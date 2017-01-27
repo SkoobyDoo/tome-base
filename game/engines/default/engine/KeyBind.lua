@@ -115,6 +115,19 @@ function _M:getBindTable(type)
 	return _M.binds_remap[type.type] or type.default
 end
 
+local changed_handlers = setmetatable({}, {__mode='k'})
+
+--- Bindings changed
+-- Calls the method "onKeyBindAltered" on the handler object when a keybind changes
+function _M:callWhenChanged(handler)
+	changed_handlers[handler] = true
+end
+
+--- Bindings changed
+function _M:changed()
+	for h, _ in pairs(changed_handlers) do h:onKeyBindAltered() end
+end
+
 function _M:init()
 	engine.KeyCommand.init(self)
 	self.virtuals = {}

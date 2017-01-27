@@ -233,6 +233,10 @@ function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 	for m, _ in pairs(drag_listeners) do m:receiveMouseGlobal("drag-start-global", x, y, true, nil, {drag=_M.drag}) end
 end
 
+function _M:isDragging()
+	return _M.drag and true or false
+end
+
 function _M:endDrag(x, y)
 	local drag = _M.drag
 	print("[MOUSE] ending drag'n'drop")

@@ -31,8 +31,8 @@ newKind{
 			else
 				frame = "cooldown"
 				pie_color = {1,0,0,0.4}
-				pie_angle = 360 * (1 - (actor.talents_cd[t.id] / actor:getTalentCooldown(t)))
 			end
+			pie_angle = 360 * (1 - (actor.talents_cd[t.id] / actor:getTalentCooldown(t)))
 			txt = tostring(actor:isTalentCoolingDown(t))
 		elseif actor:isTalentActive(t.id) then
 			pie_color = {1,1,0,0.4}
@@ -43,6 +43,10 @@ newKind{
 		end
 		return display_entity, pie_color, pie_angle, frame, txt
 	end end,
+	drag_display_object = function(self, actor)
+		local t = actor:getTalentFromId(self.data)
+		return t.display_entity:getEntityDisplayObject(nil, 64, 64, 1, false, false, true)
+	end,
 	use = function(self, actor)
 		actor:useTalent(self.data)
 	end,
@@ -92,6 +96,10 @@ newKind{
 			frame = "sustain"
 		end
 		return display_entity, pie_color, pie_angle, frame, txt
+	end,
+	drag_display_object = function(self, actor)
+		local o = actor:findInAllInventories(self.data, {no_add_name=true, force_id=true, no_count=true})
+		if o then return o:getEntityDisplayObject(nil, 64, 64) end
 	end,
 	use = function(self, actor)
 		local o, item, inven = actor:findInAllInventories(self.data)

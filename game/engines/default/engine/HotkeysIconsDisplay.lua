@@ -125,10 +125,14 @@ end
 
 _M.page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
 
+function _M:onKeyBindAltered()
+	for _, hk in pairs(self.hk_cache) do hk:updateKeybind(self, self.actor) end
+end
+
 -- Displays the hotkeys, keybinds & cooldowns
 function _M:display()
 	local a = self.actor
-	if not a or not a.changed then return end
+	-- if not a or not a.changed then return end
 
 	local bpage = a.hotkey_page
 	local spage = bpage
@@ -152,7 +156,7 @@ function _M:display()
 			self.hk_cache[j]:addTo(self, a, page, bi, j, x, y)
 			self.dragclics[j] = {x,y,w,h}
 			self.clics[j] = {x,y,w,h,fake=not has_hk}
-		elseif not self.hk_cache[j]:isInvalid(a.hotkey[j] or {"none", j}) then
+		elseif self.hk_cache[j]:isInvalid(a.hotkey[j] or {"none", j}, x, y) then
 			self.hk_cache[j]:removeFrom(self, a)
 			if has_hk then self.hk_cache[j] = HotkeysIcons.new(a.hotkey[j])
 			else self.hk_cache[j] = HotkeysIcons:getEmpty(j) end
@@ -254,15 +258,8 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 				if click then
 					a:activateHotkey(i)
 				else
-					MAEK DRAG AND DROP WORK AND MOVE THAT TO HotkeysIcons CLASS
-					if a.hotkey[i][1] == "talent" then
-						local t = self.actor:getTalentFromId(a.hotkey[i][2])
-						local DO = t.display_entity:getEntityDisplayObject(nil, 64, 64)
-						game.mouse:startDrag(mx, my, DO, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
-					elseif a.hotkey[i][1] == "inventory" then
-						local o = a:findInAllInventories(a.hotkey[i][2], {no_add_name=true, force_id=true, no_count=true})
-						local DO = nil
-						if o then DO = o:getEntityDisplayObject(nil, 64, 64) end
+					if self.hk_cache[i] then
+						local DO = self.hk_cache[i]:getDragDO(a)
 						game.mouse:startDrag(mx, my, DO, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
 					end
 				end

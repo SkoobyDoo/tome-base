@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
+
 rm, rM = rm or 0.8, rM or 1
 gm, gM = gm or 0.8, gM or 1
 bm, bM = bm or 0, bM or 0

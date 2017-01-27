@@ -95,12 +95,14 @@ function _M:use(item)
 			if sym == KeyBind._BACKSPACE then
 				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
 				KeyBind.binds_remap[t.type][curcol] = nil
+				KeyBind:changed()
 			elseif sym ~= KeyBind._ESCAPE then
 				local ks = KeyBind:makeKeyString(sym, ctrl, shift, alt, meta, unicode)
 				print("Binding", t.name, "to", ks, "::", curcol)
 
 				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
 				KeyBind.binds_remap[t.type][curcol] = ks
+				KeyBind:changed()
 			end
 			self.c_tree:drawItem(item)
 			game:unregisterDialog(d)
@@ -122,6 +124,7 @@ function _M:use(item)
 
 				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
 				KeyBind.binds_remap[t.type][curcol] = ks
+				KeyBind:changed()
 				self.c_tree:drawItem(item)
 				game:unregisterDialog(d)
 			end },

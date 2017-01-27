@@ -42,6 +42,7 @@ function _M:newKind(t)
 	assert(t.kind, "No hotkeys kind")
 	assert(t.display_data, "No hotkeys display_data")
 	assert(t.use, "No hotkeys use")
+	assert(t.drag_display_object, "No hotkeys drag_display_object")
 	self.kinds_def[t.kind] = t
 end
 
@@ -60,12 +61,16 @@ end
 
 function _M:isInvalid(def, x, y)
 	if self.kind ~= def[1] or self.data ~= def[2] then return true end
-	if self.x ~= x or self.x ~= y then return true end
+	if self.x ~= x or self.y ~= y then return true end
 	return false
 end
 
 function _M:displayData(actor)
 	return kinds_def[self.kind].display_data(self, actor)
+end
+
+function _M:getDragDO(actor)
+	return kinds_def[self.kind].drag_display_object(self, actor)
 end
 
 function _M:addTo(hks, actor, page, bi, i, x, y)
@@ -82,8 +87,8 @@ function _M:addTo(hks, actor, page, bi, i, x, y)
 	self.oldpie_color = {1, 1, 1, 0}
 
 	if display_entity then
-		self.display_entity = display_entity
-		hks.icons_layer:add(display_entity:getEntityDisplayObject(hks.tiles, hks.icon_w, hks.icon_h, false, false):removeFromParent():translate(x, y, 0))
+		self.display_entity = display_entity:getEntityDisplayObject(hks.tiles, hks.icon_w, hks.icon_h, 1, false, false, true)
+		hks.icons_layer:add(self.display_entity:removeFromParent():translate(x, y, 0))
 	end
 
 	self.selframe = core.renderer.colorQuad(0, 0, 1, 1, 0.5, 0.5, 1, 1):color(1, 1, 1, 0):translate(x, y):scale(hks.icon_w, hks.icon_h, 1)
@@ -98,6 +103,9 @@ function _M:addTo(hks, actor, page, bi, i, x, y)
 	self.txt = core.renderer.text(hks.fontbig)
 	hks:applyShadowOutline(self.txt)
 	hks.texts_layer:add(self.txt)
+	print("==add")
+
+	self:updateKeybind(hks, actor)
 end
 
 local frames_colors = {
@@ -108,6 +116,7 @@ local frames_colors = {
 }
 
 function _M:removeFrom(hks, actor)
+	print("==die")
 	self.frame.container:removeFromParent()
 	self.pie:removeFromParent()
 	self.selframe:removeFromParent()
@@ -127,23 +136,18 @@ function _M:update(hks, actor)
 			:tween(7, "a", nil, frames_colors[frame][4])
 		-- self.frame.container:color(unpack(frames_colors[frame]))
 		self.oldframe = frame
+		print("==update frame")
 	end
 
 	if pie_color[1] ~= self.oldpie_color[1] or pie_color[2] ~= self.oldpie_color[2] or pie_color[3] ~= self.oldpie_color[3] or pie_color[4] ~= self.oldpie_color[4] then
 		self.pie:color(unpack(pie_color))
 		self.oldpie_color = pie_color
+		print("==update color")
 	end
 	if self.oldpie_angle ~= pie_angle then
 		self.pie:clear():quadPie(0, 0, hks.icon_w, hks.icon_h, 0, 0, 1, 1, pie_angle, 1, 1, 1, 1)
 		self.oldpie_angle = pie_angle
-	end
-
-	local ks = game.key:formatKeyString(game.key:findBoundKeys(self.keybound))
-	if ks ~= self.oldks then
-		self.txtkey:text(ks)
-		local tw, th = self.txtkey:getStats()
-		self.txtkey:translate(self.x + hks.icon_w - tw/2, self.y + hks.icon_h - th/2, 0) -- /2 because we scale by 0.5
-		self.oldks = ks
+		print("==update angle")
 	end
 
 	if txt ~= self.oldtxt then
@@ -151,9 +155,20 @@ function _M:update(hks, actor)
 		local tw, th = self.txt:getStats()
 		self.txt:translate(self.x + (hks.icon_w - tw) / 2, self.y + (hks.icon_h - th) / 2, 0)
 		self.oldtxt = txt
+		print("==update txt")
 	end
 end
 
+function _M:updateKeybind(hks, actor)
+	local ks = game.key:formatKeyString(game.key:findBoundKeys(self.keybound))
+	if ks ~= self.oldks then
+		self.txtkey:text(ks)
+		local tw, th = self.txtkey:getStats()
+		self.txtkey:translate(self.x + hks.icon_w - tw/2, self.y + hks.icon_h - th/2, 0) -- /2 because we scale by 0.5
+		self.oldks = ks
+		print("==update key")
+	end
+end
 ------------------------------------------------------------------
 -- Empty frame version
 ------------------------------------------------------------------
@@ -166,8 +181,12 @@ end
 
 function Empty:isInvalid(def, x, y)
 	if self.kind ~= def[1] or self.data ~= def[2] then return true end
-	if self.x ~= x or self.x ~= y then return true end
+	if self.x ~= x or self.y ~= y then return true end
 	return false
+end
+
+function Empty:getDragDO(actor)
+	return nil
 end
 
 function Empty:addTo(hks, actor, page, bi, i, x, y)
@@ -186,21 +205,29 @@ function Empty:addTo(hks, actor, page, bi, i, x, y)
 	hks:applyShadowOutline(self.txtkey)
 	self.txtkey:textColor(colors.unpack1(colors.ANTIQUE_WHITE)):scale(0.5, 0.5, 0.5) -- Scale so we can usethe same atlas for all text
 	hks.unseens_layer:add(self.txtkey)
+	print("==empty add")
+
+	self:updateKeybind(hks, actor)
 end
 
 function Empty:removeFrom(hks, actor)
+	print("==empty die")
 	self.frame.container:removeFromParent()
 	self.selframe:removeFromParent()
 	self.txtkey:removeFromParent()
 end
 
 function Empty:update(hks, actor)
+end
+
+function Empty:updateKeybind(hks, actor)
 	local ks = game.key:formatKeyString(game.key:findBoundKeys(self.keybound))
 	if ks ~= self.oldks then
 		self.txtkey:text(ks)
 		local tw, th = self.txtkey:getStats()
 		self.txtkey:translate(self.x + hks.icon_w - tw/2, self.y + hks.icon_h - th/2, 0) -- /2 because we scale by 0.5
 		self.oldks = ks
+		print("==empty update")
 	end
 end
 
