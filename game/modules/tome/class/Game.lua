@@ -239,11 +239,15 @@ function _M:newGame()
 	else
 		self.always_target = config.settings.tome.tactical_mode
 	end
-	local nb_unlocks, max_unlocks = self:countBirthUnlocks()
+	local nb_unlocks, max_unlocks, categories = self:countBirthUnlocks()
+	local unlocks_order = { class=1, race=2, cometic=3, other=4 }
+	local unlocks = {}
+	for cat, d in pairs(categories) do unlocks[#unlocks+1] = {desc=d.nb.."/"..d.max.." "..cat, order=unlocks_order[cat] or 99} end
+	table.sort(unlocks, "order")
 	self.creating_player = true
 	self.extra_birth_option_defs = {}
 	self:triggerHook{"ToME:extraBirthOptions", options = self.extra_birth_option_defs}
-	local birth; birth = Birther.new("Character Creation ("..nb_unlocks.."/"..max_unlocks.." unlocked birth options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
+	local birth; birth = Birther.new("Character Creation ("..table.concat(table.extract_field(unlocks, "desc", ipairs), ", ").." unlocked options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
 		if not loaded then
 			self.calendar = Calendar.new("/data/calendar_"..(self.player.calendar or "allied")..".lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
 			self.player:check("make_tile")
@@ -2631,6 +2635,8 @@ unlocks_list = {
 	undead_skeleton = "Race: Skeleton",
 	yeek = "Race: Yeek",
 
+	race_ogre = "Race: Ogre",
+
 	mage = "Class: Archmage",
 	mage_tempest = "Class tree: Storm",
 	mage_geomancer = "Class tree: Stone",
@@ -2672,12 +2678,25 @@ unlocks_list = {
 function _M:countBirthUnlocks()
 	local nb = 0
 	local max = 0
+	local categories = {
+		class = {nb = 0, max = 0},
+		race = {nb = 0, max = 0},
+		cosmetic = {nb = 0, max = 0},
+		other = {nb = 0, max = 0},
+	}
 
-	for name, _ in pairs(self.unlocks_list) do
+	for name, dname in pairs(self.unlocks_list) do
+		local cat = "other"
+		if dname:find("^Class:") then cat = "class"
+		elseif dname:find("^Race:") then cat = "race"
+		elseif dname:find("^Cosmetic:") then cat = "cosmetic"
+		else cat = "other"
+		end
 		max = max + 1
-		if profile.mod.allow_build[name] then nb = nb + 1 end
+		categories[cat].max = categories[cat].max + 1
+		if profile.mod.allow_build[name] then nb = nb + 1 categories[cat].nb = categories[cat].nb + 1 end
 	end
-	return nb, max
+	return nb, max, categories
 end
 
 -- get a text-compatible texture (icon) for an entity

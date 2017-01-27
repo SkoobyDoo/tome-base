@@ -284,6 +284,13 @@ function table.values(t)
 	return tt
 end
 
+function table.extract_field(t, field, iterator)
+	iterator = iterator or pairs
+	local tt = {}
+	for k, e in iterator(t) do tt[k] = e[field] end
+	return tt
+end
+
 function table.same_values(t1, t2)
 	for _, e1 in ipairs(t1) do
 		local ok = false
