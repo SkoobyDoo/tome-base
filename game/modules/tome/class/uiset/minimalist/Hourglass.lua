@@ -27,28 +27,29 @@ module(..., package.seeall, class.inherit(MiniContainer))
 
 function _M:init(minimalist, w, h)
 	self.full_container = core.renderer.container()
-	self.do_container = core.renderer.renderer("static"):setRendererName("Hourglass MiniContainer")
+	self.do_container = core.renderer.container()
 	self.full_container:add(self.do_container)
 
 	local shadow
 	shadow, self.def_w, self.def_h = self:imageLoader("resources/hourglass_shadow.png")
+	self.sand = core.renderer.renderer("static"):setRendererName("Hourglass Sand")
 	local front = self:imageLoader("resources/hourglass_front.png")
-	self.bottom_t = self:texLoader("resources/hourglass_bottom.png")
-	self.top_t = self:texLoader("resources/hourglass_top.png")
-
-	self.fill_top = core.renderer.container()
-	self.fill_bottom = core.renderer.container()
+	local bottom, bw, bh = self:imageLoader("resources/hourglass_bottom.png")
+	local top, tw, th = self:imageLoader("resources/hourglass_top.png")
+	self.sand:add(top)
+	self.sand:add(bottom:translate(0, th))
+	self.sand_w = math.max(bw, tw)
+	self.sand_h = th + bh
 
 	self.do_container:add(shadow)
-	self.do_container:add(self.fill_top)
-	self.do_container:add(self.fill_bottom)
+	self.do_container:add(self.sand:translate(11, 32))
 	self.do_container:add(front)
 
 	MiniContainer.init(self, minimalist)
 
-	self.mouse:registerZone(0, 0, self.w, self.h, self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
-		-- DGDGDGDG: handle tooltip from game.level.turn_counter_desc
-	end, ""))
+	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
+		if event ~= "out" then game.tooltip_x, game.tooltip_y = 1, 1; game:tooltipDisplayAtMap(game.w, game.h, tostring(game.level.turn_counter_desc)) end
+	end)
 
 	self:update(0)
 end
@@ -67,19 +68,11 @@ function _M:update(nb_keyframes)
 		self.old_hidden = false
 		if self.old_turn ~= game.level.turn_counter or self.old_turn_max ~= game.level.max_turn_counter then
 			self.do_container:shown(true)
-			self.fill_bottom:clear()
-			self.fill_top:clear()
 
 			local c = game.level.turn_counter
 			local m = math.max(game.level.max_turn_counter, c)
 			local p = c / m
-			if p >= 0.5 then
-				self.fill_bottom:add(core.renderer.fromTextureTableCut(self.top_t, 11, 32, nil, nil, 1-(p-0.5)*2, 1))
-				self.fill_bottom:add(core.renderer.fromTextureTable(self.bottom_t, 12, 72))
-			else
-				self.fill_bottom:add(core.renderer.fromTextureTableCut(self.bottom_t, 12, 72, nil, nil, 1-(p)*2, 1))
-				-- self.fill_bottom:add(core.renderer.fromTextureTableCut(self.bottom_t, 12, 72 + (self.bottom_t.h * (1-p*2)), self.bottom_t.w+0.001, self.bottom_t.h * p*2))
-			end
+			self.sand:cutoff(0, self.sand_h * (1-p), self.sand_w, self.sand_h * p)
 
 			self.old_turn = game.level.turn_counter
 			self.old_turn_max = game.level.max_turn_counter
