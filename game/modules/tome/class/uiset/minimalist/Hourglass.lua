@@ -74,9 +74,10 @@ function _M:update(nb_keyframes)
 			local m = math.max(game.level.max_turn_counter, c)
 			local p = c / m
 			if p >= 0.5 then
-				self.fill_bottom:add(core.renderer.fromTextureTableCut(self.top_t, 11, 32, nil, nil, 1-(p-0.5)*2, (p-0.5)*2))
+				self.fill_bottom:add(core.renderer.fromTextureTableCut(self.top_t, 11, 32, nil, nil, 1-(p-0.5)*2, 1))
 				self.fill_bottom:add(core.renderer.fromTextureTable(self.bottom_t, 12, 72))
 			else
+				self.fill_bottom:add(core.renderer.fromTextureTableCut(self.bottom_t, 12, 72, nil, nil, 1-(p)*2, 1))
 				-- self.fill_bottom:add(core.renderer.fromTextureTableCut(self.bottom_t, 12, 72 + (self.bottom_t.h * (1-p*2)), self.bottom_t.w+0.001, self.bottom_t.h * p*2))
 			end
 

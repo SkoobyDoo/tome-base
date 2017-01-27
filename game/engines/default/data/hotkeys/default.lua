@@ -55,7 +55,7 @@ newKind{
 newKind{
 	kind = "inventory",
 	display_data = function(self, actor)
-		local display_entity = t.display_entity
+		local display_entity
 		local pie_color, pie_angle = {1, 1, 1, 0}, 360
 		local frame = "ok"
 		local txt = nil
@@ -84,7 +84,7 @@ newKind{
 		elseif o and (o.use_talent or o.use_power) then
 			pie_angle = 360 * ((o.power / o.max_power))
 			pie_color = {1,0,0,0.4}
-			local cd = o:getObjectCooldown(a)
+			local cd = o:getObjectCooldown(actor)
 			if cd and cd > 0 then
 				frame = "cooldown"
 				txt = tostring(cd)
@@ -103,7 +103,7 @@ newKind{
 	end,
 	use = function(self, actor)
 		local o, item, inven = actor:findInAllInventories(self.data)
-		if not o then require("engine.ui.Dialog"):simplePopup("Item not found", "You do not have any "..name..".")
+		if not o then require("engine.ui.Dialog"):simplePopup("Item not found", "You do not have any "..self.data..".")
 		else actor:playerUseItem(o, item, inven)
 		end
 	end,
