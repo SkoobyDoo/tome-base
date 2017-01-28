@@ -3042,27 +3042,40 @@ newEffect{
 newEffect{
 	name = "GARROTE", image = "talents/grab.png",
 	desc = "Garrote",
-	long_desc = function(self, eff) return ("The target is being garrotted, pinning them, reducing their damage dealt by %d%% and causing them to take an unarmed hit for %d%% damage each turn."):format(eff.reduce, eff.power*100) end,
+	long_desc = function(self, eff)
+		local silence = eff.silence > 0 and eff.silenceid and ("  It is silenced for the next %d turn(s), preventing it from casting spells and using some vocal talents."):format(eff.silence) or ""
+		return ("The target is being garrotted by %s, rendering it unable to move and subject to an automatic unarmed attack (at %d%% damage) each turn.%s"):format(eff.src and eff.src.name or "something", eff.power*100, silence) 
+	end,
 	type = "physical",
-	subtype = { pin=true },
+	subtype = { grapple=true, pin=true },
 	status = "detrimental",
-	parameters = { power = 0.6, reduce=30},
+	parameters = { power = 0.6, silence=0},
 	remove_on_clone = true,
-	on_gain = function(self, err) return "#Target# is caught by a garrote!", "+Garrote" end,
-	on_lose = function(self, err) return "#Target# is free from the garrote.", "-Garrote" end,
+	on_gain = function(self, eff) return ("%s has garroted #Target#!"):format(eff.src and eff.src.name or "Something"), "+Garrote" end,
+	on_lose = function(self, eff) return ("#Target# is free from %s's garrote."):format(eff.src and eff.src.name or "something"), "-Garrote" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "never_move", 1)
-		self:effectTemporaryValue(eff, "numbed", eff.reduce)
+		if eff.silence > 0 then eff.silenceid = self:addTemporaryValue("silence", 1) end
 	end,
+	charges = function(self, eff) return eff.silence end,
 	on_timeout = function(self, eff)
+		if eff.silence > 0 then
+			eff.silence = eff.silence - 1
+			if eff.silenceid and eff.silence <= 0 then self:removeTemporaryValue("silence", eff.silenceid); eff.silenceid = nil end
+		end
 		if not self.x or not eff.src or not eff.src.x or core.fov.distance(self.x, self.y, eff.src.x, eff.src.y) > 1 or eff.src.dead or not game.level:hasEntity(eff.src) then
 			self:removeEffect(self.EFF_GARROTE)
 		else
-			eff.src:attackTarget(self, nil, eff.power, true, true)	
+			eff.src:logCombat(self, "#Source# #LIGHT_RED#strangles#LAST# #Target#!")
+			eff.src.turn_procs.auto_melee_hit = true
+			self:attr("no_evasion", 1)
+			eff.src:attackTarget(self, nil, eff.power, true, true)
+			eff.src.turn_procs.auto_melee_hit = nil
+			self:attr("no_evasion", -1)
 		end
 	end,
 	deactivate = function(self, eff)
-
+		if eff.silenceid then self:removeTemporaryValue("silence", eff.silenceid) end
 	end, 
 }
 
@@ -3094,7 +3107,7 @@ newEffect{
 		eff.dam = eff.dam + (cb.value * eff.perc)
 		return true
 	end,
-	on_die = function(self, eff)
+	on_die = function(self, eff) -- splitting oozes?
 		if eff.src then
 			eff.src:incStamina(eff.stam)
 			eff.src.talents_cd[eff.src.T_MARKED_FOR_DEATH] = 0
