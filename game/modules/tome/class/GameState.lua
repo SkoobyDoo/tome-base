@@ -963,6 +963,7 @@ function _M:makeWeatherShader(level, shader, params)
 	level.data.weather_shader = ps
 end
 
+local weather_shader_vbo = core.renderer.vbo("static"):texture(core.renderer.white):quad(0, 0, 0, 0,   1, 0, 1, 0,   1, 1, 1, 1,   0, 1, 0, 1,   1, 1, 1, 1)
 function _M:displayWeatherShader(level, ps, x, y, nb_keyframes)
 	local dx, dy = level.map:getScreenUpperCorner() -- Display at map border, always, so it scrolls with the map
 
@@ -972,9 +973,7 @@ function _M:displayWeatherShader(level, ps, x, y, nb_keyframes)
 	for j = 1, #ps do
 		if ps[j].shad then
 			ps[j]:setUniform("mapCoord", mapcoords)
-			ps[j].shad:use(true)
-			core.display.drawQuad(x, y, level.map.viewport.width, level.map.viewport.height, 255, 255, 255, 255)
-			ps[j].shad:use(false)
+			weather_shader_vbo:shader(ps[j].shad):toScreen(x, y, 0, level.map.viewport.width, level.map.viewport.height)
 		end
 	end
 end

@@ -1148,6 +1148,108 @@ static int gl_spriter_trigger_callback(lua_State *L)
 }
 
 /******************************************************************
+ ** VBO
+ ******************************************************************/
+static int gl_vbo_new(lua_State *L)
+{
+	VBO **v = (VBO**)lua_newuserdata(L, sizeof(VBO*));
+	auxiliar_setclass(L, "gl{vbo}", -1);
+
+	VBOMode mode = VBOMode::DYNAMIC;
+	if (lua_isstring(L, 1)) {
+		const char *ms = lua_tostring(L, 1);
+		if (!strcmp(ms, "static")) mode = VBOMode::STATIC;
+		else if (!strcmp(ms, "dynamic")) mode = VBOMode::DYNAMIC;
+		else if (!strcmp(ms, "stream")) mode = VBOMode::STREAM;
+		else {
+			lua_pushstring(L, "Parameter to vbo() must be either nil or static/dynamic/stream");
+			lua_error(L);
+		}		
+	}
+
+	*v = new VBO(mode);
+	return 1;
+}
+
+static int gl_vbo_free(lua_State *L)
+{
+	VBO *v = *(VBO**)auxiliar_checkclass(L, "gl{vbo}", 1);
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_vbo_shader(lua_State *L)
+{
+	VBO *v = *(VBO**)auxiliar_checkclass(L, "gl{vbo}", 1);
+	if (lua_isnil(L, 2)) {
+		v->setShader(NULL);
+	} else {
+		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		v->setShader(shader);
+	}
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vbo_texture(lua_State *L)
+{
+	VBO *v = *(VBO**)auxiliar_checkclass(L, "gl{vbo}", 1);
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
+	int id = lua_tonumber(L, 3);
+	v->setTexture(t->tex, id);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vbo_color(lua_State *L)
+{
+	VBO *v = *(VBO**)auxiliar_checkclass(L, "gl{vbo}", 1);
+	v->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vbo_clear(lua_State *L)
+{
+	VBO *v = *(VBO**)auxiliar_checkclass(L, "gl{vbo}", 1);
+	v->clear();
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vbo_quad(lua_State *L)
+{
+	VBO *v = *(VBO**)auxiliar_checkclass(L, "gl{vbo}", 1);
+	float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float u1 = lua_tonumber(L, 4);  float v1 = lua_tonumber(L, 5); 
+	float x2 = lua_tonumber(L, 6);  float y2 = lua_tonumber(L, 7);  float u2 = lua_tonumber(L, 8);  float v2 = lua_tonumber(L, 9); 
+	float x3 = lua_tonumber(L, 10); float y3 = lua_tonumber(L, 11); float u3 = lua_tonumber(L, 12); float v3 = lua_tonumber(L, 13); 
+	float x4 = lua_tonumber(L, 14); float y4 = lua_tonumber(L, 15); float u4 = lua_tonumber(L, 16); float v4 = lua_tonumber(L, 17); 
+	float r = lua_tonumber(L, 18); float g = lua_tonumber(L, 19); float b = lua_tonumber(L, 20); float a = lua_tonumber(L, 21);
+	v->addQuad(
+		x1, y1, u1, v1, 
+		x2, y2, u2, v2, 
+		x3, y3, u3, v3, 
+		x4, y4, u4, v4, 
+		r, g, b, a
+	);
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vbo_toscreen(lua_State *L)
+{
+	VBO *v = *(VBO**)auxiliar_checkclass(L, "gl{vbo}", 1);
+	float scale_x = 1, scale_y = 1;
+	if (lua_isnumber(L, 5)) scale_x = lua_tonumber(L, 5);
+	if (lua_isnumber(L, 6)) scale_y = lua_tonumber(L, 6);
+	v->toScreen(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), scale_x, scale_y);
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+/******************************************************************
  ** View
  ******************************************************************/
 static int gl_view_new(lua_State *L)
@@ -1556,6 +1658,18 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_vbo_reg[] =
+{
+	{"__gc", gl_vbo_free},
+	{"shader", gl_vbo_shader},
+	{"texture", gl_vbo_texture},
+	{"color", gl_vbo_color},
+	{"quad", gl_vbo_quad},
+	{"clear", gl_vbo_clear},
+	{"toScreen", gl_vbo_toscreen},
+	{NULL, NULL},
+};
+
 static const struct luaL_Reg gl_view_reg[] =
 {
 	{"__gc", gl_view_free},
@@ -1584,6 +1698,7 @@ const luaL_Reg rendererlib[] = {
 	{"callback", gl_callback_new},
 	{"spriter", gl_spriter_new},
 	{"view", gl_view_new},
+	{"vbo", gl_vbo_new},
 	{"countDOs", gl_dos_count},
 	{"defaultTextShader", gl_set_default_text_shader},
 	{"physicWorldGravity", physic_world_gravity},
@@ -1605,6 +1720,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{particles}", gl_particles_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);
 	auxiliar_newclass(L, "gl{view}", gl_view_reg);
+	auxiliar_newclass(L, "gl{vbo}", gl_vbo_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
 
 	// Build the weak self store registry
