@@ -893,7 +893,7 @@ void DORContainer::remove(DisplayObject *dob) {
 
 void DORContainer::clear() {
 	containerClear();
-	setChanged();
+	setChanged(true);
 	setSortingChanged();
 }
 

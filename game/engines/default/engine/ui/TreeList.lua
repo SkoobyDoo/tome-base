@@ -257,6 +257,10 @@ function _M:sortByColumn(column, reverse)
 	self:outputList()
 end
 
+function _M:regenerate()
+	self:setTree(self.tree)
+end
+
 function _M:setTree(tree)
 	self.tree = tree
 	self:walkTree(true)
@@ -339,7 +343,7 @@ function _M:walkTree(purge_cache)
 			item._number = count
 			count = count + 1
 			if item[self.key_prop] then self.items_by_key[item[self.key_prop]] = item end
-			if purge_cache then item.cols = nil end
+			if purge_cache then item.cols = nil if item._container then item._container:removeFromParent() end item._container = nil end
 			if item.nodes then count = recurs(item.nodes, level+1, count) end
 		end
 		return count
