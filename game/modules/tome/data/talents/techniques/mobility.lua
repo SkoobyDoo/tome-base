@@ -301,8 +301,6 @@ newTalent {
 				if self.turn_procs[t.id] == state then
 					stam_cost = 0
 				end
-			else -- intercept at most 1 non-melee/archery attack
-				if self.turn_procs.gen_trained_reactions then return end
 			end
 			stam, stam_cost = self:getStamina(), stam_cost or t.getStamina(self, t)
 			local lt = t.getLifeTrigger(self, t)/100
@@ -311,8 +309,8 @@ newTalent {
 				--print(("[PROJECTOR: Trained Reactions] PASSED life/stam test for %s: %s %s damage (%s) (%0.1f/%0.1f stam) from %s (state:%s)"):format(self.name, dam, type, is_attk, stam_cost, stam, src.name, state)) -- debugging
 				self.turn_procs[t.id] = state
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
-				local reduce = t.getReduction(self, t)*(self:attr("never_move") and 0.5 or 1)
-				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #source#, partially avoiding it!", is_attk and "an attack" or "damage") end
+				local reduce = t.getReduction(self, t)
+				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, partially avoiding it!", is_attk and "an attack" or "damage") end
 
 				dam = dam*(1-reduce)
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
@@ -335,8 +333,8 @@ newTalent {
 		return ([[You have trained to be very light on your feet and have conditioned your reflexes to react faster than thought to damage you take.
 		You permanently gain %d%% pinning immunity.
 		While this talent is active, you instantly react to any direct damage (not from status effects, etc.) that would hit you for at least %d%% of your current life or %d%% of your maximum life (whichever is greater).
-		This requires %0.1f stamina and reduces the damage by %d%%.  It can happen up to once per turn, unless the damage comes from a melee or archery strike.
-		Your reactions are too slow for this if you are wearing heavy armour and are only half effective when you are immobilized.
+		This requires %0.1f stamina and reduces the damage by %d%%.
+		Your reactions are too slow for this if you are wearing heavy armour.
 		The damage reduction improves with your Defense.]])
 		:format(t.pinImmune(self, t)*100, trigger, 5, stam, reduce)
 	end,
