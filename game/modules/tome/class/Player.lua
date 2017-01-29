@@ -418,78 +418,77 @@ end
 
 --- Funky shader stuff
 function _M:updateMainShader()
-	if game.fbo_shader then
-		local effects = {}
-		local pf = game.posteffects or {}
+	local effects = {}
+	local pf = game.posteffects or {}
 
-		-- Set shader HP warning
-		if self.life ~= self.shader_old_life then
-			if self.life < self.max_life / 2 then game.fbo_shader:setUniform("hp_warning", 1 - (self.life / self.max_life))
-			else game.fbo_shader:setUniform("hp_warning", 0) end
-		end
-		-- Set shader air warning
-		if self.air ~= self.old_air then
-			if self.air < self.max_air / 2 then game.fbo_shader:setUniform("air_warning", 1 - (self.air / self.max_air))
-			else game.fbo_shader:setUniform("air_warning", 0) end
-		end
-		if self:attr("solipsism_threshold") and self.psi ~= self.old_psi then
-			local solipsism_power = self:attr("solipsism_threshold") - self:getPsi()/self:getMaxPsi()
-			if solipsism_power > 0 then game.fbo_shader:setUniform("solipsism_warning", solipsism_power)
-			else game.fbo_shader:setUniform("solipsism_warning", 0) end
-		end
-		if ((self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) ~= self.old_healwarn) and not self:attr("no_healing_no_warning") then
-			if (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) then
-				game.fbo_shader:setUniform("intensify", {0.3,1.3,0.3,1})
-			else
-				game.fbo_shader:setUniform("intensify", {0,0,0,0})
-			end
-		end
-
-		-- Colorize shader
-		if self:attr("stealth") and self:attr("stealth") > 0 then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9,0.6})
-		elseif self:attr("invisible") and self:attr("invisible") > 0 then game.fbo_shader:setUniform("colorize", {0.3,0.4,0.9,0.8})
-		elseif self:attr("unstoppable") then game.fbo_shader:setUniform("colorize", {1,0.2,0,1})
-		elseif self:attr("lightning_speed") then game.fbo_shader:setUniform("colorize", {0.2,0.3,1,1})
-		elseif game.level and game.level.data.is_eidolon_plane then game.fbo_shader:setUniform("colorize", {1,1,1,1})
---		elseif game:hasDialogUp() then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9})
-		else game.fbo_shader:setUniform("colorize", {0,0,0,0}) -- Disable
-		end
-
-		-- Blur shader
-		if config.settings.tome.fullscreen_confusion and pf.blur and pf.blur.shad then
-			if self:attr("confused") and self.confused >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
-			elseif self:attr("sleep") and not self:attr("lucid_dreamer") and self.sleep >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
-			end
-		end
-
-		-- Moving Blur shader
-		if pf.motionblur and pf.motionblur.shad then
-			if self:attr("invisible") then pf.motionblur.shad:uniMotionblur(3) effects[pf.motionblur.shad] = true
-			elseif self:attr("lightning_speed") then pf.motionblur.shad:uniMotionblur(2) effects[pf.motionblur.shad] = true
-			elseif game.level and game.level.data and game.level.data.motionblur then pf.motionblur.shad:uniMotionblur(game.level.data.motionblur) effects[pf.motionblur.shad] = true
-			end
-		end
-
-		-- Underwater shader
-		if game.level and game.level.data and game.level.data.underwater and pf.underwater and pf.underwater.shad then effects[pf.underwater.shad] = true
-		end
-
-		-- Wobbling shader
-		if config.settings.tome.fullscreen_stun and pf.wobbling and pf.wobbling.shad then
-			if self:attr("stunned") and self.stunned >= 1 then pf.wobbling.shad:uniWobbling(1) effects[pf.wobbling.shad] = true
-			elseif self:attr("dazed") and self.dazed >= 1 then pf.wobbling.shad:uniWobbling(0.7) effects[pf.wobbling.shad] = true
-			end
-		end
-
-		-- Timestop shader
-		if self:attr("timestopping") and pf.timestop and pf.timestop.shad then
-			effects[pf.timestop.shad] = true
-			pf.timestop.shad:paramNumber("tick_start", core.game.getTime())
-		end
-
-		game.posteffects_use = table.keys(effects)
-		game.posteffects_use[#game.posteffects_use+1] = game.fbo_shader.shad
+	-- Set shader HP warning
+	if self.life ~= self.shader_old_life then
+		if self.life < self.max_life / 2 then game.fbo_shader:setUniform("hp_warning", 1 - (self.life / self.max_life))
+		else game.fbo_shader:setUniform("hp_warning", 0) end
 	end
+	-- Set shader air warning
+	if self.air ~= self.old_air then
+		if self.air < self.max_air / 2 then game.fbo_shader:setUniform("air_warning", 1 - (self.air / self.max_air))
+		else game.fbo_shader:setUniform("air_warning", 0) end
+	end
+	if self:attr("solipsism_threshold") and self.psi ~= self.old_psi then
+		local solipsism_power = self:attr("solipsism_threshold") - self:getPsi()/self:getMaxPsi()
+		if solipsism_power > 0 then game.fbo_shader:setUniform("solipsism_warning", solipsism_power)
+		else game.fbo_shader:setUniform("solipsism_warning", 0) end
+	end
+	if ((self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) ~= self.old_healwarn) and not self:attr("no_healing_no_warning") then
+		if (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) then
+			game.fbo_shader:setUniform("intensify", {0.3,1.3,0.3,1})
+		else
+			game.fbo_shader:setUniform("intensify", {0,0,0,0})
+		end
+	end
+
+	-- Colorize shader
+	if self:attr("stealth") and self:attr("stealth") > 0 then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9,0.6})
+	elseif self:attr("invisible") and self:attr("invisible") > 0 then game.fbo_shader:setUniform("colorize", {0.3,0.4,0.9,0.8})
+	elseif self:attr("unstoppable") then game.fbo_shader:setUniform("colorize", {1,0.2,0,1})
+	elseif self:attr("lightning_speed") then game.fbo_shader:setUniform("colorize", {0.2,0.3,1,1})
+	elseif game.level and game.level.data.is_eidolon_plane then game.fbo_shader:setUniform("colorize", {1,1,1,1})
+--		elseif game:hasDialogUp() then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9})
+	else game.fbo_shader:setUniform("colorize", {0,0,0,0}) -- Disable
+	end
+
+	-- Blur shader
+	if config.settings.tome.fullscreen_confusion and pf.blur then
+		if self:attr("confused") and self.confused >= 1 then pf.blur:uniBlur(2) effects.blur = true
+		elseif self:attr("sleep") and not self:attr("lucid_dreamer") and self.sleep >= 1 then pf.blur:uniBlur(2) effects.blur = true
+		end
+	end
+
+	-- Moving Blur shader
+	if pf.motionblur then
+		if self:attr("invisible") then pf.motionblur:uniMotionblur(3) effects.motionblur = true
+		elseif self:attr("lightning_speed") then pf.motionblur:uniMotionblur(2) effects.motionblur = true
+		elseif game.level and game.level.data and game.level.data.motionblur then pf.motionblur:uniMotionblur(game.level.data.motionblur) effects.motionblur = true
+		end
+	end
+
+	-- Underwater shader
+	if game.level and game.level.data and game.level.data.underwater and pf.underwater then effects.underwater = true
+	end
+
+	-- Wobbling shader
+	if config.settings.tome.fullscreen_stun and pf.wobbling then
+		if self:attr("stunned") and self.stunned >= 1 then pf.wobbling:uniWobbling(1) effects.wobbling = true
+		elseif self:attr("dazed") and self.dazed >= 1 then pf.wobbling:uniWobbling(0.7) effects.wobbling = true
+		end
+	end
+
+	-- Timestop shader
+	if self:attr("timestopping") and pf.timestop then
+		effects.timestop = true
+		pf.timestop:uniTick_start(core.game.getTime())
+	end
+
+	game.fbo_posteffects:disableAll()
+	game.fbo_posteffects:enable("main", true)
+	for name, _ in pairs(effects) do game.fbo_posteffects:enable(name, true) end
 end
 
 -- Precompute FOV form, for speed

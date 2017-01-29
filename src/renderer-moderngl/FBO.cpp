@@ -51,7 +51,7 @@ DORTarget::DORTarget(int w, int h, int nbt, bool hdr) {
 	makeFramebuffer(w, h, nbt, hdr, &fbo);
 
 	// For display as a DO
-	for (int i = 0; i < (nbt > 3 ? 3 : nbt); i++) tex[i] = fbo.textures[i];
+	for (int i = 0; i < (nbt > 3 ? 3 : nbt); i++) tex[i] = fbo.textures[i].texture;
 	// Default display quad, can be removed and altered if needed with clear & addQuad
 	addQuad(
 		0, 0, 0, 1,
@@ -79,15 +79,18 @@ void DORTarget::makeFramebuffer(int w, int h, int nbt, bool hdr, Fbo *fbo) {
 	int i;
 	fbo->textures.resize(nbt);
 	fbo->buffers.resize(nbt);
-	glGenTextures(nbt, fbo->textures.data());
+	vector<GLuint> td(nbt);
+	glGenTextures(nbt, td.data());
 
 	for (i = 0; i < nbt; i++) {
-		tfglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+		fbo->textures[i].texture = td[i];
+		fbo->textures[i].gc = true;
+		tfglBindTexture(GL_TEXTURE_2D, fbo->textures[i].texture);
 		glTexImage2D(GL_TEXTURE_2D, 0, hdr ? GL_RGBA16F : GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i].texture, 0);
 		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 
@@ -97,10 +100,15 @@ void DORTarget::makeFramebuffer(int w, int h, int nbt, bool hdr, Fbo *fbo) {
 void DORTarget::deleteFramebuffer(Fbo *fbo) {
 	int nbt = fbo->textures.size();
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
-	for (int i = 0; i < nbt; i++) glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+	for (int i = 0; i < nbt; i++) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
+		auto &t = fbo->textures[i];
+		if (t.gc) {
+			glDeleteTextures(1, &t.texture);
+		}
+	}
 	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	glDeleteTextures(nbt, fbo->textures.data());
 	glDeleteFramebuffers(1, &fbo->fbo);
 }
 
@@ -229,7 +237,7 @@ void DORTarget::toScreen(int x, int y) {
 			0, h, 0, 0,
 			1, 1, 1, 1
 		);
-		toscreen_vbo->setTexture(fbo.textures[0]);
+		toscreen_vbo->setTexture(fbo.textures[0].texture);
 		toscreen_vbo->setShader(shader);
 	}
 	toscreen_vbo->toScreen(x, y, 0, 1, 1);
@@ -284,13 +292,13 @@ void TargetBloom::renderMode() {
 	
 	// Draw the normal particles
 	target->useFramebuffer(&fbo_plain);
-	vbo.setTexture(target->fbo.textures[0]);
+	vbo.setTexture(target->fbo.textures[0].texture);
 	vbo.setShader(NULL);
 	vbo.toScreen(model);
 	
 	// Draw the bloom
 	target->useFramebuffer(&fbo_bloom);
-	vbo.setTexture(target->fbo.textures[0]);
+	vbo.setTexture(target->fbo.textures[0].texture);
 	vbo.setShader(bloom);
 	vbo.toScreen(model);
 
@@ -300,7 +308,7 @@ void TargetBloom::renderMode() {
 	shader_type *shader_blur = hblur;
 	for (int i = 0; i < blur_passes; i++) {
 		target->useFramebuffer(fbo_blur);
-		vbo.setTexture((i == 0) ? fbo_bloom.textures[0] : fbo_blur_prev->textures[0]);
+		vbo.setTexture((i == 0) ? fbo_bloom.textures[0].texture : fbo_blur_prev->textures[0].texture);
 		vbo.setShader(shader_blur);
 		vbo.toScreen(model);
 
@@ -311,16 +319,88 @@ void TargetBloom::renderMode() {
 
 	// Draw back into the normal FBO
 	target->useFramebuffer(&target->fbo);
-	vbo.setTexture(fbo_blur->textures[0], 0); // Use the last of the blurs
-	vbo.setTexture(fbo_plain.textures[0], 1); // Use plain rendering
+	vbo.setTexture(fbo_blur->textures[0].texture, 0); // Use the last of the blurs
+	vbo.setTexture(fbo_plain.textures[0].texture, 1); // Use plain rendering
 	vbo.setShader(combine);
 	vbo.toScreen(model);
 
-	// // Draw back into the normal FBO
-	// target->useFramebuffer(&target->fbo);
-	// vbo.setTexture(fbo_bloom.textures[0], 0); // Use the last of the blurs
-	// vbo.setShader(NULL);
-	// vbo.toScreen(model);
+	glEnable(GL_BLEND);
+}	
+
+/*************************************************************************
+ ** TargetPostProcess
+ *************************************************************************/
+TargetPostProcess::TargetPostProcess(DORTarget *t)
+	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
+{
+	target->makeFramebuffer(target->w, target->h, 1, false, &fbo);
+
+	vbo.addQuad(
+		0, 0, 0, 1,
+		target->w, 0, 1, 1,
+		target->w, target->h, 1, 0,
+		0, target->h, 0, 0,
+		1, 1, 1, 1
+	);
+}
+TargetPostProcess::~TargetPostProcess() {
+	for (auto &it : shaders) {
+		if (it.lua_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, it.lua_ref); }
+	}
+	target->deleteFramebuffer(&fbo);
+}
+
+void TargetPostProcess::add(string name, shader_type *shader, int ref) {
+	shader_ref sref;
+	sref.name = name;
+	sref.shader = shader;
+	sref.lua_ref = ref;
+	sref.active = false;
+	shaders.push_back(sref);
+}
+
+void TargetPostProcess::disableAll() {
+	for (auto &ref : shaders) {
+		ref.active = false;
+	}
+}
+
+void TargetPostProcess::enable(string name, bool v) {
+	for (auto &ref : shaders) {
+		if (ref.name == name) {
+			ref.active = v;
+			break;
+		}
+	}
+}
+
+void TargetPostProcess::renderMode() {
+	if (!shaders.size()) return;
+	mat4 model = mat4();
+	glDisable(GL_BLEND);
+	
+	// Draw all passes
+	bool nothing = true;
+	Fbo *use_fbo_prev = &target->fbo;
+	Fbo *use_fbo = &fbo;
+	for (auto &ref : shaders) { if (ref.active) {
+		nothing = false;
+		target->useFramebuffer(use_fbo);
+		vbo.setTexture(use_fbo_prev->textures[0].texture);
+		vbo.setShader(ref.shader);
+		vbo.toScreen(model);
+
+		swap(use_fbo_prev, use_fbo);
+	} }
+	if (nothing) { glEnable(GL_BLEND); return; }
+
+	// If we didnt end up in the rigth buffer, draw back into the normal FBO
+	if (use_fbo == &target->fbo) {
+		target->useFramebuffer(&target->fbo);
+		vbo.setTexture(use_fbo_prev->textures[0].texture);
+		vbo.setShader(NULL);
+		vbo.toScreen(model);
+	}
 
 	glEnable(GL_BLEND);
 }	

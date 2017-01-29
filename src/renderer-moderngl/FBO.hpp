@@ -23,12 +23,19 @@
 #define FBO_GL_HPP
 
 #include "renderer-moderngl/Renderer.hpp"
+#include <map>
 
 class DORTarget;
 
+struct FboTexture {
+
+	GLuint texture;
+	bool gc;
+};
+
 struct Fbo {
 	GLuint fbo;
-	vector<GLuint> textures;
+	vector<FboTexture> textures;
 	vector<GLenum> buffers;
 };
 
@@ -69,12 +76,37 @@ public:
 	virtual void renderMode();
 };
 
+struct shader_ref {
+	string name;
+	shader_type *shader;
+	int lua_ref = LUA_NOREF;
+	bool active = false;
+};
+
+class TargetPostProcess : public TargetSpecialMode {
+protected:
+	vector<shader_ref> shaders;
+
+	Fbo fbo;
+	VBO vbo;
+public:
+	TargetPostProcess(DORTarget *t);
+	virtual ~TargetPostProcess();
+
+	void add(string name, shader_type *shader, int ref);
+	void disableAll();
+	void enable(string name, bool v);
+
+	virtual void renderMode();
+};
+
 /****************************************************************************
  ** A FBO that masquerades as a DORVertexes, draw stuff in it and
  ** then add it to a renderer to use the content generated
  ****************************************************************************/
 class DORTarget : public DORVertexes, public IResizable {
 	friend class TargetBloom;
+	friend class TargetPostProcess;
 protected:
 	int w, h;
 	Fbo fbo;

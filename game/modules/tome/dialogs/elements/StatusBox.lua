@@ -51,23 +51,23 @@ function _M:generate()
 end
 
 function _M:setTextColor(text, color)
-	self.text = text or self.text
-	self.color = color or self.color
+	-- self.text = text or self.text
+	-- self.color = color or self.color
 
-	self.text_tex = self:drawFontLine(self.font_bold, self.text)
-	self.frame_decay = 0
+	-- self.text_tex = self:drawFontLine(self.font_bold, self.text)
+	-- self.frame_decay = 0
 end
 
 function _M:display(x, y, nb_keyframes)
-	local alpha = 1
-	if self.frame_delay then
-		self.frame_decay = self.frame_decay + nb_keyframes
-		if self.frame_decay > self.frame_delay then
-			-- ease out over 0.5 s
-			local easetime = (config.settings.display_fps or 60) / 2
-			alpha = 1 - (self.frame_decay - self.frame_delay) / easetime
-		end
-	end
-	self:textureToScreen(self.text_tex, x + 3 + (self.iw - self.text_tex.w) / 2, y + 3, self.color.r/255, self.color.g/255, self.color.b/255, alpha)
+	-- local alpha = 1
+	-- if self.frame_delay then
+	-- 	self.frame_decay = self.frame_decay + nb_keyframes
+	-- 	if self.frame_decay > self.frame_delay then
+	-- 		-- ease out over 0.5 s
+	-- 		local easetime = (config.settings.display_fps or 60) / 2
+	-- 		alpha = 1 - (self.frame_decay - self.frame_delay) / easetime
+	-- 	end
+	-- end
+	-- self:textureToScreen(self.text_tex, x + 3 + (self.iw - self.text_tex.w) / 2, y + 3, self.color.r/255, self.color.g/255, self.color.b/255, alpha)
 end
 

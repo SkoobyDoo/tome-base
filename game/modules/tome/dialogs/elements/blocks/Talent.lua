@@ -19,59 +19,37 @@
 
 require "engine.class"
 local Block = require "engine.ui.blocks.Block"
+local Tiles = require "engine.Tiles"
 
---- A text entry zone
--- @classmod engine.ui.blocks.block
+--- A talent icon
+-- @classmod engine.ui.blocks.Talent
 module(..., package.seeall, class.inherit(Block))
 
-function _M:init(t, text, color, w, h)
-	color = color or {255,255,255}
+local tiles_cache = Tiles.new(64, 64, "/data/font/DroidSansMono.ttf", 16, true, true)
+tiles_cache.use_images = true
+tiles_cache.force_back_color = {r=0, g=0, b=0}
 
+function _M:init(t, entity, size, frame, frame_sel, talent_frame)
 	Block.init(self, t)
 
-	self.cursor_t = self.parent:getAtlasTexture("ui/textbox-cursor.png")
-	self.cursor = core.renderer.fromTextureTable(self.cursor_t, 0, 0)
-
-	self.frame = self.parent:makeFrameDO("ui/textbox", nil, nil, w, h)
-	self.frame_sel = self.parent:makeFrameDO("ui/textbox-sel", nil, nil, w, h)
+	self.frame = self.parent:makeFrameDO(frame, size, size)
+	self.frame.container:shown(true)
+	self.frame_sel = self.parent:makeFrameDO(frame_sel, size, size)
 	self.frame_sel.container:shown(false)
 	self.cur_frame = self.frame
+	self.talent_frame = self.parent:makeFrameDO(talent_frame, size, size)
 	
-	self.w, self.h = self.frame.w, self.frame.h
+	self.w, self.h = self.talent_frame.w, self.talent_frame.h
 
-	self.text = core.renderer.text(self.parent.font)
-	self.text:translate(self.frame.b4.w, (self.h - self.parent.font_h) / 2, 10)
-	self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
-	
 	self.do_container:add(self.frame.container)
 	self.do_container:add(self.frame_sel.container)
-	self.do_container:add(self.text)
-	self.do_container:add(self.cursor)
-
-	self:setText(text)
-	self:setPos(#text)
+	self.do_container:add(self.talent_frame.container)
+	self.do_container:add(entity:getEntityDisplayObject(tiles_cache, size, size, 1, false, false, true):translate(0, 0, 20))
 end
 
 function _M:onFocusChange(v)
 	self.cur_frame.container:shown(false)
 	self.cur_frame = v and self.frame_sel or self.frame
 	self.cur_frame.container:shown(true)
-	self.cursor:shown(v)
-end
-
-function _M:setText(text, color)
-	if color then
-		self.text:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
-	end
-	self.text:text(text)
-	self.lasttext = text
-end
-
-function _M:setPos(i)
-	local size = self.text:getLetterPosition(i)
-	self.cursor:translate(self.frame.b4.w - self.cursor_t.w / 2 + size, (self.h - self.cursor_t.h) / 2, 11)
-end
-
-function _M:showCursor(v)
-	self.cursor:color(1, 1, 1, v and 1 or 0)
+	-- self.cursor:shown(v)
 end

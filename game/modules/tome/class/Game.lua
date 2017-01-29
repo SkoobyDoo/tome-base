@@ -1574,55 +1574,41 @@ end
 function _M:createFBOs()
 	print("[GAME] Creating FBOs")
 --[[
-	-- Create the framebuffer
-	self.fbo = core.display.newFBO(Map.viewport.width, Map.viewport.height)
-	if self.fbo then
-		self.fbo_shader = Shader.new("main_fbo")
-		self.posteffects = {
-			wobbling = Shader.new("main_fbo/wobbling"),
-			underwater = Shader.new("main_fbo/underwater"),
-			motionblur = Shader.new("main_fbo/motionblur"),
-			blur = Shader.new("main_fbo/blur"),
-			timestop = Shader.new("main_fbo/timestop"),
-			line_grids = Shader.new("main_fbo/line_grids"),
-			gestures = Shader.new("main_fbo/gestures"),
-		}
-		self.posteffects_use = { self.fbo_shader.shad }
-		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end
-		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
-
 		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
-	end
-
-	if self.player then self.player:updateMainShader() end
-
-	self.full_fbo = core.display.newFBO(self.w, self.h)
-	if self.full_fbo then self.full_fbo_shader = Shader.new("full_fbo") if not self.full_fbo_shader.shad then self.full_fbo = nil self.full_fbo_shader = nil end end
-
-	if self.fbo and self.fbo2 then core.particles.defineFramebuffer(self.fbo)
-	else core.particles.defineFramebuffer(nil) end
-
 
 	Map:enableFBORenderer("target_fbo")
 
 --	self.mm_fbo = core.display.newFBO(200, 200)
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
 ]]
-	self.posteffects = {
-		wobbling = Shader.new("main_fbo/wobbling"),
-		underwater = Shader.new("main_fbo/underwater"),
-		motionblur = Shader.new("main_fbo/motionblur"),
-		blur = Shader.new("main_fbo/blur"),
-		timestop = Shader.new("main_fbo/timestop"),
-		line_grids = Shader.new("main_fbo/line_grids"),
-		gestures = Shader.new("main_fbo/gestures"),
+	local effs = { 
+		{ "wobbling", "main_fbo/wobbling" }, 
+		{ "underwater", "main_fbo/underwater" }, 
+		{ "motionblur", "main_fbo/motionblur" }, 
+		{ "blur", "main_fbo/blur" }, 
+		{ "timestop", "main_fbo/timestop" }, 
+		{ "main", "main_fbo" }, 
+		-- line_grids = "main_fbo/line_grids", 
+		-- gestures = "main_fbo/gestures",1
 	}
+	self.posteffects = {}
+	local w, h = core.display.size()
+	local seffs = {}
+	for i, d in ipairs(effs) do
+		local s = Shader.new(d[2])
+		if s.shad then
+			s:setUniform("texSize", {w, h})
+			seffs[#seffs+1] = {d[1], s.shad}
+			self.posteffects[d[1]] = s.shad
+			if d[1] == "main" then self.fbo_shader = s end
+		end
+	end
+
 	local bloom_shader = Shader.new("bloom/bloom")
 	local hblur_shader = Shader.new("bloom/hblur") hblur_shader:setUniform("texSize", {w, h})
 	local vblur_shader = Shader.new("bloom/vblur") vblur_shader:setUniform("texSize", {w, h})
 	local combine_shader = Shader.new("bloom/combine")
 
-	self.fbo_shader = Shader.new("main_fbo")
 	self.full_fbo_shader = Shader.new("full_fbo")
 
 	self.fbobloom = core.renderer.target()
@@ -1631,6 +1617,8 @@ function _M:createFBOs()
 	core.particles.defineBloomFBO(self.fbobloom)
 
 	self.fbo2 = core.renderer.target()
+	self.fbo_posteffects = self.fbo2:postEffectsMode(unpack(seffs))
+	self.fbo_posteffects:enable("main", true)
 	self.fbo2renderer = core.renderer.renderer("static"):add(self.fbo2):enableBlending(false)
 	core.particles.defineAlterFBO(self.fbo2)
 
@@ -1641,9 +1629,9 @@ function _M:createFBOs()
 	self.full_fbo:shader(self.full_fbo_shader)
 	self.full_fborenderer = core.renderer.renderer("static"):add(self.full_fbo)
 
-	self.posteffects_use = { self.fbo_shader.shad }
-	
 	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
+
+	if self.player then self.player:updateMainShader() end
 end
 
 function _M:displayMap(nb_keyframes)

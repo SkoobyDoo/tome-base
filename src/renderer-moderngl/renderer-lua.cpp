@@ -688,6 +688,50 @@ static int gl_target_mode_bloom(lua_State *L)
 	return 1;
 }
 
+static int gl_target_post_effect_disableall(lua_State *L)
+{
+	TargetPostProcess *p = *(TargetPostProcess**)auxiliar_checkclass(L, "gl{target:posteffects}", 1);
+	p->disableAll();
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_target_post_effect_enable(lua_State *L)
+{
+	TargetPostProcess *p = *(TargetPostProcess**)auxiliar_checkclass(L, "gl{target:posteffects}", 1);
+	p->enable(lua_tostring(L, 2), lua_toboolean(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_target_mode_posteffects(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+
+	TargetPostProcess *mode = new TargetPostProcess(v);
+	v->setSpecialMode(mode);
+
+	// Iterate shaders
+	int idx = 2;
+	while (lua_istable(L, idx)) {
+		const char *name = "";
+		if (string_get_lua_table(L, idx, 1, &name)) {
+			lua_pushnumber(L, 2);
+			lua_gettable(L, idx);
+			shader_type *shad = (shader_type*)lua_touserdata(L, -1);
+			lua_pushvalue(L, -1); int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+			lua_pop(L, 1);
+			mode->add(name, shad, ref);
+		}
+		idx++;
+	}
+
+	TargetPostProcess **r = (TargetPostProcess**)lua_newuserdata(L, sizeof(TargetPostProcess*));
+	auxiliar_setclass(L, "gl{target:posteffects}", -1);
+	*r = mode;
+	return 1;
+}
+
 static int gl_target_shader(lua_State *L)
 {
 	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
@@ -1401,6 +1445,15 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{NULL, NULL},
 };
 
+
+// Note the is no __gc because we dont actaully manage the object
+static const struct luaL_Reg gl_target_posteffects_reg[] =
+{
+	{"disableAll", gl_target_post_effect_disableall},
+	{"enable", gl_target_post_effect_enable},
+	{NULL, NULL},
+};
+
 static const struct luaL_Reg gl_target_reg[] =
 {
 	{"__gc", gl_target_free},
@@ -1412,6 +1465,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"texture", gl_target_texture},
 	{"textureTarget", gl_target_target_texture},
 	{"bloomMode", gl_target_mode_bloom},
+	{"postEffectsMode", gl_target_mode_posteffects},
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},
 	{"clear", gl_vertexes_clear},
@@ -1713,6 +1767,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{vertexes}", gl_vertexes_reg);
 	auxiliar_newclass(L, "gl{text}", gl_text_reg);
 	auxiliar_newclass(L, "gl{container}", gl_container_reg);
+	auxiliar_newclass(L, "gl{target:posteffects}", gl_target_posteffects_reg);
 	auxiliar_newclass(L, "gl{target}", gl_target_reg);
 	auxiliar_newclass(L, "gl{callback}", gl_callback_reg);
 	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
