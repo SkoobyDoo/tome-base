@@ -44,7 +44,24 @@ function _M:init(t, entity, size, frame, frame_sel, talent_frame)
 	self.do_container:add(self.frame.container)
 	self.do_container:add(self.frame_sel.container)
 	self.do_container:add(self.talent_frame.container)
-	self.do_container:add(entity:getEntityDisplayObject(tiles_cache, size, size, 1, false, false, true):translate(0, 0, 20))
+	self.do_container:add(entity:getEntityDisplayObject(tiles_cache, size - 6, size - 6, 1, false, false, true):translate(3, 3, 20))
+
+	self.text = core.renderer.text(self.parent.font):outline(1)
+	self.do_container:add(self.text)
+	self.h = self.h + self.parent.font:height()
+end
+
+function _M:updateStatus(text)
+	self.text:text(text)
+	local w, h = self.text:getStats()
+	self.text:translate((self.w - w) / 2, self.h - h, 10)
+	return self
+end
+
+function _M:updateColor(color)
+	self.frame.container:color(colors.smart1unpack(color))
+	self.frame_sel.container:color(colors.smart1unpack(color))
+	return self
 end
 
 function _M:onFocusChange(v)

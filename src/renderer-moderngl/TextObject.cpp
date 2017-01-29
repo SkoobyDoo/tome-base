@@ -115,7 +115,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 			vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 
-			x += d->advance_x * scale; // WTF without a 110% factor letters always look too close .. uh
+			x += d->advance_x * scale * (style == FONT_STYLE_BOLD ? 1.1 : 1);
 		}
 	}
 	return x;

@@ -22,6 +22,7 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local Scrollbar = require "engine.ui.blocks.Scrollbar"
 local Talent = require "mod.dialogs.elements.blocks.Talent"
+local TalentLine = require "mod.dialogs.elements.blocks.TalentLine"
 local Tiles = require "engine.Tiles"
 
 --- A talent trees display
@@ -54,9 +55,6 @@ function _M:init(t)
 	self.shadow = 0.7
 	self.last_input_was_keyboard = false
 
-	self.plus = self:getAtlasTexture("ui/plus.png")
-	self.minus = self:getAtlasTexture("ui/minus.png")
-
 	t.require_renderer = true
 	Base.init(self, t)
 end
@@ -64,7 +62,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-	self.do_container:clear():zSort(true):countDraws(false)
+	self.do_container:clear():zSort(true):countDraws(false):cutoff(0, 0, self.w, self.h)
 	
 	-- generate the scrollbar
 	self.scroll_inertia = 0
@@ -181,8 +179,10 @@ end
 function _M:moveSel(i, j)
 end
 
-function _M:drawItem(item)
+function _M:drawItem(item, parent)
 	if item.stat then
+		item._block = Talent.new(nil, item.entity, self.frame_size, "ui/selector", "ui/selector-sel", "ui/icon-frame/frame")
+		self.do_container:add(item._block:get())
 		-- local str = item:status():toString()
 		-- local d = self.font:draw(str, self.font:size(str), 255, 255, 255, true)[1]
 		-- item.text_status = d
@@ -193,12 +193,15 @@ function _M:drawItem(item)
 		-- self.font:setStyle("normal")
 		-- item.text_status = d
 	elseif item.talent then
-		-- local str = item:status():toString()
 		-- local d = self.font:draw(str, self.font:size(str), 255, 255, 255, true)[1]
 		-- item.text_status = d
 		item._block = Talent.new(nil, item.entity, self.frame_size, "ui/selector", "ui/selector-sel", "ui/icon-frame/frame")
-		self.do_container:add(item._block:get())
+		item._block:updateStatus(item:status():toString()):updateColor(item:color())
+		parent._block:add(item._block)
 	elseif item.type then
+		item._block = TalentLine.new()
+		item._block:updateStatus("#{bold}#"..item:rawname():toString().."#{normal}#"):updateColor(item:color())
+		self.do_container:add(item._block:get())
 		-- local str = item:rawname():toString()
 		-- local c = item:color()
 		-- self.font:setStyle("bold")
@@ -215,12 +218,17 @@ function _M:on_focus_change(status)
 end
 
 function _M:redrawAllItems()
+	local y = 0
 	for i = 1, #self.tree do
 		local tree = self.tree[i]
-		self:drawItem(tree)
+		self:drawItem(tree, nil)
 		for j = 1, #tree.nodes do
 			local tal = tree.nodes[j]
-			self:drawItem(tal)
+			self:drawItem(tal, tree)
+		end
+		if tree._block then
+			tree._block:get():translate(0, y)
+			y = y + tree._block.h + 10
 		end
 	end
 

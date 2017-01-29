@@ -106,7 +106,6 @@ end
 -- @return b
 -- @return a
 function colors.smart1unpack(color)
-	print("===", color)
 	if type(color) == "string" then
 		if colors[color] then return colors.unpack1(colors[color])
 		else return colors.hex1alphaunpack(color)
