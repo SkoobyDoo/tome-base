@@ -41,7 +41,7 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	self.font_line_skip = self.font:lineSkip()
 	self.scroll_delay = 20 -- ms/pixel
 
-	self.default_ui = { TextzoneList.new{weakstore=true, width=self.max, height=500, variable_height=true, font=self.font, ui=self.ui} }
+	self.default_ui = { TextzoneList.new{weakstore=true, no_update_delay=true, width=self.max, height=500, variable_height=true, font=self.font, ui=self.ui} }
 	self.locked = false
 	
 	if lockstatus_icon then
@@ -143,7 +143,7 @@ function _M:set(str, ...)
 						if not str[i].suppress_line_break then
 							ts:add(true, "---")
 						end
-						local tz = TextzoneList.new{weakstore=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
+						local tz = TextzoneList.new{weakstore=true, no_update_delay=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
 						tz:switchItem(ts, ts)
 						uis_size = uis_size + 1
 						uis[uis_size] = tz
@@ -156,7 +156,7 @@ function _M:set(str, ...)
 				end
 			end
 		end
-		local tz = TextzoneList.new{weakstore=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
+		local tz = TextzoneList.new{weakstore=true, no_update_delay=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
 		tz:switchItem(ts, ts)
 		
 		uis_size = uis_size + 1
