@@ -699,7 +699,7 @@ void on_redraw()
 
 	if (ticks_count >= 500) {
 		current_fps = (float)frames_done * 1000.0 / (float)ticks_count;
-		printf("%d frames in %d ms = %0.2f FPS (%f keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
+		// printf("%d frames in %d ms = %0.2f FPS (%f keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
 		ticks_count = 0;
 		frames_done = 0;
 		keyframes_done = 0;

@@ -1236,7 +1236,6 @@ static int map_draw_seen_texture(lua_State *L)
 	if (!map->seens_vbo) return 0;
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
-	int nb_keyframes = 0;
 	int mx = map->mx;
 	int my = map->my;
 	x += -map->tile_w * 5;
@@ -1406,7 +1405,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 }
 
 // static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
-static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
+static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, float nb_keyframes, bool always_show)
 {
 	map_object *dm;
 	float r, g, b;
@@ -1619,7 +1618,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 
 #define MIN(a,b) ((a < b) ? a : b)
 
-void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show, mat4 model, vec4 color)
+void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color)
 {
 	bool changed = false;
 	int i = 0, j = 0, z = 0;
@@ -1768,7 +1767,7 @@ static int lua_map_toscreen(lua_State *L)
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
-	int nb_keyframes = luaL_checknumber(L, 4);
+	float nb_keyframes = luaL_checknumber(L, 4);
 	bool always_show = lua_toboolean(L, 5);
 
 	vec4 color = {1, 1, 1, 1};

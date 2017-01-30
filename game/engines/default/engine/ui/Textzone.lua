@@ -181,8 +181,8 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, 
 	if self.scrollbar then
 		local oldpos = self.scrollbar.pos
 		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
-		if self.scroll_inertia > 0 then self:stopAutoScrolling() self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
-		elseif self.scroll_inertia < 0 then self:stopAutoScrolling() self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+		if self.scroll_inertia > 0 then self:stopAutoScrolling() self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self:stopAutoScrolling() self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
 

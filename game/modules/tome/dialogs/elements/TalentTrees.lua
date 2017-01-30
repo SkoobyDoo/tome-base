@@ -224,7 +224,8 @@ function _M:display(x, y, nb_keyframes)
 
 		if self.scrollbar.pos ~= oldpos then
 			self.lines_container:translate(0, -self.scrollbar.pos, 0)
-			self.mouse.delegate_offset_y = self.scrollbar.pos
+			-- self.mouse.delegate_offset_y = -self.scrollbar.pos
+			-- print("== offset", self.mouse.delegate_offset_y)
 		end
 	end
 end

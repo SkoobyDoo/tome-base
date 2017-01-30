@@ -82,7 +82,7 @@ struct s_map_object {
 	bool valid;
 	bool flip_x, flip_y;
 	float oldx, oldy;
-	int move_step, move_max, move_blur, move_twitch_dir;
+	float move_step, move_max, move_blur, move_twitch_dir;
 	float move_twitch;
 	int anim_max, anim_loop;
 	float anim_step, anim_speed;
@@ -152,7 +152,7 @@ typedef struct {
 	float scroll_x, scroll_y;
 	int mx, my, mwidth, mheight;
 	float oldmx, oldmy;
-	int move_step, move_max;
+	float move_step, move_max;
 	float used_mx, used_my;
 	float used_animdx, used_animdy;
 	int seensinfo_w;
@@ -167,7 +167,7 @@ typedef struct {
 	VBO *mm_vbo;
 } map_type;
 
-extern void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show, mat4 model, vec4 color);
+extern void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color);
 extern void minimap_toscreen(map_type *map, mat4 model, int gridsize, int mdx, int mdy, int mdw, int mdh, float transp);
 
 #endif
