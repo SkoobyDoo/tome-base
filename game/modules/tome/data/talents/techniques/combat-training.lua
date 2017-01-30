@@ -20,6 +20,7 @@
 newTalent{
 	name = "Thick Skin",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	points = 5,
 	require = { stat = { con=function(level) return 14 + level * 9 end }, },
@@ -37,6 +38,7 @@ newTalent{
 newTalent{
 	name = "Heavy Armour Training", short_name = "ARMOUR_TRAINING",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	no_unlearn_last = true,
 	points = 5,
@@ -103,6 +105,7 @@ newTalent{
 newTalent{
 	name = "Light Armour Training",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	levelup_screen_break_line = true,
 	points = 5,
@@ -147,6 +150,7 @@ newTalent{
 newTalent{
 	name = "Combat Accuracy", short_name = "WEAPON_COMBAT",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { level=function(level) return (level - 1) * 4 end },
 	mode = "passive",
@@ -162,6 +166,7 @@ newTalent{
 newTalent{
 	name = "Weapons Mastery",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { stat = { str=function(level) return 12 + level * 6 end }, },
 	mode = "passive",
@@ -179,6 +184,7 @@ newTalent{
 newTalent{
 	name = "Dagger Mastery", short_name = "KNIFE_MASTERY",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { stat = { dex=function(level) return 10 + level * 6 end }, },
 	mode = "passive",
@@ -195,6 +201,7 @@ newTalent{
 newTalent{
 	name = "Exotic Weapons Mastery",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	hide = true,
 	points = 5,
 	require = { stat = { str=function(level) return 10 + level * 6 end, dex=function(level) return 10 + level * 6 end }, },

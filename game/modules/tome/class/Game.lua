@@ -778,11 +778,11 @@ function _M:onLevelLoadRun()
 end
 
 function _M:noStairsTime()
-	local nb = 3
+	local nb = 2
 	if game.difficulty == game.DIFFICULTY_EASY then nb = 0
-	elseif game.difficulty == game.DIFFICULTY_NIGHTMARE then nb = 5
-	elseif game.difficulty == game.DIFFICULTY_INSANE then nb = 7
-	elseif game.difficulty == game.DIFFICULTY_MADNESS then nb = 10
+	elseif game.difficulty == game.DIFFICULTY_NIGHTMARE then nb = 3
+	elseif game.difficulty == game.DIFFICULTY_INSANE then nb = 5
+	elseif game.difficulty == game.DIFFICULTY_MADNESS then nb = 9
 	end
 	return nb * 10
 end
