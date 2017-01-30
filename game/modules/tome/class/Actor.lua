@@ -6351,6 +6351,7 @@ local save_for_effects = {
 	mental = "combatMentalResist",
 	physical = "combatPhysicalResist",
 }
+_M.save_for_effects = save_for_effects
 
 --- Adjust temporary effects
 function _M:on_set_temporary_effect(eff_id, e, p)

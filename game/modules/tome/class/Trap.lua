@@ -143,9 +143,9 @@ function _M:tooltip()
 				local desc = util.getval(self.desc, self)
 				if desc then res:add(true, desc) end
 			end
-			res:add(true, "#YELLOW#Detect: "..self.detect_power.."#WHITE#")
+			res:add(true, ("#YELLOW#Detect: %d#WHITE#"):format(self.detect_power))
 			if id or config.settings.cheat then
-				res:add("#YELLOW# Disarm: "..self.disarm_power.."#WHITE#")
+				res:add(("#YELLOW# Disarm: %d#WHITE#"):format(self.disarm_power))
 			end
 		end
 		if config.settings.cheat then res:add(true, "UID: "..self.uid, true) end
