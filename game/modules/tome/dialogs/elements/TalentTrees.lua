@@ -53,8 +53,7 @@ function _M:init(t)
 	self.scroll_inertia = 0
 	
 	self.shadow = 0.7
-	self.last_input_was_keyboard = false
-
+	
 	self.lines_container = core.renderer.container()
 
 	t.require_renderer = true
@@ -95,27 +94,27 @@ function _M:generate()
 		return false
 	end)
 	self.key:addBinds{
-		ACCEPT = function() if self.last_mz then self:onUse(self.last_mz.item, true) end end,
-		MOVE_UP = function() self.last_input_was_keyboard = true self:moveSel(-1, 0) end,
-		MOVE_DOWN = function() self.last_input_was_keyboard = true self:moveSel(1, 0) end,
-		MOVE_LEFT = function() self.last_input_was_keyboard = true self:moveSel(0, -1) end,
-		MOVE_RIGHT = function() self.last_input_was_keyboard = true self:moveSel(0, 1) end,
+		ACCEPT = function() self:onUse(self.cur_item, true) end,
+		MOVE_UP = function() self:moveSel(-1, 0) end,
+		MOVE_DOWN = function() self:moveSel(1, 0) end,
+		MOVE_LEFT = function() self:moveSel(0, -1) end,
+		MOVE_RIGHT = function() self:moveSel(0, 1) end,
 	}
 	self.key:addCommands{
 		[{"_RETURN","ctrl"}] = function() if self.last_mz then self:onUse(self.cur_item, false) end end,
-		[{"_UP","ctrl"}] = function() self.last_input_was_keyboard = false if self.scrollbar then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 5 end end,
-		[{"_DOWN","ctrl"}] = function() self.last_input_was_keyboard = false if self.scrollbar then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 5 end end,
-		_HOME = function() if self.scrollbar then self.scrollbar.pos = 0 self.last_input_was_keyboard = true self:moveSel(0, 0) end end,
-		_END = function() if self.scrollbar then self.scrollbar.pos = self.scrollbar.max self.last_input_was_keyboard = true self:moveSel(0, 0) end end,
-		_PAGEUP = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos - self.h, 0, self.scrollbar.max) self.last_input_was_keyboard = true self:moveSel(0, 0) end end,
-		_PAGEDOWN = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.h, 0, self.scrollbar.max) self.last_input_was_keyboard = true self:moveSel(0, 0) end end,
-		_SPACE = function() if self.last_mz and self.last_mz.item.type then self:onExpand(self.last_mz.item) end end
+		[{"_UP","ctrl"}] = function() if self.scrollbar then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 5 end end,
+		[{"_DOWN","ctrl"}] = function() if self.scrollbar then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 5 end end,
+		_HOME = function() if self.scrollbar then self:scroll(-999999) end end,
+		_END = function() if self.scrollbar then self:scroll(999999) end end,
+		_PAGEUP = function() if self.scrollbar then self:scroll(-self.h) end end,
+		_PAGEDOWN = function() if self.scrollbar then self:scroll(self.h) end end,
+		_SPACE = function() if self.cur_item and self.cur_item._block.collapse then self.cur_item._block:collapse(not self.cur_item.collapsed) end end
 	}
 end
 
 function _M:setListHeight(h)
 	self.list_h = h
-	if self.scrollbar then self.scrollbar:setMax(h) end
+	if self.scrollbar then self.scrollbar:setMax(h - self.h) end
 end
 
 function _M:scroll(v)
@@ -127,6 +126,7 @@ function _M:scroll(v)
 end
 
 function _M:onUse(item, inc)
+	if not item then return end
 	self.on_use(item, inc)
 end
 
@@ -209,8 +209,8 @@ function _M:display(x, y, nb_keyframes)
 	if self.scrollbar then
 		local oldpos = self.scrollbar.pos
 		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
-		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
-		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
 
