@@ -55,6 +55,8 @@ function _M:init(t)
 	self.shadow = 0.7
 	self.last_input_was_keyboard = false
 
+	self.lines_container = core.renderer.container()
+
 	t.require_renderer = true
 	Base.init(self, t)
 end
@@ -62,11 +64,12 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-	self.do_container:clear():zSort(true):countDraws(false):cutoff(0, 0, self.w, self.h)
+	self.do_container:clear():zSort(true):cutoff(0, 0, self.w, self.h):setRendererName("TalentTrees")
+	self.lines_container:clear():translate(0, 0)
+	self.do_container:add(self.lines_container)
 	
 	-- generate the scrollbar
 	self.scroll_inertia = 0
-	self.scroll = 0
 
 	-- Draw the scrollbar
 	if self.scrollbar then
@@ -87,65 +90,10 @@ function _M:generate()
 	
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
-		self.last_input_was_keyboard = false
-
-		if event == "button" and button == "wheelup" then if self.scrollbar then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 5 end
-		elseif event == "button" and button == "wheeldown" then if self.scrollbar then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 5 end
+		if event == "button" and button == "wheelup" then if self.scrollbar then self:scroll(-1) end
+		elseif event == "button" and button == "wheeldown" then if self.scrollbar then self:scroll(1) end
 		end
-
-		if button == "middle" and self.scrollbar then
-			if not self.scroll_drag then
-				self.scroll_drag = true
-				self.scroll_drag_x_start = x
-				self.scroll_drag_y_start = y
-			else
-				self.scrollbar.pos = util.minBound(self.scrollbar.pos + y - self.scroll_drag_y_start, 0, self.scrollbar.max)
-				self.scroll_drag_x_start = x
-				self.scroll_drag_y_start = y
-			end
-		else
-			self.scroll_drag = false
-		end
-
-		y = y - (self.scrollbar and -self.scrollbar.pos or 0)
-
-		local done = false
-		for i = 1, #self.mousezones do
-			local mz = self.mousezones[i]
-			if x >= mz.x1 and x <= mz.x2 and y >= mz.y1 and y <= mz.y2 then
-				if not self.last_mz or mz.item ~= self.last_mz.item then
-					self.last_mz = mz
-					self:updateTooltip()
-				end
-
-				if event == "button" and (button == "left" or button == "right") then
-					if mz.item.type then
-						if x - mz.x1 >= self.plus.w then self:onUse(mz.item, button == "left")
-						else self:onExpand(mz.item, button == "left") end
-					else
-						self:onUse(mz.item, button == "left")
-					end
-				end
-
-				self.last_mz = mz
-				self.sel_i = mz.i
-				self.sel_j = mz.j
-				done = true
-				break
-			end
-		end
-		if not done then game.tooltip_x = nil self.last_mz = nil end
-
---[[
-		if self.last_mz and event == "button" and (button == "left" or button == "right") then
-			if self.last_mz.item.type then
-				if x - self.last_mz.x1 >= self.plus.w then self:onUse(self.last_mz.item, button == "left")
-				elseif not self.no_cross then self:onExpand(self.last_mz.item, button == "left") end
-			else
-				self:onUse(self.last_mz.item, button == "left")
-			end
-		end
-]]
+		return false
 	end)
 	self.key:addBinds{
 		ACCEPT = function() if self.last_mz then self:onUse(self.last_mz.item, true) end end,
@@ -166,23 +114,42 @@ function _M:generate()
 	}
 end
 
+function _M:setListHeight(h)
+	self.list_h = h
+	if self.scrollbar then self.scrollbar:setMax(h) end
+end
+
+function _M:scroll(v)
+	if self.scrollbar then
+		if v < 0 then self.scroll_inertia = math.min(self.scroll_inertia, 0) + v * 5
+		else self.scroll_inertia = math.max(self.scroll_inertia, 0) + v * 5
+		end
+	end
+end
+
 function _M:onUse(item, inc)
 	self.on_use(item, inc)
 end
 
-function _M:onExpand(item, inc)
+function _M:onExpand(item)
+	if self.on_expand then self.on_expand(item) end
 end
 
 function _M:updateTooltip()
+	local str = self.tooltip(self.cur_item)
+	if not self.no_tooltip then game:tooltipDisplayAtMap(game.w, game.h, str) end
 end
 
-function _M:moveSel(i, j)
+function _M:setSel(item)
+	if self.cur_item == item then return end
+	self.cur_item = item
+	self:updateTooltip()
 end
 
 function _M:drawItem(item, parent)
 	if item.stat then
-		item._block = Talent.new(nil, item.entity, self.frame_size, "ui/selector", "ui/selector-sel", "ui/icon-frame/frame")
-		self.do_container:add(item._block:get())
+		item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")
+		self.lines_container:add(item._block:get())
 		-- local str = item:status():toString()
 		-- local d = self.font:draw(str, self.font:size(str), 255, 255, 255, true)[1]
 		-- item.text_status = d
@@ -195,13 +162,12 @@ function _M:drawItem(item, parent)
 	elseif item.talent then
 		-- local d = self.font:draw(str, self.font:size(str), 255, 255, 255, true)[1]
 		-- item.text_status = d
-		item._block = Talent.new(nil, item.entity, self.frame_size, "ui/selector", "ui/selector-sel", "ui/icon-frame/frame")
+		item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")
 		item._block:updateStatus(item:status():toString()):updateColor(item:color())
 		parent._block:add(item._block)
 	elseif item.type then
-		item._block = TalentLine.new()
-		item._block:updateStatus("#{bold}#"..item:rawname():toString().."#{normal}#"):updateColor(item:color())
-		self.do_container:add(item._block:get())
+		item._block = TalentLine.new(nil, item, not item.shown)
+		item._block:updateStatus(item:rawname():toString()):updateColor(item:color())
 		-- local str = item:rawname():toString()
 		-- local c = item:color()
 		-- self.font:setStyle("bold")
@@ -219,6 +185,7 @@ end
 
 function _M:redrawAllItems()
 	local y = 0
+	local prev_tree = nil
 	for i = 1, #self.tree do
 		local tree = self.tree[i]
 		self:drawItem(tree, nil)
@@ -227,8 +194,10 @@ function _M:redrawAllItems()
 			self:drawItem(tal, tree)
 		end
 		if tree._block then
-			tree._block:get():translate(0, y)
-			y = y + tree._block.h + 10
+			if prev_tree then prev_tree._block:setNext(tree._block)
+			else self.lines_container:add(tree._block:get()) end
+			tree._block:collapse(not tree.shown)
+			prev_tree = tree
 		end
 	end
 
@@ -266,4 +235,20 @@ function _M:on_select(item, force)
 	local tx,ty = fx or (self.last_display_x + self.last_mz.x2), fy or (self.last_display_y + self.last_mz.y1)
 	if not self.no_tooltip then game:tooltipDisplayAtMap(tx, ty, str) end
 	self.prev_item = item
+end
+
+
+function _M:display(x, y, nb_keyframes)
+	if self.scrollbar then
+		local oldpos = self.scrollbar.pos
+		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
+		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
+		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+		end
+		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
+
+		if self.scrollbar.pos ~= oldpos then
+			self.lines_container:translate(0, -self.scrollbar.pos, 0)
+		end
+	end
 end

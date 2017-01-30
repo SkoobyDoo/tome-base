@@ -68,6 +68,7 @@ end
 function _M:setPos(pos)
 	self.max = math.max(self.max, 1)
 	self.pos = util.minBound(pos, 0, self.max)
+	if self.pos == self.oldpos and self.max == self.oldmax then return end
 
 	local y
 	if self.inverse then
@@ -76,4 +77,7 @@ function _M:setPos(pos)
 		y = (self.pos / self.max) * (self.h - self.bottom_h - self.top_h - self.sel_t.h) + self.top_h
 	end
 	self.sel:translate(0, y, 1)
+
+	self.oldmax = self.max
+	self.oldpos = self.pos
 end

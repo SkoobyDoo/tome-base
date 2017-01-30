@@ -159,6 +159,13 @@ function _M:registerZone(x, y, w, h, fct, mode, name, allow_out_events, scale)
 	if name then self.areas_name[name] = d end
 end
 
+--- Registers or updates a zone
+function _M:replaceZone(x, y, w, h, fct, mode, name, allow_out_events, scale)
+	if not self:updateZone(name, x, y, w, h, fct, scale) then
+		self:registerZone(x, y, w, h, fct, mode, name, allow_out_events, scale)
+	end
+end
+
 function _M:registerZones(t)
 	for i, z in ipairs(t) do
 		self:registerZone(z.x, z.y, z.w, z.h, z.fct, z.mode, z.name, z.out_events)

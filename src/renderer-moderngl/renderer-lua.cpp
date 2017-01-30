@@ -96,7 +96,22 @@ static int gl_generic_translate_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	float x, y, z;
-	c->getTranslate(&x, &y, &z);
+
+	if (lua_toboolean(L, 2)) {
+		DisplayObject *stop_at = NULL;
+		if (lua_isuserdata(L, 2)) {
+			stop_at = userdata_to_DO(__FUNCTION__, L, 2);
+		}
+
+		// Absolute position mode
+		glm::vec4 point = glm::vec4(0, 0, 0, 1);
+		recomputematrix orim = c->computeParentCompositeMatrix(stop_at, {glm::mat4(), glm::vec4(1, 1, 1, 1), true});
+		point = orim.model * point;
+		x = point.x; y = point.y; z = point.z; 
+	} else {
+		// Normal (relative) position mode
+		c->getTranslate(&x, &y, &z);
+	}
 	lua_pushnumber(L, x);
 	lua_pushnumber(L, y);
 	lua_pushnumber(L, z);

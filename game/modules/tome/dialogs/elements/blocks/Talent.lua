@@ -29,26 +29,33 @@ local tiles_cache = Tiles.new(64, 64, "/data/font/DroidSansMono.ttf", 16, true, 
 tiles_cache.use_images = true
 tiles_cache.force_back_color = {r=0, g=0, b=0}
 
-function _M:init(t, entity, size, frame, frame_sel, talent_frame)
+function _M:init(t, item, entity, size, frame, talent_frame)
 	Block.init(self, t)
 
-	self.frame = self.parent:makeFrameDO(frame, size, size)
-	self.frame.container:shown(true)
-	self.frame_sel = self.parent:makeFrameDO(frame_sel, size, size)
-	self.frame_sel.container:shown(false)
-	self.cur_frame = self.frame
+	self.item = item
+
 	self.talent_frame = self.parent:makeFrameDO(talent_frame, size, size)
 	
 	self.w, self.h = self.talent_frame.w, self.talent_frame.h
 
-	self.do_container:add(self.frame.container)
-	self.do_container:add(self.frame_sel.container)
 	self.do_container:add(self.talent_frame.container)
 	self.do_container:add(entity:getEntityDisplayObject(tiles_cache, size - 6, size - 6, 1, false, false, true):translate(3, 3, 20))
 
 	self.text = core.renderer.text(self.parent.font):outline(1)
 	self.do_container:add(self.text)
-	self.h = self.h + self.parent.font:height()
+	self.h = math.ceil(self.h + self.parent.font:height())
+
+	self.frame = self.parent:makeFrameDO(frame, self.w, self.h)
+	self.frame.container:shown(false)
+	self.do_container:add(self.frame.container)
+end
+
+function _M:setSel(v)
+	if self.is_sel ~= v then
+		self.frame.container:shown(v)
+		self.is_sel = v
+		self.parent:setSel(self.item)
+	end
 end
 
 function _M:updateStatus(text)
@@ -59,14 +66,10 @@ function _M:updateStatus(text)
 end
 
 function _M:updateColor(color)
-	self.frame.container:color(colors.smart1unpack(color))
-	self.frame_sel.container:color(colors.smart1unpack(color))
+	self.talent_frame.container:color(colors.smart1unpack(color))
 	return self
 end
 
 function _M:onFocusChange(v)
-	self.cur_frame.container:shown(false)
-	self.cur_frame = v and self.frame_sel or self.frame
-	self.cur_frame.container:shown(true)
-	-- self.cursor:shown(v)
+	self.frame.container:tween(8, "a", nil, v and 1 or 0.5)
 end

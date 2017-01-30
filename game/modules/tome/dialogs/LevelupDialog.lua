@@ -679,16 +679,18 @@ function _M:createDisplay()
 	if self.actor.unused_prodigies > 0 then self.b_prodigies.glow = 0.6 end
 	if self.actor.unused_talents_types > 0 and self.b_inscriptions then self.b_inscriptions.glow = 0.6 end
 
+	local font = FontPackage:get("bold")
+
 	local recreate_trees = function()
 		self.c_ctree = TalentTrees.new{
-			font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+			font = font,
 			tiles=game.uiset.hotkeys_display_icons,
 			tree=self.ctree,
 			width=320, height=self.ih-50,
 			tooltip=function(item)
 				local x = self.display_x + self.uis[5].x - game.tooltip.max
 				if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
-				local ret = self:getTalentDesc(item), x, nil
+				local ret = self:getTalentDesc(item)
 				if self.no_tooltip then
 					self.c_desc:erase()
 					self.c_desc:switchItem(ret, ret)
@@ -702,14 +704,14 @@ function _M:createDisplay()
 		}
 
 		self.c_gtree = TalentTrees.new{
-			font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+			font = font,
 			tiles=game.uiset.hotkeys_display_icons,
 			tree=self.gtree,
 			width=320, height=(self.no_tooltip and self.ih - 50) or self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
 			tooltip=function(item)
 				local x = self.display_x + self.uis[8].x - game.tooltip.max
 				if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
-				local ret = self:getTalentDesc(item), x, nil
+				local ret = self:getTalentDesc(item)
 				if self.no_tooltip then
 					self.c_desc:erase()
 					self.c_desc:switchItem(ret, ret)
@@ -724,7 +726,7 @@ function _M:createDisplay()
 	recreate_trees()
 
 	self.c_stat = TalentTrees.new{
-		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+		font = font,
 		tiles=game.uiset.hotkeys_display_icons,
 		tree=self.tree_stats, no_cross = true,
 		width=50, height=self.ih,

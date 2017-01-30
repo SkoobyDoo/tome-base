@@ -82,7 +82,7 @@ void DisplayObject::setChanged(bool force) {
 			if (force) p->changed = true;
 			break;
 		} else {
-			if (p->changed && !force) return; // Dont bother, the rest of the parents are already marked
+			// if (p->changed && !force) return; // Dont bother, the rest of the parents are already marked
 			p->changed = true;
 		}
 		p = p->parent;

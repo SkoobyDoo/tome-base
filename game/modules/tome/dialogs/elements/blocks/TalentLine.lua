@@ -19,14 +19,19 @@
 
 require "engine.class"
 local Block = require "engine.ui.blocks.Block"
-local Tiles = require "engine.Tiles"
+local Mouse = require "engine.Mouse"
 
 --- A talent icon
 -- @classmod engine.ui.blocks.Talent
 module(..., package.seeall, class.inherit(Block))
 
-function _M:init(t)
+function _M:init(t, item, collapsed)
 	Block.init(self, t)
+	self.mouseid = tostring(self) -- this makes values like "table: 0x......" which are always unique
+
+	self.item = item
+
+	self.mouse = Mouse.new()
 
 	self.plus_t = self.parent:getAtlasTexture("ui/plus.png")
 	self.minus_t = self.parent:getAtlasTexture("ui/minus.png")
@@ -34,12 +39,82 @@ function _M:init(t)
 	self.plus = core.renderer.fromTextureTable(self.plus_t, 0, 0)
 	self.minus = core.renderer.fromTextureTable(self.minus_t, 0, 0)
 
-	self.next_x, self.next_y = self.minus_t.w, self.parent.font:height()
 	self.text = core.renderer.text(self.parent.font):outline(1):translate(self.minus_t.w, 0, 10)
 
 	self.do_container:add(self.plus:shown(false))
 	self.do_container:add(self.minus)
 	self.do_container:add(self.text)
+
+	self.talents_x, self.talents_y = self.minus_t.w, self.parent.font:height()
+	self.do_talents = core.renderer.container():translate(self.talents_x, self.talents_y)
+	self.do_container:add(self.do_talents)
+	
+	self.next = core.renderer.container()
+	self.do_container:add(self.next)
+
+	self.next_x, self.next_y = 0, 0
+	self.talents_h = 0
+
+	self.talents = {}
+	self.sel = 1
+
+	self.mouse:registerZone(0, 0, self.plus_t.w, self.plus_t.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
+		elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
+		elseif event == "button" and (button == "left" or button == "right") then
+			self:collapse(not self.collapsed)
+		end
+	end, nil, "collapse", true, 1)
+	self.mouse:registerZone(self.plus_t.w, 0, self.parent.w - self.plus_t.w, self.plus_t.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
+		elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
+		elseif event == "button" and (button == "left" or button == "right") then
+			self:collapse(not self.collapsed)
+		elseif event == "out" then
+		else
+			self.parent:setSel(self.item)
+		end
+	end, nil, "collapse", true, 1)
+end
+
+function _M:setNext(d)
+	self.next_line = d
+	self.next:clear():add(d:get())
+end
+
+function _M:collapse(v)
+	self.collapsed = v
+	self.do_talents:shown(not v)
+	self.minus:shown(not v)
+	self.plus:shown(v)
+	if v then
+		self.h = math.ceil(self.parent.font:height())
+	else
+		self.h = math.ceil(self.parent.font:height() + self.talents_h)
+	end
+	self.next:translate(0, self.h + 10)
+
+	self:updateMouse()
+
+	self.parent:onExpand(self.item)
+end
+
+function _M:updateMouse()
+	local tx, ty = self.do_container:getTranslate(self.parent.lines_container)
+	local pmouse = self.parent.mouse
+	local mouse = self.mouse
+
+	pmouse:replaceZone(tx, ty, self.parent.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+		mouse:delegate(button, x - tx, y - ty, xrel, yrel, bx, by, event)
+	end, nil, self.mouseid, true, 1)
+
+	if self.next_line then
+		-- Update the next one too
+		self.next_line:updateMouse()
+	else
+		-- We are the last one, tell parent the size of the list
+		self.parent:setListHeight(ty + self.h)
+	end
 end
 
 function _M:updateStatus(text)
@@ -53,14 +128,26 @@ function _M:updateColor(color)
 end
 
 function _M:add(talent)
-	self.do_container:add(talent:get():translate(self.next_x, self.next_y))
+	local id = #self.talents+1
+	self.talents[id] = talent
+
+	self.mouse:registerZone(self.talents_x + self.next_x, self.talents_y + self.next_y, talent.w, talent.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
+		elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
+		elseif event == "button" and (button == "left" or button == "right") then
+		elseif event == "out" then
+			self.talents[self.sel]:setSel(false)	
+		else
+			self.talents[self.sel]:setSel(false)	
+			self.talents[id]:setSel(true)
+			self.sel = id
+		end
+	end, nil, "icon"..id, true, 1)
+
+	self.do_talents:add(talent:get():translate(self.next_x, self.next_y))
 	self.next_x = self.next_x + talent.w + 4
-	self.h = self.next_y + talent.h
+	self.talents_h = self.next_y + talent.h
 end
 
 function _M:onFocusChange(v)
-	-- self.cur_frame.container:shown(false)
-	-- self.cur_frame = v and self.frame_sel or self.frame
-	-- self.cur_frame.container:shown(true)
-	-- self.cursor:shown(v)
 end
