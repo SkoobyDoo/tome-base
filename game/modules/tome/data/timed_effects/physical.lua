@@ -3729,26 +3729,22 @@ newEffect{
 }
 
 newEffect{
-	name = "INCENDIARY_SMOKE", image = "talents/sticky_smoke.png",
-	desc = "Incendiary Smoke",
-	long_desc = function(self, eff) return ("The target's vision range is decreased by %d and fire resistance by %d%%."):format(eff.sight, eff.resist) end,
+	name = "STICKY_PITCH", image = "talents/sticky_smoke.png",
+	desc = "Sticky Pitch",
+	long_desc = function(self, eff) return ("The target's global speed is reduced by %d%% and fire resistance by %d%%."):format(eff.slow, eff.resist) end,
 	type = "physical",
-	subtype = { sense=true },
+	subtype = { slow=true },
 	status = "detrimental",
-	parameters = { sight=5, resist=10 },
-	on_gain = function(self, err) return "#Target# is surrounded by a thick, incendiary smoke.", "+Sticky Flame" end,
-	on_lose = function(self, err) return "The smoke around #target# dissipate.", "-Sticky Flame" end,
+	parameters = { slow=0.1, resist=10 },
+	on_gain = function(self, err) return "#Target# is covered in sticky, flammable pitch.", "+Pitch" end,
+	on_lose = function(self, err) return "#Target# is free from the pitch.", "-Pitch" end,
 	activate = function(self, eff)
-		if self.sight - eff.sight < 1 then eff.sight = self.sight - 1 end
-		eff.tmpid = self:addTemporaryValue("sight", -eff.sight)
+		eff.tmpid = self:addTemporaryValue("global_speed_add", -eff.slow)
 		eff.resid = self:addTemporaryValue("resists", {[DamageType.FIRE] = -eff.resist})
-		self:setTarget(nil) -- Loose target!
-		self:doFOV()
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("sight", eff.tmpid)
+		self:removeTemporaryValue("global_speed_add", eff.tmpid)
 		self:removeTemporaryValue("resists", eff.resid)
-		self:doFOV()
 	end,
 }
 
@@ -3856,22 +3852,63 @@ newEffect{
 }
 
 newEffect{
-	name = "TAKING_AIM", image = "talents/concealment.png",
-	desc = "Taking Aim",
-	long_desc = function(self, eff) return ("The target is taking aim, increasing the damage of their next marked shot by %d%%."):format(eff.power) end,
+	name = "CONCEALMENT", image = "talents/concealment.png",
+	desc = "Concealment",
+	long_desc = function(self, eff) return ("The target is concealed, increasing sight and attack range by %d and chance to avoid damage by %d%%."):format(eff.sight, eff.power*eff.charges) end,
 	type = "physical",
 	subtype = { tactic=true },
 	status = "beneficial",
 	charges = function(self, eff) return eff.charges end,
-	parameters = { power=5, duration=1, max_power=15, charges=1 },
-	on_merge = function(self, old_eff, new_eff)
-		new_eff.charges = math.min(old_eff.charges + 1, 3)
-		new_eff.power = math.min(new_eff.power + old_eff.power, new_eff.max_power)
-		return new_eff
-	end,
+	parameters = { power=5, duration=1, sight=1, dam=10, max_power=15, charges=3 },
 	activate = function(self, eff)
-		eff.charges = 1
+		self:effectTemporaryValue(eff, "cancel_damage_chance", eff.max_power)
+		self:effectTemporaryValue(eff, "sight", eff.sight)
+		self:effectTemporaryValue(eff, "infravision", eff.sight)
+		self:effectTemporaryValue(eff, "heightened_senses", eff.sight)
+		self:effectTemporaryValue(eff, "archery_bonus_range", eff.sight)
+		self:doFOV()
 	end,
 	deactivate = function(self, eff)
+		self:doFOV()
+	end,
+	on_timeout = function(self, eff)
+		if not self:isTalentActive(self.T_CONCEALMENT) then 
+			eff.charges = eff.charges -1
+			eff.max_power = eff.power*eff.charges
+			if eff.charges == 0 then self:removeEffect(self.EFF_CONCEALMENT) end
+		end
+	end,
+}
+
+newEffect{
+	name = "SHADOW_SMOKE", image = "talents/shadow_shot.png",
+	desc = "Shadow Smoke",
+	long_desc = function(self, eff) return ("The target is wrapped in disorientating smoke, confusing them and reducing vision range by %d."):format(eff.sight) end,
+	type = "physical",
+	subtype = { sense=true },
+	status = "detrimental",
+	parameters = { sight=5 },
+	on_gain = function(self, err) return "#Target# is surrounded by a thick smoke.", "+Shadow Smoke" end,
+	on_lose = function(self, err) return "The smoke around #target# dissipate.", "-Shadow Smoke" end,
+	charges = function(self, eff) return -eff.sight end,
+	activate = function(self, eff)
+		if self:canBe("blind") then
+			if self.sight - eff.sight < 1 then eff.sight = self.sight - 1 end
+			eff.tmpid = self:addTemporaryValue("sight", -eff.sight)
+	--		self:setTarget(nil) -- Loose target!
+			self:doFOV()
+		end
+		if self:canBe("confusion") then
+			eff.cid = self:addTemporaryValue("confused", 50)
+		end
+	end,
+	deactivate = function(self, eff)
+		if eff.tmpid then 
+			self:removeTemporaryValue("sight", eff.tmpid)
+			self:doFOV()
+		end
+		if eff.cid then
+			self:removeTemporaryValue("confused", eff.cid)
+		end
 	end,
 }

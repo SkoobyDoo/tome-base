@@ -80,7 +80,7 @@ newTalent{
 	points = 5,
 	no_unlearn_last = true,
 	mode = "passive",
-	getChance = function(self, t) return math.floor(self:combatTalentScale(t, 15, 40)) end,
+	getChance = function(self, t) return math.floor(self:combatTalentScale(t, 15, 45)) end,
 	on_learn = function(self, t)
 		self:attr("show_shield_combat", 1)
 	end,
@@ -90,6 +90,15 @@ newTalent{
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)
 		local chance = t.getChance(self, t)
 		if not rng.percent(chance) then return end
+		--this might be worth doing later, but for now let it block DoTs
+		--local psrc = src.__project_source
+		--if psrc then
+		--	local kind = util.getval(psrc.getEntityKind)
+		--	if kind == "projectile" or kind == "trap" or kind == "object" then
+		--	else
+		--		return
+		--	end
+		--end
 		local lastdam = dam
 		local shield = self:hasShield()
 		if not shield then return end
@@ -105,7 +114,7 @@ newTalent{
 	info = function(self, t)
 		local chance = t.getChance(self, t)
 		return ([[You are trained in an agile, mobile fighting technique combining sling and shield. This allows shields to be equipped, using Dexterity instead of Strength as a requirement.
-While you have a shield equip and block is not on cooldown, you have a %d%% chance to deflect any incoming damage, reducing it by 50%% of your shield’s block value.]])
+While you have a shield equip and your Block talent is not on cooldown, you have a %d%% chance to deflect any incoming damage, reducing it by 50%% of your shield’s block value.]])
 			:format(chance)
 	end,
 }
@@ -130,9 +139,8 @@ newTalent{
 	getDist = function(self, t) return math.floor(self:combatTalentScale(t, 3, 5)) end,
 	action = function(self, t)
 		local shield, shield_combat = self:hasShield()
-		local sling = self:hasArcheryWeapon()
-		if not shield or not sling then
-			game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.")
+		if not shield then
+			game.logPlayer(self, "You require a shield to use this talent.")
 			return nil
 		end
 
@@ -210,7 +218,7 @@ newTalent{
 	tactical = { ATTACK = { weapon = 1 } },
 	requires_target = true,
 	on_pre_use = function(self, t, silent)
-		if not archerPreUse(self, t, silent) then return false end
+		if not archerPreUse(self, t, silent, "sling") then return false end
 		if self:attr("never_move") then return false end
 		return true
 	end,
@@ -220,7 +228,7 @@ newTalent{
 			self.talents_cd[t.id] = math.max(cooldown - 1, 0)
 		end
 	end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 2.4) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.4, 2.6) end, --high damage, high opportunity cost
 	getDist = function(self, t) if self:getTalentLevel(t) >= 3 then return 2 else return 1 end end,
 	archery_onhit = function(self, t, target, x, y)
 		if not target or not target:canBe("knockback") then return end
@@ -264,7 +272,8 @@ newTalent{
 	info = function(self, t)
 		return ([[You rush toward your foe, readying your shot. If you reach the enemy, you release the shot, imbuing it with great power.
 		The shot does %d%% weapon damage and knocks back your target by %d.
-		The cooldown of this talent is reduced by 1 each time you move.]]):
+		The cooldown of this talent is reduced by 1 each time you move.
+		This requires a sling to use.]]):
 		format(t.getDamage(self,t)*100, t.getDist(self, t))
 	end,
 }
@@ -281,16 +290,19 @@ newTalent{
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getAttackSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20))/100 end,
-	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 30, 70))/100 end,
-	getTurn = function(self, t) return math.floor(self:combatTalentScale(t, 5, 15)) end,
+	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 25, 60))/100 end,
+	getTurn = function(self, t) return math.floor(self:combatTalentLimit(t, 35, 10, 22)) end,
+	on_pre_use = function(self, t, silent)
+		if not archerPreUse(self, t, silent, "sling") then return false end
+		return true
+	end,
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		local dist = math.max(0, core.fov.distance(self.x, self.y, target.x, target.y) - 3)
 		if hitted and not target.turn_procs.rapid_fire and dist < 5 then
 			target.turn_procs.rapid_fire = true
-			turn = t.getTurn(self,t)
+			turn = t.getTurn(self,t)/100
 			energy = turn - (turn * dist * 0.2)
-			local energy = (game.energy_to_act * energy)/100
-			self.energy.value = self.energy.value + energy
+			self.energy.value = self.energy.value + game.energy_to_act*energy
 		end
 		game:onTickEnd(function() 
 			self:setEffect(self.EFF_RAPID_MOVEMENT, 1, {src=self, power=t.getMovementSpeed(self,t)})
