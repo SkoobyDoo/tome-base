@@ -147,7 +147,6 @@ void DORText::parseText() {
 	clear();
 	entities_container.clear();
 	positions.clear();
-	centered = false;
 	setChanged(true);
 
 	font_type *f = font;
@@ -389,6 +388,7 @@ void DORText::setText(const char *text) {
 	this->text = (char*)malloc(len + 1);
 	strcpy(this->text, text);
 	parseText();
+	if (centered) center();
 }
 
 void DORText::center() {

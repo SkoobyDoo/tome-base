@@ -85,8 +85,7 @@ function _M:generate()
 	self.sel_j = 1
 	self.max_h = 0
 	
-	self.mousezones = {}
-	self:redrawAllItems()
+	self:generateAllItems()
 	
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -103,7 +102,7 @@ function _M:generate()
 		MOVE_RIGHT = function() self.last_input_was_keyboard = true self:moveSel(0, 1) end,
 	}
 	self.key:addCommands{
-		[{"_RETURN","ctrl"}] = function() if self.last_mz then self:onUse(self.last_mz.item, false) end end,
+		[{"_RETURN","ctrl"}] = function() if self.last_mz then self:onUse(self.cur_item, false) end end,
 		[{"_UP","ctrl"}] = function() self.last_input_was_keyboard = false if self.scrollbar then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 5 end end,
 		[{"_DOWN","ctrl"}] = function() self.last_input_was_keyboard = false if self.scrollbar then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 5 end end,
 		_HOME = function() if self.scrollbar then self.scrollbar.pos = 0 self.last_input_was_keyboard = true self:moveSel(0, 0) end end,
@@ -136,6 +135,7 @@ function _M:onExpand(item)
 end
 
 function _M:updateTooltip()
+	if not self.cur_item then return end
 	local str = self.tooltip(self.cur_item)
 	if not self.no_tooltip then game:tooltipDisplayAtMap(game.w, game.h, str) end
 end
@@ -146,13 +146,12 @@ function _M:setSel(item)
 	self:updateTooltip()
 end
 
-function _M:drawItem(item, parent)
+function _M:drawItem(item, parent, rebuild)
 	if item.stat then
-		item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")
-		self.lines_container:add(item._block:get())
-		-- local str = item:status():toString()
-		-- local d = self.font:draw(str, self.font:size(str), 255, 255, 255, true)[1]
-		-- item.text_status = d
+		if not rebuild then
+			item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")
+			self.lines_container:add(item._block:get())
+		end
 	elseif item.type_stat then
 		-- local str = item.name:toString()
 		-- self.font:setStyle("bold")
@@ -160,23 +159,16 @@ function _M:drawItem(item, parent)
 		-- self.font:setStyle("normal")
 		-- item.text_status = d
 	elseif item.talent then
-		-- local d = self.font:draw(str, self.font:size(str), 255, 255, 255, true)[1]
-		-- item.text_status = d
-		item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")
+		if not rebuild then
+			item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")
+			parent._block:add(item._block)
+		end
 		item._block:updateStatus(item:status():toString()):updateColor(item:color())
-		parent._block:add(item._block)
 	elseif item.type then
-		item._block = TalentLine.new(nil, item, not item.shown)
+		if not rebuild then
+			item._block = TalentLine.new(nil, item, not item.shown, "ui/selector-sel")
+		end
 		item._block:updateStatus(item:rawname():toString()):updateColor(item:color())
-		-- local str = item:rawname():toString()
-		-- local c = item:color()
-		-- self.font:setStyle("bold")
-		-- local d = self.font:draw(str, self.font:size(str), c[1], c[2], c[3], true)[1]
-		-- self.font:setStyle("normal")
-		-- item.text_status = d
-		-- if ((not self.no_cross) and self.plus.w + 3 or 0) + item.text_status.w > self.w - (self.scrollbar and self.scrollbar.sel.w * 0.8 or 0) + 10 then
-		-- 	item.text_status.display_offset = { x_dir = 0, x = 0 }
-		-- end
 	end
 end
 
@@ -184,14 +176,25 @@ function _M:on_focus_change(status)
 end
 
 function _M:redrawAllItems()
+	for i = 1, #self.tree do
+		local tree = self.tree[i]
+		self:drawItem(tree, nil, true)
+		for j = 1, #tree.nodes do
+			local tal = tree.nodes[j]
+			self:drawItem(tal, tree, true)
+		end
+	end
+end
+
+function _M:generateAllItems()
 	local y = 0
 	local prev_tree = nil
 	for i = 1, #self.tree do
 		local tree = self.tree[i]
-		self:drawItem(tree, nil)
+		self:drawItem(tree, nil, false)
 		for j = 1, #tree.nodes do
 			local tal = tree.nodes[j]
-			self:drawItem(tal, tree)
+			self:drawItem(tal, tree, false)
 		end
 		if tree._block then
 			if prev_tree then prev_tree._block:setNext(tree._block)
@@ -200,43 +203,7 @@ function _M:redrawAllItems()
 			prev_tree = tree
 		end
 	end
-
-	-- -- calculate each tree items height
-	-- self.max_h = 0
-	-- for i = 1, #self.tree do
-	-- 	local dy = 0
-	-- 	local tree = self.tree[i]
-
-	-- 	if tree.text_status then
-	-- 		local key = tree.text_status
-	-- 		dy = dy + key.h + 4
-	-- 	end
-	-- 	local addh = 0
-	-- 	if tree.shown then for j = 1, #tree.nodes do
-	-- 		local tal = tree.nodes[j]
-	-- 		if tal.text_status then
-	-- 			local key = tal.text_status
-	-- 			addh = key.h
-	-- 		end
-	-- 		addh = addh + self.frame_size
-	-- 	end end
-	-- 	dy = dy + addh + 12
-	-- 	tree.h = dy
-	-- 	self.max_h = self.max_h + dy
-	-- end
-	
-	-- -- generate the scrollbar
-	-- if self.scrollbar then self.scrollbar.max = self.max_h end
 end
-
-function _M:on_select(item, force)
-	if self.prev_item == item and not force then return end
-	local str, fx, fy = self.tooltip(item)
-	local tx,ty = fx or (self.last_display_x + self.last_mz.x2), fy or (self.last_display_y + self.last_mz.y1)
-	if not self.no_tooltip then game:tooltipDisplayAtMap(tx, ty, str) end
-	self.prev_item = item
-end
-
 
 function _M:display(x, y, nb_keyframes)
 	if self.scrollbar then

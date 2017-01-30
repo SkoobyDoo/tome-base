@@ -25,7 +25,7 @@ local Mouse = require "engine.Mouse"
 -- @classmod engine.ui.blocks.Talent
 module(..., package.seeall, class.inherit(Block))
 
-function _M:init(t, item, collapsed)
+function _M:init(t, item, collapsed, frame)
 	Block.init(self, t)
 	self.mouseid = tostring(self) -- this makes values like "table: 0x......" which are always unique
 
@@ -39,7 +39,11 @@ function _M:init(t, item, collapsed)
 	self.plus = core.renderer.fromTextureTable(self.plus_t, 0, 0)
 	self.minus = core.renderer.fromTextureTable(self.minus_t, 0, 0)
 
-	self.text = core.renderer.text(self.parent.font):outline(1):translate(self.minus_t.w, 0, 10)
+	self.frame = self.parent:makeFrameDO(frame, 1, 1, nil, nil, nil, true)
+	self.frame.container:shown(false):translate(self.minus_t.w + 4 - 2, (self.minus_t.h - self.parent.font:height()) / 2 - 2)
+	self.do_container:add(self.frame.container)
+
+	self.text = core.renderer.text(self.parent.font):outline(1):translate(self.minus_t.w + 4, (self.minus_t.h - self.parent.font:height()) / 2, 10)
 
 	self.do_container:add(self.plus:shown(false))
 	self.do_container:add(self.minus)
@@ -48,7 +52,7 @@ function _M:init(t, item, collapsed)
 	self.talents_x, self.talents_y = self.minus_t.w, self.parent.font:height()
 	self.do_talents = core.renderer.container():translate(self.talents_x, self.talents_y)
 	self.do_container:add(self.do_talents)
-	
+
 	self.next = core.renderer.container()
 	self.do_container:add(self.next)
 
@@ -69,9 +73,12 @@ function _M:init(t, item, collapsed)
 		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
 		elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
 		elseif event == "button" and (button == "left" or button == "right") then
-			self:collapse(not self.collapsed)
+			self.parent:onUse(self.item, button == "left")
+			self:collapse(false)
 		elseif event == "out" then
+			self.frame.container:shown(false)
 		else
+			self.frame.container:shown(true)
 			self.parent:setSel(self.item)
 		end
 	end, nil, "collapse", true, 1)
@@ -119,6 +126,8 @@ end
 
 function _M:updateStatus(text)
 	self.text:text(text)
+	local w, h = self.text:getStats()
+	self.frame:resize(w + 4, h + 4)
 	return self
 end
 
@@ -135,10 +144,11 @@ function _M:add(talent)
 		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
 		elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
 		elseif event == "button" and (button == "left" or button == "right") then
+			self.parent:onUse(self.talents[self.sel].item, button == "left")
 		elseif event == "out" then
 			self.talents[self.sel]:setSel(false)	
 		else
-			self.talents[self.sel]:setSel(false)	
+			self.talents[self.sel]:setSel(false)
 			self.talents[id]:setSel(true)
 			self.sel = id
 		end
