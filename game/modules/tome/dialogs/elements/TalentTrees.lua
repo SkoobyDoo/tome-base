@@ -102,8 +102,8 @@ function _M:generate()
 	}
 	self.key:addCommands{
 		[{"_RETURN","ctrl"}] = function() if self.last_mz then self:onUse(self.cur_item, false) end end,
-		[{"_UP","ctrl"}] = function() if self.scrollbar then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 5 end end,
-		[{"_DOWN","ctrl"}] = function() if self.scrollbar then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 5 end end,
+		[{"_UP","ctrl"}] = function() if self.scrollbar then self:scroll(-1) end end,
+		[{"_DOWN","ctrl"}] = function() if self.scrollbar then self:scroll(1) end end,
 		_HOME = function() if self.scrollbar then self:scroll(-999999) end end,
 		_END = function() if self.scrollbar then self:scroll(999999) end end,
 		_PAGEUP = function() if self.scrollbar then self:scroll(-self.h) end end,
@@ -140,8 +140,13 @@ function _M:updateTooltip()
 	if not self.no_tooltip then game:tooltipDisplayAtMap(game.w, game.h, str) end
 end
 
+function _M:moveSel(i, j)
+	if not self.cur_item then return end
+end
+
 function _M:setSel(item)
 	if self.cur_item == item then return end
+	for _, tree in ipairs(self.tree) do tree._block:setSel(false) end
 	self.cur_item = item
 	self:updateTooltip()
 end
@@ -203,6 +208,9 @@ function _M:generateAllItems()
 			prev_tree = tree
 		end
 	end
+	if self.tree[1]._block then
+		self.tree[1]._block:setSel(true)
+	end
 end
 
 function _M:display(x, y, nb_keyframes)
@@ -216,6 +224,7 @@ function _M:display(x, y, nb_keyframes)
 
 		if self.scrollbar.pos ~= oldpos then
 			self.lines_container:translate(0, -self.scrollbar.pos, 0)
+			self.mouse.delegate_offset_y = self.scrollbar.pos
 		end
 	end
 end

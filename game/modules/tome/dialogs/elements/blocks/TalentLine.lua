@@ -76,15 +76,20 @@ function _M:init(t, item, collapsed, frame)
 			self.parent:onUse(self.item, button == "left")
 			self:collapse(false)
 		elseif event == "out" then
-			self.frame.container:shown(false)
+			self:setSel(false)
 		else
-			self.frame.container:shown(true)
-			self.parent:setSel(self.item)
+			self:setSel(true)
 		end
 	end, nil, "collapse", true, 1)
 end
 
+function _M:setSel(v)
+	self.frame.container:shown(v)
+	if v then self.parent:setSel(self.item) end
+end
+
 function _M:setNext(d)
+	d.prev_line = self
 	self.next_line = d
 	self.next:clear():add(d:get())
 end
@@ -139,6 +144,7 @@ end
 function _M:add(talent)
 	local id = #self.talents+1
 	self.talents[id] = talent
+	talent.tree = self
 
 	self.mouse:registerZone(self.talents_x + self.next_x, self.talents_y + self.next_y, talent.w, talent.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
