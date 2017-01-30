@@ -51,9 +51,9 @@ public:
 	IRealtime();
 	virtual ~IRealtime();
 	virtual void killMe();
-	virtual void onKeyframe(int nb_keyframes) = 0;
+	virtual void onKeyframe(float nb_keyframes) = 0;
 };
 
-extern "C" void interface_realtime(int nb_keyframes);
+extern "C" void interface_realtime(float nb_keyframes);
 
 #endif

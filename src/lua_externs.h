@@ -25,5 +25,4 @@ extern bool is_waiting();
 
 extern void create_particles_thread();
 extern void free_particles_thread();
-extern void thread_particle_new_keyframes(int nb_keyframes);
 extern void free_profile_thread();

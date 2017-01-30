@@ -176,7 +176,7 @@ public:
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4 cur_model);
 
-	virtual void onKeyframe(int nb_keyframes);
+	virtual void onKeyframe(float nb_keyframes);
 };
 
 extern void init_spriter();

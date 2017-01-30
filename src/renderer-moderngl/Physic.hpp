@@ -50,7 +50,7 @@ public:
 	void applyTorque(float t);
 	void applyAngularImpulse(float t);
 
-	virtual void onKeyframe(int nb_keyframes);
+	virtual void onKeyframe(float nb_keyframes);
 };
 
 /*************************************************************************
@@ -68,7 +68,7 @@ public:
 	void setGravity(float x, float y);
 	void use();
 
-	void step(int nb_keyframes);
+	void step(float nb_keyframes);
 
 	static void setUnitScale(float scale);
 	static PhysicSimulator *getCurrent();

@@ -179,7 +179,7 @@ DORTweener::~DORTweener() {
 	}
 }
 
-void DORTweener::onKeyframe(int nb_keyframes) {
+void DORTweener::onKeyframe(float nb_keyframes) {
 	if (!nb_keyframes) return;
 
 	bool mat = false, changed = false;

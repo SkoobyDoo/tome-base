@@ -281,10 +281,10 @@ void DORSpriter::startAnim(const char *name) {
 	instance->setCurrentAnimation(name);
 }
 
-void DORSpriter::onKeyframe(int nb_keyframe) {
+void DORSpriter::onKeyframe(float nb_keyframe) {
 	if (!instance) return;
 	currently_processing = this;
-	instance->setTimeElapsed(1000.0 * (float)nb_keyframe / KEYFRAMES_PER_SEC);
+	instance->setTimeElapsed(1000.0 * nb_keyframe / KEYFRAMES_PER_SEC);
 	setChanged();
 }
 

@@ -1235,12 +1235,16 @@ int thread_particles(void *data)
 
 // Runs on main thread
 // Signals all particles threads that some new keyframes have arrived
-void thread_particle_new_keyframes(int nb_keyframes)
+float nb_keyframes_remaining = 0;
+void thread_particle_new_keyframes(float nb_keyframes)
 {
 	int i, j;
+	nb_keyframes += nb_keyframes_remaining;
 	for (i = 0; i < MAX_THREADS; i++)
 	{
 		for (j = 0; j < nb_keyframes; j++) SDL_SemPost(threads[i].keyframes);
+		nb_keyframes_remaining = nb_keyframes - j;
+		// printf("==particels %f remain %f  :: %d\n", nb_keyframes_remaining, nb_keyframes, j);
 	}
 }
 

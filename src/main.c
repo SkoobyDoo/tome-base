@@ -640,7 +640,7 @@ void on_tick()
 
 extern void interface_realtime(int nb_keyframes); // From renderer-moderngl/Interfaces.hpp
 
-void call_draw(int nb_keyframes)
+static void call_draw(float nb_keyframes)
 {
 	if (draw_waiting(L)) return;
 
@@ -667,12 +667,12 @@ void call_draw(int nb_keyframes)
 }
 
 
-extern void run_physic_simulation(int nb_keyframes);
+extern void run_physic_simulation(float nb_keyframes);
 void on_redraw()
 {
 	static int last_ticks = 0;
 	static int ticks_count = 0;
-	static int keyframes_done = 0;
+	static float keyframes_done = 0;
 	static int frames_done = 0;
 	static float frames_count = 0;
 
@@ -684,14 +684,13 @@ void on_redraw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	frames_count += (float)(ticks - last_ticks) / (1000.0 / (float)NORMALIZED_FPS);
-	// printf("ticks %d :: %d\n", ticks - last_ticks, (int)frames_count);
-	int nb_keyframes = (int)frames_count;
+	frames_count = (float)(ticks - last_ticks) / ((float)1000.0 / (float)NORMALIZED_FPS);
+	// printf("ticks %d :: %f :: %f\n", ticks - last_ticks, ((float)1000.0 / (float)NORMALIZED_FPS), frames_count);
+	float nb_keyframes = frames_count;
 	run_physic_simulation(nb_keyframes);
 	call_draw(nb_keyframes);
 	keyframes_done += nb_keyframes;
 	frames_done++;
-	frames_count -= nb_keyframes;
 
 	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);
@@ -700,7 +699,7 @@ void on_redraw()
 
 	if (ticks_count >= 500) {
 		current_fps = (float)frames_done * 1000.0 / (float)ticks_count;
-		// printf("%d frames in %d ms = %0.2f FPS (%d keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
+		printf("%d frames in %d ms = %0.2f FPS (%f keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
 		ticks_count = 0;
 		frames_done = 0;
 		keyframes_done = 0;

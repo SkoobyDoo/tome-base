@@ -23,7 +23,7 @@
 
 extern void create_particles_thread();
 extern void free_particles_thread();
-extern void thread_particle_new_keyframes(int nb_keyframes);
+extern void thread_particle_new_keyframes(float nb_keyframes);
 extern int luaopen_particles(lua_State *L);
 
 #endif

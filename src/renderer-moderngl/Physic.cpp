@@ -81,7 +81,7 @@ void DORPhysic::applyAngularImpulse(float t) {
 	body->ApplyAngularImpulse(t, true);
 }
 
-void DORPhysic::onKeyframe(int nb_keyframes) {
+void DORPhysic::onKeyframe(float nb_keyframes) {
 	b2Vec2 position = body->GetPosition();
 	float32 angle = body->GetAngle();
 	float unit_scale = PhysicSimulator::unit_scale;
@@ -113,7 +113,7 @@ void PhysicSimulator::setUnitScale(float scale) {
 	unit_scale = scale;
 }
 
-void PhysicSimulator::step(int nb_keyframes) {
+void PhysicSimulator::step(float nb_keyframes) {
 	// We do it this way because box2d doc says it realyl doesnt like changing the timestep
 	// printf("doing %f steps\n", nb_keyframes * 60.0 / (float)NORMALIZED_FPS);
 	for (int f = 0; f < nb_keyframes * 60.0 / (float)NORMALIZED_FPS; f++) {
@@ -129,8 +129,9 @@ PhysicSimulator *PhysicSimulator::getCurrent() {
 	return current;
 }
 
-extern "C" void run_physic_simulation(int nb_keyframes);
-void run_physic_simulation(int nb_keyframes) {
+// DGDGDGDG: this could totaly run in a thread provided we make it it locks on DORPhysic::onKeyframe and on world alteration
+extern "C" void run_physic_simulation(float nb_keyframes);
+void run_physic_simulation(float nb_keyframes) {
 	if (!PhysicSimulator::current) return;
 	PhysicSimulator::current->step(nb_keyframes);
 }
