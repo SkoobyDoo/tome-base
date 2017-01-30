@@ -1399,7 +1399,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			if target:canBe("blind") then
-				target:setEffect(target.EFF_DIM_VISION, 7, {sight=dam, apply_power=src:combatAttack()})
+				target:setEffect(target.EFF_DIM_VISION, 5, {sight=dam, apply_power=src:combatAttack()})
 			else
 				game.logSeen(target, "%s resists!", target.name:capitalize())
 			end
@@ -4038,14 +4038,14 @@ newDamageType{
 }
 
 newDamageType{
-	name = "incendiary smoke", type = "INCENDIARY_SMOKE",
+	name = "sticky pitch", type = "PITCH",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			if target:canBe("blind") then
-				target:setEffect(target.EFF_INCENDIARY_SMOKE, dam.dur, {sight=dam.dam, resist=dam.fire, apply_power=src:combatAttack()})
+			if target:canBe("slow") then
+				target:setEffect(target.EFF_STICKY_PITCH, dam.dur, {slow=dam.dam/100, resist=dam.fire, apply_power=src:combatAttack()})
 			else
 				game.logSeen(target, "%s resists!", target.name:capitalize())
 			end
@@ -4064,6 +4064,19 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			target:setEffect(target.EFF_SUNDER_ARMOUR, dam.dur, {src=dam.self, power=dam.power})
+		end
+	end,
+}
+
+-- Dim vision+confuse
+newDamageType{
+	name = "shadow smoke", type = "SHADOW_SMOKE",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			target:setEffect(target.EFF_SHADOW_SMOKE, 5, {sight=dam, apply_power=src:combatAttack()})
 		end
 	end,
 }
