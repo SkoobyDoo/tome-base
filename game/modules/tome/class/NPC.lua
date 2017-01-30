@@ -561,6 +561,11 @@ function _M:addedToLevel(level, x, y)
 					self.desc = self.desc.."\n#CRIMSON#Well Raderak, you wanted them buffed. I did... but ONLY FOR YOU ! :) *CACKLES EVILY*\n-- yours truly, DarkGod#LAST#"
 				end
 			end
+			if self.type == "vermin" and self.subtype == "rodent" then
+				self.max_life = self.max_life * 20
+				self.life = self.life * 20
+				self.desc = self.desc.."\n#CRIMSON#Well Raderak, you wanted them buffed. I did... but ONLY FOR YOU ! :) *CACKLES EVILY*\n-- yours truly, DarkGod#LAST#"
+			end
 		end
 	end
 
