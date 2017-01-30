@@ -6565,28 +6565,31 @@ function _M:addedToLevel(level, x, y)
 
 	self:updateModdableTile()
 	self:recomputeGlobalSpeed()
-	if self.make_escort then
-		for _, filter in ipairs(self.make_escort) do
-			for i = 1, filter.number do
-				if not filter.chance or rng.percent(filter.chance) then
-					-- Find space
-					local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
-					if not x then break end
+	if self.make_escort then -- add escorts last, after all other actors have been placed on the level
+		game:onTickEnd(function()
+			for _, filter in ipairs(self.make_escort) do
+				for i = 1, filter.number do
+					if not filter.chance or rng.percent(filter.chance) then
+					
+						-- Find space
+						local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
+						if not x then break end
 
-					-- Find an actor with that filter
-					local m
-					if filter.define_as then m = game.zone:makeEntityByName(game.level, "actor", filter.define_as, true)
-					else m = game.zone:makeEntity(game.level, "actor", filter, nil, true) end
-					if m and m:canMove(x, y) then
-						if filter.no_subescort then m.make_escort = nil end
-						if self._empty_drops_escort then m:emptyDrops() end
-						game.zone:addEntity(game.level, m, "actor", x, y)
-						if filter.post then filter.post(self, m) end
-					elseif m then m:removed() end
+						-- Find an actor with that filter
+						local m
+						if filter.define_as then m = game.zone:makeEntityByName(game.level, "actor", filter.define_as, true)
+						else m = game.zone:makeEntity(game.level, "actor", filter, nil, true) end
+						if m and m:canMove(x, y) then
+							if filter.no_subescort then m.make_escort = nil end
+							if self._empty_drops_escort then m:emptyDrops() end
+							game.zone:addEntity(game.level, m, "actor", x, y)
+							if filter.post then filter.post(self, m) end
+						elseif m then m:removed() end
+					end
 				end
 			end
-		end
-		self.make_escort = nil
+			self.make_escort = nil
+		end, self.uid)
 	end
 
 	if game.level.data.zero_gravity then self:setEffect(self.EFF_ZERO_GRAVITY, 1, {})
