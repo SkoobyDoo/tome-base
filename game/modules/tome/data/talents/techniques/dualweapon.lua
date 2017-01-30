@@ -45,7 +45,7 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 	-- called by _M:combatDefenseBase in mod.class.interface.Combat.lua
 	getDefense = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 45.7, 500) end,
 	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
-		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 100, 15, 20, 60, 250) -- ~68% at TL 6.5, 55 dex
+		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 90, 15, 20, 60, 250) -- limit < 90%, ~67% at TL 6.5, 55 dex
 	end,
 	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
 		return math.max(0, self:combatTalentLimit(t, 100, 15, 50))

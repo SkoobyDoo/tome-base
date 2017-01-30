@@ -64,6 +64,24 @@ function _M:getRequirementDesc(who)
 		self.require = oldreq
 
 		return desc
+	elseif self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_AGILE_DEFENSE) then
+		local oldreq = rawget(self, "require")
+		self.require = table.clone(oldreq, true)
+		if self.require.stat and self.require.stat.str then
+			self.require.stat.dex, self.require.stat.str = self.require.stat.str, nil
+		end
+		if self.require.talent then for i, tr in ipairs(self.require.talent) do
+			if tr[1] == who.T_ARMOUR_TRAINING then
+				self.require.talent[i] = {who.T_AGILE_DEFENSE, 1}
+				break
+			end
+		end end
+
+		local desc = base_getRequirementDesc(self, who)
+
+		self.require = oldreq
+
+		return desc
 	elseif (self.type =="weapon" or self.type=="ammo") and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
 		local oldreq = rawget(self, "require")
 		self.require = table.clone(oldreq, true)

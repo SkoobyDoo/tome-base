@@ -310,7 +310,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, -- Limit effect to <100%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, -- Limit effect to <35%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -364,7 +364,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, --	Limit effect to < 50%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, --	Limit chance to < 35%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -444,7 +444,7 @@ newTalent{
 	no_unlearn_last = true,
 	getDamage = function(self, t) return self:combatStatScale("mag", 20, 50, 0.75) end,
 	info = function(self, t)
-	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity (for living targets) by 50%%.]]):
+	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity by 50%%.]]):
 	format(damDesc(self, DamageType.ARCANE, t.getDamage(self,t)))
 	end,
 }

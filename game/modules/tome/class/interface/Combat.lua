@@ -121,10 +121,10 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 		if self.player then self:logCombat(target, "#Target# notices you at the last moment!") end
 	end
 
-	if target:isTalentActive(target.T_INTUITIVE_SHOTS) and rng.percent(target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")) then
-		local ret = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
-		if ret then return false end
-	end
+--	if target:isTalentActive(target.T_INTUITIVE_SHOTS) and rng.percent(target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")) then
+--		local ret = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
+--		if ret then return false end
+--	end
 
 	if not target.turn_procs.warding_weapon and target:knowTalent(target.T_WARDING_WEAPON) and target:getTalentLevelRaw(target.T_WARDING_WEAPON) >= 5
 		and rng.percent(target:callTalent(target.T_WARDING_WEAPON, "getChance")) then
@@ -349,7 +349,7 @@ end
 function _M:checkEvasion(target)
 	if not target:attr("evasion") or self == target then return end
 	if target:attr("no_evasion") then return end
-
+	
 	local evasion = target:attr("evasion")
 	print("checkEvasion", evasion, target.level, self.level)
 	print("=> evasion chance", evasion)
@@ -473,6 +473,14 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		local chance = target:callTalent(target.T_BLADE_WARD, "getChance")
 		if rng.percent(chance) then
 			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
+			repelled = true
+		end
+	end
+	
+	if target:isTalentActive(target.T_INTUITIVE_SHOTS) then
+		local chance = target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")
+		self.turn_procs.intuitive_shots = self.turn_procs.intuitive_shots or target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
+		if self.turn_procs.intuitive_shots == true then
 			repelled = true
 		end
 	end
@@ -1134,8 +1142,8 @@ _M.weapon_talents = {
 	knife =   {"T_KNIFE_MASTERY", "T_STRENGTH_OF_PURPOSE"},
 	whip  =   "T_EXOTIC_WEAPONS_MASTERY",
 	trident = "T_EXOTIC_WEAPONS_MASTERY",
-	bow =     {"T_BOW_MASTERY", "T_STRENGTH_OF_PURPOSE"},
-	sling =   {"T_SLING_MASTERY", "T_SKIRMISHER_SLING_SUPREMACY"},
+	bow =     {"T_BOW_MASTERY", "T_STRENGTH_OF_PURPOSE", "T_MASTER_MARKSMAN"},
+	sling =   {"T_SLING_MASTERY", "T_SKIRMISHER_SLING_SUPREMACY", "T_MASTER_MARKSMAN"},
 	staff =   "T_STAFF_MASTERY",
 	mindstar ="T_PSIBLADES",
 	dream =   "T_DREAM_CRUSHER",
@@ -1314,7 +1322,7 @@ function _M:combatArmorHardiness()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
 	end
-	if self:hasEffect(self.EFF_BREACH) or self:hasEffect(self.EXPOSE_WEAKNESS) then
+	if self:hasEffect(self.EFF_BREACH) then
 		multi = 0.5
 	end
 	return util.bound(30 + self.combat_armor_hardiness + add, 0, 100) * multi

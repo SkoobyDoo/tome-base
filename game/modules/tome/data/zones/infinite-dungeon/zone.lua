@@ -159,7 +159,7 @@ return {
 				lite_room_chance = rng.range(0, 100),
 				max_block_w = rng.range(7, 20), max_block_h = rng.range(7, 20),
 				max_building_w = rng.range(4, size/6), max_building_h = rng.range(4, size/6),
-				enemy_count = math.ceil(vx * vy *45/4900) -- more room for enemies and more cover on this map: avg: 31 @ 60x60, 45 @ 70x70, 75 @ 90x90
+				enemy_count = math.ceil(vx * vy *60/4900) -- more room for enemies and more cover on this map: avg: 44 @ 60x60, 60 @ 70x70, 99 @ 90x90
 			},
 			{	id_layout_name = "octopus",
 				desc = ", subsided area",

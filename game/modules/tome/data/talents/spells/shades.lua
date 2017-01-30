@@ -254,13 +254,13 @@ newTalent{
 	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { BUFF = 2 },
-	getDarknessDamageIncrease = function(self, t) return self:getTalentLevelRaw(t) * 2 end,
+	getDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
 	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 17, 50, true) end,  -- Limit to < 100%
 	getAffinity = function(self, t) return self:combatTalentLimit(t, 100, 10, 50) end, -- Limit < 100%
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")
 		local ret = {
-			dam = self:addTemporaryValue("inc_damage", {[DamageType.DARKNESS] = t.getDarknessDamageIncrease(self, t), [DamageType.COLD] = t.getDarknessDamageIncrease(self, t)}),
+			dam = self:addTemporaryValue("inc_damage", {[DamageType.DARKNESS] = t.getDamageIncrease(self, t), [DamageType.COLD] = t.getDamageIncrease(self, t)}),
 			resist = self:addTemporaryValue("resists_pen", {[DamageType.DARKNESS] = t.getResistPenalty(self, t)}),
 			affinity = self:addTemporaryValue("damage_affinity", {[DamageType.DARKNESS] = t.getAffinity(self, t)}),
 		}
@@ -283,10 +283,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local damageinc = t.getDarknessDamageIncrease(self, t)
+		local damageinc = t.getDamageIncrease(self, t)
 		local ressistpen = t.getResistPenalty(self, t)
 		local affinity = t.getAffinity(self, t)
-		return ([[Surround yourself with Frostdusk, increasing all your darkness and cold damage by %d%%, and ignoring %d%% of the darkness resistance of your targets.
+		return ([[Surround yourself with Frostdusk, increasing all your darkness and cold damage by %0.1f%%, and ignoring %d%% of the darkness resistance of your targets.
 		In addition, all darkness damage you take heals you for %d%% of the damage.]])
 		:format(damageinc, ressistpen, affinity)
 	end,

@@ -48,6 +48,7 @@ newEntity{ define_as = "UNGOLE", base = "BASE_NPC_SPIDER",
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 	resolvers.drops{chance=100, nb=1, {defined="ROD_SPYDRIC_POISON"} },
 	resolvers.drops{chance=100, nb=1, {unique=true} },
+	resolvers.drops{chance=100, nb=1, {defined="NOTE4"} },
 
 	resolvers.talents{
 		[Talents.T_KNOCKBACK]={base=4, every=5, max=7},

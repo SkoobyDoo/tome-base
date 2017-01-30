@@ -209,7 +209,14 @@ function _M:onEnterLevel(zone, level)
 end
 
 function _M:onEnterLevelEnd(zone, level)
-
+	if level._player_enter_scatter then return end
+	level._player_enter_scatter = true
+	self:project({type="ball", radius=4}, self.x, self.y, function(px, py)
+		local a = level.map(px, py, Map.ACTOR)
+		if a and self:reactionToward(a) < 0 then
+			a:teleportRandom(self.x, self.y, 50, 5)
+		end
+	end)
 end
 
 function _M:onLeaveLevel(zone, level)
@@ -554,6 +561,19 @@ function _M:playerFOV()
 			cache and map._fovcache["block_sight"]
 		)
 	end
+
+	core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 10,
+		function(d, x, y)end, -- block
+		function(d, x, y) -- apply
+			local act = game.level.map(x, y, game.level.map.ACTOR)
+			if act then
+			local eff = act:hasEffect(act.EFF_MARKED)
+				if eff and eff.src==self then
+					game.level.map.seens(x, y, 0.6)
+				end
+			end
+		end,
+	nil)
 
 	-- Handle Preternatural Senses talent, a simple FOV, using cache.
 	if self:knowTalent(self.T_PRETERNATURAL_SENSES) then

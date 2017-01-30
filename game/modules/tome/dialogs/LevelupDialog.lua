@@ -287,7 +287,7 @@ function _M:computeDeps(t)
 
 	-- Check number of talents
 	for id, nt in pairs(self.actor.talents_def) do
-		if nt.type[1] == t.type[1] then
+		if nt.type[1] == t.type[1] and not t.no_levelup_category_deps then
 			d[id] = true
 --			print("Talent deps: ", t.id, "same category as", id)
 		end

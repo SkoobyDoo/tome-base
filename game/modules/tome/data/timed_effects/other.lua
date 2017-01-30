@@ -3193,22 +3193,40 @@ newEffect{
 }
 
 newEffect{
-	name = "GARROTE_SILENCED", image = "talents/garrote.png",
-	desc = "Garrote - Silence",
-	long_desc = function(self, eff) return "The target is silenced, preventing it from casting spells and using some vocal talents." end,
+	name = "MARKED", image = "talents/master_marksman.png",
+	desc = "Marked",
+	long_desc = function(self, eff) return ("Target is marked, leaving them vulnerable to marked shots."):format() end,
 	type = "other",
-	subtype = { silence=true },
+	subtype = { tactic=true },
 	status = "detrimental",
-	parameters = {},
+	on_gain = function(self, err) return nil, "+Marked!" end,
+	on_lose = function(self, err) return nil, "-Marked" end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("silence", 1)
+		eff.particle = self:addParticles(Particles.new("circle", 1, {base_rot=1, oversize=1.0, a=200, appear=8, speed=0, img="marked", radius=0}))
+		self:effectTemporaryValue(eff, "marked", 1)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("silence", eff.tmpid)
+		self:removeParticles(eff.particle)
 	end,
-	on_timeout = function(self, eff)
-		if not self.x or not eff.src or not eff.src.x or core.fov.distance(self.x, self.y, eff.src.x, eff.src.y) > 1 or eff.src.dead or not game.level:hasEntity(eff.src) or not self:hasEffect(self.EFF_GARROTE) then
-			self:removeEffect(self.EFF_GARROTE_SILENCED)
-		end
+	on_die = function(self,eff)
+		if eff.src and eff.src:knowTalent(eff.src.T_FIRST_BLOOD) then eff.src:incStamina(eff.src:callTalent(eff.src.T_FIRST_BLOOD, "getStamina")) end
+	end,
+}
+
+newEffect{
+	name = "FLARE",
+	desc = "Flare", image = "talents/flare_raz.png",
+	long_desc = function(self, eff) return ("The target is lit up by a flare, reducing its stealth and invisibility power by %d, defense by %d and removing all evasion bonus from being unseen."):format(eff.power, eff.power) end,
+	type = "other",
+	subtype = { sun=true },
+	status = "detrimental",
+	parameters = { power=20 },
+	on_gain = function(self, err) return nil, "+Illumination" end,
+	on_lose = function(self, err) return nil, "-Illumination" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_stealth", -eff.power)
+		if self:attr("invisible") then self:effectTemporaryValue(eff, "invisible", -eff.power) end
+		self:effectTemporaryValue(eff, "combat_def", -eff.power)
+		self:effectTemporaryValue(eff, "blind_fighted", 1)
 	end,
 }

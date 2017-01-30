@@ -30,7 +30,7 @@ newTalent{
 		return 50 * self:getTalentLevelRaw(t) + self.max_life * self:combatTalentLimit(t, 1, .01, .05)
 	end,
 	activate = function(self, t)
-		if self.player and not self:hasQuest("lichform") and not self:attr("undead") then
+		if self.player and not self:attr("no_lichform_quest") and not self:hasQuest("lichform") and not self:attr("undead") then
 			self:grantQuest("lichform")
 			if game.state.birth.campaign_name ~= "maj-eyal" then self:setQuestStatus("lichform", engine.Quest.DONE) end
 			require("engine.ui.Dialog"):simplePopup("Lichform", "You have mastered the lesser arts of overcoming death, but your true goal is before you: the true immortality of Lichform!")
