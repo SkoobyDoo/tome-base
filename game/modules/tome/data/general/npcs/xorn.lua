@@ -110,23 +110,25 @@ newEntity{ base = "BASE_NPC_XORN",
 
 	-- Come in 5!
 	on_added_to_level = function(self)
-		self.add_max_life = self.max_life * 0.2
-		local all = {self}
-		for i = 1, 4 do
-			local x, y = util.findFreeGrid(self.x, self.y, 15, true, {[engine.Map.ACTOR]=true})
-			if x and y then
-				local m = self:clone()
-				m:removeAllMOs()
-				m.on_added_to_level = nil
-				m.x, m.y = nil, nil
-				game.zone:addEntity(game.level, m, "actor", x, y)
-				all[#all+1] = m
+		game:onTickEnd(function() --spawn escorts after all other actors are placed
+			self.add_max_life = self.max_life * 0.2
+			local all = {self}
+			for i = 1, 4 do
+				local x, y = util.findFreeGrid(self.x, self.y, 15, true, {[engine.Map.ACTOR]=true})
+				if x and y then
+					local m = self:clone()
+					m:removeAllMOs()
+					m.on_added_to_level = nil
+					m.x, m.y = nil, nil
+					game.zone:addEntity(game.level, m, "actor", x, y)
+					all[#all+1] = m
+				end
 			end
-		end
-		for _, m in ipairs(all) do
-			m.all_fragments = all
-			m.can_pass = {pass_wall=20} -- Restore passwall
-		end
+			for _, m in ipairs(all) do
+				m.all_fragments = all
+				m.can_pass = {pass_wall=20} -- Restore passwall
+			end
+		end)
 	end,
 	on_die = function(self, who)
 		local nb_alive = 0

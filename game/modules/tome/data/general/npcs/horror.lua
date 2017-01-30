@@ -224,24 +224,26 @@ newEntity{ base = "BASE_NPC_HORROR",
 
 	-- Add eyes
 	on_added_to_level = function(self)
-		local eyes = {}
-		for i = 1, 3 do
-			local x, y = util.findFreeGrid(self.x, self.y, 15, true, {[engine.Map.ACTOR]=true})
-			if x and y then
-				local m = game.zone:makeEntity(game.level, "actor", {properties={"is_eldritch_eye"}, special_rarity="_eldritch_eye_rarity"}, nil, true)
-				if m then
-					m.summoner = self
-					game.zone:addEntity(game.level, m, "actor", x, y)
-					eyes[m] = true
+		game:onTickEnd(function() --spawn escorts after all other actors are placed
+			local eyes = {}
+			for i = 1, 3 do
+				local x, y = util.findFreeGrid(self.x, self.y, 15, true, {[engine.Map.ACTOR]=true})
+				if x and y then
+					local m = game.zone:makeEntity(game.level, "actor", {properties={"is_eldritch_eye"}, special_rarity="_eldritch_eye_rarity"}, nil, true)
+					if m then
+						m.summoner = self
+						game.zone:addEntity(game.level, m, "actor", x, y)
+						eyes[m] = true
 
-					-- Grant resist
-					local damtype = next(m.resists)
-					self.resists[damtype] = 100
-					self.resists.all = (self.resists.all or 0) + 30
+						-- Grant resist
+						local damtype = next(m.resists)
+						self.resists[damtype] = 100
+						self.resists.all = (self.resists.all or 0) + 30
+					end
 				end
 			end
-		end
-		self.eyes = eyes
+			self.eyes = eyes
+		end)
 	end,
 
 	-- Needs an on death affect that kills off any remaining eyes.
