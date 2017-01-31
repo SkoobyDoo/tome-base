@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 -- Explore the far east
 name = "The wild wild east"
 desc = function(self, who)

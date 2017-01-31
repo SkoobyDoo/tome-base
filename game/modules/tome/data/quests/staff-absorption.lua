@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 -- Main quest: the Staff of Absorption
 name = "A mysterious staff"
 desc = function(self, who)

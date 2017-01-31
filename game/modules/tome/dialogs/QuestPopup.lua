@@ -38,6 +38,7 @@ function _M:init(quest, status)
 	local use_ui = "quest"
 	if quest.use_ui then use_ui = quest.use_ui end
 	if status == Quest.FAILED then use_ui = "quest-fail" end
+	-- if status == Quest.DONE then use_ui = "quest-done" end
 
 	self.quest = quest
 	self.ui = use_ui
