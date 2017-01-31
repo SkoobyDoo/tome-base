@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
+
 local radius, density = radius or 3, density or 200
 base_size = 32
 can_shift = true

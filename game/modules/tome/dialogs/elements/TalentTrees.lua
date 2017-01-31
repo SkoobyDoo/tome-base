@@ -24,6 +24,7 @@ local Scrollbar = require "engine.ui.blocks.Scrollbar"
 local Talent = require "mod.dialogs.elements.blocks.Talent"
 local TalentLine = require "mod.dialogs.elements.blocks.TalentLine"
 local Tiles = require "engine.Tiles"
+local Mouse = require "engine.Mouse"
 
 --- A talent trees display
 module(..., package.seeall, class.inherit(Base, Focusable))
@@ -61,6 +62,7 @@ function _M:init(t)
 end
 
 function _M:generate()
+	self.list_mouse = Mouse.new()
 	self.mouse:reset()
 	self.key:reset()
 	self.do_container:clear():zSort(true):cutoff(0, 0, self.w, self.h):setRendererName("TalentTrees")
@@ -90,6 +92,8 @@ function _M:generate()
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button" and button == "wheelup" then if self.scrollbar then self:scroll(-1) end
 		elseif event == "button" and button == "wheeldown" then if self.scrollbar then self:scroll(1) end
+		else
+			self.list_mouse:delegate(button, x, y + (self.scrollbar and self.scrollbar.pos or 0), xrel, yrel, bx, by, event)
 		end
 		return false
 	end)
@@ -224,8 +228,6 @@ function _M:display(x, y, nb_keyframes)
 
 		if self.scrollbar.pos ~= oldpos then
 			self.lines_container:translate(0, -self.scrollbar.pos, 0)
-			-- self.mouse.delegate_offset_y = -self.scrollbar.pos
-			-- print("== offset", self.mouse.delegate_offset_y)
 		end
 	end
 end

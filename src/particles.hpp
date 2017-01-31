@@ -130,6 +130,8 @@ struct s_particle_thread {
 	SDL_Thread *thread;
 	SDL_mutex *lock;
 	SDL_sem *keyframes;
+	float nb_keyframes_to_consume;
+	int nb_keyframes_to_consume_int;
 	plist *list;
 	jmp_buf panicjump;
 };

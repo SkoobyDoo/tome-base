@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
+
 local basenb = basenb or 200
 local nb = 0
 return { generator = function()

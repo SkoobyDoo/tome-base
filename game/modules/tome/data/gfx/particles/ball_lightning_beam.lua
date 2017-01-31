@@ -17,11 +17,13 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
+
 local points = {}
 
 local basesize = radius * (engine.Map.tile_w + engine.Map.tile_h) / 2
 
-for fork_i = 0, 35 do
+for fork_i = 2, 22,20 do
 	local tx = math.cos(fork_i * math.pi * 2 / 35) * basesize
 	local ty = math.sin(fork_i * math.pi * 2 / 35) * basesize
 	local basedir = math.atan2(ty, tx)
@@ -34,7 +36,7 @@ for fork_i = 0, 35 do
 	local starts = rng.range(-4, 4)
 	points[#points+1] = {bc=bc, c=c, a=a, size=size, x=math.cos(starta) * starts, y=math.sin(starta) * starts, prev=-1}
 
-	local nb = 5
+	local nb = -1
 	for i = 0, nb - 1 do
 		-- Split point in the segment
 		local split = rng.range(0, basesize / nb) + i * (basesize / nb)
@@ -46,6 +48,31 @@ for fork_i = 0, 35 do
 
 	points[#points+1] = {bc=bc, c=c, a=a, size=size, x=tx, y=ty, prev=#points-1}
 end
+-- for fork_i = 0, 35 do
+-- 	local tx = math.cos(fork_i * math.pi * 2 / 35) * basesize
+-- 	local ty = math.sin(fork_i * math.pi * 2 / 35) * basesize
+-- 	local basedir = math.atan2(ty, tx)
+
+-- 	local bc = rng.float(0.8, 1)
+-- 	local c = 1
+-- 	local a = 1 or rng.float(0.3, 0.6)
+-- 	local size = 2
+-- 	local starta = basedir+math.pi/2
+-- 	local starts = rng.range(-4, 4)
+-- 	points[#points+1] = {bc=bc, c=c, a=a, size=size, x=math.cos(starta) * starts, y=math.sin(starta) * starts, prev=-1}
+
+-- 	local nb = 5
+-- 	for i = 0, nb - 1 do
+-- 		-- Split point in the segment
+-- 		local split = rng.range(0, basesize / nb) + i * (basesize / nb)
+		
+-- 		local dev = math.rad(rng.range(-8, 8))
+		
+-- 		points[#points+1] = {bc=bc, c=c, a=a, movea=basedir+dev+math.pi/2, size=size + rng.range(-2, 2), x=math.cos(basedir+dev) * split, y=math.sin(basedir+dev) * split, prev=#points-1}
+-- 	end
+
+-- 	points[#points+1] = {bc=bc, c=c, a=a, size=size, x=tx, y=ty, prev=#points-1}
+-- end
 
 local nbp =  #points
 

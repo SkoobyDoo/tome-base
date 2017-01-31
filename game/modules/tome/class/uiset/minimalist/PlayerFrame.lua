@@ -152,24 +152,24 @@ function _M:update(nb_keyframes)
 	if self.old_level ~= player.level then self.text_level:text("Lvl "..player.level) self.old_level = player.level end
 	if self.old_name ~= player.name then self.text_name:text(player.name) self.old_name = player.name end
 
-	local v = (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled
+	local v = (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled and true or false
 	if self.old_attack == nil or self.old_attack ~= v then
 		self.pf_defend:shown(v)
 		self.pf_attack:shown(not v)
 		self.old_attack = v
 	end
 
-	if self.old_encumber == nil or self.old_encumber ~= player:attr("encumbered") then
+	if self.old_encumber == nil or self.old_encumber ~= (player:attr("encumbered") and true or false) then
 		self.pf_encumber:shown(player:attr("encumbered") and true or false)
-		self.old_encumber = player:attr("encumbered")
+		self.old_encumber = player:attr("encumbered") and true or false
 	end
 
 	local v = player.unused_stats + player.unused_talents + player.unused_generics + player.unused_talents_types
 	if self.old_levelup ~= v then
+		self.old_levelup = v
 		v = v > 0
 		self.pf_levelup:shown(v)
 		self.pf_exp_levelup:shown(v)
-		self.old_levelup = v
 	end
 end
 

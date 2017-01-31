@@ -367,7 +367,7 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						ly = ps->particles[p->trail].y;
 						lsize = ps->particles[p->trail].size;
 						a = atan2(p->y - ly, p->x - lx) + M_PI_2;
-//						printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,a*180/M_PI,p->x,p->y,p->size);
+						printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,a*180/M_PI,p->x,p->y,p->size);
 
 						vertices[ps->batch_nb++] = particles_vertex({{lx + cos(a) * lsize / 2, ly + sin(a) * lsize / 2, 0, 1}, {0, 0}, {r, g, b, a}});
 						vertices[ps->batch_nb++] = particles_vertex({{lx - cos(a) * lsize / 2, ly - sin(a) * lsize / 2, 0, 1}, {1, 0}, {r, g, b, a}});

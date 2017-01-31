@@ -113,7 +113,7 @@ end
 
 function _M:updateMouse()
 	local tx, ty = self.do_container:getTranslate(self.parent.lines_container)
-	local pmouse = self.parent.mouse
+	local pmouse = self.parent.list_mouse
 	local mouse = self.mouse
 
 	pmouse:replaceZone(tx, ty, self.parent.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
