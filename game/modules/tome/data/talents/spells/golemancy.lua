@@ -161,6 +161,7 @@ newTalent{
 	mana = 10,
 	no_energy = true,
 	no_npc_use = true,
+	cant_steal = true,
 	no_unlearn_last = true,
 	action = function(self, t)
 		if not self.alchemy_golem then return end
@@ -193,6 +194,7 @@ newTalent{
 	points = 1,
 	cooldown = 20,
 	mana = 10,
+	cant_steal = true,
 	no_npc_use = true,
 	no_unlearn_last = true,
 	on_pre_use = function(self, t) return not self.resting end,
@@ -425,6 +427,7 @@ newTalent{
 	points = 5,
 	mana = 10,
 	cooldown = 20,
+	cant_steal = true,
 	no_npc_use = true,
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 15, 50) end,
 	action = function(self, t)
@@ -461,6 +464,7 @@ newTalent{
 	require = spells_req4,
 	points = 5,
 	mana = 40,
+	cant_steal = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 14, 10, true)) end, -- Limit to > 0
 	action = function(self, t)
 		local mover, golem = getGolem(self)

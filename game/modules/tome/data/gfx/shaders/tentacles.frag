@@ -93,7 +93,7 @@ void main(void)
 		if(noup == 1 && layerIndex < backLayersCount) continue;
 		if(noup == 2 && layerIndex >= backLayersCount) continue;
 		float deformRate = GetDistortionRange(layerIndex, pos);
-		vec2 texPos = GetDistortion(pos, layerIndex, wobblingType, deformRate);
+		vec2 texPos = GetDistortion(pos, layerIndex, distortionType, deformRate);
 		vec4 layerColor = GetColor(layerIndex, texPos);
 		float alphaThreshold = 1.0 - appearPhase + deformRate;
 		layerColor.a = max(0.0, layerColor.a - alphaThreshold) / (1.0 - alphaThreshold + 1e-4);
