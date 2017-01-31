@@ -28,7 +28,7 @@ local basedir = math.atan2(ty, tx)
 local points = {}
 
 for fork_i = 1, 10 do
-	local bc = rng.float(0.3, 0.5)
+	local bc = rng.float(0.5, 0.8)
 	local c = 1
 	local a = 1 or rng.float(0.3, 0.6)
 	local size = fork_i == 1 and 6 or 2

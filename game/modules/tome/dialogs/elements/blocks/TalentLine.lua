@@ -83,6 +83,10 @@ function _M:init(t, item, collapsed, frame)
 	end, nil, "collapse", true, 1)
 end
 
+function _M:moveSel(i, j)
+	
+end
+
 function _M:setSel(v)
 	self.frame.container:shown(v)
 	if v then self.parent:setSel(self.item) end

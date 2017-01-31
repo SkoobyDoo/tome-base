@@ -795,7 +795,7 @@ function _M:createDisplay()
 	end}
 
 	self.t_messages = StatusBox.new{
-		font = core.display.newFont("/data/font/DroidSans.ttf", 16),
+		font = font,
 		width = math.floor(2 * self.iw / 3), delay = 1,
 	}
 	local vsep1 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
@@ -825,7 +825,7 @@ function _M:createDisplay()
 
 		{right=0, bottom=0, ui=self.b_prodigies},
 
-		{hcenter=self.b_types, top=-self.t_messages.h, ui=self.t_messages},
+		{left=0, top=-self.t_messages.h, ui=self.t_messages},
 	}
 	if self.b_inscriptions then table.insert(ret, {right=self.b_prodigies.w, bottom=0, ui=self.b_inscriptions}) end
 	table.insert(ret, {right=self.b_inscriptions or self.b_prodigies, bottom=0, ui=self.c_hide_unknown})

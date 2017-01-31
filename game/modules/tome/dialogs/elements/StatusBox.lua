@@ -29,45 +29,32 @@ module(..., package.seeall, class.inherit(Base))
 -- text and color can be set, that updates frame counter
 function _M:init(t)
 	self.w = t.width
-	self.text = ""
-	self.color = t.color or {r=255,g=255,b=255}
-	self.delay = t.delay
-	self.frame_delay = t.delay * (config.settings.display_fps or 60)
-	self.frame_decay = 0
+	self.delay = t.delay * 30
 
+	t.request_renderer = true
 	Base.init(self, t)
 end
 
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 	self.h = self.font_h
 
-	self:setTextColor(self.text, self.color)
 	self.iw, self.ih = self.w, self.h
 
 	self.w = self.w + 6
 	self.h = self.h + 6
+	self.text = core.renderer.text(self.font)
+	self.do_container:add(self.text)
 end
 
 function _M:setTextColor(text, color)
-	-- self.text = text or self.text
-	-- self.color = color or self.color
-
-	-- self.text_tex = self:drawFontLine(self.font_bold, self.text)
-	-- self.frame_decay = 0
+	text = text or ""
+	color = color or {r=255,g=255,b=255}
+	self.text:textColor(colors.smart1unpack(color)):text(text):color(1, 1, 1, 0):cancelTween(true):tween(6, "a", 0, 1, nil, function(d)
+		d:tween(30, "wait", function(d)
+			d:tween(15, "a", nil, 0)
+		end)
+	end)
 end
-
-function _M:display(x, y, nb_keyframes)
-	-- local alpha = 1
-	-- if self.frame_delay then
-	-- 	self.frame_decay = self.frame_decay + nb_keyframes
-	-- 	if self.frame_decay > self.frame_delay then
-	-- 		-- ease out over 0.5 s
-	-- 		local easetime = (config.settings.display_fps or 60) / 2
-	-- 		alpha = 1 - (self.frame_decay - self.frame_delay) / easetime
-	-- 	end
-	-- end
-	-- self:textureToScreen(self.text_tex, x + 3 + (self.iw - self.text_tex.w) / 2, y + 3, self.color.r/255, self.color.g/255, self.color.b/255, alpha)
-end
-

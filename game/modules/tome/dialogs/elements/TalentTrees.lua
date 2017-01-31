@@ -105,7 +105,7 @@ function _M:generate()
 		MOVE_RIGHT = function() self:moveSel(0, 1) end,
 	}
 	self.key:addCommands{
-		[{"_RETURN","ctrl"}] = function() if self.last_mz then self:onUse(self.cur_item, false) end end,
+		[{"_RETURN","ctrl"}] = function() self:onUse(self.cur_item, false) end,
 		[{"_UP","ctrl"}] = function() if self.scrollbar then self:scroll(-1) end end,
 		[{"_DOWN","ctrl"}] = function() if self.scrollbar then self:scroll(1) end end,
 		_HOME = function() if self.scrollbar then self:scroll(-999999) end end,
@@ -146,6 +146,7 @@ end
 
 function _M:moveSel(i, j)
 	if not self.cur_item then return end
+	self.cur_item._block:moveSel(i, j)
 end
 
 function _M:setSel(item)
