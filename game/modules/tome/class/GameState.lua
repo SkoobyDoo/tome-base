@@ -2532,6 +2532,7 @@ function _M:makeChallengeQuest(level, name, desc, data, alter_effect)
 	local q = {
 		id = "id-challenge-"..level.level,
 		name = "Infinite Dungeon Challenge: "..name.." (Level "..level.level..")",
+		use_ui = "quest-idchallenge",
 		challenge_desc = desc,
 		desc = function(self, who)
 			local desc = {}
