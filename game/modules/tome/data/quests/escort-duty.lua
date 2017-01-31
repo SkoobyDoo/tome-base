@@ -22,6 +22,8 @@ local Stats = require("engine.interface.ActorStats")
 local NameGenerator = require("engine.NameGenerator")
 local Astar = require("engine.Astar")
 
+use_ui = "quest-escort"
+
 --------------------------------------------------------------------------------
 -- Quest data
 --------------------------------------------------------------------------------
