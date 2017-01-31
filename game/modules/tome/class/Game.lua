@@ -1578,8 +1578,6 @@ end
 function _M:createFBOs()
 	print("[GAME] Creating FBOs")
 --[[
-		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
-
 	Map:enableFBORenderer("target_fbo")
 
 --	self.mm_fbo = core.display.newFBO(200, 200)
@@ -1692,9 +1690,11 @@ function _M:displayMap(nb_keyframes)
 		map:displayEmotes(nb_keyframe or 1)
 
 		-- Mouse gestures
-		self.gestures:update()
-		-- self.gestures:display(map.display_x, map.display_y + map.viewport.height - self.gestures.font_h - 5)
-		self.gestures:display(map.display_x, map.display_y, nb_keyframes)
+		if self.gestures:update() then
+			self.fbobloom:use(true)
+			self.gestures:display(map.display_x, map.display_y, nb_keyframes)
+			self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+		end
 
 		-- Inform the player that map is in scroll mode
 		if self.scroll_lock_enabled then
@@ -1813,7 +1813,7 @@ function _M:setupCommands()
 
 	-- Activate mouse gestures
 	self.gestures = Gestures.new("Gesture: ", self.key, true)
-	if self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
+	self.gestures:setTexture("/data/gfx/particles_images/diffuse_point.png")
 
 	-- Helper function to not allow some actions on the wilderness map
 	local not_wild = function(f, bypass) return function(...) if self.zone and (not self.zone.wilderness or (bypass and bypass())) then f(...) else self.logPlayer(self.player, "You cannot do that on the world map.") end end end

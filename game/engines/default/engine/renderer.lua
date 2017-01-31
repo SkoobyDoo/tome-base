@@ -70,8 +70,8 @@ function core.renderer.redPoint()
 	return v
 end
 
-function core.renderer.colorQuad(x, y, w, h, r, g, b, a)
-	local v = core.renderer.vertexes()
+function core.renderer.colorQuad(x, y, w, h, r, g, b, a, v)
+	v = v or core.renderer.vertexes()
 	local x1, x2 = x, x + w
 	local y1, y2 = y, y + h
 	local u1, u2 = 0, 1
