@@ -144,7 +144,7 @@ void main(void)
 	vec2 radius = vec2(0.5, 0.5) - gl_TexCoord[0].xy;
 	//radius.x *= ellispoidalFactor; //for simple ellipsoid
 	//comment next line for regular spherical shield
-	radius.x *= (1.0 + ellipsoidalFactor) * 0.5 + (ellipsoidalFactor - 1.0) * 0.5 * pow(cos(tick / time_factor * oscillationSpeed), 2.0);
+	radius.x *= (1.0 + ellipsoidalFactor) * 0.5 + (ellipsoidalFactor - 1.0) * 0.5 * pow(0.5001 + cos(tick / time_factor * oscillationSpeed) * 0.5, 2.0);
 	
 	//on-hit wobbling effect
 	float radiusLen = length(radius);

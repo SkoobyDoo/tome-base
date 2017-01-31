@@ -26,7 +26,7 @@ vec4 Uberblend(vec4 col0, vec4 col1)
 		min(1.0, col0.a + col1.a));
 }
 
-float GetDistortionRange(const int layerIndex, float2 texPos)
+float GetDistortionRange(const int layerIndex, vec2 texPos)
 {
 	vec2 layerOffsets[4];
 	layerOffsets[0] = vec2(0.0, 0.0);
@@ -37,7 +37,7 @@ float GetDistortionRange(const int layerIndex, float2 texPos)
 	return texture2D(tex, (texPos * 0.5 + layerOffsets[layerIndex]) * vec2(0.5, 1.0) + vec2(0.5, 0.0)).r;
 }
 
-vec4 GetColor(const int layerIndex, float2 texPos)
+vec4 GetColor(const int layerIndex, vec2 texPos)
 {
 	vec2 layerOffsets[4];
 	layerOffsets[0] = vec2(0.0, 0.0);
