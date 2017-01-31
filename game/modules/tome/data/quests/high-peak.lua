@@ -49,6 +49,7 @@ end
 on_status_change = function(self, who, status, sub)
 	if sub then
 		if self:isCompleted("elandar-dead") and self:isCompleted("argoniel-dead") and not who:isQuestStatus("high-peak", engine.Quest.DONE) then
+			self.use_ui = "quest-win"
 			who:setQuestStatus(self.id, engine.Quest.DONE)
 
 			-- Remove all remaining hostiles

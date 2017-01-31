@@ -76,3 +76,13 @@ def['quest-main'] = {
 	frame_oy2 =  60,
 	dialog_h_middles = true,
 }
+
+def['quest-win'] = {
+	frame_alpha = 1,
+	frame_darkness = 0.6,
+	frame_ox1 = -60,
+	frame_ox2 =  60,
+	frame_oy1 = -154,
+	frame_oy2 =  60,
+	dialog_h_middles = true,
+}
