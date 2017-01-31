@@ -264,6 +264,7 @@ newTalent {
 	points = 5,
 	require = techs_dex_req4,
 	sustain_stamina = 10,
+	cooldown = 10,
 	no_energy = true,
 	tactical = { DEFEND = 2 },
 --	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
@@ -278,9 +279,9 @@ newTalent {
 		return true
 	end,
 	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
-		return self:combatTalentLimit(t, 1, 0.15, 0.50) * self:combatLimit(self:combatDefense(), 1, 0.15, 10, 0.5, 50) -- Limit < 100%, 25% for TL 5.0 and 50 defense
+		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.6))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.5, 50) -- vs TL/def: 1/10 == ~08%, 1.3/10 == ~10%, 1.3/50 == ~16%, 6.5/50 == ~32%, 6.5/100 = ~40%
 	end,
-	getStamina = function(self, t) return 8 end, -- as per Shibari's comment, this can get pretty annoying if cost was any higher
+	getStamina = function(self, t) return 12*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end,
 	getLifeTrigger = function(self, t)
 		return self:combatTalentLimit(t, 10, 30, 15) -- Limit trigger > 10% life
 	end,
@@ -308,10 +309,11 @@ newTalent {
 				--print(("[PROJECTOR: Trained Reactions] PASSED life/stam test for %s: %s %s damage (%s) (%0.1f/%0.1f stam) from %s (state:%s)"):format(self.name, dam, type, is_attk, stam_cost, stam, src.name, state)) -- debugging
 				self.turn_procs[t.id] = state
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
-				local reduce = t.getReduction(self, t)
-				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, partially avoiding it!", is_attk and "an attack" or "damage") end
 
-				dam = dam*(1-reduce)
+				local reduce = t.getReduction(self, t)
+				local newdam = dam*(1-reduce)
+				src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow by #ORCHID#" .. math.ceil(dam-newdam) .. "#LAST#.", is_attk and "an attack" or "damage")
+				dam = newdam
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
 				if not is_attk then self.turn_procs.gen_trained_reactions = true end
 				return {dam = dam}

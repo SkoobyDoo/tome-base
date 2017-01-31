@@ -219,7 +219,7 @@ newTalent{
 	sustain_stamina = 50,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
-	getPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 4, 0, 54, 50) end,
+	getPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(8, true), 4, 0, 54, 50) end,
 	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 150, 50, 100)) end,
 	getDamage = function(self, t) return 1 + math.min(math.floor(self:getTalentLevel(t)),6) end, --we really don't want a flat damage bonus like this going up past 35%
 	sustain_slots = 'archery_stance',
