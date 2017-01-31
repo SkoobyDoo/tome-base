@@ -23,17 +23,19 @@ local points = {}
 
 local basesize = radius * (engine.Map.tile_w + engine.Map.tile_h) / 2
 
-for fork_i = 2, 22,20 do
-	local tx = math.cos(fork_i * math.pi * 2 / 35) * basesize
-	local ty = math.sin(fork_i * math.pi * 2 / 35) * basesize
+for _, fork_i in ipairs{90, 270} do
+	local tx = math.cos(math.rad(fork_i)) * basesize
+	local ty = math.sin(math.rad(fork_i)) * basesize
+	-- local tx = math.cos(fork_i * math.pi * 2 / 35) * basesize
+	-- local ty = math.sin(fork_i * math.pi * 2 / 35) * basesize
 	local basedir = math.atan2(ty, tx)
 
-	local bc = rng.float(0.8, 1)
+	local bc = rng.float(0.3, 0.5)
 	local c = 1
 	local a = 1 or rng.float(0.3, 0.6)
-	local size = 2
+	local size = 12
 	local starta = basedir+math.pi/2
-	local starts = rng.range(-4, 4)
+	local starts = 4 -- rng.range(-4, 4)
 	points[#points+1] = {bc=bc, c=c, a=a, size=size, x=math.cos(starta) * starts, y=math.sin(starta) * starts, prev=-1}
 
 	local nb = -1
@@ -87,7 +89,8 @@ return { engine=core.particles.ENGINE_LINES, generator = function()
 		x = p.x, xv = 0, xa = 0,
 		y = p.y, yv = 0, ya = 0,
 		dir = p.movea, dirv = 0, dira = 0,
-		vel = rng.float(-1, 1), velv = 0, vela = 0,
+		vel = 0, velv = 0, vela = 0,
+		-- vel = rng.float(-1, 1), velv = 0, vela = 0,
 
 		r = p.bc, rv = 0, ra = 0,
 		g = p.bc, gv = 0, ga = 0,

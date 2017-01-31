@@ -373,6 +373,9 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						vertices[ps->batch_nb++] = particles_vertex({{lx - cos(a) * lsize / 2, ly - sin(a) * lsize / 2, 0, 1}, {1, 0}, {r, g, b, a}});
 						vertices[ps->batch_nb++] = particles_vertex({{p->x - cos(a) * p->size / 2, p->y - sin(a) * p->size / 2, 0, 1}, {1, 1}, {r, g, b, a}});
 						vertices[ps->batch_nb++] = particles_vertex({{p->x + cos(a) * p->size / 2, p->y + sin(a) * p->size / 2, 0, 1}, {0, 1}, {r, g, b, a}});
+						for (int r = ps->batch_nb - 4; r < ps->batch_nb; r++) {
+							printf(" * %dx%d\n", (int)vertices[r].pos.x, (int)vertices[r].pos.y);
+						}
 					}
 				} else {
 					if (!p->trail)
@@ -502,8 +505,8 @@ static void particles_draw(particles_type *ps, mat4 model)
 	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)offsetof(particles_vertex, color));
 
 	// glDrawArrays(GL_TRIANGLES, 0, ps->batch_nb);
-	glDrawElements(GL_TRIANGLES, ps->batch_nb * 6, GL_UNSIGNED_INT, (void*)0);
-	// glDrawArrays(GL_QUADS, 0, ps->batch_nb);
+	// glDrawElements(GL_TRIANGLES, ps->batch_nb * 6, GL_UNSIGNED_INT, (void*)0);
+	glDrawArrays(GL_QUADS, 0, ps->batch_nb);
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
