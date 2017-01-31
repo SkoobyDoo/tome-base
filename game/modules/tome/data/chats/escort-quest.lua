@@ -147,7 +147,7 @@ local reward_types = {
 		},
 		antimagic = {
 			types = {
-				["technique/feedback"] = 0.8,
+				["psionic/feedback"] = 0.8,
 			},
 			talents = {
 				[Talents.T_BIOFEEDBACK] = 1,
