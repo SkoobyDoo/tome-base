@@ -90,6 +90,22 @@ Talents.wardenPreUse = wardenPreUse
 
 archery_range = Talents.main_env.archery_range
 
+local function concealmentDetection(self, radius, estimate)
+	if not self.x then return nil end
+	local dist = 0
+	local closest, detect = math.huge, 0
+	for i, act in ipairs(self.fov.actors_dist) do
+		dist = core.fov.distance(self.x, self.y, act.x, act.y)
+		if dist > radius then break end
+		if act ~= self and act:reactionToward(self) < 0 and not act:attr("blind") and (not act.fov or not act.fov.actors or act.fov.actors[self]) and (not estimate or self:canSee(act)) then
+			detect = detect + act:combatSeeStealth() * (1.1 - dist/10) -- detection strength reduced 10% per tile
+			if dist < closest then closest = dist end
+		end
+	end
+	return detect, closest
+end
+Talents.concealmentDetection = concealmentDetection
+
 newTalent{
 	name = "Concealment",
 	type = {"technique/sniper", 1},
@@ -97,41 +113,48 @@ newTalent{
 	mode = "sustained",
 	require = techs_dex_req_high1,
 	cooldown = 10,
+	no_energy = true,
 	tactical = { BUFF = 2 },
-	no_npc_use = true, -- getting 1 shot from an invisible ranged attacker = no
-	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
-	getDamage = function(self, t) return math.floor(self:combatTalentScale(t, 10, 35)) end,
-	getAvoidance = function(self, t) return math.floor(self:combatTalentScale(t, 15, 40)) end,
+	no_npc_use = true, -- range 13 mobs are a bit excessive
+	on_pre_use = function(self, t, silent, fake)
+		if not archerPreUse(self, t, silent, "bow") then return false end
+		if self:isTalentActive(t.id) then return true end
+		
+		-- Check nearby actors detection ability
+		if not self.x or not self.y or not game.level then return end
+		if not rng.percent(self.hide_chance or 0) then
+			if concealmentDetection(self, t.getRadius(self, t)) > 0 then
+				if not silent then game.logPlayer(self, "You are being observed too closely to enter Concealment!") end
+				return nil
+			end
+		end
+		return true
+	end,
+	getDamage = function(self, t) return math.floor(self:combatTalentScale(t, 35, 75)) end,
+	getAvoidance = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 10, 22)) end,
+	getSight = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, "log")) end,
+	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.6)) end,
 	sustain_lists = "break_with_stealth",
 	activate = function(self, t)
 		local ret = {}
-		local chance = t.getAvoidance(self, t)
-		self:talentTemporaryValue(ret, "cancel_damage_chance", chance)
-		self:talentTemporaryValue(ret, "concealment", 6)
+		self:setEffect(self.EFF_CONCEALMENT, 3, {power=t.getAvoidance(self,t), dam=t.getDamage(self,t), sight=t.getSight(self,t), charges=3})
 		return ret
 	end,
 	deactivate = function(self, t, p)
 		return true
 	end,
-	hasFoes = function(self)
-		for i = 1, #self.fov.actors_dist do
-			local act = self.fov.actors_dist[i]
-			if act and self:reactionToward(act) < 0 and self:canSee(act) then return true end
-		end
-		return false
-	end,
 	callbackOnActBase = function(self, t)
-		if t.hasFoes(self) then
-			self:setEffect(self.EFF_TAKING_AIM, 2, {power=t.getDamage(self,t), max_stacks=3, max_power=t.getDamage(self,t)*3 })
-		end
+		self:setEffect(self.EFF_CONCEALMENT, 3, {power=t.getAvoidance(self,t), max_power=t.getAvoidance(self,t)*3, dam=t.getDamage(self,t), sight=t.getSight(self,t), charges=3})
 	end,
 	info = function(self, t)
-		local avoid = t.getAvoidance(self,t)
+		local avoid = t.getAvoidance(self,t)*3
 		local dam = t.getDamage(self,t)
-		return ([[Enter a concealed sniping stance. You gain a %d%% chance to completely avoid incoming damage and status effects, and enemies further than 6 tiles away will be unable to clearly see you, effectively blinding them.
-While in this stance, you will take aim if a foe is visible. Each stack of take aim increases the damage of your next Steady Shot by %d%% and the chance to mark by 30%%, stacking up to 3 times.
-This requires a bow to use.]]):
-		format(avoid, dam, dam*3)
+		local range = t.getSight(self,t)
+		local radius = t.getRadius(self,t)
+		return ([[Enter a concealed sniping stance, increasing our weapon's attack range and vision range by %d, giving all incoming damage a %d%% chance to miss you, and increasing the damage dealt by Steady Shot by %d%% and chance to mark by 100%%.
+Any non-instant, non-movement action will break concealment, but the increased range and vision and damage avoidance will persist for 3 turns, with the damage avoidance decreasing in power by 33%% each turn.
+This requires a bow to use, and cannot be used if there are foes in sight within range %d.]]):
+		format(range, avoid, dam, radius)
 	end,
 }
 
@@ -151,47 +174,14 @@ newTalent{
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2.7)) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 1.9) end,
-	archery_onreach = function(self, t, x, y)
-		local tg = self:getTalentTarget(t)
-		self:project(tg, x, y, function(px, py)
-			local e = Object.new{
-				block_sight=true,
-				temporary = 4,
-				x = px, y = py,
-				canAct = false,
-				act = function(self)
-					local t = self.summoner:getTalentFromId(self.summoner.T_SHADOW_SHOT)
-					local rad = self.summoner:getTalentRadius(t)
-					local Map = require "engine.Map"
-					self:useEnergy()
-					local actor = game.level.map(self.x, self.y, Map.ACTOR)
-					self.temporary = self.temporary - 1
-					if self.temporary <= 0 then
-						if self.particles then game.level.map:removeParticleEmitter(self.particles) end
-						game.level.map:remove(self.x, self.y, engine.Map.TERRAIN+rad)
-						self.smokeBomb = nil
-						game.level:removeEntity(self)
-						game.level.map:scheduleRedisplay()
-					end
-				end,
-				summoner_gain_exp = true,
-				summoner = self,
-			}
-			e.smokeBomb = e -- used for checkAllEntities to return the dark Object itself
-			game.level:addEntity(e)
-			game.level.map(px, py, Map.TERRAIN+self:getTalentRadius(t), e)
-			e.particles = Particles.new("creeping_dark", 1, { })
-			e.particles.x = px
-			e.particles.y = py
-			game.level.map:addParticleEmitter(e.particles)
-
-			end, nil, {type="dark"})
-
-		game.level.map:redisplay()
-	end,
+	getSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
 	target = function(self, t)
 		local weapon, ammo = self:hasArcheryWeapon()
 		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), selffire=false, display=self:archeryDefaultProjectileVisual(weapon, ammo)}
+	end,
+	archery_onreach = function(self, t, x, y)
+		local tg = self:getTalentTarget(t)
+		self:project(tg, x, y, DamageType.SHADOW_SMOKE, t.getSightLoss(self,t), {type="dark"})
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -200,9 +190,9 @@ newTalent{
 		local dam = t.getDamage(self,t)
 		self:archeryShoot(targets, t, nil, {mult=dam})
 		game:onTickEnd(function()
-			if self:knowTalent(self.T_CONCEALMENT) and not self:isTalentActive(self.T_CONCEALMENT)  then
-				self.talents_cd[self.T_CONCEALMENT] = 0
-				self:forceUseTalent(self.T_CONCEALMENT, {ignore_energy=true, silent = true})
+			if self:knowTalent(self.T_CONCEALMENT) and not self:isTalentActive(self.T_CONCEALMENT) then
+				self:alterTalentCoolingdown(self.T_CONCEALMENT, -20)
+				self:forceUseTalent(self.T_CONCEALMENT, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})
 			end
 		end)
 		game.level.map:redisplay()
@@ -211,9 +201,11 @@ newTalent{
 	info = function(self, t)
 		local dam = t.getDamage(self,t)*100
 		local radius = self:getTalentRadius(t)
-		return ([[Fire an arrow tipped with a smoke bomb, inflicting %d%% damage. The bomb will create a radius %d cloud of smoke on impact for 4 turns that blocks line of sight.
-You take advantage of this distraction to immediately enter Concealment.]]):
-		format(dam, radius)
+		local sight = t.getSightLoss(self,t)
+		return ([[Fire an arrow tipped with a smoke bomb inflicting %d%% damage and creating a radius %d cloud of thick, disorientating smoke. Those caught within will be confused (power 50%%) and have their vision range reduced by %d for 5 turns.
+You take advantage of this distraction to immediately enter Concealment, regardless of it's cooldown.
+The chance for the smoke bomb to affect your targets increases with your Accuracy.]]):
+		format(dam, radius, sight)
 	end,
 }
 
@@ -227,16 +219,11 @@ newTalent{
 	sustain_stamina = 50,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
-	getPower = function(self, t) return math.floor(self:combatTalentScale(t, 10, 45)) end,
-	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 150, 50, 110)) end,
-	getDamage = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1, 5)) end,
+	getPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 4, 0, 54, 50) end,
+	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 150, 50, 100)) end,
+	getDamage = function(self, t) return 1 + math.min(math.floor(self:getTalentLevel(t)),6) end, --we really don't want a flat damage bonus like this going up past 35%
 	sustain_slots = 'archery_stance',
 	activate = function(self, t)
-		local weapon = self:hasArcheryWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Aim without a bow or sling!")
-			return nil
-		end
 
 		local power = t.getPower(self,t)
 		local speed = t.getSpeed(self,t)
@@ -257,8 +244,9 @@ newTalent{
 		local speed = t.getSpeed(self,t)
 		local dam = t.getDamage(self,t)
 		return ([[Enter a calm, focused stance, increasing physical power and accuracy by %d and projectile speed by %d%%.
-This makes your shots more effective at range, increasing all damage dealt by %d%% per tile travelled beyond 3, to a maximum of %d%% damage at range 10.]]):
-		format(power, speed, dam, dam*7)
+This makes your shots more effective at range, increasing all damage dealt by %d%% per tile travelled beyond 3, to a maximum of %d%% damage at range 8.
+The physical power and accuracy increase with your Dexterity.]]):
+		format(power, speed, dam, dam*5)
 	end,
 }
 
@@ -275,8 +263,8 @@ newTalent{
 	tactical = { ATTACK = { weapon = 3 }, },
 	no_npc_use = true, --no way am i giving a npc a 300%+ ranged shot
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.4, 3.0) end, -- very high damage as this effectively takes 2 turns
-	getDamageReduction = function(self, t) return math.floor(self:combatTalentLimit(t, 100, 25, 70)) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.7, 3.5) end, -- very high damage as this effectively takes 2 turns
+	getDamageReduction = function(self, t) return math.floor(self:combatTalentLimit(t, 90, 30, 70)) end,
 	action = function(self, t)
 		local dam = t.getDamage(self,t)
 		local reduction = t.getDamageReduction(self,t)

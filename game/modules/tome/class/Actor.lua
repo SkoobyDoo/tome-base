@@ -2014,7 +2014,7 @@ end
 
 --- Regenerate life, call it from your actor class act() method
 function _M:regenLife()
-	if self.life_regen and not self:attr("no_life_regen") then
+	if self.life_regen then
 		local regen = self.life_regen * util.bound((self.healing_factor or 1), 0, 2.5)
 
 		-- Solipsism
@@ -2029,11 +2029,13 @@ function _M:regenLife()
 			end
 		end
 
-		self.life = util.bound(self.life + regen, self.die_at, self.max_life)
+		if not self:attr("no_life_regen") then
+			self.life = util.bound(self.life + regen, self.die_at, self.max_life)
 
-		-- Blood Lock
-		if self:attr("blood_lock") then
-			self.life = util.bound(self.life, self.die_at, self:attr("blood_lock"))
+			-- Blood Lock
+			if self:attr("blood_lock") then
+				self.life = util.bound(self.life, self.die_at, self:attr("blood_lock"))
+			end
 		end
 	end
 end
@@ -2052,10 +2054,20 @@ end
 
 --- Called before healing
 function _M:onHeal(value, src)
+	value = value * util.bound((self.healing_factor or 1), 0, 2.5)
+
+	-- Solipsism healing
+	local psi_heal = 0
+	if self:knowTalent(self.T_SOLIPSISM) then
+		local t = self:getTalentFromId(self.T_SOLIPSISM)
+		local ratio = t.getConversionRatio(self, t)
+		psi_heal = value * ratio
+		self:incPsi(psi_heal)
+		value = value - psi_heal
+	end
+
 	if self:hasEffect(self.EFF_UNSTOPPABLE) then return 0 end
 	if self:attr("no_healing") then return 0 end
-
-	value = value * util.bound((self.healing_factor or 1), 0, 2.5)
 
 	--if self:attr("stunned") then value = value / 2 end
 
@@ -2081,16 +2093,6 @@ function _M:onHeal(value, src)
 
 	if self:attr("fungal_growth") and self:attr("allow_on_heal") and value > 0 and not self:hasEffect(self.EFF_REGENERATION) then
 		self:setEffect(self.EFF_REGENERATION, 6, {power=(value * self.fungal_growth / 100) / 6, no_wild_growth=true})
-	end
-
-	-- Solipsism healing
-	local psi_heal = 0
-	if self:knowTalent(self.T_SOLIPSISM) then
-		local t = self:getTalentFromId(self.T_SOLIPSISM)
-		local ratio = t.getConversionRatio(self, t)
-		psi_heal = value * ratio
-		self:incPsi(psi_heal)
-		value = value - psi_heal
 	end
 
 	-- Must be last!

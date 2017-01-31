@@ -102,12 +102,12 @@ newTalent{
 	mode = "passive",
 	require = techs_dex_req2,
 	getBleed = function(self, t) return self:combatTalentScale(t, 0.3, 1.0) end,
-	getStamina = function(self, t) return math.floor(self:combatTalentScale(t, 5, 15)) end,
+	getStamina = function(self, t) return self:combatTalentScale(t, 1.5, 4) end,
 	info = function(self, t)
 		local bleed = t.getBleed(self,t)*100
 		local sta = t.getStamina(self,t)
-		return ([[You take advantage of unwary foes, doubling the chance for Steady Shot and Shoot to mark targets and bleeding them for %d%% additional damage over 5 turns if the target is at or above 90%% life.
-In addition, each time you trigger a mark or marked target dies you gain %d stamina.]])
+		return ([[You take advantage of unwary foes, giving Steady Shot and Shoot an additional 50%% chance to mark targets and bleeding them for %d%% additional damage over 5 turns if the target is at or above 90%% life.
+In addition, your Steady Shot, Shoot and Headshot now restore %0.1f stamina on hit.]])
 		:format(bleed, sta)
 	end,
 }
@@ -170,7 +170,7 @@ newTalent{
 	require = techs_dex_req4,
 	random_ego = "attack",
 	tactical = { BUFF = 3 },
-	getSpeed = function(self, t) return self:combatTalentScale(t, 15, 50)/100 end,
+	getSpeed = function(self, t) return self:combatTalentLimit(t, 60, 15, 45)/100 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	action = function(self, t)
 		local dur = t.getDuration(self,t)

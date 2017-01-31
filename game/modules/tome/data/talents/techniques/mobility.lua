@@ -188,7 +188,7 @@ newTalent{
 	base_stamina = 25,
 	stamina = mobility_stamina,
 	no_energy = true,
-	getDur = function(self, t) return 5 end,
+	getDur = function(self, t) return 4 end,
 	getChanceDef = function(self, t)
 		if self.perfect_evasion then return 100, 0 end
 		return self:combatLimit(5*self:getTalentLevel(t) + self:getDex(50,true), 50, 10, 10, 37.5, 75),
@@ -266,10 +266,10 @@ newTalent {
 	sustain_stamina = 10,
 	no_energy = true,
 	tactical = { DEFEND = 2 },
-	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "pin_immune", t.pinImmune(self, t))
-	end,
+--	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
+--	passives = function(self, t, p)
+--		self:talentTemporaryValue(p, "pin_immune", t.pinImmune(self, t))
+--	end,
 	on_pre_use = function(self, t, silent, fake)
 		if self:hasHeavyArmor() then
 			if not silent then game.logPlayer(self, "%s is not usable while wearing heavy armour.", t.name) end
@@ -278,11 +278,11 @@ newTalent {
 		return true
 	end,
 	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
-		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.78, 50) -- vs TL/def: 1/10 == ~12%, 1.3/10 == ~17%, 1.3/50 == ~27%, 6.5/50 == ~53%, 6.5/100 = ~59%
+		return self:combatTalentLimit(t, 1, 0.15, 0.50) * self:combatLimit(self:combatDefense(), 1, 0.15, 10, 0.5, 50) -- Limit < 100%, 25% for TL 5.0 and 50 defense
 	end,
-	getStamina = function(self, t) return 20*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end, -- Stamina increases in proportion to talent-based effectiveness.  Stamina Efficiency increased with level through higher Defense (Automatic from the increased Dexterity required for higher talent levels)
+	getStamina = function(self, t) return 8 end, -- as per Shibari's comment, this can get pretty annoying if cost was any higher
 	getLifeTrigger = function(self, t)
-		return self:combatTalentLimit(t, 10, 35, 20)
+		return self:combatTalentLimit(t, 10, 30, 15) -- Limit trigger > 10% life
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, state)
 		if dam > 0 and state and not (self:attr("encased_in_ice") or self:attr("invulnerable")) then
@@ -304,8 +304,7 @@ newTalent {
 			end
 			stam, stam_cost = self:getStamina(), stam_cost or t.getStamina(self, t)
 			local lt = t.getLifeTrigger(self, t)/100
-			local min_dam = self.max_life*0.05
-			if stam_cost == 0 or dam > min_dam and dam > self.life*lt then
+			if stam_cost == 0 or dam > self.max_life*lt then
 				--print(("[PROJECTOR: Trained Reactions] PASSED life/stam test for %s: %s %s damage (%s) (%0.1f/%0.1f stam) from %s (state:%s)"):format(self.name, dam, type, is_attk, stam_cost, stam, src.name, state)) -- debugging
 				self.turn_procs[t.id] = state
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
@@ -327,16 +326,16 @@ newTalent {
 		return true
 	end,
 	info = function(self, t)
+--		local pin = t.pinImmune(self,t)
 		local stam = t.getStamina(self, t)
 		local trigger = t.getLifeTrigger(self, t)
 		local reduce = t.getReduction(self, t, true)*100
 		return ([[You have trained to be very light on your feet and have conditioned your reflexes to react faster than thought to damage you take.
-		You permanently gain %d%% pinning immunity.
-		While this talent is active, you instantly react to any direct damage (not from status effects, etc.) that would hit you for at least %d%% of your current life or %d%% of your maximum life (whichever is greater).
+		While this talent is active, you instantly react to any direct damage (not from status effects, etc.) that would hit you for at least %d%% of your maximum life.
 		This requires %0.1f stamina and reduces the damage by %d%%.
 		Your reactions are too slow for this if you are wearing heavy armour.
 		The damage reduction improves with your Defense.]])
-		:format(t.pinImmune(self, t)*100, trigger, 5, stam, reduce)
+		:format(trigger, stam, reduce)
 	end,
 }
 

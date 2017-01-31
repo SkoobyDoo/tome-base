@@ -3208,9 +3208,9 @@ newEffect{
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 	end,
-	on_die = function(self,eff)
-		if eff.src and eff.src:knowTalent(eff.src.T_FIRST_BLOOD) then eff.src:incStamina(eff.src:callTalent(eff.src.T_FIRST_BLOOD, "getStamina")) end
-	end,
+--	on_die = function(self,eff)
+--		if eff.src and eff.src:knowTalent(eff.src.T_FIRST_BLOOD) then eff.src:incStamina(eff.src:callTalent(eff.src.T_FIRST_BLOOD, "getStamina")) end
+--	end,
 }
 
 newEffect{

@@ -99,7 +99,7 @@ newTalent{
 				local eff = target:hasEffect(target.EFF_PIN_DOWN)
 				chance = chance + eff.mark
 			end
-			if self.turn_procs.first_blood_ss then chance = chance * 2 end
+			if self.turn_procs.first_blood_shoot then chance = chance + 50 end
 			if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
 		end
 		if self.turn_procs.first_blood_shoot then
@@ -109,6 +109,7 @@ newTalent{
 				target:setEffect(target.EFF_CUT, 5, {power=life_diff * scale / 5, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
 			end
 		end
+		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
 	end,
 	action = function(self, t)
 		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "bow"))
@@ -178,17 +179,17 @@ newTalent{
 	tactical = { ATTACK = { weapon = 2 } },
 	getDamage = function(self, t)
 		local dam = self:combatTalentWeaponDamage(t, 1.0, 1.8)
-		if self:hasEffect(self.EFF_TAKING_AIM) then	
-			local eff = self:hasEffect(self.EFF_TAKING_AIM)
-			dam = dam + (dam * eff.power/100)
+		if self:hasEffect(self.EFF_CONCEALMENT) then	
+			local eff = self:hasEffect(self.EFF_CONCEALMENT)
+			if eff.dam > 0 then dam = dam + (dam * eff.dam/100) end
 		end
 		return dam
 	end,
 	getChance = function(self,t) 
 		local chance = 20 + math.floor(self:combatTalentScale(t, 2, 10))
-		if self:hasEffect(self.EFF_TAKING_AIM) then	
-			local eff = self:hasEffect(self.EFF_TAKING_AIM)
-			chance = chance + (eff.charges * 30)
+		if self:hasEffect(self.EFF_CONCEALMENT) then	
+			local eff = self:hasEffect(self.EFF_CONCEALMENT)
+			if eff.dam > 0 then chance = chance + 100 end
 		end
 		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
 		return math.min(100, chance)
@@ -212,7 +213,7 @@ newTalent{
 			local eff = target:hasEffect(target.EFF_PIN_DOWN)
 			chance = chance + eff.mark
 		end
-		if self.turn_procs.first_blood_ss then chance = chance * 2 end
+		if self.turn_procs.first_blood_ss then chance = chance + 50 end
 		if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
 		
 		if self.turn_procs.first_blood_ss then
@@ -222,8 +223,9 @@ newTalent{
 				target:setEffect(target.EFF_CUT, 5, {power=life_diff * scale / 5, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
 			end
 		end
-		
-		self:removeEffect(self.EFF_TAKING_AIM)
+		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
+		local eff = self:hasEffect(self.EFF_CONCEALMENT) 
+		if eff then eff.dam = 0 end
 	end,
 	action = function(self, t)
 		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
@@ -258,7 +260,7 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.1) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5)) end,
 	getMarkChance = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
-	getCritPower = function(self, t) return math.floor(self:combatTalentScale(t, 10, 25)) end,
+	getCritPower = function(self, t) return math.floor(self:combatTalentScale(t, 8, 20)) end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getChance = function(self,t) 
 		local chance = 20 + math.floor(self:combatTalentScale(t, 2, 10)) 
@@ -455,20 +457,27 @@ newTalent{
 	no_energy = "fake",
 	points = 5,
 	random_ego = "attack",
-	cooldown = 0,
-	require = techs_dex_req1,
+	cooldown = function(self, t) -- this makes it a bit less likely that a mob could lob chain headshots at you
+		if self.ai and self.ai == "party_member" then 
+			return 0
+		elseif self.ai then
+			return 3
+		else
+			return 3
+		end
+	end,	require = techs_dex_req1,
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
 	getDamage = function(self, t)
-		local dam = self:combatTalentWeaponDamage(t, 1.1, 2.3)
+		local dam = self:combatTalentWeaponDamage(t, 1.1, 2.4)
 --		if self:hasEffect(self.EFF_TAKING_AIM) then	
 --			local eff = self:hasEffect(self.EFF_TAKING_AIM)
 --			dam = dam + (dam * eff.power/100)
 --		end
 		return dam
 	end,
-	getApr = function(self, t) return self:getDex(100,true) end,
+	getApr = function(self, t) return self:getDex(40,true) end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)
 		target:removeEffect(target.EFF_MARKED)
@@ -497,7 +506,8 @@ newTalent{
 		local dam = t.getDamage(self,t)*100
 		local apr = t.getApr(self,t)
 		return ([[Fire a precise shot dealing %d%% weapon damage, with %d increased armor penetration and 100 increased accuracy. This shot will bypass other enemies between you and your target.
-Only usable against marked targets, and consumes the mark on hit.]]):
+Only usable against marked targets, and consumes the mark on hit.
+The armor penetration increases with your Dexterity.]]):
 		format(dam, apr)
 	end,
 }
@@ -581,7 +591,7 @@ newTalent{
 		
 		target:removeEffect(target.EFF_MARKED)
 		if self:knowTalent(self.T_BULLSEYE) then self:callTalent(self.T_BULLSEYE, "proc") end
-		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
+--		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
 		
 		game.target.forced = old_target_forced
 		return true
@@ -621,7 +631,7 @@ newTalent{
 		if target:hasEffect(target.EFF_MARKED) then 
 			target:removeEffect(target.EFF_MARKED) 
 			if self:knowTalent(self.T_BULLSEYE) then self:callTalent(self.T_BULLSEYE, "proc") end
-			if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
+--			if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
 		end
 		if not target.turn_procs.called_shot_silence then
 			target.turn_procs.called_shot_silence = true
@@ -681,9 +691,8 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = techs_dex_req4,
-	cooldown = 3,
-	getSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 15, 40))/100 end,
-	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
+	getSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 10, 35))/100 end,
+	getTalentCount = function(self, t) return math.floor(self:combatTalentLimit(t, 4, 1, 2.5)) end,
 	getCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
 	proc = function(self, t)
 		if not self:isTalentCoolingDown(t) then 
@@ -717,8 +726,7 @@ newTalent{
 		local speed = t.getSpeed(self,t)*100
 		local nb = t.getTalentCount(self,t)
 		local cd = t.getCooldown(self,t)
-		return ([[Each time you trigger a mark, you gain %d%% increased attack speed for 3 turns and the cooldown of %d random techniques are reduced by %d turns.
-This talent has a cooldown.]]):
+		return ([[Each time you consume a mark, you gain %d%% increased attack speed for 2 turns and the cooldown of %d random techniques are reduced by %d turns.]]):
 		format(speed, nb, cd)
 	end,
 }
