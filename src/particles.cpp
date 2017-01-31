@@ -366,16 +366,15 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						lx = ps->particles[p->trail].x;
 						ly = ps->particles[p->trail].y;
 						lsize = ps->particles[p->trail].size;
-						a = atan2(p->y - ly, p->x - lx) + M_PI_2;
-						printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,a*180/M_PI,p->x,p->y,p->size);
+						float angle = atan2(p->y - ly, p->x - lx) + M_PI_2;
+						float cangle = cos(angle);
+						float sangle = sin(angle);
+						// printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,angle*180/M_PI,p->x,p->y,p->size);
 
-						vertices[ps->batch_nb++] = particles_vertex({{lx + cos(a) * lsize / 2, ly + sin(a) * lsize / 2, 0, 1}, {0, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{lx - cos(a) * lsize / 2, ly - sin(a) * lsize / 2, 0, 1}, {1, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->x - cos(a) * p->size / 2, p->y - sin(a) * p->size / 2, 0, 1}, {1, 1}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->x + cos(a) * p->size / 2, p->y + sin(a) * p->size / 2, 0, 1}, {0, 1}, {r, g, b, a}});
-						for (int r = ps->batch_nb - 4; r < ps->batch_nb; r++) {
-							printf(" * %dx%d\n", (int)vertices[r].pos.x, (int)vertices[r].pos.y);
-						}
+						vertices[ps->batch_nb++] = particles_vertex({{lx + cangle * lsize / 2, ly + sangle * lsize / 2, 0, 1}, {0, 0}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{lx - cangle * lsize / 2, ly - sangle * lsize / 2, 0, 1}, {1, 0}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x - cangle * p->size / 2, p->y - sangle * p->size / 2, 0, 1}, {1, 1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x + cangle * p->size / 2, p->y + sangle * p->size / 2, 0, 1}, {0, 1}, {r, g, b, a}});
 					}
 				} else {
 					if (!p->trail)
@@ -505,8 +504,8 @@ static void particles_draw(particles_type *ps, mat4 model)
 	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)offsetof(particles_vertex, color));
 
 	// glDrawArrays(GL_TRIANGLES, 0, ps->batch_nb);
-	// glDrawElements(GL_TRIANGLES, ps->batch_nb * 6, GL_UNSIGNED_INT, (void*)0);
-	glDrawArrays(GL_QUADS, 0, ps->batch_nb);
+	glDrawElements(GL_TRIANGLES, ps->batch_nb * 6, GL_UNSIGNED_INT, (void*)0);
+	// glDrawArrays(GL_QUADS, 0, ps->batch_nb);
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
