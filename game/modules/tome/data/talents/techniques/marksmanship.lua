@@ -102,7 +102,7 @@ newTalent{
 	mode = "passive",
 	require = techs_dex_req2,
 	getBleed = function(self, t) return self:combatTalentScale(t, 0.3, 1.0) end,
-	getStamina = function(self, t) return self:combatTalentScale(t, 1.5, 4) end,
+	getStamina = function(self, t) return self:combatTalentScale(t, 1.5, 4.5) end,
 	info = function(self, t)
 		local bleed = t.getBleed(self,t)*100
 		local sta = t.getStamina(self,t)
