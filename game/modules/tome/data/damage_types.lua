@@ -3874,7 +3874,7 @@ newDamageType{
 			chance = rng.range(1, 2)
 		else chance = 1
 		end
-		if target and (target:canBe("poison") or rng.percent(dam.penetration)) then
+		if target and (target:canBe("poison") or rng.percent(dam.penetration or 0)) then
 			if chance == 1 then
 				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 2 then
