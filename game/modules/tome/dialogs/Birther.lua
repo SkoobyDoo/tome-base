@@ -188,7 +188,7 @@ end
 
 function _M:checkNew(fct)
 	local savename = self.c_name.text:gsub("[^a-zA-Z0-9_-.]", "_")
-	if fs.exists(("/save/%s/game.teag"):format(savename)) then
+	if fs.exists((savefile_pipe:getSaveFolder().."%s/game.teag"):format(savename)) then
 		Dialog:yesnoPopup("Overwrite character?", "There is already a character with this name, do you want to overwrite it?", function(ret)
 			if not ret then fct() end
 		end, "No", "Yes")

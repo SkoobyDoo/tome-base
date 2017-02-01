@@ -176,30 +176,16 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 	local allmounts = fs.getSearchPath(true)
 	fs.mount(engine.homepath..fs.getPathSeparator(), "/tmp/listsaves")
 
-	local steamsaves = {}
-	if util.steamCanCloud() then
-		local list = core.steam.listFilesEndingWith("game.teag")
-		for _, file in ipairs(list) do
-			local _, _, modname, char = file:find("^([^/]+)/save/([^/]+)/game%.teag$")
-			if modname then
-				steamsaves[modname] = steamsaves[modname] or {}
-				steamsaves[modname][char] = true
-			end
-		end
-	end
-
 	local mods = self:listModules(incompatible_module, moddir_filter)
 	for _, mod in ipairs(mods) do
 		local lss = {}
 		print("Listing saves for module", mod.short_name)
 		local oldwrite = fs.getWritePath()
 		self:setupWrite(mod, true)
-		for i, short_name in ipairs(fs.list("/tmp/listsaves/"..mod.short_name.."/save/")) do
-			local sdir = "/save/"..short_name
+		for i, short_name in ipairs(fs.list("/tmp/listsaves/"..mod.short_name..savefile_pipe:getSaveFolder())) do
+			local sdir = savefile_pipe:getSaveFolder()..short_name
 			local dir = "/tmp/listsaves/"..mod.short_name..sdir
-			if fs.exists(dir.."/game.teag") or (util.steamCanCloud() and core.steam.checkFile(sdir.."/game.teag")) then
-				if steamsaves[mod.short_name] then steamsaves[mod.short_name][short_name:lower()] = nil end
-				if util.steamCanCloud() then core.steam.readFile(sdir.."/desc.lua") end
+			if fs.exists(dir.."/game.teag") then
 				local def = self:loadSavefileDescription(dir)
 				if def then
 					if def.loadable and fs.exists(dir.."/cur.png") then
@@ -210,21 +196,6 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 				end
 			end
 		end
-		if steamsaves[mod.short_name] then for short_name, _ in pairs(steamsaves[mod.short_name]) do
-			local sdir = "/save/"..short_name
-			local dir = "/tmp/listsaves/"..mod.short_name..sdir
-			if core.steam.checkFile(sdir.."/game.teag") then
-				core.steam.readFile(sdir.."/desc.lua")
-				local def = self:loadSavefileDescription(dir)
-				if def then
-					if def.loadable and fs.exists(dir.."/cur.png") then
-						def.screenshot = core.display.loadImage(dir.."/cur.png")
-					end
-
-					table.insert(lss, def)
-				end
-			end
-		end end
 		fs.setWritePath(oldwrite)
 		mod.savefiles = lss
 
@@ -1120,8 +1091,8 @@ function _M:setupWrite(mod, nomount)
 	-- Create module directory
 	fs.setWritePath(engine.homepath)
 	fs.mkdir(mod.short_name)
-	fs.mkdir(mod.short_name.."/save")
-	if util.steamCanCloud() then core.steam.setFileNamespace(mod.short_name) end
+	fs.mkdir(mod.short_name.."/save/")
+	fs.mkdir(mod.short_name.."/save_steamcloud/")
 
 	-- Enter module directory
 	local base = engine.homepath .. fs.getPathSeparator() .. mod.short_name

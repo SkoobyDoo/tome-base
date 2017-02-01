@@ -42,8 +42,8 @@ _M.md5_types = {}
 -- @param coroutine if true the saving will yield sometimes to let other code run
 function _M:init(savefile, coroutine)
 	self.short_name = savefile:gsub("[^a-zA-Z0-9_-.]", "_"):lower()
-	self.save_dir = "/save/"..self.short_name.."/"
-	self.quickbirth_file = "/save/"..self.short_name..".quickbirth"
+	self.save_dir = savefile_pipe:getSaveFolder()..self.short_name.."/"
+	self.quickbirth_file = savefile_pipe:getSaveFolder()..self.short_name..".quickbirth"
 	self.load_dir = "/tmp/loadsave/"
 	print("Loading savefile ", self.save_dir)
 
@@ -92,18 +92,8 @@ end
 function _M:delete()
 	for i, f in ipairs(fs.list(self.save_dir)) do
 		fs.delete(self.save_dir..f)
-		if util.steamCanCloud() then core.steam.deleteFile(self.save_dir..f) end
 	end
 	fs.delete(self.save_dir)
-	if util.steamCanCloud() then
-		local namespace = core.steam.getFileNamespace()
-		local list = core.steam.listFilesStartingWith(namespace..self.save_dir)
-		core.steam.setFileNamespace("")
-		for i, file in ipairs(list) do
-			core.steam.deleteFile(file)
-		end
-		core.steam.setFileNamespace(namespace)
-	end
 end
 
 --- add to process
@@ -283,7 +273,6 @@ function _M:saveGame(game, no_dialog)
 	f:write(("cheat = %s\n"):format(game:isTainted() and "true" or "false"))
 	f:write(("description = %q\n"):format(desc.description))
 	f:close()
-	if util.steamCanCloud() then core.steam.writeFile(self.save_dir.."desc.lua") end
 
 	-- TODO: Replace this with saving quickhotkeys to the profile.
 	-- Add print_doable_table to utils.lua as table.print_doable?
@@ -474,7 +463,6 @@ end
 -- @return[1] "no savefile"
 -- @return[2] `World`
 function _M:loadWorld()
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadWorld())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -508,7 +496,6 @@ end
 -- @return[1] "no savefile"
 -- @return[2] size
 function _M:loadWorldSize()
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadWorld()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadWorld())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -532,7 +519,6 @@ end
 -- @return[2] `Game`
 -- @return[2] delay_fct
 function _M:loadGame()
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadGame())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -569,7 +555,6 @@ end
 -- @return[1] "no savefile"
 -- @return[2] size
 function _M:loadGameSize()
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadGame())
 	if not path or path == "" then return nil, "no savefile" end
 
@@ -592,7 +577,6 @@ end
 -- @return[1] false
 -- @return[2] `Zone`
 function _M:loadZone(zone)
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadZone(zone)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadZone(zone))
 	if not path or path == "" then return false end
 
@@ -636,7 +620,6 @@ end
 -- @return[1] false
 -- @return[2] `Level`
 function _M:loadLevel(zone, level)
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadLevel(zone, level)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadLevel(zone, level))
 	if not path or path == "" then return false end
 
@@ -677,7 +660,6 @@ end
 -- @return[1] false
 -- @return[2] `Entity`
 function _M:loadEntity(name)
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadEntity(name)) end
 	local path = fs.getRealPath(self.save_dir..self:nameLoadEntity(name))
 	if not path or path == "" then return false end
 
@@ -735,7 +717,6 @@ end
 --- Checks for existence
 -- @return true if exists
 function _M:check()
-	if util.steamCanCloud() then core.steam.readFile(self.save_dir..self:nameLoadGame()) end
 	return fs.exists(self.save_dir..self:nameLoadGame())
 end
 
