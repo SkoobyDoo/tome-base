@@ -86,7 +86,31 @@ newTalent{
 
 		local dx, dy
 		if self.player then -- player targeting
-			local tg2 = {type="beam", source_actor=self, selffire=false, range=move_dist, talent=t}
+			local l = target:lineFOV(self.x, self.y)
+			l:set_corner_block()
+			local lx, ly, is_corner_blocked = l:step(true)
+			local possible_x, possible_y = lx, ly
+			local pass_self = false
+			-- Check for terrain and friendly actors
+			while lx and ly and not is_corner_blocked and core.fov.distance(self.x, self.y, lx, ly) <= move_dist do
+				local actor = game.level.map(lx, ly, engine.Map.ACTOR)
+				if actor == self then
+					pass_self = true
+				elseif pass_self and game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") then
+					-- possible_x, possible_y = lx, ly
+					break
+				end
+				possible_x, possible_y = lx, ly
+				lx, ly = l:step(true)
+			end
+
+			if pass_self then
+				game.target.target.entity = nil
+				game.target.target.x = possible_x
+				game.target.target.y = possible_y
+			end
+
+			local tg2 = {type="beam", source_actor=self, selffire=false, range=move_dist, talent=t, no_start_scan=true, no_move_tooltip=true}
 			tg2.display_line_step = function(self, d) -- highlight permissible grids for the player
 				local t_range = core.fov.distance(self.target_type.start_x, self.target_type.start_y, d.lx, d.ly)
 				if t_range >= 1 and t_range <= tg2.range and not d.block and check_dest(d.lx, d.ly) then
