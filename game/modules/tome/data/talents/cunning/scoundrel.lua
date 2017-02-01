@@ -39,7 +39,7 @@ newTalent{
 			end
 		end		
 	end,
-	callbackOnArcheryAttack = function(self, t, target, hitted)
+	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam, talent)
 		if not (target and hitted and dam > 0) or self:reactionToward(target) >= 0 then return nil end
 		if rng.percent(t.getChance(self, t)) and target:canBe("cut") then
 			target:setEffect(target.EFF_CUT, 10, {src=self, power=(dam*.75 / 10)})
