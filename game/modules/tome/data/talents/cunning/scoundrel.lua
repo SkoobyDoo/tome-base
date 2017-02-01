@@ -103,13 +103,13 @@ newTalent{
 			target.turn_procs.scoundrel = true
 		end
 	end,
-	callbackOnArcheryAttack = function(self, t, target, hitted)
+	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam, talent)
 		if not (target and hitted and dam > 0) or self:reactionToward(target) >=0 then return nil end
 		target:setEffect(target.EFF_SCOUNDREL, 10, {src=self, power=t.getCritPenalty(self,t) })
 		if self:knowTalent(self.T_FUMBLE) then
-			local dam = self:callTalent(self.T_FUMBLE, "getDamage")
+			local ddam = self:callTalent(self.T_FUMBLE, "getDamage")
 			local stacks = self:callTalent(self.T_FUMBLE, "getStacks")
-			target:setEffect(target.EFF_FUMBLE, 10, {power=3, max_power = stacks*3, dam=dam, stacks=1, max_stacks=stacks })
+			target:setEffect(target.EFF_FUMBLE, 10, {power=3, max_power = stacks*3, dam=ddam, stacks=1, max_stacks=stacks })
 		end
 
 		if target.turn_procs.scoundrel or not rng.percent(t.getChance(self,t)) then return end
