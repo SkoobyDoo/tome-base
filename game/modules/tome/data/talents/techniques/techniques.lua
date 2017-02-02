@@ -41,7 +41,7 @@ newTalentType{ allow_random=true, type="technique/combat-techniques-active", nam
 newTalentType{ allow_random=true, type="technique/combat-techniques-passive", name = "combat veteran", description = "Generic combat oriented techniques." }
 newTalentType{ allow_random=true, type="technique/combat-training", name = "combat training", generic = true, description = "Teaches to use various armours, weapons and improves health." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="technique/magical-combat", name = "magical combat", description = "The blending together of magic and melee prowess." }
-newTalentType{ allow_random=true, type="technique/mobility", name = "mobility", generic = true, description = "Controlling your movements on the battlefields is the sure way to victory." }
+newTalentType{ allow_random=true, type="technique/mobility", name = "mobility", generic = true, description = "Training and techniques to improve mobility and evade your enemies.  On the battlefield, positioning is paramount." }
 newTalentType{ allow_random=true, type="technique/thuggery", name = "thuggery", generic = true, description = "Whatever wins the day, wins the day." }
 newTalentType{ allow_random=true, type="technique/assassination", name = "assassination", min_lev=10, description = "Bring death from the shadows." }
 newTalentType{ allow_random=true, type="technique/throwing-knives", name = "throwing knives", description = "Master the art of throwing knives to fight from a distance." }
