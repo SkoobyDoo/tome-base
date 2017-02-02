@@ -118,6 +118,7 @@ newEntity{
 	archery_ammo = "bow",
 	desc = [[Arrows are used with bows to pierce your foes to death.]],
 	randart_able = "/data/general/objects/random-artifacts/ammo.lua",
+	ego_bonus_mult = 0.5,
 	egos = "/data/general/objects/egos/ammo.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
 	resolvers.shooter_capacity(),
 }
