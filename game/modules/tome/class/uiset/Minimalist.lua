@@ -1349,7 +1349,7 @@ function _M:displayBuffs(scale, bx, by)
 
 		for eff_id, p in pairs(good_e) do
 			local e = player.tempeffect_def[eff_id]
-			self:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale, (e.status == "beneficial") or config.settings.cheat)
+			self:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale, (e.status == "beneficial" and not e.no_player_remove) or config.settings.cheat)
 			is_first = false
 			x, y = self:buffOrientStep(orient, bx, by, scale, x, y, hs, hs)
 		end
