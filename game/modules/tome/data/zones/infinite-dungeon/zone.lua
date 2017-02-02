@@ -132,7 +132,7 @@ return {
 			{	id_layout_name = "cavern",
 				desc = " cavern",
 				class = "engine.generator.map.Cavern",
-				zoom = math.random(10, 20),
+				zoom = math.random(12, 20),
 				min_floor = math.floor(rng.range(vx * vy * 0.4 / 2, vx * vy * 0.4)),
 			},
 			{	id_layout_name = "maze",
