@@ -86,7 +86,31 @@ newTalent{
 
 		local dx, dy
 		if self.player then -- player targeting
-			local tg2 = {type="beam", source_actor=self, selffire=false, range=move_dist, talent=t}
+			local l = target:lineFOV(self.x, self.y)
+			l:set_corner_block()
+			local lx, ly, is_corner_blocked = l:step(true)
+			local possible_x, possible_y = lx, ly
+			local pass_self = false
+			-- Check for terrain and friendly actors
+			while lx and ly and not is_corner_blocked and core.fov.distance(self.x, self.y, lx, ly) <= move_dist do
+				local actor = game.level.map(lx, ly, engine.Map.ACTOR)
+				if actor == self then
+					pass_self = true
+				elseif pass_self and game.level.map:checkEntity(lx, ly, engine.Map.TERRAIN, "block_move") then
+					-- possible_x, possible_y = lx, ly
+					break
+				end
+				possible_x, possible_y = lx, ly
+				lx, ly = l:step(true)
+			end
+
+			if pass_self then
+				game.target.target.entity = nil
+				game.target.target.x = possible_x
+				game.target.target.y = possible_y
+			end
+
+			local tg2 = {type="beam", source_actor=self, selffire=false, range=move_dist, talent=t, no_start_scan=true, no_move_tooltip=true}
 			tg2.display_line_step = function(self, d) -- highlight permissible grids for the player
 				local t_range = core.fov.distance(self.target_type.start_x, self.target_type.start_y, d.lx, d.ly)
 				if t_range >= 1 and t_range <= tg2.range and not d.block and check_dest(d.lx, d.ly) then
@@ -188,7 +212,7 @@ newTalent{
 	base_stamina = 25,
 	stamina = mobility_stamina,
 	no_energy = true,
-	getDur = function(self, t) return 5 end,
+	getDur = function(self, t) return 4 end,
 	getChanceDef = function(self, t)
 		if self.perfect_evasion then return 100, 0 end
 		return self:combatLimit(5*self:getTalentLevel(t) + self:getDex(50,true), 50, 10, 10, 37.5, 75),
@@ -264,12 +288,13 @@ newTalent {
 	points = 5,
 	require = techs_dex_req4,
 	sustain_stamina = 10,
+	cooldown = 10,
 	no_energy = true,
 	tactical = { DEFEND = 2 },
-	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
-	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "pin_immune", t.pinImmune(self, t))
-	end,
+--	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
+--	passives = function(self, t, p)
+--		self:talentTemporaryValue(p, "pin_immune", t.pinImmune(self, t))
+--	end,
 	on_pre_use = function(self, t, silent, fake)
 		if self:hasHeavyArmor() then
 			if not silent then game.logPlayer(self, "%s is not usable while wearing heavy armour.", t.name) end
@@ -278,11 +303,11 @@ newTalent {
 		return true
 	end,
 	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
-		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.78, 50) -- vs TL/def: 1/10 == ~12%, 1.3/10 == ~17%, 1.3/50 == ~27%, 6.5/50 == ~53%, 6.5/100 = ~59%
+		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.6))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.5, 50) -- vs TL/def: 1/10 == ~08%, 1.3/10 == ~10%, 1.3/50 == ~16%, 6.5/50 == ~32%, 6.5/100 = ~40%
 	end,
-	getStamina = function(self, t) return 20*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end, -- Stamina increases in proportion to talent-based effectiveness.  Stamina Efficiency increased with level through higher Defense (Automatic from the increased Dexterity required for higher talent levels)
+	getStamina = function(self, t) return 12*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end,
 	getLifeTrigger = function(self, t)
-		return self:combatTalentLimit(t, 10, 35, 20)
+		return self:combatTalentLimit(t, 10, 30, 15) -- Limit trigger > 10% life
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, state)
 		if dam > 0 and state and not (self:attr("encased_in_ice") or self:attr("invulnerable")) then
@@ -304,16 +329,17 @@ newTalent {
 			end
 			stam, stam_cost = self:getStamina(), stam_cost or t.getStamina(self, t)
 			local lt = t.getLifeTrigger(self, t)/100
-			local min_dam = self.max_life*0.05
-			if stam_cost == 0 or dam > min_dam and dam > self.life*lt then
+			if stam_cost == 0 or dam > self.max_life*lt then
 				--print(("[PROJECTOR: Trained Reactions] PASSED life/stam test for %s: %s %s damage (%s) (%0.1f/%0.1f stam) from %s (state:%s)"):format(self.name, dam, type, is_attk, stam_cost, stam, src.name, state)) -- debugging
 				self.turn_procs[t.id] = state
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
-				local reduce = t.getReduction(self, t)
-				if stam_cost > 0 then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, partially avoiding it!", is_attk and "an attack" or "damage") end
 
-				dam = dam*(1-reduce)
+				local reduce = t.getReduction(self, t)*dam
+				src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow!#LAST#.", is_attk and "an attack" or "damage")
+				dam = dam - reduce
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
+				local stam_txt = stam_cost > 0 and (" #ffcc80#to %d stam#LAST#"):format(stam_cost) or ""
+				game:delayedLogDamage(src, self, 0, ("%s(%d reacted%s)#LAST#"):format(DamageType:get(type).text_color or "#FIREBRICK#", reduce, stam_txt), false)
 				if not is_attk then self.turn_procs.gen_trained_reactions = true end
 				return {dam = dam}
 			end
@@ -327,16 +353,16 @@ newTalent {
 		return true
 	end,
 	info = function(self, t)
+--		local pin = t.pinImmune(self,t)
 		local stam = t.getStamina(self, t)
 		local trigger = t.getLifeTrigger(self, t)
 		local reduce = t.getReduction(self, t, true)*100
 		return ([[You have trained to be very light on your feet and have conditioned your reflexes to react faster than thought to damage you take.
-		You permanently gain %d%% pinning immunity.
-		While this talent is active, you instantly react to any direct damage (not from status effects, etc.) that would hit you for at least %d%% of your current life or %d%% of your maximum life (whichever is greater).
+		While this talent is active, you instantly react to any direct damage (not from status effects, etc.) that would hit you for at least %d%% of your maximum life.
 		This requires %0.1f stamina and reduces the damage by %d%%.
 		Your reactions are too slow for this if you are wearing heavy armour.
 		The damage reduction improves with your Defense.]])
-		:format(t.pinImmune(self, t)*100, trigger, 5, stam, reduce)
+		:format(trigger, stam, reduce)
 	end,
 }
 

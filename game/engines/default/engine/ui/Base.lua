@@ -54,10 +54,12 @@ _M.ui_conf = {}
 
 function _M:loadUIDefinitions(file)
 	local f, err = loadfile(file)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = self.ui_conf
 	setfenv(f, self.ui_conf)
 	local ok, err = pcall(f)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = nil
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
 end
 
 function _M:uiExists(ui)

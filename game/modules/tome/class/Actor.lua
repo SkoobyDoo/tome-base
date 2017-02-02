@@ -395,9 +395,8 @@ function _M:getSpeed(speed_type)
 
 		if not speed then speed = self:combatSpeed() end
 	elseif speed_type == "throwing" then
-		   local turn = 0
-		   if self:knowTalent(self.T_QUICKDRAW) then turn = self:callTalent("T_QUICKDRAW", "getSpeed") end
-		   speed = 1 * self:combatSpeed() * (100 - turn) / 100
+		speed = 1
+		if self:knowTalent(self.T_QUICKDRAW) then speed = speed/(1 + self:callTalent("T_QUICKDRAW", "getSpeed")) end
 	elseif speed_type == "spell" then speed = self:combatSpellSpeed()
 	elseif speed_type == "summon" then speed = self:combatSummonSpeed()
 	elseif speed_type == "mind" then speed = self:combatMindSpeed()
@@ -912,8 +911,7 @@ function _M:defineDisplayCallback()
 			e:checkDisplay()
 			if e.ps:isAlive() then
 				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
-				-- e.ps:toScreen(x/2,y/2, true, w / (game.level and game.level.map.tile_w or w))
-				e.ps:toScreen(x + w / 2, y + dy + h / 2, true, w / (game.level and game.level.map.tile_w or w))
+				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
 			else self:removeParticles(e)
 			end
 		end
@@ -1687,7 +1685,7 @@ end
 
 --- Regenerate life, call it from your actor class act() method
 function _M:regenLife()
-	if self.life_regen and not self:attr("no_life_regen") then
+	if self.life_regen then
 		local regen = self.life_regen * util.bound((self.healing_factor or 1), 0, 2.5)
 
 		-- Solipsism
@@ -1702,11 +1700,13 @@ function _M:regenLife()
 			end
 		end
 
-		self.life = util.bound(self.life + regen, self.die_at, self.max_life)
+		if not self:attr("no_life_regen") then
+			self.life = util.bound(self.life + regen, self.die_at, self.max_life)
 
-		-- Blood Lock
-		if self:attr("blood_lock") then
-			self.life = util.bound(self.life, self.die_at, self:attr("blood_lock"))
+			-- Blood Lock
+			if self:attr("blood_lock") then
+				self.life = util.bound(self.life, self.die_at, self:attr("blood_lock"))
+			end
 		end
 	end
 end
@@ -1725,10 +1725,20 @@ end
 
 --- Called before healing
 function _M:onHeal(value, src)
+	value = value * util.bound((self.healing_factor or 1), 0, 2.5)
+
+	-- Solipsism healing
+	local psi_heal = 0
+	if self:knowTalent(self.T_SOLIPSISM) then
+		local t = self:getTalentFromId(self.T_SOLIPSISM)
+		local ratio = t.getConversionRatio(self, t)
+		psi_heal = value * ratio
+		self:incPsi(psi_heal)
+		value = value - psi_heal
+	end
+
 	if self:hasEffect(self.EFF_UNSTOPPABLE) then return 0 end
 	if self:attr("no_healing") then return 0 end
-
-	value = value * util.bound((self.healing_factor or 1), 0, 2.5)
 
 	--if self:attr("stunned") then value = value / 2 end
 
@@ -1754,16 +1764,6 @@ function _M:onHeal(value, src)
 
 	if self:attr("fungal_growth") and self:attr("allow_on_heal") and value > 0 and not self:hasEffect(self.EFF_REGENERATION) then
 		self:setEffect(self.EFF_REGENERATION, 6, {power=(value * self.fungal_growth / 100) / 6, no_wild_growth=true})
-	end
-
-	-- Solipsism healing
-	local psi_heal = 0
-	if self:knowTalent(self.T_SOLIPSISM) then
-		local t = self:getTalentFromId(self.T_SOLIPSISM)
-		local ratio = t.getConversionRatio(self, t)
-		psi_heal = value * ratio
-		self:incPsi(psi_heal)
-		value = value - psi_heal
 	end
 
 	-- Must be last!
@@ -6024,6 +6024,7 @@ local save_for_effects = {
 	mental = "combatMentalResist",
 	physical = "combatPhysicalResist",
 }
+_M.save_for_effects = save_for_effects
 
 --- Adjust temporary effects
 function _M:on_set_temporary_effect(eff_id, e, p)
@@ -6237,28 +6238,31 @@ function _M:addedToLevel(level, x, y)
 
 	self:updateModdableTile()
 	self:recomputeGlobalSpeed()
-	if self.make_escort then
-		for _, filter in ipairs(self.make_escort) do
-			for i = 1, filter.number do
-				if not filter.chance or rng.percent(filter.chance) then
-					-- Find space
-					local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
-					if not x then break end
+	if self.make_escort then -- add escorts last, after all other actors have been placed on the level
+		game:onTickEnd(function()
+			for _, filter in ipairs(self.make_escort) do
+				for i = 1, filter.number do
+					if not filter.chance or rng.percent(filter.chance) then
+					
+						-- Find space
+						local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
+						if not x then break end
 
-					-- Find an actor with that filter
-					local m
-					if filter.define_as then m = game.zone:makeEntityByName(game.level, "actor", filter.define_as, true)
-					else m = game.zone:makeEntity(game.level, "actor", filter, nil, true) end
-					if m and m:canMove(x, y) then
-						if filter.no_subescort then m.make_escort = nil end
-						if self._empty_drops_escort then m:emptyDrops() end
-						game.zone:addEntity(game.level, m, "actor", x, y)
-						if filter.post then filter.post(self, m) end
-					elseif m then m:removed() end
+						-- Find an actor with that filter
+						local m
+						if filter.define_as then m = game.zone:makeEntityByName(game.level, "actor", filter.define_as, true)
+						else m = game.zone:makeEntity(game.level, "actor", filter, nil, true) end
+						if m and m:canMove(x, y) then
+							if filter.no_subescort then m.make_escort = nil end
+							if self._empty_drops_escort then m:emptyDrops() end
+							game.zone:addEntity(game.level, m, "actor", x, y)
+							if filter.post then filter.post(self, m) end
+						elseif m then m:removed() end
+					end
 				end
 			end
-		end
-		self.make_escort = nil
+			self.make_escort = nil
+		end, self.uid)
 	end
 
 	if game.level.data.zero_gravity then self:setEffect(self.EFF_ZERO_GRAVITY, 1, {})

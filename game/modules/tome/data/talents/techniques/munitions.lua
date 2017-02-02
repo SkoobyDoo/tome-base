@@ -83,9 +83,9 @@ newTalent{
 	getIncendiaryDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.1, 0.4) end,
 	getIncendiaryRadius = function(self, t) if self:getTalentLevel(t)>=3 then return 2 else return 1 end end,
 	getPoisonDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 20, 180) end,
-	getNumb = function(self, t) return 5 + self:combatTalentLimit(t, 30, 5, 15) end,
-	getArmorSaveReduction = function(self, t) return 5 + self:combatTalentPhysicalDamage(t, 5, 30) end,
-	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 15, 35, true) end,
+	getNumb = function(self, t) return 5 + self:combatTalentLimit(t, 25, 5, 15) end,
+	getArmorSaveReduction = function(self, t) return self:combatTalentLimit(t, 30, 5, 25, 0.75) end,
+	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 35, 10, 25, true) end,
 	on_learn = function(self, t)
 		local lev = self:getTalentLevelRaw(t)
 		if lev == 1 then
@@ -336,15 +336,15 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.5) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3.3, 5.5)) end,
-	getSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
+	getSlow = function(self, t) return math.floor(self:combatTalentLimit(t, 40, 10, 25)) end,	
 	getFireResist = function(self, t) return math.floor(self:combatTalentScale(t, 10, 40)) end,	
 	getPoisonDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 15, 100) end,
-	getPoisonFailure = function(self, t) return math.floor(self:combatTalentScale(t, 10, 30)) end,
-	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	getPoisonFailure = function(self, t) return math.floor(self:combatTalentScale(t, 10, 20)) end,
+	getRemoveCount = function(self, t) return self:combatTalentLimit(t, 4, 1, 2.5) end,
 	archery_onreach = function(self, t, x, y)
 		local tg = self:getTalentTarget(t)
 		if self:isTalentActive(self.T_INCENDIARY_AMMUNITION) then
-			self:project(tg, x, y, DamageType.INCENDIARY_SMOKE, {dam=t.getSightLoss(self,t), dur=t.getDuration(self,t), fire=t.getFireResist(self,t)})
+			self:project(tg, x, y, DamageType.PITCH, {dam=t.getSlow(self,t), dur=t.getDuration(self,t), fire=t.getFireResist(self,t)})
 		end
 		if self:isTalentActive(self.T_VENOMOUS_AMMUNITION) then
 				game.level.map:addEffect(self,
@@ -408,7 +408,7 @@ newTalent{
 		if not targets then return end
 		local dam = t.getDamage(self,t)
 		if self:isTalentActive(self.T_PIERCING_AMMUNITION) then
-			self:archeryShoot(targets, t, tg, {mult=dam*1.5, damtype=DamageType.PHYSICAL})
+			self:archeryShoot(targets, t, tg, {mult=dam, damtype=DamageType.PHYSICAL})
 		elseif self:isTalentActive(self.T_VENOMOUS_AMMUNITION) then
 			self:archeryShoot(targets, t, nil, {mult=dam, damtype=DamageType.NATURE})
 		elseif self:isTalentActive(self.T_INCENDIARY_AMMUNITION) then
@@ -420,17 +420,17 @@ newTalent{
 		local dam = t.getDamage(self,t)*100
 		local radius = self:getTalentRadius(t)
 		local dur = t.getDuration(self,t)
-		local sight = t.getSightLoss(self,t)
+		local slow = t.getSlow(self,t)
 		local fire = t.getFireResist(self,t)
 		local poison = t.getPoisonDamage(self,t)
 		local fail = t.getPoisonFailure(self,t)
 		local nb = t.getRemoveCount(self,t)
 		return ([[Fires a special shot based on your currently loaded ammo:
-Incendiary - Fire a shot that deals %d%% weapon damage as fire and covers targets in radius %d in incendiary smoke for %d turns, reducing their sight range by %d and increasing fire damage taken by %d%%.
+Incendiary - Fire a shot that deals %d%% weapon damage as fire and covers targets in radius %d in sticky pitch for %d turns, reducing global speed by %d%% and increasing fire damage taken by %d%%.
 Venomous - Fire a shot that deals %d%% weapon damage as nature and explodes into a radius %d cloud of crippling poison for %d turns, dealing %0.2f nature damage each turn and giving affected targets a %d%% chance to fail talent usage.
 Piercing - Fire a shot that explodes into a radius %d burst of shredding shrapnel, dealing %d%% weapon damage as physical and removing %d beneficial physical effects or sustains.
 The poison damage dealt increases with your Physical Power, and status chance increases with your Accuracy.]]):
-		format(dam, radius, dur, sight, fire, dam, radius, dur, damDesc(self, DamageType.NATURE, poison), fail, radius, dam*1.5, nb)
+		format(dam, radius, dur, slow, fire, dam, radius, dur, damDesc(self, DamageType.NATURE, poison), fail, radius, dam, nb)
 	end,
 }
 
@@ -439,12 +439,12 @@ newTalent{
 	type = {"technique/munitions", 3},
 	mode = "passive",
 	points = 5,
-	cooldown = 6,
+	cooldown = 8,
 	require = techs_dex_req_high3,
 	fixed_cooldown = true,
 	getFireDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 10, 100) end,
 	getPoisonDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 20, 240) end,
-	getResistPenalty = function(self, t) return math.floor(self:combatTalentScale(t, 10, 25)) end,
+	getResistPenalty = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 5, 20)) end,
 	info = function(self, t)
 		local fire = t.getFireDamage(self,t)
 		local poison = t.getPoisonDamage(self,t)
@@ -468,9 +468,9 @@ newTalent{
 	getPoisonDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.1, 0.4) end,
 	getPoisonRadius = function(self, t) if self:getTalentLevel(t)>=3 then return 2 else return 1 end end,
 	getPhysicalDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 20, 180) end,
-	getNumb = function(self, t) return 5 + self:combatTalentLimit(t, 30, 5, 15) end,
-	getArmorSaveReduction = function(self, t) return 5 + self:combatTalentPhysicalDamage(t, 5, 30) end,
-	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 15, 35, true) end,
+	getNumb = function(self, t) return 5 + self:combatTalentLimit(t, 25, 5, 15) end,
+	getArmorSaveReduction = function(self, t) return self:combatTalentLimit(t, 30, 5, 25, 0.75) end,
+	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 35, 10, 25, true) end,
 	info = function(self, t)
 		local poison = t.getPoisonDamage(self,t)*100
 		local radius = t.getPoisonRadius(self,t)

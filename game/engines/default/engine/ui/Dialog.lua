@@ -380,12 +380,14 @@ function _M:init(title, w, h, x, y, alpha, font, showup, skin)
 	self.frame.oy2 = self.frame.oy2 or conf.frame_oy2
 
 	if self.frame.dialog_h_middles then
-		self.frame.b8 = "ui/dialogframe_8_middle.png"
-		self.frame.b8l = "ui/dialogframe_8_left.png"
-		self.frame.b8r = "ui/dialogframe_8_right.png"
-		self.frame.b2 = "ui/dialogframe_2_middle.png"
-		self.frame.b2l = "ui/dialogframe_2_left.png"
-		self.frame.b2r = "ui/dialogframe_2_right.png"
+		local t = type(self.frame.dialog_h_middles) == "table" and table.clone(self.frame.dialog_h_middles) or {}
+		table.merge(t, self.dialog_h_middles_alter or {})
+		self.frame.b8 = t.b8 or "ui/dialogframe_8_middle.png"
+		self.frame.b8l = t.b8l or "ui/dialogframe_8_left.png"
+		self.frame.b8r = t.b8r or "ui/dialogframe_8_right.png"
+		self.frame.b2 = t.b2 or "ui/dialogframe_2_middle.png"
+		self.frame.b2l = t.b2l or "ui/dialogframe_2_left.png"
+		self.frame.b2r = t.b2r or "ui/dialogframe_2_right.png"
 	end
 
 	self.particles = {}

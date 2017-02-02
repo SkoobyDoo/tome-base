@@ -107,7 +107,7 @@ newEntity{
 	cost = 15,
 
 	wielder = {
---		talent_cd_reduction={[Talents.T_INVOKE_TENTACLE]=-5},
+		talent_cd_reduction={[Talents.T_INVOKE_TENTACLE]=-5},
 		learn_talent = {[Talents.T_INVOKE_TENTACLE] = 1},
 	},
 }

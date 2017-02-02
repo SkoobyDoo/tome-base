@@ -588,7 +588,7 @@ newEffect{
 newEffect{
 	name = "SEVER_LIFELINE", image = "talents/sever_lifeline.png",
 	desc = "Sever Lifeline",
-	long_desc = function(self, eff) return ("The target's lifeline is being cut. When the effect ends %0.2f temporal damage will hit the target."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target's lifeline is being cut. When the effect ends %d temporal damage will hit the target."):format(eff.power) end,
 	type = "other",
 	subtype = { time=true },
 	status = "detrimental",
@@ -3208,9 +3208,9 @@ newEffect{
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle)
 	end,
-	on_die = function(self,eff)
-		if eff.src and eff.src:knowTalent(eff.src.T_FIRST_BLOOD) then eff.src:incStamina(eff.src:callTalent(eff.src.T_FIRST_BLOOD, "getStamina")) end
-	end,
+--	on_die = function(self,eff)
+--		if eff.src and eff.src:knowTalent(eff.src.T_FIRST_BLOOD) then eff.src:incStamina(eff.src:callTalent(eff.src.T_FIRST_BLOOD, "getStamina")) end
+--	end,
 }
 
 newEffect{

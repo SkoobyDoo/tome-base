@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 -- Quest for Maze, Sandworm & Old Forest
 name = "Into the darkness"
 desc = function(self, who)

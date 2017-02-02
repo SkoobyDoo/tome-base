@@ -211,6 +211,9 @@ end
 function _M:onEnterLevelEnd(zone, level)
 	if level._player_enter_scatter then return end
 	level._player_enter_scatter = true
+
+	if level.data.generator and level.data.generator.map and level.data.generator.map.class == "engine.generator.map.Static" and not level.data.static_force_scatter then return end
+
 	self:project({type="ball", radius=5}, self.x, self.y, function(px, py)
 		local a = level.map(px, py, Map.ACTOR)
 		if a and self:reactionToward(a) < 0 then

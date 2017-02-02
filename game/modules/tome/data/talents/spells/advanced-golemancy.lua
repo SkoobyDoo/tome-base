@@ -30,6 +30,7 @@ newTalent{
 	mana = 25,
 	cooldown = 12,
 	tactical = { HEAL = 2 },
+	cant_steal = true,
 	is_heal = true,
 	getPower = function(self, t) return 70 + self:combatTalentSpellDamage(t, 15, 450) end,
 	action = function(self, t)
@@ -79,6 +80,7 @@ newTalent{
 	require = spells_req_high3,
 	points = 5,
 	mana = 20,
+	cant_steal = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 24, 20)) end, -- Limit to > 0
 	tactical = { DEFEND = 1, ATTACK=1 },
 	getPower = function(self, t) return (60 + self:combatTalentSpellDamage(t, 15, 450)) / 7, 7, self:combatTalentLimit(t, 100, 27, 55) end, --Limit life gain < 100%
@@ -130,6 +132,7 @@ newTalent{
 	require = spells_req_high4,
 	mode = "passive",
 	points = 5,
+	cant_steal = true,
 	no_unlearn_last = true,
 	on_learn = function(self, t)
 		if not self.alchemy_golem then return end -- Safety net

@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 name = "Important news"
 desc = function(self, who)
 	local desc = {}

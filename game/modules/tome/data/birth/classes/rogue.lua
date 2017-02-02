@@ -191,7 +191,7 @@ newBirthDescriptor{
 	talents = {
 		[ActorTalents.T_DIRTY_FIGHTING] = 1,
 		[ActorTalents.T_SKULLCRACKER] = 1,
-		[ActorTalents.T_HACK_N_BACK] = 1,
+		[ActorTalents.T_VITALITY] = 1,
 		[ActorTalents.T_DUAL_STRIKE] = 1,
 		[ActorTalents.T_ARMOUR_TRAINING] = 1,
 	},
@@ -240,7 +240,7 @@ newBirthDescriptor{
 		["cunning/poisons"]={false, 0.2, "rogue_poisons"},
 	},
 	talents = {
-		[ActorTalents.T_SKIRMISHER_VAULT] = 1,
+		[ActorTalents.T_DISENGAGE] = 1,
 		[ActorTalents.T_SHOOT] = 1,
 		[ActorTalents.T_SKIRMISHER_KNEECAPPER] = 1,
 		[ActorTalents.T_SKIRMISHER_SLING_SUPREMACY] = 1,

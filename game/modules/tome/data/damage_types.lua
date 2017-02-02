@@ -1399,7 +1399,7 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			if target:canBe("blind") then
-				target:setEffect(target.EFF_DIM_VISION, 7, {sight=dam, apply_power=src:combatAttack()})
+				target:setEffect(target.EFF_DIM_VISION, 5, {sight=dam, apply_power=src:combatAttack()})
 			else
 				game.logSeen(target, "%s resists!", target.name:capitalize())
 			end
@@ -3874,7 +3874,7 @@ newDamageType{
 			chance = rng.range(1, 2)
 		else chance = 1
 		end
-		if target and (target:canBe("poison") or rng.percent(dam.penetration)) then
+		if target and (target:canBe("poison") or rng.percent(dam.penetration or 0)) then
 			if chance == 1 then
 				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 			elseif chance == 2 then
@@ -4038,14 +4038,14 @@ newDamageType{
 }
 
 newDamageType{
-	name = "incendiary smoke", type = "INCENDIARY_SMOKE",
+	name = "sticky pitch", type = "PITCH",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			if target:canBe("blind") then
-				target:setEffect(target.EFF_INCENDIARY_SMOKE, dam.dur, {sight=dam.dam, resist=dam.fire, apply_power=src:combatAttack()})
+			if target:canBe("slow") then
+				target:setEffect(target.EFF_STICKY_PITCH, dam.dur, {slow=dam.dam/100, resist=dam.fire, apply_power=src:combatAttack()})
 			else
 				game.logSeen(target, "%s resists!", target.name:capitalize())
 			end
@@ -4064,6 +4064,19 @@ newDamageType{
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
 			target:setEffect(target.EFF_SUNDER_ARMOUR, dam.dur, {src=dam.self, power=dam.power})
+		end
+	end,
+}
+
+-- Dim vision+confuse
+newDamageType{
+	name = "shadow smoke", type = "SHADOW_SMOKE",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target then
+			target:setEffect(target.EFF_SHADOW_SMOKE, 5, {sight=dam, apply_power=src:combatAttack()})
 		end
 	end,
 }
