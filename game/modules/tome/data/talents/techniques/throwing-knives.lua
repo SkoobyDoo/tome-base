@@ -24,7 +24,7 @@ local Map = require "engine.Map"
 local function knives(self)
 	local combat = {
 		talented = "knife",
-		sound = {"actions/knife_throw", vol=1}, sound_miss = {"actions/knife_throw", pitch=0.4, vol=1},
+		sound = {"actions/melee_hit_squish", pitch=1.2, vol=1.2}, sound_miss = {"actions/melee_miss", pitch=1, vol=1.2},
 
 		damrange = 1.4,
 		physspeed = 1,
@@ -64,6 +64,7 @@ local function throw(self, range, dam, x, y, dtype, special, fok)
 	if not eff and not fok then return nil end
 	self.turn_procs.quickdraw = true
 	local tg = {speed = 10, type="bolt", range=range, selffire=false, display={display='', particle="arrow", particle_args={tile="particles_images/rogue_throwing_knife"} }}
+	game:playSoundNear(self, {"actions/knife_throw", vol=0.8})
 	local proj = self:projectile(tg, x, y, function(px, py, tg, self)
 		local target = game.level.map(px, py, engine.Map.ACTOR)
 		if target and target ~= self then
@@ -292,7 +293,7 @@ newTalent{
 	sustain_stamina = 30,
 	tactical = { BUFF = 2 },
 	range = 7,
-	getSpeed = function(self, t) return self:combatTalentLimit(t, 50, 10, 35) end,
+	getSpeed = function(self, t) return self:combatTalentLimit(t, 1, 0.10, 0.35) end, -- Limit < +100% attack speed
 	getChance = function(self, t) return self:combatTalentLimit(t, 100, 8, 25) end,
 	activate = function(self, t)
 		local ret = {
@@ -303,31 +304,29 @@ newTalent{
 		return true
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if not hitted or core.fov.distance(self.x, self.y, target.x, target.y) > 1 or not rng.percent(t.getChance(self,t)) then return nil end
-		
-		local tg = {type="ball", range=0, radius=7, friendlyfire=false }
-		local tgts = {}
+		if not hitted or self.turn_procs.quickdraw or core.fov.distance(self.x, self.y, target.x, target.y) > 1 or not rng.percent(t.getChance(self,t)) then return nil end
 		
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-
-		if hitted and not self.turn_procs.quickdraw and eff then
-			self:project(tg, self.x, self.y, function(px, py, tg, self)	
-				local target = game.level.map(px, py, Map.ACTOR)	
-				if target and target ~= self then	
-					tgts[#tgts+1] = target
-				end	
-			end)	
-		end
+		if not eff then return end
+		
+		local tg = {type="ball", range=0, radius=7, friendlyfire=false, selffire=false }
+		local tgts = {}
+		
+		self:project(tg, self.x, self.y, function(px, py, tg, self)	
+			local target = game.level.map(px, py, Map.ACTOR)	
+			if target and self:canSee(target) then
+				tgts[#tgts+1] = target
+			end	
+		end)
 		
 		if #tgts <= 0 then return nil end
 		local a, id = rng.table(tgts)
 		local proj = throw(self, self:getTalentRange(t), 1, a.x, a.y, nil, nil, nil)
 		proj.name = "Quickdraw Knife"
 		self.turn_procs.quickdraw = true
-
 	end,
 	info = function(self, t)
-		local speed = t.getSpeed(self, t)
+		local speed = t.getSpeed(self, t)*100
 		local chance = t.getChance(self, t)
 		return ([[You can throw knives with lightning speed, increasing your attack speed with them by %d%% and giving you a %d%% chance when striking a target in melee to throw a knife at a random foe within 7 tiles for 100%% damage. 
 		This bonus attack can only trigger once per turn, and does not trigger from throwing knife attacks.]]):

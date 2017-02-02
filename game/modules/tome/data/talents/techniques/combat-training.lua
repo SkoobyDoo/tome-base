@@ -92,7 +92,7 @@ newTalent{
 		if self:knowTalent(self.T_STEALTH) then
 			classrestriction = "(Note that wearing mail or plate armour will interfere with stealth.)"
 		end
-		return ([[You become better at using your armour to deflect blows and protect your vital areas. Increases Armour value by %d, Armour hardiness by %d%%, and reduces chance to be critically hit by %d%% with your current body armour.
+		return ([[You become better at using your armour to deflect blows and protect your vital areas. Increases Armour value by %d, Armour hardiness by %d%%, and reduces the chance melee or ranged attacks critically hit you by %d%% with your current body armour.
 		(This talent only provides bonuses for heavy mail or massive plate armour.)
 		At level 1, it allows you to wear heavy mail armour, gauntlets, helms, and heavy boots.
 		At level 2, it allows you to wear shields.

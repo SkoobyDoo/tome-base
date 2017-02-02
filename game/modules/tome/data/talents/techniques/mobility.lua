@@ -334,11 +334,12 @@ newTalent {
 				self.turn_procs[t.id] = state
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
 
-				local reduce = t.getReduction(self, t)
-				local newdam = dam*(1-reduce)
-				src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow by #ORCHID#" .. math.ceil(dam-newdam) .. "#LAST#.", is_attk and "an attack" or "damage")
-				dam = newdam
+				local reduce = t.getReduction(self, t)*dam
+				src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow!#LAST#.", is_attk and "an attack" or "damage")
+				dam = dam - reduce
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
+				local stam_txt = stam_cost > 0 and (" #ffcc80#to %d stam#LAST#"):format(stam_cost) or ""
+				game:delayedLogDamage(src, self, 0, ("%s(%d reacted%s)#LAST#"):format(DamageType:get(type).text_color or "#FIREBRICK#", reduce, stam_txt), false)
 				if not is_attk then self.turn_procs.gen_trained_reactions = true end
 				return {dam = dam}
 			end
