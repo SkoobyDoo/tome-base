@@ -299,14 +299,26 @@ end
 
 -- Use the appropriate amount of stamina. Return false if we don't have enough.
 use_stamina = function(self, cost)
-  cost = cost * (1 + self:combatFatigue() * 0.01)
-  local available = self:getStamina()
-  if self:hasEffect("EFF_ADRENALINE_SURGE") then
-	  available = available + self.life
-  end
-  if cost > available then return end
-  self:incStamina(-cost)
-  return true
+	cost = cost * (1 + self:combatFatigue() * 0.01)
+	local available = self:getStamina()
+	if self:hasEffect("EFF_ADRENALINE_SURGE") then
+		available = available + self.life
+	end
+	if cost > available then return end
+	self:incStamina(-cost)
+	return true
+end
+
+venomous_throw_check = function(self)
+	if not self:knowTalent(self.T_VENOMOUS_THROW) then
+		if self:knowTalent(self.T_VENOMOUS_STRIKE) and self:knowTalent(self.T_THROWING_KNIVES) then
+			self:learnTalent(self.T_VENOMOUS_THROW, true, nil, {no_unlearn=true})
+		end
+	else
+		if not self:knowTalent(self.T_VENOMOUS_STRIKE) or not self:knowTalent(self.T_THROWING_KNIVES) then
+			self:unlearnTalent(self.T_VENOMOUS_THROW)
+		end
+	end
 end
 
 load("/data/talents/techniques/2hweapon.lua")

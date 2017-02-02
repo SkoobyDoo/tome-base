@@ -104,16 +104,12 @@ newTalent{
 		level = function(level) return 0 + (level-1) * 8  end,
 	},
 	on_learn = function(self, t)
-		if self:knowTalent(self.T_VENOMOUS_STRIKE) and not self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:learnTalent(self.T_VENOMOUS_THROW, true, nil, {no_unlearn=true})
-		end
+		venomous_throw_check(self)
 		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
 		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=max, max_stacks=max })
 	end,
 	on_unlearn = function(self, t)
-		if self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:unlearnTalent(self.T_VENOMOUS_THROW)
-		end
+		venomous_throw_check(self)
 		self:removeEffect(self.EFF_THROWING_KNIVES)
 	end,
 	speed = "throwing",

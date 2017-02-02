@@ -198,16 +198,8 @@ newTalent{
 	stamina = 14,
 	require = cuns_req4,
 	requires_target = true,
-	on_learn = function(self, t)
-		if self:knowTalent(self.T_THROWING_KNIVES) and not self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:learnTalent(self.T_VENOMOUS_THROW, true, nil, {no_unlearn=true})
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:unlearnTalent(self.T_VENOMOUS_THROW)
-		end
-	end,
+	on_learn = venomous_throw_check,
+	on_unlearn = venomous_throw_check,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.1) end,
 	getSecondaryDamage = function (self, t) return self:combatTalentStatDamage(t, "cun", 50, 550) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4, "log")) end,
