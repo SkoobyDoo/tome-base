@@ -73,3 +73,13 @@ end
 function _M:onFocusChange(v)
 	self.frame.container:tween(8, "a", nil, v and 1 or 0.5)
 end
+
+function _M:moveSel(i, j)
+	if i == -1 then
+		self.tree:setSel(true)
+	elseif i == 1 then
+		if self.tree.next_line then
+			self.tree.next_line:setSel(true)
+		end
+	end
+end

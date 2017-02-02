@@ -141,7 +141,7 @@ DORPhysic *DisplayObject::getPhysic() {
 }
 
 void DisplayObject::shown(bool v) {
-	// if (visible != v) setSortingChanged();
+	if (visible == v) return;
 	visible = v;
 	setChanged(true);
 }
