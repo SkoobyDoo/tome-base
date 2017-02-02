@@ -35,6 +35,7 @@ newEntity{
 	proj_image = resolvers.image_material("arrow", "wood"),
 	desc = [[Longbows are used to shoot arrows at your foes.]],
 	randart_able = "/data/general/objects/random-artifacts/ranged.lua",
+	ego_bonus_mult = 0.5,
 	egos = "/data/general/objects/egos/bow.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
 }
 
