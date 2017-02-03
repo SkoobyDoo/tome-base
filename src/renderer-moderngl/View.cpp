@@ -102,12 +102,12 @@ mat4 View::get() {
 		glm::vec4 camera_point = glm::vec4(0, 0, 0, 1);
 		glm::vec4 origin_point = glm::vec4(0, 0, 0, 1);
 
-		recomputematrix camm = camera_do->computeParentCompositeMatrix(NULL, {glm::mat4(), glm::vec4(1, 1, 1, 1), true});
-		recomputematrix orim = origin_do->computeParentCompositeMatrix(NULL, {glm::mat4(), glm::vec4(1, 1, 1, 1), true});
+		recomputematrix camm = camera_do->computeParentCompositeMatrix(NULL, {camera_do->model, glm::vec4(1, 1, 1, 1), true});
+		recomputematrix orim = origin_do->computeParentCompositeMatrix(NULL, {origin_do->model, glm::vec4(1, 1, 1, 1), true});
 		camera_point = camm.model * camera_point;
 		origin_point = orim.model * origin_point;
 
-		printf("recomputing %f x %f x %f\n", camera_point.x, camera_point.y, camera_point.z);
+		printf("View:recomputing camera %f x %f x %f\n", camera_point.x, camera_point.y, camera_point.z);
 
 		cam = glm::lookAt(
 			glm::vec3(camera_point),

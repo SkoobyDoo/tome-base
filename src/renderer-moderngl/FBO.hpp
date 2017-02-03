@@ -35,6 +35,7 @@ struct FboTexture {
 
 struct Fbo {
 	GLuint fbo;
+	GLuint depthbuffer;
 	vector<FboTexture> textures;
 	vector<GLenum> buffers;
 };
@@ -124,7 +125,7 @@ protected:
 
 public:
 	DORTarget();
-	DORTarget(int w, int h, int nbt, bool hdr=false);
+	DORTarget(int w, int h, int nbt, bool hdr=false, bool depth=false);
 	virtual ~DORTarget();
 	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
 	virtual const char* getKind() { return "DORTarget"; };
@@ -147,7 +148,7 @@ public:
 
 	void setSpecialMode(TargetSpecialMode *mode);
 
-	void makeFramebuffer(int w, int h, int nbt, bool hdr, Fbo *fbo);
+	void makeFramebuffer(int w, int h, int nbt, bool hdr, bool depth, Fbo *fbo);
 	void deleteFramebuffer(Fbo *fbo);
 	void useFramebuffer(Fbo *fbo);
 };

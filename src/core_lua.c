@@ -836,6 +836,23 @@ static int sdl_surface_update_texture(lua_State *L)
 	return 0;
 }
 
+GLuint load_image_texture(const char *file) {
+	SDL_Surface *s = IMG_Load_RW(PHYSFSRWOPS_openRead(file), TRUE);
+	printf("OPENING %s : %lx\n", file, s);
+	if (!s) return 0;
+
+	GLuint t;
+	glGenTextures(1, &t);
+	tfglBindTexture(GL_TEXTURE_2D, t);
+
+	int fw, fh;
+	make_texture_for_surface(s, &fw, &fh, true);
+	copy_surface_to_texture(s);
+
+	SDL_FreeSurface(s);
+	return t;
+}
+
 static int sdl_surface_to_texture(lua_State *L)
 {
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);

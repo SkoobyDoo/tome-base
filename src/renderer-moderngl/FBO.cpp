@@ -20,6 +20,9 @@
 */
 
 #include "renderer-moderngl/FBO.hpp"
+extern "C" {
+#include "shaders.h"
+}
 
 /*************************************************************************
  ** DORTarget
@@ -41,17 +44,18 @@ void DORTarget::cloneInto(DisplayObject* _into) {
 
 DORTarget::DORTarget() : DORTarget(screen->w / screen_zoom, screen->h / screen_zoom, 1) {
 }
-DORTarget::DORTarget(int w, int h, int nbt, bool hdr) {
+DORTarget::DORTarget(int w, int h, int nbt, bool hdr, bool depth) {
 	this->nbt = nbt;
 	this->w = w;
 	this->h = h;
 
-	view = new View(w, h);
+	view = NULL;
 
-	makeFramebuffer(w, h, nbt, hdr, &fbo);
+	makeFramebuffer(w, h, nbt, hdr, depth, &fbo);
 
 	// For display as a DO
 	for (int i = 0; i < (nbt > 3 ? 3 : nbt); i++) tex[i] = fbo.textures[i].texture;
+
 	// Default display quad, can be removed and altered if needed with clear & addQuad
 	addQuad(
 		0, 0, 0, 1,
@@ -62,16 +66,16 @@ DORTarget::DORTarget(int w, int h, int nbt, bool hdr) {
 	);
 }
 DORTarget::~DORTarget() {
-	delete view;
 	if (mode) delete mode;
 	if (toscreen_vbo) delete toscreen_vbo;
 
+	if (view_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, view_lua_ref);
 	if (subrender_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, subrender_lua_ref);
 
 	deleteFramebuffer(&fbo);
 }
 
-void DORTarget::makeFramebuffer(int w, int h, int nbt, bool hdr, Fbo *fbo) {
+void DORTarget::makeFramebuffer(int w, int h, int nbt, bool hdr, bool depth, Fbo *fbo) {
 	glGenFramebuffers(1, &fbo->fbo);
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
 
@@ -81,6 +85,19 @@ void DORTarget::makeFramebuffer(int w, int h, int nbt, bool hdr, Fbo *fbo) {
 	fbo->buffers.resize(nbt);
 	vector<GLuint> td(nbt);
 	glGenTextures(nbt, td.data());
+
+	if (depth) {
+		glGenTextures(1, &fbo->depthbuffer);
+		glBindTexture(GL_TEXTURE_2D, fbo->depthbuffer);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo->depthbuffer, 0);
+	} else {
+		fbo->depthbuffer = 0;
+	}
 
 	for (i = 0; i < nbt; i++) {
 		fbo->textures[i].texture = td[i];
@@ -107,6 +124,12 @@ void DORTarget::deleteFramebuffer(Fbo *fbo) {
 			glDeleteTextures(1, &t.texture);
 		}
 	}
+
+	if (fbo->depthbuffer) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+		glDeleteTextures(1, &fbo->depthbuffer);
+	}
+
 	tglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDeleteFramebuffers(1, &fbo->fbo);
@@ -114,7 +137,6 @@ void DORTarget::deleteFramebuffer(Fbo *fbo) {
 
 void DORTarget::setView(View *view, int ref) {
 	if (view_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, view_lua_ref);
-	delete this->view;
 	this->view = view;
 	view_lua_ref = ref;
 }
@@ -154,7 +176,8 @@ void DORTarget::useFramebuffer(Fbo *fbo) {
 	tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
 	glDrawBuffers(fbo->buffers.size(), fbo->buffers.data());
 	tglClearColor(clear_r, clear_g, clear_b, clear_a);
-	glClear(GL_COLOR_BUFFER_BIT);
+	if (fbo->depthbuffer) glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	else glClear(GL_COLOR_BUFFER_BIT);
 }
 
 static stack<GLuint> fbo_stack;
@@ -163,7 +186,7 @@ void DORTarget::use(bool activate) {
 	{
 		useFramebuffer(&fbo);
 		fbo_stack.push(fbo.fbo);
-		view->use(true);
+		if (view) view->use(true);
 	}
 	else
 	{
@@ -173,7 +196,7 @@ void DORTarget::use(bool activate) {
 		// If we have a special mode to do stuff, do it now!
 		if (mode) mode->renderMode();
 		
-		view->use(false);
+		if (view) view->use(false);
 
 		// Unbind texture from FBO and then unbind FBO
 		if (!fbo_stack.empty()) {
@@ -260,10 +283,10 @@ TargetBloom::TargetBloom(DORTarget *t, int blur_passes, shader_type *bloom, int 
 
 	this->blur_passes = blur_passes;
 
-	target->makeFramebuffer(target->w, target->h, 1, false, &fbo_plain);
-	target->makeFramebuffer(target->w, target->h, 1, true, &fbo_bloom);
-	target->makeFramebuffer(target->w, target->h, 1, true, &fbo_hblur);
-	target->makeFramebuffer(target->w, target->h, 1, true, &fbo_vblur);
+	target->makeFramebuffer(target->w, target->h, 1, false, false, &fbo_plain);
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_bloom);
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_hblur);
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_vblur);
 
 	vbo.addQuad(
 		0, 0, 0, 1,
@@ -333,7 +356,7 @@ void TargetBloom::renderMode() {
 TargetPostProcess::TargetPostProcess(DORTarget *t)
 	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
 {
-	target->makeFramebuffer(target->w, target->h, 1, false, &fbo);
+	target->makeFramebuffer(target->w, target->h, 1, false, false, &fbo);
 
 	vbo.addQuad(
 		0, 0, 0, 1,

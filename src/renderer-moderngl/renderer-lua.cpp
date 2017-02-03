@@ -573,8 +573,9 @@ static int gl_target_new(lua_State *L)
 	if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
 	if (lua_isnumber(L, 3)) nbt = lua_tonumber(L, 3);
 	bool hdr = lua_toboolean(L, 4);
+	bool depth = lua_toboolean(L, 5);
 
-	*c = new DORTarget(w, h, nbt, hdr);
+	*c = new DORTarget(w, h, nbt, hdr, depth);
 	setWeakSelfRef(L, -1, *c);
 
 	return 1;
@@ -1345,8 +1346,12 @@ static int gl_view_project(lua_State *L)
 	int camera_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	lua_pushvalue(L, 6);
 	int origin_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	float near = 0.001, far = 1000;
 
-	v->setProjectView(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), 0.001, 1000, camera, camera_ref, origin, origin_ref);
+	if (lua_isnumber(L, 7)) near = lua_tonumber(L, 7);
+	if (lua_isnumber(L, 8)) far = lua_tonumber(L, 8);
+
+	v->setProjectView(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), near, far, camera, camera_ref, origin, origin_ref);
 	lua_pushvalue(L, 1);
 	return 1;
 }

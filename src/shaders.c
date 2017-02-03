@@ -102,6 +102,11 @@ void useShaderSimple(shader_type *p)
 	current_shader = p;
 	tglUseProgramObject(p->shader);
 
+	if (p->p_tick != -1) {
+		GLfloat t = cur_frame_tick;
+		glUniform1fv(p->p_tick, 1, &t);
+	}
+
 	shader_reset_uniform *ru = p->reset_uniforms;
 	while (ru) {
 		switch (ru->kind) {
