@@ -45,11 +45,16 @@ function _M:init(t, item, collapsed, frame)
 
 	self.text = core.renderer.text(self.parent.font):outline(1):translate(self.minus_t.w + 4, (self.minus_t.h - self.parent.font:height()) / 2, 10)
 
+	-- self.do_container = core.renderer.renderer()
 	self.do_container:add(self.plus:shown(false))
 	self.do_container:add(self.minus)
-	self.do_container:add(self.text)
+	if not item.no_title then self.do_container:add(self.text) end
 
-	self.talents_x, self.talents_y = self.minus_t.w, self.parent.font:height()
+	if not item.no_title then
+		self.talents_x, self.talents_y = self.minus_t.w, self.parent.font:height()
+	else
+		self.talents_x, self.talents_y = 0, 0
+	end
 	self.do_talents = core.renderer.container():translate(self.talents_x, self.talents_y)
 	self.do_container:add(self.do_talents)
 
@@ -178,4 +183,5 @@ function _M:add(talent)
 end
 
 function _M:onFocusChange(v)
+	self.frame.container:tween(8, "a", nil, v and 1 or 0.5)
 end

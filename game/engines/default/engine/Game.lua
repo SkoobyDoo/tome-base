@@ -31,6 +31,7 @@ module(..., package.seeall, class.make)
 -- A simple FPS counter
 local fps_counter_renderer
 local fps_counter
+local fps_counter_frames = 30
 _M.fps_shown = false
 
 --- Sets up the default keyhandler
@@ -53,8 +54,8 @@ function _M:init(keyhandler)
 
 	self:defaultMouseCursor()
 
-	local fps_font = core.display.newFont("/data/font/DroidSans.ttf", 24)
-	fps_counter_renderer = core.renderer.renderer():color(1, 1, 1, 0.7)
+	local fps_font = core.display.newFont("/data/font/FSEX300.ttf", 14)
+	fps_counter_renderer = core.renderer.renderer():color(1, 1, 1, 1)
 	fps_counter = core.renderer.text(fps_font):outline(1, 0, 0, 0, 1)
 	fps_counter_renderer:add(fps_counter)
 end
@@ -219,7 +220,13 @@ function _M:display(nb_keyframes)
 	if nb_keyframes > 0 then tween.update(nb_keyframes) end
 
 	if _M.fps_shown then
-		fps_counter:text(("%0.1f FPS - %d draws/frame"):format(core.display.getFPS(), core.display.countDraws()))
+		fps_counter_frames = fps_counter_frames + nb_keyframes
+		if fps_counter_frames >= 30 then
+			fps_counter_frames = 0
+			fps_counter:text(("%0.1f FPS\n%d draws/frame\n%d mb lua memory"):format(core.display.getFPS(), core.display.countDraws(), collectgarbage("count")/1024))
+		else
+			core.display.countDraws()
+		end
 		fps_counter_renderer:toScreen()
 	end
 end

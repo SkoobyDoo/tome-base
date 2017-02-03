@@ -211,11 +211,9 @@ function _M:drawItem(item, parent, rebuild)
 			self.lines_container:add(item._block:get())
 		end
 	elseif item.type_stat then
-		-- local str = item.name:toString()
-		-- self.font:setStyle("bold")
-		-- local d = self.font:draw(str, self.font:size(str), 255, 255, 255, true)[1]
-		-- self.font:setStyle("normal")
-		-- item.text_status = d
+		if not rebuild then
+			item._block = TalentLine.new(nil, item, not item.shown, "ui/selector-sel")
+		end
 	elseif item.talent then
 		if not rebuild then
 			item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")

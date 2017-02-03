@@ -562,7 +562,7 @@ function _M:generateList()
 		local e = engine.Entity.new{image="stats/"..s.name:lower()..".png", is_stat=true}
 		e:getMapObjects(game.uiset.hotkeys_display_icons.tiles, {}, 1)
 
-		stats[#stats+1] = {shown=true, nodes={{
+		stats[#stats+1] = {shown=true, type_stat=true, nodes={{
 			name=s.name,
 			rawname=s.name,
 			entity=e,
@@ -748,7 +748,7 @@ function _M:createDisplay()
 		no_tooltip = self.no_tooltip,
 	}
 
-	self.b_stat = Button.new{can_focus = false, can_focus_mouse=true, text="Stats: "..self.actor.unused_stats, fct=function() end, on_select=function()
+	self.b_stat = Textzone.new{text="Stats: "..self:getColorPoints(self.actor.unused_stats), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_stats
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -757,7 +757,7 @@ function _M:createDisplay()
 			game:tooltipDisplayAtMap(self.b_stat.last_display_x + self.b_stat.w, self.b_stat.last_display_y, str)
 		end
 	end}
-	self.b_class = Button.new{can_focus = false, can_focus_mouse=true, text="Class points: "..self.actor.unused_talents, fct=function() end, on_select=function()
+	self.b_class = Textzone.new{text="Class points: "..self:getColorPoints(self.actor.unused_talents), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_class
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -766,7 +766,7 @@ function _M:createDisplay()
 			game:tooltipDisplayAtMap(self.b_stat.last_display_x + self.b_stat.w, self.b_stat.last_display_y, str)
 		end
 	end}
-	self.b_generic = Button.new{can_focus = false, can_focus_mouse=true, text="Generic points: "..self.actor.unused_generics, fct=function() end, on_select=function()
+	self.b_generic = Textzone.new{text="Generic points: "..self:getColorPoints(self.actor.unused_generics), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_generic
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -775,7 +775,7 @@ function _M:createDisplay()
 			game:tooltipDisplayAtMap(self.b_stat.last_display_x + self.b_stat.w, self.b_stat.last_display_y, str)
 		end
 	end}
-	self.b_types = Button.new{can_focus = false, can_focus_mouse=true, text="Category points: "..self.actor.unused_talents_types, fct=function() end, on_select=function()
+	self.b_types = Textzone.new{text="Category points: "..self:getColorPoints(self.actor.unused_talents_types), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_types
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -973,6 +973,10 @@ function _M:getTalentDesc(item)
 	return text
 end
 
+function _M:getColorPoints(v)
+	return (v > 0 and "#LIGHT_GREEN#" or "#GREY#")..v
+end
+
 function _M:onUseTalent(item, inc)
 	if item.type then
 		self:learnType(item.type, inc)
@@ -991,14 +995,10 @@ function _M:onUseTalent(item, inc)
 		self.c_gtree:redrawAllItems()
 	end
 
-	self.b_stat.text = "Stats: "..self.actor.unused_stats
-	self.b_stat:generate()
-	self.b_class.text = "Class points: "..self.actor.unused_talents
-	self.b_class:generate()
-	self.b_generic.text = "Generic points: "..self.actor.unused_generics
-	self.b_generic:generate()
-	self.b_types.text = "Category points: "..self.actor.unused_talents_types
-	self.b_types:generate()
+	self.b_stat:setText("Stats: "..self:getColorPoints(self.actor.unused_stats))
+	self.b_class:setText("Class points: "..self:getColorPoints(self.actor.unused_talents))
+	self.b_generic:setText("Generic points: "..self:getColorPoints(self.actor.unused_generics))
+	self.b_types:setText("Category points: "..self:getColorPoints(self.actor.unused_talents_types))
 end
 
 function _M:updateTooltip()
