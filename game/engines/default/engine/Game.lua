@@ -373,6 +373,7 @@ end
 --- Registers a dialog to display
 -- @param[type=Dialog] d
 function _M:registerDialog(d)
+	if d.__refuse_dialog then return end
 	table.insert(self.dialogs, d)
 	self.dialogs[d] = #self.dialogs
 	d.__stack_id = #self.dialogs

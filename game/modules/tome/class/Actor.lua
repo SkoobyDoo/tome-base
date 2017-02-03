@@ -389,9 +389,8 @@ function _M:getSpeed(speed_type)
 
 		if not speed then speed = self:combatSpeed() end
 	elseif speed_type == "throwing" then
-		   local turn = 0
-		   if self:knowTalent(self.T_QUICKDRAW) then turn = self:callTalent("T_QUICKDRAW", "getSpeed") end
-		   speed = 1 * self:combatSpeed() * (100 - turn) / 100
+		speed = 1
+		if self:knowTalent(self.T_QUICKDRAW) then speed = speed/(1 + self:callTalent("T_QUICKDRAW", "getSpeed")) end
 	elseif speed_type == "spell" then speed = self:combatSpellSpeed()
 	elseif speed_type == "summon" then speed = self:combatSummonSpeed()
 	elseif speed_type == "mind" then speed = self:combatMindSpeed()
@@ -1227,7 +1226,7 @@ function _M:defineDisplayCallback()
 			e:checkDisplay()
 			if e.ps:isAlive() then
 				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
-				e.ps:toScreen(x + w / 2, y + dy + h / 2, true, w / (game.level and game.level.map.tile_w or w))
+				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
 			else self:removeParticles(e)
 			end
 		end

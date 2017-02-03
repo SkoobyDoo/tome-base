@@ -1840,6 +1840,12 @@ function _M:setupCommands()
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
 			self:changeLevel(game.level.level + 1)
 do return end
+			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)
+			local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[Map.ACTOR]=true})
+			if m and x then
+				game.zone:addEntity(game.level, m, "actor", x, y)
+			end
+do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
 			print(f, err)
 			setfenv(f, setmetatable({level=self.level, zone=self.zone}, {__index=_G}))

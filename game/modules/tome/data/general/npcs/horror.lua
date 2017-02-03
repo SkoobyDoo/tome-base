@@ -968,6 +968,7 @@ You can discern a huge round mouth covered in razor-sharp teeth.]],
 	size_category = 4,
 	movement_speed = 0.8,
 	is_grgglck = true,
+	immune_possession = 1,
 
 	stun_immune = 1,
 	knockback_immune = 1,

@@ -175,7 +175,7 @@ newTalent{
 	action = function(self, t)
 		local dur = t.getDuration(self,t)
 		local speed = t.getSpeed(self,t)
-		self:setEffect(self.EFF_TRUESHOT, dur, {src=self, speed=speed})
+		self:setEffect(self.EFF_TRUESHOT, dur, {src=self, power=speed})
 		return true
 	end,
 	info = function(self, t)
