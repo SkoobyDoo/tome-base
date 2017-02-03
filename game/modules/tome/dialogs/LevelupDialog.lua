@@ -555,19 +555,20 @@ function _M:generateList()
 
 	-- Makes up the stats list
 	local stats = {}
-	self.tree_stats = stats
+	self.tree_stats = {{shown=true, type_stat=true, no_title=true, nodes=stats}}
 
 	for i, sid in ipairs{self.actor.STAT_STR, self.actor.STAT_DEX, self.actor.STAT_CON, self.actor.STAT_MAG, self.actor.STAT_WIL, self.actor.STAT_CUN } do
 		local s = self.actor.stats_def[sid]
 		local e = engine.Entity.new{image="stats/"..s.name:lower()..".png", is_stat=true}
 		e:getMapObjects(game.uiset.hotkeys_display_icons.tiles, {}, 1)
 
-		stats[#stats+1] = {shown=true, type_stat=true, nodes={{
+		stats[#stats+1] = {
 			name=s.name,
 			rawname=s.name,
 			entity=e,
 			stat=sid,
 			desc=s.description,
+			break_line=#stats > 0,
 			color=function(item)
 				if self.actor:getStat(sid, nil, nil, true) ~= self.actor_dup:getStat(sid, nil, nil, true) then return {255, 215, 0}
 				elseif self.actor:getStat(sid, nil, nil, true) >= self.actor.level * 1.4 + 20 or
@@ -587,7 +588,7 @@ function _M:generateList()
 					return tstring{{"color", 0x00, 0xFF, 0x00}, ("%d (%d)"):format(self.actor:getStat(sid), self.actor:getStat(sid, nil, nil, true))}
 				end
 			end,
-		}}}
+		}
 	end
 end
 

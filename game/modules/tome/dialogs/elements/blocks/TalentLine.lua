@@ -46,9 +46,11 @@ function _M:init(t, item, collapsed, frame)
 	self.text = core.renderer.text(self.parent.font):outline(1):translate(self.minus_t.w + 4, (self.minus_t.h - self.parent.font:height()) / 2, 10)
 
 	-- self.do_container = core.renderer.renderer()
-	self.do_container:add(self.plus:shown(false))
-	self.do_container:add(self.minus)
-	if not item.no_title then self.do_container:add(self.text) end
+	if not item.no_title then
+		self.do_container:add(self.plus:shown(false))
+		self.do_container:add(self.minus)
+		self.do_container:add(self.text)
+	end
 
 	if not item.no_title then
 		self.talents_x, self.talents_y = self.minus_t.w, self.parent.font:height()
@@ -67,25 +69,27 @@ function _M:init(t, item, collapsed, frame)
 	self.talents = {}
 	self.sel = 1
 
-	self.mouse:registerZone(0, 0, self.plus_t.w, self.plus_t.h, function(button, x, y, xrel, yrel, bx, by, event)
-		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
-		elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
-		elseif event == "button" and (button == "left" or button == "right") then
-			self:collapse(not self.collapsed)
-		end
-	end, nil, "collapse", true, 1)
-	self.mouse:registerZone(self.plus_t.w, 0, self.parent.w - self.plus_t.w, self.plus_t.h, function(button, x, y, xrel, yrel, bx, by, event)
-		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
-		elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
-		elseif event == "button" and (button == "left" or button == "right") then
-			self.parent:onUse(self.item, button == "left")
-			self:collapse(false)
-		elseif event == "out" then
-			self.parent:setSel(self.item, false)
-		else
-			self.parent:setSel(self.item, true)
-		end
-	end, nil, "collapse", true, 1)
+	if not item.no_title then
+		self.mouse:registerZone(0, 0, self.plus_t.w, self.plus_t.h, function(button, x, y, xrel, yrel, bx, by, event)
+			if event == "button" and button == "wheelup" then self.parent:scroll(-1)
+			elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
+			elseif event == "button" and (button == "left" or button == "right") then
+				self:collapse(not self.collapsed)
+			end
+		end, nil, "collapse", true, 1)
+		self.mouse:registerZone(self.plus_t.w, 0, self.parent.w - self.plus_t.w, self.plus_t.h, function(button, x, y, xrel, yrel, bx, by, event)
+			if event == "button" and button == "wheelup" then self.parent:scroll(-1)
+			elseif event == "button" and button == "wheeldown" then self.parent:scroll(1)
+			elseif event == "button" and (button == "left" or button == "right") then
+				self.parent:onUse(self.item, button == "left")
+				self:collapse(false)
+			elseif event == "out" then
+				self.parent:setSel(self.item, false)
+			else
+				self.parent:setSel(self.item, true)
+			end
+		end, nil, "collapse", true, 1)
+	end
 end
 
 function _M:setSel(v)
@@ -173,6 +177,7 @@ function _M:add(talent)
 
 	self.do_talents:add(talent:get():translate(self.next_x, self.next_y))
 
+	print("!!!!!", self.item.stat, "::", self.next_x, self.next_y, talent.h)
 	if talent.item.break_line then
 		self.next_x = 0
 		self.next_y = self.next_y + talent.h

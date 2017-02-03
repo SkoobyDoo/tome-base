@@ -208,8 +208,9 @@ function _M:drawItem(item, parent, rebuild)
 	if item.stat then
 		if not rebuild then
 			item._block = Talent.new(nil, item, item.entity, self.frame_size, "ui/selector-sel", "ui/icon-frame/frame")
-			self.lines_container:add(item._block:get())
+			parent._block:add(item._block)
 		end
+		item._block:updateStatus(item:status():toString()):updateColor(item:color())
 	elseif item.type_stat then
 		if not rebuild then
 			item._block = TalentLine.new(nil, item, not item.shown, "ui/selector-sel")
