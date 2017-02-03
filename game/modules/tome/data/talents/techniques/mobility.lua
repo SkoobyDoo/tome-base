@@ -335,7 +335,7 @@ newTalent {
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
 
 				local reduce = t.getReduction(self, t)*dam
-				src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow!#LAST#.", is_attk and "an attack" or "damage")
+				if src.logCombat then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow!#LAST#.", is_attk and "an attack" or "damage") end
 				dam = dam - reduce
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
 				local stam_txt = stam_cost > 0 and (" #ffcc80#to %d stam#LAST#"):format(stam_cost) or ""
