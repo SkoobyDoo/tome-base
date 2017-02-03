@@ -145,14 +145,50 @@ function _M:updateTooltip()
 end
 
 function _M:moveSel(i, j)
-	if not self.cur_item then return end
-	self.cur_item._block:moveSel(i, j)
+	local bi, bj = 1, 1
+	if self.cur_item then bi, bj = self.cur_item.tree_pos.i, self.cur_item.tree_pos.j end
+	if i == -1 then
+		if bj then
+			i = bi
+			j = nil
+		else
+			i = bi - 1
+			j = 1
+		end
+	elseif i == 1 then
+		if bj then
+			i = bi + 1
+			j = nil
+		else
+			i = bi
+			j = 1
+		end
+	elseif j == -1 then
+		i = bi
+		j = (bj or 0) - 1
+	elseif j == 1 then
+		i = bi
+		j = (bj or 0) + 1
+	end
+
+	local item = self.tree[i]
+	if not item then return end
+	if j then item = item.nodes[j] end
+	if not item or not item._block then return end
+	self:setSel(item, true)
 end
 
-function _M:setSel(item)
+function _M:setSel(item, v)
 	if self.cur_item == item then return end
-	for _, tree in ipairs(self.tree) do tree._block:setSel(false) end
-	self.cur_item = item
+	-- for _, tree in ipairs(self.tree) do if tree ~= item then tree._block:setSel(false) end end
+	if self.cur_item then self.cur_item._block:setSel(false) end
+	if v then
+		item._block:setSel(true)
+		self.cur_item = item
+	else
+		item._block:setSel(false)
+		self.cur_item = nil
+	end
 	self:updateTooltip()
 end
 
@@ -201,9 +237,11 @@ function _M:generateAllItems()
 	local prev_tree = nil
 	for i = 1, #self.tree do
 		local tree = self.tree[i]
+		tree.tree_pos = {i=i, j=nil}
 		self:drawItem(tree, nil, false)
 		for j = 1, #tree.nodes do
 			local tal = tree.nodes[j]
+			tal.tree_pos = {i=i, j=j}
 			self:drawItem(tal, tree, false)
 		end
 		if tree._block then
@@ -214,7 +252,7 @@ function _M:generateAllItems()
 		end
 	end
 	if self.tree[1]._block then
-		self.tree[1]._block:setSel(true)
+		self:setSel(self.tree[1])
 	end
 end
 

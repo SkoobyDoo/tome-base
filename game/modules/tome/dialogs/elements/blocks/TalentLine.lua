@@ -76,20 +76,18 @@ function _M:init(t, item, collapsed, frame)
 			self.parent:onUse(self.item, button == "left")
 			self:collapse(false)
 		elseif event == "out" then
-			self:setSel(false)
+			self.parent:setSel(self.item, false)
 		else
-			self:setSel(true)
+			self.parent:setSel(self.item, true)
 		end
 	end, nil, "collapse", true, 1)
 end
 
-function _M:moveSel(i, j)
-	
-end
-
 function _M:setSel(v)
-	self.frame.container:shown(v)
-	if v then self.parent:setSel(self.item) end
+	if self.is_sel ~= v then
+		self.frame.container:shown(v)
+		self.is_sel = v
+	end
 end
 
 function _M:setNext(d)
@@ -149,6 +147,10 @@ function _M:add(talent)
 	local id = #self.talents+1
 	self.talents[id] = talent
 	talent.tree = self
+	talent.prev_talent = self.talents[id-1]
+	if self.talents[id-1] then
+		self.talents[id-1].next_talent = talent
+	end
 
 	self.mouse:registerZone(self.talents_x + self.next_x, self.talents_y + self.next_y, talent.w, talent.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if event == "button" and button == "wheelup" then self.parent:scroll(-1)
@@ -156,16 +158,21 @@ function _M:add(talent)
 		elseif event == "button" and (button == "left" or button == "right") then
 			self.parent:onUse(self.talents[self.sel].item, button == "left")
 		elseif event == "out" then
-			self.talents[self.sel]:setSel(false)	
+			self.parent:setSel(self.talents[self.sel].item, false)
 		else
-			self.talents[self.sel]:setSel(false)
-			self.talents[id]:setSel(true)
 			self.sel = id
+			self.parent:setSel(self.talents[self.sel].item, true)
 		end
 	end, nil, "icon"..id, true, 1)
 
 	self.do_talents:add(talent:get():translate(self.next_x, self.next_y))
-	self.next_x = self.next_x + talent.w + 4
+
+	if talent.item.break_line then
+		self.next_x = 0
+		self.next_y = self.next_y + talent.h
+	else
+		self.next_x = self.next_x + talent.w + 4
+	end
 	self.talents_h = self.next_y + talent.h
 end
 
