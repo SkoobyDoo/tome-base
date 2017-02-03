@@ -20,7 +20,7 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
-local Slider = require "engine.ui.Slider"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A talent trees display
 module(..., package.seeall, class.inherit(Base, Focusable))
@@ -54,7 +54,17 @@ function _M:generate()
 	self.key:reset()
 	
 	-- generate the scrollbar
-	if self.scrollbar then self.scrollbar = Slider.new{size=self.h, max=1} end
+	self.scroll_inertia = 0
+
+	-- Draw the scrollbar
+	if self.scrollbar then
+		self.scrollbar = Scrollbar.new(nil, self.h, 1)
+		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
+		self.use_w = self.w - self.scrollbar.w
+		self.do_container:add(self.scrollbar:get())
+	else
+		self.use_w = self.w
+	end
 	
 	self.sel_i = 1
 	self.sel_j = 1
@@ -115,6 +125,11 @@ function _M:generate()
 		_PAGEDOWN = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.h, 0, self.scrollbar.max) end end,
 		_SPACE = function() if self.last_mz and self.last_mz.item.type then self:onExpand(self.last_mz.item) end end
 	}
+end
+
+function _M:setListHeight(h)
+	self.list_h = h
+	if self.scrollbar then self.scrollbar:setMax(h - self.h) end
 end
 
 function _M:onUse(item, inc)
@@ -191,6 +206,22 @@ function _M:on_select(item, force)
 	self.prev_item = item
 end
 
+
+function _M:display(x, y, nb_keyframes)
+	if self.scrollbar then
+		local oldpos = self.scrollbar.pos
+		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
+		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
+		end
+		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
+
+		if self.scrollbar.pos ~= oldpos then
+			self.lines_container:translate(0, -self.scrollbar.pos, 0)
+		end
+	end
+end
+--[[
 function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
 	offset_x = offset_x or 0
 
@@ -252,3 +283,4 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, 
 		self.scrollbar:display(x + self.w - self.scrollbar.w, y)
 	end
 end
+]]
