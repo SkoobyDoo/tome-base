@@ -97,6 +97,7 @@ function _M:setNext(d)
 end
 
 function _M:collapse(v)
+	self.item.shown = not v
 	self.collapsed = v
 	self.do_talents:shown(not v)
 	self.minus:shown(not v)

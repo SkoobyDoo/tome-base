@@ -112,7 +112,9 @@ function _M:generate()
 		_END = function() if self.scrollbar then self:scroll(999999) end end,
 		_PAGEUP = function() if self.scrollbar then self:scroll(-self.h) end end,
 		_PAGEDOWN = function() if self.scrollbar then self:scroll(self.h) end end,
-		_SPACE = function() if self.cur_item and self.cur_item._block.collapse then self.cur_item._block:collapse(not self.cur_item.collapsed) end end
+		_SPACE = function() if self.cur_item and self.cur_item._block.collapse then self.cur_item._block:collapse(not self.cur_item._block.collapsed) end end,
+		_KP_PLUS = function() if self.cur_item and self.cur_item._block.collapse then self.cur_item._block:collapse(false) end end,
+		_KP_MINUS = function() if self.cur_item and self.cur_item._block.collapse then self.cur_item._block:collapse(true) end end,
 	}
 end
 
@@ -144,6 +146,14 @@ function _M:updateTooltip()
 	if not self.no_tooltip then game:tooltipDisplayAtMap(game.w, game.h, str) end
 end
 
+function _M:getItem(i, j)
+	local item = self.tree[i]
+	if not item then return end
+	if j then item = item.nodes[j] end
+	if not item or not item._block then return end
+	return item
+end
+
 function _M:moveSel(i, j)
 	local bi, bj = 1, 1
 	if self.cur_item then bi, bj = self.cur_item.tree_pos.i, self.cur_item.tree_pos.j end
@@ -153,15 +163,20 @@ function _M:moveSel(i, j)
 			j = nil
 		else
 			i = bi - 1
-			j = 1
+			if self:getItem(i, nil) and self:getItem(i, nil)._block.collapsed then j = nil else j = 1 end
 		end
 	elseif i == 1 then
 		if bj then
 			i = bi + 1
 			j = nil
 		else
-			i = bi
-			j = 1
+			if self:getItem(bi, nil) and self:getItem(bi, nil)._block.collapsed then
+				i = bi + 1
+				j = nil
+			else
+				i = bi
+				j = 1
+			end
 		end
 	elseif j == -1 then
 		i = bi
@@ -171,11 +186,8 @@ function _M:moveSel(i, j)
 		j = (bj or 0) + 1
 	end
 
-	local item = self.tree[i]
-	if not item then return end
-	if j then item = item.nodes[j] end
-	if not item or not item._block then return end
-	self:setSel(item, true)
+	local item = self:getItem(i, j)
+	if item then self:setSel(item, true) end
 end
 
 function _M:setSel(item, v)
