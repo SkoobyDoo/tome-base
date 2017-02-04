@@ -2609,7 +2609,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end,
 			on_grant = function(self, who)
 				game:onTickEnd(function()
-					 -- mark enemies when quest is awarded (to prevent summons and any newly spawned npcs from t preventing completion)
+					 -- mark enemies when quest is awarded (to prevent summons and any newly spawned npcs from preventing completion)
 					for uid, e in pairs(self.check_level.entities) do
 						if who:reactionToward(e) < 0 then
 							e[self.id] = true
@@ -2681,7 +2681,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 		if tries < 100 then
 			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge and kill your mirror clone on the level.", {
 				on_exit_check = function(self, who)
-					if not self:isEnded() then who:setQuestStatus(self.id, self.FAILED) end 
+					if not self:isEnded() then who:setQuestStatus(self.id, self.FAILED) end
 				end,
 			})
 
@@ -2750,9 +2750,23 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 
 		end end, "Refuse", "Accept", true)
 	elseif id_challenge == "multiplicity" then
-		Dialog:yesnoPopup("Challenge: #PURPLE#Multiplicity", "Survive the level while all the foes have the multiply talent, even bosses, for a reward.", function(r) if not r then
+		local turns = level.map.h + level.map.w
+		Dialog:yesnoPopup("Challenge: #PURPLE#Multiplicity", "All foes (including bosses) gain the ability to multiply up to 3 times.  You must survive for at least "..turns.." turns before exiting.", function(r) if not r then
 			self:makeChallengeQuest(level, "Multiplicity", "All foes have the multiply talent!", {
-				on_exit_check = function(self, who) who:setQuestStatus(self.id, self.COMPLETED) end,
+				turns_left = turns,
+				dynamic_desc = function(self, desc)
+					desc[#desc+1] = "Turns left: #LIGHT_GREEN#"..math.max(0, self.turns_left)
+				end,
+				on_exit_check = function(self, who)
+					if who.dead and not self:isEnded() then who:setQuestStatus(self.id, self.FAILED); return end
+					if self.turns_left <= 0 and not who.dead then who:setQuestStatus(self.id, self.COMPLETED) else who:setQuestStatus(self.id, self.FAILED) end
+				end,
+				on_act_base = function(self, who)
+					self.turns_left = self.turns_left - 1
+					if self.turns_left == 0 then
+						game.bignews:say(60, "#LIGHT_GREEN#Multiplicity: You have survived so far. Exit for your reward!")
+					end
+				end,
 			})
 			game:onTickEnd(function()
 				local p = game:getPlayer(true)
