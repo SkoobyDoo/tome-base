@@ -182,12 +182,13 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	local o = self:getItem()
 	if self.old_o ~= o then
 		if o then
-			self.item_container:add(o:getEntityDisplayObject(nil, self.f_iw, self.f_ih, 1, false, false, true)):shown(true)
+			self.item_container:clear():add(o:getEntityDisplayObject(nil, self.f_iw, self.f_ih, 1, false, false, true)):shown(true)
 			if self.bg_empty then self.bg_empty:shown(false) end
 		else
 			self.item_container:clear():shown(false)
 			if self.bg_empty then self.bg_empty:shown(true) end
 		end
+		self.old_o = o
 	end
 
 	-- if self.focused then
