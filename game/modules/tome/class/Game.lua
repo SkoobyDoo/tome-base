@@ -1839,7 +1839,12 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			game.bignews:saySimple(60, "PLOPzor les loulous! Je suis tres tres long comme texte. Et en plus je suis en francais! Ohlala que vas t'il arriver!!!!")
+			package.loaded["mod.dialogs.UberTalent"] = nil
+			package.loaded["mod.dialogs.elements.TalentGrid"] = nil
+			package.loaded["mod.dialogs.elements.blocks.Talent"] = nil
+			self.on_finish_prodigies = self.on_finish_prodigies or {}
+			local d = require("mod.dialogs.UberTalent").new(self.player, self.on_finish_prodigies)
+			game:registerDialog(d)
 do return end
 			self:changeLevel(game.level.level + 1)
 do return end

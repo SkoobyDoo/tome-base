@@ -88,12 +88,8 @@ function _M:generateList()
 		table.sort(cols[s], function(a,b) return a.name < b.name end)
 
 		for i = 1, max do
-			if not cols[s][i] then
-
-			else
+			if cols[s][i] then
 				local t = cols[s][i]
-				if t.display_entity then t.display_entity:getMapObjects(game.uiset.hotkeys_display_icons.tiles, {}, 1) end
-
 				n[#n+1] = {
 					rawname = t.name,
 					talent = t.id,

@@ -29,7 +29,7 @@ local tiles_cache = Tiles.new(64, 64, "/data/font/DroidSansMono.ttf", 16, true, 
 tiles_cache.use_images = true
 tiles_cache.force_back_color = {r=0, g=0, b=0}
 
-function _M:init(t, item, entity, size, frame, talent_frame)
+function _M:init(t, item, entity, size, frame, talent_frame, no_text)
 	Block.init(self, t)
 
 	self.item = item
@@ -40,10 +40,14 @@ function _M:init(t, item, entity, size, frame, talent_frame)
 
 	self.do_container:add(self.talent_frame.container)
 	self.do_container:add(entity:getEntityDisplayObject(tiles_cache, size - 6, size - 6, 1, false, false, true):translate(3, 3, 20))
+	self.shadow = core.renderer.colorQuad(3, 3, size - 6, size - 6, 0, 0, 0, 0.85):translate(0, 0, 50):shown(false)
+	self.do_container:add(self.shadow)
 
-	self.text = core.renderer.text(self.parent.font):outline(1)
-	self.do_container:add(self.text)
-	self.h = math.ceil(self.h + self.parent.font:height())
+	if not no_text then
+		self.text = core.renderer.text(self.parent.font):outline(1)
+		self.do_container:add(self.text)
+		self.h = math.ceil(self.h + self.parent.font:height())
+	end
 
 	self.frame = self.parent:makeFrameDO(frame, self.w, self.h)
 	self.frame.container:shown(false)
@@ -66,6 +70,11 @@ end
 
 function _M:updateColor(color)
 	self.talent_frame.container:color(colors.smart1unpack(color))
+	return self
+end
+
+function _M:updateShadow(v)
+	self.shadow:shown(v)
 	return self
 end
 
