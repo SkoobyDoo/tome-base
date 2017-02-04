@@ -21,6 +21,7 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local Entry = require "engine.ui.blocks.Entry"
+local CustomEntry = require "engine.ui.blocks.CustomEntry"
 local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI tree list
@@ -282,7 +283,8 @@ function _M:drawItem(item)
 		if not col.direct_draw then
 			local fw = col.width
 			local level = item.level
-			local color = util.getval(item.color, item) or {255,255,255}
+			local color = item.color or {255,255,255}
+			if type(color) == "function" then color = color(item) end
 			local text
 
 			if is_header then
@@ -329,6 +331,21 @@ function _M:drawItem(item)
 			end
 			item.cols[i]._entry:setText(text, color, true)
 			item.cols[i]._value = text
+		else
+			if not item.cols[i] then
+				local offset = 0
+				if i == 1 then
+					offset = level * self.level_offset
+					if item.nodes then offset = offset + self.plus.w end
+				end
+
+				item.cols[i] = {}
+				item.cols[i]._entry = CustomEntry.new(nil, col.width - offset, self.fh, col.direct_draw(item, self.fh))
+				item.cols[i]._entry:translate(x + offset, 0, 0)
+				item.cols[i]._entry:select(is_header)
+				local ec = item.cols[i]._entry:get()
+				item._container:add(ec)
+			end
 		end
 		x = x + col.width
 	end

@@ -60,6 +60,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	self.uis = {}
 
@@ -104,31 +105,10 @@ function _M:generate()
 		end
 	end
 
-	local direct_draw= function(item, x, y, w, h, total_w, total_h, loffset_x, loffset_y, dest_area)
-		-- if there is object and is withing visible bounds
-		if item.object and total_h + h > loffset_y and total_h < loffset_y + dest_area.h then
-			local clip_y_start, clip_y_end = 0, 0
-			-- if it started before visible area then compute its top clip
-			if total_h < loffset_y then
-				clip_y_start = loffset_y - total_h
-			end
-			-- if it ended after visible area then compute its bottom clip
-			if total_h + h > loffset_y + dest_area.h then
-				clip_y_end = total_h + h - loffset_y - dest_area.h
-			end
-			-- get entity texture with everything it has i.e particles
-			
-			-- DGDGDGDG getEntityFinalTexture doesnt exist anymore
-			return 0, 0, 0, 0, 0, 0
-			--[[
-			local texture = item.object:getEntityFinalTexture(nil, h, h)
-			if not texture then return 0, 0, 0, 0, 0, 0 end
-			local one_by_tex_h = 1 / h
-			texture:toScreenPrecise(x, y, h, h - clip_y_start - clip_y_end, 0, 1, clip_y_start * one_by_tex_h, (h - clip_y_end) * one_by_tex_h)
-			return h, h, 0, 0, clip_y_start, clip_y_end
-			]]
+	local direct_draw = function(item, h)
+		if item.object then
+			return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true)
 		end
-		return 0, 0, 0, 0, 0, 0
 	end
 
 	self.c_inven = ListColumns.new{width=self.w, height=self.h - (self.c_tabs and self.c_tabs.h or 0), sortable=true, scrollbar=true, columns=self.columns or {
@@ -166,6 +146,10 @@ function _M:generate()
 				[{'_F'..i,"ctrl"}] = function() self.c_tabs.sel_j = 1 self.c_tabs.sel_i = i self.c_tabs:onUse("left", true) self.c_tabs:onSelect("key") end,
 			}
 		end
+	end
+
+	for _, ui in ipairs(self.uis) do
+		self.do_container:add(ui.ui.do_container:translate(ui.x, ui.y))
 	end
 
 	self.c_inven:onSelect()
@@ -291,7 +275,19 @@ function _M:generateList(no_update)
 			local enc = 0
 			o:forAllStack(function(o) enc=enc+o.encumber end)
 
-			list[#list+1] = { id=#list+1, char=char, name=o:getName(), sortname=o:getName():toString():removeColorCodes(), color=o:getDisplayColor(), object=o, inven=self.actor.INVEN_INVEN, item=item, cat=o.subtype, encumberance=enc, special_bg=self.special_bg }
+			list[#list+1] = {
+				id=#list+1,
+				char=char,
+				name=o:getName(),
+				sortname=o:getName():toString():removeColorCodes(),
+				color=o:getDisplayColor(),
+				object=o,
+				inven=self.actor.INVEN_INVEN,
+				item=item,
+				cat=o.subtype,
+				encumberance=enc,
+				special_bg=self.special_bg,
+			}
 			chars[char] = #list
 			i = i + 1
 		end

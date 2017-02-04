@@ -189,35 +189,35 @@ function _M:onSelect(how, force)
 end
 
 function _M:display(x, y, nb_keyframes, screen_x, screen_y)
-	local bx, by = x, y
+	-- local bx, by = x, y
 
-	for j = self.scroll, math.min(self.scroll + self.nb_h, #self.dlist) do
-		local row = self.dlist[j]
-		if row then for i = 1, #row do
-			local item = row[i]
+	-- for j = self.scroll, math.min(self.scroll + self.nb_h, #self.dlist) do
+	-- 	local row = self.dlist[j]
+	-- 	if row then for i = 1, #row do
+	-- 		local item = row[i]
 
-			if item.selected then self:drawFrame(self.frame_selected, x + (i-1) * (self.tile_w + self.padding), y) end
+	-- 		if item.selected then self:drawFrame(self.frame_selected, x + (i-1) * (self.tile_w + self.padding), y) end
 
-			if self.sel_i == i and self.sel_j == j then
-				if self.focused then self:drawFrame(self.frame_sel, x + (i-1) * (self.tile_w + self.padding), y)
-				else self:drawFrame(self.frame_usel, x + (i-1) * (self.tile_w + self.padding), y) end
-			else
-				self:drawFrame(self.frame, x + (i-1) * (self.tile_w + self.padding), y)
-			end
+	-- 		if self.sel_i == i and self.sel_j == j then
+	-- 			if self.focused then self:drawFrame(self.frame_sel, x + (i-1) * (self.tile_w + self.padding), y)
+	-- 			else self:drawFrame(self.frame_usel, x + (i-1) * (self.tile_w + self.padding), y) end
+	-- 		else
+	-- 			self:drawFrame(self.frame, x + (i-1) * (self.tile_w + self.padding), y)
+	-- 		end
 
-			if self.force_size then
-				item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding), y, self.tile_w, self.tile_h, item[2] * self.tile_w / item.w, item[3] * self.tile_h / item.h)
-			else
-				item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding) + self.tile_w - item.w, y + self.tile_h - item.h, item.w, item.h, item[2], item[3])
-			end
-			item.last_display_x = screen_x + (x - bx)
-			item.last_display_y = screen_y + (y - by)
-		end end
-		y = y + self.tile_h + self.padding
-	end
+	-- 		if self.force_size then
+	-- 			item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding), y, self.tile_w, self.tile_h, item[2] * self.tile_w / item.w, item[3] * self.tile_h / item.h)
+	-- 		else
+	-- 			item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding) + self.tile_w - item.w, y + self.tile_h - item.h, item.w, item.h, item[2], item[3])
+	-- 		end
+	-- 		item.last_display_x = screen_x + (x - bx)
+	-- 		item.last_display_y = screen_y + (y - by)
+	-- 	end end
+	-- 	y = y + self.tile_h + self.padding
+	-- end
 
-	if self.focused and self.scrollbar then
-		self.scrollbar.pos = self.scroll
-		self.scrollbar:display(bx + self.w - self.scrollbar.w, by)
-	end
+	-- if self.focused and self.scrollbar then
+	-- 	self.scrollbar.pos = self.scroll
+	-- 	self.scrollbar:display(bx + self.w - self.scrollbar.w, by)
+	-- end
 end

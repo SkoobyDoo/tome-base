@@ -51,6 +51,7 @@ function _M:init(t)
 	self.title = t.title
 	if self.scale ~= 1 then self:ScaleFrame(self.scale) end
 	
+	t.require_renderer = true
 	Base.init(self, t)
 end
 
@@ -91,16 +92,20 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
+	self.uis_container = core.renderer.renderer()
 
 	self:generateEquipDollFrames()
-
-	if self.title ~= false then
-		self.font_bold:setStyle("bold")
-		self.title_tex = self:drawFontLine(self.font_bold, self.title or self.actor.name)
-		self.font_bold:setStyle("normal")
-	end
 	
-	self.inner_scroll = self:makeFrame("ui/tooltip/", self.w, self.h)
+	self.inner_scroll = self:makeFrameDO("ui/tooltip/", self.w, self.h)
+	self.do_container:add(self.inner_scroll.container:translate(0, self.base_doll_y, -10))
+	if self.title ~= false then
+		self.title_do = core.renderer.text(self.font_bold):textColor(1, 1, 1, 1):text(self.title or self.actor.name)
+		local w, h = self.title_do:getStats()
+		self.do_container:add(self.title_do:translate((self.w - w) / 2, 5, 10))
+	end
+
+	self.do_container:add(self.uis_container):translate(0, 0, 100)
 
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if self:mouseEvent(button, x, y, xrel, yrel, bx, by, event) then
@@ -129,6 +134,7 @@ function _M:keyTrigger(c)
 end
 
 function _M:on_focus_change(status)
+	if self.inner_scroll then self.inner_scroll.container:tween(7, "a", nil, status and 1 or 0.5) end
 	if status == true then
 		game.tooltip:erase()
 		local ui = self.focus_ui
@@ -220,22 +226,28 @@ function _M:generateEquipDollFrames()
 	end
 
 	self.uis = uis
+	self.uis_container:clear()
+	for _, ui in ipairs(self.uis) do
+		self.do_container:add(ui.ui.do_container:translate(ui.x, ui.y))
+	end
+
 	self:setFocus(1)
 end
 
 function _M:display(x, y, nb_keyframes, ox, oy)
-	local doll = self.equipdoll
+	-- local doll = self.equipdoll
+
+	-- Base.drawFrame(self, self.inner_scroll, x, y + self.base_doll_y, 1, 1, 1, self.focused and 1 or 0.5)
+
+	-- if self.title_tex then
+	-- 	if self.title_shadow then self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + 2, y + self.base_doll_y + 5 + 2, 0, 0, 0, 0.5) end
+	-- 	self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2, y + self.base_doll_y + 5)
+	-- end
+
+	-- if doll.doll_x and doll.doll_y and doll.doll_x>0 and doll.doll_y>0 then self.actor:toScreen(nil, x + doll.doll_x, y + self.base_doll_y + doll.doll_y, doll.doll_w or doll.w*2.6, doll.doll_h or doll.h*2.6) end
+
 	self.last_display_x = ox
 	self.last_display_y = oy
-
-	Base.drawFrame(self, self.inner_scroll, x, y + self.base_doll_y, 1, 1, 1, self.focused and 1 or 0.5)
-
-	if self.title_tex then
-		if self.title_shadow then self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + 2, y + self.base_doll_y + 5 + 2, 0, 0, 0, 0.5) end
-		self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2, y + self.base_doll_y + 5)
-	end
-
-	if doll.doll_x and doll.doll_y and doll.doll_x>0 and doll.doll_y>0 then self.actor:toScreen(nil, x + doll.doll_x, y + self.base_doll_y + doll.doll_y, doll.doll_w or doll.w*2.6, doll.doll_h or doll.h*2.6) end
 
 	-- UI elements
 	for i = 1, #self.uis do
