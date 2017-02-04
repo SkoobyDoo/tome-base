@@ -2679,7 +2679,11 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			tries = tries + 1
 		end
 		if tries < 100 then
-			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge and kill your mirror clone on the level.", {})
+			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge and kill your mirror clone on the level.", {
+				on_exit_check = function(self, who)
+					if not self:isEnded() then who:setQuestStatus(self.id, self.FAILED) end 
+				end,
+			})
 
 			local a = mod.class.NPC.new{}
 			a:replaceWith(game:getPlayer(true):cloneFull())
@@ -2690,6 +2694,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			a.energy.value = 0
 			a.player = nil
 			a.rank = 4
+			a.desc = "An evil twin of "..a.name..(a.desc and ":\n"..a.desc or "")
 			a.name = "Mirror Challenge of "..a.name
 			a.killer_message = "but nobody knew why #sex# suddenly became evil"
 			a.color_r = 150 a.color_g = 150 a.color_b = 150
@@ -2702,10 +2707,12 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			a.max_life = a.max_life * 2
 			a.life = a.max_life
 			a.id_challenge_quest = q.id
-			a.invulnerable = 1
+			a:attr("invulnerable", 1)
+			a:attr("negative_status_effect_immune", 1)
 			a.on_bump = function(self, who)
 				Dialog:yesnoPopup("Challenge: #PURPLE#Mirror Match", "Challenge your mirror clone and triumph!", function(r) if not r then
-					self.invulnerable = nil
+					self:attr("invulnerable", -1)
+					self:attr("negative_status_effect_immune", -1)
 					self.faction = "enemies"
 					self.ai = "tactical"
 					game.bignews:say(60, "#CRIMSON#FIGHT!")
@@ -2716,7 +2723,6 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end
 
 			game.zone:addEntity(game.level, a, "actor", x, y)
-
 			-- Remove some talents
 			local tids = {}
 			for tid, _ in pairs(a.talents) do
