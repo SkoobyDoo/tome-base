@@ -40,7 +40,7 @@ newTalent{
 	cooldown = 3,
 	range = 10,
 	requires_target = true,
-	tactical = { ATTACK = function(self, t, aitarget) return math.max(2, self.level/10) end },
+	tactical = { ATTACK = function(self, t, aitarget) return 2*(1.2 + self.level/50) end },
 	action = function(self, t)
 		if not self.can_multiply or self.can_multiply <= 0 then game.logPlayer(self, "You can not multiply anymore.") return nil end
 
