@@ -685,6 +685,20 @@ newTalent{
 			local target = game.level.map(px, py, engine.Map.ACTOR)
 
 			if target then -- hook actor
+				local tx, ty
+				local size = target.size_category - self.size_category
+				if size >= 1 or not target:canBe("knockback") then
+					if self:attr("never_move") then game.logPlayer(self, "You cannot move!") ok = false return end
+					local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+					local linestep = self:lineFOV(x, y, block_actor)
+					local lx, ly, is_corner_blocked
+					repeat  -- make sure each tile is passable
+						tx, ty = lx, ly
+						lx, ly, is_corner_blocked = linestep:step()
+					until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
+					if not tx or not ty or core.fov.distance(x, y, tx, ty) > 1 then ok = false return end
+				end
+
 				local dam, dam2 = 0, 0
 				local hit = false
 				self:logCombat(target, "#Source# throws a grappling hook at #target#!")
@@ -700,18 +714,7 @@ newTalent{
 				else
 					return
 				end
-				local size = target.size_category - self.size_category
 				if size >= 1 or not target:canBe("knockback") then
-					if self:attr("never_move") then game.logPlayer(self, "You cannot move!") ok = false return end
-					local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
-					local linestep = self:lineFOV(x, y, block_actor)
-			
-					local tx, ty, lx, ly, is_corner_blocked
-					repeat  -- make sure each tile is passable
-						tx, ty = lx, ly
-						lx, ly, is_corner_blocked = linestep:step()
-					until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
-					if not tx or not ty or core.fov.distance(x, y, tx, ty) > 1 then ok = false return end
 					self:logCombat(target, "#Source# is dragged towards #target#!")
 					local ox, oy = self.x, self.y
 					self:move(tx, ty, true)
