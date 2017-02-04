@@ -803,9 +803,10 @@ function _M:removed()
 	if game and game.hasEntity and game:hasEntity(self) then game:removeEntity(self) end
 
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) - 1
-		if game.uniques[self.__CLASSNAME.."/"..self.unique] <= 0 then game.uniques[self.__CLASSNAME.."/"..self.unique] = nil end
-		print("Removed unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tostring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) - 1
+		if game.uniques[self.__CLASSNAME.."/"..ustr] <= 0 then game.uniques[self.__CLASSNAME.."/"..ustr] = nil end
+		print("Removed unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 
