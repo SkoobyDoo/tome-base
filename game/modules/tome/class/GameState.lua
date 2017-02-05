@@ -2593,31 +2593,40 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			check_level = level,
 		})
 	elseif id_challenge == "exterminator" then
+		local enemies_left = function(self, who)
+			local nb = 0
+			for uid, e in pairs(self.check_level.entities) do
+				if e[self.id] then nb = nb + 1 end
+			end
+			return nb
+		end
 		self:makeChallengeQuest(level, "Exterminator", "Exterminate every foe on the level.", {
+			enemies_left = enemies_left,
 			dynamic_desc = function(self, desc, who)
 				if not self.check_level then return end
-				local nb = 0
-				for uid, e in pairs(self.check_level.entities) do
-					if who:reactionToward(e) < 0 then nb = nb + 1 end
-				end
-
+				local nb = self:enemies_left(who)
 				desc[#desc+1] = "Foes left: #LIGHT_RED#"..nb
+			end,
+			on_grant = function(self, who)
+				game:onTickEnd(function()
+					 -- mark enemies when quest is awarded (to prevent summons and any newly spawned npcs from t preventing completion)
+					for uid, e in pairs(self.check_level.entities) do
+						if who:reactionToward(e) < 0 then
+							e[self.id] = true
+							e.desc = "#LIGHT_RED#EXTERMINATE THIS FOE#LAST#\n"..(e.desc or "")
+						end
+					end
+				end)
 			end,
 			on_exit_check = function(self, who)
 				if not self.check_level then return end
-				local nb = 0
-				for uid, e in pairs(self.check_level.entities) do
-					if who:reactionToward(e) < 0 then nb = nb + 1 break end
-				end
+				local nb = self:enemies_left(who)
 				if nb == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
 				self.check_level = nil
 			end,
 			on_kill_foe = function(self, who, target)
 				if not self.check_level then return end
-				local nb = 0
-				for uid, e in pairs(self.check_level.entities) do
-					if who:reactionToward(e) < 0 then nb = nb + 1 break end
-				end
+				local nb = self:enemies_left(who)
 				if nb == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
 			end,
 			check_level = level,
