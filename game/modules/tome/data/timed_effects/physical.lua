@@ -3514,7 +3514,7 @@ newEffect{
 	long_desc = function(self, eff) return ("The target has recently performed an extreme feat of agility and is exhausted.  The stamina cost of activated Mobility talents is increased by %d%%."):format(eff.fatigue) end,
 	type = "other",
 	subtype = {tactic = true},
-	status = "detrimental",
+	status = "detrimental", no_stop_enter_worlmap = true,
 	parameters = {fatigue = 50 },
 	charges = function(self, eff) return math.round(eff.fatigue) end,
 	on_timeout = function(self, eff)
