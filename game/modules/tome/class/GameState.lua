@@ -2751,7 +2751,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 		end end, "Refuse", "Accept", true)
 	elseif id_challenge == "headhunter" then
 		local mlist = {}
-		for i = 1, 1 do
+		for i = 1, rng.range(2, 4) do
 			local m = zone:makeEntity(level, "actor", {type="demon", random_boss={
 				nb_classes = 2,
 				rank=3.5, ai = "tactical",
