@@ -2505,14 +2505,14 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
-		-- { id = "exterminator", rarity = 1 },
-		-- { id = "pacifist", rarity = 2 },
-		-- { id = "fast-exit", rarity = 2, min_lev = 8 },
-		-- { id = "near-sighted", rarity = 3, min_lev = 4 },
+		{ id = "exterminator", rarity = 1 },
+		{ id = "pacifist", rarity = 2 },
+		{ id = "fast-exit", rarity = 2, min_lev = 8 },
+		{ id = "near-sighted", rarity = 3, min_lev = 4 },
 		{ id = "mirror-match", rarity = 4, min_lev = 5 },
-		-- { id = "multiplicity", rarity = 6, min_lev = 10 },
-		-- { id = "dream-horror", rarity = 8, min_lev = 15 },
-		-- { id = "headhunter", rarity = 10, min_lev = 12 },
+		{ id = "multiplicity", rarity = 6, min_lev = 10 },
+		{ id = "dream-horror", rarity = 8, min_lev = 15 },
+		{ id = "headhunter", rarity = 10, min_lev = 12 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}
