@@ -2672,14 +2672,13 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end
 		end
 	elseif id_challenge == "mirror-match" then
-		local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-		local tries = 0
-		while not game.player:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
-			x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-			tries = tries + 1
-		end
-		if tries < 100 then
-			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge and kill your mirror clone on the level.", {
+		local x, y = self:findEventGrid(level, function(self, level, x, y)
+				if x > 10 and x < level.map.w-10 and y > 10 and y < level.map.h and self:canEventGrid(level, x, y)then return x, y end
+			end
+			)
+		if x and y then
+			print("[Infinite Dungeon Challenge] spawning Mirror-Match at", x, y)
+			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge, and kill your mirror clone on the level.", {
 				on_exit_check = function(self, who)
 					if not self:isEnded() then who:setQuestStatus(self.id, self.FAILED) end
 				end,
@@ -2707,15 +2706,26 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			a.max_life = a.max_life * 2
 			a.life = a.max_life
 			a.id_challenge_quest = q.id
+			a:attr("stealth", -1000)
+			a:attr("invisible", -1000)
 			a:attr("invulnerable", 1)
 			a:attr("negative_status_effect_immune", 1)
 			a.on_bump = function(self, who)
-				Dialog:yesnoPopup("Challenge: #PURPLE#Mirror Match", "Challenge your mirror clone and triumph!", function(r) if not r then
+				local p = game:getPlayer(true)
+				if who ~= p then
+					game.logPlayer(who, "#ORCHID#%s does not recognize you.", self.name:capitalize())
+					return
+				end
+				require("engine.ui.Dialog"):yesnoPopup("Challenge: #PURPLE#Mirror Match", "Challenge your mirror clone and triumph!", function(r) if not r then
 					self:attr("invulnerable", -1)
 					self:attr("negative_status_effect_immune", -1)
+					self:attr("stealth", 1000)
+					self:attr("invisible", 1000)
 					self.faction = "enemies"
 					self.ai = "tactical"
-					game.bignews:say(60, "#CRIMSON#FIGHT!")
+					self:setTarget(p)
+					self:teleportRandom(p.x, p.y, 20, 10)
+					game.bignews:say(60, "#CRIMSON#The Fight Is Joined!")
 				end end, "Refuse", "Accept", true)
 			end
 			a.on_die = function(self, who)
