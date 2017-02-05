@@ -783,8 +783,9 @@ end
 -- This helps ensuring uniqueness of uniques
 function _M:added()
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) + 1
-		print("Added unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tstring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) + 1
+		print("Added unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 
