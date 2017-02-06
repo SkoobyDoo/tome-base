@@ -2609,7 +2609,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end,
 			on_grant = function(self, who)
 				game:onTickEnd(function()
-					 -- mark enemies when quest is awarded (to prevent summons and any newly spawned npcs from t preventing completion)
+					 -- mark enemies when quest is awarded (to prevent summons and any newly spawned npcs from preventing completion)
 					for uid, e in pairs(self.check_level.entities) do
 						if who:reactionToward(e) < 0 then
 							e[self.id] = true
@@ -2672,14 +2672,17 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end
 		end
 	elseif id_challenge == "mirror-match" then
-		local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-		local tries = 0
-		while not game.player:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
-			x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-			tries = tries + 1
-		end
-		if tries < 100 then
-			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge and kill your mirror clone on the level.", {})
+		local x, y = self:findEventGrid(level, function(self, level, x, y)
+				if x > 10 and x < level.map.w-10 and y > 10 and y < level.map.h and self:canEventGrid(level, x, y)then return x, y end
+			end
+			)
+		if x and y then
+			print("[Infinite Dungeon Challenge] spawning Mirror-Match at", x, y)
+			local q = self:makeChallengeQuest(level, "Mirror Match", "Find, challenge, and kill your mirror clone on the level.", {
+				on_exit_check = function(self, who)
+					if not self:isEnded() then who:setQuestStatus(self.id, self.FAILED) end
+				end,
+			})
 
 			local a = mod.class.NPC.new{}
 			a:replaceWith(game:getPlayer(true):cloneFull())
@@ -2690,6 +2693,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			a.energy.value = 0
 			a.player = nil
 			a.rank = 4
+			a.desc = "An evil twin of "..a.name..(a.desc and ":\n"..a.desc or "")
 			a.name = "Mirror Challenge of "..a.name
 			a.killer_message = "but nobody knew why #sex# suddenly became evil"
 			a.color_r = 150 a.color_g = 150 a.color_b = 150
@@ -2702,13 +2706,26 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			a.max_life = a.max_life * 2
 			a.life = a.max_life
 			a.id_challenge_quest = q.id
-			a.invulnerable = 1
+			a:attr("stealth", -1000)
+			a:attr("invisible", -1000)
+			a:attr("invulnerable", 1)
+			a:attr("negative_status_effect_immune", 1)
 			a.on_bump = function(self, who)
-				Dialog:yesnoPopup("Challenge: #PURPLE#Mirror Match", "Challenge your mirror clone and triumph!", function(r) if not r then
-					self.invulnerable = nil
+				local p = game:getPlayer(true)
+				if who ~= p then
+					game.logPlayer(who, "#ORCHID#%s does not recognize you.", self.name:capitalize())
+					return
+				end
+				require("engine.ui.Dialog"):yesnoPopup("Challenge: #PURPLE#Mirror Match", "Challenge your mirror clone and triumph!", function(r) if not r then
+					self:attr("invulnerable", -1)
+					self:attr("negative_status_effect_immune", -1)
+					self:attr("stealth", 1000)
+					self:attr("invisible", 1000)
 					self.faction = "enemies"
 					self.ai = "tactical"
-					game.bignews:say(60, "#CRIMSON#FIGHT!")
+					self:setTarget(p)
+					self:teleportRandom(p.x, p.y, 20, 10)
+					game.bignews:say(60, "#CRIMSON#The Fight Is Joined!")
 				end end, "Refuse", "Accept", true)
 			end
 			a.on_die = function(self, who)
@@ -2716,7 +2733,6 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end
 
 			game.zone:addEntity(game.level, a, "actor", x, y)
-
 			-- Remove some talents
 			local tids = {}
 			for tid, _ in pairs(a.talents) do
@@ -2744,9 +2760,23 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 
 		end end, "Refuse", "Accept", true)
 	elseif id_challenge == "multiplicity" then
-		Dialog:yesnoPopup("Challenge: #PURPLE#Multiplicity", "Survive the level while all the foes have the multiply talent, even bosses, for a reward.", function(r) if not r then
+		local turns = level.map.h + level.map.w
+		Dialog:yesnoPopup("Challenge: #PURPLE#Multiplicity", "All foes (including bosses) gain the ability to multiply up to 3 times.  You must survive for at least "..turns.." turns before exiting.", function(r) if not r then
 			self:makeChallengeQuest(level, "Multiplicity", "All foes have the multiply talent!", {
-				on_exit_check = function(self, who) who:setQuestStatus(self.id, self.COMPLETED) end,
+				turns_left = turns,
+				dynamic_desc = function(self, desc)
+					desc[#desc+1] = "Turns left: #LIGHT_GREEN#"..math.max(0, self.turns_left)
+				end,
+				on_exit_check = function(self, who)
+					if who.dead and not self:isEnded() then who:setQuestStatus(self.id, self.FAILED); return end
+					if self.turns_left <= 0 and not who.dead then who:setQuestStatus(self.id, self.COMPLETED) else who:setQuestStatus(self.id, self.FAILED) end
+				end,
+				on_act_base = function(self, who)
+					self.turns_left = self.turns_left - 1
+					if self.turns_left == 0 then
+						game.bignews:say(60, "#LIGHT_GREEN#Multiplicity: You have survived so far. Exit for your reward!")
+					end
+				end,
 			})
 			game:onTickEnd(function()
 				local p = game:getPlayer(true)
