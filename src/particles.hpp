@@ -88,6 +88,8 @@ struct s_particles_type {
 
 	int life_min, life_max;
 
+	float shift_x, shift_y;
+
 	int engine, blend_mode;
 
 	float rotate, rotate_v;

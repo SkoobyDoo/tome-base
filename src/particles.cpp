@@ -180,6 +180,7 @@ static int particles_new(lua_State *L)
 	ps->lock = SDL_CreateMutex();
 	ps->name_def = strdup(name_def);
 	ps->args = strdup(args);
+	ps->shift_x = ps->shift_y = 0;
 	ps->density = density;
 	ps->alive = TRUE;
 	ps->i_want_to_die = FALSE;
@@ -210,44 +211,38 @@ static int particles_set_sub(lua_State *L)
 	return 0;
 }
 
-static void do_shift(particles_type *ps, float sx, float sy) {
+static void do_shift(particles_type *ps, float sx, float sy, bool set) {
 	SDL_mutexP(ps->lock);
 
 	if (ps->alive) {
-		int w;
-		for (w = 0; w < ps->nb; w++)
-		{
-			particle_type *p = &ps->particles[w];
-			if (!p) break;
-
-			if (p->life > 0)
-			{
-				p->x += sx;
-				p->ox += sx;
-				p->y += sy;
-				p->oy += sy;
-			}
+		if (set) {
+			ps->shift_x = sx;
+			ps->shift_y = sy;
+		} else {
+			ps->shift_x += sx;
+			ps->shift_y += sy;
 		}
-
-		ps->recompile = TRUE;
 	}
 
 	SDL_mutexV(ps->lock);
 
-	if (ps->sub) do_shift(ps->sub, sx, sy);
+	if (ps->sub) do_shift(ps->sub, sx, sy, set);
 }
 
 // Runs into main thread
 static int particles_shift(lua_State *L)
 {
 	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
-	float sx = lua_tonumber(L, 2) / ps->zoom;
-	float sy = lua_tonumber(L, 3) / ps->zoom;
-	if (!sx && !sy) return 0;
-//	printf("shift, %fx%f, zoom %f\n", sx, sy, ps->zoom);
-
-	do_shift(ps, sx, sy);
-
+	if (lua_toboolean(L, 4)) {
+		float sx = lua_tonumber(L, 2) / ps->zoom;
+		float sy = lua_tonumber(L, 3) / ps->zoom;
+		do_shift(ps, sx, sy, true);
+	} else {
+		float sx = lua_tonumber(L, 2) / ps->zoom;
+		float sy = lua_tonumber(L, 3) / ps->zoom;
+		if (!sx && !sy) return 0;
+		do_shift(ps, sx, sy, false);
+	}
 	return 0;
 }
 
@@ -785,6 +780,8 @@ static int particles_emit(lua_State *L)
 				lua_pop(L, 1);
 				lua_pop(L, 1); // global table
 			}
+			p->x += ps->shift_x;
+			p->y += ps->shift_y;
 			p->ox = p->x;
 			p->oy = p->y;
 
