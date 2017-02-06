@@ -214,14 +214,12 @@ static int particles_set_sub(lua_State *L)
 static void do_shift(particles_type *ps, float sx, float sy, bool set) {
 	SDL_mutexP(ps->lock);
 
-	if (ps->alive) {
-		if (set) {
-			ps->shift_x = sx;
-			ps->shift_y = sy;
-		} else {
-			ps->shift_x += sx;
-			ps->shift_y += sy;
-		}
+	if (set) {
+		ps->shift_x = sx;
+		ps->shift_y = sy;
+	} else {
+		ps->shift_x += sx;
+		ps->shift_y += sy;
 	}
 
 	SDL_mutexV(ps->lock);
@@ -234,12 +232,12 @@ static int particles_shift(lua_State *L)
 {
 	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
 	if (lua_toboolean(L, 4)) {
-		float sx = lua_tonumber(L, 2) / ps->zoom;
-		float sy = lua_tonumber(L, 3) / ps->zoom;
+		float sx = lua_tonumber(L, 2);
+		float sy = lua_tonumber(L, 3);
 		do_shift(ps, sx, sy, true);
 	} else {
-		float sx = lua_tonumber(L, 2) / ps->zoom;
-		float sy = lua_tonumber(L, 3) / ps->zoom;
+		float sx = lua_tonumber(L, 2);
+		float sy = lua_tonumber(L, 3);
 		if (!sx && !sy) return 0;
 		do_shift(ps, sx, sy, false);
 	}
@@ -780,8 +778,8 @@ static int particles_emit(lua_State *L)
 				lua_pop(L, 1);
 				lua_pop(L, 1); // global table
 			}
-			p->x += ps->shift_x;
-			p->y += ps->shift_y;
+			p->x += ps->shift_x / ps->zoom;
+			p->y += ps->shift_y / ps->zoom;
 			p->ox = p->x;
 			p->oy = p->y;
 
