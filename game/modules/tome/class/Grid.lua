@@ -227,8 +227,9 @@ function _M:tooltip(x, y)
 		-- debugging info
 		if game.level.map.room_map then
 			local data = game.level.map.room_map[x][y]
-			local room = table.get(game.level.map.room_map.rooms, data.room, "room")
-			tstr:add(true, {"color", "PINK"}, ("room_map: rm:%s(%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
+			local room_base = table.get(game.level.map.room_map.rooms, data.room)
+			local room = room_base and room_base.room
+			tstr:add(true, {"color", "PINK"}, ("room_map:rm:%s(id:%s,name:%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room_base and room_base.id, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
 		end
 		local attrs = game.level.map.attrs[x+y*game.level.map.w]
 		if attrs then

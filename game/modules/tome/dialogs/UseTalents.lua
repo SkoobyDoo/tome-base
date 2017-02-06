@@ -212,7 +212,7 @@ function _M:use(item, button)
 			elseif b.what == "auto-dis" then
 				self.actor:checkSetTalentAuto(item.talent, false)
 			else
-				self:triggerHook{"UseTalents:use", actor=self.actor, talent=t, item=item}
+				self:triggerHook{"UseTalents:use", what=b.what, actor=self.actor, talent=t, item=item}
 			end
 			self.c_list:regenerate()
 			self.actor.changed = true

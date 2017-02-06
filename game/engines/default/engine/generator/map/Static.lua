@@ -369,7 +369,7 @@ function _M:tmxLoad(file)
 					props.type, props.subtype = nil, nil
 					for i = x, x + w do for j = y, y + h do
 						local i, j = rotate_coords(i, j)
-						g.addSpot({i, j}, props.type, props.subtype, props)
+						g.addSpot({i, j}, t, st, props)
 					end end
 				end
 			elseif og.attr.name:find("^addZone") then
@@ -379,7 +379,7 @@ function _M:tmxLoad(file)
 					props.type, props.subtype = nil, nil
 					local i1, j1 = rotate_coords(x, y)
 					local i2, j2 = rotate_coords(x + w, y + h)
-					g.addZone({i1, j1, i2, j2}, props.type, props.subtype, props)
+					g.addZone({i1, j1, i2, j2}, t, st, props)
 				end
 			elseif og.attr.name:find("^attrs") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
