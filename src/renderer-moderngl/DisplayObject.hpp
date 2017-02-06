@@ -310,6 +310,21 @@ public:
 
 
 /****************************************************************************
+ ** Interface to make a DisplayObject be a sub-renderer: breaking chaining
+ ** and using it's own render method
+ ****************************************************************************/
+typedef void (*static_sub_cb)(mat4 cur_model, vec4 color);
+class StaticSubRenderer : public  SubRenderer {
+protected:
+	static_sub_cb cb;
+	virtual void cloneInto(DisplayObject *into);
+public:
+	StaticSubRenderer(static_sub_cb cb) : cb(cb) {};
+	virtual void toScreen(mat4 cur_model, vec4 color);
+};
+
+
+/****************************************************************************
  ** A Dummy DO taht displays nothing and instead calls a lua callback
  ****************************************************************************/
 class DORCallback : public SubRenderer {

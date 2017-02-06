@@ -1051,6 +1051,19 @@ void SubRenderer::toScreenSimple() {
 }
 
 /***************************************************************************
+ ** StaticSubRenderer class
+ ***************************************************************************/
+void StaticSubRenderer::cloneInto(DisplayObject* _into) {
+	SubRenderer::cloneInto(_into);
+	StaticSubRenderer *into = dynamic_cast<StaticSubRenderer*>(_into);
+	into->cb = cb;
+}
+
+void StaticSubRenderer::toScreen(mat4 cur_model, vec4 color) {
+	if (cb) cb(cur_model, color);
+}
+
+/***************************************************************************
  ** DORCallback class
  ***************************************************************************/
 void DORCallback::cloneInto(DisplayObject* _into) {

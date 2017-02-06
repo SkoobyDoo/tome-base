@@ -63,6 +63,7 @@ static int nb_threads = 0;
 static int cur_thread = 0;
 static DORTarget *alter_fbo = NULL;
 static DORTarget *bloom_fbo = NULL;
+static StaticSubRenderer *bloom_do = NULL;
 static particle_draw_last *pdls_head = NULL;
 static particle_draw_last *blooms_head = NULL;
 void thread_add(particles_type *ps);
@@ -621,16 +622,33 @@ static int particles_has_alter(lua_State *L)
 	return 1;
 }
 
-// Runs into main thread
-static int particles_draw_bloom(lua_State *L)
-{
-	if (!blooms_head) return 0;
+static void draw_bloom(mat4 model, vec4 color) {
+	if (!blooms_head) return;
 	while (blooms_head) {
 		particle_draw_last *pdl = blooms_head;
-		particles_draw(pdl->ps, pdl->model);
+		particles_draw(pdl->ps, model * pdl->model);
 		blooms_head = blooms_head->next;
 		free(pdl);
 	}
+}
+
+// Runs into main thread
+static int particles_bloom_do(lua_State *L)
+{
+	if (!bloom_do) {
+		bloom_do = new StaticSubRenderer(draw_bloom);
+	}
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	*v = bloom_do;
+	auxiliar_setclass(L, "gl{staticsub}", -1);
+	return 1;
+}
+
+// Runs into main thread
+static int particles_draw_bloom(lua_State *L)
+{
+	draw_bloom(mat4(), vec4(1, 1, 1, 1));
 	return 0;
 }
 
@@ -787,6 +805,7 @@ static const struct luaL_Reg particleslib[] =
 	{"flushLast", particles_flush_last},
 	{"drawAlterings", particles_draw_alter},
 	{"hasAlterings", particles_has_alter},
+	{"getBloomsDO", particles_bloom_do},
 	{"drawBlooms", particles_draw_bloom},
 	{"hasBlooms", particles_has_bloom},
 	{NULL, NULL},

@@ -1706,6 +1706,30 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_staticsub_reg[] =
+{
+	// No _GC method, this object is fulyl handled C++ side
+	{"getKind", gl_generic_getkind},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
+	{"shown", gl_generic_shown},
+	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicEnable", gl_generic_physic_enable},
+	{"physic", gl_generic_get_physic},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
+	{"removeFromParent", gl_generic_remove_from_parent},
+	{NULL, NULL},
+};
+
 static const struct luaL_Reg gl_spriter_reg[] =
 {
 	{"__gc", gl_spriter_free},
@@ -1793,6 +1817,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
 	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
 	auxiliar_newclass(L, "gl{particles}", gl_particles_reg);
+	auxiliar_newclass(L, "gl{staticsub}", gl_staticsub_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);
 	auxiliar_newclass(L, "gl{view}", gl_view_reg);
 	auxiliar_newclass(L, "gl{vbo}", gl_vbo_reg);
