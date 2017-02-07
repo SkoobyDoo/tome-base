@@ -192,6 +192,6 @@ newTalent{
 		If a target dies while marked, the cooldown of this ability is reset and the cost refunded.
 		This ability can be used without breaking stealth.
 		The base damage dealt will increase with your Dexterity.]]):
-		format(power, damDesc(self, DamageType.DARKNESS, dam), perc)
+		format(power, damDesc(self, DamageType.PHYSICAL, dam), perc)
 	end,
 }
