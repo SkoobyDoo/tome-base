@@ -134,6 +134,9 @@ It should automatically create a portal back, but it might not be near your arri
 			game.state:seenSpecialFarportal("eidolon")
 			return true
 		end
+		if self:triggerHook{"ShertulFortress:exploratoryPortal:specialLocation", q=q, who=who} then
+			return true
+		end
 	end,
 
 	on_move = function(self, x, y, who)
