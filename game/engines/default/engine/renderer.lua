@@ -140,6 +140,7 @@ function core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 end
 
 function core.renderer.textureTable(s)
+	if type(s) == "string" then s = core.display.loadImage(s) end
 	local t = {tx=0, ty=0}
 	t.w, t.h = s:getSize()
 	t.t, t.tw, t.th = s:glTexture()

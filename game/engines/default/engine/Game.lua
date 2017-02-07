@@ -58,6 +58,7 @@ function _M:init(keyhandler)
 	fps_counter_renderer = core.renderer.renderer():color(1, 1, 1, 1)
 	fps_counter = core.renderer.text(fps_font):outline(1, 0, 0, 0, 1)
 	fps_counter_renderer:add(fps_counter)
+	_M.fps_shown = config.settings.cheat
 end
 
 --- Log a message
@@ -223,7 +224,8 @@ function _M:display(nb_keyframes)
 		fps_counter_frames = fps_counter_frames + nb_keyframes
 		if fps_counter_frames >= 30 then
 			fps_counter_frames = 0
-			fps_counter:text(("%0.1f FPS\n%d draws/frame\n%d mb lua memory"):format(core.display.getFPS(), core.display.countDraws(), collectgarbage("count")/1024))
+			local fps, msframe = core.display.getFPS()
+			fps_counter:text(("%0.1f FPS\n%d draws/frame\n%d ms/frame\n%d mb lua memory"):format(fps, core.display.countDraws(), msframe, collectgarbage("count")/1024))
 		else
 			core.display.countDraws()
 		end

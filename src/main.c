@@ -89,6 +89,7 @@ float gamma_correction = 1;
 int cur_frame_tick = 0;
 int frame_tick_paused_time = 0;
 /* The currently requested fps for the program */
+float ticks_per_frame = 1;
 float current_fps = NORMALIZED_FPS;
 int requested_fps = NORMALIZED_FPS;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
@@ -684,7 +685,8 @@ void on_redraw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	frames_count = (float)(ticks - last_ticks) / ((float)1000.0 / (float)NORMALIZED_FPS);
+	ticks_per_frame = ticks - last_ticks;
+	frames_count = ((float)ticks - last_ticks) / ((float)1000.0 / (float)NORMALIZED_FPS);
 	// printf("ticks %d :: %f :: %f\n", ticks - last_ticks, ((float)1000.0 / (float)NORMALIZED_FPS), frames_count);
 	float nb_keyframes = frames_count;
 	run_physic_simulation(nb_keyframes);
@@ -695,6 +697,7 @@ void on_redraw()
 	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);
 
+	// ticks_per_frame = /;
 	last_ticks = ticks;
 
 	if (ticks_count >= 500) {

@@ -1451,7 +1451,8 @@ static int gl_counts_draws(lua_State *L) {
 
 static int gl_get_fps(lua_State *L) {
 	lua_pushnumber(L, current_fps);
-	return 1;
+	lua_pushnumber(L, ticks_per_frame);
+	return 2;
 }
 
 static const struct luaL_Reg displaylib[] =

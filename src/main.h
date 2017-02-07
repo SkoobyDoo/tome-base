@@ -72,6 +72,7 @@ extern char **g_argv;
 extern char *override_home;
 extern float screen_zoom;
 extern float current_fps;
+extern float ticks_per_frame;
 
 /* Error handling */
 struct lua_err_type_s {
