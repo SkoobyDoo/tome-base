@@ -746,25 +746,31 @@ function _M:noStairsTime()
 	return nb * 10
 end
 
-function _M:changeLevel(lev, zone, params)
+function _M:changeLevelCheck(lev, zone, params)
 	params = params or {}
 	if not params.direct_switch and (self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime()) then
 		local left = math.ceil((10 + self:getPlayer(true).last_kill_turn - self.turn + self:noStairsTime()) / 10)
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level so soon after a kill (%d game turns left to wait)!", left)
-		return
+		return false
 	end
 	if not self.player.can_change_level then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level without your own body!")
-		return
+		return false
 	end
 	if zone and not self.player.can_change_zone then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not leave the zone with this character!")
-		return
+		return false
 	end
 	if self.player:hasEffect(self.player.EFF_PARADOX_CLONE) or self.player:hasEffect(self.player.EFF_IMMINENT_PARADOX_CLONE) then
 		self.logPlayer(self.player, "#LIGHT_RED#You cannot escape your fate by leaving the level!")
-		return
+		return false
 	end
+	return true
+end
+
+function _M:changeLevel(lev, zone, params)
+	params = params or {}
+	if not self:changeLevelCheck(lev, zone, params) then return end
 
 	-- Transmo!
 	local p = self:getPlayer(true)

@@ -41,6 +41,7 @@ uberTalent{
 	require = { special={desc="Have at least 25% arcane damage reduction and have been exposed to the void of space", fct=function(self)
 		return (game.state.birth.ignore_prodigies_special_reqs or self:attr("planetary_orbit")) and self:combatGetResist(DamageType.ARCANE) >= 25
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local ret = {}
 		self:talentTemporaryValue(ret, "force_use_resist", DamageType.ARCANE)
@@ -128,6 +129,7 @@ uberTalent{
 	require = { special={desc="Have summoned at least 100 creatures affected by this talent. The alchemist golem counts as 100.", fct=function(self)
 		return self:attr("summoned_times") and self:attr("summoned_times") >= 100
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local golem = self.alchemy_golem
 		if not golem then return end

@@ -187,6 +187,10 @@ uberTalent{
 		self.max_life = self.max_life + 250
 		self.combat_armor_hardiness = self.combat_armor_hardiness + 20
 	end,
+	on_unlearn = function(self, t)
+		self.max_life = self.max_life - 250
+		self.combat_armor_hardiness = self.combat_armor_hardiness - 20
+	end,
 	info = function(self, t)
 		return ([[Thanks to your newfound knowledge of corruption, you've learned some tricks for toughening your body... but only if you are healthy enough to withstand the strain from the changes.
 		Improves your life by 250, your Defense by %d, your Armour Hardiness by 20%% and your saves by %d as your natural toughness and reflexes are pushed beyond their normal limits.

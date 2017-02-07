@@ -770,7 +770,7 @@ end
 -- This helps ensuring uniqueness of uniques
 function _M:added()
 	if self.unique then
-		local ustr = tstring(self.unique)
+		local ustr = tostring(self.unique)
 		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) + 1
 		print("Added unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end

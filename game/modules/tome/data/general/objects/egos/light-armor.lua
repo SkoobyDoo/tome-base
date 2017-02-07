@@ -278,7 +278,7 @@ newEntity{
 			[DamageType.NATURE] = resolvers.mbonus_material(8, 5),
 			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 5),
 		},
-		comnbat_mindpower = resolvers.mbonus_material(10, 5),
+		combat_mindpower = resolvers.mbonus_material(10, 5),
 	},
 }
 

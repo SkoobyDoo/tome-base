@@ -131,6 +131,7 @@ uberTalent{
 		local o3 = self:findInAllInventoriesBy("define_as", "TELOS_BOTTOM_HALF")
 		return o1 and o2 and o3
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local list = mod.class.Object:loadList("/data/general/objects/special-artifacts.lua")
 		local o = game.zone:makeEntityByName(game.level, list, "TELOS_SPIRE", true)
