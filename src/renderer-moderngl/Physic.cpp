@@ -49,6 +49,9 @@ void DORPhysic::define(b2BodyDef &bodyDef, const b2FixtureDef &fixtureDef) {
 }
 
 DORPhysic::~DORPhysic() {
+	if (body) {
+		PhysicSimulator::current->world.DestroyBody(body);
+	}
 	physic_obj_count--;
 }
 

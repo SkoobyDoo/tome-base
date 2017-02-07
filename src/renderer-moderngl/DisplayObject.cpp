@@ -1075,11 +1075,17 @@ void DORCallback::cloneInto(DisplayObject* _into) {
 	}
 }
 
+void DORCallback::onKeyframe(float nb_keyframes) {
+	keyframes += nb_keyframes;
+}
+
 void DORCallback::toScreen(mat4 cur_model, vec4 color) {
 	lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
-	if (lua_pcall(L, 0, 0, 0))
+	lua_pushnumber(L, keyframes);
+	if (lua_pcall(L, 1, 0, 0))
 	{
 		printf("DORCallback callback error: %s\n", lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
+	keyframes = 0;
 }

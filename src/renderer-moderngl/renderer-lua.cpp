@@ -712,6 +712,34 @@ static int gl_target_mode_bloom(lua_State *L)
 	return 1;
 }
 
+static int gl_target_mode_bloom2(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+
+	int blur_passes = lua_tonumber(L, 2);
+
+	shader_type *bloom = (shader_type*)lua_touserdata(L, 3);
+	lua_pushvalue(L, 3); int bloom_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	shader_type *blur = (shader_type*)lua_touserdata(L, 4);
+	lua_pushvalue(L, 4); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	shader_type *combine = (shader_type*)lua_touserdata(L, 5);
+	lua_pushvalue(L, 5); int combine_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	
+	TargetBloom2 *mode = new TargetBloom2(
+		v,
+		blur_passes,
+		bloom, bloom_ref,
+		blur, blur_ref,
+		combine, combine_ref
+	);
+	v->setSpecialMode(mode);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_target_post_effect_disableall(lua_State *L)
 {
 	TargetPostProcess *p = *(TargetPostProcess**)auxiliar_checkclass(L, "gl{target:posteffects}", 1);
@@ -1494,6 +1522,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"texture", gl_target_texture},
 	{"textureTarget", gl_target_target_texture},
 	{"bloomMode", gl_target_mode_bloom},
+	{"bloomMode2", gl_target_mode_bloom2},
 	{"postEffectsMode", gl_target_mode_posteffects},
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},

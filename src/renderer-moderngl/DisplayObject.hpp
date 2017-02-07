@@ -327,10 +327,11 @@ public:
 /****************************************************************************
  ** A Dummy DO taht displays nothing and instead calls a lua callback
  ****************************************************************************/
-class DORCallback : public SubRenderer {
+class DORCallback : public SubRenderer, public IRealtime {
 protected:
 	int cb_ref = LUA_NOREF;
 	bool enabled = true;
+	float keyframes = 0;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -347,6 +348,7 @@ public:
 	void enable(bool v) { enabled = v; setChanged(); };
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
+	virtual void onKeyframe(float nb_keyframes);
 };
 
 #endif

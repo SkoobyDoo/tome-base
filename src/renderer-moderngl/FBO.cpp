@@ -352,6 +352,97 @@ void TargetBloom::renderMode() {
 	glEnable(GL_BLEND);
 }	
 
+
+/*************************************************************************
+ ** TargetBloom
+ *************************************************************************/
+TargetBloom2::TargetBloom2(DORTarget *t, int blur_passes, shader_type *bloom, int bloom_ref, shader_type *blur, int blur_ref, shader_type *combine, int combine_ref)
+	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
+{
+	this->bloom = bloom;
+	this->blur = blur;
+	this->combine = combine;
+	this->bloom_ref = bloom_ref;
+	this->blur_ref = blur_ref;
+	this->combine_ref = combine_ref;
+
+	this->blur_passes = blur_passes;
+
+	useShaderSimple(blur);
+	blur_horizontal_uniform = glGetUniformLocation(blur->shader, "horizontal");
+
+	target->makeFramebuffer(target->w, target->h, 1, false, false, &fbo_plain);
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_bloom);
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_hblur);
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_vblur);
+
+	vbo.addQuad(
+		0, 0, 0, 1,
+		target->w, 0, 1, 1,
+		target->w, target->h, 1, 0,
+		0, target->h, 0, 0,
+		1, 1, 1, 1
+	);
+}
+TargetBloom2::~TargetBloom2() {
+	target->deleteFramebuffer(&fbo_plain);
+	target->deleteFramebuffer(&fbo_bloom);
+	target->deleteFramebuffer(&fbo_hblur);
+	target->deleteFramebuffer(&fbo_vblur);
+
+	if (bloom_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, bloom_ref); bloom_ref = LUA_NOREF; }
+	if (blur_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, blur_ref); blur_ref = LUA_NOREF; }
+	if (combine_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, combine_ref); combine_ref = LUA_NOREF; }
+}
+
+void TargetBloom2::renderMode() {
+	mat4 model = mat4();
+	vbo.resetTexture();
+	glDisable(GL_BLEND);
+	// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // DGDGDGDG: probably betetr to use premultipled alpha, work on me!
+
+	// Draw the normal particles
+	target->useFramebuffer(&fbo_plain);
+	vbo.setTexture(target->fbo.textures[0].texture);
+	vbo.setShader(NULL);
+	vbo.toScreen(model);
+	
+	// Draw the bloom
+	target->useFramebuffer(&fbo_bloom);
+	vbo.setTexture(target->fbo.textures[0].texture);
+	vbo.setShader(bloom);
+	vbo.toScreen(model);
+
+	// Draw X passes of blur
+	Fbo *fbo_blur_prev = NULL;
+	Fbo *fbo_blur = &fbo_hblur;
+	useShaderSimple(blur);
+	vbo.setShader(blur);
+	for (int i = 0; i < blur_passes; i++) {
+		target->useFramebuffer(fbo_blur);
+		vbo.setTexture((i == 0) ? fbo_bloom.textures[0].texture : fbo_blur_prev->textures[0].texture);
+
+		float radius = blur_passes + 1 - i;
+		GLfloat uni[2] = {radius, 0};
+		if (i % 2 == 1) { uni[0] = 0; uni[1] = radius; }
+		glUniform2fv(blur_horizontal_uniform, 1, uni);
+		vbo.toScreen(model);
+
+		fbo_blur_prev = fbo_blur;
+		fbo_blur = (i % 2 == 1) ? &fbo_hblur : &fbo_vblur;
+	}
+
+	// Draw back into the normal FBO
+	target->useFramebuffer(&target->fbo);
+	vbo.setTexture(fbo_blur->textures[0].texture, 0); // Use the last of the blurs
+	vbo.setTexture(fbo_plain.textures[0].texture, 1); // Use plain rendering
+	vbo.setShader(combine);
+	vbo.toScreen(model);
+
+	// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+}	
+
 /*************************************************************************
  ** TargetPostProcess
  *************************************************************************/

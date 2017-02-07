@@ -52,6 +52,32 @@ public:
 	virtual void renderMode() = 0;
 };
 
+class TargetBloom2 : public TargetSpecialMode {
+protected:
+	shader_type *bloom = NULL;
+	shader_type *blur = NULL;
+	shader_type *combine = NULL;
+	int bloom_ref = LUA_NOREF;
+	int blur_ref = LUA_NOREF;
+	int combine_ref = LUA_NOREF;
+
+	GLint blur_horizontal_uniform = 0;
+
+	int blur_passes;
+
+	Fbo fbo_plain;
+	Fbo fbo_bloom;
+	Fbo fbo_hblur;
+	Fbo fbo_vblur;
+
+	VBO vbo;
+public:
+	TargetBloom2(DORTarget *t, int blur_passes, shader_type *bloom, int bloom_ref, shader_type *blur, int blur_ref,shader_type *combine, int combine_ref);
+	virtual ~TargetBloom2();
+	virtual void renderMode();
+};
+
+
 class TargetBloom : public TargetSpecialMode {
 protected:
 	shader_type *bloom = NULL;
@@ -107,6 +133,7 @@ public:
  ****************************************************************************/
 class DORTarget : public DORVertexes, public IResizable {
 	friend class TargetBloom;
+	friend class TargetBloom2;
 	friend class TargetPostProcess;
 protected:
 	int w, h;

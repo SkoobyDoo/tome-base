@@ -89,6 +89,10 @@ function _M:empty()
 	self.flyers = {}
 end
 
+function _M:getDO()
+	return core.renderer.callback(function(nb_keyframes) self:display(nb_keyframes) end)
+end
+
 --- Display loop function
 -- @int nb_keyframes
 function _M:display(nb_keyframes)
