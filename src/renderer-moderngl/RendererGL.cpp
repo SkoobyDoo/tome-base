@@ -353,6 +353,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 
 	if (zsort == SortMode::GL) glEnable(GL_DEPTH_TEST);
 	if (!allow_blending) glDisable(GL_BLEND);
+	if (premultiplied_alpha) glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Bind the indices
 	if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
@@ -443,6 +444,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 
 	if (zsort == SortMode::GL) glDisable(GL_DEPTH_TEST);
 	if (!allow_blending) glEnable(GL_BLEND);
+	if (premultiplied_alpha) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
 	if (cutting) {
 		glDisable(GL_SCISSOR_TEST);

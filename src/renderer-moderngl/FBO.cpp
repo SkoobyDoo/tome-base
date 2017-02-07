@@ -312,7 +312,8 @@ void TargetBloom::renderMode() {
 	mat4 model = mat4();
 	vbo.resetTexture();
 	glDisable(GL_BLEND);
-	
+	// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // DGDGDGDG: probably betetr to use premultipled alpha, work on me!
+
 	// Draw the normal particles
 	target->useFramebuffer(&fbo_plain);
 	vbo.setTexture(target->fbo.textures[0].texture);
@@ -347,6 +348,7 @@ void TargetBloom::renderMode() {
 	vbo.setShader(combine);
 	vbo.toScreen(model);
 
+	// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 }	
 

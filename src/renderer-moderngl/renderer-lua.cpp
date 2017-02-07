@@ -469,6 +469,14 @@ static int gl_renderer_blend(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_premultiplied_alpha(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	r->premultipliedAlpha(lua_toboolean(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_renderer_set_name(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
@@ -1458,6 +1466,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"clear", gl_container_clear},
 	{"cutoff", gl_renderer_cutoff},
 	{"enableBlending", gl_renderer_blend},
+	{"premultipliedAlpha", gl_renderer_premultiplied_alpha},
 	{"setRendererName", gl_renderer_set_name},
 	{"countTime", gl_renderer_count_time},
 	{"countDraws", gl_renderer_count_draws},

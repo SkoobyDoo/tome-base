@@ -89,6 +89,7 @@ protected:
 	bool count_vertexes = false;
 
 	bool allow_blending = true;
+	bool premultiplied_alpha = false;
 
 	bool cutting = false;
 	vec4 cutpos1;
@@ -126,6 +127,7 @@ public:
 	void zSorting(bool sort) { zsort = sort ? SortMode::FAST : SortMode::NO_SORT; };
 	void zSorting(SortMode mode) { zsort = mode; };
 	void enableBlending(bool v) { allow_blending = v; };
+	void premultipliedAlpha(bool v) { premultiplied_alpha = v; };
 	void sortedToDL();
 	void update();
 	virtual void toScreen(mat4 cur_model, vec4 color);
