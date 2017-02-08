@@ -1382,12 +1382,12 @@ static int gl_view_project(lua_State *L)
 	int camera_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	lua_pushvalue(L, 6);
 	int origin_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	float near = 0.001, far = 1000;
+	float nearp = 0.001, farp = 1000;
 
-	if (lua_isnumber(L, 7)) near = lua_tonumber(L, 7);
-	if (lua_isnumber(L, 8)) far = lua_tonumber(L, 8);
+	if (lua_isnumber(L, 7)) nearp = lua_tonumber(L, 7);
+	if (lua_isnumber(L, 8)) farp = lua_tonumber(L, 8);
 
-	v->setProjectView(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), near, far, camera, camera_ref, origin, origin_ref);
+	v->setProjectView(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), nearp, farp, camera, camera_ref, origin, origin_ref);
 	lua_pushvalue(L, 1);
 	return 1;
 }
