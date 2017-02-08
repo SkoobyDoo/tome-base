@@ -34,7 +34,7 @@ newTalent{
 		return chance
 	end,
 	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
-		return math.max(0, self:combatTalentLimit(t, 100, 15, 50))
+		return math.max(0, self:combatTalentLimit(t, 100, 15, 40))
 	end,
 	-- deflect count handled in physical effect "PARRY" in mod.data.timed_effects.physical.lua
 	getDeflects = function(self, t, fake)

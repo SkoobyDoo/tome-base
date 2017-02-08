@@ -338,8 +338,9 @@ newTalent {
 				if src.logCombat then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow!#LAST#.", is_attk and "an attack" or "damage") end
 				dam = dam - reduce
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
-				local stam_txt = stam_cost > 0 and (" #ffcc80#to %d stam#LAST#"):format(stam_cost) or ""
-				game:delayedLogDamage(src, self, 0, ("%s(%d reacted%s)#LAST#"):format(DamageType:get(type).text_color or "#FIREBRICK#", reduce, stam_txt), false)
+				local d_color = DamageType:get(type).text_color or "#FIREBRICK#"
+				local stam_txt = stam_cost > 0 and (" #ffcc80#, -%d stam#LAST#"):format(stam_cost) or ""
+				game:delayedLogDamage(src, self, 0, ("%s(%d reacted#LAST#%s%s)#LAST#"):format(d_color, reduce, stam_txt, d_color), false)
 				if not is_attk then self.turn_procs.gen_trained_reactions = true end
 				return {dam = dam}
 			end

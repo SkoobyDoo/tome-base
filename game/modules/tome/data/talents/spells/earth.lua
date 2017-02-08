@@ -65,7 +65,7 @@ newTalent{
 	info = function(self, t)
 		local armor = t.getArmor(self, t)
 		return ([[The caster's skin grows as hard as stone, granting a %d bonus to Armour.
-		Each time you are hit in melee you have %d%% chances to reduce the cooldown of an Earth or Stone spell by 2 (this effect can only happen once per turn).
+		Each time you are hit in melee, you have a %d%% chance to reduce the cooldown of an Earth or Stone spell by 2 (this effect can only happen once per turn).
 		The bonus to Armour will increase with your Spellpower.]]):
 		format(armor, t.getCDChance(self, t))
 	end,

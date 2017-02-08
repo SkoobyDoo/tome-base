@@ -780,7 +780,7 @@ function _M:printResolvers(t)
 end
 
 --- Call when the entity is actually added to a level/whatever
--- This helps ensuring uniqueness of uniques
+-- This helps ensure uniqueness of uniques
 function _M:added()
 	if self.unique then
 		local ustr = tostring(self.unique)
@@ -790,7 +790,7 @@ function _M:added()
 end
 
 --- Call when the entity is actually removed from existence
--- This helps ensuring uniqueness of uniques.
+-- This helps ensure uniqueness of uniques.
 -- This recursively removes inventories too, if you need anything special, overload this
 function _M:removed()
 	if self.inven then
