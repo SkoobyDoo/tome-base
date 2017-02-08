@@ -40,10 +40,11 @@ DORPhysic::DORPhysic(DisplayObject *d) {
 	me = d;
 }
 
-void DORPhysic::define(b2BodyDef &bodyDef, const b2FixtureDef &fixtureDef) {
+void DORPhysic::define(b2BodyDef &bodyDef, b2FixtureDef &fixtureDef) {
 	bodyDef.angle = me->rot_z;
 	bodyDef.position.Set(me->x / PhysicSimulator::unit_scale, -me->y / PhysicSimulator::unit_scale);
 	bodyDef.userData = me;
+	fixtureDef.userData = me;
 	body = PhysicSimulator::current->world.CreateBody(&bodyDef);
 	body->CreateFixture(&fixtureDef);
 }
@@ -118,7 +119,6 @@ void PhysicSimulator::setUnitScale(float scale) {
 
 void PhysicSimulator::step(float nb_keyframes) {
 	// We do it this way because box2d doc says it realyl doesnt like changing the timestep
-	// printf("doing %f steps\n", nb_keyframes * 60.0 / (float)NORMALIZED_FPS);
 	for (int f = 0; f < nb_keyframes * 60.0 / (float)NORMALIZED_FPS; f++) {
 		world.Step(1.0f / 60.0f, 6, 2);
 	}
@@ -137,4 +137,100 @@ extern "C" void run_physic_simulation(float nb_keyframes);
 void run_physic_simulation(float nb_keyframes) {
 	if (!PhysicSimulator::current) return;
 	PhysicSimulator::current->step(nb_keyframes);
+}
+
+
+/*************************************************************
+ ** Raycasting
+ *************************************************************/
+struct Hit {
+	DisplayObject *d;
+	vec2 point, normal;
+};
+class RayCastCallbackList : public b2RayCastCallback
+{
+protected:
+public:
+	vector<Hit> hits;
+	float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) {
+		hits.push_back({
+			static_cast<DisplayObject*>(fixture->GetUserData()),
+			{point.x, point.y},
+			{normal.x, normal.y},
+		});
+		return 1;
+	};
+};
+class RayCastCallbackCB : public b2RayCastCallback
+{
+protected:
+public:
+	RayCastCallbackCB(int cb_id) : cb_id(cb_id) {};
+	int cb_id;
+	vector<Hit> hits;
+	float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) {
+		float32 ret;
+		DisplayObject *d = static_cast<DisplayObject*>(fixture->GetUserData());
+
+		// Grab weak DO registery
+		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+
+		lua_pushvalue(L, cb_id);
+		lua_rawgeti(L, -2, d->getWeakSelfRef()); // The DO
+		lua_pushnumber(L, point.x * PhysicSimulator::unit_scale);
+		lua_pushnumber(L, -point.y * PhysicSimulator::unit_scale);
+		lua_pushnumber(L, normal.x * PhysicSimulator::unit_scale);
+		lua_pushnumber(L, -normal.y * PhysicSimulator::unit_scale);
+		if (lua_pcall(L, 5, 1, 0)) {
+			printf("RayCast callback error: %s\n", lua_tostring(L, -1));
+		} else {
+			if (lua_isnil(L, -1)) ret = 0;
+			else ret = lua_toboolean(L, -1) ? 1 : fraction;
+		}
+		lua_pop(L, 1);
+		return ret;
+	};
+};
+
+void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id) {
+	b2Vec2 point1(x1 / unit_scale, -y1 / unit_scale);
+	b2Vec2 point2(x2 / unit_scale, -y2 / unit_scale);
+	if (cb_id) {
+		// We are called with a callback fct, no returns are sent
+		RayCastCallbackCB callback(cb_id);
+		world.RayCast(&callback, point1, point2);
+	} else {
+		// We are called with a table in the lua top stack to store the results
+		RayCastCallbackList callback;
+		world.RayCast(&callback, point1, point2);
+		
+		int i = 1;
+		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+		for (auto &it : callback.hits) {
+			lua_newtable(L);
+
+			lua_pushstring(L, "d");
+			lua_rawgeti(L, -3, it.d->getWeakSelfRef());
+			lua_rawset(L, -3);
+
+			lua_pushstring(L, "x");
+			lua_pushnumber(L, it.point.x * unit_scale);
+			lua_rawset(L, -3);
+
+			lua_pushstring(L, "y");
+			lua_pushnumber(L, -it.point.y * unit_scale);
+			lua_rawset(L, -3);
+
+			lua_pushstring(L, "normal_x");
+			lua_pushnumber(L, it.normal.x * unit_scale);
+			lua_rawset(L, -3);
+
+			lua_pushstring(L, "normal_y");
+			lua_pushnumber(L, -it.normal.y * unit_scale);
+			lua_rawset(L, -3);
+
+			lua_rawseti(L, -3, i++);
+		}
+		lua_pop(L, 1); // Pop the weak regisry table
+	}
 }

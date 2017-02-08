@@ -685,7 +685,6 @@ void on_redraw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	ticks_per_frame = ticks - last_ticks;
 	frames_count = ((float)ticks - last_ticks) / ((float)1000.0 / (float)NORMALIZED_FPS);
 	// printf("ticks %d :: %f :: %f\n", ticks - last_ticks, ((float)1000.0 / (float)NORMALIZED_FPS), frames_count);
 	float nb_keyframes = frames_count;
@@ -1472,7 +1471,9 @@ int main(int argc, char *argv[])
 	SDL_Event event;
 	while (!exit_engine)
 	{
+		int ticks = 0;
 		if (!requested_fps) { // Unbound FPS mode
+			ticks = SDL_GetTicks();
 			on_redraw();
 		} else {
 			if (!isActive || tickPaused) SDL_WaitEvent(NULL);
@@ -1600,6 +1601,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+		if (ticks) ticks_per_frame = ticks - SDL_GetTicks();
 
 		/* draw the scene */
 		// Note: since realtime_timer_id is accessed, have to lock first

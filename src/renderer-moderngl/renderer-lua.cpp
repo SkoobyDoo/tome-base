@@ -1458,6 +1458,17 @@ static int physic_world_gravity(lua_State *L) {
 	return 0;
 }
 
+static int physic_world_raycast(lua_State *L) {
+	if (!lua_isfunction(L, 5)) {
+		lua_newtable(L);
+		PhysicSimulator::current->rayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), 0);
+		return 1;
+	} else {
+		PhysicSimulator::current->rayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), 5);
+		return 0;
+	}
+}
+
 static int physic_world_unit_to_pixel(lua_State *L) {
 	PhysicSimulator::setUnitScale(lua_tonumber(L, 1));
 	return 0;
@@ -1837,6 +1848,7 @@ const luaL_Reg rendererlib[] = {
 	{"vbo", gl_vbo_new},
 	{"countDOs", gl_dos_count},
 	{"defaultTextShader", gl_set_default_text_shader},
+	{"physicRayCast", physic_world_raycast},
 	{"physicWorldGravity", physic_world_gravity},
 	{"physicWorldScale", physic_world_unit_to_pixel},
 	{NULL, NULL}

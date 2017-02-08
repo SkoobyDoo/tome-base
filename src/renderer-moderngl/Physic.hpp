@@ -38,7 +38,7 @@ public:
 	DORPhysic(DisplayObject *d);
 	virtual ~DORPhysic();
 
-	void define(b2BodyDef &bodyDef, const b2FixtureDef &fixtureDef);
+	void define(b2BodyDef &bodyDef, b2FixtureDef &fixtureDef);
 
 	void setPos(float x, float y);
 	void setAngle(float a);
@@ -69,6 +69,8 @@ public:
 	void use();
 
 	void step(float nb_keyframes);
+
+	void rayCast(float x1, float y1, float x2, float y2, int cb_id);
 
 	static void setUnitScale(float scale);
 	static PhysicSimulator *getCurrent();

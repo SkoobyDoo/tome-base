@@ -134,6 +134,7 @@ public:
 
 	// void setLuaState(lua_State *L) { this->L = L; };
 	void setWeakSelfRef(int ref) {weak_self_ref = ref; };
+	int getWeakSelfRef() { return weak_self_ref; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
 	void setParent(DisplayObject *parent);
