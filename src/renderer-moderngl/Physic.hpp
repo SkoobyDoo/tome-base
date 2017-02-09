@@ -47,6 +47,7 @@ public:
 	void applyForce(float fx, float fy);
 	void applyLinearImpulse(float fx, float fy, float apply_x, float apply_y);
 	void applyLinearImpulse(float fx, float fy);
+	void setLinearVelocity(float fx, float fy);
 	void applyTorque(float t);
 	void applyAngularImpulse(float t);
 

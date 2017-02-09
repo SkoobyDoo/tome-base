@@ -142,8 +142,13 @@ function _M:checkDisplay()
 	self:loaded()
 end
 
+function _M:onDie(fct)
+	self.on_die = fct
+end
+
 function _M:dieDisplay()
 	if not self.ps then return end
+	if self.on_die then self:on_die() end
 	self.ps:die()
 	self.ps = nil
 end

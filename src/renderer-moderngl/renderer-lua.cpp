@@ -1419,6 +1419,13 @@ static int body_apply_linear_impulse(lua_State *L)
 	lua_pushvalue(L, 1);
 	return 1;
 }
+static int body_apply_set_linear_velocity(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	p->setLinearVelocity(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
 static int body_apply_torque(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
@@ -1831,6 +1838,7 @@ static const struct luaL_Reg physic_body_reg[] =
 {
 	{"applyForce", body_apply_force},
 	{"applyLinearImpulse", body_apply_linear_impulse},
+	{"setLinearVelocity", body_apply_set_linear_velocity},
 	{"applyTorque", body_apply_torque},
 	{"applyAngularImpulse", body_apply_angular_impulse},
 	{NULL, NULL},
