@@ -130,10 +130,10 @@ newTalent{
 		end
 		return true
 	end,
-	getDamage = function(self, t) return math.floor(self:combatTalentScale(t, 35, 75)) end,
+	getDamage = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
 	getAvoidance = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 10, 22)) end,
 	getSight = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, "log")) end,
-	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.6)) end,
+	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.5)) end,
 	sustain_lists = "break_with_stealth",
 	activate = function(self, t)
 		local ret = {}
@@ -151,7 +151,7 @@ newTalent{
 		local dam = t.getDamage(self,t)
 		local range = t.getSight(self,t)
 		local radius = t.getRadius(self,t)
-		return ([[Enter a concealed sniping stance, increasing our weapon's attack range and vision range by %d, giving all incoming damage a %d%% chance to miss you, and increasing the damage dealt by Steady Shot by %d%% and chance to mark by 100%%.
+		return ([[Enter a concealed sniping stance, increasing our weapon's attack range and vision range by %d, giving all incoming damage a %d%% chance to miss you, and causing your Headshot, Volley and Called Shots to deal %d%% increased damage and behave as if the target was marked.
 Any non-instant, non-movement action will break concealment, but the increased range and vision and damage avoidance will persist for 3 turns, with the damage avoidance decreasing in power by 33%% each turn.
 This requires a bow to use, and cannot be used if there are foes in sight within range %d.]]):
 		format(range, avoid, dam, radius)
@@ -222,6 +222,7 @@ newTalent{
 	getPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(8, true), 4, 0, 54, 50) end,
 	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 150, 50, 100)) end,
 	getDamage = function(self, t) return 1 + math.min(math.floor(self:getTalentLevel(t)),6) end, --we really don't want a flat damage bonus like this going up past 35%
+	getMarkChance = function(self, t) return math.floor(self:combatTalentScale(t, 2, 10)) end,
 	sustain_slots = 'archery_stance',
 	activate = function(self, t)
 
@@ -243,10 +244,11 @@ newTalent{
 		local power = t.getPower(self,t)
 		local speed = t.getSpeed(self,t)
 		local dam = t.getDamage(self,t)
-		return ([[Enter a calm, focused stance, increasing physical power and accuracy by %d and projectile speed by %d%%.
+		local mark = t.getMarkChance(self,t)
+		return ([[Enter a calm, focused stance, increasing physical power and accuracy by %d, projectile speed by %d%% and the chance to mark targets by an additional %d%%.
 This makes your shots more effective at range, increasing all damage dealt by %d%% per tile travelled beyond 3, to a maximum of %d%% damage at range 8.
 The physical power and accuracy increase with your Dexterity.]]):
-		format(power, speed, dam, dam*5)
+		format(power, speed, mark, dam, dam*5)
 	end,
 }
 
