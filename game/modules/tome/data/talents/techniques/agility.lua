@@ -125,7 +125,7 @@ newTalent{
 	require = techs_dex_req_high2,
 	points = 5,
 	random_ego = "attack",
-	cooldown = 8,
+	cooldown = 10,
 	stamina = 15,
 	requires_target = true,
 	tactical = { ATTACK = 2, ESCAPE = 1, DISABLE = { stun = 1 } },
@@ -211,7 +211,7 @@ newTalent{
 	no_energy = "fake",
 	points = 5,
 	random_ego = "attack",
-	cooldown = 6,
+	cooldown = 8,
 	stamina = 18,
 	require = techs_dex_req_high3,
 	range = archery_range,
@@ -329,7 +329,8 @@ newTalent{
 		local move = t.getMovementSpeed(self,t)*100
 		local turn = t.getTurn(self,t)
 		return ([[Enter a fluid, mobile shooting stance that excels at close combat. Your ranged attack speed is increased by %d%% and each time you shoot you gain %d%% increased movement speed for 2 turns.
-Ranged attacks against targets will also grant you up to %d%% of a turn. This is 100%% effective against targets within 3 tiles, and decreases by 20%% for each tile beyond that (to 0%% at 8 tiles). This cannot occur more than once per turn.]]):
+Ranged attacks against targets will also grant you up to %d%% of a turn. This is 100%% effective against targets within 3 tiles, and decreases by 20%% for each tile beyond that (to 0%% at 8 tiles). This cannot occur more than once per turn.
+Requires a sling to use.]]):
 		format(atk, move, turn)
 	end,
 }

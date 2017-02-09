@@ -104,7 +104,7 @@ newEntity{ base = "BASE_NPC_THIEF", define_as = "THIEF_BANDIT",
 	resolvers.talents{
 		[Talents.T_STEALTH]={base=3, every=6, max=9},
 		[Talents.T_LETHALITY]={base=2, every=6, max=6},
-		[Talents.T_DIRTY_FIGHTING]={base=1, every=7, max=6},
+		[Talents.T_VICIOUS_STRIKES]={base=1, every=7, max=6},
 	},
 	max_life = resolvers.rngavg(80,100),
 }

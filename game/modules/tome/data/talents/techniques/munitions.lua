@@ -339,7 +339,7 @@ newTalent{
 	getSlow = function(self, t) return math.floor(self:combatTalentLimit(t, 40, 10, 25)) end,	
 	getFireResist = function(self, t) return math.floor(self:combatTalentScale(t, 10, 40)) end,	
 	getPoisonDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 15, 100) end,
-	getPoisonFailure = function(self, t) return math.floor(self:combatTalentScale(t, 10, 20)) end,
+	getPoisonFailure = function(self, t) return math.floor(self:combatTalentScale(t, 10, 35)) end,
 	getRemoveCount = function(self, t) return self:combatTalentLimit(t, 4, 1, 2.5) end,
 	archery_onreach = function(self, t, x, y)
 		local tg = self:getTalentTarget(t)

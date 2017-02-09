@@ -127,22 +127,25 @@ newTalent{
 	tactical = { BUFF = 2 },
 	getCrit = function(self, t) return self:combatTalentStatDamage(t, "dex", 10, 50) / 1.5 end,
 	getPen = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "str", 10, 50), 100, 0, 0, 35.7, 35.7) end, -- Limit to <100%
+	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.20, 0.75) end,
 	drain_stamina = 6,
 	activate = function(self, t)
 		local ret = {
 			crit = self:addTemporaryValue("combat_physcrit", t.getCrit(self, t)),
 			pen = self:addTemporaryValue("resists_pen", {[DamageType.PHYSICAL] = t.getPen(self, t)}),
+			speed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
 		}
 		return ret
 	end,
 	deactivate = function(self, t, p)
+		self:removeTemporaryValue("combat_physspeed", p.speed)
 		self:removeTemporaryValue("combat_physcrit", p.crit)
 		self:removeTemporaryValue("resists_pen", p.pen)
 		return true
 	end,
 	info = function(self, t)
 		return ([[You go all out, trying to burn down your foes as fast as possible.
-		Every hit in battle has +%d%% critical chance and +%d%% physical resistance penetration, but this talent drains 6 stamina each turn.]]):
-		format(t.getCrit(self, t), t.getPen(self, t))
+		You gain +%d%% attack speed, +%d%% critical chance and +%d%% physical resistance penetration, but this talent drains 6 stamina each turn.]]):
+		format(t.getSpeed(self,t)*100, t.getCrit(self, t), t.getPen(self, t))
 	end,
 }

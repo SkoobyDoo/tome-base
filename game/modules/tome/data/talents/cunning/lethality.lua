@@ -33,7 +33,7 @@ newTalent{
 		local critchance = t.getCriticalChance(self, t)
 		local power = t.critpower(self, t)
 		return ([[You have learned to find and hit weak spots. All your strikes have a %0.1f%% greater chance to be critical hits, and your critical hits do %0.1f%% more damage.
-		Also, when using knives, you now use your Cunning instead of your Strength for bonus damage.]]):
+		Also, when using knives and throwing knives, you now use your Cunning instead of your Strength for bonus damage.]]):
 		format(critchance, power)
 	end,
 }
