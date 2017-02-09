@@ -76,6 +76,9 @@ void DORPhysic::applyLinearImpulse(float fx, float fy, float apply_x, float appl
 void DORPhysic::applyLinearImpulse(float fx, float fy) {
 	body->ApplyLinearImpulseToCenter(b2Vec2(fx, -fy), true);
 }
+void DORPhysic::setLinearVelocity(float fx, float fy) {
+	body->SetLinearVelocity(b2Vec2(fx, -fy));
+}
 
 void DORPhysic::applyTorque(float t) {
 	body->ApplyTorque(t, true);
