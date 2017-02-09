@@ -75,7 +75,7 @@ newEntity{
 newEntity{
 	power_source = {technique=true},
 	name = "duelist's ", prefix=true, instant_resolve=true,
-	keywords = {marauder=true},
+	keywords = {duelist=true},
 	level_range = {20, 50},
 	greater_ego = 1,
 	rarity = 20,
@@ -179,7 +179,7 @@ newEntity{
 	cost = 80,
 	resolvers.charmt(Talents.T_SECOND_WIND, {3,4,5}, 35),
 	wielder = {
-		cancel_damage_chance = resolvers.mbonus_material(8, 4),
+		combat_def = resolvers.mbonus_material(8, 2),
 		combat_physcrit = resolvers.mbonus_material(7, 3),
 		combat_apr = resolvers.mbonus_material(15, 5),
 		combat_def = resolvers.mbonus_material(10, 5),
@@ -191,42 +191,20 @@ newEntity{
 	power_source = {nature=true},
 	name = "multi-hued ", prefix=true, instant_resolve=true,
 	keywords = {multihued=true},
-	level_range = {40, 50},
+	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 29,
 	cost = 47,
 	wielder = {
 		resists={
-			[DamageType.ACID] = resolvers.mbonus_material(8, 5),
-			[DamageType.LIGHTNING] = resolvers.mbonus_material(8, 5),
-			[DamageType.FIRE] = resolvers.mbonus_material(8, 5),
-			[DamageType.COLD] = resolvers.mbonus_material(8, 5),
-		},
-		on_melee_hit={
-			[DamageType.ACID] = resolvers.mbonus_material(8, 5),
-			[DamageType.LIGHTNING] = resolvers.mbonus_material(8, 5),
-			[DamageType.FIRE] = resolvers.mbonus_material(8, 5),
-			[DamageType.COLD] = resolvers.mbonus_material(8, 5),
-		},
-	},
-}
-
-newEntity{
-	power_source = {nature=true},
-	name = "caller's ", prefix=true, instant_resolve=true,
-	keywords = {callers=true},
-	level_range = {40, 50},
-	greater_ego = 1,
-	rarity = 29,
-	cost = 47,
-	wielder = {
-		resists={
-			[DamageType.FIRE] = resolvers.mbonus_material(8, 5),
-			[DamageType.COLD] = resolvers.mbonus_material(8, 5),
-			[DamageType.NATURE] = resolvers.mbonus_material(8, 5),
-			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 5),
+			[DamageType.ACID] = resolvers.mbonus_material(15, 5),
+			[DamageType.LIGHTNING] = resolvers.mbonus_material(15, 5),
+			[DamageType.FIRE] = resolvers.mbonus_material(15, 5),
+			[DamageType.COLD] = resolvers.mbonus_material(15, 5),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(15, 5),
 		},
 		combat_mindpower = resolvers.mbonus_material(10, 5),
+
 	},
 }
 
