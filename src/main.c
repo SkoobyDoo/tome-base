@@ -639,7 +639,7 @@ void on_tick()
 	}
 }
 
-extern void interface_realtime(int nb_keyframes); // From renderer-moderngl/Interfaces.hpp
+extern void interface_realtime(float nb_keyframes); // From renderer-moderngl/Interfaces.hpp
 
 static void call_draw(float nb_keyframes)
 {

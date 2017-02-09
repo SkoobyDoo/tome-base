@@ -67,6 +67,7 @@ void IRealtime::killMe() {
 	}
 }
 
+extern "C" void interface_realtime(float nb_keyframes);
 void interface_realtime(float nb_keyframes) {
 	realtime_executing = true;
 	for (auto it = realtime_list.begin(); it != realtime_list.end();) {
