@@ -48,7 +48,7 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 90, 15, 20, 60, 250) -- limit < 90%, ~67% at TL 6.5, 55 dex
 	end,
 	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
-		return math.max(0, self:combatTalentLimit(t, 100, 15, 50))
+		return math.max(0, self:combatTalentLimit(t, 100, 15, 40))
 	end,
 	getDamageChange = function(self, t, fake)
 		local dam,_,weapon = 0,self:hasDualWeapon()
