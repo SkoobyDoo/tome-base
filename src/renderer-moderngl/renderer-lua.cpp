@@ -32,7 +32,7 @@ extern "C" {
 #include "renderer-moderngl/renderer-lua.h"
 }
 
-template<class T=DisplayObject>T* userdata_to_DO(const char *caller, lua_State *L, int index, const char *auxclass = nullptr) {
+template<class T=DisplayObject>T* userdata_to_DO(const char *caller, lua_State *L, int index, const char *auxclass) {
 	DisplayObject **ptr;
 	if (auxclass) {
 		ptr = reinterpret_cast<DisplayObject**>(auxiliar_checkclass(L, auxclass, index));

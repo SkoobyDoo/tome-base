@@ -37,10 +37,12 @@ VBO::VBO(VBOMode mode) : VBO() {
 
 VBO::VBO() {
 	glGenBuffers(1, &vbo);
+	glGenBuffers(1, &vbo_elements);
 }
 
 VBO::~VBO() {
 	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &vbo_elements);
 }
 
 void VBO::clear() {
@@ -94,28 +96,39 @@ int VBO::addQuad(
 		float x4, float y4, float z4, float u4, float v4, 
 		float r, float g, float b, float a
 	) {
-	if (vertices.size() + 4 < vertices.capacity()) vertices.reserve(vertices.size() * 2);
+	int vsize = vertices.size();
+	if (vsize + 4 < vertices.capacity()) vertices.reserve(vsize * 2);
+	if (elements.size() + 6 < elements.capacity()) elements.reserve(elements.size() * 2);
 
 	vertices.push_back({{x1, y1, z1, 1}, {u1, v1}, {r, g, b, a}});
 	vertices.push_back({{x2, y2, z2, 1}, {u2, v2}, {r, g, b, a}});
 	vertices.push_back({{x3, y3, z3, 1}, {u3, v3}, {r, g, b, a}});
-	vertices.push_back({{x1, y1, z1, 1}, {u1, v1}, {r, g, b, a}});
-	vertices.push_back({{x3, y3, z3, 1}, {u3, v3}, {r, g, b, a}});
 	vertices.push_back({{x4, y4, z4, 1}, {u4, v4}, {r, g, b, a}});
+
+	elements.push_back(vsize);
+	elements.push_back(vsize + 1);
+	elements.push_back(vsize + 2);
+	elements.push_back(vsize);
+	elements.push_back(vsize + 2);
+	elements.push_back(vsize + 3);
 
 	changed = true;
 	return 0;
 }
 
 void VBO::update() {
-	// glBindBuffer(GL_ARRAY_BUFFER, vbo); // dont do it here, we did it before being called in toScreen
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vbo_vertex) * vertices.size(), NULL, (GLenum)mode);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vbo_vertex) * vertices.size(), vertices.data());
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * elements.size(), NULL, GL_STATIC_DRAW); // Static because this wont change often
+	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * elements.size(), elements.data());
+
 	changed = false;
 }
 
 void VBO::toScreen(mat4 model) {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 	if (changed) update();
 
 	int tex_unit = 0;
@@ -135,15 +148,19 @@ void VBO::toScreen(mat4 model) {
 
 	if (shader->p_tick != -1) { GLfloat t = cur_frame_tick; glUniform1fv(shader->p_tick, 1, &t); }
 	if (shader->p_color != -1) { glUniform4fv(shader->p_color, 1, glm::value_ptr(color)); }
-	glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+	if (shader->p_mvp != -1) { glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));	}
 	glEnableVertexAttribArray(shader->vertex_attrib);
 	glVertexAttribPointer(shader->vertex_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vbo_vertex), (void*)0);
-	glEnableVertexAttribArray(shader->texcoord_attrib);
-	glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vbo_vertex), (void*)offsetof(vbo_vertex, tex));
-	glEnableVertexAttribArray(shader->color_attrib);
-	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vbo_vertex), (void*)offsetof(vbo_vertex, color));
+	if (shader->texcoord_attrib != -1) {
+		glEnableVertexAttribArray(shader->texcoord_attrib);
+		glVertexAttribPointer(shader->texcoord_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(vbo_vertex), (void*)offsetof(vbo_vertex, tex));
+	}
+	if (shader->color_attrib != -1) {
+		glEnableVertexAttribArray(shader->color_attrib);
+		glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vbo_vertex), (void*)offsetof(vbo_vertex, color));
+	}
 
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+	glDrawElements(GL_TRIANGLES, elements.size(), GL_UNSIGNED_INT, (void*)0);
 }
 
 void VBO::toScreen(float x, float y, float rot, float scalex, float scaley) {

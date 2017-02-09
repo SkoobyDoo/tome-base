@@ -1,3 +1,8 @@
+// Lol or what ? Mingw64 on windows seems to not find it ..
+#ifndef M_PI
+#define M_PI                3.14159265358979323846
+#endif
+
 namespace easing {
 	static float linear(float start, float end, float position) { return (end - start) * position + start; }
 

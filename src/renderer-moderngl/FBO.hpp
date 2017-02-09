@@ -52,6 +52,9 @@ public:
 	virtual void renderMode() = 0;
 };
 
+/****************************************************************************
+ ** Bloom mode with a single blur shader
+ ****************************************************************************/
 class TargetBloom2 : public TargetSpecialMode {
 protected:
 	shader_type *bloom = NULL;
@@ -78,6 +81,9 @@ public:
 };
 
 
+/****************************************************************************
+ ** Bloom mode with a double blur shader
+ ****************************************************************************/
 class TargetBloom : public TargetSpecialMode {
 protected:
 	shader_type *bloom = NULL;
@@ -103,6 +109,9 @@ public:
 	virtual void renderMode();
 };
 
+/****************************************************************************
+ ** Pass rendering through a series of shaders
+ ****************************************************************************/
 struct shader_ref {
 	string name;
 	shader_type *shader;

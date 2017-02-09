@@ -23,7 +23,7 @@
 #define PARTICLES_GL_HPP
 
 #include "renderer-moderngl/Renderer.hpp"
-#include "particles.hpp"
+#include "../particles.hpp"
 
 // This one is a little strange, it is not the master of particles_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around particle code

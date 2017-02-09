@@ -34,6 +34,11 @@ int donb = 0;
 #include "tinyobjloader/tiny_obj_loader.h"
 #include <string>
 
+// Lol or what ? Mingw64 on windows seems to not find it ..
+#ifndef M_PI
+#define M_PI                3.14159265358979323846
+#endif
+
 #define DEBUG_CHECKPARENTS
 
 /*************************************************************************

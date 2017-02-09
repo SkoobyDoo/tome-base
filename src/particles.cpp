@@ -40,6 +40,10 @@ extern "C" {
 #include "renderer-moderngl/FBO.hpp"
 #include "particles.hpp"
 
+// Lol or what ? Mingw64 on windows seems to not find it ..
+#ifndef M_PI
+#define M_PI                3.14159265358979323846
+#endif
 #ifndef M_PI_2
 # define M_PI_2		1.57079632679489661923	/* pi/2 */
 #endif
@@ -506,6 +510,9 @@ static void particles_draw(particles_type *ps, mat4 model)
 	if (alter_fbo) {
 		tglActiveTexture(GL_TEXTURE0);
 	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	SDL_mutexV(ps->lock);
 }

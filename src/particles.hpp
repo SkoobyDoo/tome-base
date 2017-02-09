@@ -18,8 +18,8 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
-#ifndef _PARTICLES_HPP_
-#define _PARTICLES_HPP_
+#ifndef _PARTICLES_HPP
+#define _PARTICLES_HPP
 
 #include "tgl.h"
 #include "useshader.h"

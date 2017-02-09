@@ -49,11 +49,12 @@ class VBO {
 
 	vec4 color = {1, 1, 1, 1};
 
-	GLuint vbo = 0;
+	GLuint vbo = 0, vbo_elements = 0;
 	vector<GLuint> textures;
 	shader_type *shader = NULL;
 
 	vector<vbo_vertex> vertices;
+	vector<GLuint> elements;
 
 	bool changed = true;
 
