@@ -2581,12 +2581,14 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 
 	if id_challenge == "pacifist" then
 		level.data.record_player_kills = 0
-		self:makeChallengeQuest(level, "Pacifist", "Leave the level (to the next level) without killing a single creature.", {
+		self:makeChallengeQuest(level, "Pacifist", "Leave the level (to the next level) without killing a single creature. You will get #{italic}#two#{normal}# rewards.", {
 			on_exit_check = function(self, who)
 				if not self.check_level then return end
 				if self.check_level.data.record_player_kills == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
 				self.check_level = nil
 			end,
+			forbid_rewards = {"randart", "generic_pt"},
+			rewards_nb = 2,
 			on_kill_foe = function(self, who, target)
 				who:setQuestStatus(self.id, self.FAILED)
 			end,
@@ -2889,12 +2891,18 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 		end
 	end
 
-	local reward = rng.rarityTable(rewards)
-	reward.name = reward.give(who) or reward.name
-	self.id_challenge.rewarded[reward.id] = (self.id_challenge.rewarded[reward.id] or 0) + 1
-	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward: "..reward.name
-	game.log("#LIGHT_BLUE#%s has received: %s.", who.name:capitalize(), reward.name)
-	return reward.name
+	local nb = 0
+	local reward_name = {}
+	for i = 1, quest.rewards_nb or 1 do
+		local reward = rng.rarityTable(rewards)
+		reward_name[#reward_name+1] = reward.give(who) or reward.name
+		self.id_challenge.rewarded[reward.id] = (self.id_challenge.rewarded[reward.id] or 0) + 1
+		nb = nb + 1
+	end
+	reward_name = table.concatNice(reward_name, ", ", " and ")
+	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward"..(nb>0 and "s" or "")..": "..reward_name
+	game.log("#LIGHT_BLUE#%s has received: %s.", who.name:capitalize(), reward_name)
+	return reward_name
 end
 
 --- Allow the actor to learn a specific talent
