@@ -241,7 +241,7 @@ function core.renderer.fromTextureTableCut(t, x, y, w, h, py, ph, r, g, b, a, v)
 end
 
 
-function core.renderer.targetDisplay(target)
+function core.renderer.targetDisplay(target, tid, did)
 	local v = core.renderer.vertexes()
 	local w, h = target:displaySize()
 	local x1, x2 = 0, w
@@ -255,7 +255,7 @@ function core.renderer.targetDisplay(target)
 		x1, y2, u1, v2,
 		1, 1, 1, 1
 	)
-	v:textureTarget(target, 0)
+	v:textureTarget(target, tid, did)
 	return v
 end
 

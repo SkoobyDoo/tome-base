@@ -477,6 +477,20 @@ static int gl_renderer_premultiplied_alpha(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_shader(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	if (lua_isnil(L, 2)) {
+		r->setShader(NULL, LUA_NOREF);
+	} else {
+		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		lua_pushvalue(L, 2);
+		r->setShader(shader, luaL_ref(L, LUA_REGISTRYINDEX));
+	}
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_renderer_set_name(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
@@ -601,6 +615,14 @@ static int gl_target_toscreen(lua_State *L)
 {
 	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
 	c->toScreen(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_target_compute(lua_State *L)
+{
+	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	c->tick();
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -733,6 +755,26 @@ static int gl_target_mode_bloom2(lua_State *L)
 		bloom, bloom_ref,
 		blur, blur_ref,
 		combine, combine_ref
+	);
+	v->setSpecialMode(mode);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_target_mode_blur(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+
+	int blur_passes = lua_tonumber(L, 2);
+
+	shader_type *blur = (shader_type*)lua_touserdata(L, 3);
+	lua_pushvalue(L, 3); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	TargetBlur *mode = new TargetBlur(
+		v,
+		blur_passes,
+		blur, blur_ref
 	);
 	v->setSpecialMode(mode);
 
@@ -1511,6 +1553,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
 	{"cutoff", gl_renderer_cutoff},
+	{"shader", gl_renderer_shader},
 	{"enableBlending", gl_renderer_blend},
 	{"premultipliedAlpha", gl_renderer_premultiplied_alpha},
 	{"setRendererName", gl_renderer_set_name},
@@ -1533,6 +1576,7 @@ static const struct luaL_Reg gl_target_reg[] =
 {
 	{"__gc", gl_target_free},
 	{"toScreen", gl_target_toscreen},
+	{"compute", gl_target_compute},
 	{"use", gl_target_use},
 	{"displaySize", gl_target_displaysize},
 	{"clearColor", gl_target_clearcolor},
@@ -1541,6 +1585,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"textureTarget", gl_target_target_texture},
 	{"bloomMode", gl_target_mode_bloom},
 	{"bloomMode2", gl_target_mode_bloom2},
+	{"blurMode", gl_target_mode_blur},
 	{"postEffectsMode", gl_target_mode_posteffects},
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},

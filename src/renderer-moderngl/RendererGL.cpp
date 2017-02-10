@@ -107,6 +107,7 @@ RendererGL::RendererGL(VBOMode mode) {
 }
 RendererGL::~RendererGL() {
 	glDeleteBuffers(1, &vbo_elements);
+	if (my_default_shader_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, my_default_shader_lua_ref);
 }
 
 DisplayObject* RendererGL::clone() {
@@ -125,6 +126,12 @@ void RendererGL::cloneInto(DisplayObject* _into) {
 	into->cutting = cutting;
 	into->cutpos1 = cutpos1;
 	into->cutpos2 = cutpos2;
+}
+
+void RendererGL::setShader(shader_type *s, int lua_ref) {
+	if (my_default_shader_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, my_default_shader_lua_ref);
+	my_default_shader = s;
+	my_default_shader_lua_ref = lua_ref;
 }
 
 bool sortable_vertex::operator<(const sortable_vertex &i) const {
@@ -382,6 +389,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 			// printf("=r= binding tex %d\n", (*dl)->tex);
 
 			shader_type *shader = (*dl)->shader;
+			if (!shader) shader = my_default_shader;
 			if (!shader) {
 				useNoShader();
 				if (!current_shader) return;

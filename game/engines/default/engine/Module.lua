@@ -902,6 +902,7 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	-- Disable particles FBO
 	core.particles.defineAlterFBO(nil)
 	core.particles.defineBloomFBO(nil)
+	core.particles.defaultShader(nil)
 
 	-- FOV Shape
 	core.fov.set_algorithm("large_ass")

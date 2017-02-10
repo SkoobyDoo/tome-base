@@ -53,6 +53,25 @@ public:
 };
 
 /****************************************************************************
+ ** Blur mode with a single blur shader
+ ****************************************************************************/
+class TargetBlur : public TargetSpecialMode {
+protected:
+	shader_type *blur = NULL;
+	int blur_ref = LUA_NOREF;
+	GLint blur_horizontal_uniform = 0;
+	int blur_passes;
+	Fbo fbo_blur;
+
+	VBO vbo;
+public:
+	TargetBlur(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref);
+	virtual ~TargetBlur();
+	virtual void renderMode();
+};
+
+
+/****************************************************************************
  ** Bloom mode with a single blur shader
  ****************************************************************************/
 class TargetBloom2 : public TargetSpecialMode {
@@ -141,6 +160,7 @@ public:
  ** then add it to a renderer to use the content generated
  ****************************************************************************/
 class DORTarget : public DORVertexes, public IResizable {
+	friend class TargetBlur;
 	friend class TargetBloom;
 	friend class TargetBloom2;
 	friend class TargetPostProcess;

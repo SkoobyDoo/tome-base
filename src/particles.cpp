@@ -70,6 +70,7 @@ static DORTarget *bloom_fbo = NULL;
 static StaticSubRenderer *bloom_do = NULL;
 static particle_draw_last *pdls_head = NULL;
 static particle_draw_last *blooms_head = NULL;
+static shader_type *default_particles_shader = NULL;
 void thread_add(particles_type *ps);
 
 /********************************************
@@ -479,6 +480,7 @@ static void particles_draw(particles_type *ps, mat4 model)
 	mat4 mvp = View::getCurrent()->get() * model * rot;
 
 	shader_type *shader = ps->shader;
+	if (!shader) shader = default_particles_shader;
 	if (!shader) { useNoShader(); if (!current_shader) return; }
 	else { useShaderSimple(shader); current_shader = shader; }
 	shader = current_shader;
@@ -630,6 +632,17 @@ static void draw_bloom(mat4 model, vec4 color) {
 		blooms_head = blooms_head->next;
 		free(pdl);
 	}
+}
+
+// Runs into main thread
+static int particles_set_default_shader(lua_State *L)
+{
+	if (lua_isnil(L, 1)) {
+		default_particles_shader = NULL;
+	} else {
+		default_particles_shader = (shader_type*)lua_touserdata(L, 1);
+	}
+	return 0;
 }
 
 // Runs into main thread
@@ -810,6 +823,7 @@ static const struct luaL_Reg particleslib[] =
 	{"getBloomsDO", particles_bloom_do},
 	{"drawBlooms", particles_draw_bloom},
 	{"hasBlooms", particles_has_bloom},
+	{"defaultShader", particles_set_default_shader},
 	{NULL, NULL},
 };
 

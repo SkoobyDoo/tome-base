@@ -444,6 +444,71 @@ void TargetBloom2::renderMode() {
 }	
 
 /*************************************************************************
+ ** TargetBlur
+ *************************************************************************/
+TargetBlur::TargetBlur(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref)
+	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
+{
+	this->blur = blur;
+	this->blur_ref = blur_ref;
+
+	this->blur_passes = blur_passes;
+
+	useShaderSimple(blur);
+	blur_horizontal_uniform = glGetUniformLocation(blur->shader, "horizontal");
+
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_blur);
+
+	vbo.addQuad(
+		0, 0, 0, 1,
+		target->w, 0, 1, 1,
+		target->w, target->h, 1, 0,
+		0, target->h, 0, 0,
+		1, 1, 1, 1
+	);
+}
+TargetBlur::~TargetBlur() {
+	target->deleteFramebuffer(&fbo_blur);
+
+	if (blur_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, blur_ref); blur_ref = LUA_NOREF; }
+}
+
+void TargetBlur::renderMode() {
+	mat4 model = mat4();
+	vbo.resetTexture();
+	glDisable(GL_BLEND);
+	// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // DGDGDGDG: probably betetr to use premultipled alpha, work on me!
+
+	// Draw all passes
+	vbo.setShader(blur);
+	Fbo *use_fbo_prev = &target->fbo;
+	Fbo *use_fbo = &fbo_blur;
+	for (int i = 0; i < blur_passes; i++) {
+		target->useFramebuffer(use_fbo);
+
+		vbo.setTexture(use_fbo_prev->textures[0].texture);
+		float radius = blur_passes + 1 - i;
+		GLfloat uni[2] = {radius, 0};
+		if (i % 2 == 1) { uni[0] = 0; uni[1] = radius; }
+		glUniform2fv(blur_horizontal_uniform, 1, uni);
+		vbo.toScreen(model);
+
+		swap(use_fbo_prev, use_fbo);
+	}
+
+	// If we didnt end up in the rigth buffer, draw back into the normal FBO
+	if (use_fbo == &target->fbo) {
+		target->useFramebuffer(&target->fbo);
+		vbo.setTexture(use_fbo_prev->textures[0].texture);
+		vbo.setShader(NULL);
+		vbo.toScreen(model);
+	}
+
+	// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+}	
+
+/*************************************************************************
  ** TargetPostProcess
  *************************************************************************/
 TargetPostProcess::TargetPostProcess(DORTarget *t)

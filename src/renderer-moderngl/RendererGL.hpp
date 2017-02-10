@@ -95,10 +95,8 @@ protected:
 	vec4 cutpos1;
 	vec4 cutpos2;
 
-	// bool post_processing = false;
-	// vector<shader_type*> post_process_shaders;
-	// GLuint post_process_fbos[2] = {0, 0};
-	// GLuint post_process_textures[2] = {0, 0};
+	shader_type *my_default_shader = NULL;
+	int my_default_shader_lua_ref = LUA_NOREF;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -119,6 +117,7 @@ public:
 
 	virtual void setSortingChanged() { recompute_fast_sort = true; }
 
+	void setShader(shader_type *s, int lua_ref);
 	void renderKind(RenderKind k) { kind = k; };
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
 	void countVertexes(bool count) { count_vertexes = count; };
