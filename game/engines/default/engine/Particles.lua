@@ -150,9 +150,9 @@ function _M:onDie(fct)
 	self.on_die = fct
 end
 
-function _M:dieDisplay()
+function _M:dieDisplay(no_callback)
 	if not self.ps then return end
-	if self.on_die then self:on_die() end
+	if not no_callback and self.on_die then self:on_die() end
 	self.ps:die()
 	self.ps = nil
 end
