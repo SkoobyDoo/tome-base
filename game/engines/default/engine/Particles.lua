@@ -100,12 +100,16 @@ function _M:loaded()
 
 	local sha = nil
 	if self.shader then
-		if not self._shader then
-			local Shader = require 'engine.Shader'
-			self._shader = Shader.new(self.shader.type, self.shader)
-		end
+		if self.shader.__CLASSNAME == "engine.Shader" then
+			sha = self.shader.shad
+		else
+			if not self._shader then
+				local Shader = require 'engine.Shader'
+				self._shader = Shader.new(self.shader.type, self.shader)
+			end
 
-		sha = self._shader.shad
+			sha = self._shader.shad
+		end
 	end
 
 	if islast and allow_bloom then error("Particle defined with both bloom and alterscreen") end

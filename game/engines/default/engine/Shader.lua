@@ -281,6 +281,7 @@ function _M:setDefault(kind, name, args)
 	
 	if kind == "text" then core.renderer.defaultTextShader(shad.shad) end
 	default[kind] = shad
+	return shad
 end
 
 function _M:getDefault(kind)
