@@ -36,11 +36,6 @@ function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.renderer = core.renderer.renderer("stream")
 end
 
---- Return the DisplayObject to draw
-function _M:getDO()
-	return self.renderer
-end
-
 --- Sets a tilt to the texts based on xvel
 -- @param angle, in degree when xvel is 5
 function _M:setTilt(a)
@@ -89,8 +84,13 @@ function _M:empty()
 	self.flyers = {}
 end
 
-function _M:getDO()
-	return core.renderer.callback(function(nb_keyframes) self:display(nb_keyframes) end)
+--- Return the DisplayObject to draw
+function _M:getDO(full)
+	if not full then
+		return self.renderer
+	else
+		return core.renderer.callback(function(nb_keyframes) self:display(nb_keyframes) end)
+	end
 end
 
 --- Display loop function

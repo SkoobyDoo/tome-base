@@ -233,6 +233,11 @@ function _M:display(nb_keyframes)
 	end
 end
 
+--- Return the DisplayObject to draw
+function _M:getBaseDisplayDO()
+	return core.renderer.callback(function(nb_keyframes) _M.display(self, nb_keyframes) end)
+end
+
 --- Register a timer
 -- @int seconds will be called in the given number of seconds
 -- @func cb the callback function
