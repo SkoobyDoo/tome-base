@@ -94,7 +94,7 @@ void DORPhysic::onKeyframe(float nb_keyframes) {
 	float unit_scale = PhysicSimulator::unit_scale;
 
 	// printf("%4.2f %4.2f %4.2f\n", position.x * unit_scale, position.y * unit_scale, angle);
-	me->translate(position.x * unit_scale, -position.y * unit_scale, me->z, true);
+	me->translate(floor(position.x * unit_scale), -floor(position.y * unit_scale), me->z, true);
 	me->rotate(me->rot_x, me->rot_y, angle, true);
 }
 
