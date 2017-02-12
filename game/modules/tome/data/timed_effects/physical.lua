@@ -3374,8 +3374,8 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("global_speed_add", eff.slowid)
-		self:removeTemporaryValue("never_move", eff.pinid)
+		if eff.slowid then self:removeTemporaryValue("global_speed_add", eff.slowid) end
+		if eff.pinid then self:removeTemporaryValue("never_move", eff.pinid) end
 	end,
 	on_timeout = function(self, eff)
 		if eff.dam > 0 then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
