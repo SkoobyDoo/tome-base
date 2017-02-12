@@ -914,7 +914,7 @@ newTalent{
 				resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/humanoid_yeek_yeek_mindslayer.png", display_h=2, display_y=-1}}},
 				desc = "A wayist that came to help.",
 
-				body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+				body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, PSIONIC_FOCUS=1 },
 
 				rank = 3,
 				life_rating = 8,
@@ -947,7 +947,8 @@ newTalent{
 					[Talents.T_KINETIC_AURA]={base=1, every=5, max=5},
 					[Talents.T_CHARGED_AURA]={base=1, every=5, max=5},
 				},
-
+				resolvers.sustains_at_birth(),
+				
 				faction = self.faction,
 				summoner = self, summoner_gain_exp=true,
 				summon_time = 6,
