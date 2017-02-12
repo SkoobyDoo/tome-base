@@ -73,7 +73,7 @@ function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
 
 	if not self.commands[sym] and not self.commands[self.__DEFAULT] then
 		if self.on_input and unicode then self.on_input(unicode) handled = true end
-	elseif not isup and self.commands[sym] and (ctrl or shift or alt or meta) and not self.commands[sym].anymod then
+	elseif (self.allow_down or not isup) and self.commands[sym] and (ctrl or shift or alt or meta) and not self.commands[sym].anymod then
 		local mods = {}
 		if alt then mods[#mods+1] = "alt" end
 		if ctrl then mods[#mods+1] = "ctrl" end
@@ -81,14 +81,14 @@ function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
 		if shift then mods[#mods+1] = "shift" end
 		mods = table.concat(mods,',')
 		if self.commands[sym][mods] then
-			self.commands[sym][mods](sym, ctrl, shift, alt, meta, unicode)
+			self.commands[sym][mods](sym, ctrl, shift, alt, meta, unicode, isup)
 			handled = true
 		end
-	elseif not isup and self.commands[sym] and self.commands[sym].plain then
-		self.commands[sym].plain(sym, ctrl, shift, alt, meta, unicode, key)
+	elseif (self.allow_down or not isup) and self.commands[sym] and self.commands[sym].plain then
+		self.commands[sym].plain(sym, ctrl, shift, alt, meta, unicode, isup, key)
 		handled = true
-	elseif not isup and self.commands[self.__DEFAULT] and self.commands[self.__DEFAULT].plain then
-		self.commands[self.__DEFAULT].plain(sym, ctrl, shift, alt, meta, unicode, key)
+	elseif (self.allow_down or not isup) and self.commands[self.__DEFAULT] and self.commands[self.__DEFAULT].plain then
+		self.commands[self.__DEFAULT].plain(sym, ctrl, shift, alt, meta, unicode, isup, key)
 		handled = true
 	end
 

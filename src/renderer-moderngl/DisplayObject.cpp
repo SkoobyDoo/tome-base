@@ -58,8 +58,8 @@ DisplayObject::~DisplayObject() {
 	if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
 	if (tweener) delete tweener;
 	tweener = NULL;
-	if (physic) delete physic;
-	physic = NULL;
+	for (int pid = 0; pid < physics.size(); pid++) delete physics[pid];
+	physics.clear();
 }
 
 void DisplayObject::removeFromParent() {
@@ -137,12 +137,13 @@ recomputematrix DisplayObject::computeParentCompositeMatrix(DisplayObject *stop_
 	return cur;
 }
 
-void DisplayObject::enablePhysic() {
-	physic = new DORPhysic(this);
+int DisplayObject::enablePhysic() {
+	physics.push_back(new DORPhysic(this));
 }
 
-DORPhysic *DisplayObject::getPhysic() {
-	return physic;
+DORPhysic *DisplayObject::getPhysic(int pid) {
+	if (pid < 0 or pid > physics.size()) pid = 0;
+	return physics[pid];
 }
 
 void DisplayObject::shown(bool v) {
@@ -333,10 +334,10 @@ void DisplayObject::cancelTween(TweenSlot slot) {
 
 
 void DisplayObject::translate(float x, float y, float z, bool increment) {
-	if (physic) {
+	if (physics.size()) {
 		if (!increment) {
 			this->z = z;
-			physic->setPos(x, y);
+			for (auto physic : physics) physic->setPos(x, y);
 			if (z != this->z) setSortingChanged();
 			recomputeModelMatrix();
 			return;
@@ -360,11 +361,11 @@ void DisplayObject::translate(float x, float y, float z, bool increment) {
 }
 
 void DisplayObject::rotate(float x, float y, float z, bool increment) {
-	if (physic) {
+	if (physics.size()) {
 		if (!increment) {
 			this->rot_x = x;
 			this->rot_y = y;
-			physic->setAngle(z);
+			for (auto physic : physics) physic->setAngle(z);
 			recomputeModelMatrix();
 			return;
 		} else {

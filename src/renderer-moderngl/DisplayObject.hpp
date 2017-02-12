@@ -122,7 +122,7 @@ protected:
 	bool stop_parent_recursing = false;
 
 	DORTweener *tweener = NULL;
-	DORPhysic *physic = NULL;
+	vector<DORPhysic*> physics;
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
@@ -145,8 +145,8 @@ public:
 	void resetChanged() { changed = false; changed_children = false; };
 	bool independantRenderer() { return stop_parent_recursing; };
 
-	void enablePhysic();
-	DORPhysic *getPhysic();
+	int enablePhysic();
+	DORPhysic *getPhysic(int pid);
 
 	void recomputeModelMatrix();
 	recomputematrix computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur);

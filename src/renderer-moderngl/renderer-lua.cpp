@@ -226,8 +226,8 @@ static bool string_get_lua_table(lua_State *L, int table_idx, float field, const
 static int gl_generic_physic_enable(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
-	c->enablePhysic();
-	DORPhysic *physic = c->getPhysic();
+	int pid = c->enablePhysic();
+	DORPhysic *physic = c->getPhysic(pid);
 
 	float tmp;
 	b2BodyDef bodyDef;
@@ -264,30 +264,50 @@ static int gl_generic_physic_enable(lua_State *L)
 	const char *shapestr = "";
 	string_get_lua_table(L, shape_table_idx, 1, &shapestr);
 	if (!strcmp(shapestr, "box")) {
-		b2PolygonShape dynamicBox;
+		b2PolygonShape shape;
 		float w = 1, h = 1;
 		if (float_get_lua_table(L, shape_table_idx, 2, &tmp)) w = tmp;	
 		if (float_get_lua_table(L, shape_table_idx, 3, &tmp)) h = tmp;	
-		dynamicBox.SetAsBox(w / 2 / PhysicSimulator::unit_scale, h / 2 / PhysicSimulator::unit_scale);
-		fixtureDef.shape = &dynamicBox;
+		shape.SetAsBox(w / 2 / PhysicSimulator::unit_scale, h / 2 / PhysicSimulator::unit_scale);
+		fixtureDef.shape = &shape;
 		physic->define(bodyDef, fixtureDef);
 	} else if (!strcmp(shapestr, "circle")) {
-		b2CircleShape dynamicBox;
-		if (float_get_lua_table(L, shape_table_idx, 2, &tmp)) dynamicBox.m_radius = tmp / 2 / PhysicSimulator::unit_scale;
-		fixtureDef.shape = &dynamicBox;
+		b2CircleShape shape;
+		if (float_get_lua_table(L, shape_table_idx, 2, &tmp)) shape.m_radius = tmp / 2 / PhysicSimulator::unit_scale;
+		fixtureDef.shape = &shape;
+		physic->define(bodyDef, fixtureDef);
+	} else if (!strcmp(shapestr, "line")) {
+		b2ChainShape shape;
+		lua_rawgeti(L, shape_table_idx, 2);
+		int nb = lua_objlen(L, -1);
+		vector<b2Vec2> vs(nb);
+		for (int i = 1; i <= nb; i++) {
+			float x, y;
+			lua_rawgeti(L, -1, i);
+			int top = lua_gettop(L);
+			if (float_get_lua_table(L, top, 1, &x) && float_get_lua_table(L, top, 2, &y)) {
+				vs[i-1] = {x / PhysicSimulator::unit_scale, -y / PhysicSimulator::unit_scale};
+			}
+			lua_pop(L, 1);
+		}
+		lua_rawgeti(L, shape_table_idx, 3);
+		if (lua_toboolean(L, -1)) shape.CreateLoop(vs.data(), nb);
+		else shape.CreateChain(vs.data(), nb);
+		lua_pop(L, 2);
+		fixtureDef.shape = &shape;
 		physic->define(bodyDef, fixtureDef);
 	} else {
-		lua_pushstring(L, "enablePhysic shape must be one of box/circle");
+		lua_pushstring(L, "enablePhysic shape must be one of box/circle/line");
 		lua_error(L);
 	}		
-	lua_pushvalue(L, 1);
+	lua_pushnumber(L, pid);
 	return 1;
 }
 
 static int gl_generic_get_physic(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
-	DORPhysic *physic = c->getPhysic();
+	DORPhysic *physic = c->getPhysic(lua_tonumber(L, 2));
 	if (!physic) {
 		lua_pushstring(L, "physic() called without previous call to enablePhysic");
 		lua_error(L);

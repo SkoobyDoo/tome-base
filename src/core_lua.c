@@ -268,7 +268,7 @@ GLenum sdl_gl_texture_format(SDL_Surface *s) {
 // caller binds texture
 static char *largest_black = NULL;
 static int largest_size = 0;
-void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
+void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp, bool exact_size) {
 	// Paramétrage de la texture.
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT);
@@ -282,8 +282,13 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp) {
 	int realw=1;
 	int realh=1;
 
-	while (realw < s->w) realw *= 2;
-	while (realh < s->h) realh *= 2;
+	if (exact_size) {
+		realw = s->w;
+		realh = s->h;
+	} else {
+		while (realw < s->w) realw *= 2;
+		while (realh < s->h) realh *= 2;
+	}
 
 	if (fw) *fw = realw;
 	if (fh) *fh = realh;
@@ -731,7 +736,7 @@ int init_blank_surface()
 	glGenTextures(1, &gl_tex_white);
 	tfglBindTexture(GL_TEXTURE_2D, gl_tex_white);
 	int fw, fh;
-	make_texture_for_surface(s, &fw, &fh, false);
+	make_texture_for_surface(s, &fw, &fh, false, false);
 	copy_surface_to_texture(s);
 	return gl_tex_white;
 }
@@ -846,7 +851,7 @@ GLuint load_image_texture(const char *file) {
 	tfglBindTexture(GL_TEXTURE_2D, t);
 
 	int fw, fh;
-	make_texture_for_surface(s, &fw, &fh, true);
+	make_texture_for_surface(s, &fw, &fh, true, true);
 	copy_surface_to_texture(s);
 
 	SDL_FreeSurface(s);
@@ -858,6 +863,7 @@ static int sdl_surface_to_texture(lua_State *L)
 	SDL_Surface **s = (SDL_Surface**)auxiliar_checkclass(L, "sdl{surface}", 1);
 	bool nearest = lua_toboolean(L, 2);
 	bool norepeat = lua_toboolean(L, 3);
+	bool exact_size = lua_toboolean(L, 4);
 
 	texture_type *t = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
 	auxiliar_setclass(L, "gl{texture}", -1);
@@ -866,7 +872,7 @@ static int sdl_surface_to_texture(lua_State *L)
 	tfglBindTexture(GL_TEXTURE_2D, t->tex);
 
 	int fw, fh;
-	make_texture_for_surface(*s, &fw, &fh, norepeat);
+	make_texture_for_surface(*s, &fw, &fh, norepeat, exact_size);
 	if (nearest) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	copy_surface_to_texture(*s);
 	t->w = (*s)->w;
