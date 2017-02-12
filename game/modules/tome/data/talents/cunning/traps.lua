@@ -2130,7 +2130,7 @@ newTalent{
 					local adj_coords = util.adjacentCoords(x, y)
 					while #adj_coords > 0 do
 						local grid = rng.tableRemove(adj_coords)
-						if not game.level.map:checkEntity(grid[1], grid[2], engine.Map.TERRAIN, "block_move") then
+						if grid and not game.level.map:checkEntity(grid[1], grid[2], engine.Map.TERRAIN, "block_move") then
 							trap.target_x, trap.target_y = grid[1], grid[2] break
 						end
 					end
