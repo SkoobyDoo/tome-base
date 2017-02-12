@@ -4191,7 +4191,7 @@ function _M:onRemoveObject(o, inven_id, slot)
 		self:useObjectDisable(o, inven_id, slot)
 	end
 	-- Callbacks
-	if o.carrier_callbacks then self:unregisterCallback(o, o) end
+	if o.carrier_callbacks then self:unregisterCallbacks(o, o) end
 
 	self:checkEncumbrance()
 end
