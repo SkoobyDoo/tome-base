@@ -935,6 +935,7 @@ newTalent{
 				resolvers.equip{
 					{type="weapon", subtype="longsword", autoreq=true},
 					{type="weapon", subtype="dagger", autoreq=true},
+					{type="weapon", subtype="greatsword", autoreq=true, force_inven = "PSIONIC_FOCUS"},
 				},
 
 				level_range = {1, nil}, exp_worth = 0,
