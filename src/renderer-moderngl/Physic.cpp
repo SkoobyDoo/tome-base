@@ -224,11 +224,11 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 			lua_pushnumber(L, -it.point.y * unit_scale);
 			lua_rawset(L, -3);
 
-			lua_pushstring(L, "normal_x");
+			lua_pushstring(L, "nx");
 			lua_pushnumber(L, it.normal.x * unit_scale);
 			lua_rawset(L, -3);
 
-			lua_pushstring(L, "normal_y");
+			lua_pushstring(L, "ny");
 			lua_pushnumber(L, -it.normal.y * unit_scale);
 			lua_rawset(L, -3);
 
