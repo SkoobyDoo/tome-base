@@ -109,6 +109,7 @@ newTalent{
 	mode = "passive",
 	levelup_screen_break_line = true,
 	points = 5,
+	no_npc_use = true,
 	require = {stat = {dex = function(level) return 16 + (level + 2) * (level - 1) end}},
 	getArmorHardiness = function(self, t)
 		return math.max(0, self:combatLimit(self:getTalentLevel(t) * 4, 100, 5, 3.75, 50, 37.5))
