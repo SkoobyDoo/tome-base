@@ -40,12 +40,15 @@ DORPhysic::DORPhysic(DisplayObject *d) {
 	me = d;
 }
 
-void DORPhysic::define(b2BodyDef &bodyDef, b2FixtureDef &fixtureDef) {
+void DORPhysic::define(b2BodyDef &bodyDef) {
 	bodyDef.angle = me->rot_z;
 	bodyDef.position.Set(me->x / PhysicSimulator::unit_scale, -me->y / PhysicSimulator::unit_scale);
 	bodyDef.userData = me;
-	fixtureDef.userData = me;
 	body = PhysicSimulator::current->world.CreateBody(&bodyDef);
+}
+
+void DORPhysic::addFixture(b2FixtureDef &fixtureDef) {
+	fixtureDef.userData = me;
 	body->CreateFixture(&fixtureDef);
 }
 

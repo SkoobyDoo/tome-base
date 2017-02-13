@@ -27,6 +27,7 @@ local DOCallback = core.game.getCClass("gl{callback}")
 local DOTileMap = core.game.getCClass("gl{tilemap}")
 local DOTileObject = core.game.getCClass("gl{tileobject}")
 local DOSpriter = core.game.getCClass("gl{spriter}")
+local DOPhysic = core.game.getCClass("physic{body}")
 local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOTileObject, DOTileMap, DOSpriter }
 
 -----------------------------------------------------------------------------------
@@ -369,6 +370,12 @@ local function doContainerAdd(self, d)
 	end
 end
 
+local function doPhysicEnable(self, t)
+	local pid = self:physicCreate(t)
+	local p = self:physic(pid)
+	p:addFixture(t)
+end
+
 -----------------------------------------------------------------------------------
 -- Alter the DOs metatables to add the new methods
 -----------------------------------------------------------------------------------
@@ -376,7 +383,7 @@ for _, DO in pairs(DOAll) do
 	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
 	if DO.add then DO._add, DO.add = DO.add, doContainerAdd end
 
+	DO.physicEnable = doPhysicEnable
 	DO.tween = doTween
 	DO.cancelTween = doCancelTween
 end
-

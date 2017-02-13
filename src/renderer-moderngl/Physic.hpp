@@ -38,7 +38,8 @@ public:
 	DORPhysic(DisplayObject *d);
 	virtual ~DORPhysic();
 
-	void define(b2BodyDef &bodyDef, b2FixtureDef &fixtureDef);
+	void define(b2BodyDef &bodyDef);
+	void addFixture(b2FixtureDef &fixtureDef);
 
 	void setPos(float x, float y);
 	void setAngle(float a);
