@@ -1019,6 +1019,7 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 		maincontext = SDL_GL_CreateContext(window);
 		SDL_GL_MakeCurrent(window, maincontext);
 		glewInit();
+		printf ("OpenGL version: %s\n", glGetString(GL_VERSION));
 
 		/* Set the window icon. */
 		windowIconSurface = IMG_Load_RW(PHYSFSRWOPS_openRead(WINDOW_ICON_PATH)
