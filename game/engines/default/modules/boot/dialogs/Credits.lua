@@ -139,6 +139,7 @@ local credits = {
 	{"Michael 'Dekar' Olscher"},
 	{"Rob 'stuntofthelitter' Stites"},
 	{"Reenen 'Canderel' Laurie"},
+	{"Sheila"},
 	{"The Revanchist"},
 	{"Yottle"},
 	false,
