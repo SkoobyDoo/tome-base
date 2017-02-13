@@ -103,7 +103,14 @@ newTalent{
 			local t = self:getTalentFromId(self.T_TERRORIZE)
 			t.terrorize(self,t)
 		end
-		
+
+		if self:knowTalent(self.T_SHADOWSTRIKE) then
+			local power = self:callTalent(self.T_SHADOWSTRIKE, "getMultiplier") * 100
+			local dur = self:callTalent(self.T_SHADOWSTRIKE, "getDuration")
+			
+			self:setEffect(self.EFF_SHADOWSTRIKE, dur, {power=power})
+		end
+
 		local sd = self:hasEffect(self.EFF_SHADOW_DANCE)
 		if sd then
 			sd.no_cancel_stealth = true
@@ -140,15 +147,18 @@ newTalent{
 	require = cuns_req2,
 	mode = "passive",
 	points = 5,
-	getMultiplier = function(self, t) return self:combatTalentScale(t, .10, .35) end,
-
+	getMultiplier = function(self, t) return self:combatTalentScale(t, 0.15, 0.40) end,
+	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
 	passives = function(self, t, p) -- attribute that increases crit multiplier vs targets that cannot see us
 		self:talentTemporaryValue(p, "unseen_critical_power", t.getMultiplier(self, t))
 	end,
 	info = function(self, t)
-	local multiplier = t.getMultiplier(self, t)*100
-	return ([[You know how to make the most out of being unseen.  Your critical multiplier against targets that cannot see you is increased by up to %d%%. (You must be able to see your target and the bonus is reduced from its full value at range 3 to 0 at range 10.)
-	Also, when striking from stealth, your attacks are automatically critical if the target does not notice you just before you land it.  (Spell and mind attacks critically strike even if the target notices you.)]]):format(multiplier)
+		local multiplier = t.getMultiplier(self, t)*100
+		local dur = t.getDuration(self, t)
+		return ([[You know how to make the most out of being unseen.
+		When striking from stealth, your attacks are automatically critical if the target does not notice you just before you land it.  (Spell and mind attacks critically strike even if the target notices you.)
+		Your critical multiplier against targets that cannot see you is increased by up to %d%%. (You must be able to see your target and the bonus is reduced from its full value at range 3 to 0 at range 10.)
+		Also when you exit stealth for any reasons you conserve the critical multiplier for %d turns (with no range restriction).]]):format(multiplier, dur)
 	end,
 }
 
