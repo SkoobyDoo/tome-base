@@ -111,6 +111,13 @@ newTalent{
 			self:setEffect(self.EFF_SHADOWSTRIKE, dur, {power=power})
 		end
 
+		if self:knowTalent(self.T_SOOTHING_DARKNESS) then
+			local life = self:callTalent(self.T_SOOTHING_DARKNESS, "getLife") * 5
+			local sta = self:callTalent(self.T_SOOTHING_DARKNESS, "getStamina")
+			local dur = self:callTalent(self.T_SOOTHING_DARKNESS, "getDuration")
+			self:setEffect(self.EFF_SOOTHING_DARKNESS, dur, {life=life, stamina=sta})
+		end
+
 		local sd = self:hasEffect(self.EFF_SHADOW_DANCE)
 		if sd then
 			sd.no_cancel_stealth = true
@@ -168,18 +175,19 @@ newTalent{
 	require = cuns_req3,
 	points = 5,
 	mode = "passive",
-	getLife = function(self, t) return self:combatStatScale("cun", 0.5, 5, 0.75) + self:combatTalentScale(t, 0.5, 5, 0.75) end, -- Primarily for out of combat recovery
+	getLife = function(self, t) return self:combatStatScale("cun", 0.5, 5, 0.75) + self:combatTalentScale(t, 0.5, 5, 0.75) end,
 	getStamina = function(self, t) return self:combatTalentScale(t, 1, 2.5) end, --2.9 @TL5
 	getRadius = function(self, t, fake)
 		if not fake and game.level.map.lites(self.x, self.y) then return 0 end
 		return math.floor(self:combatTalentLimit(t, 10, 2, 5))
 	end,
-	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
+	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 4 else return 3 end end,
 	info = function(self, t)
 		return ([[You have a special affinity for darkness and shadows.
 		When standing in an unlit grid, the minimum range to your foes for activating stealth or for maintaining it after a Shadow Dance is reduced by %d.
-		While stealthed, and for %d turns thereafter, your life regeneration is increased by %0.1f (based on your Cunning) and your stamina regeneration is increased %0.1f.]]):
-		format(t.getRadius(self, t, true), t.getDuration(self, t), t.getLife(self,t), t.getStamina(self,t))
+		While stealthed your life regeneration is increased by %0.1f (based on your Cunning) and your stamina regeneration is increased %0.1f.
+		For %d turns thereafter you keep the stamina regeneration and gain 500%% of the life regeneration.]]):
+		format(t.getRadius(self, t, true), t.getLife(self,t), t.getStamina(self,t), t.getDuration(self, t))
 	end,
 }
 
