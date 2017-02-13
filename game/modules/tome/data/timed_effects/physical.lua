@@ -3136,9 +3136,9 @@ newEffect{
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then 
 			self:heal(eff.power, eff.src)
-		else
+		elseif self.x and self.y then
 			local dam = DamageType:get(DamageType.NATURE).projector(eff.src, self.x, self.y, DamageType.NATURE, eff.power)
-			if eff.volatile > 0 and self.x and self.y then
+			if eff.volatile > 0 then
 				local tg = {type="ball", radius=1, friendlyfire=false, x=self.x, y=self.y, act_exclude={[self.uid]=true}}
 				eff.src:project(tg, self.x, self.y, DamageType.NATURE, eff.power)
 			end
