@@ -88,6 +88,11 @@ void DORPhysic::applyAngularImpulse(float t) {
 	body->ApplyAngularImpulse(t, true);
 }
 
+vec2 DORPhysic::getLinearVelocity() {
+	b2Vec2 v = body->GetLinearVelocity();
+	return {v.x * PhysicSimulator::unit_scale, -v.y * PhysicSimulator::unit_scale};
+}
+
 void DORPhysic::onKeyframe(float nb_keyframes) {
 	b2Vec2 position = body->GetPosition();
 	float32 angle = body->GetAngle();

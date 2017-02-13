@@ -50,6 +50,7 @@ public:
 	void setLinearVelocity(float fx, float fy);
 	void applyTorque(float t);
 	void applyAngularImpulse(float t);
+	vec2 getLinearVelocity();
 
 	virtual void onKeyframe(float nb_keyframes);
 };

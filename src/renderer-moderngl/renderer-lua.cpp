@@ -1502,6 +1502,14 @@ static int body_apply_angular_impulse(lua_State *L)
 	lua_pushvalue(L, 1);
 	return 1;
 }
+static int body_get_linear_velocity(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	vec2 v = p->getLinearVelocity();
+	lua_pushnumber(L, v.x);
+	lua_pushnumber(L, v.y);
+	return 2;
+}
 
 /******************************************************************
  ** Generic non object functions
@@ -1906,6 +1914,7 @@ static const struct luaL_Reg physic_body_reg[] =
 	{"setLinearVelocity", body_apply_set_linear_velocity},
 	{"applyTorque", body_apply_torque},
 	{"applyAngularImpulse", body_apply_angular_impulse},
+	{"getLinearVelocity", body_get_linear_velocity},
 	{NULL, NULL},
 };
 
