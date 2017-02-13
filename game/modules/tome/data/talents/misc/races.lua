@@ -168,9 +168,7 @@ newTalent{
 	critChance = function(self, t) return self:combatTalentScale(t, 3, 10, 0.75) end,
 	critPower = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "combat_physcrit", t.critChance(self, t))
-		self:talentTemporaryValue(p, "combat_spellcrit", t.critChance(self, t))
-		self:talentTemporaryValue(p, "combat_mindcrit", t.critChance(self, t))
+		self:talentTemporaryValue(p, "combat_generic_crit", t.critChance(self, t))
 		self:talentTemporaryValue(p, "combat_critical_power", t.critPower(self, t))
 	end,
 	info = function(self, t)
