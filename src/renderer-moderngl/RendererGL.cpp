@@ -356,7 +356,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	cur_color = cur_color * color;
 
 	if (cutting) activateCutting(cur_model, true);
-	else glDisable(GL_SCISSOR_TEST);
+	// else glDisable(GL_SCISSOR_TEST);
 
 	if (zsort == SortMode::GL) glEnable(GL_DEPTH_TEST);
 	if (!allow_blending) glDisable(GL_BLEND);
