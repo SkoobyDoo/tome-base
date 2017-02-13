@@ -39,7 +39,7 @@ public:
 	virtual ~DORPhysic();
 
 	void define(b2BodyDef &bodyDef);
-	void addFixture(b2FixtureDef &fixtureDef);
+	b2Fixture *addFixture(b2FixtureDef &fixtureDef);
 
 	void setPos(float x, float y);
 	void setAngle(float a);

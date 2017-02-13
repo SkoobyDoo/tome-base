@@ -47,9 +47,9 @@ void DORPhysic::define(b2BodyDef &bodyDef) {
 	body = PhysicSimulator::current->world.CreateBody(&bodyDef);
 }
 
-void DORPhysic::addFixture(b2FixtureDef &fixtureDef) {
+b2Fixture *DORPhysic::addFixture(b2FixtureDef &fixtureDef) {
 	fixtureDef.userData = me;
-	body->CreateFixture(&fixtureDef);
+	return body->CreateFixture(&fixtureDef);
 }
 
 DORPhysic::~DORPhysic() {

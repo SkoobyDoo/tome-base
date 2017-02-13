@@ -1427,7 +1427,16 @@ static int body_add_fixture(lua_State *L)
 	if (float_get_lua_table(L, 2, "restitution", &tmp)) fixtureDef.restitution = tmp;
 	fixtureDef.isSensor = bool_get_lua_table(L, 2, "sensor");
 
-	// Define the box shape
+	// Define the filter
+	lua_pushstring(L, "filter");
+	lua_gettable(L, 2);
+	if (lua_istable(L, -1)) {
+		int filter_table_idx = lua_gettop(L);
+		if (float_get_lua_table(L, filter_table_idx, "group", &tmp)) fixtureDef.filter.groupIndex = tmp;
+	}
+	lua_pop(L, 1);
+
+	// Define the shape
 	lua_pushstring(L, "shape");
 	lua_gettable(L, 2);
 	if (!lua_istable(L, -1)) {
@@ -1435,6 +1444,8 @@ static int body_add_fixture(lua_State *L)
 		lua_error(L);
 	}		
 	int shape_table_idx = lua_gettop(L);
+
+	b2Fixture *fixture = NULL;
 
 	const char *shapestr = "";
 	string_get_lua_table(L, shape_table_idx, 1, &shapestr);
@@ -1445,12 +1456,12 @@ static int body_add_fixture(lua_State *L)
 		if (float_get_lua_table(L, shape_table_idx, 3, &tmp)) h = tmp;	
 		shape.SetAsBox(w / 2 / PhysicSimulator::unit_scale, h / 2 / PhysicSimulator::unit_scale);
 		fixtureDef.shape = &shape;
-		physic->addFixture(fixtureDef);
+		fixture = physic->addFixture(fixtureDef);
 	} else if (!strcmp(shapestr, "circle")) {
 		b2CircleShape shape;
 		if (float_get_lua_table(L, shape_table_idx, 2, &tmp)) shape.m_radius = tmp / 2 / PhysicSimulator::unit_scale;
 		fixtureDef.shape = &shape;
-		physic->addFixture(fixtureDef);
+		fixture = physic->addFixture(fixtureDef);
 	} else if (!strcmp(shapestr, "line")) {
 		b2ChainShape shape;
 		lua_rawgeti(L, shape_table_idx, 2);
@@ -1470,11 +1481,12 @@ static int body_add_fixture(lua_State *L)
 		else shape.CreateChain(vs.data(), nb);
 		lua_pop(L, 2);
 		fixtureDef.shape = &shape;
-		physic->addFixture(fixtureDef);
+		fixture = physic->addFixture(fixtureDef);
 	} else {
 		lua_pushstring(L, "addFixture shape must be one of box/circle/line");
 		lua_error(L);
-	}		
+	}
+	lua_pop(L, 1);
 
 	lua_pushvalue(L, 1);
 	return 1;
