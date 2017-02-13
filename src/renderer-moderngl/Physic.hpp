@@ -33,6 +33,7 @@ class DORPhysic : public IRealtime {
 private:
 	DisplayObject *me = NULL;
 	b2Body *body = NULL;
+	bool staticbodies = true;
 
 public:
 	DORPhysic(DisplayObject *d);

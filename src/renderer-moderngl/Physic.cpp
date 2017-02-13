@@ -41,6 +41,7 @@ DORPhysic::DORPhysic(DisplayObject *d) {
 }
 
 void DORPhysic::define(b2BodyDef &bodyDef) {
+	if (bodyDef.type != b2_staticBody) staticbodies = false;
 	bodyDef.angle = me->rot_z;
 	bodyDef.position.Set(me->x / PhysicSimulator::unit_scale, -me->y / PhysicSimulator::unit_scale);
 	bodyDef.userData = me;
@@ -97,6 +98,7 @@ vec2 DORPhysic::getLinearVelocity() {
 }
 
 void DORPhysic::onKeyframe(float nb_keyframes) {
+	if (staticbodies) return;
 	b2Vec2 position = body->GetPosition();
 	float32 angle = body->GetAngle();
 	float unit_scale = PhysicSimulator::unit_scale;
