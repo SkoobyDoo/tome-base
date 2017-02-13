@@ -3334,6 +3334,10 @@ function _M:levelup()
 		self.unused_generics = self.unused_generics + 1
 		if self.level % 5 == 0 then self.unused_talents = self.unused_talents + 1 end
 		if self.level % 5 == 0 then self.unused_generics = self.unused_generics - 1 end
+
+		if self.extra_talent_point_every and self.level % self.extra_talent_point_every then self.unused_talents = self.unused_talents + 1 end
+		if self.extra_generic_point_every and self.level % self.extra_generic_point_every then self.unused_generics = self.unused_generics + 1 end
+
 		-- At levels 10, 20 and 36 and then every 30 levels, we gain a new talent type
 		if self.level == 10 or self.level == 20 or self.level == 36 or (self.level > 50 and (self.level - 6) % 30 == 0) then
 			self.unused_talents_types = self.unused_talents_types + 1

@@ -117,7 +117,7 @@ newBirthDescriptor
 	name = "Cornac",
 	desc = {
 		"Cornacs are Humans from the northern parts of the Allied Kingdoms.",
-		"Humans are an inherently very adaptable race and as such they gain a #GOLD#talent category point#WHITE# (others only gain one at levels 10, 20 and 36) and a #GOLD#generic talent point#WHITE# at birth.",
+		"Humans are an inherently very adaptable race and as such they gain a #GOLD#talent category point#WHITE# (others only gain one at levels 10, 20 and 36) and both #GOLD#a class and a generic talent point#WHITE# at birth and every 10 levels.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +0 Strength, +0 Dexterity, +0 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
@@ -127,6 +127,7 @@ newBirthDescriptor
 	experience = 1.0,
 	copy_add = {
 		unused_talents_types = 1,
+		unused_talents = 1,
 		unused_generics = 1,
 	},
 	copy = {
@@ -138,5 +139,7 @@ newBirthDescriptor
 		starting_zone = "trollmire",
 		starting_quest = "start-allied",
 		starting_intro = "cornac",
+		extra_talent_point_every = 10,
+		extra_generic_point_every = 10,
 	},
 }
