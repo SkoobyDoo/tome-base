@@ -251,6 +251,7 @@ static int gl_generic_physic_enable(lua_State *L)
 	if (float_get_lua_table(L, 2, "angularDamping", &tmp)) bodyDef.angularDamping = tmp;
 	bodyDef.fixedRotation = bool_get_lua_table(L, 2, "fixedRotation");
 	bodyDef.bullet = bool_get_lua_table(L, 2, "bullet");
+	fixtureDef.isSensor = bool_get_lua_table(L, 2, "sensor");
 
 	// Define the box shape
 	lua_pushstring(L, "shape");

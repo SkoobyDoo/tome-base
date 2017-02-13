@@ -98,7 +98,10 @@ end
 function _M:display(nb_keyframes)
 	if not next(self.flyers) then return end
 	self.renderer:toScreen()
+	self:update(nb_keyframes)
+end
 
+function _M:update(nb_keyframes)
 	local dels = {}
 
 	for fl, _ in pairs(self.flyers) do
