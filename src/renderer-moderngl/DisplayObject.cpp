@@ -494,7 +494,7 @@ int DORVertexes::addQuad(
 	if (size + 4 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
 
 	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
-	if ((z1 != z2) || (z1 != z3) || (size && (z1 != zflat))) {
+	if ((z1 != z2) || (z1 != z3) || (z1 != z4) || (z3 != z4) || (size && (z1 != zflat))) {
 		printf("Warning making non flat DORVertexes::addQuad!\n");
 		is_zflat = false;
 	}
@@ -504,6 +504,26 @@ int DORVertexes::addQuad(
 	vertices.push_back({{x2, y2, z2, 1}, {u2, v2}, {r, g, b, a}});
 	vertices.push_back({{x3, y3, z3, 1}, {u3, v3}, {r, g, b, a}});
 	vertices.push_back({{x4, y4, z4, 1}, {u4, v4}, {r, g, b, a}});
+
+	setChanged();
+	return 0;
+}
+
+int DORVertexes::addQuad(vertex v1, vertex v2, vertex v3, vertex v4) {
+	int size = vertices.size();
+	if (size + 4 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
+
+	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
+	if ((v1.pos.z != v2.pos.z) || (v1.pos.z != v3.pos.z) || (v1.pos.z != v4.pos.z) || (v3.pos.z != v4.pos.z) || (size && (v1.pos.z != zflat))) {
+		printf("Warning making non flat DORVertexes::addQuad!\n");
+		is_zflat = false;
+	}
+	if (!size) zflat = v1.pos.z;
+
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
 
 	setChanged();
 	return 0;

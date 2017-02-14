@@ -863,18 +863,49 @@ static int gl_vertexes_reserve(lua_State *L)
 static int gl_vertexes_quad(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
-	float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float u1 = lua_tonumber(L, 4);  float v1 = lua_tonumber(L, 5); 
-	float x2 = lua_tonumber(L, 6);  float y2 = lua_tonumber(L, 7);  float u2 = lua_tonumber(L, 8);  float v2 = lua_tonumber(L, 9); 
-	float x3 = lua_tonumber(L, 10); float y3 = lua_tonumber(L, 11); float u3 = lua_tonumber(L, 12); float v3 = lua_tonumber(L, 13); 
-	float x4 = lua_tonumber(L, 14); float y4 = lua_tonumber(L, 15); float u4 = lua_tonumber(L, 16); float v4 = lua_tonumber(L, 17); 
-	float r = lua_tonumber(L, 18); float g = lua_tonumber(L, 19); float b = lua_tonumber(L, 20); float a = lua_tonumber(L, 21);
-	v->addQuad(
-		x1, y1, u1, v1, 
-		x2, y2, u2, v2, 
-		x3, y3, u3, v3, 
-		x4, y4, u4, v4, 
-		r, g, b, a
-	);
+	if (lua_isnumber(L, 2)) {
+		float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float u1 = lua_tonumber(L, 4);  float v1 = lua_tonumber(L, 5); 
+		float x2 = lua_tonumber(L, 6);  float y2 = lua_tonumber(L, 7);  float u2 = lua_tonumber(L, 8);  float v2 = lua_tonumber(L, 9); 
+		float x3 = lua_tonumber(L, 10); float y3 = lua_tonumber(L, 11); float u3 = lua_tonumber(L, 12); float v3 = lua_tonumber(L, 13); 
+		float x4 = lua_tonumber(L, 14); float y4 = lua_tonumber(L, 15); float u4 = lua_tonumber(L, 16); float v4 = lua_tonumber(L, 17); 
+		float r = lua_tonumber(L, 18); float g = lua_tonumber(L, 19); float b = lua_tonumber(L, 20); float a = lua_tonumber(L, 21);
+		v->addQuad(
+			x1, y1, u1, v1, 
+			x2, y2, u2, v2, 
+			x3, y3, u3, v3, 
+			x4, y4, u4, v4, 
+			r, g, b, a
+		);
+	} else {
+		vertex vs[4];
+		for (int i = 0; i < 4; i++) {
+			vs[i].pos.w = 1;
+			lua_pushliteral(L, "x"); lua_rawget(L, i + 2); vs[i].pos.x = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "y"); lua_rawget(L, i + 2); vs[i].pos.y = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "z"); lua_rawget(L, i + 2); vs[i].pos.z = lua_tonumber(L, -1); lua_pop(L, 1);
+			
+			lua_pushliteral(L, "r"); lua_rawget(L, i + 2); vs[i].color.r = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "g"); lua_rawget(L, i + 2); vs[i].color.g = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "b"); lua_rawget(L, i + 2); vs[i].color.b = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "a"); lua_rawget(L, i + 2); vs[i].color.a = lua_tonumber(L, -1); lua_pop(L, 1);
+
+			lua_pushliteral(L, "u"); lua_rawget(L, i + 2); vs[i].tex.x = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "v"); lua_rawget(L, i + 2); vs[i].tex.y = lua_tonumber(L, -1); lua_pop(L, 1);
+
+			lua_pushliteral(L, "kind"); lua_rawget(L, i + 2); vs[i].kind = lua_tonumber(L, -1); lua_pop(L, 1);
+
+			lua_pushliteral(L, "mx"); lua_rawget(L, i + 2); vs[i].mapcoords.x = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "my"); lua_rawget(L, i + 2); vs[i].mapcoords.y = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "mw"); lua_rawget(L, i + 2); vs[i].mapcoords.z = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "mh"); lua_rawget(L, i + 2); vs[i].mapcoords.w = lua_tonumber(L, -1); lua_pop(L, 1);
+
+			lua_pushliteral(L, "tx"); lua_rawget(L, i + 2); vs[i].texcoords.x = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "ty"); lua_rawget(L, i + 2); vs[i].texcoords.y = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "tw"); lua_rawget(L, i + 2); vs[i].texcoords.z = lua_tonumber(L, -1); lua_pop(L, 1);
+			lua_pushliteral(L, "th"); lua_rawget(L, i + 2); vs[i].texcoords.w = lua_tonumber(L, -1); lua_pop(L, 1);
+		}
+		v->addQuad(vs[0], vs[1], vs[2], vs[3]);
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }

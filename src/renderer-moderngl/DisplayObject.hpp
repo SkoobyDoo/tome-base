@@ -234,6 +234,7 @@ public:
 		float x4, float y4, float z4, float u4, float v4, 
 		float r, float g, float b, float a
 	);
+	int addQuad(vertex v1, vertex v2, vertex v3, vertex v4);
 	void loadObj(const string &filename);
 	GLuint getTexture(int id) { return tex[id]; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
