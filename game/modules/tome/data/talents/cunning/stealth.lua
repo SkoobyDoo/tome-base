@@ -165,7 +165,7 @@ newTalent{
 		return ([[You know how to make the most out of being unseen.
 		When striking from stealth, your attacks are automatically critical if the target does not notice you just before you land it.  (Spell and mind attacks critically strike even if the target notices you.)
 		Your critical multiplier against targets that cannot see you is increased by up to %d%%. (You must be able to see your target and the bonus is reduced from its full value at range 3 to 0 at range 10.)
-		Also when you exit stealth for any reasons you conserve the critical multiplier for %d turns (with no range restriction).]]):format(multiplier, dur)
+		Also, after exiting stealth for any reason, the critical multiplier persists for %d turns (with no range limitation).]]):format(multiplier, dur)
 	end,
 }
 
@@ -176,7 +176,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getLife = function(self, t) return self:combatStatScale("cun", 0.5, 5, 0.75) + self:combatTalentScale(t, 0.5, 5, 0.75) end,
-	getStamina = function(self, t) return self:combatTalentScale(t, 1, 2.5) end, --2.9 @TL5
+	getStamina = function(self, t) return self:combatTalentScale(t, 1, 2.5) end, --2.9 @TL6.5
 	getRadius = function(self, t, fake)
 		if not fake and game.level.map.lites(self.x, self.y) then return 0 end
 		return math.floor(self:combatTalentLimit(t, 10, 2, 5))
@@ -185,8 +185,7 @@ newTalent{
 	info = function(self, t)
 		return ([[You have a special affinity for darkness and shadows.
 		When standing in an unlit grid, the minimum range to your foes for activating stealth or for maintaining it after a Shadow Dance is reduced by %d.
-		While stealthed your life regeneration is increased by %0.1f (based on your Cunning) and your stamina regeneration is increased %0.1f.
-		For %d turns thereafter you keep the stamina regeneration and gain 500%% of the life regeneration.]]):
+		While stealthed, your life regeneration is increased by %0.1f (based on your Cunning) and your stamina regeneration is increased by %0.1f.  The regeneration effects persist for %d turns after exiting stealth, with 5 times the normal life regeneration rate.]]):
 		format(t.getRadius(self, t, true), t.getLife(self,t), t.getStamina(self,t), t.getDuration(self, t))
 	end,
 }
