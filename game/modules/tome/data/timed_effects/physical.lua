@@ -3136,7 +3136,7 @@ newEffect{
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then 
 			self:heal(eff.power, eff.src)
-		else
+		elseif self.x and self.y then
 			local dam = DamageType:get(DamageType.NATURE).projector(eff.src, self.x, self.y, DamageType.NATURE, eff.power)
 			if eff.volatile > 0 then
 				local tg = {type="ball", radius=1, friendlyfire=false, x=self.x, y=self.y, act_exclude={[self.uid]=true}}
@@ -3208,11 +3208,11 @@ newEffect{
 newEffect{
 	name = "DIRTY_FIGHTING", image = "talents/dirty_fighting.png",
 	desc = "Dirty Fighting",
-	long_desc = function(self, eff) return ("The target is reeling in pain. Stun, pin, blindness, and confusion immunity are %d%% of normal and physical save is reduced by %d."):format((1 - eff.immune)*100, eff.power) end,
+	long_desc = function(self, eff) return ("The target is reeling in pain. Stun, pin, blindness, and confusion immunity are halved and physical save is reduced by %d."):format(eff.power) end,
 	type = "physical",
 	subtype = { wound=true },
 	status = "detrimental",
-	parameters = { power=5, immune = 0.1 },
+	parameters = { power=5 },
 	on_gain = function(self, err) return nil, "+Dirty Fighting" end,
 	on_lose = function(self, err) return nil, "-Dirty Fighting" end,
 	on_merge = function(self, old_eff, new_eff)
@@ -3221,16 +3221,16 @@ newEffect{
 	end,
 	activate = function(self, eff)
 		if self:attr("stun_immune") then
-			self:effectTemporaryValue(eff, "stun_immune", -self:attr("stun_immune")*eff.immune)
+			self:effectTemporaryValue(eff, "stun_immune", -self:attr("stun_immune") / 2)
 		end
 		if self:attr("confusion_immune") then
-			self:effectTemporaryValue(eff, "confusion_immune", -self:attr("confusion_immune")*eff.immune)
+			self:effectTemporaryValue(eff, "confusion_immune", -self:attr("confusion_immune") / 2)
 		end
 		if self:attr("blind_immune") then
-			self:effectTemporaryValue(eff, "blind_immune", -self:attr("blind_immune")*eff.immune)
+			self:effectTemporaryValue(eff, "blind_immune", -self:attr("blind_immune") / 2)
 		end
 		if self:attr("pin_immune") then
-			self:effectTemporaryValue(eff, "pin_immune", -self:attr("pin_immune")*eff.immune)
+			self:effectTemporaryValue(eff, "pin_immune", -self:attr("pin_immune") / 2)
 		end
 		self:effectTemporaryValue(eff, "combat_physresist", -eff.power)
 	end,
@@ -3374,8 +3374,8 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("global_speed_add", eff.slowid)
-		self:removeTemporaryValue("never_move", eff.pinid)
+		if eff.slowid then self:removeTemporaryValue("global_speed_add", eff.slowid) end
+		if eff.pinid then self:removeTemporaryValue("never_move", eff.pinid) end
 	end,
 	on_timeout = function(self, eff)
 		if eff.dam > 0 then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
@@ -3706,11 +3706,11 @@ newEffect{
 	on_gain = function(self, err) return nil, "+Pinned Down" end,
 	on_lose = function(self, err) return nil, "-Pinned Down" end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("never_move", 1)
+		if eff.pin==1 then eff.tmpid = self:addTemporaryValue("never_move", 1) end
 		eff.critid = self:addTemporaryValue("combat_crit_vulnerable", eff.power)
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("never_move", eff.tmpid)
+		if eff.tmpid then self:removeTemporaryValue("never_move", eff.tmpid) end
 		self:removeTemporaryValue("combat_crit_vulnerable", eff.critid)
 	end,
 }
@@ -3910,5 +3910,20 @@ newEffect{
 		if eff.cid then
 			self:removeTemporaryValue("confused", eff.cid)
 		end
+	end,
+}
+
+newEffect{
+	name = "SHADOWSTRIKE", image = "talents/shadowstrike.png",
+	desc = "Shadowstrike",
+	long_desc = function(self, eff) return ("The target's critical strike damage bonus is increased by %d%%."):format(eff.power) end,
+	type = "magical",
+	subtype = { darkness=true },
+	status = "beneficial",
+	parameters = { power=1 },
+	on_gain = function(self, err) return nil, true end,
+	on_lose = function(self, err) return nil, true end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_critical_power", eff.power)
 	end,
 }

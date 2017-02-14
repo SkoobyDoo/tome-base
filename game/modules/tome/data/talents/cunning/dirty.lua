@@ -31,11 +31,11 @@ newTalent{
 	requires_target = true,
 	range = 1,
 	is_melee = true,
+	no_npc_use = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.5) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.5, 2.1) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 8)) end,
-	getImmune = function(self, t) return self:combatTalentLimit(t, 0.75, 0.10, 0.30) end, -- Limit < 75% reduction in immunity
-	getPower = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
+	getPower = function(self, t) return math.floor(self:combatTalentScale(t, 5, 25)) end,
 	speed = "weapon",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -43,7 +43,7 @@ newTalent{
 		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true, true)
 		if hitted then
-			target:setEffect(target.EFF_DIRTY_FIGHTING, t.getDuration(self, t), {power=t.getPower(self,t), immune=t.getImmune(self, t), apply_power=self:combatAttack()})
+			target:setEffect(target.EFF_DIRTY_FIGHTING, t.getDuration(self, t), {power=t.getPower(self,t)})
 		end
 
 		return true
@@ -52,9 +52,9 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local power = t.getPower(self,t)
-		return ([[You make a low blow against a sensitive point on the target, dealing %d%% unarmed damage. If your attack hits, the target is left reeling and vulnerable, reducing their physical save by %d and their stun, blind, confusion and pin immunities to %d%% of normal for %d turns.
-The chance to apply this effect increases with your Accuracy.]]):
-		format(100 * damage, power, (1 - t.getImmune(self, t))*100, duration)
+		return ([[You make a low blow against a sensitive point on the target, dealing %d%% unarmed damage. If your attack hits, the target is left reeling and vulnerable, reducing their physical save by %d and their stun, blind, confusion and pin immunities to 50%% of normal for %d turns.
+This effect bypasses saves.]]):
+		format(100 * damage, power, duration)
 	end,
 }
 

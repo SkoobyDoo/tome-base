@@ -106,7 +106,7 @@ newTalent{
 	info = function(self, t)
 		local bleed = t.getBleed(self,t)*100
 		local sta = t.getStamina(self,t)
-		return ([[You take advantage of unwary foes, giving Steady Shot and Shoot an additional 50%% chance to mark targets and bleeding them for %d%% additional damage over 5 turns if the target is at or above 90%% life.
+		return ([[You take advantage of unwary foes (those at or above 90%% life). Against these targets, Shoot, Steady Shot and Headshot bleed targets for %d%% additional damage over 5 turns and have a 50%% increased chance to mark (if capable of marking).
 In addition, your Steady Shot, Shoot and Headshot now restore %0.1f stamina on hit.]])
 		:format(bleed, sta)
 	end,

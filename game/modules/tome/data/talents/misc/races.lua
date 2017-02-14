@@ -168,9 +168,7 @@ newTalent{
 	critChance = function(self, t) return self:combatTalentScale(t, 3, 10, 0.75) end,
 	critPower = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "combat_physcrit", t.critChance(self, t))
-		self:talentTemporaryValue(p, "combat_spellcrit", t.critChance(self, t))
-		self:talentTemporaryValue(p, "combat_mindcrit", t.critChance(self, t))
+		self:talentTemporaryValue(p, "combat_generic_crit", t.critChance(self, t))
 		self:talentTemporaryValue(p, "combat_critical_power", t.critPower(self, t))
 	end,
 	info = function(self, t)
@@ -914,7 +912,7 @@ newTalent{
 				resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/humanoid_yeek_yeek_mindslayer.png", display_h=2, display_y=-1}}},
 				desc = "A wayist that came to help.",
 
-				body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+				body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, PSIONIC_FOCUS=1 },
 
 				rank = 3,
 				life_rating = 8,
@@ -935,6 +933,7 @@ newTalent{
 				resolvers.equip{
 					{type="weapon", subtype="longsword", autoreq=true},
 					{type="weapon", subtype="dagger", autoreq=true},
+					{type="weapon", subtype="greatsword", autoreq=true, force_inven = "PSIONIC_FOCUS"},
 				},
 
 				level_range = {1, nil}, exp_worth = 0,
@@ -946,7 +945,8 @@ newTalent{
 					[Talents.T_KINETIC_AURA]={base=1, every=5, max=5},
 					[Talents.T_CHARGED_AURA]={base=1, every=5, max=5},
 				},
-
+				resolvers.sustains_at_birth(),
+				
 				faction = self.faction,
 				summoner = self, summoner_gain_exp=true,
 				summon_time = 6,

@@ -176,7 +176,7 @@ newBirthDescriptor{
 		["technique/combat-techniques-passive"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},
 		["technique/battle-tactics"]={false, 0.2},
-		["technique/mobility"]={false, 0.3},
+		["technique/mobility"]={true, 0.3},
 		["technique/thuggery"]={true, 0.3},
 		["technique/conditioning"]={true, 0.3},
 		["technique/bloodthirst"]={false, 0.1},

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ local function knives(self)
 		apr = 0,
 		atk = 0,
 		physcrit = 0,
-		dammod = {dex=0.7, cun=0.5},
+		dammod = {dex=0.7, str=0.5},
 		melee_project = {},
 		special_on_crit = {fct=function(combat, who, target)
 			if not self:knowTalent(self.T_PRECISE_AIM) then return end
@@ -55,6 +55,9 @@ local function knives(self)
 		combat.apr = 0 + t.getBaseApr(self, t)
 		combat.physcrit = 0 + t.getBaseCrit(self,t) + t2.getCrit(self,t2)
 		combat.atk = 0 + self:combatAttack()
+	end
+	if self:knowTalent(self.T_LETHALITY) then 
+		combat.dammod = {dex=0.7, cun=0.5}
 	end
 	return combat
 end

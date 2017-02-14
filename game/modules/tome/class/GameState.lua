@@ -2576,12 +2576,14 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 
 	if id_challenge == "pacifist" then
 		level.data.record_player_kills = 0
-		self:makeChallengeQuest(level, "Pacifist", "Leave the level (to the next level) without killing a single creature.", {
+		self:makeChallengeQuest(level, "Pacifist", "Leave the level (to the next level) without killing a single creature. You will get #{italic}#two#{normal}# rewards.", {
 			on_exit_check = function(self, who)
 				if not self.check_level then return end
 				if self.check_level.data.record_player_kills == 0 then who:setQuestStatus(self.id, self.COMPLETED) end
 				self.check_level = nil
 			end,
+			forbid_rewards = {"randart", "generic_pt"},
+			rewards_nb = 2,
 			on_kill_foe = function(self, who, target)
 				who:setQuestStatus(self.id, self.FAILED)
 			end,
@@ -2668,7 +2670,7 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 		end
 	elseif id_challenge == "mirror-match" then
 		local x, y = self:findEventGrid(level, function(self, level, x, y)
-				if x > 10 and x < level.map.w-10 and y > 10 and y < level.map.h and self:canEventGrid(level, x, y)then return x, y end
+				if x > 10 and x < level.map.w-10 and y > 10 and y < level.map.h-10 and self:canEventGrid(level, x, y)then return x, y end
 			end
 			)
 		if x and y then
@@ -2784,24 +2786,23 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end)
 		end end, "Refuse", "Accept", true)
 	elseif id_challenge == "headhunter" then
-		local mlist = {}
+		local mlist = {} -- add random elite "spawns of Urh'Rok"
 		for i = 1, rng.range(2, 4) do
-			local m = zone:makeEntity(level, "actor", {type="demon", random_boss={
+			local m = zone:makeEntity(level, "actor", {type="demon", random_elite={
+				ai = "tactical",
+				life_rating=function(v) return v * 1.3 + 3 end,
 				nb_classes = 2,
-				rank=3.5, ai = "tactical",
-				life_rating=function(v) return v * 1.5 + 5 end,
-				loot_quantity = 2,
-				no_loot_randart = true,
+				loot_quantity=2,
+				nb_rares=2, -- make this difficult challenge (usually) worth trying and failing
+				no_loot_randart=true,
 				name_scheme = "#rng# the Spawn of Urh'Rok",
 			}}, nil, true)
 			if m then
-				local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-				local tries = 0
-				while not m:canMove(x, y) and tries < 100 and not level.map.attrs(x, y, "no_teleport") do
-					x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-					tries = tries + 1
+				local x, y = self:findEventGrid(level, function(self, level, x, y)
+					if x > 0 and x < level.map.w - 2 and y > 0 and y < level.map.h - 2 and m:canMove(x, y) and self:canEventGrid(level, x, y) then return x, y end
 				end
-				if tries < 100 then
+				)
+				if x and y then
 					m.is_headhunter_npc = true
 					zone:addEntity(level, m, "actor", x, y)
 					mlist[#mlist+1] = m
@@ -2809,26 +2810,52 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 			end
 		end
 		if #mlist > 0 then
-			Dialog:yesnoPopup("Challenge: #PURPLE#Headhunter", "Kill all "..#mlist.." spawns of Urh'Rok on the level and no other creatures, for a reward.", function(r)
+			Dialog:yesnoPopup("Challenge: #PURPLE#Headhunter", "Kill "..#mlist.." spawns of Urh'Rok on the level before killing any other elite (or higher rank) creatures, for an uncommon reward.", function(r)
 				if not r then
-					local q = self:makeChallengeQuest(level, "Headhunter", "Kill all "..#mlist.." spawns of Urh'Rok on the level and no other creatures.", {
+					local quest = self:makeChallengeQuest(level, "Headhunter", "Kill "..#mlist.." spawns of Urh'Rok on the level before killing any elite creatures.", {
 						dynamic_desc = function(self, desc)
-							desc[#desc+1] = ("%d / %d spawns killed."):format(self.nb_killed, self.to_kill)
+							desc[#desc+1] = ("%d / %d demon spawn killed."):format(self.nb_killed, self.to_kill)
 						end,
-						nb_killed = 0, to_kill = #mlist,
+						nb_killed = 0, to_kill = #mlist, mlist = mlist,
 						on_kill_foe = function(self, who, target)
 							if self:isEnded() then return end
-							if target.is_headhunter_npc then
+							if target.is_headhunter_npc then -- killed target spawn
 								self.nb_killed = self.nb_killed + 1
+								game.bignews:say(60, "#ORCHID#You claim the head of "..target.name..", giving pause to all foes on the level.")
 								if self.nb_killed >= self.to_kill then
 									who:setQuestStatus(self.id, self.COMPLETED)
 								end
-							else
+								for uid, e in pairs(game.level.entities) do -- other enemies pause, untarget player
+									if e ~= who and table.get(e, "ai_target", "actor") == who then
+									e:setTarget()
+									e.energy.value = -game.energy_per_tick
+									end
+								end
+							elseif target.rank >= 3 and (not target.summoner or not target.summoner.is_headhunter_npc) then -- killed forbidden target
 								who:setQuestStatus(self.id, self.FAILED)
 							end
 						end,
+						on_exit_check = function(self, who)
+							if who.dead and not self:isEnded() then who:setQuestStatus(self.id, self.FAILED); return end
+						end,
 						forbid_rewards = {"randart", "stat_pts", "generic_pt"},
 					})
+					for _, m in ipairs(mlist) do
+						m.id_challenge_quest = quest.id
+						m.on_die = function(self, src)
+							local p = game:getPlayer(true)
+							local q = p:hasQuest(self.id_challenge_quest)
+							if src ~= p and q then
+								src = src and src.summoner or src
+								if game.party:hasMember(src) then -- killed by player, party member or related summon
+									q:on_kill_foe(src, self)
+									return
+								end
+								-- killed by something else, quest fail
+								p:setQuestStatus(q.id, q.FAILED)
+							end
+						end
+					end
 				else
 					for _, m in ipairs(mlist) do m:disappear() m:removed() end
 				end
@@ -2884,12 +2911,18 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 		end
 	end
 
-	local reward = rng.rarityTable(rewards)
-	reward.name = reward.give(who) or reward.name
-	self.id_challenge.rewarded[reward.id] = (self.id_challenge.rewarded[reward.id] or 0) + 1
-	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward: "..reward.name
-	game.log("#LIGHT_BLUE#%s has received: %s.", who.name:capitalize(), reward.name)
-	return reward.name
+	local nb = 0
+	local reward_name = {}
+	for i = 1, quest.rewards_nb or 1 do
+		local reward = rng.rarityTable(rewards)
+		reward_name[#reward_name+1] = reward.give(who) or reward.name
+		self.id_challenge.rewarded[reward.id] = (self.id_challenge.rewarded[reward.id] or 0) + 1
+		nb = nb + 1
+	end
+	reward_name = table.concatNice(reward_name, ", ", " and ")
+	quest.popup_text[engine.Quest.DONE] = "#OLIVE_DRAB#Reward"..(nb>0 and "s" or "")..": "..reward_name
+	game.log("#LIGHT_BLUE#%s has received: %s.", who.name:capitalize(), reward_name)
+	return reward_name
 end
 
 --- Allow the actor to learn a specific talent

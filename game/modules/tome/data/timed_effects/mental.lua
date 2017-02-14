@@ -390,6 +390,7 @@ newEffect{
 	parameters = {},
 	activate = function(self, eff)
 		local effStalker = eff.src:hasEffect(eff.src.EFF_STALKER)
+		if not effStalker then game:onTickEnd(function() self:removeEffect(self.EFF_STALKED, true, true) end) return end
 		eff.particleBonus = effStalker.bonus
 		eff.particle = self:addParticles(Particles.new("stalked", 1, { bonus = eff.particleBonus }))
 	end,

@@ -131,7 +131,7 @@ newTalent{
 	no_energy = true,
 	require = techs_dex_req2,
 	tactical = { BUFF = 2 },
-	getChance = function(self, t) return math.floor(self:combatTalentLimit(t, 50, 10, 30)) end,
+	getChance = function(self, t) return math.floor(self:combatTalentLimit(t, 45, 10, 35)) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 0.9) end,
 	-- called by _M:attackTarget in mod.class.interface.Combat.lua
 	proc = function(self, t, target)
@@ -167,15 +167,15 @@ newTalent{
 	type = {"technique/reflexes", 3},
 	require = techs_dex_req3,
 	points = 5,
-	cooldown = function(self, t) return math.max(4, 7-(math.floor(self:getTalentLevel(t)/2))) end,
-	stamina = 30,
+	cooldown = function(self, t) return math.max(6, 13-(math.floor(self:getTalentLevel(t)))) end,
+	stamina = 25,
 	tactical = { DISABLE=3 },
 	range = archery_range,
 	requires_target = true,
 	no_npc_use = true,
 	fixed_cooldown = true, -- there's probably some sort of unexpected interaction that would let you chain this infinitely with cooldown reducers
-	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4)) end, --Limit < 100%
-	getCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end, --Limit < 100%
+	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4.5)) end, --Limit < 100%
+	getCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3.5)) end, --Limit < 100%
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)
 	
@@ -205,14 +205,14 @@ newTalent{
 		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then return nil end
-		target:setEffect(target.EFF_SENTINEL, 4, {src=self, target=target})
+		target:setEffect(target.EFF_SENTINEL, 5, {src=self, target=target})
 		
 		return true
 	end,
 	info = function(self, t)
 		local nb = t.getTalentCount(self,t)
 		local cd = t.getCooldown(self,t)
-		return ([[You take close notice of the target for the next 4 turns. If they attempt to use a non-instant talent you react with incredible speed, firing a shot dealing 25%% damage that causes the talent to fail and go on cooldown.
+		return ([[You take close notice of the target for the next 5 turns. If they attempt to use a non-instant talent you react with incredible speed, firing a shot dealing 25%% damage that causes the talent to fail and go on cooldown.
 This shot is instant, cannot miss, and puts %d other talents on cooldown for %d turns.]]):
 		format(nb, cd)
 	end,
@@ -229,7 +229,7 @@ newTalent{
 	tactical = { ESCAPE = 2, DEFEND = 2 },
 	getDamageReduction = function(self, t) return self:combatTalentLimit(t, 70, 15, 60) end,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 150, 350) end,
-	getStamina = function(self, t) return self:combatTalentScale(t, 10, 25) end,
+	getStamina = function(self, t) return self:combatTalentScale(t, 10, 22) end,
 	action = function(self, t)
 		local power = t.getDamageReduction(self,t)
 		local speed = t.getSpeed(self,t)
