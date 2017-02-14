@@ -106,15 +106,19 @@ newTalent{
 		stat = { dex=function(level) return 12 + (level-1) * 2 end },
 		level = function(level) return 0 + (level-1) * 8  end,
 	},
--- need to fix talent toggling abuse
 	on_learn = function(self, t)
 		venomous_throw_check(self)
-		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
-		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=max, max_stacks=max })
+		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=0, max_stacks=t.getNb(self, t)})
 	end,
 	on_unlearn = function(self, t)
 		venomous_throw_check(self)
-		self:removeEffect(self.EFF_THROWING_KNIVES)
+		if self:knowTalent(t.id) then
+			if self:hasEffect(self.EFF_THROWING_KNIVES) then
+				self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=0, max_stacks=t.getNb(self, t)})
+			end
+		else
+			self:removeEffect(self.EFF_THROWING_KNIVES)		
+		end
 	end,
 	speed = "throwing",
 	proj_speed = 10,
@@ -126,9 +130,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t)
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if eff then
-			return true
-		end	
+		if eff and eff.stacks > 0 then return true end
 	end,
 	callbackOnActBase = function(self, t)
 		if self.resting then
@@ -307,7 +309,7 @@ newTalent{
 		if not hitted or self.turn_procs.quickdraw or core.fov.distance(self.x, self.y, target.x, target.y) > 1 or not rng.percent(t.getChance(self,t)) then return nil end
 		
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if not eff then return end
+		if not eff or eff.stacks <= 0 then return end
 		
 		local tg = {type="ball", range=0, radius=7, friendlyfire=false, selffire=false }
 		local tgts = {}
@@ -354,9 +356,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t)
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if eff then
-			return true
-		end	
+		if eff and eff.stacks > 0 then return true end
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)

@@ -3078,12 +3078,13 @@ newEffect{
 	display_desc = function(self, eff) return eff.stacks.." Knives" end,
 	long_desc = function(self, eff) return ("Has %d throwing knives prepared:\n\n%s"):format(eff.stacks, self:callTalent(self.T_THROWING_KNIVES, "knivesInfo")) end,
 	type = "other",
-	subtype = { },
+	subtype = { tactic=true },
 	status = "beneficial",
-	parameters = { stacks=1, max_stacks=10 },
+	parameters = { stacks=1, max_stacks=6 },
 	charges = function(self, eff) return eff.stacks end,
 	on_merge = function(self, old_eff, new_eff)
 		old_eff.dur = new_eff.dur
+		old_eff.max_stacks = new_eff.max_stacks
 		old_eff.stacks = util.bound(old_eff.stacks + new_eff.stacks, 1, new_eff.max_stacks)
 		return old_eff
 	end,
