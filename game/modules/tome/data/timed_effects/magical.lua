@@ -2943,11 +2943,15 @@ newEffect{
 	parameters = { power=10 },
 	on_gain = function(self, err) return nil, "+Healing Inversion" end,
 	on_lose = function(self, err) return nil, "-Healing Inversion" end,
-	callbackOnHeal = function(self, eff, value, src)
-		local dam = value * eff.power / 100
-		if not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
+	callbackPriorities={callbackOnHeal = 1}, -- trigger after (most) other healing callbacks
+	callbackOnHeal = function(self, eff, value, src, raw_value)
+		if raw_value > 0 and not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
 			eff.projecting = true
-			DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+			local dam = raw_value * eff.power / 100
+			local psrc = eff.src or src or self
+			psrc.__project_source = eff
+			DamageType:get(DamageType.BLIGHT).projector(psrc, self.x, self.y, DamageType.BLIGHT, dam)
+			psrc.__project_source = nil
 			eff.projecting = false
 		end
 		return {value=0}
@@ -3716,8 +3720,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = { power=10 },
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Blight Poison" end,
-	on_lose = function(self, err) return "#Target# stops being poisoned.", "-Blight Poison" end,
+	on_gain = function(self, err) return "#Target# is poisoned with blight!", "+Blight Poison" end,
+	on_lose = function(self, err) return "#Target# is free from the blighted poison.", "-Blight Poison" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the poison
 		local olddam = old_eff.power * old_eff.dur
@@ -3743,8 +3747,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = {power=10, heal_factor=30},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Insidious Blight" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Insidious Blight" end,
+	on_gain = function(self, err) return "#Target# is poisoned with insidious blight!!", "+Insidious Blight" end,
+	on_lose = function(self, err) return "#Target# is free from the insidious blight.", "-Insidious Blight" end,
 	activate = function(self, eff)
 		eff.healid = self:addTemporaryValue("healing_factor", -eff.heal_factor / 100)
 	end,
@@ -3763,7 +3767,6 @@ newEffect{
 	end,
 }
 
-
 newEffect{
 	name = "CRIPPLING_BLIGHT", image = "talents/crippling_poison.png",
 	desc = "Crippling Blight",
@@ -3772,8 +3775,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = {power=10, fail=5},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Crippling Blight" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Crippling Blight" end,
+	on_gain = function(self, err) return "#Target# is poisoned with crippling blight!", "+Crippling Blight" end,
+	on_lose = function(self, err) return "#Target# is free from the crippling blight.", "-Crippling Blight" end,
 	-- Damage each turn
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then self:heal(eff.power, eff.src)
@@ -3801,8 +3804,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = {power=10, reduce=5},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Numbing Blight" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Numbing Blight" end,
+	on_gain = function(self, err) return "#Target# is poisoned numbing blight!", "+Numbing Blight" end,
+	on_lose = function(self, err) return "#Target# is free from the numbing blight.", "-Numbing Blight" end,
 	-- Damage each turn
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then self:heal(eff.power, eff.src)

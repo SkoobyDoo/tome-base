@@ -106,6 +106,7 @@ newTalent{
 		stat = { dex=function(level) return 12 + (level-1) * 2 end },
 		level = function(level) return 0 + (level-1) * 8  end,
 	},
+-- need to fix talent toggling abuse
 	on_learn = function(self, t)
 		venomous_throw_check(self)
 		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
