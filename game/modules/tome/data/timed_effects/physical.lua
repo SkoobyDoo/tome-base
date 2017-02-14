@@ -3949,3 +3949,18 @@ newEffect{
 		end
 	end,
 }
+
+newEffect{
+	name = "SHADOWSTRIKE", image = "talents/shadowstrike.png",
+	desc = "Shadowstrike",
+	long_desc = function(self, eff) return ("The target's critical strike damage bonus is increased by %d%%."):format(eff.power) end,
+	type = "magical",
+	subtype = { darkness=true },
+	status = "beneficial",
+	parameters = { power=1 },
+	on_gain = function(self, err) return nil, true end,
+	on_lose = function(self, err) return nil, true end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_critical_power", eff.power)
+	end,
+}
