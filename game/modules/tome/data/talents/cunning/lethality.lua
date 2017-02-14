@@ -104,7 +104,7 @@ newTalent{
 	no_break_stealth = true,
 	no_energy = true,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.30, 0.75) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
+	getDamage = function(self, t) return 1 end,
 	activate = function(self, t)
 		return {
 			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
