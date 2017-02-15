@@ -44,6 +44,23 @@ function CXML:findAll(tag, attr, value, no_recurs)
 	search(self)
 	return list
 end
+function CXML:findAllOf(tags, attr, value, no_recurs)
+	local list = {}
+	tags = table.reverse(tags)
+	local function search(t)
+		for _, node in ipairs(t) do
+			if type(node) == "table" then
+				if tags[node.tag] and (not attr or node.attr[attr] == value) then
+					list[#list+1] = CXML.castAs(node)
+				elseif not no_recurs then
+					search(node)
+				end
+			end
+		end
+	end
+	search(self)
+	return list
+end
 function CXML:findAllAttrs(tag, key, value)
 	local list = self:findAll(tag)
 	local attrs = {}

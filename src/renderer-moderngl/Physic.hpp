@@ -60,17 +60,23 @@ public:
 /*************************************************************************
  ** PhysicSimulator
  *************************************************************************/
+class TE4ContactListener;
 class PhysicSimulator {
 private:
-
+	TE4ContactListener *contact_listener;
+	int contact_listener_ref = LUA_NOREF;
 public:
+	bool paused = true;
 	b2World world;
 	static float unit_scale;
 	static PhysicSimulator *current;
 
 	PhysicSimulator(float x=0, float y=0);
+	~PhysicSimulator();
 	void setGravity(float x, float y);
+	void setContactListener(int ref);
 	void use();
+	void pause(bool v) { paused = v; };
 
 	void step(float nb_keyframes);
 

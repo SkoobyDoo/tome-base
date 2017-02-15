@@ -1609,6 +1609,21 @@ static int physic_world_unit_to_pixel(lua_State *L) {
 	return 0;
 }
 
+static int physic_world_pause(lua_State *L) {
+	PhysicSimulator::current->pause(lua_toboolean(L, 1));
+	return 0;
+}
+
+static int physic_world_set_contact_listener(lua_State *L) {
+	if (lua_isfunction(L, 1)) {
+		lua_pushvalue(L, 1);
+		PhysicSimulator::current->setContactListener(luaL_ref(L, LUA_REGISTRYINDEX));
+	} else {
+		PhysicSimulator::current->setContactListener(LUA_NOREF);
+	}
+	return 0;
+}
+
 /******************************************************************
  ** Lua declarations
  ******************************************************************/
@@ -1989,9 +2004,15 @@ const luaL_Reg rendererlib[] = {
 	{"vbo", gl_vbo_new},
 	{"countDOs", gl_dos_count},
 	{"defaultTextShader", gl_set_default_text_shader},
-	{"physicRayCast", physic_world_raycast},
-	{"physicWorldGravity", physic_world_gravity},
-	{"physicWorldScale", physic_world_unit_to_pixel},
+	{NULL, NULL}
+};
+
+const luaL_Reg physicslib[] = {
+	{"pause", physic_world_pause},
+	{"setContactListener", physic_world_set_contact_listener},
+	{"rayCast", physic_world_raycast},
+	{"worldGravity", physic_world_gravity},
+	{"worldScale", physic_world_unit_to_pixel},
 	{NULL, NULL}
 };
 
@@ -2013,6 +2034,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{view}", gl_view_reg);
 	auxiliar_newclass(L, "gl{vbo}", gl_vbo_reg);
 	luaL_openlib(L, "core.renderer", rendererlib, 0);
+	luaL_openlib(L, "core.physics", physicslib, 0);
 
 	// Build the weak self store registry
 	lua_newtable(L); // new_table={}
@@ -2024,5 +2046,6 @@ int luaopen_renderer(lua_State *L)
 	DisplayObject::weak_registry_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	init_spriter();
+
 	return 1;
 }

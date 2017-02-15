@@ -91,6 +91,9 @@ extern int traceback (lua_State *L);
 extern void physfs_reset_dir_allowed(lua_State *L);
 extern bool physfs_check_allow_path(lua_State *L, const char *path);
 
+extern void run_physic_simulation(float nb_keyframes);
+extern void reset_physic_simulation();
+
 extern int luaopen_font(lua_State *L);
 
 #ifdef STEAM_TE4

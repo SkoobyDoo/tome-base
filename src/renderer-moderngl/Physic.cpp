@@ -108,50 +108,39 @@ void DORPhysic::onKeyframe(float nb_keyframes) {
 	me->rotate(me->rot_x, me->rot_y, angle, true);
 }
 
-/*************************************************************************
- ** PhysicSimulator
- *************************************************************************/
-PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale, -y / unit_scale)) {
-}
+/*************************************************************
+ ** Contacts
+ *************************************************************/
+struct contact_info {
+	b2Body *a;
+	b2Body *b;
+	float velocity;
+};
+class TE4ContactListener : public b2ContactListener
+{
+public:
+	vector<contact_info> events;
 
-void PhysicSimulator::use() {
-	if (current && !physic_obj_count) {
-		printf("[PhysicSimulator] ERROR TRYING TO DEFINE NEW CURRENT WITH %d OBJECTS LEFT\n", physic_obj_count);
-		exit(1);
-	}
-	current = this;
-}
-
-void PhysicSimulator::setGravity(float x, float y) {
-	world.SetGravity(b2Vec2(x / unit_scale, -y / unit_scale));
-}
-
-void PhysicSimulator::setUnitScale(float scale) {
-	unit_scale = scale;
-}
-
-void PhysicSimulator::step(float nb_keyframes) {
-	// We do it this way because box2d doc says it realyl doesnt like changing the timestep
-	for (int f = 0; f < nb_keyframes * 60.0 / (float)NORMALIZED_FPS; f++) {
-		world.Step(1.0f / 60.0f, 6, 2);
-	}
-}
-
-PhysicSimulator *PhysicSimulator::current = NULL;
-float PhysicSimulator::unit_scale = 1;
-
-PhysicSimulator *PhysicSimulator::getCurrent() {
-	printf("[PhysicSimulator] getCurrent: NO CURRENT ONE !\n");
-	return current;
-}
-
-// DGDGDGDG: this could totaly run in a thread provided we make it it locks on DORPhysic::onKeyframe and on world alteration
-extern "C" void run_physic_simulation(float nb_keyframes);
-void run_physic_simulation(float nb_keyframes) {
-	if (!PhysicSimulator::current) return;
-	PhysicSimulator::current->step(nb_keyframes);
-}
-
+	void BeginContact(b2Contact* contact) {};
+	void EndContact(b2Contact* contact) {};
+	void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) {
+		b2WorldManifold worldManifold;
+		contact->GetWorldManifold(&worldManifold);
+		b2PointState state1[2], state2[2];
+		b2GetPointStates(state1, state2, oldManifold, contact->GetManifold());
+		if (state2[0] == b2_addState)
+		{
+			b2Body* bodyA = contact->GetFixtureA()->GetBody();
+			b2Body* bodyB = contact->GetFixtureB()->GetBody();
+			b2Vec2 point = worldManifold.points[0];
+			b2Vec2 vA = bodyA->GetLinearVelocityFromWorldPoint(point);
+			b2Vec2 vB = bodyB->GetLinearVelocityFromWorldPoint(point);
+			float32 approachVelocity = b2Dot(vB - vA, worldManifold.normal);
+			events.push_back({bodyA, bodyB, approachVelocity});
+		}
+	};
+	void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) {};
+};
 
 /*************************************************************
  ** Raycasting
@@ -200,7 +189,7 @@ public:
 			if (lua_isnil(L, -1)) ret = 0;
 			else ret = lua_toboolean(L, -1) ? 1 : fraction;
 		}
-		lua_pop(L, 1);
+		lua_pop(L, 2); // 1 for result, 1 for weak register
 		return ret;
 	};
 };
@@ -247,3 +236,96 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 		lua_pop(L, 1); // Pop the weak regisry table
 	}
 }
+
+
+/*************************************************************************
+ ** PhysicSimulator
+ *************************************************************************/
+PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale, -y / unit_scale)) {
+	contact_listener = new TE4ContactListener();
+	world.SetContactListener(contact_listener);
+}
+PhysicSimulator::~PhysicSimulator() {
+	if (contact_listener_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, contact_listener_ref);
+	delete contact_listener;
+}
+
+void PhysicSimulator::use() {
+	if (current && !physic_obj_count) {
+		printf("[PhysicSimulator] ERROR TRYING TO DEFINE NEW CURRENT WITH %d OBJECTS LEFT\n", physic_obj_count);
+		exit(1);
+	}
+	current = this;
+}
+
+void PhysicSimulator::setGravity(float x, float y) {
+	world.SetGravity(b2Vec2(x / unit_scale, -y / unit_scale));
+}
+
+void PhysicSimulator::setUnitScale(float scale) {
+	unit_scale = scale;
+}
+
+void PhysicSimulator::setContactListener(int ref) {
+	if (contact_listener_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, contact_listener_ref);
+	contact_listener_ref = ref;
+}
+
+void PhysicSimulator::step(float nb_keyframes) {
+	// We do it this way because box2d doc says it realyl doesnt like changing the timestep
+	for (int f = 0; f < nb_keyframes * 60.0 / (float)NORMALIZED_FPS; f++) {
+		world.Step(1.0f / 60.0f, 6, 2);
+		if ((contact_listener_ref != LUA_NOREF) && contact_listener->events.size()) {
+			// Grab weak DO registery
+			lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+
+			lua_rawgeti(L, LUA_REGISTRYINDEX, contact_listener_ref);
+			lua_newtable(L);
+			int i = 1;
+			for (auto &it : contact_listener->events) {
+				DisplayObject *a = static_cast<DisplayObject*>(it.a->GetUserData());
+				DisplayObject *b = static_cast<DisplayObject*>(it.b->GetUserData());
+
+				lua_newtable(L);
+				
+				lua_rawgeti(L, -4, a->getWeakSelfRef()); // The DO
+				lua_rawseti(L, -2, 1);
+				lua_rawgeti(L, -4, b->getWeakSelfRef()); // The DO
+				lua_rawseti(L, -2, 2);
+				lua_pushnumber(L, it.velocity);
+				lua_rawseti(L, -2, 3);
+
+				lua_rawseti(L, -2, i++); // Store the table in the list
+			}
+
+			if (lua_pcall(L, 1, 0, 0)) {
+				printf("Contact Listener callback error: %s\n", lua_tostring(L, -1));
+			}
+			lua_pop(L, 1); // Pop the weak registry
+
+			contact_listener->events.clear();
+		}
+	}
+}
+
+PhysicSimulator *PhysicSimulator::current = NULL;
+float PhysicSimulator::unit_scale = 1;
+
+PhysicSimulator *PhysicSimulator::getCurrent() {
+	printf("[PhysicSimulator] getCurrent: NO CURRENT ONE !\n");
+	return current;
+}
+
+// DGDGDGDG: this could totaly run in a thread provided we make it it locks on DORPhysic::onKeyframe and on world alteration
+extern "C" void run_physic_simulation(float nb_keyframes);
+void run_physic_simulation(float nb_keyframes) {
+	if (!PhysicSimulator::current || PhysicSimulator::current->paused) return;
+	PhysicSimulator::current->step(nb_keyframes);
+}
+
+extern "C" void reset_physic_simulation();
+void reset_physic_simulation() {
+	if (!PhysicSimulator::current) return;
+	PhysicSimulator::current->setContactListener(LUA_NOREF);
+}
+

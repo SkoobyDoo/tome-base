@@ -667,8 +667,6 @@ static void call_draw(float nb_keyframes)
 	mouse_draw_drag();
 }
 
-
-extern void run_physic_simulation(float nb_keyframes);
 void on_redraw()
 {
 	static int last_ticks = 0;
@@ -1629,6 +1627,7 @@ int main(int argc, char *argv[])
 			{
 				tickPaused = FALSE;
 				setupRealtime(0);
+				reset_physic_simulation();
 				boot_lua(1, TRUE, argc, argv);
 				boot_lua(2, TRUE, argc, argv);
 			}
