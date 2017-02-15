@@ -147,6 +147,7 @@ public:
 
 	int enablePhysic();
 	DORPhysic *getPhysic(int pid);
+	void destroyPhysic(int pid);
 
 	void recomputeModelMatrix();
 	recomputematrix computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur);

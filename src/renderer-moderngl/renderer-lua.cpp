@@ -253,6 +253,17 @@ static int gl_generic_physic_create(lua_State *L)
 	return 1;
 }
 
+static int gl_generic_physic_destroy(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	if (lua_toboolean(L, 2)) {
+		c->destroyPhysic(-1);
+	} else {
+		c->destroyPhysic(lua_tonumber(L, 2));
+	}
+	return 0;
+}
+
 static int gl_generic_get_physic(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
@@ -1650,6 +1661,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1709,6 +1721,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1736,6 +1749,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1769,6 +1783,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1805,6 +1820,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1831,6 +1847,7 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1855,6 +1872,7 @@ static const struct luaL_Reg gl_tileobject_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1879,6 +1897,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1905,6 +1924,7 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1929,6 +1949,7 @@ static const struct luaL_Reg gl_staticsub_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
@@ -1955,6 +1976,7 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},

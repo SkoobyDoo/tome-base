@@ -146,6 +146,16 @@ DORPhysic *DisplayObject::getPhysic(int pid) {
 	return physics[pid];
 }
 
+void DisplayObject::destroyPhysic(int pid) {
+	if (pid == -1) {
+		for (auto it : physics) delete it;
+			physics.clear();
+	} else {
+		delete physics[pid];
+		physics.erase(physics.begin() + pid);
+	}
+}
+
 void DisplayObject::shown(bool v) {
 	if (visible == v) return;
 	visible = v;
