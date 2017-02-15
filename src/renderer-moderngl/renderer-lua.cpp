@@ -1464,6 +1464,8 @@ static int body_add_fixture(lua_State *L)
 	if (lua_istable(L, -1)) {
 		int filter_table_idx = lua_gettop(L);
 		if (float_get_lua_table(L, filter_table_idx, "group", &tmp)) fixtureDef.filter.groupIndex = tmp;
+		if (float_get_lua_table(L, filter_table_idx, "category", &tmp)) fixtureDef.filter.categoryBits = static_cast<uint16>(tmp);
+		if (float_get_lua_table(L, filter_table_idx, "mask", &tmp)) fixtureDef.filter.maskBits = static_cast<uint16>(tmp);
 	}
 	lua_pop(L, 1);
 
@@ -1602,6 +1604,12 @@ static int physic_world_raycast(lua_State *L) {
 		PhysicSimulator::current->rayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), 5);
 		return 0;
 	}
+}
+
+static int physic_world_circlecast(lua_State *L) {
+	lua_newtable(L);
+	PhysicSimulator::current->circleCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
+	return 1;
 }
 
 static int physic_world_unit_to_pixel(lua_State *L) {
@@ -2011,6 +2019,7 @@ const luaL_Reg physicslib[] = {
 	{"pause", physic_world_pause},
 	{"setContactListener", physic_world_set_contact_listener},
 	{"rayCast", physic_world_raycast},
+	{"circleCast", physic_world_circlecast},
 	{"worldGravity", physic_world_gravity},
 	{"worldScale", physic_world_unit_to_pixel},
 	{NULL, NULL}

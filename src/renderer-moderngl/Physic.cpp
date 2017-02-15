@@ -148,17 +148,22 @@ public:
 struct Hit {
 	DisplayObject *d;
 	vec2 point, normal;
+	float dist;
 };
 class RayCastCallbackList : public b2RayCastCallback
 {
 protected:
+	float sx, sy;
 public:
+	RayCastCallbackList(float sx, float sy) : sx(sx), sy(sy) {};
 	vector<Hit> hits;
 	float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) {
+		float x = (point.x * PhysicSimulator::unit_scale) - sx, y = (-point.y * PhysicSimulator::unit_scale) - sy;
 		hits.push_back({
 			static_cast<DisplayObject*>(fixture->GetUserData()),
 			{point.x, point.y},
 			{normal.x, normal.y},
+			sqrt(x*x + y*y)
 		});
 		return 1;
 	};
@@ -194,6 +199,10 @@ public:
 	};
 };
 
+static bool sort_hits(const Hit &a, const Hit &b) {
+	return a.dist < b.dist;
+}
+
 void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id) {
 	b2Vec2 point1(x1 / unit_scale, -y1 / unit_scale);
 	b2Vec2 point2(x2 / unit_scale, -y2 / unit_scale);
@@ -203,8 +212,9 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 		world.RayCast(&callback, point1, point2);
 	} else {
 		// We are called with a table in the lua top stack to store the results
-		RayCastCallbackList callback;
+		RayCastCallbackList callback(x1, y1);
 		world.RayCast(&callback, point1, point2);
+		sort(callback.hits.begin(), callback.hits.end(), sort_hits);
 		
 		int i = 1;
 		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
@@ -215,14 +225,12 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 			lua_rawgeti(L, -3, it.d->getWeakSelfRef());
 			lua_rawset(L, -3);
 
-			float x = it.point.x * unit_scale;
 			lua_pushstring(L, "x");
-			lua_pushnumber(L, x);
+			lua_pushnumber(L, it.point.x * unit_scale);
 			lua_rawset(L, -3);
 
-			float y = -it.point.y * unit_scale;
 			lua_pushstring(L, "y");
-			lua_pushnumber(L, y);
+			lua_pushnumber(L, -it.point.y * unit_scale);
 			lua_rawset(L, -3);
 
 			lua_pushstring(L, "nx");
@@ -233,10 +241,8 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 			lua_pushnumber(L, -it.normal.y * unit_scale);
 			lua_rawset(L, -3);
 
-			x -= x1;
-			y -= y1;
 			lua_pushstring(L, "dist");
-			lua_pushnumber(L, sqrt(x*x + y*y));
+			lua_pushnumber(L, it.dist);
 			lua_rawset(L, -3);
 
 			lua_rawseti(L, -3, i++);
@@ -245,6 +251,109 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 	}
 }
 
+/*************************************************************
+ ** Circlecasting
+ *************************************************************/
+struct Subhit {
+	b2Fixture *fixture;
+	vec2 point, normal;
+	float dist;
+};
+static bool sort_subhits(const Subhit &a, const Subhit &b) {
+	return a.dist < b.dist;
+}
+class CircleCastCallbackList : public b2QueryCallback, public b2RayCastCallback
+{
+protected:
+	uint16 mask_bits;
+	b2Vec2 src;
+	float radius;
+	vector<Subhit> subhits;
+public:
+	CircleCastCallbackList(float sx, float sy, float radius, uint16 mask_bits) : src(sx, sy), radius(radius), mask_bits(mask_bits) {};
+	vector<Hit> hits;
+
+	// Callback for QueryAABB
+	// For each body found we make a raycast from the center to ensure that they both fit in the circle and are in LOS set by mask
+	bool ReportFixture(b2Fixture* fixture) {
+		subhits.clear();
+		b2Body *cur_body = fixture->GetBody();
+		PhysicSimulator::current->world.RayCast(this, src, cur_body->GetPosition());
+		sort(subhits.begin(), subhits.end(), sort_subhits);
+
+		for (auto &it : subhits) {
+			// Awww we hit a wall, too bad let's stop now
+			if (it.fixture->GetFilterData().categoryBits & mask_bits) break;
+			// We hit our body, yay
+			if (it.fixture->GetBody() == cur_body) {
+				DisplayObject *d = static_cast<DisplayObject*>(fixture->GetUserData());
+				hits.push_back({
+					d,
+					it.point,
+					it.normal,
+					sqrt(it.dist)
+				});
+				break;
+			}
+		}
+		return true;
+	}
+	// Callback for internal raycasting
+	float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) {
+		float x = point.x - src.x, y = src.y;
+		subhits.push_back({
+			fixture,
+			{point.x, point.y},
+			{normal.x, normal.y},
+			x*x + y*y // Just for sorting, no need to square it
+		});
+		return 1;
+	};
+};
+
+void PhysicSimulator::circleCast(float x, float y, float radius, uint16 mask_bits) {
+	// We are called with a table in the lua top stack to store the results
+	x = x / unit_scale; y = -y / unit_scale; radius = radius / unit_scale;
+	CircleCastCallbackList callback(x, y, radius, mask_bits);
+	b2AABB aabb;
+	aabb.lowerBound = b2Vec2(x - radius, y - radius);
+	aabb.upperBound = b2Vec2(x + radius, y + radius);
+	world.QueryAABB(&callback, aabb);
+	// sort(callback.hits.begin(), callback.hits.end(), sort_hits);
+	
+	int i = 1;
+	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+	for (auto &it : callback.hits) {
+		lua_newtable(L);
+
+		lua_pushstring(L, "d");
+		lua_rawgeti(L, -3, it.d->getWeakSelfRef());
+		lua_rawset(L, -3);
+
+		lua_pushstring(L, "x");
+		lua_pushnumber(L, it.point.x * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushstring(L, "y");
+		lua_pushnumber(L, -it.point.y * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushstring(L, "nx");
+		lua_pushnumber(L, it.normal.x * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushstring(L, "ny");
+		lua_pushnumber(L, -it.normal.y * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushstring(L, "dist");
+		lua_pushnumber(L, it.dist * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_rawseti(L, -3, i++);
+	}
+	lua_pop(L, 1); // Pop the weak regisry table
+}
 
 /*************************************************************************
  ** PhysicSimulator
