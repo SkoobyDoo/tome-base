@@ -3085,7 +3085,7 @@ newEffect{
 	on_merge = function(self, old_eff, new_eff)
 		old_eff.dur = new_eff.dur
 		old_eff.max_stacks = new_eff.max_stacks
-		old_eff.stacks = util.bound(old_eff.stacks + new_eff.stacks, 1, new_eff.max_stacks)
+		old_eff.stacks = util.bound(old_eff.stacks + new_eff.stacks, 0, new_eff.max_stacks)
 		return old_eff
 	end,
 	activate = function(self, eff)

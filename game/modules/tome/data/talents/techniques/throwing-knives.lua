@@ -108,7 +108,8 @@ newTalent{
 	},
 	on_learn = function(self, t)
 		venomous_throw_check(self)
-		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=0, max_stacks=t.getNb(self, t)})
+		local max = t.getNb(self, t)
+		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=game.party:hasMember(self) and 0 or max, max_stacks=max})
 	end,
 	on_unlearn = function(self, t)
 		venomous_throw_check(self)
@@ -133,7 +134,7 @@ newTalent{
 		if eff and eff.stacks > 0 then return true end
 	end,
 	callbackOnActBase = function(self, t)
-		if self.resting then
+		if self.resting or not self.player and not table.get(self, "ai_target","actor") then -- bit kludgy, npc's don't rest
 			local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
 			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
 			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
