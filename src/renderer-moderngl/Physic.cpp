@@ -187,7 +187,7 @@ public:
 			printf("RayCast callback error: %s\n", lua_tostring(L, -1));
 		} else {
 			if (lua_isnil(L, -1)) ret = 0;
-			else ret = lua_toboolean(L, -1) ? 1 : fraction;
+			else ret = lua_toboolean(L, -1) ? fraction : 1;
 		}
 		lua_pop(L, 2); // 1 for result, 1 for weak register
 		return ret;
@@ -215,12 +215,14 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 			lua_rawgeti(L, -3, it.d->getWeakSelfRef());
 			lua_rawset(L, -3);
 
+			float x = it.point.x * unit_scale;
 			lua_pushstring(L, "x");
-			lua_pushnumber(L, it.point.x * unit_scale);
+			lua_pushnumber(L, x);
 			lua_rawset(L, -3);
 
+			float y = -it.point.y * unit_scale;
 			lua_pushstring(L, "y");
-			lua_pushnumber(L, -it.point.y * unit_scale);
+			lua_pushnumber(L, y);
 			lua_rawset(L, -3);
 
 			lua_pushstring(L, "nx");
@@ -229,6 +231,12 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, int cb_id)
 
 			lua_pushstring(L, "ny");
 			lua_pushnumber(L, -it.normal.y * unit_scale);
+			lua_rawset(L, -3);
+
+			x -= x1;
+			y -= y1;
+			lua_pushstring(L, "dist");
+			lua_pushnumber(L, sqrt(x*x + y*y));
 			lua_rawset(L, -3);
 
 			lua_rawseti(L, -3, i++);
