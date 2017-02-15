@@ -267,7 +267,7 @@ class CircleCastCallbackList : public b2QueryCallback, public b2RayCastCallback
 protected:
 	uint16 mask_bits;
 	b2Vec2 src;
-	float radius;
+	float radius, radius2;
 	vector<Subhit> subhits;
 public:
 	CircleCastCallbackList(float sx, float sy, float radius, uint16 mask_bits) : src(sx, sy), radius(radius), mask_bits(mask_bits) {};
@@ -276,6 +276,7 @@ public:
 	// Callback for QueryAABB
 	// For each body found we make a raycast from the center to ensure that they both fit in the circle and are in LOS set by mask
 	bool ReportFixture(b2Fixture* fixture) {
+		radius2 = radius * radius;
 		subhits.clear();
 		b2Body *cur_body = fixture->GetBody();
 		PhysicSimulator::current->world.RayCast(this, src, cur_body->GetPosition());
@@ -300,13 +301,16 @@ public:
 	}
 	// Callback for internal raycasting
 	float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) {
-		float x = point.x - src.x, y = src.y;
-		subhits.push_back({
-			fixture,
-			{point.x, point.y},
-			{normal.x, normal.y},
-			x*x + y*y // Just for sorting, no need to square it
-		});
+		float x = point.x - src.x, y = point.y - src.y;
+		float dist2 = x*x + y*y;
+		if (dist2 <= radius2) {
+			subhits.push_back({
+				fixture,
+				{point.x, point.y},
+				{normal.x, normal.y},
+				dist2 // Just for sorting, no need to square it
+			});
+		}
 		return 1;
 	};
 };
