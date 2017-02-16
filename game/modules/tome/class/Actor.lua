@@ -5075,6 +5075,8 @@ local sustainCallbackCheck = {
 	callbackOnTakeDamage = "talents_on_take_damage",
 	callbackOnHeal = "talents_on_heal",
 	callbackOnQuickSwitchWeapons = "talents_on_quick_switch_weapon",
+	callbackOnWearTinker = "talents_on_wear_tinker",
+	callbackOnTakeoffTinker = "talents_on_takeoff_tinker",
 	callbackOnWear = "talents_on_wear",
 	callbackOnTakeoff = "talents_on_takeoff",
 	callbackOnTalentPost = "talents_on_talent_post",
@@ -6855,6 +6857,9 @@ function _M:doTakeoffTinker(base_o, oldo, only_remove)
 	end
 
 	if not only_remove then self:addObject(self.INVEN_INVEN, oldo) end
+
+	self:fireTalentCheck("callbackOnTakeoffTinker", oldo, base_o)
+
 	game.logPlayer(self, "You detach %s from your %s.", oldo:getName{do_color=true}, base_o:getName{do_color=true})
 
 	return true
@@ -6914,6 +6919,9 @@ function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, b
 		game.logPlayer(self, "You attach %s to your %s.", wear_o:getName{do_color=true}, base_o:getName{do_color=true})
 
 		if wear_inven and wear_item then self:removeObject(wear_inven, wear_item) end
+
+		self:fireTalentCheck("callbackOnWearTinker", wear_o, base_o)
+
 		return true, base_o
 	else
 		game.logPlayer(self, "You fail to attach %s to %s.", wear_o:getName{do_color=true}, base_o:getName{do_color=true})

@@ -85,8 +85,8 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		local ret = {
-		}
+		local ret = {}
+		self:talentParticles(ret, {type="apply_poison", args={}})
 		return ret
 	end,
 	deactivate = function(self, t, p)

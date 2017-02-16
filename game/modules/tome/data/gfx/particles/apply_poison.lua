@@ -18,23 +18,36 @@
 -- darkgod@te4.org
 
 base_size = 32
+toback = false
+can_shift = true
 
-return {
-	base = 2000,
+return { generator = function()
+	local ad = rng.range(0, 360)
+	local a = math.rad(ad)
+	local dir = math.rad(90)
+	local r = rng.range(18, 22)
+	local dirchance = rng.chance(2)
+	local x = rng.range(-10, 10)
+	local y = -4 + math.abs(math.sin(x / 16) * 8)
 
-	angle = { 0, 360 }, anglev = { 4000, 5000 }, anglea = { 20, 60 },
+	return {
+		trail = 2,
+		life = 32,
+		size = rng.range(3, 6), sizev = 0, sizea = -0.008,
 
-	life = { 20, 30 },
-	size = { 7, 8 }, sizev = {0, 0}, sizea = {0, 0},
+		x = x, xv = 0, xa = 0,
+		y = y, yv = 0.2, ya = 0.04,
+		dir = 0, dirv = 0, dira = 0,
+		vel = 0, velv = 0, vela = 0,
 
-	r = {240, 255}, rv = {0, 10}, ra = {0, 0},
-	g = {200, 214}, gv = {0, 0}, ga = {0, 0},
-	b = {150, 163}, bv = {0, 10}, ba = {0, 0},
-	a = {25, 120}, av = {0, 0}, aa = {0, 0},
-
-}, function(self)
-	self.nb = (self.nb or 0) + 1
-	if self.nb < 3 then
-		self.ps:emit(20)
-	end
-end
+		r = 10/255, rv = 0, ra = 0,
+		g = 168/255, gv = 0, ga = 0,
+		b = 13/255, bv = 0, ba = 0,
+		a = 1.0, av = -1.0/32, aa = 0,
+	}
+end, },
+function(self)
+	self.ps:emit(1)
+end,
+32,
+"particles_images/apply_poison"..rng.range(1, 4)

@@ -309,6 +309,36 @@ newEffect{
 	end,
 }
 
+
+newEffect{
+	name = "VIMSENSE_DETECT", image = "talents/vimsense.png",
+	desc = "Sensing (Vim)",
+	long_desc = function(self, eff) return "Improves senses, allowing the detection of unseen things." end,
+	type = "magical",
+	subtype = { sense=true, corruption=true },
+	status = "beneficial",
+	parameters = { range=10, actor=1, object=0, trap=0 },
+	activate = function(self, eff)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=true,  size_factor=1.5, img="05_vimsense"}, shader={type="tentacles", appearTime=0.6, time_factor=1000, noup=2.0}})
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=1.5, img="05_vimsense"}, shader={type="tentacles", appearTime=0.6, time_factor=1000, noup=1.0}})
+		end
+		eff.rid = self:addTemporaryValue("detect_range", eff.range)
+		eff.aid = self:addTemporaryValue("detect_actor", eff.actor)
+		eff.oid = self:addTemporaryValue("detect_object", eff.object)
+		eff.tid = self:addTemporaryValue("detect_trap", eff.trap)
+		self.detect_function = eff.on_detect
+		game.level.map.changed = true
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("detect_range", eff.rid)
+		self:removeTemporaryValue("detect_actor", eff.aid)
+		self:removeTemporaryValue("detect_object", eff.oid)
+		self:removeTemporaryValue("detect_trap", eff.tid)
+		self.detect_function = nil
+	end,
+}
+
 newEffect{
 	name = "SENSE_HIDDEN", image = "talents/keen_senses.png",
 	desc = "Sense Hidden",
