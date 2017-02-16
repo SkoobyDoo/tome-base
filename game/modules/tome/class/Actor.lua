@@ -3833,6 +3833,8 @@ function _M:quickSwitchWeapons(free_swap, message, silent)
 
 	self.off_weapon_slots = not self.off_weapon_slots
 	self.changed = true
+
+	self:fireTalentCheck("callbackOnQuickSwitchWeapons")
 end
 
 --- Call when an object is worn
@@ -5072,6 +5074,7 @@ local sustainCallbackCheck = {
 	callbackOnStatChange = "talents_on_stat_change",
 	callbackOnTakeDamage = "talents_on_take_damage",
 	callbackOnHeal = "talents_on_heal",
+	callbackOnQuickSwitchWeapons = "talents_on_quick_switch_weapon",
 	callbackOnWear = "talents_on_wear",
 	callbackOnTakeoff = "talents_on_takeoff",
 	callbackOnTalentPost = "talents_on_talent_post",
