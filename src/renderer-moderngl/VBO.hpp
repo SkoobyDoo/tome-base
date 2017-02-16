@@ -45,7 +45,7 @@ typedef struct {
 } vbo_vertex;
 
 class VBO {
-	VBOMode mode = VBOMode::DYNAMIC;
+	VBOMode mode = VBOMode::STATIC;
 
 	vec4 color = {1, 1, 1, 1};
 

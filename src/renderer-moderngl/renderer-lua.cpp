@@ -762,6 +762,26 @@ static int gl_target_mode_blur(lua_State *L)
 	return 1;
 }
 
+static int gl_target_mode_blur_downsampling(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+
+	int blur_passes = lua_tonumber(L, 2);
+
+	shader_type *blur = (shader_type*)lua_touserdata(L, 3);
+	lua_pushvalue(L, 3); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	TargetBlurDownsampling *mode = new TargetBlurDownsampling(
+		v,
+		blur_passes,
+		blur, blur_ref
+	);
+	v->setSpecialMode(mode);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_target_post_effect_disableall(lua_State *L)
 {
 	TargetPostProcess *p = *(TargetPostProcess**)auxiliar_checkclass(L, "gl{target:posteffects}", 1);
@@ -1707,6 +1727,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"bloomMode", gl_target_mode_bloom},
 	{"bloomMode2", gl_target_mode_bloom2},
 	{"blurMode", gl_target_mode_blur},
+	{"blurModeDownsampling", gl_target_mode_blur_downsampling},
 	{"postEffectsMode", gl_target_mode_posteffects},
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},

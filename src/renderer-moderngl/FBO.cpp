@@ -107,6 +107,7 @@ void DORTarget::makeFramebuffer(int w, int h, int nbt, bool hdr, bool depth, Fbo
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i].texture, 0);
 		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
@@ -444,71 +445,6 @@ void TargetBloom2::renderMode() {
 }	
 
 /*************************************************************************
- ** TargetBlur
- *************************************************************************/
-TargetBlur::TargetBlur(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref)
-	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
-{
-	this->blur = blur;
-	this->blur_ref = blur_ref;
-
-	this->blur_passes = blur_passes;
-
-	useShaderSimple(blur);
-	blur_horizontal_uniform = glGetUniformLocation(blur->shader, "horizontal");
-
-	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_blur);
-
-	vbo.addQuad(
-		0, 0, 0, 1,
-		target->w, 0, 1, 1,
-		target->w, target->h, 1, 0,
-		0, target->h, 0, 0,
-		1, 1, 1, 1
-	);
-}
-TargetBlur::~TargetBlur() {
-	target->deleteFramebuffer(&fbo_blur);
-
-	if (blur_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, blur_ref); blur_ref = LUA_NOREF; }
-}
-
-void TargetBlur::renderMode() {
-	mat4 model = mat4();
-	vbo.resetTexture();
-	glDisable(GL_BLEND);
-	// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // DGDGDGDG: probably betetr to use premultipled alpha, work on me!
-
-	// Draw all passes
-	vbo.setShader(blur);
-	Fbo *use_fbo_prev = &target->fbo;
-	Fbo *use_fbo = &fbo_blur;
-	for (int i = 0; i < blur_passes; i++) {
-		target->useFramebuffer(use_fbo);
-
-		vbo.setTexture(use_fbo_prev->textures[0].texture);
-		float radius = blur_passes + 1 - i;
-		GLfloat uni[2] = {radius, 0};
-		if (i % 2 == 1) { uni[0] = 0; uni[1] = radius; }
-		glUniform2fv(blur_horizontal_uniform, 1, uni);
-		vbo.toScreen(model);
-
-		swap(use_fbo_prev, use_fbo);
-	}
-
-	// If we didnt end up in the rigth buffer, draw back into the normal FBO
-	if (use_fbo == &target->fbo) {
-		target->useFramebuffer(&target->fbo);
-		vbo.setTexture(use_fbo_prev->textures[0].texture);
-		vbo.setShader(NULL);
-		vbo.toScreen(model);
-	}
-
-	// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
-}	
-
-/*************************************************************************
  ** TargetPostProcess
  *************************************************************************/
 TargetPostProcess::TargetPostProcess(DORTarget *t)
@@ -583,5 +519,166 @@ void TargetPostProcess::renderMode() {
 		vbo.toScreen(model);
 	}
 
+	glEnable(GL_BLEND);
+}	
+
+/*************************************************************************
+ ** TargetBlur
+ *************************************************************************/
+TargetBlur::TargetBlur(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref)
+	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
+{
+	this->blur = blur;
+	this->blur_ref = blur_ref;
+
+	this->blur_passes = blur_passes;
+
+	useShaderSimple(blur);
+	blur_horizontal_uniform = glGetUniformLocation(blur->shader, "horizontal");
+
+	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_blur);
+
+	vbo.addQuad(
+		0, 0, 0, 1,
+		target->w, 0, 1, 1,
+		target->w, target->h, 1, 0,
+		0, target->h, 0, 0,
+		1, 1, 1, 1
+	);
+}
+TargetBlur::~TargetBlur() {
+	target->deleteFramebuffer(&fbo_blur);
+
+	if (blur_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, blur_ref); blur_ref = LUA_NOREF; }
+}
+
+void TargetBlur::renderMode() {
+	mat4 model = mat4();
+	vbo.resetTexture();
+	glDisable(GL_BLEND);
+	// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // DGDGDGDG: probably betetr to use premultipled alpha, work on me!
+
+	// Draw all passes
+	vbo.setShader(blur);
+	Fbo *use_fbo_prev = &target->fbo;
+	Fbo *use_fbo = &fbo_blur;
+	for (int i = 0; i < blur_passes; i++) {
+		target->useFramebuffer(use_fbo);
+
+		vbo.setTexture(use_fbo_prev->textures[0].texture);
+		float radius = blur_passes + 1 - i;
+		GLfloat uni[2] = {radius, 0};
+		if (i % 2 == 1) { uni[0] = 0; uni[1] = radius; }
+		glUniform2fv(blur_horizontal_uniform, 1, uni);
+		vbo.toScreen(model);
+
+		swap(use_fbo_prev, use_fbo);
+	}
+
+	// If we didnt end up in the rigth buffer, draw back into the normal FBO
+	if (use_fbo == &target->fbo) {
+		target->useFramebuffer(&target->fbo);
+		vbo.setTexture(use_fbo_prev->textures[0].texture);
+		vbo.setShader(NULL);
+		vbo.toScreen(model);
+	}
+
+	// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+}	
+
+/*************************************************************************
+ ** TargetBlurDownsampling
+ *************************************************************************/
+TargetBlurDownsampling::TargetBlurDownsampling(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref)
+	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
+{
+	this->blur = blur;
+	this->blur_ref = blur_ref;
+
+	fbos.resize(blur_passes);
+	int w = target->w, h = target->h;
+	vbo.setShader(blur);
+	vbo.addQuad(
+		0, 0, 0, 1,
+		w, 0, 1, 1,
+		w, h, 1, 0,
+		0, h, 0, 0,
+		1, 1, 1, 1
+	);
+
+	int ph = h;
+	for (int i = 0; i < blur_passes; i++) {
+		w /= 2; h /= 2;
+		fbos[i].w = w;
+		fbos[i].h = h;
+		target->makeFramebuffer(w, h, 1, true, false, &fbos[i].fbo);
+
+		fbos[i].vbo = new VBO(VBOMode::STATIC);
+		fbos[i].vbo->setShader(NULL);
+		fbos[i].vbo->setTexture(i == 0 ? target->fbo.textures[0].texture : fbos[i-1].fbo.textures[0].texture);
+		fbos[i].vbo->addQuad(
+			0, ph, 0, 0,
+			w, ph, 1, 0,
+			w, ph-h, 1, 1,
+			0, ph-h, 0, 1,
+			1, 1, 1, 1
+		);
+		vbo.setTexture(fbos[i].fbo.textures[0].texture, i);
+		printf("TargetBlurDownsampling: %dx%d\n", w, h);
+	}
+}
+TargetBlurDownsampling::~TargetBlurDownsampling() {
+	for (auto &fbo : fbos) {
+		target->deleteFramebuffer(&fbo.fbo);
+		delete fbo.vbo;
+	}
+
+	if (blur_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, blur_ref); blur_ref = LUA_NOREF; }
+}
+
+void TargetBlurDownsampling::renderMode() {
+	mat4 model = mat4();
+	glDisable(GL_BLEND);
+
+	for (auto &fbo : fbos) {
+		target->useFramebuffer(&fbo.fbo);
+		fbo.vbo->toScreen(model);
+	}
+
+	target->useFramebuffer(&target->fbo);
+	vbo.toScreen(model);
+
+	// target->useFramebuffer(&target->fbo);
+	// vbo.setTexture(use_fbo_prev->textures[0].texture);
+	// vbo.setShader(NULL);
+	// vbo.toScreen(model);
+
+	// Draw all passes
+	// vbo.setShader(blur);
+	// Fbo *use_fbo_prev = &target->fbo;
+	// Fbo *use_fbo = &fbo_blur;
+	// for (int i = 0; i < blur_passes; i++) {
+	// 	target->useFramebuffer(use_fbo);
+
+	// 	vbo.setTexture(use_fbo_prev->textures[0].texture);
+	// 	float radius = blur_passes + 1 - i;
+	// 	GLfloat uni[2] = {radius, 0};
+	// 	if (i % 2 == 1) { uni[0] = 0; uni[1] = radius; }
+	// 	glUniform2fv(blur_horizontal_uniform, 1, uni);
+	// 	vbo.toScreen(model);
+
+	// 	swap(use_fbo_prev, use_fbo);
+	// }
+
+	// // If we didnt end up in the rigth buffer, draw back into the normal FBO
+	// if (use_fbo == &target->fbo) {
+	// 	target->useFramebuffer(&target->fbo);
+	// 	vbo.setTexture(use_fbo_prev->textures[0].texture);
+	// 	vbo.setShader(NULL);
+	// 	vbo.toScreen(model);
+	// }
+
+	// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 }	

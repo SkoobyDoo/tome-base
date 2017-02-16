@@ -681,7 +681,6 @@ void on_redraw()
 	if (!anims_paused) cur_frame_tick = ticks - frame_tick_paused_time;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
 
 	frames_count = ((float)ticks - last_ticks) / ((float)1000.0 / (float)NORMALIZED_FPS);
 	// printf("ticks %d :: %f :: %f\n", ticks - last_ticks, ((float)1000.0 / (float)NORMALIZED_FPS), frames_count);
@@ -894,19 +893,15 @@ int resizeWindow(int width, int height)
 	/* Setup our viewport. */
 	glViewport( 0, 0, ( GLsizei )width, ( GLsizei )height );
 
-	/* change to the projection matrix and set our viewing volume. */
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
 	/* Set our perspective */
 	//gluPerspective( 45.0f, ratio, 0.1f, 100.0f );
-	glOrtho(0, width / screen_zoom, height / screen_zoom, 0, -1001, 1001);
+	// glOrtho(0, width / screen_zoom, height / screen_zoom, 0, -1001, 1001);
 
 	/* Make sure we're chaning the model view and not the projection */
-	glMatrixMode( GL_MODELVIEW );
+	// glMatrixMode( GL_MODELVIEW );
 
 	/* Reset The View */
-	glLoadIdentity( );
+	// glLoadIdentity( );
 
 //TSDL2	SDL_SetGamma(gamma_correction, gamma_correction, gamma_correction);
 

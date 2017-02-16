@@ -72,6 +72,27 @@ public:
 
 
 /****************************************************************************
+ ** Blur mode using downsampling
+ ****************************************************************************/
+struct DownsampledFbo {
+	Fbo fbo;
+	VBO *vbo;
+	int w, h;
+};
+class TargetBlurDownsampling : public TargetSpecialMode {
+protected:
+	shader_type *blur = NULL;
+	int blur_ref = LUA_NOREF;
+	vector<DownsampledFbo> fbos;
+	VBO vbo;
+public:
+	TargetBlurDownsampling(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref);
+	virtual ~TargetBlurDownsampling();
+	virtual void renderMode();
+};
+
+
+/****************************************************************************
  ** Bloom mode with a single blur shader
  ****************************************************************************/
 class TargetBloom2 : public TargetSpecialMode {
@@ -161,6 +182,7 @@ public:
  ****************************************************************************/
 class DORTarget : public DORVertexes, public IResizable {
 	friend class TargetBlur;
+	friend class TargetBlurDownsampling;
 	friend class TargetBloom;
 	friend class TargetBloom2;
 	friend class TargetPostProcess;
