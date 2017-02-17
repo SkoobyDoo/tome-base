@@ -169,10 +169,10 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 		local x2, y2 = x + w, y + h
 		if not v then v = core.renderer.vertexes() end
 		v:quad(
-			x1, y1, u1, v1,
-			x2+0.1, y1, u2, v1,
-			x2+0.1, y2+0.1, u2, v2,
-			x1, y2+0.1, u1, v2,
+			x1+0.375, y1+0.375, u1, v1,
+			x2+0.375, y1+0.375, u2, v1,
+			x2+0.375, y2+0.375, u2, v2,
+			x1+0.375, y2+0.375, u1, v2,
 			r, g, b, a
 		)
 		v:texture(t.t)

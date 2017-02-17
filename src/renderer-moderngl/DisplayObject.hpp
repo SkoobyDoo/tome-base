@@ -107,6 +107,7 @@ class DisplayObject {
 	friend class View;
 public:
 	static int weak_registry_ref;
+	static bool pixel_perfect;
 protected:
 	int weak_self_ref = LUA_NOREF;
 	int lua_ref = LUA_NOREF;

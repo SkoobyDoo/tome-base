@@ -1610,6 +1610,11 @@ static int gl_dos_count(lua_State *L) {
 	return 1;
 }
 
+static int gl_set_pixel_perfect(lua_State *L) {
+	DisplayObject::pixel_perfect = lua_toboolean(L, 1);
+	return 0;
+}
+
 static int gl_set_default_text_shader(lua_State *L) {
 	shader_type *shader = (shader_type*)lua_touserdata(L, 1);
 	DORText::defaultShader(shader);
@@ -1627,14 +1632,9 @@ static int physic_world_gravity(lua_State *L) {
 }
 
 static int physic_world_raycast(lua_State *L) {
-	if (!lua_isfunction(L, 5)) {
-		lua_newtable(L);
-		PhysicSimulator::current->rayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), 0);
-		return 1;
-	} else {
-		PhysicSimulator::current->rayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), 5);
-		return 0;
-	}
+	lua_newtable(L);
+	PhysicSimulator::current->rayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), (uint16)lua_tonumber(L, 5));
+	return 1;
 }
 
 static int physic_world_circlecast(lua_State *L) {
@@ -2055,6 +2055,7 @@ const luaL_Reg rendererlib[] = {
 	{"vbo", gl_vbo_new},
 	{"countDOs", gl_dos_count},
 	{"defaultTextShader", gl_set_default_text_shader},
+	{"pixelPerfect", gl_set_pixel_perfect},
 	{NULL, NULL}
 };
 

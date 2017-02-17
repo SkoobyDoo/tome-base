@@ -80,7 +80,7 @@ public:
 
 	void step(float nb_keyframes);
 
-	void rayCast(float x1, float y1, float x2, float y2, int cb_id);
+	void rayCast(float x1, float y1, float x2, float y2, uint16 mask_bits);
 	void circleCast(float x, float y, float radius, uint16 mask_bits);
 
 	static void setUnitScale(float scale);

@@ -45,6 +45,7 @@ int donb = 0;
  ** DisplayObject
  *************************************************************************/
 int DisplayObject::weak_registry_ref = LUA_NOREF;
+bool DisplayObject::pixel_perfect = true;
 
 DisplayObject::DisplayObject() {
 	donb++;
@@ -119,7 +120,11 @@ void DisplayObject::setSortingChanged() {
 
 void DisplayObject::recomputeModelMatrix() {
 	model = mat4();
-	model = glm::translate(model, glm::vec3(x, y, z));
+	if (pixel_perfect) {
+		model = glm::translate(model, glm::vec3(floor(x), floor(y), floor(z)));
+	} else {
+		model = glm::translate(model, glm::vec3(x, y, z));
+	}
 	model = glm::rotate(model, rot_x, glm::vec3(1, 0, 0));
 	model = glm::rotate(model, rot_y, glm::vec3(0, 1, 0));
 	model = glm::rotate(model, rot_z, glm::vec3(0, 0, 1));
