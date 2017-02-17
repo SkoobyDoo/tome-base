@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,6 +25,13 @@ newEntity{ base = "BASE_LORE",
 	define_as = "NOTE"..i,
 	name = "diary page", lore="ardhungol-"..i,
 	desc = [[A page of a diary.]],
+	rarity = false,
+	encumberance = 0,
+}
+newEntity{ base = "BASE_LORE",
+	define_as = "NOTE4",
+	name = "scrap of paper", lore="ardhungol-4",
+	desc = [[A scrap of paper.]],
 	rarity = false,
 	encumberance = 0,
 }

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ newEntity{
 	proj_image = resolvers.image_material("arrow", "wood"),
 	desc = [[Longbows are used to shoot arrows at your foes.]],
 	randart_able = "/data/general/objects/random-artifacts/ranged.lua",
+	ego_bonus_mult = 0.5,
 	egos = "/data/general/objects/egos/bow.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
 }
 
@@ -103,7 +104,7 @@ newEntity{ base = "BASE_LONGBOW",
 newEntity{
 	define_as = "BASE_ARROW",
 	slot = "QUIVER",
-	moddable_tile = "quiver",
+	moddable_tile = resolvers.moddable_tile("quiver"),
 	type = "ammo", subtype="arrow",
 	add_name = " (#COMBAT_AMMO#)",
 	display = "{", color=colors.UMBER, image = resolvers.image_material("arrow", "wood"),
@@ -117,6 +118,7 @@ newEntity{
 	archery_ammo = "bow",
 	desc = [[Arrows are used with bows to pierce your foes to death.]],
 	randart_able = "/data/general/objects/random-artifacts/ammo.lua",
+	ego_bonus_mult = 0.5,
 	egos = "/data/general/objects/egos/ammo.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
 	resolvers.shooter_capacity(),
 }

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -310,31 +310,35 @@ newEntity{ base = "BASE_LONGSWORD",
 	unided_name = "glowing long sword",
 	moddable_tile = "special/%s_weapon_spellblade",
 	moddable_tile_big = true,
-	level_range = {40, 45},
+	level_range = {35, 50},
 	color=colors.AQUAMARINE,
 	rarity = 250,
 	desc = [[Mages sometimes have funny ideas. Archmage Varil once learned how to handle a sword and found he preferred wielding it instead of his staff.]],
 	on_id_lore = "spellblade",
 	cost = 1000,
 
-	require = { stat = { mag=28, str=28, dex=28 }, },
+	require = { stat = { mag=28, str=28 }, },
 	material_level = 5,
 	combat = {
 		dam = 50,
-		apr = 2,
 		physcrit = 5,
 		dammod = {str=1},
 	},
 	wielder = {
 		lite = 1,
-		combat_spellpower = 20,
+		combat_spellpower = 25,
 		combat_spellcrit = 9,
 		inc_damage={
-			[DamageType.PHYSICAL] = 18,
-			[DamageType.FIRE] = 18,
-			[DamageType.LIGHT] = 18,
+			[DamageType.ARCANE] = 30,
+			[DamageType.FIRE] = 30,
+			[DamageType.LIGHTNING] = 30,
 		},
-		inc_stats = { [Stats.STAT_MAG] = 4, [Stats.STAT_STR] = 4, },
+		inc_stats = { [Stats.STAT_MAG] = 8, [Stats.STAT_STR] = 4, },
+	},
+	talent_on_spell = {
+		{chance=12, talent=Talents.T_MANATHRUST, level=5},
+		{chance=12, talent=Talents.T_FLAME, level=5},
+		{chance=12, talent=Talents.T_LIGHTNING, level=5},
 	},
 }
 
@@ -371,6 +375,7 @@ newEntity{ base = "BASE_STAFF",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Bolbum's Big Knocker", image = "object/artifact/staff_bolbums_big_knocker.png",
+	moddable_tile = "special/%s_staff_bolbums_big_knocker",
 	unided_name = "thick staff",
 	level_range = {20, 35},
 	color=colors.UMBER,
@@ -633,7 +638,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "viciously sharp battle axe",
 	name = "Drake's Bane", image = "object/artifact/axe_drakes_bane.png",
-	moddable_tile = "special/axe_drakes_bane",
+	moddable_tile = "special/%s_axe_drakes_bane",
 	moddable_tile_big = true,
 	color = colors.RED,
 	desc = [[The killing of Kroltar, mightiest of wyrms, took seven months and the lives of 20,000 dwarven warriors.  Finally the beast was worn down and mastersmith Gruxim, standing atop the bodies of his fallen comrades, was able slit its throat with this axe crafted purely for the purpose of penetrating the wyrm's hide.]],

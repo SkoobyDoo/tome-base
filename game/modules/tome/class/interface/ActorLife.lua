@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ module(..., package.seeall, class.inherit(Base))
 
 local function oktodie(self, value, src, death_note)
 	if self:knowTalent(self.T_CAUTERIZE) and self:triggerTalent(self.T_CAUTERIZE, nil, value) then
+		return false, 0
+	elseif self:fireTalentCheck("callbackOnDie", value, src, death_note) then
 		return false, 0
 	else
 		if src and src.on_kill and src:on_kill(self) then return false, value end

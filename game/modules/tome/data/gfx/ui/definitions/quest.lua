@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,7 +18,66 @@
 -- darkgod@te4.org
 
 quest = {
-	-- frame_shadow = {x=15, y=15, a=0.3},
+	frame_alpha = 1,
+	frame_darkness = 0.6,
+	frame_ox1 = -60,
+	frame_ox2 =  60,
+	frame_oy1 = -154,
+	frame_oy2 =  60,
+	dialog_h_middles = true,
+}
+
+def['quest-fail'] = {
+	frame_alpha = 1,
+	frame_darkness = 0.6,
+	frame_ox1 = -60,
+	frame_ox2 =  60,
+	frame_oy1 = -154,
+	frame_oy2 =  60,
+	dialog_h_middles = true,
+}
+
+def['quest-done'] = {
+	frame_alpha = 1,
+	frame_darkness = 0.6,
+	frame_ox1 = -60,
+	frame_ox2 =  60,
+	frame_oy1 = -154,
+	frame_oy2 =  60,
+	dialog_h_middles = true,
+}
+
+def['quest-idchallenge'] = {
+	frame_alpha = 1,
+	frame_darkness = 0.6,
+	frame_ox1 = -60,
+	frame_ox2 =  60,
+	frame_oy1 = -154,
+	frame_oy2 =  60,
+	dialog_h_middles = true,
+}
+
+def['quest-escort'] = {
+	frame_alpha = 1,
+	frame_darkness = 0.6,
+	frame_ox1 = -60,
+	frame_ox2 =  60,
+	frame_oy1 = -154,
+	frame_oy2 =  60,
+	dialog_h_middles = true,
+}
+
+def['quest-main'] = {
+	frame_alpha = 1,
+	frame_darkness = 0.6,
+	frame_ox1 = -60,
+	frame_ox2 =  60,
+	frame_oy1 = -154,
+	frame_oy2 =  60,
+	dialog_h_middles = true,
+}
+
+def['quest-win'] = {
 	frame_alpha = 1,
 	frame_darkness = 0.6,
 	frame_ox1 = -60,

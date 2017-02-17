@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -268,7 +268,7 @@ end
 function _M:canMove(x, y, terrain_only)
 	if not game.level.map:isBound(x, y) then return false end
 	if terrain_only then
-		return not game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move")
+		return not game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self)
 	else
 		return not game.level.map:checkAllEntities(x, y, "block_move", self)
 	end

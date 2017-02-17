@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,10 +50,12 @@ _M.ui_conf = {}
 
 function _M:loadUIDefinitions(file)
 	local f, err = loadfile(file)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = self.ui_conf
 	setfenv(f, self.ui_conf)
 	local ok, err = pcall(f)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = nil
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
 end
 
 function _M:uiExists(ui)

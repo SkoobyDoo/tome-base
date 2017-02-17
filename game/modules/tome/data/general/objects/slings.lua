@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ newEntity{ base = "BASE_SLING",
 newEntity{
 	define_as = "BASE_SHOT",
 	slot = "QUIVER",
-	moddable_tile = "shotbag",
+	moddable_tile = resolvers.moddable_tile("shotbag"),
 	type = "ammo", subtype="shot",
 	add_name = " (#COMBAT_AMMO#)",
 	display = "{", color=colors.UMBER, image = resolvers.image_material("shot", "metal"),

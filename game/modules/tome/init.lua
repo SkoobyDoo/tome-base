@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,6 +45,9 @@ Still, this is a golden age. Civilisations are healing the wounds of thousands o
 You are an adventurer, set out to discover wonders, explore old places, and venture into the unknown for wealth and glory.
 ]]
 starter = "mod.load"
+
+-- Forbid some now useless addons
+forbid_addons = {"stone-wardens"}
 
 -- List of additional team files required
 teams = {

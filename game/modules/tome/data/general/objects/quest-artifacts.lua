@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,9 +31,9 @@ newEntity{ define_as = "STAFF_ABSORPTION",
 	flavor_name = "magestaff",
 	level_range = {30, 30},
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
+	moddable_tile = "special/%s_staff_of_absorbtion",
 	encumber = 7,
 	auto_pickup = 1,
-	moddable_tile = resolvers.moddable_tile("staff"),
 	plot = true, quest = true,
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.
 Light around it seems to dim and you can feel its tremendous power simply by touching it.]],
@@ -480,7 +480,7 @@ newEntity{ base = "BASE_CLOTH_ARMOR", define_as = "FUN_BIKINI",
 
 newEntity{ base = "BASE_CLOTH_ARMOR", define_as = "FUN_MANKINI",
 	unique = true,
-	name = "Mankini", color = colors.RED, image = "object/artifact/bikini.png",
+	name = "Mankini", color = colors.RED, image = "object/artifact/mankini.png",
 	unided_name = "tiny piece of cloth",
 	desc = [[Revealing, green, fun.
 #{bold}#If you never take it off and win you will gain a neat achievement and bragging rights!#{normal}#]],

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1003,7 +1003,7 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	local ux, uy, dx, dy, spots = generator:generate(lev, old_lev)
 	if level.force_recreate then
 
-		forceprint("[Zone:newLevel] map generator"..generator.__CLASSNAME.." forced recreation: ",level.force_recreate)
+		forceprint("[Zone:newLevel] map generator "..generator.__CLASSNAME.." forced recreation: ",level.force_recreate)
 		level:removed()
 		return self:newLevel(level_data, lev, old_lev, game)
 	end

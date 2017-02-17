@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,6 +55,22 @@ Talents.newTalent = function(self, t)
 end
 
 damDesc = function(self, type, dam)
+	if self:attr("dazed") then
+		dam = dam * 0.5
+	end
+	if self:attr("stunned") then
+		dam = dam * 0.4
+	end
+	if self:attr("invisible_damage_penalty") then
+		dam = dam * util.bound(1 - (self.invisible_damage_penalty / (self.invisible_damage_penalty_divisor or 1)), 0, 1)
+	end
+	if self:attr("numbed") then
+		dam = dam - dam * self:attr("numbed") / 100
+	end
+	if self:attr("generic_damage_penalty") then
+		dam = dam - dam * math.min(100, self:attr("generic_damage_penalty")) / 100
+	end
+
 	-- Increases damage
 	if self.inc_damage then
 		local inc = self:combatGetDamageIncrease(type)

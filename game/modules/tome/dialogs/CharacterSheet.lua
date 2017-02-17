@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -703,6 +703,10 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 		if text then
 			self:mouseTooltip(self.TOOLTIP_VISION_INFRA,  s:drawColorStringBlended(self.font, ("Heighten Senses: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 		end
+		text = compare_fields(player, actor_to_compare, function(actor) return actor:attr("see_traps") and (actor:attr("see_traps") or 0) end, "%.1f", "%+.1f")
+		if text then
+			self:mouseTooltip(self.TOOLTIP_SEE_TRAPS,  s:drawColorStringBlended(self.font, ("Detect Traps   : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		end
 		text = compare_fields(player, actor_to_compare, function(who) return who:attr("stealth") and who.stealth + (who:attr("inc_stealth") or 0) end, "%.1f", "%+.1f")
 		if text then
 			self:mouseTooltip(self.TOOLTIP_VISION_STEALTH,  s:drawColorStringBlended(self.font, ("Stealth        : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
@@ -951,6 +955,12 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 
 		h = 0
 		w = self.w * 0.25
+		s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Physical:", w, h, 255, 255, 255, true) h = h + self.font_h
+		text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatPhysicalpower() end, "%3d", "%+.0f")
+		self:mouseTooltip(self.TOOLTIP_PHYSICAL_POWER, s:drawColorStringBlended(self.font, ("Phys. Power: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatCrit() end, "%d%%", "%+.0f%%")
+		self:mouseTooltip(self.TOOLTIP_PHYSICAL_CRIT, s:drawColorStringBlended(self.font,  ("Crit. chance: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		h = h + self.font_h
 		s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Magical:", w, h, 255, 255, 255, true) h = h + self.font_h
 		text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatSpellpower() end, "%3d", "%+.0f")
 		self:mouseTooltip(self.TOOLTIP_SPELL_POWER, s:drawColorStringBlended(self.font, ("Spellpower  : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h

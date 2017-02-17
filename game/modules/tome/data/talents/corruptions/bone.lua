@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -132,6 +132,11 @@ newTalent{
 	direct_hit = true,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
 	getRegen = function(self, t) return math.max(math.floor(30 / t.getNb(self, t)), 3) end,
+	iconOverlay = function(self, t, p)
+		local p = self.sustain_talents[t.id]
+		if not p or not p.nb then return "" end
+		return p.nb.."/"..t.getNb(self, t), "buff_font_smaller"
+	end,
 	callbackOnRest = function(self, t)
 		local nb = t.getNb(self, t)
 		local p = self.sustain_talents[t.id]

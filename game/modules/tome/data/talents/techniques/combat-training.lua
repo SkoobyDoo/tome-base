@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 newTalent{
 	name = "Thick Skin",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	points = 5,
 	require = { stat = { con=function(level) return 14 + level * 9 end }, },
@@ -35,8 +36,9 @@ newTalent{
 }
 
 newTalent{
-	name = "Armour Training",
+	name = "Heavy Armour Training", short_name = "ARMOUR_TRAINING",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	no_unlearn_last = true,
 	points = 5,
@@ -90,7 +92,7 @@ newTalent{
 		if self:knowTalent(self.T_STEALTH) then
 			classrestriction = "(Note that wearing mail or plate armour will interfere with stealth.)"
 		end
-		return ([[You become better at using your armour to deflect blows and protect your vital areas. Increases Armour value by %d, Armour hardiness by %d%%, and reduces chance to be critically hit by %d%% with your current body armour.
+		return ([[You become better at using your armour to deflect blows and protect your vital areas. Increases Armour value by %d, Armour hardiness by %d%%, and reduces the chance melee or ranged attacks critically hit you by %d%% with your current body armour.
 		(This talent only provides bonuses for heavy mail or massive plate armour.)
 		At level 1, it allows you to wear heavy mail armour, gauntlets, helms, and heavy boots.
 		At level 2, it allows you to wear shields.
@@ -99,11 +101,58 @@ newTalent{
 	end,
 }
 
+-- could fold this into regular armour training to reduce investment
+newTalent{
+	name = "Light Armour Training",
+	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
+	mode = "passive",
+	levelup_screen_break_line = true,
+	points = 5,
+	no_npc_use = true,
+	require = {stat = {dex = function(level) return 16 + (level + 2) * (level - 1) end}},
+	getArmorHardiness = function(self, t)
+		return math.max(0, self:combatLimit(self:getTalentLevel(t) * 4, 100, 5, 3.75, 50, 37.5))
+	end,
+	getDefense = function(self, t) return math.floor(self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 50, 500, 0.375)) end, -- net scaling ~^0.75 with level
+	getFatigue = function(self, t, fake)
+		-- Note: drakeskin body armour @ 8% + drakeskin leather cap @ 5% + drakeskin leather boots @ 5% = 18%
+		if fake or self:hasLightArmor() then
+			return self:combatTalentLimit(t, 50, 5, 18)
+		else return 0
+		end
+	end,
+	callbackOnMove = function(self, t, moved, force, ox, oy)
+		if force or not moved or (ox == self.x and oy == self.y) or not self:hasLightArmor() then return end
+
+		local nb_foes = 0
+		local add_if_visible_enemy = function(x, y)
+			local target = game.level.map(x, y, game.level.map.ACTOR)
+			if target and self:reactionToward(target) < 0 and self:canSee(target) then
+				nb_foes = nb_foes + 1
+			end
+		end
+		local adjacent_tg = {type = "ball", range = 0, radius = 1, selffire = false}
+		self:project(adjacent_tg, self.x, self.y, add_if_visible_enemy)
+
+		if nb_foes > 0 then
+			self:setEffect(self.EFF_MOBILE_DEFENCE, 2, {power=t.getDefense(self,t)/2, stamina=0})
+		end
+	end,
+	info = function(self, t)
+		local defense = t.getDefense(self,t)
+		return ([[You learn to maintain your agility and manage your combat posture while wearing light armour.  When wearing armour no heavier than leather, you gain %d Defense, %d%% Armour hardiness, and %d%% reduced Fatigue.
+		In addition, when you step adjacent to a (visible) enemy, you use the juxtaposition to increase your total Defense by %d for 2 turns.
+		The Defense bonus scales with your Dexterity.]]):
+		format(defense, t.getArmorHardiness(self,t), t.getFatigue(self, t, true), defense/2)
+	end,
+}
+
 newTalent{
 	name = "Combat Accuracy", short_name = "WEAPON_COMBAT",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
-	levelup_screen_break_line = true,
 	require = { level=function(level) return (level - 1) * 4 end },
 	mode = "passive",
 	--getAttack = function(self, t) return self:getTalentLevel(t) * 10 end,
@@ -118,6 +167,7 @@ newTalent{
 newTalent{
 	name = "Weapons Mastery",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { stat = { str=function(level) return 12 + level * 6 end }, },
 	mode = "passive",
@@ -135,6 +185,7 @@ newTalent{
 newTalent{
 	name = "Dagger Mastery", short_name = "KNIFE_MASTERY",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { stat = { dex=function(level) return 10 + level * 6 end }, },
 	mode = "passive",
@@ -151,6 +202,7 @@ newTalent{
 newTalent{
 	name = "Exotic Weapons Mastery",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	hide = true,
 	points = 5,
 	require = { stat = { str=function(level) return 10 + level * 6 end, dex=function(level) return 10 + level * 6 end }, },

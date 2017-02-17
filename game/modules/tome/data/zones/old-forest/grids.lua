@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,10 +18,13 @@
 -- darkgod@te4.org
 
 load("/data/general/grids/basic.lua")
-load("/data/general/grids/forest.lua")
 load("/data/general/grids/water.lua")
 
 if not currentZone.is_crystaline then
+	load("/data/general/grids/forest.lua", function(e)
+		if e.nice_editer and e.nice_editer.def == "grass" then e.nice_editer.def = "dark_grass" end
+		if e.image == "terrain/grass.png" then e.image = "terrain/grass/dark_grass_main_01.png" end
+	end)
 	local grass_editer = { method="borders_def", def="dark_grass"}
 
 	newEntity{
@@ -126,6 +129,7 @@ if not currentZone.is_crystaline then
 	}
 
 else -- Crystaline
+	load("/data/general/grids/forest.lua")
 	local grass_editer = { method="borders_def", def="grass"}
 
 	local treesdef = {

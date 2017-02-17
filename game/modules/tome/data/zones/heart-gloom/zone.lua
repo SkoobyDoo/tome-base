@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -57,7 +57,16 @@ return {
 				"UNDERGROUND_TREE",
 				"UNDERGROUND_TREE",
 			},
-			['.'] = "UNDERGROUND_FLOOR",
+			['.'] = {
+				"UNDERGROUND_FLOOR",
+				"UNDERGROUND_FLOOR",
+				"UNDERGROUND_FLOOR",
+				"UNDERGROUND_FLOOR",
+				"UNDERGROUND_FLOOR",
+				"UNDERGROUND_FLOOR",
+				"UNDERGROUND_FLOOR",
+				"UNDERGROUND_CREEP",
+			},
 			up = "UNDERGROUND_LADDER_UP",
 			down = "UNDERGROUND_LADDER_DOWN",
 			door = "UNDERGROUND_FLOOR",

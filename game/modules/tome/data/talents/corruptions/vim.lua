@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ newTalent{
 	getResistPenalty = function(self, t) return self:combatTalentSpellDamage(t, 10, 45) end, -- Consider reducing this
 	action = function(self, t)
 		local rad = 10
-		self:setEffect(self.EFF_SENSE, t.getDuration(self,t), {
+		self:setEffect(self.EFF_VIMSENSE_DETECT, t.getDuration(self,t), {
 			range = rad,
 			actor = 1,
 			VimsensePenalty = t.getResistPenalty(self,t), -- Compute resist penalty at time of activation
@@ -66,7 +66,7 @@ newTalent{
 				local a = game.level.map(x, y, engine.Map.ACTOR)
 				if not a or self:reactionToward(a) >= 0 then return end
 				a:setTarget(game.player)
-				a:setEffect(a.EFF_VIMSENSE, 2, {power=self:hasEffect(self.EFF_SENSE).VimsensePenalty or 0})
+				a:setEffect(a.EFF_VIMSENSE, 2, {power=self:hasEffect(self.EFF_VIMSENSE_DETECT).VimsensePenalty or 0})
 			end,
 		})
 		game:playSoundNear(self, "talents/spell_generic")

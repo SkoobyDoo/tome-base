@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ function _M:generateList()
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"If you have a very high DPI screen you may want to raise this value. Requires a restart to take effect.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Screen Zoom#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.screen_zoom * 100)
+		return tostring(config.settings.screen_zoom * 100).."%"
 	end, fct=function(item)
 		game:registerDialog(GetQuantitySlider.new("Enter Zoom %", "From 50 to 400", math.floor(config.settings.screen_zoom * 100), 50, 400, 5, function(qty)
 			qty = util.bound(qty, 50, 400)
@@ -100,7 +100,7 @@ function _M:generateList()
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Controls the particle effects density.\nThis option allows to change the density of the many particle effects in the game.\nIf the game is slow when displaying spell effects try to lower this setting.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Particle effects density#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.particles_density)
+		return tostring(config.settings.particles_density).."%"
 	end, fct=function(item)
 		game:registerDialog(GetQuantitySlider.new("Enter density", "From 0 to 100", config.settings.particles_density, 0, 100, 1, function(qty)
 			game:saveSettings("particles_density", ("particles_density = %d\n"):format(qty))
@@ -117,6 +117,18 @@ function _M:generateList()
 		core.display.setTextBlended(state)
 		game:saveSettings("aa_text", ("aa_text = %s\n"):format(tostring(state)))
 		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Apply a global scaling to all fonts.\nApplies after restarting the game"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Font Scale#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.font_scale).."%"
+	end, fct=function(item)
+		game:registerDialog(GetQuantity.new("Font Scale %", "From 50 to 300", config.settings.font_scale, 300, function(qty)
+			qty = util.bound(qty, 50, 300)
+			game:saveSettings("font_scale", ("font_scale = %d\n"):format(qty))
+			config.settings.font_scale = qty
+			self.c_list:drawItem(item)
+		end, 50))
 	end,}
 
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Activates framebuffers.\nThis option allows for some special graphical effects.\nIf you encounter weird graphical glitches try to disable it.\n\n#LIGHT_RED#You must restart the game for it to take effect.#WHITE#"}

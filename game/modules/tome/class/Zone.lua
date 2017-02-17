@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,10 +28,17 @@ _M:enableLastPersistZones(3)
  -- retain the room map after level generation (for runPostGeneration callbacks)
 _M._retain_level_room_map = true
 
+-- object ego fields that are appended as a list when the ego is applied
+-- overridden by mod.class.Object._special_ego_rules (defined here for backwards compatibility)
+_M._object_special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_kill=true}
+
+_M.update_base_level_on_enter = true -- Always update base level on zone load
+
 -- Merge special_on_crit values.
 _M:addEgoRule("object", function(dvalue, svalue, key, dst, src, rules, state)
-	-- Only work on the special_on_* keys.
-	if key ~= 'special_on_hit' and key ~= 'special_on_crit' and key ~= 'special_on_kill' then return end
+	-- Only apply to some special fields
+	local special_rule_egos = mod.class.Object._special_ego_rules or _M._object_special_ego_rules
+	if not special_rule_egos[key] then return end
 	-- If the special isn't a table, make it an empty one.
 	if type(dvalue) ~= 'table' then dvalue = {} end
 	if type(svalue) ~= 'table' then svalue = {} end

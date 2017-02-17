@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "CULTIST_RAK_SHOR",
 			a.rank = 4
 			a.name = "Doomed Shade of "..a.name
 			a.killer_message = "but nobody knew why #sex# suddenly became evil"
+			a.is_player_doomed_shade = true
 			a.color_r = 150 a.color_g = 150 a.color_b = 150
 			a:removeAllMOs()
 			a.ai = "tactical"

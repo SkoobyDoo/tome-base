@@ -71,20 +71,30 @@ newTalent{
 	require = psi_cun_req2,
 	points = 5,
 	mode = "sustained",
-	cooldown = 0,
+	cooldown = 15,
 	sustain_psi = 10,
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	getMult = function(self, t) return self:combatTalentScale(t, 0.1, 0.3) end,
-	activate = function(self, t)
+	recomputeStats = function(self, t, p)
+		if p.stats then self:removeTemporaryValue("inc_stats", p.stats) end
 		local str_power = math.ceil(t.getMult(self, t)*self:getWil())
 		local dex_power = math.ceil(t.getMult(self, t)*self:getCun())
-		return {
-			stats = self:addTemporaryValue("inc_stats", {
-				[self.STAT_STR] = str_power,
-				[self.STAT_DEX] = dex_power,
-			}),
-		}
+		p.stats = self:addTemporaryValue("inc_stats", {
+			[self.STAT_STR] = str_power,
+			[self.STAT_DEX] = dex_power,
+		})
+	end,
+	callbackOnStatChange = function(self, t, stat, v)
+		local p = self:isTalentActive(t.id)
+		if p and (stat == self.STAT_WIL or stat == self.STAT_CUN) then
+			t.recomputeStats(self, t, p)
+		end
+	end,
+	activate = function(self, t)
+		local ret = {}
+		t.recomputeStats(self, t, ret)
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("inc_stats", p.stats)

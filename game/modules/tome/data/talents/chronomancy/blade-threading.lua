@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -271,7 +271,7 @@ newTalent{
 	getChance = function(self, t) return self:combatTalentLimit(t, 40, 10, 30) end, -- Limit < 40%
 	info = function(self, t)
 		local chance = t.getChance(self, t)
-		return ([[While dual-wielding you have a %d%% chance of parrying melee attacks made against you.]])
+		return ([[While dual-wielding you have a %d%% chance of completely parrying melee attacks made against you.]])
 		:format(chance)
 	end
 }

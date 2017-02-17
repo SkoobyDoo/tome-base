@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -182,54 +182,36 @@ newTalent{
 	require = gifts_req_high4,
 	points = 5,
 	mode = "passive",
-	resistPen = function(tl)
-		if tl <=0 then return 0 end
-		return math.floor(mod.class.interface.Combat.combatTalentLimit({}, tl, 100, 4, 20))
-	end, -- Limit < 100%
-	on_learn = function(self, t)
-		self.resists[DamageType.PHYSICAL] = (self.resists[DamageType.PHYSICAL] or 0) + 0.5
-		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 0.5
-		self.resists[DamageType.FIRE] = (self.resists[DamageType.FIRE] or 0) + 0.5
-		self.resists[DamageType.LIGHTNING] = (self.resists[DamageType.LIGHTNING] or 0) + 0.5
-		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) + 0.5
-
-		local rpchange = t.resistPen(self:getTalentLevelRaw(t)) - t.resistPen(self:getTalentLevelRaw(t)-1)
-		self.resists_pen[DamageType.PHYSICAL] = (self.resists_pen[DamageType.PHYSICAL] or 0) + rpchange
-		self.resists_pen[DamageType.COLD] = (self.resists_pen[DamageType.COLD] or 0) + rpchange
-		self.resists_pen[DamageType.FIRE] = (self.resists_pen[DamageType.FIRE] or 0) + rpchange
-		self.resists_pen[DamageType.LIGHTNING] = (self.resists_pen[DamageType.LIGHTNING] or 0) + rpchange
-		self.resists_pen[DamageType.ACID] = (self.resists_pen[DamageType.ACID] or 0) + rpchange
-
-		self.inc_damage[DamageType.PHYSICAL] = (self.inc_damage[DamageType.PHYSICAL] or 0) + 2
-		self.inc_damage[DamageType.COLD] = (self.inc_damage[DamageType.COLD] or 0) + 2
-		self.inc_damage[DamageType.FIRE] = (self.inc_damage[DamageType.FIRE] or 0) + 2
-		self.inc_damage[DamageType.LIGHTNING] = (self.inc_damage[DamageType.LIGHTNING] or 0) + 2
-		self.inc_damage[DamageType.ACID] = (self.inc_damage[DamageType.ACID] or 0) + 2
-	end,
-	on_unlearn = function(self, t)
-		self.resists[DamageType.PHYSICAL] = (self.resists[DamageType.PHYSICAL] or 0) - 0.5
-		self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) - 0.5
-		self.resists[DamageType.FIRE] = (self.resists[DamageType.FIRE] or 0) - 0.5
-		self.resists[DamageType.LIGHTNING] = (self.resists[DamageType.LIGHTNING] or 0) - 0.5
-		self.resists[DamageType.ACID] = (self.resists[DamageType.ACID] or 0) - 0.5
-
-		local rpchange = t.resistPen(self:getTalentLevelRaw(t)) - t.resistPen(self:getTalentLevelRaw(t)+1)
-		self.resists_pen[DamageType.PHYSICAL] = (self.resists_pen[DamageType.PHYSICAL] or 0) + rpchange
-		self.resists_pen[DamageType.COLD] = (self.resists_pen[DamageType.COLD] or 0) + rpchange
-		self.resists_pen[DamageType.FIRE] = (self.resists_pen[DamageType.FIRE] or 0) + rpchange
-		self.resists_pen[DamageType.LIGHTNING] = (self.resists_pen[DamageType.LIGHTNING] or 0) + rpchange
-		self.resists_pen[DamageType.ACID] = (self.resists_pen[DamageType.ACID] or 0) + rpchange
-
-		self.inc_damage[DamageType.PHYSICAL] = (self.inc_damage[DamageType.PHYSICAL] or 0) - 2
-		self.inc_damage[DamageType.COLD] = (self.inc_damage[DamageType.COLD] or 0) - 2
-		self.inc_damage[DamageType.FIRE] = (self.inc_damage[DamageType.FIRE] or 0) - 2
-		self.inc_damage[DamageType.LIGHTNING] = (self.inc_damage[DamageType.LIGHTNING] or 0) - 2
-		self.inc_damage[DamageType.ACID] = (self.inc_damage[DamageType.ACID] or 0) - 2
+	getDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
+	getResists = function(self, t) return self:combatTalentScale(t, 0.6, 2.5) end,
+	getResistPen = function(self, t) return self:combatTalentLimit(t, 100, 5, 20) end, -- Limit < 100%
+	passives = function(self, t, p)
+		local dam_inc = t.getDamageIncrease(self, t)
+		local resists = t.getResists(self, t)
+		local resists_pen = t.getResistPen(self, t)
+		self:talentTemporaryValue(p, "heightened_senses",  t.getDamageIncrease(self, t))
+		self:talentTemporaryValue(p, "inc_damage", {[DamageType.PHYSICAL]=dam_inc,
+			[DamageType.COLD]=dam_inc,
+			[DamageType.FIRE]=dam_inc,
+			[DamageType.LIGHTNING]=dam_inc,
+			[DamageType.ACID]=dam_inc
+			})
+		self:talentTemporaryValue(p, "resists", {[DamageType.PHYSICAL]=resists,
+			[DamageType.COLD]=resists,
+			[DamageType.FIRE]=resists,
+			[DamageType.LIGHTNING]=resists,
+			[DamageType.ACID]=resists
+			})
+		self:talentTemporaryValue(p, "resists_pen", {[DamageType.PHYSICAL]=resists_pen,
+			[DamageType.COLD]=resists_pen,
+			[DamageType.FIRE]=resists_pen,
+			[DamageType.LIGHTNING]=resists_pen,
+			[DamageType.ACID]=resists_pen
+			})
 	end,
 	info = function(self, t)
-		return ([[You have gained the full power of the multihued dragon, and your mastery over the elements is complete.
-		Increases physical, fire, cold, lightning and acid damage by %d%%, and your resistance penetration in those elements by %d%%.
-		Each point in Chromatic Fury also increases your resistances to physical, fire, cold, lightning and acid by 0.5%%.]])
-		:format(2*self:getTalentLevelRaw(t), t.resistPen(self:getTalentLevelRaw(t)))
+		return ([[You have gained the full power of the multihued dragon, and have become both resistant and attuned to physical, fire, cold, lightning and acid damage.
+		Your resistance to these elements is increased by %0.1f%% and all damage you deal with them is increased by %0.1f%% with %0.1f%% resistance penetration.]])
+		:format(t.getResists(self, t), t.getDamageIncrease(self, t), t.getResistPen(self, t))
 	end,
 }

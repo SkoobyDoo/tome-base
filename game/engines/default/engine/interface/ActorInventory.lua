@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -94,6 +94,17 @@ function _M:getInven(id)
 		return self.inven[self["INVEN_"..id]]
 	else
 		return id
+	end
+end
+
+--- Returns the content of an inventory as a table
+function _M:getInvenDef(id)
+	if type(id) == "number" then
+		return self.inven_def[id]
+	elseif type(id) == "string" then
+		return self.inven_def[self["INVEN_"..id]]
+	else
+		return nil
 	end
 end
 

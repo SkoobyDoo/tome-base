@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -94,6 +94,12 @@ If you are not currently connected to the internet, please report this bug when 
 
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
+		LUA_CONSOLE = function()
+			if config.settings.cheat then
+				local DebugConsole = require "engine.DebugConsole"
+				game:registerDialog(DebugConsole.new())
+			end
+		end,
 	}
 end
 

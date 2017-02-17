@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -92,6 +92,8 @@ function _M:activate()
 		game.uiset.logdisplay(...) else game.uiset.logdisplay(style, ...) end
 		if game.uiset.show_userchat then game.uiset.logdisplay.changed = old end
 	end
+	game.logRollback = function(line, ...) return self.logdisplay:rollback(line, ...) end
+	game.logNewest = function() return self.logdisplay:getNewestLine() end
 --	game.logSeen = function(e, style, ...) if e and e.player or (not e.dead and e.x and e.y and game.level and game.level.map.seens(e.x, e.y) and game.player:canSee(e)) then game.log(style, ...) end end
 	game.logPlayer = function(e, style, ...) if e == game.player or e == game.party then game.log(style, ...) end end
 end

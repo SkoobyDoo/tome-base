@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -186,6 +186,10 @@ uberTalent{
 	on_learn = function(self, t)
 		self.max_life = self.max_life + 250
 		self.combat_armor_hardiness = self.combat_armor_hardiness + 20
+	end,
+	on_unlearn = function(self, t)
+		self.max_life = self.max_life - 250
+		self.combat_armor_hardiness = self.combat_armor_hardiness - 20
 	end,
 	info = function(self, t)
 		return ([[Thanks to your newfound knowledge of corruption, you've learned some tricks for toughening your body... but only if you are healthy enough to withstand the strain from the changes.

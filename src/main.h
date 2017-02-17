@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -82,6 +82,9 @@ typedef struct lua_err_type_s lua_err_type;
 extern lua_err_type *last_lua_error_head, *last_lua_error_tail;
 extern void del_lua_error();
 extern core_boot_type *core_def;
+
+extern void physfs_reset_dir_allowed(lua_State *L);
+extern bool physfs_check_allow_path(lua_State *L, const char *path);
 
 #ifdef STEAM_TE4
 #include "steam-te4.h"

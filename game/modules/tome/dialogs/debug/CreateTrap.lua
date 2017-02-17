@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ function _M:use(item)
 		game.zone:addEntity(game.level, n, "trap", game.player.x, game.player.y)
 	else
 		local n = game.zone:finishEntity(game.level, "trap", item.e)
-		n:setKnown(game.player, true)
+		n:setKnown(game.player, true) n:identify(true)
 		game.zone:addEntity(game.level, n, "trap", game.player.x, game.player.y)
 	end
 end

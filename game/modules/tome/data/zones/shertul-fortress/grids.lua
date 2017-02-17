@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -134,6 +134,9 @@ It should automatically create a portal back, but it might not be near your arri
 			game.state:seenSpecialFarportal("eidolon")
 			return true
 		end
+		if self:triggerHook{"ShertulFortress:exploratoryPortal:specialLocation", q=q, who=who} then
+			return true
+		end
 	end,
 
 	on_move = function(self, x, y, who)
@@ -145,6 +148,7 @@ It should automatically create a portal back, but it might not be near your arri
 		if not q:exploratory_energy(true) then Dialog:simplePopup("Exploratory Farportal", "The fortress does not have enough energy to power a trip through the portal.") return end
 
 		Dialog:yesnoPopup("Exploratory Farportal", "Do you want to travel in the farportal? You cannot know where you will end up.", function(ret) if ret then
+			if not game:changeLevelCheck(1, {}, {direct_switch=true}) then return end
 			if self:checkSpecialLocation(who, q) then return end
 
 			local zone, boss = game.state:createRandomZone()
@@ -352,4 +356,34 @@ newEntity{
 	notice = true,
 	always_remember = true,
 	block_move = true,
+}
+
+newEntity{
+	define_as = "SHIMMER_CONTROL",
+	name = "Mirror of Reflection", image = "terrain/solidwall/solid_floor1.png",
+	add_displays = {
+		class.new{
+			image="terrain/mirror_of_reflection_back.png",
+			defineDisplayCallback = function(self)
+				if not self._mo then return end
+				self._mo:displayCallback(function(x, y, w, h)
+					local p = game:getPlayer(true)
+					if not p or not game.level or not game.level.map then return end
+					p:toScreen(game.level.map.tiles, x + w * 0.23, y + h * 0.3, w * 0.6, h * 0.6, 0.5, false, false)
+				end)
+			end,
+			shader = "shadow_simulacrum",
+		},
+		class.new{image="terrain/mirror_of_reflection_front.png"},
+	},
+	display = '*', color=colors.PURPLE,
+	notice = true,
+	always_remember = true,
+	block_move = function(self, x, y, e, act, couldpass)
+		if e and e.player and act then
+			local chat = require("engine.Chat").new("shertul-fortress-shimmer", self, e, {player=e})
+			chat:invoke()
+		end
+		return true
+	end,
 }

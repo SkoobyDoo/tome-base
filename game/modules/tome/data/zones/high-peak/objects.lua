@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	unided_name = "ominous, dark runed staff",
 	force_lore_artifact=true,
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
+	moddable_tile = "special/%s_awaken_staff_of_absorbtion",
 	encumber = 7,
 	plot=true,
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.

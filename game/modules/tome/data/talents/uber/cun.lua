@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -131,6 +131,7 @@ uberTalent{
 		local o3 = self:findInAllInventoriesBy("define_as", "TELOS_BOTTOM_HALF")
 		return o1 and o2 and o3
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local list = mod.class.Object:loadList("/data/general/objects/special-artifacts.lua")
 		local o = game.zone:makeEntityByName(game.level, list, "TELOS_SPIRE", true)
@@ -212,6 +213,23 @@ uberTalent{
 	end,
 }
 
+eye_of_the_tiger_data = {
+	physical = {
+		desc = "All physical criticals reduce the remaining cooldown of a random technique or cunning talent by 2.",
+		types = { "^technique/", "^cunning/" },
+		reduce = 2,
+	},
+	spell = {
+		desc = "All spell criticals reduce the remaining cooldown of a random spell talent by 1.",
+		types = { "^spell/", "^corruption/", "^celestial/", "^chronomancy/" },
+		reduce = 1,
+	},
+	mind = {
+		desc = "All mind criticals reduce the remaining cooldown of a random wild gift/psionic/afflicted talent by 2.",
+		types = { "^wild%-gift/", "^cursed/", "^psionic/" },
+		reduce = 2,
+	},
+}
 uberTalent{
 	name = "Eye of the Tiger",
 	mode = "passive",
@@ -223,52 +241,37 @@ uberTalent{
 		for tid, _ in pairs(self.talents_cd) do
 			local t = self:getTalentFromId(tid)
 			if not t.fixed_cooldown then
-				if
-					(kind == "physical" and
-						(
-							t.type[1]:find("^technique/") or
-							t.type[1]:find("^cunning/")
-						)
-					) or
-					(kind == "spell" and
-						(
-							t.type[1]:find("^spell/") or
-							t.type[1]:find("^corruption/") or
-							t.type[1]:find("^celestial/") or
-							t.type[1]:find("^chronomancy/")
-						)
-					) or
-					(kind == "mind" and
-						(
-							t.type[1]:find("^wild%-gift/") or
-							t.type[1]:find("^cursed/") or
-							t.type[1]:find("^psionic/")
-						)
-					)
-					then
+				local ok = false
+				local d = eye_of_the_tiger_data[kind]
+				if d then for _, check in ipairs(d.types) do
+						if t.type[1]:find(check) then ok = true break end
+				end end
+				if ok then
 					tids[#tids+1] = tid
 				end
 			end
 		end
 		if #tids == 0 then return end
 		local tid = rng.table(tids)
-		self.talents_cd[tid] = self.talents_cd[tid] - (kind == "spell" and 1 or 2)
+		local d = eye_of_the_tiger_data[kind]
+		self.talents_cd[tid] = self.talents_cd[tid] - (d and d.reduce or 1)
 		if self.talents_cd[tid] <= 0 then self.talents_cd[tid] = nil end
 		self.changed = true
 		self.turn_procs.eye_tiger = true
 	end,
 	info = function(self, t)
-		return ([[All physical criticals reduce the remaining cooldown of a random technique or cunning talent by 2.
-		All spell criticals reduce the remaining cooldown of a random spell talent by 1.
-		All mind criticals reduce the remaining cooldown of a random wild gift/psionic/afflicted talent by 2.
+		local list = {}
+		for _, d in pairs(eye_of_the_tiger_data) do list[#list+1] = d.desc end
+		return ([[%s		
 		This can only happen once per turn, and cannot affect the talent that triggers it.]])
-		:format()
+		:format(table.concat(list, "\n"))
 	end,
 }
 
 uberTalent{
 	name = "Worldly Knowledge",
 	mode = "passive",
+	cant_steal = true,
 	on_learn = function(self, t, kind)
 		local Chat = require "engine.Chat"
 		local chat = Chat.new("worldly-knowledge", {name="Worldly Knowledge"}, self)
@@ -299,6 +302,7 @@ uberTalent{
 uberTalent{
 	name = "Tricks of the Trade",
 	mode = "passive",
+	cant_steal = true,
 	require = { special={desc="Have sided with the Assassin Lord", fct=function(self) return game.state.birth.ignore_prodigies_special_reqs or (self:isQuestStatus("lost-merchant", engine.Quest.COMPLETED, "evil")) end} },
 	on_learn = function(self, t) 
 		if self:knowTalentType("cunning/stealth") then

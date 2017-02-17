@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -490,6 +490,8 @@ function _M:activate()
 		game.uiset.logdisplay(...) else game.uiset.logdisplay(style, ...) end
 		if game.uiset.show_userchat then game.uiset.logdisplay.changed = old end
 	end
+	game.logRollback = function(line, ...) return self.logdisplay:rollback(line, ...) end
+	game.logNewest = function() return self.logdisplay:getNewestLine() end
 --	game.logSeen = function(e, style, ...) if e and e.player or (not e.dead and e.x and e.y and game.level and game.level.map.seens(e.x, e.y) and game.player:canSee(e)) then game.log(style, ...) end end
 	game.logPlayer = function(e, style, ...) if e == game.player or e == game.party then game.log(style, ...) end end
 
@@ -1347,7 +1349,7 @@ function _M:displayBuffs(scale, bx, by)
 
 		for eff_id, p in pairs(good_e) do
 			local e = player.tempeffect_def[eff_id]
-			self:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale, (e.status == "beneficial") or config.settings.cheat)
+			self:handleEffect(player, eff_id, e, p, x, y, hs, bx, by, is_first, scale, (e.status == "beneficial" and not e.no_player_remove) or config.settings.cheat)
 			is_first = false
 			x, y = self:buffOrientStep(orient, bx, by, scale, x, y, hs, hs)
 		end

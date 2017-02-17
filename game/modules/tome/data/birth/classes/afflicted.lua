@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -116,6 +116,12 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Strength, +0 Dexterity, +0 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +4 Willpower, +5 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +0",
+	},
+	birth_example_particles = {
+		function(actor) if core.shader.active() then
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1, img="call_shadows"}, {type="rotatingshield", noup=2.0, cylinderRotationSpeed=1.7, appearTime=0.2}))
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1, img="call_shadows"}, {type="rotatingshield", noup=1.0, cylinderRotationSpeed=1.7, appearTime=0.2}))
+		end end,
 	},
 	power_source = {psionic=true},
 	random_rarity = 2,

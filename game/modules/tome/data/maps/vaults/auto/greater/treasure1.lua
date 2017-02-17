@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ defineTile('$', "FLOOR", {random_filter={add_levels=10, tome_mod="gvault"}})
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 
 return {
-[[;;;;;;;;;;;;;;;;;;;;]],
+[[;;;;;;;;;..;;;;;;;;;]],
 [[;########!!########;]],
 [[;#..#...+XX+...#..#;]],
 [[;#..+...#XX#...+..#;]],
@@ -50,5 +50,5 @@ return {
 [[;#XX+XXX#..#...+..#;]],
 [[;#XX#XXX+..+...#..#;]],
 [[;########!!########;]],
-[[;;;;;;;;;;;;;;;;;;;;]],
+[[;;;;;;;;;..;;;;;;;;;]],
 }

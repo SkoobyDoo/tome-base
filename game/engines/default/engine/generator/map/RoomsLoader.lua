@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,16 +34,20 @@ function _M:init(data)
 	if data.rooms then for i, file in ipairs(data.rooms) do
 		if type(file) == "table" then
 			table.insert(self.rooms, {self:loadRoom(file[1]), chance_room=file[2]})
+			print("[RoomsLoader:init] loaded room:", file[1], self.rooms[#self.rooms][1], "chance:", file[2])
 		else
 			table.insert(self.rooms, self:loadRoom(file))
+			print("[RoomsLoader:init] loaded room:", file, self.rooms[#self.rooms])
 		end
 	end end
 
 	if data.required_rooms then for i, file in ipairs(data.required_rooms) do
 		if type(file) == "table" then
 			table.insert(self.required_rooms, {self:loadRoom(file[1]), chance_room=file[2]})
+			print("[RoomsLoader:init] loaded required room:", file[1], self.required_rooms[#self.required_rooms][1], "chance:", file[2])
 		else
 			table.insert(self.required_rooms, self:loadRoom(file))
+			print("[RoomsLoader:init] loaded required room:", file, self.required_rooms[#self.required_rooms])
 		end
 	end end
 end
@@ -564,7 +568,7 @@ function _M:roomCheck(room, zone, level, map)
 			for i, xroom in ipairs(rooms_list) do
 				if xroom.room then
 					if xroom.room.unique == room.unique then
-						print("[roomCheck]-- rejecting duplicate of unique room", room.unique)
+						print("[RoomsLoader:roomCheck]-- rejecting duplicate of unique room", room.unique)
 						return false, "unique:"..room.unique
 					end
 				end
@@ -658,8 +662,7 @@ function _M:roomPlace(room, id, x, y)
 			end
 		end
 	end
-	
-	print("room placed at", x, y,"with center",math.floor(x+(room.w-1)/2), math.floor(y+(room.h-1)/2))
+	print("placed room", room.name ,"at", x, y,"with center",math.floor(x+(room.w-1)/2), math.floor(y+(room.h-1)/2))
 	cx = cx or math.floor(x+(room.w-1)/2)
 	cy = cy or math.floor(y+(room.h-1)/2)
 	local ret = { id=id, x=x, y=y, cx=cx, cy=cy, room=room }
@@ -705,7 +708,7 @@ function _M:roomAlloc(room, id, lev, old_lev, add_check)
 		if px and py then -- gradually spread additional tries around the preferred location
 			local sig = tries/100
 			x = util.bound(rng.normal(px, sig*self.map.w*2), math.max(1, border), self.map.w - room.w - math.max(1, border))
-			y = util.bound(rng.normal(px, sig*self.map.h*2), math.max(1, border), self.map.h - room.h - math.max(1, border))
+			y = util.bound(rng.normal(py, sig*self.map.h*2), math.max(1, border), self.map.h - room.h - math.max(1, border))
 		else
 			x = rng.range(math.max(1, border), self.map.w - room.w - math.max(1, border))
 			y = rng.range(math.max(1, border), self.map.h - room.h - math.max(1, border))

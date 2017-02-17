@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -63,6 +63,16 @@ end
 function table.concatNice(t, sep, endsep)
 	if not endsep or #t == 1 then return table.concat(t, sep) end
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
+end
+
+function ripairs(t)
+	local i = #t
+	return function()
+		if i == 0 then return nil end
+		local oi = i
+		i = i - 1
+		return oi, t[oi]
+	end
 end
 
 function table.count(t)
@@ -274,6 +284,13 @@ function table.values(t)
 	return tt
 end
 
+function table.extract_field(t, field, iterator)
+	iterator = iterator or pairs
+	local tt = {}
+	for k, e in iterator(t) do tt[k] = e[field] end
+	return tt
+end
+
 function table.same_values(t1, t2)
 	for _, e1 in ipairs(t1) do
 		local ok = false
@@ -296,6 +313,11 @@ function table.from_list(t, k, v)
 	local tt = {}
 	for i, e in ipairs(t) do tt[e[k or 1]] = e[v or 2] end
 	return tt
+end
+
+function table.hasInList(t, v)
+	for i = #t, 1, -1 do if t[i] == v then return true end end
+	return false
 end
 
 function table.removeFromList(t, ...)
@@ -2247,6 +2269,29 @@ function rng.poissonProcess(k, turn_scale, rate)
 	return math.exp(-rate*turn_scale) * ((rate*turn_scale) ^ k)/ util.factorial(k)
 end
 
+--- Randomly select a table from a list of tables based on rarity
+-- @param t <table> indexed table containing the tables to choose from
+-- @param rarity_field <string, default "rarity">, field in each table containing its rarity value
+--		rarity values are numbers > 0, such that higher values reduce the chance to be selected
+-- @raturn the table selected, index
+function rng.rarityTable(t, rarity_field)
+	if #t == 0 then return end
+	local rt = {}
+	rarity_field = rarity_field or "rarity"
+	local total, val = 0
+	for i, e in ipairs(t) do
+		val = e[rarity_field]; val = val and 1/val or 0
+		total = total + val
+		rt[i] = total
+	end
+	val = rng.float(0, total)
+	for i, total in ipairs(rt) do
+		if total >= val then
+			return t[i], i
+		end
+	end
+end
+
 function util.show_function_calls()
 	debug.sethook(function(event, line)
 		local t = debug.getinfo(2)
@@ -2299,25 +2344,10 @@ function util.browserOpenUrl(url, forbid_methods)
 
 	if core.webview and not forbid_methods.webview then local d = require("engine.ui.Dialog"):webPopup(url) if d then return "webview", d end end
 	if core.steam and not forbid_methods.steam and core.steam.openOverlayUrl(url) then return "steam", true end
+	
 	if forbid_methods.native then return false end
+	if core.game.openBrowser(url) then return "native", true end
 
-	local tries = {
-		"rundll32 url.dll,FileProtocolHandler %s",	-- Windows
-		"open %s",	-- OSX
-		"xdg-open %s",	-- Linux - portable way
-		"gnome-open %s",  -- Linux - Gnome
-		"kde-open %s",	-- Linux - Kde
-		"firefox %s",  -- Linux - try to find something
-		"mozilla-firefox %s",  -- Linux - try to find something
-		"google-chrome-stable %s",  -- Linux - try to find something
-		"google-chrome %s",  -- Linux - try to find something
-	}
-	while #tries > 0 do
-		local urlbase = table.remove(tries, 1)
-		urlbase = urlbase:format(url)
-		print("Trying to run URL with command: ", urlbase)
-		if os.execute(urlbase) == 0 then return "native", true end
-	end
 	return false
 end
 

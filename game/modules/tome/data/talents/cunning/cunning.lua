@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -82,6 +82,13 @@ cuns_req_high4 = {
 cuns_req_high5 = {
 	stat = { cun=function(level) return 54 + (level-1) * 2 end },
 	level = function(level) return 26 + (level-1)  end,
+}
+
+-- talents that require unlocking (specific poisons, traps)
+cuns_req_unlock = {
+	special = {desc="Talent not unlocked", fct=function(self, t, offset)
+		return game.state:unlockTalentCheck(t.id, self)
+	end}
 }
 
 load("/data/talents/cunning/stealth.lua")

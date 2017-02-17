@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -376,6 +376,7 @@ newEffect{
 	subtype = { miscellaneous=true },
 	status = "detrimental",
 	parameters = { power=10 },
+	no_stop_enter_worlmap = true,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the destabilizations
 		old_eff.dur = new_eff.dur
@@ -587,7 +588,7 @@ newEffect{
 newEffect{
 	name = "SEVER_LIFELINE", image = "talents/sever_lifeline.png",
 	desc = "Sever Lifeline",
-	long_desc = function(self, eff) return ("The target's lifeline is being cut. When the effect ends %0.2f temporal damage will hit the target."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target's lifeline is being cut. When the effect ends %d temporal damage will hit the target."):format(eff.power) end,
 	type = "other",
 	subtype = { time=true },
 	status = "detrimental",
@@ -3029,7 +3030,7 @@ newEffect{
 	name = "ZONE_AURA_ABASHED",
 	desc = "Abashed Expanse",
 	no_stop_enter_worlmap = true,
-	long_desc = function(self, eff) return ("Zone-wide effect: Your Phase Door spell is super easy to use here, alllowing you to target it regardless of level.") end,
+	long_desc = function(self, eff) return ("Zone-wide effect: Your Phase Door spell is super easy to use here, allowing you to target it regardless of level.") end,
 	decrease = 0, no_remove = true,
 	type = "other",
 	subtype = { aura=true },
@@ -3043,10 +3044,37 @@ newEffect{
 }
 
 newEffect{
+	name = "ZONE_AURA_CHALLENGE",
+	desc = "Challenge",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return "???" else return self:hasQuest(eff.id_challenge_quest).name end end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "neutral",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_exit_level", self)
+	end,
+	callbackOnKill = function(self, eff, who, death_note)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_kill_foe", self, who)
+	end,
+	callbackOnActBase = function(self, eff)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_act_base", self)
+	end,
+}
+
+newEffect{
 	name = "THROWING_KNIVES", image = "talents/throwing_knives.png",
 	desc = "Throwing Knives",  decrease = 0,
 	display_desc = function(self, eff) return eff.stacks.." Knives" end,
-	long_desc = function(self, eff) return ("You have %d throwing knives."):format(eff.stacks) end,
+	long_desc = function(self, eff) return ("Has %d throwing knives prepared:\n\n%s"):format(eff.stacks, self:callTalent(self.T_THROWING_KNIVES, "knivesInfo")) end,
 	type = "other",
 	subtype = { },
 	status = "beneficial",
@@ -3093,8 +3121,8 @@ newEffect{
 newEffect{
 	name = "FUMBLE", image = "talents/fumble.png",
 	desc = "Fumble",
-	long_desc = function(self, eff) return ("The target is suffering from distracting wounds, giving them a %d%% chance to fail their next talent usage and injure themself."):
-		format( eff.power*eff.stacks ) end,
+	long_desc = function(self, eff) return ("The target is suffering from distracting wounds, and has a %d%% chance to fail to use a talent and injure itself for %d physical damage."):
+		format( eff.power*eff.stacks, eff.dam ) end,
 	charges = function(self, eff) return eff.stacks end,
 	type = "other",
 	subtype = { tactic=true },
@@ -3129,5 +3157,76 @@ newEffect{
 			DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam)
 			self:removeEffect(self.EFF_FUMBLE)
 		end
+	end,
+}
+
+
+newEffect{
+	name = "TOUCH_OF_DEATH", image = "talents/touch_of_death.png",
+	desc = "Touch of Death",
+	long_desc = function(self, eff) return ("The target is taking %0.2f physical damage each turn. If they die while under this effect, they will explode!"):format(eff.dam) end,
+	type = "other", --extending this would be very bad
+	subtype = {  },
+	status = "detrimental",
+	parameters = { dur=4, dam=10, power=20, radius=1, combo=1 },
+	on_gain = function(self, err) return "#Target# is mortally wounded!", "+Touch of Death!" end,
+	on_lose = function(self, err) return "#Target# overcomes the touch of death.", "-Touch of Death" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+	on_timeout = function(self, eff)
+		DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam)
+		eff.dam = eff.dam * (1 + eff.mult)
+	end,
+	on_die = function(self, eff)
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		local tg = {type="ball", radius=eff.radius, selffire=false, x=self.x, y=self.y}
+		local dam = self.max_life * eff.power / self.rank
+		eff.src:project(tg, self.x, self.y, DamageType.PHYSICAL, dam, {type="bones"})
+		game.logSeen(eff.src, "#LIGHT_RED#%s explodes into a shower of gore!", self.name:capitalize())
+		self:removeEffect(self.EFF_TOUCH_OF_DEATH)
+	end,
+}
+
+newEffect{
+	name = "MARKED", image = "talents/master_marksman.png",
+	desc = "Marked",
+	long_desc = function(self, eff) return ("Target is marked, leaving them vulnerable to marked shots."):format() end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	on_gain = function(self, err) return nil, "+Marked!" end,
+	on_lose = function(self, err) return nil, "-Marked" end,
+	activate = function(self, eff)
+		eff.particle = self:addParticles(Particles.new("circle", 1, {base_rot=1, oversize=1.0, a=200, appear=8, speed=0, img="marked", radius=0}))
+		self:effectTemporaryValue(eff, "marked", 1)
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle)
+	end,
+--	on_die = function(self,eff)
+--		if eff.src and eff.src:knowTalent(eff.src.T_FIRST_BLOOD) then eff.src:incStamina(eff.src:callTalent(eff.src.T_FIRST_BLOOD, "getStamina")) end
+--	end,
+}
+
+newEffect{
+	name = "FLARE",
+	desc = "Flare", image = "talents/flare_raz.png",
+	long_desc = function(self, eff) return ("The target is lit up by a flare, reducing its stealth and invisibility power by %d, defense by %d and removing all evasion bonus from being unseen."):format(eff.power, eff.power) end,
+	type = "other",
+	subtype = { sun=true },
+	status = "detrimental",
+	parameters = { power=20 },
+	on_gain = function(self, err) return nil, "+Illumination" end,
+	on_lose = function(self, err) return nil, "-Illumination" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_stealth", -eff.power)
+		if self:attr("invisible") then self:effectTemporaryValue(eff, "invisible", -eff.power) end
+		self:effectTemporaryValue(eff, "combat_def", -eff.power)
+		self:effectTemporaryValue(eff, "blind_fighted", 1)
 	end,
 }

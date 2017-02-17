@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ newEntity{ base = "BASE_NPC_OOZE",
 	blood_color = colors.WHITE,
 	desc = "It's translucent and it's oozing.",
 	level_range = {25, nil}, exp_worth = 1,
-	rarity = 1,
+	rarity = 10,
 	rank = 2,
 	max_life = resolvers.rngavg(80,90), life_rating = 8,
 	combat = { dam=resolvers.mbonus(40, 15), atk=15, apr=5, },

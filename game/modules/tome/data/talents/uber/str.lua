@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -157,6 +157,10 @@ uberTalent{
 		self:attr("max_encumber", 500)
 		self:incIncStat(self.STAT_STR, 40)
 	end,
+	on_unlearn = function(self, t)
+		self:attr("max_encumber", -500)
+		self:incIncStat(self.STAT_STR, -40)
+	end,
 	info = function(self, t)
 		return ([[Your strength is legendary; fatigue and physical exertion mean nothing to you.
 		Your fatigue is permanently set to 0, carrying capacity increased by 500, and strength increased by 40.]])
@@ -172,6 +176,7 @@ uberTalent{
 		local q = self:hasQuest("temple-of-creation")
 		return q and not q:isCompleted("kill-slasul") and q:isCompleted("kill-drake")
 	end} },
+	cant_steal = true,
 	-- _M:levelup function in mod.class.Actor.lua updates the talent levels with character level
 	bonusLevel = function(self, t) return math.ceil(self.level/10) end,
 	callbackOnLevelup = function(self, t, new_level)

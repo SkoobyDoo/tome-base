@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,9 +41,9 @@ newEntity{ define_as = "ASSASSIN_LORD",
 
 	open_door = true,
 
-	autolevel = "rogue",
+	autolevel = "roguemage",
 	ai = "dumb_talented_simple", ai_state = { talent_in=5, },
-	stats = { str=8, dex=15, mag=6, cun=15, con=7 },
+	stats = { str=8, dex=15, mag=15, cun=15, con=7 },
 
 	resolvers.tmasteries{ ["cunning/stealth"]=1.3, },
 
@@ -52,6 +52,8 @@ newEntity{ define_as = "ASSASSIN_LORD",
 	combat_armor = 5, combat_def = 7,
 	max_life = resolvers.rngavg(90,100), life_rating = 14,
 	resolvers.talents{
+		[Talents.T_WEAPON_COMBAT] = {base=1, every=8, max=5},
+		[Talents.T_KNIFE_MASTERY] = {base=1, every=8, max=5},
 		[engine.interface.ActorTalents.T_LETHALITY]={base=3, every=4, max=10},
 		[engine.interface.ActorTalents.T_STEALTH]={base=4, every=4, max=10},
 		[engine.interface.ActorTalents.T_VILE_POISONS]={base=3, every=4, max=10},
@@ -61,7 +63,7 @@ newEntity{ define_as = "ASSASSIN_LORD",
 		[engine.interface.ActorTalents.T_AMBUSCADE]={base=3, every=4, max=10},
 		[engine.interface.ActorTalents.T_APPLY_POISON]={base=3, every=4, max=10},
 		[engine.interface.ActorTalents.T_SHADOW_DANCE]={base=3, every=4, max=10},
-		[engine.interface.ActorTalents.T_DIRTY_FIGHTING]={base=3, every=4, max=10},
+		[engine.interface.ActorTalents.T_EXPOSE_WEAKNESS]={base=3, every=4, max=10},
 	},
 	stamina_regen = 5,
 	mana_regen = 6,

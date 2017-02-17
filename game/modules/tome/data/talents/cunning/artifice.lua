@@ -22,75 +22,116 @@ local Object = require "engine.Object"
 local Map = require "engine.Map"
 local Chat = require "engine.Chat"
 
+-- equipable artifice tool talents and associated mastery talents
+-- to add a new tool, define a tool talent and a mastery talent and update this table
+artifice_tool_tids = {T_HIDDEN_BLADES="T_ASSASSINATE", T_SMOKESCREEN="T_SMOKESCREEN_MASTERY", T_ROGUE_S_BREW="T_ROGUE_S_BREW_MASTERY", T_DART_LAUNCHER="T_DART_LAUNCHER_MASTERY", T_GRAPPLING_HOOK="T_GRAPPLING_HOOK_MASTERY",}
+Talents.artifice_tool_tids = artifice_tool_tids
+
+--- initialize artifice tools, update mastery level and unlearn any unselected tools talents
+function artifice_tools_setup(self, t)
+	self.artifice_tools = self.artifice_tools or {}
+	self:setTalentTypeMastery("cunning/tools", self:getTalentMastery(t))
+	for tid, m_tid in pairs(artifice_tool_tids) do
+		if self:knowTalent(tid) then
+			local slot
+			for slot_id, tool_id in pairs(self.artifice_tools) do
+				if tool_id == tid then slot = slot_id break end
+			end
+			if not slot then self:unlearnTalentFull(tid) end
+		end
+		if self.artifice_tools_mastery == tid then
+			local m_level = self:getTalentLevelRaw(self.T_MASTER_ARTIFICER)
+			if self:getTalentLevelRaw(m_tid) ~= m_level then
+				self:unlearnTalentFull(m_tid)
+				self:learnTalent(m_tid, true, m_level, {no_unlearn=true})
+			end
+		elseif self:knowTalent(m_tid) then
+			self:unlearnTalentFull(m_tid)
+		end
+	end
+	return true
+end
+
+--- generate a textual list of available artifice tools
+function artifice_tools_get_descs(self, t)
+	if not self.artifice_tools then artifice_tools_setup(self, t) end
+	local tool_descs = {}
+	for tool_id, mt in pairs(artifice_tool_tids) do
+		local tool, desc = self:getTalentFromId(tool_id)
+		local prepped = self.artifice_tools[t.id] == tool_id
+		if prepped then
+			desc = ("#YELLOW#%s (prepared, level %s)#LAST#:\n"):format(tool.name, self:getTalentLevelRaw(tool))
+		else
+			desc = tool.name..":\n"
+		end
+		if tool.short_info then
+			desc = desc..tool.short_info(self, tool, t).."\n"
+		else
+			desc = desc.."#GREY#(see talent description)#LAST#\n"
+		end
+		tool_descs[#tool_descs+1] = desc
+	end
+	return table.concatNice(tool_descs, "\n\t")
+end
+
+--- NPC's automatically pick a tool for each tool slot if needed
+-- used as the talent on_pre_use_ai function
+-- this causes newly spawned NPC's to prepare their tools the first time they check for usable talents
+function artifice_tools_npc_select(self, t, silent, fake)
+	if not self.artifice_tools[t.id] then -- slot is empty: pick a tool
+		local tool_ids = table.keys(artifice_tool_tids)
+		local tid = rng.tableRemove(tool_ids)
+		while tid do
+			if not self:knowTalent(tid) then -- select the tool
+				self:learnTalent(tid, true, self:getTalentLevelRaw(t), {no_unlearn=true})
+				self.artifice_tools[t.id] = tid
+				if game.party:hasMember(self) then -- cooldowns for party members
+					self:startTalentCooldown(t); self:startTalentCooldown(tid)
+					self:useEnergy()
+				end
+				game.logSeen(self, "#GREY#You notice %s has prepared: %s.", self.name:capitalize(), self:getTalentFromId(tid).name)
+				break
+			end
+			tid = rng.tableRemove(tool_ids)
+		end
+	end
+	return false -- npc's don't need to actually use the tool slot talents
+end
+
 newTalent{
 	name = "Rogue's Tools",
 	type = {"cunning/artifice", 1},
 	points = 5,
 	require = cuns_req_high1,
 	cooldown = 10,
-	no_npc_use = true,
+	stamina = 0, -- forces learning stamina pool (npcs)
 	no_unlearn_last = true,
+	on_pre_use = artifice_tools_setup,
 	on_learn = function(self, t)
 		self:attr("show_gloves_combat", 1)
 	end,
 	on_unlearn = function(self, t)
 		self:attr("show_gloves_combat", -1)
 	end,
-	getHBDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.8) end,
-	getRBDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 4, 9)) end,
-	getRBResist = function(self, t) return self:combatTalentLimit(t, 1, 0.17, 0.5) end,
-	getRBRawHeal = function (self, t) return self:getTalentLevel(t) * 40 end,
-	getRBMaxHeal = function (self, t) return self:combatTalentLimit(t, 0.4, 0.10, 0.25) end,
-	getRBCure = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
-	getSSDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 3, 5)) end,
-	getSSSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
-	getDLDamage = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 12, 150) end,
-	getDLSleepPower = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 15, 180) end,
+	tactical = {BUFF = 2},
+	on_pre_use_ai = artifice_tools_npc_select, -- NPC's automatically pick a tool
 	action = function(self, t)
-		if self.artifice_hidden_blades==1 then 
-			self:unlearnTalent(self.T_HIDDEN_BLADES)
-			self.artifice_hidden_blades = null
-			if self:knowTalent(self.T_ASSASSINATE) then self:unlearnTalent(self.T_ASSASSINATE) end
-		end
-		if self.artifice_smokescreen==1 then 
-			self:unlearnTalent(self.T_SMOKESCREEN)
-			self.artifice_smokescreen = null
-			if self:knowTalent(self.T_SMOKESCREEN_MASTERY) then self:unlearnTalent(self.T_SMOKESCREEN_MASTERY) end
-		end		
-		if self.artifice_rogue_s_brew==1 then 
-			self:unlearnTalent(self.T_ROGUE_S_BREW)
-			self.artifice_rogue_s_brew = null
-			if self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then self:unlearnTalent(self.T_ROGUE_S_BREW_MASTERY) end
-		end		
-		if self.artifice_dart_launcher==1 then 
-			self:unlearnTalent(self.T_DART_LAUNCHER)
-			self.artifice_dart_launcher = null
-			if self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then self:unlearnTalent(self.T_DART_LAUNCHER_MASTERY) end
-		end
-		
-		local chat = Chat.new("artifice", self, self, {player=self, slot=1})
-		self:talentDialog(chat:invoke())
-		return true
+		local chat = Chat.new("artifice", self, self, {player=self, slot=1, chat_tid=t.id, tool_ids=artifice_tool_tids})
+		local d = chat:invoke()
+		d.key:addBinds{ EXIT = function()
+			game:unregisterDialog(d)
+		end}
+		local tool_id, m_id = self:talentDialog(d)
+		artifice_tools_setup(self, t)
+		return tool_id ~= nil -- only use energy/cooldown if a tool was prepared
 	end,
 	info = function(self, t)
-		local tool = ""
-		if self:knowTalent(self.T_HIDDEN_BLADES) and self.artifice_hidden_blades==1 then
-			tool = ([[#YELLOW#Current Tool: Hidden Blades]]):format()
-		elseif self:knowTalent(self.T_SMOKESCREEN) and self.artifice_smokescreen==1 then
-			tool = ([[#YELLOW#Current Tool: Smokescreen]]):format()
-		elseif self:knowTalent(self.T_ROGUE_S_BREW) and self.artifice_rogue_s_brew==1 then
-			tool = ([[#YELLOW#Current Tool: Rogue's Brew]]):format()
-		elseif self:knowTalent(self.T_DART_LAUNCHER) and self.artifice_dart_launcher==1 then
-			tool = ([[#YELLOW#Current Tool: Dart Launcher]]):format()
-		end
-		return ([[You learn to create and equip a number of useful tools:
-Hidden Blades. Melee criticals inflict %d%% bonus unarmed damage. 4 turn cooldown.
-Smokescreen. Throw a vial of smoke that blocks vision in radius 2 for %d turns, and reduces the vision of enemies within by %d. 15 turn cooldown.
-Rogue’s Brew. Drink a potion that restores %d life (+%d%% of maximum), %d stamina (+%d%% of maximum) and cures %d negative physical effects. 20 turn cooldown.
-Dart Launcher. Fires a dart that deals %0.2f physical damage and puts the target to sleep for 4 turns. 10 turn cooldown.
-You can equip a single tool at first.
-%s]]):
-format(t.getHBDamage(self,t)*100, t.getSSDuration(self,t), t.getSSSightLoss(self,t), t.getRBRawHeal(self,t), t.getRBMaxHeal(self,t)*100, t.getRBRawHeal(self,t)/4, t.getRBMaxHeal(self,t)*40, t.getRBCure(self,t), damDesc(self, DamageType.PHYSICAL, t.getDLDamage(self,t)), tool)
+		local descs = artifice_tools_get_descs(self, t)
+		return ([[With some advanced preparation, you learn to create and equip one of a number of useful tools (at #YELLOW#level %d#WHITE#):
+
+%s
+Preparing a tool sets its talent level and puts it on cooldown.
+]]):format(self:getTalentLevelRaw(t), descs)
 	end,
 }
 
@@ -100,65 +141,31 @@ newTalent{
 	points = 5,
 	require = cuns_req_high2,
 	cooldown = 10,
-	no_npc_use = true,
+	stamina = 0, -- forces learning stamina pool (npcs)
 	no_unlearn_last = true,
-	getHBDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.8) end,
-	getRBDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 4, 9)) end,
-	getRBResist = function(self, t) return self:combatTalentLimit(t, 1, 0.17, 0.5) end,
-	getRBRawHeal = function (self, t) return self:getTalentLevel(t) * 40 end,
-	getRBMaxHeal = function (self, t) return self:combatTalentLimit(t, 0.4, 0.10, 0.25) end,
-	getRBCure = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
-	getSSDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 3, 5)) end,
-	getSSSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
-	getDLDamage = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 12, 150) end,
-	getDLSleepPower = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 15, 180) end,
+	on_pre_use = artifice_tools_setup,
+	tactical = {BUFF = 2},
+	on_pre_use_ai = artifice_tools_npc_select, -- NPC's automatically pick a tool
 	action = function(self, t)
-		if self.artifice_hidden_blades==2 then 
-			self:unlearnTalent(self.T_HIDDEN_BLADES)
-			self.artifice_hidden_blades = null
-			if self:knowTalent(self.T_ASSASSINATE) then self:unlearnTalent(self.T_ASSASSINATE) end
-		end
-		if self.artifice_smokescreen==2 then 
-			self:unlearnTalent(self.T_SMOKESCREEN)
-			self.artifice_smokescreen = null
-			if self:knowTalent(self.T_SMOKESCREEN_MASTERY) then self:unlearnTalent(self.T_SMOKESCREEN_MASTERY) end
-		end		
-		if self.artifice_rogue_s_brew==2 then 
-			self:unlearnTalent(self.T_ROGUE_S_BREW)
-			self.artifice_rogue_s_brew = null
-			if self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then self:unlearnTalent(self.T_ROGUE_S_BREW_MASTERY) end
-		end		
-		if self.artifice_dart_launcher==2 then 
-			self:unlearnTalent(self.T_DART_LAUNCHER)
-			self.artifice_dart_launcher = null
-			if self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then self:unlearnTalent(self.T_DART_LAUNCHER_MASTERY) end
-		end
-
-		local chat = Chat.new("artifice", self, self, {player=self, slot=2})
-		self:talentDialog(chat:invoke())
-		return true
+		local chat = Chat.new("artifice", self, self, {player=self, slot=2, chat_tid=t.id, tool_ids=artifice_tool_tids})
+		local d = chat:invoke()
+		d.key:addBinds{ EXIT = function()
+			game:unregisterDialog(d)
+		end}
+		local tool_id, m_id = self:talentDialog(d)
+		artifice_tools_setup(self, t)
+		return tool_id ~= nil -- only use energy/cooldown if a tool was prepared
 	end,
 	info = function(self, t)
-		local tool = ""
-		if self:knowTalent(self.T_HIDDEN_BLADES) and self.artifice_hidden_blades==2 then
-			tool = ([[#YELLOW#Current Tool: Hidden Blades]]):format()
-		elseif self:knowTalent(self.T_SMOKESCREEN) and self.artifice_smokescreen==2 then
-			tool = ([[#YELLOW#Current Tool: Smokescreen]]):format()
-		elseif self:knowTalent(self.T_ROGUE_S_BREW) and self.artifice_rogue_s_brew==2 then
-			tool = ([[#YELLOW#Current Tool: Rogue's Brew]]):format()
-		elseif self:knowTalent(self.T_DART_LAUNCHER) and self.artifice_dart_launcher==2 then
-			tool = ([[#YELLOW#Current Tool: Dart Launcher]]):format()
-		end
-		return ([[You learn to equip a second tool:
-Hidden Blades. Melee criticals inflict %d%% bonus unarmed damage. 4 turn cooldown.
-Smokescreen. Throw a vial of smoke that blocks vision in radius 2 for %d turns, and reduces the vision of enemies within by %d. 15 turn cooldown.
-Rogue’s Brew. Drink a potion that restores %d life (+%d%% of maximum), %d stamina (+%d%% of maximum) and cures %d negative physical effects. 20 turn cooldown.
-Dart Launcher. Fires a dart that deals %0.2f physical damage and puts the target to sleep for 4 turns. 10 turn cooldown.
-%s]]):
-format(t.getHBDamage(self,t)*100, t.getSSDuration(self,t), t.getSSSightLoss(self,t), t.getRBRawHeal(self,t), t.getRBMaxHeal(self,t)*100, t.getRBRawHeal(self,t)/4, t.getRBMaxHeal(self,t)*40, t.getRBCure(self,t), damDesc(self, DamageType.PHYSICAL, t.getDLDamage(self,t)), tool)
+		local descs = artifice_tools_get_descs(self, t)
+		return ([[With some advanced preparation, you learn to create and equip a second tool (at #YELLOW#level %d#WHITE#):
+
+%s
+Preparing a tool sets its talent level and puts it on cooldown.
+Only one tool of each type can be equipped at a time.
+]]):format(self:getTalentLevelRaw(t), descs)
 	end,
 }
-
 
 newTalent{
 	name = "Intricate Tools",
@@ -166,62 +173,29 @@ newTalent{
 	require = cuns_req_high3,
 	points = 5,
 	cooldown = 10,
-	no_npc_use = true,
+	stamina = 0, -- forces learning stamina pool (npcs)
 	no_unlearn_last = true,
-	getHBDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.8) end,
-	getRBDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 4, 9)) end,
-	getRBResist = function(self, t) return self:combatTalentLimit(t, 1, 0.17, 0.5) end,
-	getRBRawHeal = function (self, t) return self:getTalentLevel(t) * 40 end,
-	getRBMaxHeal = function (self, t) return self:combatTalentLimit(t, 0.4, 0.10, 0.25) end,
-	getRBCure = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
-	getSSDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 3, 5)) end,
-	getSSSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
-	getDLDamage = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 12, 150) end,
-	getDLSleepPower = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 15, 180) end,
+	on_pre_use = artifice_tools_setup,
+	tactical = {BUFF = 2},
+	on_pre_use_ai = artifice_tools_npc_select, -- NPC's automatically pick a tool
 	action = function(self, t)
-		if self.artifice_hidden_blades==3 then 
-			self:unlearnTalent(self.T_HIDDEN_BLADES)
-			self.artifice_hidden_blades = null
-			if self:knowTalent(self.T_ASSASSINATE) then self:unlearnTalent(self.T_ASSASSINATE) end
-		end
-		if self.artifice_smokescreen==3 then 
-			self:unlearnTalent(self.T_SMOKESCREEN)
-			self.artifice_smokescreen = null
-			if self:knowTalent(self.T_SMOKESCREEN_MASTERY) then self:unlearnTalent(self.T_SMOKESCREEN_MASTERY) end
-		end		
-		if self.artifice_rogue_s_brew==3 then 
-			self:unlearnTalent(self.T_ROGUE_S_BREW)
-			self.artifice_rogue_s_brew = null
-			if self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then self:unlearnTalent(self.T_ROGUE_S_BREW_MASTERY) end
-		end		
-		if self.artifice_dart_launcher==3 then 
-			self:unlearnTalent(self.T_DART_LAUNCHER)
-			self.artifice_dart_launcher = null
-			if self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then self:unlearnTalent(self.T_DART_LAUNCHER_MASTERY) end
-		end
-		
-		local chat = Chat.new("artifice", self, self, {player=self, slot=3})
-		self:talentDialog(chat:invoke())
-		return true
+		local chat = Chat.new("artifice", self, self, {player=self, slot=3, chat_tid=t.id, tool_ids=artifice_tool_tids})
+		local d = chat:invoke()
+		d.key:addBinds{ EXIT = function()
+			game:unregisterDialog(d)
+		end}
+		local tool_id, m_id = self:talentDialog(d)
+		artifice_tools_setup(self, t)
+		return tool_id ~= nil -- only use energy/cooldown if a tool was prepared
 	end,
 	info = function(self, t)
-		local tool = ""
-		if self:knowTalent(self.T_HIDDEN_BLADES) and self.artifice_hidden_blades==3 then
-			tool = ([[#YELLOW#Current Tool: Hidden Blades]]):format()
-		elseif self:knowTalent(self.T_SMOKESCREEN) and self.artifice_smokescreen==3 then
-			tool = ([[#YELLOW#Current Tool: Smokescreen]]):format()
-		elseif self:knowTalent(self.T_ROGUE_S_BREW) and self.artifice_rogue_s_brew==3 then
-			tool = ([[#YELLOW#Current Tool: Rogue's Brew]]):format()
-		elseif self:knowTalent(self.T_DART_LAUNCHER) and self.artifice_dart_launcher==3 then
-			tool = ([[#YELLOW#Current Tool: Dart Launcher]]):format()
-		end
-		return ([[You learn to equip a third tool:
-Hidden Blades. Melee criticals inflict %d%% bonus unarmed damage. 4 turn cooldown.
-Smokescreen. Throw a vial of smoke that blocks vision in radius 2 for %d turns, and reduces the vision of enemies within by %d. 15 turn cooldown.
-Rogue’s Brew. Drink a potion that restores %d life (+%d%% of maximum), %d stamina (+%d%% of maximum) and cures %d negative physical effects. 20 turn cooldown.
-Dart Launcher. Fires a dart that deals %0.2f physical damage and puts the target to sleep for 4 turns. 10 turn cooldown.
-%s]]):
-format(t.getHBDamage(self,t)*100, t.getSSDuration(self,t), t.getSSSightLoss(self,t), t.getRBRawHeal(self,t), t.getRBMaxHeal(self,t)*100, t.getRBRawHeal(self,t)/4, t.getRBMaxHeal(self,t)*40, t.getRBCure(self,t), damDesc(self, DamageType.PHYSICAL, t.getDLDamage(self,t)), tool)
+		local descs = artifice_tools_get_descs(self, t)
+		return ([[With some advanced preparation, you learn to create and equip a third tool (at #YELLOW#level %d#WHITE#):
+
+%s
+Preparing a tool sets its talent level and puts it on cooldown.
+Only one tool of each type can be equipped at a time.
+]]):format(self:getTalentLevelRaw(t), descs)
 	end,
 }
 
@@ -231,57 +205,88 @@ newTalent{
 	require = cuns_req_high4,
 	points = 5,
 	cooldown = 10,
-	no_npc_use = true,
+	stamina = 0, -- forces learning stamina pool (npcs)
+	no_energy = true,
 	no_unlearn_last = true,
-	getAssassinateDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.8, 3.0) end,
-	getBleed = function(self, t) return self:combatTalentScale(t, 0.2, 0.8) end,
-    getSSDamage = function (self, t) return 30 + self:combatTalentStatDamage(t, "cun", 10, 150) end,
-	getRBDieAt = function(self, t) return self:combatTalentScale(t, 100, 600) end,
-    getDLSlow = function(self, t) return self:combatTalentLimit(t, 50, 15, 40)/100 end,
+	on_pre_use = artifice_tools_setup,
+	tactical = {BUFF = 2},
+	on_pre_use_ai = function(self, t, silent, fake) -- npc's automatically master a tool they have prepared
+		if self.artifice_tools and not self.artifice_tools_mastery then
+			game:onTickEnd(function()
+				local tools = table.values(self.artifice_tools)
+				while #tools > 0 do
+					local tool_id = rng.tableRemove(tools)
+					local m_tid = artifice_tool_tids[tool_id]
+					if m_tid then -- note: talent level affects AI use
+						local tl = self:getTalentLevelRaw(m_tid)
+						if self:learnTalent(m_tid, true, self:getTalentLevelRaw(t) - tl) then
+							self.artifice_tools_mastery = tool_id
+							if game.party:hasMember(self) then -- cooldowns for party members
+								self:startTalentCooldown(t); self:startTalentCooldown(tool_id); self:startTalentCooldown(m_tid)
+							end
+							break
+						end
+					end
+				end
+			end)
+		end
+		return false
+	end,
 	action = function(self, t)
-		if self:knowTalent(self.T_ASSASSINATE) then self:unlearnTalent(self.T_ASSASSINATE) end
-		if self:knowTalent(self.T_SMOKESCREEN_MASTERY) then self:unlearnTalent(self.T_SMOKESCREEN_MASTERY) end
-		if self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then self:unlearnTalent(self.T_ROGUE_S_BREW_MASTERY) end
-		if self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then self:unlearnTalent(self.T_DART_LAUNCHER_MASTERY) end
-		
-		local chat = Chat.new("artifice-mastery", self, self, {player=self})
-		self:talentDialog(chat:invoke())
-		return true
+		local chat = Chat.new("artifice-mastery", self, self, {player=self, chat_tid=t.id, tool_ids=artifice_tool_tids})
+		local d = chat:invoke()
+		d.key:addBinds{ EXIT = function()
+			game:unregisterDialog(d)
+		end}
+		local tool_id = self:talentDialog(d)
+		artifice_tools_setup(self, t)
+		return tool_id ~= nil -- only use energy/cooldown if a new tool was mastered
 	end,
 	info = function(self, t)
-		local tool = ""
-		if self:knowTalent(self.T_ASSASSINATE) then
-			tool = ([[#YELLOW#Current Mastery: Hidden Blades]]):format()
-		elseif self:knowTalent(self.T_SMOKESCREEN_MASTERY) then
-			tool = ([[#YELLOW#Current Mastery: Smokescreen]]):format()
-		elseif self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then
-			tool = ([[#YELLOW#Current Mastery: Rogue's Brew]]):format()
-		elseif self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then
-			tool = ([[#YELLOW#Current Mastery: Dart Launcher]]):format()
+		local tool = "none"
+		if self.artifice_tools_mastery then
+			tool = self:getTalentFromId(self.artifice_tools_mastery).name
 		end
-		return ([[You reach the height of your craft, allowing you to focus on a single tool to greatly improve its capabilities:
-Hidden Blades. Grants use of the Assassinate ability, striking twice with your hidden blades for %d%% unarmed damage as a guaranteed critical strike which ignores armor and resistances. Your Hidden Blades also inflict an additional %d%% damage as bleed.
-Smokescreen: Infuses your Smokescreen with chokedust, causing %0.2f nature damage each turn to enemies inside as well as silencing them.
-Rogue’s Brew. The brew strengthens you for 8 turns, preventing you from dying until you reach -%d life.
-Dart Launcher. The sleeping poison becomes potent enough to ignore immunity, and on waking the target will be slowed by %d%% for 4 turns.
-%s]]):
-format(t.getAssassinateDamage(self,t)*100, t.getBleed(self,t)*100, damDesc(self, DamageType.NATURE, t.getSSDamage(self,t)), t.getRBDieAt(self,t), t.getDLSlow(self,t)*100, tool)
+		--- generate a textual list of available artifice tools enhancements
+		if not self.artifice_tools then artifice_tools_setup(self, t) end
+		local mastery_descs = {}
+		for tool_id, m_tid in pairs(artifice_tool_tids) do
+			local tool, mt = self:getTalentFromId(tool_id), self:getTalentFromId(m_tid)
+			if mt then
+				local desc
+				local prepped = self.artifice_tools_mastery == tool_id
+				if prepped then
+					desc = ("#YELLOW#%s (%s)#LAST#\n"):format(tool.name, mt.name)
+				else
+					desc = ("%s (%s)\n"):format(tool.name, mt.name)
+				end
+				if mt.short_info then
+					desc = desc..mt.short_info(self, mt).."\n"
+				else
+					desc = desc.."#GREY#(see talent description)#LAST#\n"
+				end
+				mastery_descs[#mastery_descs+1] = desc
+			end
+		end
+		mastery_descs = table.concatNice(mastery_descs, "\n\t")
+		return ([[You become a master of your craft, allowing you to focus on a single tool (#YELLOW#currently %s#LAST#) to greatly improve its capabilities:
+
+%s
+The effects depend on this talent's level.
+Mastering a new tool places it (and its special effects, as appropriate) on cooldown.]]):format(tool, mastery_descs)
 	end,
 }
 
+--====================--
+-- Rogue's tools and enhancements
+--====================--
 newTalent{
 	name = "Hidden Blades",
 	type = {"cunning/tools", 1},
 	mode = "passive",
 	points = 1,
 	cooldown = 4,
-	getDamage = function(self, t) 
-		if self.artifice_hidden_blades == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getHBDamage") 
-		elseif self.artifice_hidden_blades == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getHBDamage") 
-		elseif self.artifice_hidden_blades == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getHBDamage") 
-		else return 0
-		end
-	end,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.8) end,
 	callbackOnCrit = function(self, t, kind, dam, chance, target)
 		if not target then return end
 		if target.turn_procs.hb then return end
@@ -289,6 +294,7 @@ newTalent{
 		if not self:isTalentCoolingDown(t) then
 			target.turn_procs.hb = true
 			local oldlife = target.life
+			self:logCombat(target, "#Source# strikes #target# with hidden blades!")
 			self:attackTarget(target, nil, t.getDamage(self,t), true, true)	
 
 			if self:knowTalent(self.T_ASSASSINATE) then
@@ -302,11 +308,81 @@ newTalent{
 			self:startTalentCooldown(t)
 		end	
 	end,
+	short_info = function(self, t, slot_talent)
+		return ([[Melee criticals trigger an extra unarmed attack, inflicting %d%% damage. 4 turn cooldown.]]):format(t.getDamage(self, slot_talent)*100)
+	end,
 	info = function(self, t)
 		local dam = t.getDamage(self, t)
-		return ([[You mount spring loaded blades on your wrists. On scoring a critical strike against an adjacent target, you follow up with your blades for %d%% unarmed damage.
-This talent has a cooldown.]]):
-		format(dam*100)
+		local slot = "not prepared"
+		for slot_id, tool_id in pairs(self.artifice_tools) do
+			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
+		end
+		return ([[You conceal spring loaded blades within your equipment. On scoring a critical strike against an adjacent target, you follow up with your blades for %d%% damage (as an unarmed attack).
+This talent has a cooldown.
+#YELLOW#Prepared with: %s#LAST#]]):format(dam*100, slot)
+	end,
+}
+
+newTalent{
+	name = "Assassinate",
+	type = {"cunning/tools", 1},
+	points = 1,
+	cooldown = 8,
+	stamina = 10,
+	message = false,
+	tactical = { ATTACK = 3 },
+	requires_target = true,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	on_pre_use = function(self, t, silent, fake)
+		if not self:knowTalent(self.T_HIDDEN_BLADES) then
+			if not silent then game.logPlayer(self, "You must have Hidden Blades prepared to use this talent.") end
+			return
+		end
+		return true
+	end,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(self:getTalentFromId(self.T_MASTER_ARTIFICER), 1.8, 3.0) end,
+	getBleed = function(self, t) return self:combatTalentScale(self:getTalentFromId(self.T_MASTER_ARTIFICER), 0.3, 1) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canSee(target) or not self:canProject(tg, x, y) then return nil end
+		
+		target.turn_procs.hb = true -- prevent a crit against this target from triggering an additional hidden blades attack
+		self.turn_procs.auto_melee_hit = true
+		-- store old values to restore later
+		local apr, rpen, evasion = self.combat_apr, self.resists_pen.PHYSICAL, target.evasion
+		self:attr("combat_apr", 10000)
+		self.resists_pen.PHYSICAL = 100
+		target.evasion = 0
+		local bleed = t.getBleed(self, t)
+		local oldlife = target.life
+
+		self:logCombat(target, "#Source# strikes at a vital spot on #target#!")
+		local do_attack = function() self:attackTarget(target, nil, t.getDamage(self, t), true, true) end
+		local ok, err = pcall(do_attack)
+		if ok then ok, err = pcall(do_attack) end
+		self.combat_apr, self.resists_pen.PHYSICAL, target.evasion = apr, rpen, evasion
+		if not ok then error(err) end
+		self.turn_procs.auto_melee_hit = nil
+		
+		local life_diff = oldlife - target.life
+		if life_diff > 0 and target:canBe('cut') and bleed then
+			target:setEffect(target.EFF_CUT, 5, {power=life_diff * bleed / 5, src=self})
+		end
+
+		return true
+	end,
+	short_info = function(self, t)
+		return ([[You prime your Hidden Blades to cause bleeding and facilitate the Assassinate ability, which allows you to strike twice for %d%% unarmed damage, hitting automatically while ignoring armor and resistance.]]):format(t.getDamage(self, t)*100)
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t) * 100
+		local bleed = t.getBleed(self,t) * 100
+		return ([[You strike your target with your Hidden Blades twice in a vital spot for %d%% unarmed (physical) damage.  You must be able to see your target to use this attack, but it always hits and ignores all armor and physical resistance.
+In addition, your hidden blades now inflict a further %d%% of all damage dealt as bleeding over 5 turns.]])
+		:format(damage, bleed)
 	end,
 }
 
@@ -315,38 +391,29 @@ newTalent{
 	type = {"cunning/tools", 1},
 	points = 1,
 	cooldown = 20,
-	tactical = { BUFF = 2 },
-	requires_target = true,
-	getRawHeal = function(self, t) 
-		if self.artifice_rogue_s_brew == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getRBRawHeal")
-		elseif self.artifice_rogue_s_brew == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getRBRawHeal") 
-		elseif self.artifice_rogue_s_brew == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getRBRawHeal") 
-		else return 0
+	tactical = { HEAL = 1.5, STAMINA = 1.5,
+		CURE = function(self, t, target)
+			local num, max = 0, t.getCure(self, t)
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "physical" and e.status == "detrimental" then
+					num = num + 1
+					if num >= max then break end
+				end
+			end
+			return (2*num)^.5
 		end
+	},
+	getHeal = function(self, t)
+		return self:combatStatScale("cun", 10, 200, 0.7) + self:combatTalentScale(t, 20, 200, 0.7)
 	end,
-	getMaxHeal = function(self, t) 
-		if self.artifice_rogue_s_brew == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getRBMaxHeal")
-		elseif self.artifice_rogue_s_brew == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getRBMaxHeal") 
-		elseif self.artifice_rogue_s_brew == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getRBMaxHeal") 
-		else return 0
-		end
+	getStam = function(self, t)
+		return self:combatStatScale("cun", 5, 50, 0.75) + self:combatTalentScale(t, 5, 50, 0.75)
 	end,
-	getCure = function(self,t) 
-		if self.artifice_rogue_s_brew == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getRBCure")
-		elseif self.artifice_rogue_s_brew == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getRBCure") 
-		elseif self.artifice_rogue_s_brew == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getRBCure") 
-		else return 0
-		end
-	end,
-	getDieAt = function(self,t) return self:callTalent(self.T_MASTER_ARTIFICER, "getRBDieAt") end,
+	getCure = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, "log")) end,
 	action = function(self, t)
-	
-		local life = t.getRawHeal(self,t) + (t.getMaxHeal(self,t) * self.max_life)
-		local sta = t.getRawHeal(self,t)/4 + (t.getMaxHeal(self,t) * self.max_stamina * 0.4)
-		self:incStamina(sta)
-		self:attr("allow_on_heal", 1)
-		self:heal(life, self)
-		self:attr("allow_on_heal", -1)
+		local life = t.getHeal(self, t)
+		local sta = t.getStam(self, t)
 		
 		local effs = {}
 		-- Go through all temporary effects
@@ -369,19 +436,45 @@ newTalent{
 		if known then
 			game.logSeen(self, "%s is cured!", self.name:capitalize())
 		end
+		
+		self:incStamina(sta)
+		self:attr("allow_on_heal", 1)
+		self:heal(life, self)
+		self:attr("allow_on_heal", -1)
 
-		if self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then self:setEffect(self.EFF_ROGUE_S_BREW, 8, {power = t.getDieAt(self,t)}) end
+		if self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) then self:setEffect(self.EFF_ROGUE_S_BREW, 8, {power = self:callTalent(self.T_ROGUE_S_BREW_MASTERY, "getDieAt")}) end
 				
 		return true
 
 	end,
+	short_info = function(self, t, slot_talent)
+		return ([[Prepare a potion that restores %d life, %d stamina, and cures %d negative physical effects. 20 turn cooldown.]]):format(t.getHeal(self, slot_talent), t.getStam(self, slot_talent), t.getCure(self, slot_talent))
+	end,
 	info = function(self, t)
-	local heal = t.getRawHeal(self,t) + (t.getMaxHeal(self,t) * self.max_life)
-	local sta = t.getRawHeal(self,t)/4 + (t.getMaxHeal(self,t) * self.max_stamina * 0.4)
+	local heal = t.getHeal(self, t)
+	local sta = t.getStam(self, t)
 	local cure = t.getCure(self,t)
-		return ([[Imbibe a potent mixture of energizing and restorative substances, restoring %d life, %d stamina and curing %d negative physical effects.]]):
-		format(heal, sta, cure)
+	local slot = "not prepared"
+	for slot_id, tool_id in pairs(self.artifice_tools) do
+		if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
+	end
+	return ([[Imbibe a potent mixture of energizing and restorative substances, restoring %d life, %d stamina and curing %d detrimental physical effects.  The restorative effects improve with your Cunning.
+	#YELLOW#Prepared with: %s#LAST#]]):format(heal, sta, cure, slot)
    end,
+}
+
+newTalent{
+	name = "Rogue's Brew Mastery",
+	type = {"cunning/tools", 1},
+	mode = "passive",
+	points = 1,
+	getDieAt = function(self, t) return self:combatTalentScale(self:getTalentFromId(self.T_MASTER_ARTIFICER), 100, 600) end,
+	short_info = function(self, t)
+		return ([[Your Rogue's Brew fortifies you for 8 turns, preventing you from dying until you reach -%d life.]]):format(t.getDieAt(self, t))
+	end,
+	info = function(self, t)
+		return ([[Adjust your Rogue's Brew formulation so that it fortifies you for 8 turns, preventing you from dying until you reach -%d life.]]):format(t.getDieAt(self,t))
+	end,
 }
 
 newTalent{
@@ -392,32 +485,22 @@ newTalent{
 	stamina = 10,
 	range = 6,
 	direct_hit = true,
-	tactical = { DISABLE = 2 },
+	tactical = { ESCAPE = 2, DISABLE = {blind = 2} },
 	requires_target = true,
+	no_break_stealth = true,
 	radius = 2,
-	getSightLoss = function(self, t) 
-		if self.artifice_smokescreen == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getSSSightLoss")
-		elseif self.artifice_smokescreen == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getSSSightLoss") 
-		elseif self.artifice_smokescreen == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getSSSightLoss") 
-		else return 0
-		end
-	end,
 	getDamage = function(self,t) 
 		if self:knowTalent(self.T_SMOKESCREEN_MASTERY) then
-			return self:callTalent(self.T_SMOKESCREEN_MASTERY, "getSSDamage")
+			return self:callTalent(self.T_SMOKESCREEN_MASTERY, "getDamage")
 		else
 			return 0
 		end
 	end,
-	getDuration = function(self, t)
-		if self.artifice_smokescreen == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getSSDuration")
-		elseif self.artifice_smokescreen == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getSSDuration") 
-		elseif self.artifice_smokescreen == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getSSDuration") 
-		else return 0
-		end
-	end,
+	getDuration = function(self, t) return math.ceil(self:combatTalentScale(t, 3, 5)) end,
+	getSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
+	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t} end,
 	action = function(self, t)
-		local tg = {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 
@@ -460,7 +543,7 @@ newTalent{
 			e.particles = Particles.new("creeping_dark", 1, { })
 			e.particles.x = px
 			e.particles.y = py
-		game.level.map:addParticleEmitter(e.particles)
+			game.level.map:addParticleEmitter(e.particles)
 
 		end, nil, {type="dark"})
 
@@ -468,80 +551,18 @@ newTalent{
 		game.level.map:redisplay()
 		return true
 	end,
-	info = function(self, t)
-		return ([[Throw a vial of sticky smoke that explodes in radius %d, blocking line of sight for 5 turns. Enemies within will have their vision range reduced by %d.
-		Creatures affected by smokescreen can never prevent you from stealthing, even if their proximity would normally forbid it.
-		Use of this will not break stealth.]]):
-		format(self:getTalentRadius(t), t.getSightLoss(self,t))
+	short_info = function(self, t, slot_talent)
+		return ([[Throw a smokebomb creating a radius 2 cloud of smoke, lasting %d turns, that blocks sight and reduces enemies' vision by %d. 15 turn cooldown.]]):format(t.getDuration(self, slot_talent), t.getSightLoss(self, slot_talent))
 	end,
-}
-
-newTalent{
-	name = "Assassinate",
-	type = {"cunning/tools", 1},
-	points = 1,
-	cooldown = 8,
-	message = "@Source@ lashes out with their hidden blades!",
-	tactical = { ATTACK = { weapon = 2 } },
-	requires_target = true,
-	is_melee = true,
-	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	range = 1,
-	getDamage = function(self, t) return self:callTalent(self.T_MASTER_ARTIFICER, "getAssassinateDamage") end,
-	getBleed = function(self, t) return self:combatTalentScale(t, 0.3, 1) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not target or not self:canProject(tg, x, y) then return nil end
-		
-		target.turn_procs.hb = true -- we're already using our hidden blades for this attack
-		self.turn_procs.auto_melee_hit = true
-		
-		self:attr("combat_apr", 1000)
-		local penstore = self.resists_pen
-		local storeeva = target.evasion
-		target.evasion=0
-		self.resists_pen = nil
-		self.resists_pen = {all = 100}
-		
-		local scale = nil
-		scale = t.getBleed(self, t)
-		local oldlife = target.life
-
-		self:attackTarget(target, nil, t.getDamage(self, t), true, true)
-		self:attackTarget(target, nil, t.getDamage(self, t), true, true)
-		
-		local life_diff = oldlife - target.life
-		if life_diff > 0 and target:canBe('cut') and scale then
-			target:setEffect(target.EFF_CUT, 5, {power=life_diff * scale / 5, src=self})
+	info = function(self, t)
+		local slot = "not prepared"
+		for slot_id, tool_id in pairs(self.artifice_tools) do
+			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
-
-		self:attr("combat_apr", -1000)
-		self.turn_procs.auto_melee_hit = nil
-		target.evasion = storeeva
-		self.resists_pen = nil
-		self.resists_pen = penstore
-
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t) * 100
-		local bleed = t.getBleed(self,t) * 100
-		return ([[Impale the target on your hidden blades, striking twice for %d%% unarmed damage. This attack always hits and ignores all armor and resistances.
-In addition, your hidden blades now inflict a further %d%% of all damage dealt as bleeding over 5 turns.]])
-		:format(damage, bleed)
-	end,
-}
-
-newTalent{
-	name = "Rogue's Brew Mastery",
-	type = {"cunning/tools", 1},
-	mode = "passive",
-	points = 1,
-	getDieAt = function(self,t) return self:callTalent(self.T_MASTER_ARTIFICER, "getRBDieAt") end,
-	info = function(self, t)
-		return ([[The brew strengthens you for 8 turns, preventing you from dying until you reach -%d life.]]):
-		format(t.getDieAt(self,t))
+		return ([[Throw a vial of volatile liquid that explodes in a radius %d cloud of smoke lasting %d turns.  The smoke blocks line of sight, and enemies within will have their vision range reduced by %d.
+		Use of this talent will not break stealth, and creatures affected by the smokes can never prevent you from activating stealth, even if their proximity would normally forbid it.
+		#YELLOW#Prepared with: %s#LAST#]]):
+		format(self:getTalentRadius(t), t.getDuration(self, t), t.getSightLoss(self,t), slot)
 	end,
 }
 
@@ -550,12 +571,13 @@ newTalent{
 	type = {"cunning/tools", 1},
 	points = 1,
 	mode = "passive",
-	getSSDamage = function (self,t) return self:callTalent(self.T_MASTER_ARTIFICER, "getSSDamage") end,
-	getSSEvasion = function (self,t) return self:callTalent(self.T_MASTER_ARTIFICER, "getSSEvasion") end,
-	no_npc_use = true,
+	getDamage = function (self, t) return 30 + self:combatTalentStatDamage(self:getTalentFromId(self.T_MASTER_ARTIFICER), "cun", 10, 150) end,
+	short_info = function(self, t)
+		return ([[Your Smokescreen is infused with chokedust. Enemies in the smoke take %0.2f nature damage and may be silenced.]]):format(t.getDamage(self, t))
+	end,
 	info = function(self, t)
-		return ([[Infuses your smoke bomb with chokedust, causing %0.2f nature damage each turn and silencing enemies inside.]]):
-		format(damDesc(self, DamageType.NATURE, t.getSSDamage(self,t)), t.getSSEvasion(self,t))
+		return ([[You infuse your smoke bomb with chokedust. Each turn, enemies in the smoke take %0.2f nature damage and are 50%% likely to be silenced.]]):
+		format(damDesc(self, DamageType.NATURE, t.getDamage(self,t)))
 	end,
 }
 
@@ -563,31 +585,23 @@ newTalent{
 	name = "Dart Launcher",
 	type = {"cunning/tools", 1},
 	points = 1,
-	tactical = { ATTACK = 2 },
+	tactical = { ATTACK = {PHYSICAL = 1},
+		DISABLE = function(self, t, target)
+			return target:checkClassification("unliving") and 0 or self:knowTalent(self.T_DART_LAUNCHER_MASTERY) and 2 or {sleep = 1, poison = 1}
+		end
+	},
 	range = 5,
 	no_energy = true,
 	cooldown = 10,
+	stamina = 5,
 	requires_target = true,
 	no_break_stealth = true,
-	getDamage = function(self, t) 
-		if self.artifice_dart_launcher == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getDLDamage")
-		elseif self.artifice_dart_launcher == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getDLDamage") 
-		elseif self.artifice_dart_launcher == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getDLDamage") 
-		else return 0
-		end
-	end,
-	getSleepPower = function(self, t)
-		if self.artifice_dart_launcher == 1 then return self:callTalent(self.T_ROGUE_S_TOOLS, "getDLSleepPower")
-		elseif self.artifice_dart_launcher == 2 then return self:callTalent(self.T_CUNNING_TOOLS, "getDLSleepPower") 
-		elseif self.artifice_dart_launcher == 3 then return self:callTalent(self.T_INTRICATE_TOOLS, "getDLSleepPower") 
-		else return 0
-		end
-	end,
-    getSlow = function(self, t) return self:callTalent(self.T_MASTER_ARTIFICER, "getDLSlow") end,
+	getDamage = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 12, 150) end,
+	getSleepPower = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 15, 180) end,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t)}
 	end,
-		action = function(self, t)
+	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
@@ -595,29 +609,37 @@ newTalent{
 		
 		local slow = 0
 		
-		if self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then slow = t.getSlow(self,t) end
+		if self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then slow = self:callTalent(self.T_DART_LAUNCHER_MASTERY, "getSlow") end
 
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return nil end
 			self:project(tg, x, y, DamageType.PHYSICAL, t.getDamage(self,t))
-			if (target:canBe("sleep") and target:canBe("poison")) or self:knowTalent(self.T_DART_LAUNCHER_MASTERY) then
+			if target:checkClassification("living") and (self:knowTalent(self.T_DART_LAUNCHER_MASTERY) or target:canBe("sleep") and target:canBe("poison")) then
 				target:setEffect(target.EFF_SEDATED, 4, {src=self, power=t.getSleepPower(self,t), slow=slow, insomnia=20, no_ct_effect=true, apply_power=self:combatAttack()})
 				game.level.map:particleEmitter(target.x, target.y, 1, "generic_charge", {rm=180, rM=200, gm=100, gM=120, bm=30, bM=50, am=70, aM=180})
 			else
-				game.logSeen(self, "%s resists the sleep!", target.name:capitalize())
+				game.logSeen(self, "%s resists the sedation!", target.name:capitalize())
 			end
 
 		end)
 
 		return true
 	end,
+	short_info = function(self, t, slot_talent)
+		return ([[Fire a poisoned dart dealing %0.2f physical damage that puts the target to sleep for 4 turns. 10 turn cooldown.]]):format(t.getDamage(self, slot_talent))
+	end,
 	info = function(self, t)
 		local dam = t.getDamage(self,t)
 		local power = t.getSleepPower(self,t)
-		return ([[Uses a wrist mounted launcher to fire a poisoned dart dealing %0.2f physical damage and putting the target to sleep for 4 turns, rendering them unable to act. Every %d points of damage the target take reduces the duration of the sleeping poison by 1 turn.
-This can be used without breaking stealth.]]):
-	format(damDesc(self, DamageType.PHYSICAL, dam), power)
+		local slot = "not prepared"
+		for slot_id, tool_id in pairs(self.artifice_tools) do
+			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
+		end
+		return ([[Fire a poisoned dart from a silent, concealed launcher on your person that deals %0.2f physical damage and puts the target (living only) to sleep for 4 turns, rendering them unable to act. Every %d points of damage the target takes brings it closer to waking by 1 turn.
+This can be used without breaking stealth.
+#YELLOW#Prepared with: %s#LAST#]]):
+	format(damDesc(self, DamageType.PHYSICAL, dam), power, slot)
 	end,
 }
 
@@ -626,9 +648,154 @@ newTalent{
 	type = {"cunning/tools", 1},
 	mode = "passive",
 	points = 1,
-    getSlow = function(self, t) return self:callTalent(self.T_MASTER_ARTIFICER, "getDLSlow") end,
+	getSlow = function(self, t) return self:combatTalentLimit(self:getTalentFromId(self.T_MASTER_ARTIFICER), 50, 15, 40)/100 end,
+	short_info = function(self, t)
+		return ([[Your darts ignore poison and sleep immunity and waking targets are slowed by %d%% for 4 turns.]]):format(t.getSlow(self, t)*100)
+	end,
 	info = function(self, t)
 		return ([[The sleeping poison of your Dart Launcher becomes potent enough to ignore immunity, and upon waking the target is slowed by %d%% for 4 turns.]]):
 		format(t.getSlow(self, t)*100)
 	end,
 }
+
+newTalent{
+	name = "Grappling Hook",
+	type = {"cunning/tools", 1},
+	points = 1,
+	tactical = { DISABLE = {pin = 1}, CLOSEIN = 3 },
+	range = function(self, t) return self:combatTalentScale(t, 4, 7) end,
+	message = false,
+	cooldown = 8,
+	stamina = 14,
+	requires_target = true,
+	target = function(self, t) return {type="bolt", range=t.range(self,t), talent=t} end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
+		local dist = core.fov.distance(self.x, self.y, x, y)
+		if dist > tg.range then return end
+		if dist <= 1 then
+			game.logPlayer(self, "You are too close to your target to swing your hook effectively!")
+			return
+		end
+		local ok = true
+		self:project(tg, x, y, function(px, py)
+			print(("Grappling hook projection at (%s, %s) vs target (%s, %s)"):format(px, py, x, y))
+			local target = game.level.map(px, py, engine.Map.ACTOR)
+
+			if target then -- hook actor
+				local tx, ty
+				local size = target.size_category - self.size_category
+				if size >= 1 or not target:canBe("knockback") then
+					if self:attr("never_move") then game.logPlayer(self, "You cannot move!") ok = false return end
+					local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+					local linestep = self:lineFOV(x, y, block_actor)
+					local lx, ly, is_corner_blocked
+					repeat  -- make sure each tile is passable
+						tx, ty = lx, ly
+						lx, ly, is_corner_blocked = linestep:step()
+					until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
+					if not tx or not ty or core.fov.distance(x, y, tx, ty) > 1 then ok = false return end
+				end
+
+				local dam, dam2 = 0, 0
+				local hit = false
+				self:logCombat(target, "#Source# throws a grappling hook at #target#!")
+				if self:knowTalent(self.T_GRAPPLING_HOOK_MASTERY) then -- unarmed attack
+					dam = self:callTalent(self.T_GRAPPLING_HOOK_MASTERY, "getDamage")
+					dam2 = self:callTalent(self.T_GRAPPLING_HOOK_MASTERY, "getSecondaryDamage")
+					hit = self:attackTarget(target, nil, dam, true, true)
+				else 
+					hit = self:attackTargetWith(target, {}, nil, 0)
+				end
+				if hit then
+					self:logCombat(target, "#Source#'s grappling hook latches onto #target#!")
+				else
+					return
+				end
+				if size >= 1 or not target:canBe("knockback") then
+					self:logCombat(target, "#Source# is dragged towards #target#!")
+					local ox, oy = self.x, self.y
+					self:move(tx, ty, true)
+					if config.settings.tome.smooth_move > 0 then
+						self:resetMoveAnim()
+						self:setMoveAnim(ox, oy, 8, 5)
+					end
+				else
+					self:logCombat(target, "#Target# is dragged towards #source#!")
+					target:pull(self.x, self.y, tg.range)
+				end
+				if target:canBe("pin") then
+					target:setEffect(target.EFF_PINNED, 2, {apply_power=self:combatAttack()})
+				else
+					game.logSeen(target, "%s resists the pin!", target.name:capitalize())
+				end
+				if dam > 0 then
+					if target:canBe("cut") then target:setEffect(target.EFF_CUT, 4, {power=dam2/4, src=self, no_ct_effect=true}) end
+					if target:canBe("poison") then target:setEffect(target.EFF_POISONED, 4, {power=dam2/4, src=self, no_ct_effect=true}) end
+				end
+			else -- anchor to terrain
+				if game.level.map:checkAllEntities(x, y, "block_move", target) then
+					if self:attr("never_move") then game.logPlayer(self, "You cannot move!") ok = false return end
+					local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move") end
+					local linestep = self:lineFOV(x, y, block_actor)
+			
+					local tx, ty, lx, ly, is_corner_blocked
+					repeat  -- make sure each tile is passable
+						tx, ty = lx, ly
+						lx, ly, is_corner_blocked = linestep:step()
+					until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move")
+					if not tx or core.fov.distance(self.x, self.y, tx, ty) <= 1 then
+						game.logPlayer(self, "You need more room to swing your hook effectively.")
+						ok = false return
+					end
+			
+					game.logSeen(self, "%s uses a grappling hook to pull %s %s!", self.name:capitalize(), self:his_her_self(), game.level.map:compassDirection(tx - self.x, ty - self.y))
+					local ox, oy = self.x, self.y
+					self:move(tx, ty, true)
+					if config.settings.tome.smooth_move > 0 then
+						self:resetMoveAnim()
+						self:setMoveAnim(ox, oy, 8, 5)
+					end
+				else
+					ok = false
+					game.logPlayer(self, "You must anchor the hook to something solid.")
+				end
+			end
+		end)
+
+		return ok
+	end,
+	short_info = function(self, t, slot_talent)
+		return ([[Throw a grappling hook up to range %d that drags you towards the target or the target towards you. 8 turn cooldown.]]):format(t.range(self, slot_talent))
+	end,
+	info = function(self, t)
+		local range = t.range(self,t)
+		local slot = "not prepared"
+		for slot_id, tool_id in pairs(self.artifice_tools) do
+			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
+		end
+		return ([[Toss out a grappling hook to a target within range %d.  If this strikes either a wall or a creature that is immovable or larger than you, you will pull yourself towards it, otherwise, you will drag the target towards you.  Creatures struck by the hook will be pinned for 2 turns.
+		Your grapple target must be at least 2 tiles from you.
+#YELLOW#Prepared with: %s#LAST#]]):
+	format(range, slot)
+	end,
+}
+
+newTalent{
+	name = "Grappling Hook Mastery",
+	type = {"cunning/tools", 1},
+	mode = "passive",
+	points = 1,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(self:getTalentLevel(self.T_MASTER_ARTIFICER), 1.0, 1.9) end,
+	getSecondaryDamage = function (self, t) return 30 + self:combatTalentStatDamage(self:getTalentFromId(self.T_MASTER_ARTIFICER), "cun", 15, 200) end,
+	short_info = function(self, t)
+		return ([[Your grappling hook deals %d%% unarmed damage when it hits, plus a further %0.2f physical and %0.2f nature damage over 4 turns.]]):format(t.getDamage(self, t)*100, damDesc(self, DamageType.PHYSICAL, t.getSecondaryDamage(self,t)), damDesc(self, DamageType.NATURE, t.getSecondaryDamage(self,t)))
+	end,
+	info = function(self, t)
+		return ([[Your grappling hook is tipped with vicious, venomous barbs. Creatures struck by it will be hit for %d%% unarmed damage, bleed for %0.2f physical damage and be poisoned for %0.2f nature damage over 4 turns.]]):
+		format(t.getDamage(self, t)*100, damDesc(self, DamageType.PHYSICAL, t.getSecondaryDamage(self,t)), damDesc(self, DamageType.NATURE, t.getSecondaryDamage(self,t)))
+	end,
+}
+-- idea: Flash powder tool: Set off a bright flash with smoke and "phase-door" to a nearby spot.  Mastery: triggers stealth and makes NPC's in LOS lose track.

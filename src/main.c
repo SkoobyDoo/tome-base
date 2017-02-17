@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1168,6 +1168,9 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_zlib(L);
 		luaopen_bit(L);
 		luaopen_wait(L);
+
+		physfs_reset_dir_allowed(L);
+
 #ifdef STEAM_TE4
 		if (!no_steam) te4_steam_lua_init(L);
 #endif

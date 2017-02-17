@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -184,7 +184,7 @@ newTalent{
 	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { BUFF = 2 },
-	getPhysicalDamageIncrease = function(self, t) return self:getTalentLevelRaw(t) * 2 end,
+	getPhysicalDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
 	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 17, 50, true) end,  -- Limit to < 100%
 	getSaves = function(self, t) return self:getTalentLevel(t) * 5 end,
 	activate = function(self, t)
@@ -215,7 +215,7 @@ newTalent{
 		local damageinc = t.getPhysicalDamageIncrease(self, t)
 		local ressistpen = t.getResistPenalty(self, t)
 		local saves = t.getSaves(self, t)
-		return ([[Concentrate on maintaining a Crystalline Focus, increasing all your physical damage by %d%% and ignoring %d%% physical resistance of your targets.
+		return ([[Concentrate on maintaining a Crystalline Focus, increasing all your physical damage by %0.1f%% and ignoring %d%% physical resistance of your targets.
 		Also raises your physical and magical saves by %d.]])
 		:format(damageinc, ressistpen, saves)
 	end,

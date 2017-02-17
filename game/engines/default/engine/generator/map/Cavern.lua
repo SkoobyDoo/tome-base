@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	self.data = data
 	self.grid_list = zone.grid_list
-	self.zoom = data.zoom or 12
+	self.zoom = data.zoom or 12 -- periodicity rate for "open" spaces when generating the cavern, lower values make open spaces wider
 	self.hurst = data.hurst or 0.2
 	self.lacunarity = data.lacunarity or 4
 	self.octave = data.octave or 1

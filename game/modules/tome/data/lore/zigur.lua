@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -99,8 +99,7 @@ Actually...  You fight in a more subtle way than most, do you not?  It is a poin
 	on_learn = function(who)
 		local p = game.party:findMember{main=true}
 		if p:knowTalentType("cunning/trapping") then
-			game.state.purging_trap = true
-			game.log("#LIGHT_GREEN#You have learnt to create purging traps!")
+			game.state:unlockTalent(p.T_PURGING_TRAP, p)
 		end
 	end,
 }

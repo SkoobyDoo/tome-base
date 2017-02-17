@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,6 +29,23 @@ newTalent{
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	getArmor = function(self, t) return self:combatTalentSpellDamage(t, 10, 23) end,
+	getCDChance = function(self, t) return self:combatTalentLimit(t, 100, 30, 90) end,
+	callbackOnMeleeHit = function(self, t, src, dam)
+		if not rng.percent(t.getCDChance(self, t)) then return end
+		if self.turn_procs.stone_skin_cd or dam <= 0 then return end
+		self.turn_procs.stone_skin_cd = true
+		local tids = {}
+		for tid, lev in pairs(self.talents) do
+			local st = self:getTalentFromId(tid)
+			if st.type[1] and (st.type[1] == "spell/earth" or st.type[1] == "spell/stone") and self:isTalentCoolingDown(tid) then
+				tids[#tids+1] = tid
+			end
+		end
+		if #tids > 0 then
+			local tid = rng.table(tids)
+			self:alterTalentCoolingdown(tid, -2)
+		end
+	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 		local ret = {
@@ -48,8 +65,9 @@ newTalent{
 	info = function(self, t)
 		local armor = t.getArmor(self, t)
 		return ([[The caster's skin grows as hard as stone, granting a %d bonus to Armour.
+		Each time you are hit in melee, you have a %d%% chance to reduce the cooldown of an Earth or Stone spell by 2 (this effect can only happen once per turn).
 		The bonus to Armour will increase with your Spellpower.]]):
-		format(armor)
+		format(armor, t.getCDChance(self, t))
 	end,
 }
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 local archerPreUse = Talents.archerPreUse
 
 newTalent{
-	name = "Shoot Down",
+	name = "Shoot Down", short_name = "SHOOT_DOWN_OLD",
 	type = {"technique/archery-excellence", 1},
 	no_energy = true,
 	points = 5,
@@ -70,7 +70,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Bull Shot",
+	name = "Bull Shot", short_name = "BULL_SHOT_OLD",
 	type = {"technique/archery-excellence", 2},
 	no_energy = "fake",
 	points = 5,
@@ -134,7 +134,7 @@ newTalent{
 }
 
 newTalent{
-	name = "Intuitive Shots",
+	name = "Intuitive Shots", short_name = "INTUITIVE_SHOTS_OLD",
 	type = {"technique/archery-excellence", 3},
 	mode = "sustained",
 	points = 5,

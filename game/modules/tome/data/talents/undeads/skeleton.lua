@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ newTalent{
 	mode = "passive",
 	require = undeads_req1,
 	points = 5,
-	statBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 10, 0.75)) end,
+	statBonus = function(self, t) return math.ceil(self:combatTalentScale(t, 2, 15, 0.75)) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "inc_stats", {[self.STAT_STR]=t.statBonus(self, t)})
 		self:talentTemporaryValue(p, "inc_stats", {[self.STAT_DEX]=t.statBonus(self, t)})
@@ -39,7 +39,7 @@ newTalent{
 	type = {"undead/skeleton", 2},
 	require = undeads_req2,
 	points = 5,
-	cooldown = 30,
+	cooldown = function(self, t) return self:combatTalentLimit(t, 10, 30, 16) end,
 	tactical = { DEFEND = 2 },
 	getShield = function(self, t)
 		return 3.5*self:getDex()+self:combatTalentScale(t, 120, 400) + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life
@@ -76,22 +76,13 @@ newTalent{ short_name = "SKELETON_REASSEMBLE",
 	type = {"undead/skeleton",4},
 	require = undeads_req4,
 	points = 5,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 41, 25)) end, -- Limit cooldown >10
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 30, 16)) end, -- Limit cooldown >10
 	getHeal = function(self, t)
 		return self:combatTalentScale(t, 100, 500) + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life
 	end,
 	tactical = { HEAL = 2 },
 	is_heal = true,
-	on_learn = function(self, t)
-		if self:getTalentLevelRaw(t) == 5 then
-			self:attr("self_resurrect", 1)
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:getTalentLevelRaw(t) == 4 then
-			self:attr("self_resurrect", -1)
-		end
-	end,
+	no_unlearn_last = true,
 	action = function(self, t)
 		self:attr("allow_on_heal", 1)
 		self:heal(t.getHeal(self, t), t)

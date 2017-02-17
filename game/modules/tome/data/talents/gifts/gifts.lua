@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,6 +42,9 @@ newTalentType{ allow_random=true, is_mind=true, is_nature=true, type="wild-gift/
 newTalentType{ allow_random=true, is_mind=true, is_nature=true, type="wild-gift/oozing-blades", name = "oozing blades", description = "You channel ooze through your psiblades." }
 newTalentType{ allow_random=true, is_mind=true, is_nature=true, type="wild-gift/corrosive-blades", name = "corrosive blades", description = "You channel acid through your psiblades." }
 newTalentType{ allow_random=true, is_mind=true, is_nature=true, is_antimagic=true, type="wild-gift/eyals-fury", name = "eyal's fury", description = "Unleash nature's fury against foes around you." }
+newTalentType{ allow_random=true, is_nature=true, type="wild-gift/earthen-power", name = "earthen power", description = "Dwarves have learned to imbue their shields with the power of stone itself." }
+newTalentType{ allow_random=true, is_nature=true, type="wild-gift/earthen-vines", name = "earthen vines", description = "Control the stone itself and bring it alive in the form of dreadful vines." }
+newTalentType{ allow_random=true, is_nature=true, type="wild-gift/dwarven-nature", name = "dwarven nature", description = "Learn to harness the innate power of your race." }
 
 -- Generic requires for gifts based on talent level
 gifts_req1 = {
@@ -92,11 +95,11 @@ function checkMaxSummon(self, silent, div, check_attr)
 	-- Count party members
 	if game.party:hasMember(self) then
 		for act, def in pairs(game.party.members) do
-			if act.summoner and act.summoner == self and act.wild_gift_summon and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
+			if act.summoner and act.summoner == self and act.wild_gift_summon and not act.wild_gift_summon_ignore_cap and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
 		end
 	elseif game.level then
 		for _, act in pairs(game.level.entities) do
-			if act.summoner and act.summoner == self and act.wild_gift_summon and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
+			if act.summoner and act.summoner == self and act.wild_gift_summon and not act.wild_gift_summon_ignore_cap and (not check_attr or act:attr(check_attr)) then nb = nb + 1 end
 		end
 	end
 
@@ -223,3 +226,7 @@ load("/data/talents/gifts/summon-advanced.lua")
 
 load("/data/talents/gifts/mindstar-mastery.lua")
 load("/data/talents/gifts/eyals-fury.lua")
+
+load("/data/talents/gifts/earthen-power.lua")
+load("/data/talents/gifts/earthen-vines.lua")
+load("/data/talents/gifts/dwarven-nature.lua")

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,9 +50,16 @@ function _M:init(keyhandler)
 end
 
 --- Log a message
-function _M:log() end
---- Log something that was seen
-function _M:logSeen() end
+-- Redefine as needed
+function _M.log(style, ...) end
+
+--- Log something associated with an entity that is seen by the player
+-- Redefine as needed
+function _M.logSeen(e, style, ...) end
+
+--- Log something associated with an entity if it is the player
+-- Redefine as needed
+function _M.logPlayer(e, style, ...) end
 
 --- Default mouse cursor
 function _M:defaultMouseCursor()
@@ -270,9 +277,11 @@ end
 
 --- This is the "main game loop", do something here
 function _M:tick()
-	-- Check out any possible errors
+	-- If any errors have occurred, save them and open the error dialog
 	local errs = core.game.checkError()
 	if errs then
+		if not self.errors or self.errors.turn ~= self.turn then self.errors = {turn=self.turn, first_error = errs} end
+		self.errors.last_error = errs table.insert(self.errors, (#self.errors%10) + 1, errs)
 		if config.settings.cheat then for id = #self.dialogs, 1, -1 do self:unregisterDialog(self.dialogs[id]) end end
 		self:registerDialog(require("engine.dialogs.ShowErrorStack").new(errs))
 	end
@@ -328,6 +337,7 @@ function _M:onTickEnd(f, name)
 	end
 
 	self.on_tick_end[#self.on_tick_end+1] = f
+	core.game.requestNextTick()
 end
 
 --- Returns a registered function to do on tick end by name
@@ -363,6 +373,7 @@ end
 --- Registers a dialog to display
 -- @param[type=Dialog] d
 function _M:registerDialog(d)
+	if d.__refuse_dialog then return end
 	table.insert(self.dialogs, d)
 	self.dialogs[d] = #self.dialogs
 	d.__stack_id = #self.dialogs

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -48,7 +48,8 @@ function _M:archery_range(t, type)
 			return 1
 		end
 	end
-	return math.max(weapon and weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 0, pf_weapon and pf_weapon.combat and pf_weapon.combat.range or 0, self:attr("archery_range_override") or 0)
+	local br = (self.archery_bonus_range or 0)
+	return math.max(weapon and br + weapon.combat.range or 6, offweapon and offweapon.combat and br + offweapon.combat.range or 0, pf_weapon and pf_weapon.combat and br + pf_weapon.combat.range or 0, self:attr("archery_range_override") or 0)
 end
 
 --- Look for possible archery targets
@@ -81,7 +82,7 @@ function _M:archeryAcquireTargets(tg, params)
 		game.logPlayer(self, "You do not have enough ammo left!")
 		return nil
 	end
-
+	local br = (self.archery_bonus_range or 0)
 	print("[ARCHERY ACQUIRE TARGETS WITH]", weapon and weapon.name, ammo.name, offweapon and offweapon.name, pf_weapon and pf_weapon.name)
 	tg = tg or {}
 	local max_range, warn_range = self:attr("archery_range_override") or 1, 40
@@ -90,7 +91,7 @@ function _M:archeryAcquireTargets(tg, params)
 	local use_resources
 	if weapon then
 		weaponC = weapon.combat
-		max_range = math.max(max_range, weaponC.range or 6)
+		max_range =  math.max(max_range, weaponC.range or 6)
 		warn_range = math.min(warn_range, weaponC.range or 6)
 		-- check resources
 		use_resources = (weaponC.use_resources or ammo.combat.use_resources) and table.mergeAdd(table.clone(weaponC.use_resources) or {}, ammo.combat.use_resources or {}) or nil
@@ -105,7 +106,7 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 	if offweapon then
 		offweaponC = offweapon.combat
-		max_range = math.max(max_range, offweaponC.range or 6)
+		max_range =  math.max(max_range, offweaponC.range or 6)
 		warn_range = math.min(warn_range, offweaponC.range or 6)
 		use_resources = (offweaponC.use_resources or ammo.combat.use_resources) and table.mergeAdd(table.clone(offweaponC.use_resources) or {}, ammo.combat.use_resources or {}) or nil
 		if use_resources then
@@ -119,7 +120,7 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 	if pf_weapon then
 		pf_weaponC = pf_weapon.combat
-		max_range = math.max(max_range, pf_weaponC.range or 6)
+		max_range =  math.max(max_range, pf_weaponC.range or 6)
 		warn_range = math.min(warn_range, pf_weaponC.range or 6)
 		use_resources = (pf_weaponC.use_resources or ammo.combat.use_resources) and table.mergeAdd(table.clone(pf_weaponC.use_resources) or {}, ammo.combat.use_resources or {}) or nil
 		if use_resources then
@@ -136,9 +137,9 @@ function _M:archeryAcquireTargets(tg, params)
 	-- at least one shot is possible, set up targeting
 	tg.type = tg.type or weaponC and weaponC.tg_type or offweaponC and offweaponC.tg_type or pf_weaponC and pf_weaponC.tg_type or ammo.combat.tg_type or "bolt"
 	if tg.range then
-		tg.warn_range, tg.max_range = math.min(tg.range, warn_range), math.min(tg.range, max_range)
+		tg.warn_range, tg.max_range = br + math.min(tg.range, warn_range), br + math.min(tg.range, max_range)
 	else
-		tg.warn_range, tg.max_range = warn_range, max_range
+		tg.warn_range, tg.max_range = br + warn_range, br + max_range
 	end
 	-- Pass friendly actors
 	if self:attr("archery_pass_friendly") then
@@ -191,7 +192,7 @@ function _M:archeryAcquireTargets(tg, params)
 	local runfire runfire = function(weapon, targets, realweapon)
 		--	Note: if shooters with built-in infinite ammo are reintroduced, handle it here by specifying ammo to use
 		-- calculate the range for the current weapon
-		local weapon_range = math.min(tg.range or 40, math.max(weapon.range or 6, self:attr("archery_range_override") or 1))
+		local weapon_range = math.min(tg.range or 40, math.max(br + weapon.range or 6, self:attr("archery_range_override") or 1))
 		-- don't fire at targets out of range unless in forced target mode
 		if not params.ignore_weapon_range and not core.key.modState("ctrl") and weapon_range < core.fov.distance(x, y, self.x, self.y) then
 			print("[archeryAcquireTargets runfire] NOT FIRING", realweapon.name, x, y, "range limit:", weapon_range)
@@ -312,10 +313,21 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
 	local hitted = false
 	local crit = false
+	local deflect = 0
 	if self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or rng.chance(3)) then
 		print("[ATTACK ARCHERY] raw dam", dam, "versus", armor, "with APR", apr)
 
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
+		-- check if target deflects the blow (deflected blows cannot crit)
+		local eff = target.knowTalent and target:hasEffect(target.EFF_PARRY)
+		if eff and eff.parry_ranged then
+			deflect = target:callEffect(target.EFF_PARRY, "doDeflect", self) or 0
+			if deflect > 0 then
+				game:delayedLogDamage(self, target, 0, ("%s(%d parried#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
+				dam = math.max(dam - deflect , 0)
+				print("[ATTACK] after PARRY", dam)
+			end
+		end
 		armor = math.max(0, armor - apr)
 		dam = math.max(dam * pres - armor, 0) + (dam * (1 - pres))
 		print("[ATTACK ARCHERY] after armor", dam)
@@ -353,7 +365,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
-		dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0)
+		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0) end
 		print("[ATTACK ARCHERY] after crit", dam)
 
 		dam = dam * mult * (weapon.dam_mult or 1)
@@ -363,6 +375,14 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			local bonus = 1 + self:getAccuracyEffect(ammo, atk, def, 0.001, 0.1)
 			print("[ATTACK] mace accuracy bonus", atk, def, "=", bonus)
 			dam = dam * bonus
+		end
+		
+		if self and dam > 0 and self.knowTalent and self:isTalentActive(self.T_AIM) and self.__CLASSNAME ~= "mod.class.Grid" then
+			local dist = math.min(math.max(0, core.fov.distance(self.x, self.y, target.x, target.y) - 3),8)
+			if dist > 0 then 
+				local dammult = self:callTalent(self.T_AIM, "getDamage") * dist 
+				dam = dam * (1 + (dammult/100))
+			end
 		end
 
 		-- hook to resolve after a hit is determined, before damage has been projected
@@ -374,38 +394,44 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 		if crit then self:logCombat(target, "#{bold}##Source# performs a ranged critical strike against #Target#!#{normal}#") end
 
-		-- Damage conversion?
-		-- Reduces base damage but converts it into another damage type
-		local conv_dam
-		local conv_damtype
-		if ammo and ammo.convert_damage then
-			for typ, conv in pairs(ammo.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
-				end
-			end
-		end
-
-		if weapon and weapon.convert_damage then
-			for typ, conv in pairs(weapon.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
-				end
-			end
-		end
-
 		if tg.archery.crushing_blow then self:attr("crushing_blow", 1) end
-		DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam), tmp)
+
+		-- Damage conversion?
+		-- Convert base damage to other damage types according to weapon and ammo
+		local ammo_conversion, weapon_conversion = 0, 0
+		if dam > 0 then
+			local conv_dam
+			local archery_state = {is_archery=true}
+			if tmp then table.merge(archery_state, tmp) end
+			if ammo and ammo.convert_damage then -- convert to ammo damage types first
+				for typ, conv in pairs(ammo.convert_damage) do
+					conv_dam = math.min(dam, dam * (conv / 100))
+					print("[ATTACK ARCHERY]\tAmmo DamageType conversion%", conv, typ, conv_dam)
+					ammo_conversion = ammo_conversion + conv_dam
+					if conv_dam > 0 then
+						DamageType:get(typ).projector(self, target.x, target.y, typ, conv_dam, archery_state)
+					end
+				end
+				dam = dam - ammo_conversion
+				print("[ATTACK ARCHERY]\t after Ammo DamageType conversion dam:", dam)
+			end
+			if weapon and weapon.convert_damage and dam > 0 then -- convert remaining damage to weapon damage types
+				for typ, conv in pairs(weapon.convert_damage) do
+					conv_dam = math.min(dam, dam * (conv / 100))
+					print("[ATTACK ARCHERY]\tWeapon DamageType conversion%", conv, typ, conv_dam)
+					weapon_conversion = weapon_conversion + conv_dam
+					if conv_dam > 0 then
+						DamageType:get(typ).projector(self, target.x, target.y, typ, conv_dam, archery_state)
+					end
+				end
+				dam = dam - weapon_conversion
+				print("[ATTACK ARCHERY]\t after Weapon DamageType conversion dam:", dam)
+			end
+
+			if dam > 0 then
+				DamageType:get(damtype).projector(self, target.x, target.y, damtype, dam, archery_state)
+			end
+		end
 		if tg.archery.crushing_blow then self:attr("crushing_blow", -1) end
 
 		if not tg.no_archery_particle then game.level.map:particleEmitter(target.x, target.y, 1, "archery") end
@@ -413,7 +439,9 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 
 		if talent.archery_onhit then talent.archery_onhit(self, talent, target, target.x, target.y) end
 
-		target:fireTalentCheck("callbackOnArcheryHit", self)
+		-- add damage conversion back in so the total damage still gets passed
+		dam = dam + ammo_conversion + weapon_conversion
+		target:fireTalentCheck("callbackOnArcheryHit", self, dam)
 	else
 		self:logCombat(target, "#Source# misses #target#.")
 
@@ -651,7 +679,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 	tg.talent = tg.talent or talent
 	
 	-- Pass friendly actors
-	if self:attr("archery_pass_friendly") then
+	if self:attr("archery_pass_friendly") or self:knowTalent(self.T_SHOOT_DOWN) then
 		tg.friendlyfire=false	
 		tg.friendlyblock=false
 	end
@@ -668,7 +696,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 			tg.archery.weapon = weapon
 			tg.archery.ammo = targets[i].ammo or ammo.combat
 			-- calculate range, speed, type by shooter/ammo combination
-			tg.range = math.min(tg.range or 40, math.max(weapon.range or 6, self:attr("archery_range_override") or 1))
+			tg.range = math.min(tg.range or 40, math.max((self.archery_bonus_range or 0) + weapon.range or 6, self:attr("archery_range_override") or 1))
 			tg.speed = (tg.speed or 10) + (ammo.travel_speed or 0) + (weapon.travel_speed or 0) + (self.combat and self.combat.travel_speed or 0)
 			tg.type = tg.type or weapon.tg_type or tg.archery.ammo.tg_type or "bolt"
 			tg.display = tg.display or targets[i].display or self:archeryDefaultProjectileVisual(realweapon, ammo)

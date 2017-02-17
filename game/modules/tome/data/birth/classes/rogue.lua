@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
+local Particles = require "engine.Particles"
 
 newBirthDescriptor{
 	type = "class",
@@ -58,15 +59,14 @@ newBirthDescriptor{
 		["technique/duelist"]={true, 0.3},
 		["technique/combat-techniques-active"]={false, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={false, 0},
-		["technique/acrobatics"]={true, 0.3},
+		["technique/mobility"]={true, 0.3},
 		["technique/throwing-knives"]={true, 0.3},
 		["technique/assassination"]={false, 0.3},
 		["cunning/stealth"]={true, 0.3},
 		["cunning/trapping"]={true, 0.3},
 		["cunning/lethality"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
-		["cunning/scoundrel"]={true, 0.3},
+		["cunning/scoundrel"]={false, 0.3},
 		["cunning/dirty"]={false, 0.3},
 		["cunning/artifice"]={false, 0.3},
 	},
@@ -76,7 +76,7 @@ newBirthDescriptor{
 	talents = {
 		[ActorTalents.T_SHOOT] = 1,
 		[ActorTalents.T_STEALTH] = 1,
-		[ActorTalents.T_PARRY] = 1,
+		[ActorTalents.T_DUAL_WEAPON_MASTERY] = 1,
 		[ActorTalents.T_LETHALITY] = 1,
 		[ActorTalents.T_DUAL_STRIKE] = 1,
 		[ActorTalents.T_KNIFE_MASTERY] = 1,
@@ -110,6 +110,13 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +3 Magic, +0 Willpower, +3 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +0",
 	},
+	birth_example_particles = {
+		function(actor) if core.shader.active(4) then
+			local slow = rng.percent(50)
+			local h1x, h1y = actor:attachementSpot("hand1", true) if h1x then actor:addParticles(Particles.new("shader_shield", 1, {img="shadowhands_01", dir=180, a=0.7, size_factor=0.4, x=h1x, y=h1y-0.1}, {type="flamehands", time_factor=slow and 700 or 1000})) end
+			local h2x, h2y = actor:attachementSpot("hand2", true) if h2x then actor:addParticles(Particles.new("shader_shield", 1, {img="shadowhands_01", dir=180, a=0.7, size_factor=0.4, x=h2x, y=h2y-0.1}, {type="flamehands", time_factor=not slow and 700 or 1000})) end
+		end end,
+	},
 	power_source = {technique=true, arcane=true},
 	stats = { dex=3, mag=3, cun=3, },
 	talents_types = {
@@ -122,7 +129,7 @@ newBirthDescriptor{
 		["technique/combat-techniques-active"]={true, 0.3},
 		["technique/combat-techniques-passive"]={false, 0.3},
 		["technique/combat-training"]={true, 0.2},
-		["cunning/stealth"]={false, 0.3},
+		["cunning/stealth"]={true, 0.3},
 		["cunning/survival"]={true, 0.1},
 		["cunning/lethality"]={true, 0.3},
 		["cunning/dirty"]={true, 0.3},
@@ -168,7 +175,6 @@ newBirthDescriptor{
 		["technique/combat-techniques-active"]={true, 0.3},
 		["technique/combat-techniques-passive"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={true, 0.3},
 		["technique/battle-tactics"]={false, 0.2},
 		["technique/mobility"]={true, 0.3},
 		["technique/thuggery"]={true, 0.3},
@@ -185,7 +191,7 @@ newBirthDescriptor{
 	talents = {
 		[ActorTalents.T_DIRTY_FIGHTING] = 1,
 		[ActorTalents.T_SKULLCRACKER] = 1,
-		[ActorTalents.T_HACK_N_BACK] = 1,
+		[ActorTalents.T_VITALITY] = 1,
 		[ActorTalents.T_DUAL_STRIKE] = 1,
 		[ActorTalents.T_ARMOUR_TRAINING] = 1,
 	},
@@ -223,18 +229,18 @@ newBirthDescriptor{
 		["cunning/called-shots"]={true, 0.3},
 		["technique/tireless-combatant"]={true, 0.3},
 		["cunning/trapping"]={false, 0.1},
-
+		
 		-- generic
-		["technique/acrobatics"]={true, 0.3},
+		["technique/mobility"]={true, 0.3},
 		["cunning/survival"]={true, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={false, 0.1},
+		["cunning/scoundrel"]={false, 0.1},
 	},
 	unlockable_talents_types = {
 		["cunning/poisons"]={false, 0.2, "rogue_poisons"},
 	},
 	talents = {
-		[ActorTalents.T_SKIRMISHER_VAULT] = 1,
+		[ActorTalents.T_DISENGAGE] = 1,
 		[ActorTalents.T_SHOOT] = 1,
 		[ActorTalents.T_SKIRMISHER_KNEECAPPER] = 1,
 		[ActorTalents.T_SKIRMISHER_SLING_SUPREMACY] = 1,

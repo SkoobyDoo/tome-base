@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,13 +27,12 @@ local function cancelPoisons(self)
 	local todel = {}
 	for tid, p in pairs(self.sustain_talents) do
 		local t = self:getTalentFromId(tid)
-		if t.type[1] == "cunning/poisons-effects" then
+		if t.vile_poison or t.type[1] == "cunning/poisons-effects" then
 			todel[#todel+1] = tid
 		end
 	end
 	while #todel > 1 do self:forceUseTalent(rng.tableRemove(todel), {ignore_energy=true}) end
 end
-
 
 newTalent{
 	name = "Apply Poison",
@@ -49,41 +48,45 @@ newTalent{
 	getChance = function(self,t) return self:combatTalentLimit(t, 100, 25, 45) end,
 	getDamage = function(self, t) return 8 + self:combatTalentStatDamage(t, "cun", 10, 60) * 0.6 end,
 	ApplyPoisons = function(self, t, target, weapon) -- apply poison(s) to a target
-		local insidious = 0
-		if self:isTalentActive(self.T_INSIDIOUS_POISON) then insidious = self:callTalent(self.T_INSIDIOUS_POISON, "getEffect") end
-		local numbing = 0
-		if self:isTalentActive(self.T_NUMBING_POISON) then numbing = self:callTalent(self.T_NUMBING_POISON, "getEffect") end
-		local crippling = 0
-		if self:isTalentActive(self.T_CRIPPLING_POISON) then crippling = self:callTalent(self.T_CRIPPLING_POISON, "getEffect") end
-		local leeching = 0
-		if self:isTalentActive(self.T_LEECHING_POISON) then leeching = self:callTalent(self.T_LEECHING_POISON, "getEffect") end
-		local volatile = 0
-		if self:isTalentActive(self.T_VOLATILE_POISON) then volatile = self:callTalent(self.T_VOLATILE_POISON, "getEffect")/100 end
-		local dam = t.getDamage(self,t) * (1 + volatile)
-		target:setEffect(target.EFF_DEADLY_POISON, t.getDuration(self, t), {src=self, power=dam, max_power=dam*4, insidious=insidious, crippling=crippling, numbing=numbing, leeching=leeching, volatile=volatile, apply_power=self:combatAttack(), no_ct_effect=true})
-		if self:knowTalent(self.T_VULNERABILITY_POISON) then 
+		if self:knowTalent(self.T_VULNERABILITY_POISON) then -- apply vulnerability first
 			target:setEffect(target.EFF_VULNERABILITY_POISON, t.getDuration(self, t), {src=self, power=self:callTalent(self.T_VULNERABILITY_POISON, "getDamage") , apply_power=self:combatAttack(), no_ct_effect=true})
 		end
-		for tid, val in pairs(self.vile_poisons) do -- apply any special procs
-			local tal = self:getTalentFromId(tid)
-			if tal and tal.proc then
-				tal.proc(self, tal, target, weapon)
+		if target:canBe("poison") then
+			local insidious = 0
+			if self:isTalentActive(self.T_INSIDIOUS_POISON) then insidious = self:callTalent(self.T_INSIDIOUS_POISON, "getEffect") end
+			local numbing = 0
+			if self:isTalentActive(self.T_NUMBING_POISON) then numbing = self:callTalent(self.T_NUMBING_POISON, "getEffect") end
+			local crippling = 0
+			if self:isTalentActive(self.T_CRIPPLING_POISON) then crippling = self:callTalent(self.T_CRIPPLING_POISON, "getEffect") end
+			local leeching = 0
+			if self:isTalentActive(self.T_LEECHING_POISON) then leeching = self:callTalent(self.T_LEECHING_POISON, "getEffect") end
+			local volatile = 0
+			if self:isTalentActive(self.T_VOLATILE_POISON) then volatile = self:callTalent(self.T_VOLATILE_POISON, "getEffect")/100 end
+			local dam = t.getDamage(self,t) * (1 + volatile)
+			target:setEffect(target.EFF_DEADLY_POISON, t.getDuration(self, t), {src=self, power=dam, max_power=dam*4, insidious=insidious, crippling=crippling, numbing=numbing, leeching=leeching, volatile=volatile, apply_power=self:combatAttack(), no_ct_effect=true})
+			if self.vile_poisons then
+				for tid, val in pairs(self.vile_poisons) do -- apply any special procs
+					local tal = self:getTalentFromId(tid)
+					if tal and tal.proc then
+						tal.proc(self, tal, target, weapon)
+					end
+				end
 			end
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if self.vile_poisons and target and hitted and target:canBe("poison") and rng.percent(t.getChance(self,t)) then
+		if target and hitted and rng.percent(t.getChance(self,t)) then
 			t.ApplyPoisons(self, t, target, weapon)
 		end
 	end,
 	callbackOnArcheryAttack = function(self, t, target, hitted, crit, weapon, ammo, damtype, mult, dam)
-		if self.vile_poisons and target and hitted and target:canBe("poison") and rng.percent(t.getChance(self,t)) then
+		if target and hitted and rng.percent(t.getChance(self,t)) then
 			t.ApplyPoisons(self, t, target, weapon)
 		end
 	end,
 	activate = function(self, t)
-		local ret = {
-		}
+		local ret = {}
+		self:talentParticles(ret, {type="apply_poison", args={}})
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -102,27 +105,37 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = cuns_req2,
-	getRadius = function(self, t) return self:combatTalentScale(t, 1, 3, "log") end,
+	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1, 2.7)) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 25) end,
 	on_kill = function(self, t, target)
 		local poisons = {}
+		local to_spread  = 0
 		for k, v in pairs(target.tmp) do
 			local e = target.tempeffect_def[k]
-			if e.subtype.poison and v.src and v.src == self then
-				poisons[k] = target:copyEffect(k)
+			if e.subtype.poison and v.src == self and rng.percent(t.getChance(self, t)) then
+				print("[Toxic Death] spreading poison", k, target.x, target.y)
+				poisons[k] = target:copyEffect(k) poisons[k]._from_toxic_death = true
+				to_spread = to_spread + 1
 			end
 		end
-
-		local tg = {type="ball", range = 10, radius=t.getRadius(self, t), selffire = false, friendlyfire = false, talent=t}
-		self:project(tg, target.x, target.y, function(tx, ty)
-			local target2 = game.level.map(tx, ty, Map.ACTOR)
-			if not target2 or target2 == self then return end
-			for eff, p in pairs(poisons) do
-				target2:setEffect(eff, p.dur, table.clone(p))
-			end
-		end)
+		if to_spread > 0 then
+			local tg = {type="ball", range = 10, radius=t.getRadius(self, t), selffire = false, friendlyfire = false, talent=t, stop_block=true}
+			target.dead = false -- for combat log purposes
+			game.logSeen(target, "#GREEN#Poison bursts out of %s's corpse!", target.name:capitalize())
+			game.level.map:particleEmitter(target.x, target.y, tg.radius, "slime")
+			self:project(tg, target.x, target.y, function(tx, ty)
+				local target2 = game.level.map(tx, ty, Map.ACTOR)
+				if not target2 or target2 == target then return end
+				for eff, p in pairs(poisons) do
+					game:playSoundNear(target, "creatures/jelly/jelly_hit")
+					if p.unresistable or target2:canBe("poison") then target2:setEffect(eff, p.dur, table.clone(p)) end
+				end
+			end)
+			target.dead = true
+		end
 	end,
 	info = function(self, t)
-		return ([[When you kill a creature, all the poisons affecting it will have a %d%% chance to spread to foes in a radius of %d.]]):format(20 + self:getTalentLevelRaw(t) * 8, t.getRadius(self, t))
+		return ([[When you kill a creature, all of your poisons affecting it will have a %d%% chance to spread to foes in a radius of %d.]]):format(t.getChance(self, t), t.getRadius(self, t))
 	end,
 }
 
@@ -185,16 +198,8 @@ newTalent{
 	stamina = 14,
 	require = cuns_req4,
 	requires_target = true,
-	on_learn = function(self, t)
-		if self:knowTalent(self.T_THROWING_KNIVES) and not self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:learnTalent(self.T_VENOMOUS_THROW, true, nil, {no_unlearn=true})
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:unlearnTalent(self.T_VENOMOUS_THROW)
-		end
-	end,
+	on_learn = venomous_throw_check,
+	on_unlearn = venomous_throw_check,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.1) end,
 	getSecondaryDamage = function (self, t) return self:combatTalentStatDamage(t, "cun", 50, 550) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4, "log")) end,
@@ -297,7 +302,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 13, 25) end, -- Limit effect to <100%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, -- Limit effect to <35%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -351,7 +356,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 50, 13, 25) end, --	Limit effect to < 50%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, --	Limit chance to < 35%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -378,7 +383,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 15, 2, 8) end, 
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 10, 40) end, -- limit < 50%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -390,7 +395,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-	return ([[Enhances your Deadly Poison with a leeching agent, causing all damage you deal to targets affected by your deadly poison to heal you for %d%%.]]):
+	return ([[Enhances your Deadly Poison with a leeching agent, causing it to heal you for %d%% of the damage it does to its target.]]):
 	format(t.getEffect(self, t))
 	end,
 }
@@ -422,22 +427,26 @@ newTalent{
 	end,
 }
 
+-- learned only with the Mystical Cunning prodigy
 newTalent{
 	name = "Vulnerability Poison",
 	type = {"cunning/poisons-effects", 1},
 	points = 1,
 	mode = "passive",
 	no_unlearn_last = true,
-	getDamage = function(self, t) return 10 + self:getCun() end,
+	getDamage = function(self, t) return self:combatStatScale("mag", 20, 50, 0.75) end,
 	info = function(self, t)
-	return ([[Whenever you apply Deadly Poison you also apply a magical poison dealing %0.2f arcane damage each turn. Those affected by the poison take 10%% increased damage and have their poison resistance reduced by 50%%.]]):
+	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity by 50%%.]]):
 	format(damDesc(self, DamageType.ARCANE, t.getDamage(self,t)))
 	end,
 }
 
+-- learned from the lost merchant
 newTalent{
 	name = "Stoning Poison",
-	type = {"cunning/poisons-effects", 1},
+	type = {"cunning/poisons", 4},
+	require = {stat = {cun=40}, level=25},
+	hide = true,
 	points = 1,
 	mode = "sustained",
 	cooldown = 10,
@@ -445,12 +454,21 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getDuration = function(self, t) return math.ceil(self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 0, 11, 7)) end, -- Make sure it takes at least 1 turn
+	vile_poison = true,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 6, 8)) end,
 	getDOT = function(self, t) return 8 + self:combatTalentStatDamage(self.T_VILE_POISONS, "cun", 10, 30) * 0.4 end,
-	getEffect = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 3, 5)) end,
+	stoneTime = function(self, t) return math.ceil(self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 1, 10, 5.6)) end, -- Time to stone target, always > 1 turn
+	getEffect = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 3, 4)) end,
+	on_learn = function(self, t)
+		table.set(self, "__show_special_talents", t.id, true)
+	end,
+	on_unlearn = function(self, t)
+		table.set(self, "__show_special_talents", t.id, false)
+	end,
 	proc = function(self, t, target, weapon) -- apply when applying other poisons with the Apply Poison talent
-		if target:hasEffect(target.EFF_STONED) or target:hasEffect(target.EFF_STONE_POISON) then return end
-		target:setEffect(target.EFF_STONE_POISON, t.getDuration(self, t), {src=self, power=t.getDOT(self, t), stone=t.getEffect(self, t)})
+		local dam = t.getDOT(self, t)
+		if target:hasEffect(target.EFF_STONED) then return end
+		target:setEffect(target.EFF_STONE_POISON, t.getDuration(self, t), {src=self, power=dam, max_power=dam*4, stone=t.getEffect(self, t), time_to_stone = t.stoneTime(self, t)})
 	end,
 	activate = function(self, t)
 		cancelPoisons(self)
@@ -463,9 +481,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Enhance your Deadly Poison with a stoning agent.  Whenever you apply Deadly Poison you afflict your target with an additional special poison that inflicts %d nature damage per turn for %d turns.
-		If this poison runs its full course, the victim will be turned to stone for %d turns.
+		local dam = damDesc(self, DamageType.NATURE, t.getDOT(self, t))
+		return ([[Enhance your Deadly Poison with a stoning agent.  Whenever you apply Deadly Poison, you afflict your target with an additional earth-based poison that inflicts %d nature damage per turn (stacking up to %d damage per turn) for %d turns.
+		After either %d turns or the poison has run its course (<100%% chance, see effect description), the target will be turned to stone for %d turns.
 		The damage scales with your Cunning.]]):
-		format(damDesc(self, DamageType.NATURE, t.getDOT(self, t)), t.getDuration(self, t), t.getEffect(self, t))
+		format(dam, dam*4, t.getDuration(self, t), t.stoneTime(self, t), t.getEffect(self, t))
 	end,
 }

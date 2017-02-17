@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ newEntity{ define_as="SUBJECT_Z",
 		[Talents.T_DUAL_WEAPON_DEFENSE]={base=3, every=8, max=6},
 		[Talents.T_DUAL_WEAPON_TRAINING]={base=3, every=8, max=6},
 		[Talents.T_FLURRY]={base=2, every=8, max=6},
-		[Talents.T_DIRTY_FIGHTING]={base=2, every=8, max=6},
+		[Talents.T_EXPOSE_WEAKNESS]={base=2, every=8, max=6},
 		[Talents.T_LETHALITY]={base=3, every=8, max=6},
 		[Talents.T_WEAPON_COMBAT]={base=1, every=10, max=4},
 		[Talents.T_KNIFE_MASTERY]={base=1, every=10, max=4},

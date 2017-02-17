@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -69,8 +69,7 @@ No, NO! I have - I --- acci--- pain, such pa--______
 	on_learn = function(who)
 		local p = game.party:findMember{main=true}
 		if p:knowTalentType("cunning/trapping") then
-			game.state.poison_gas_trap = true
-			game.log("#LIGHT_GREEN#You have learnt to create poison gas traps!")
+			game.state:unlockTalent(p.T_POISON_GAS_TRAP, p)
 		end
 	end,
 }

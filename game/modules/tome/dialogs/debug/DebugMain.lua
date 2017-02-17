@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -87,8 +87,13 @@ function _M:use(item)
 				local a = game.zone:finishEntity(game.level, "object", e)
 				a.no_unique_lore = true -- to not spam
 				a:identify(true)
-				if a.name == a.unided_name then print("=================", a.name) end
 				game.zone:addEntity(game.level, a, "object", game.player.x, game.player.y)
+				if a.slot then
+					local invendef = game.player:getInvenDef(a.slot)
+					if invendef and invendef.infos and invendef.infos.shimmerable then
+						world:unlockShimmer(a)
+					end
+				end
 			end
 		end
 	elseif act == "magic_map" then
@@ -98,7 +103,7 @@ function _M:use(item)
 			for j = 0, game.level.map.h - 1 do
 				local trap = game.level.map(i, j, game.level.map.TRAP)
 				if trap then
-					trap:setKnown(game.player, true)
+					trap:setKnown(game.player, true) trap:identify(true)
 					game.level.map:updateMap(i, j)
 				end
 			end
@@ -117,7 +122,7 @@ function _M:use(item)
 				print("======",e.name,e.rarity)
 				if e.rarity then
 					local trap = game.zone:finishEntity(game.level, "trap", e)
-					trap:setKnown(game.player, true)
+					trap:setKnown(game.player, true) trap:identify(true)
 					local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[engine.Map.TRAP]=true})
 					if x then
 						game.zone:addEntity(game.level, trap, "trap", x, y)

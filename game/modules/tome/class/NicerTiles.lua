@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -716,7 +716,7 @@ function _M:niceTileOuterSpace(level, i, j, g, nt)
 end
 
 local defs = {
-grass = { method="borders", type="grass", forbid={lava=true, rock=true},
+grass = { method="borders", type="grass", forbid={lava=true, rock=true, dark_grass=true},
 	default8={add_mos={{image="terrain/grass/grass_2_%02d.png", display_y=-1}}, min=1, max=2},
 	default2={add_mos={{image="terrain/grass/grass_8_%02d.png", display_y=1}}, min=1, max=2},
 	default4={add_mos={{image="terrain/grass/grass_6_%02d.png", display_x=-1}}, min=1, max=2},
@@ -855,6 +855,54 @@ jungle_grass = { method="borders", type="jungle_grass", forbid={lava=true, rock=
 	default3i={add_mos={{image="terrain/jungle/jungle_grass_inner_3_%02d.png", display_x=1, display_y=1}}, min=1, max=3},
 	default7i={add_mos={{image="terrain/jungle/jungle_grass_inner_7_%02d.png", display_x=-1, display_y=-1}}, min=1, max=3},
 	default9i={add_mos={{image="terrain/jungle/jungle_grass_inner_9_%02d.png", display_x=1, display_y=-1}}, min=1, max=3},
+},
+gloomy_creep = { method="borders", type="gloomy_creep", forbid={lava=true, rock=true, grass=true},
+	default8={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_2_%02d.png", display_y=-1}}, min=1, max=2},
+	default2={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_8_%02d.png", display_y=1}}, min=1, max=2},
+	default4={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_6_%02d.png", display_x=-1}}, min=1, max=2},
+	default6={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_4_%02d.png", display_x=1}}, min=1, max=2},
+
+	-- default1={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_9_%02d.png", display_x=-1, display_y=1}}, min=1, max=1},
+	-- default3={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_7_%02d.png", display_x=1, display_y=1}}, min=1, max=1},
+	-- default7={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_3_%02d.png", display_x=-1, display_y=-1}}, min=1, max=1},
+	-- default9={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_1_%02d.png", display_x=1, display_y=-1}}, min=1, max=1},
+
+	default1i={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_inner_1_%02d.png", display_x=-1, display_y=1}}, min=1, max=2},
+	default3i={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_inner_3_%02d.png", display_x=1, display_y=1}}, min=1, max=2},
+	default7i={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_inner_7_%02d.png", display_x=-1, display_y=-1}}, min=1, max=2},
+	default9i={add_mos={{image="terrain/mushrooms/creep_gloomy_mushrooms_inner_9_%02d.png", display_x=1, display_y=-1}}, min=1, max=2},
+},
+dreamy_creep = { method="borders", type="dreamy_creep", forbid={lava=true, rock=true, grass=true},
+	default8={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_2_%02d.png", display_y=-1}}, min=1, max=2},
+	default2={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_8_%02d.png", display_y=1}}, min=1, max=2},
+	default4={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_6_%02d.png", display_x=-1}}, min=1, max=2},
+	default6={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_4_%02d.png", display_x=1}}, min=1, max=2},
+
+	-- default1={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_9_%02d.png", display_x=-1, display_y=1}}, min=1, max=1},
+	-- default3={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_7_%02d.png", display_x=1, display_y=1}}, min=1, max=1},
+	-- default7={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_3_%02d.png", display_x=-1, display_y=-1}}, min=1, max=1},
+	-- default9={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_1_%02d.png", display_x=1, display_y=-1}}, min=1, max=1},
+
+	default1i={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_inner_1_%02d.png", display_x=-1, display_y=1}}, min=1, max=2},
+	default3i={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_inner_3_%02d.png", display_x=1, display_y=1}}, min=1, max=2},
+	default7i={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_inner_7_%02d.png", display_x=-1, display_y=-1}}, min=1, max=2},
+	default9i={add_mos={{image="terrain/mushrooms/creep_dreamy_mushrooms_inner_9_%02d.png", display_x=1, display_y=-1}}, min=1, max=2},
+},
+slimy_creep = { method="borders", type="slimy_creep", forbid={lava=true, rock=true, grass=true},
+	default8={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_2_%02d.png", display_y=-1}}, min=1, max=1},
+	default2={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_8_%02d.png", display_y=1}}, min=1, max=1},
+	default4={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_6_%02d.png", display_x=-1}}, min=1, max=1},
+	default6={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_4_%02d.png", display_x=1}}, min=1, max=1},
+
+	-- default1={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_9_%02d.png", display_x=-1, display_y=1}}, min=1, max=1},
+	-- default3={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_7_%02d.png", display_x=1, display_y=1}}, min=1, max=1},
+	-- default7={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_3_%02d.png", display_x=-1, display_y=-1}}, min=1, max=1},
+	-- default9={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_1_%02d.png", display_x=1, display_y=-1}}, min=1, max=1},
+
+	default1i={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_inner_1_%02d.png", display_x=-1, display_y=1}}, min=1, max=1},
+	default3i={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_inner_3_%02d.png", display_x=1, display_y=1}}, min=1, max=1},
+	default7i={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_inner_7_%02d.png", display_x=-1, display_y=-1}}, min=1, max=1},
+	default9i={add_mos={{image="terrain/mushrooms/creep_slimy_mushrooms_inner_9_%02d.png", display_x=1, display_y=-1}}, min=1, max=1},
 },
 sand = { method="borders", type="sand", forbid={grass=true, jungle_grass=true, lava=true,},
 	default8={add_mos={{image="terrain/sand/sand_2_%02d.png", display_y=-1}}, min=1, max=5},

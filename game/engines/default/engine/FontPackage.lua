@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -66,6 +66,7 @@ function _M:resolveFont(name, orname)
 	if not font[name] then name = orname end
 	if not font[name] then name = "default" end
 	if not font[name][size] then size = "normal" end
+	print(font[name], size)
 	return font[name], size
 end
 
@@ -76,7 +77,7 @@ end
 -- @return size
 function _M:getFont(name, orname)
 	local font, size = self:resolveFont(name, orname)
-	return font.font, font[size]
+	return font.font, math.ceil(font[size] * config.settings.font_scale / 100)
 end
 
 --- Get by name. 
@@ -84,7 +85,7 @@ end
 -- @param[type=?boolean] force make a font bold no matter what
 function _M:get(name, force)
 	local font, size = self:resolveFont(name)
-	local f = core.display.newFont(font.font, font[size], font.bold or force)
+	local f = core.display.newFont(font.font, math.ceil(font[size] * config.settings.font_scale / 100), font.bold or force)
 	if font.bold then f:setStyle("bold") end
 	return f
 end

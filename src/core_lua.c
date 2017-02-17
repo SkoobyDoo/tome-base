@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -597,6 +597,28 @@ static int lua_force_next_tick(lua_State *L)
 	return 0;
 }
 
+static int lua_open_browser(lua_State *L)
+{
+#if defined(SELFEXE_LINUX) || defined(SELFEXE_BSD)
+	const char *command = "xdg-open \"%s\"";
+#elif defined(SELFEXE_WINDOWS)
+	const char *command = "rundll32 url.dll,FileProtocolHandler \"%s\"";
+#elif defined(SELFEXE_MACOSX)
+	const char *command = "open  \"%s\"";
+#else
+	{ return 0; }
+#endif
+	char buf[2048];
+	size_t len;
+	char *path = strdup(luaL_checklstring(L, 1, &len));
+	size_t i;
+	for (i = 0; i < len; i++) if (path[i] == '"') path[i] = '_'; // Just dont put " in there
+	snprintf(buf, 2047, command, path);
+	lua_pushboolean(L, system(buf) == 0);
+	
+	return 1;
+}
+
 static const struct luaL_Reg gamelib[] =
 {
 	{"setRebootMessage", lua_set_reboot_message},
@@ -612,6 +634,7 @@ static const struct luaL_Reg gamelib[] =
 	{"requestNextTick", lua_force_next_tick},
 	{"checkError", lua_check_error},
 	{"resetLocale", lua_reset_locale},
+	{"openBrowser", lua_open_browser},
 	{NULL, NULL},
 };
 

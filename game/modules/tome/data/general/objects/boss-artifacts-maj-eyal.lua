@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -875,7 +875,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	require = { stat = { str=25 }, },
 	level_range = {1, 10},
 	material_level = 1,
-	moddable_tile = "special/treetrunk",
+	moddable_tile = "special/%s_treetrunk",
 	moddable_tile_big = true,
 
 	rarity = 200,
@@ -1039,6 +1039,20 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 				fake_ego = true,
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			local images = {
+				battleaxe = "object/artifact/2haxe_crystalline.png",
+				greatmaul = "object/artifact/2hmace_crystalline.png",
+				greatsword = "object/artifact/2hsword_crystalline.png",
+				dagger = "object/artifact/dagger_crystalline.png",
+				longsword = "object/artifact/1hsword_crystalline.png",
+				mace = "object/artifact/1hmace_crystalline.png",
+				waraxe = "object/artifact/1haxe_crystalline.png",
+				shield = "object/artifact/shield_crystalline.png",
+				staff = "object/artifact/staff_crystalline.png",
+				trident = "object/artifact/trident_crystalline.png",
+				hands = "object/artifact/gauntlets_crystalline.png",
+			}
+			if images[o.subtype] then o.image = images[o.subtype] o:removeAllMOs() end
 			o:resolve()
 
 			who:sortInven()
@@ -1110,6 +1124,13 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 				end),
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
+			local images = {
+				cloth = "object/artifact/cloth_armour_crystalline.png",
+				leather = "object/artifact/leather_armour_crystalline.png",
+				heavy = "object/artifact/heavy_armour_crystalline.png",
+				massive = "object/artifact/massive_armour_crystalline.png",
+			}
+			if images[o.subtype] then o.image = images[o.subtype] o:removeAllMOs() end
 			o:resolve()
 
 			who:sortInven()
@@ -1289,6 +1310,7 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 	desc = [[Inch-thick stralite plates lock together with voratun joints. The whole suit looks impenetrable, but has clearly been subjected to terrible treatment - great dents and misshaping warps, and caustic fissures bored across the surface.
 Though clearly a powerful piece, it must once have been much greater.]],
 	color = colors.WHITE, image = "object/artifact/armor_plate_borfasts_cage.png",
+	moddable_tile = "special/armor_plate_borfasts_cage",
 	level_range = {20, 28},
 	rarity = 200,
 	require = { stat = { str=35 }, },
@@ -1319,6 +1341,7 @@ newEntity{ base = "BASE_LEATHER_CAP", -- No armor training requirement
 	power_source = {psionic=true},
 	define_as = "ALETTA_DIADEM",
 	name = "Aletta's Diadem", unique=true, unided_name="jeweled diadem", image = "object/artifact/diadem_alettas_diadem.png",
+	moddable_tile = "special/diadem_alettas_diadem",
 	desc = [[A filigree of silver set with many small jewels, this diadem seems radiant - ethereal almost. But its touch seems to freeze your skin and brings wild thoughts to your mind. You want to drop it, throw it away, and yet you cannot resist thinking of what powers it might bring you.
 Is this temptation a weak will on your part, or some domination from the artifact itself...?]],
 	require = { stat = { wil=24 }, },
@@ -1342,6 +1365,7 @@ newEntity{ base = "BASE_SLING",
 	power_source = {nature=true},
 	define_as = "HARESKIN_SLING",
 	name = "Hare-Skin Sling", unique=true, unided_name = "hare-skin sling", image = "object/artifact/sling_hareskin_sling.png",
+	moddable_tile = "special/%s_hareskin_sling",
 	desc = [[This well-tended sling is made from the leather and sinews of a large hare. It feels smooth to the touch, yet very durable. Some say that the skin of a hare brings luck and fortune.
 Hard to tell if that really helped its former owner, but it's clear that the skin is at least also strong and reliable.]],
 	level_range = {20, 28},

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -39,6 +39,9 @@ desc = function(self, who)
 	end
 	if self:isCompleted("training") then
 		desc[#desc+1] = "#LIGHT_GREEN#* You have unlocked the training room.#WHITE#"
+	end
+	if self:isCompleted("shimmer") then
+		desc[#desc+1] = "#LIGHT_GREEN#* You have unlocked the hall of reflections.#WHITE#"
 	end
 	if self:isCompleted("recall") then
 		if self:isCompleted("recall-done") then
@@ -162,6 +165,16 @@ open_training = function(self)
 	local spot = game.level:pickSpot{type="door", subtype="trainingroom"}
 	game.zone:addEntity(game.level, g, "terrain", spot.x, spot.y)
 	self.shertul_energy = self.shertul_energy - 50
+end
+
+open_shimmer = function(self)
+	game.player:setQuestStatus("shertul-fortress", self.COMPLETED, "shimmer")
+
+	-- Open the door, destroy the stairs
+	local g = game.zone:makeEntityByName(game.level, "terrain", "OLD_FLOOR")
+	local spot = game.level:pickSpot{type="door", subtype="shimmer"}
+	game.zone:addEntity(game.level, g, "terrain", spot.x, spot.y)
+	self.shertul_energy = self.shertul_energy - 10
 end
 
 upgrade_rod = function(self)

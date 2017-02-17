@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ This value can be improved with spells, talents, infusions, equipment.
 TOOLTIP_HEALING_MOD = [[#GOLD#Healing mod#LAST#
 This represents how effective healing is for you.
 All healing values are multiplied by this value (including life regeneration).
+It is increased by Constitution.
 ]]
 
 TOOLTIP_AIR = [[#GOLD#Air#LAST#
@@ -231,7 +232,7 @@ TOOLTIP_DEX = [[#GOLD#Dexterity#LAST#
 Dexterity defines your character's ability to be agile and alert. It increases Accuracy, Defense, chance to shrug off critical hits and your damage with light weapons.
 ]]
 TOOLTIP_CON = [[#GOLD#Constitution#LAST#
-Constitution defines your character's ability to withstand and resist damage. It increases your maximum life and Physical Save.
+Constitution defines your character's ability to withstand and resist damage. It increases your maximum life, Physical Save and Healing mod.
 ]]
 TOOLTIP_MAG = [[#GOLD#Magic#LAST#
 Magic defines your character's ability to manipulate the magical energy of the world. It increases your Spellpower, Spell Save, and the effect of spells and other magic items.
@@ -332,16 +333,27 @@ Increases chance to shrug off magically-induced effects.  Also reduces duration 
 TOOLTIP_MENTAL_SAVE = [[#GOLD#Mental saving throw#LAST#
 Increases chance to shrug off mentally-induced effects.  Also reduces duration of detrimental mental effects by up to 5% per point, depending on the power of the opponent's effect.
 ]]
-
+-------------------------------------------------------------
+-- Physical
+-------------------------------------------------------------
+TOOLTIP_PHYSICAL_POWER = [[#GOLD#Physical Power#LAST#
+Your physical power represents how overwhelming your physcial abilities are. It is usually improved by Strength, but may be modified by your weapon.  It is opposed by your opponent's physical save.
+In addition, when your physical attacks inflict temporary detrimental effects, every point your opponent's save exceeds your physical power will reduce the duration of the effect by 5%.
+]]
+TOOLTIP_PHYSICAL_CRIT = [[#GOLD#Physical critical chance#LAST#
+Each time you deal damage with a physical ability you may have a chance to perform a critical hit that deals extra damage.
+Some talents allow you to increase this percentage, and it may be modified by your weapon.
+It is improved by Cunning.
+]]
 -------------------------------------------------------------
 -- Spells
 -------------------------------------------------------------
 TOOLTIP_SPELL_POWER = [[#GOLD#Spellpower#LAST#
-Your spellpower represents how powerful your magical spells are.
-In addition, when your spells inflict temporary detrimental effects, every point your opponent's relevant saving throw exceeds your spellpower will reduce the duration of the effect by 5%.
+Your spellpower represents how powerful your magical spells are.  It is opposed by your opponent's spell save.
+In addition, when your spells inflict temporary detrimental effects, every point your opponent's save exceeds your spellpower will reduce the duration of the effect by 5%.
 ]]
 TOOLTIP_SPELL_CRIT = [[#GOLD#Spell critical chance#LAST#
-Each time you deal damage with a spell you may have a chance to make a critical hit that deals extra damage.
+Each time you deal damage with a spell you may have a chance to perform a critical hit that deals extra damage.
 Some talents allow you to increase this percentage.
 It is improved by Cunning.
 ]]
@@ -357,11 +369,11 @@ The lower it is, the more often you'll be able to use your spell talents and run
 -- Mental
 -------------------------------------------------------------
 TOOLTIP_MINDPOWER = [[#GOLD#Mindpower#LAST#
-Your mindpower represents how powerful your mental abilities are.
-In addition, when your mental abilities inflict temporary detrimental effects, every point your opponent's relevant saving throw exceeds your mindpower will reduce the duration of the effect by 5%.
+Your mindpower represents how powerful your mental abilities are.  It is opposed by your opponent's mental save.
+In addition, when your mental abilities inflict temporary detrimental effects, every point your opponent's save exceeds your mindpower will reduce the duration of the effect by 5%.
 ]]
 TOOLTIP_MIND_CRIT = [[#GOLD#Mental critical chance#LAST#
-Each time you deal damage with a mental attack you may have a chance to make a critical hit that deals extra damage.
+Each time you deal damage with a mental attack you may have a chance to perform a critical hit that deals extra damage.
 Some talents allow you to increase this percentage.
 It is improved by Cunning.
 ]]
@@ -424,7 +436,7 @@ TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
 This represents your chance to completely avoid this specific effect.
 ]]
 TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
-This represents your chance to completely being stunned, dazed, or frozen.
+This represents your chance to completely avoid being stunned, dazed, or frozen.
 ]]
 TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
 This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
@@ -497,6 +509,10 @@ Invisible creatures are magically removed from the sight of all others. They can
 TOOLTIP_VISION_SEE_INVISIBLE = [[#GOLD#See invisible#LAST#
 Your power to see invisible creatures. The higher it is, the more likely you are to see them (based on their own invisibility score).
 If you do not have any see invisible score you will never be able to see invisible creatures.
+]]
+TOOLTIP_SEE_TRAPS = [[#GOLD#Detect Traps#LAST#
+Your power to find hidden traps. The higher it is, the more likely you are to notice a trap before setting it off  (based on its own detection score).
+If you do not have any detect traps score, you can not detect traps without triggering them.
 ]]
 TOOLTIP_ANTIMAGIC_USER = [[#GOLD#Antimagic User#LAST#
 Dedicated to opposing and destroying magical and arcane influence in the world.

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 Totems
 *healing
 *cure illness
-*cure poisons
 *thorny skin
 ]]
 
@@ -79,7 +78,8 @@ newEntity{
 				end
 			end
 			return nb
-			end},
+			end,
+			},
 	}),
 }
 
@@ -122,7 +122,7 @@ newEntity{
 			who:project(tg, x, y, engine.DamageType.HEAL, dam)
 			game:playSoundNear(who, "talents/heal")
 			return {id=true, used=true}
-			end,
+		end,
 		"T_GLOBAL_CD",
 		{range = function(self, who) return math.floor(who:combatStatScale("wil", 6, 10)) end,
 		damage = function(self, who) return self:getCharmPower(who) end,

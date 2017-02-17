@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,6 +41,9 @@ _M.projectile_class = "mod.class.Projectile"
 
 _M.logCombat = Combat.logCombat
 
+-- ego fields that are appended as a list when the ego is applied (by Zone:applyEgo)
+_M._special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_kill=true, charm_on_use=true}
+
 function _M:getRequirementDesc(who)
 	local base_getRequirementDesc = engine.Object.getRequirementDesc
 	if self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_SKIRMISHER_BUCKLER_EXPERTISE) then
@@ -52,6 +55,24 @@ function _M:getRequirementDesc(who)
 		if self.require.talent then for i, tr in ipairs(self.require.talent) do
 			if tr[1] == who.T_ARMOUR_TRAINING then
 				self.require.talent[i] = {who.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
+				break
+			end
+		end end
+
+		local desc = base_getRequirementDesc(self, who)
+
+		self.require = oldreq
+
+		return desc
+	elseif self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_AGILE_DEFENSE) then
+		local oldreq = rawget(self, "require")
+		self.require = table.clone(oldreq, true)
+		if self.require.stat and self.require.stat.str then
+			self.require.stat.dex, self.require.stat.str = self.require.stat.str, nil
+		end
+		if self.require.talent then for i, tr in ipairs(self.require.talent) do
+			if tr[1] == who.T_ARMOUR_TRAINING then
+				self.require.talent[i] = {who.T_AGILE_DEFENSE, 1}
 				break
 			end
 		end end
@@ -78,6 +99,17 @@ function _M:getRequirementDesc(who)
 	end
 end
 
+local auto_moddable_tile_slots = {
+	MAINHAND = true,
+	OFFHAND = true,
+	BODY = true,
+	CLOAK = true,
+	HEAD = true,
+	HANDS = true,
+	FEET = true,
+	QUIVER = true,
+}
+
 function _M:init(t, no_default)
 	t.encumber = t.encumber or 0
 
@@ -90,6 +122,61 @@ function _M:init(t, no_default)
 		self.auto_image = nil
 		self.image = "object/"..(self.unique and "artifact/" or "")..self.name:lower():gsub("[^a-z0-9]", "")..".png"
 	end
+	if not self.auto_moddable_tile_check and self.unique and self.slot and auto_moddable_tile_slots[self.slot] and (not self.moddable_tile or type(self.moddable_tile) == "table" or (type(self.moddable_tile) == "string" and not self.moddable_tile:find("^special/"))) then
+		self.auto_moddable_tile_check = true
+		local file, filecheck = nil, nil
+		if self.type == "weapon" or self.subtype == "shield" then
+			file = "special/%s_"..self.name:lower():gsub("[^a-z0-9]", "_")
+			filecheck = file:format("left")
+		elseif self.subtype == "cloak" then
+			file = "special/"..self.name:lower():gsub("[^a-z0-9]", "_").."_%s"
+			filecheck = file:format("behind")
+		else
+			file = "special/"..self.name:lower():gsub("[^a-z0-9]", "_")
+			filecheck = file
+		end
+		if file and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+			self.moddable_tile = file
+			-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+		else
+			-- Try using the artifact image name
+			if type(self.image) == "string" and self.image:find("^object/artifact/") then
+				local base = self.image:gsub("object/artifact/", ""):gsub("%.png$", "")
+				if self.type == "weapon" or self.subtype == "shield" then
+					file = "special/%s_"..base
+					filecheck = file:format("left")
+				elseif self.subtype == "cloak" then
+					file = "special/"..base.."_%s"
+					filecheck = file:format("behind")
+				else
+					file = "special/"..base
+					filecheck = file
+				end
+				if file and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+					self.moddable_tile = file
+					-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+				else
+					print("[UNIQUE MODDABLE] auto moddable failed for ", self.name)
+				end
+			end
+		end
+	end
+
+	-- if self.unique and self.slot and type(self.moddable_tile) == "string" then
+	-- 	local filecheck = nil, nil
+	-- 	if self.type == "weapon" or self.subtype == "shield" then
+	-- 		filecheck = self.moddable_tile:format("left")
+	-- 	elseif self.subtype == "cloak" then
+	-- 		filecheck = self.moddable_tile:format("behind")
+	-- 	else
+	-- 		filecheck = self.moddable_tile
+	-- 	end
+	-- 	if filecheck and fs.exists("/data/gfx/shockbolt/player/human_female/"..filecheck..".png") then
+	-- 		-- print("[UNIQUE MODDABLE] auto moddable set for ", self.name, file)
+	-- 	else
+	-- 		print("[UNIQUE MODDABLE] auto moddable failed for ", self.name, self.moddable_tile, filecheck)
+	-- 	end
+	-- end
 end
 
 function _M:altered(t)
@@ -259,12 +346,12 @@ function _M:use(who, typ, inven, item)
 			end
 			if self.use_sound then game:playSoundNear(who, self.use_sound) end
 			if not ret.nobreakStepUp then who:breakStepUp() end
-			if not ret.nobreakStealth then who:breakStealth() end
 			if not ret.nobreakLightningSpeed then who:breakLightningSpeed() end
 			if not ret.nobreakReloading then who:breakReloading() end
 			if not ret.nobreakSpacetimeTuning then who:breakSpacetimeTuning() end
 			if not (self.use_no_energy or ret.no_energy) then
 				who:useEnergy(game.energy_to_act * (inven.use_speed or 1))
+				if not ret.nobreakStealth then who:breakStealth() end
 			end
 		end
 		return ret
@@ -444,6 +531,10 @@ function _M:getName(t)
 		name = name .. self.add_name:gsub("#([^#]+)#", function(attr)
 			return self:descAttribute(attr)
 		end)
+	end
+
+	if not t.no_add_name and self.tinker then
+		name = name .. ' #{italic}#<' .. self.tinker:getName(t) .. '>#{normal}#'
 	end
 
 	if not t.no_add_name and self.__tagged then
@@ -1055,7 +1146,13 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		compare_fields(combat, compare_with, field, "lifesteal", "%+d%%", "Lifesteal (this weapon only): ", 1, false, false, add_table)
 		
+		local attack_recurse_procs_reduce_compare = function(orig, compare_with)
+			orig = 100 - 100 / orig
+			if compare_with then return ("%+d%%"):format(-(orig - (100 - 100 / compare_with)))
+			else return ("%d%%"):format(-orig) end
+		end
 		compare_fields(combat, compare_with, field, "attack_recurse", "%+d", "Multiple attacks: ", 1, false, false, add_table)
+		compare_fields(combat, compare_with, field, "attack_recurse_procs_reduce", attack_recurse_procs_reduce_compare, "Multiple attacks procs power reduction: ", 1, true, false, add_table)
 
 		if combat.tg_type and combat.tg_type == "beam" then
 			desc:add({"color","YELLOW"}, ("Shots beam through all targets."), {"color","LAST"}, true)
@@ -1965,6 +2062,13 @@ function _M:getDesc(name_param, compare_with, never_compare, use_actor)
 		desc:add(true, true, {"color", "ANTIQUE_WHITE"})
 		desc:merge(self.desc:toTString())
 		desc:add({"color", "WHITE"})
+	end
+
+	if self.shimmer_moddable then
+		local oname = (self.shimmer_moddable.name or "???"):toTString()
+		desc:add(true, {"color", "OLIVE_DRAB"}, "This object's appearance was changed to ")
+		desc:merge(oname)
+		desc:add(".", {"color","LAST"}, true)
 	end
 
 	if could_compare and not never_compare then desc:add(true, {"font","italic"}, {"color","GOLD"}, "Press <control> to compare", {"color","LAST"}, {"font","normal"}) end

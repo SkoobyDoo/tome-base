@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ newTalent{
 			friendlyblock=false,
 		}
 	end,
+	on_pre_use = function(self, t, silent) if not self:hasStaffWeapon() then if not silent then game.logPlayer(self, "You need a staff to use this spell.") end return false end return true end,
 	getDamageMod = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.1) end,
 	action = function(self, t)
 		local weapon = self:hasStaffWeapon()
@@ -147,6 +148,7 @@ newTalent{
 	tactical = { ATTACK = 1, DISABLE = 2, ESCAPE = 1 },
 	range = 1,
 	requires_target = true,
+	on_pre_use = function(self, t, silent) if not self:hasStaffWeapon() then if not silent then game.logPlayer(self, "You need a staff to use this spell.") end return false end return true end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t)}
 	end,

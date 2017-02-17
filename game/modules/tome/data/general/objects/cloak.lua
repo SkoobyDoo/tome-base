@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ newEntity{
 	type = "armor", subtype="cloak",
 	add_name = " (#ARMOR#)",
 	display = "(", color=colors.UMBER, image = resolvers.image_material("cloak", "cloth"),
-	moddable_tile = resolvers.moddable_tile("cloak"),
+	moddable_tile = resolvers.moddable_tile("cloak"), moddable_tile_hood = true,
 	encumber = 2,
 	rarity = 6,
 	desc = [[A cloth coat typically worn as a loose outer garment. It is spacious enough to be worn even over bulky metal armour.]],

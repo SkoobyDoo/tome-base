@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -208,7 +208,7 @@ newEntity{ base = "BASE_NPC_SLAVER",
 	name = "enthralled slave", color=colors.KHAKI,
 	subtype = "human",
 	desc = [[A slave.]],
-	level_range = {10, nil}, exp_worth = 1,
+	level_range = {10, nil}, exp_worth = 0,
 	rarity = 20,
 	max_life = resolvers.rngavg(80,90), life_rating = 13,
 	combat_armor = 0, combat_def = 6,

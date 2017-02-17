@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -348,6 +348,7 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 	level_range = {20, nil}, exp_worth = 2,
 	max_life = 250, life_rating = 15, fixed_rating = true,
 	max_stamina = 200,
+	stamina_regen = 1,
 	rank = 3.5,
 	rarity = 50,
 	size_category = 3,
@@ -373,8 +374,10 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 
 	resolvers.talents{
 		[Talents.T_SHOOT]=1,
-		[Talents.T_INERTIAL_SHOT]=3,
+		[Talents.T_SLING_MASTERY]={base=2, every=10, max=5},
+		[Talents.T_INERTIAL_SHOT]={base=0, every=8, max=5},
 
+		[Talents.T_TRAP_MASTERY]={base=1, every=6, max=5},
 		[Talents.T_STEALTH]={base=5, every=6, max=7},
 		[Talents.T_SHADOWSTRIKE]={base=1, every=6, max=7},
 		[Talents.T_HIDE_IN_PLAIN_SIGHT]={base=1, every=6, max=7},
@@ -400,13 +403,16 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 
 	autolevel = "slinger",
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
-	ai_tactic = resolvers.tactic"survivor",
+	ai_tactic = resolvers.tactic"ranged",
 	resolvers.inscriptions(1, {"invisibility rune",}),
 
-	on_move = function(self, x, y, self, force)
+	on_move = function(self, x, y, self, force) -- leave a trail of traps behind!
 		if not force and rng.percent(10) then
+			print(self.name, "Placing automatic trap", x, y)
+			self._breaking_stealth = true -- prevents automatic trap from breaking stealth
 			local traps = { self.T_BEAR_TRAP, self.T_CATAPULT_TRAP }
-			self:forceUseTalent(rng.table(traps), {ignore_energy=true, ignore_ressources=true, ignore_cd=true, force_target=self})
+			self:forceUseTalent(rng.table(traps), {ignore_energy=true, ignore_ressources=true, ignore_cd=true, silent=true, force_target=self})
+			self._breaking_stealth = nil
 		end
 	end,
 }

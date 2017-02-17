@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -80,8 +80,9 @@ return {
 			nb_rooms = 10,
 			edge_entrances = {4,6},
 			rooms = {"forest_clearing"},
---			required_rooms = {"greater_vault"}, -- triggers level generation failure
-			greater_vaults_list = {"portal-vault"},
+			required_rooms = {"greater_vault", "greater_vault", "greater_vault"}, -- triggers level generation failure
+--			greater_vaults_list = {"portal-vault"},
+			greater_vaults_list = {"test2", "test"},
 			['.'] = {"GRASS"},
 			['#'] = "TREE",
 			up = "GRASS_UP4",
