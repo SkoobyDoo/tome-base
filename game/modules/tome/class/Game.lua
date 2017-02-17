@@ -1114,15 +1114,15 @@ function _M:changeLevelReal(lev, zone, params)
 			if #list > 0 then x, y = unpack(rng.table(list)) end
 		end
 
-		if self.level.exited then -- use the last location, if defined
-			local turn = 0
-			if self.level.exited.down then
-				x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
-			end
-			if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
-				x, y = self.level.exited.up.x, self.level.exited.up.y
-			end
-		end
+		-- if self.level.exited then -- use the last location, if defined
+		-- 	local turn = 0
+		-- 	if self.level.exited.down then
+		-- 		x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
+		-- 	end
+		-- 	if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
+		-- 		x, y = self.level.exited.up.x, self.level.exited.up.y
+		-- 	end
+		-- end
 
 		if not x then -- Default to stairs
 			if lev > old_lev and not params.force_down and self.level.default_up then x, y = self.level.default_up.x, self.level.default_up.y
