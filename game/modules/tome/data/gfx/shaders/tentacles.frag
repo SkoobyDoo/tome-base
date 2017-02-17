@@ -105,7 +105,7 @@ void main(void)
 	resultColor = texture2D(tex, vec2(0.5) + (pos - vec2(0.5)) * rotation);*/
 	//resultColor = texture2D(tex, pos);
 
-	gl_FragColor = resultColor;
+	gl_FragColor = resultColor * gl_Color;
 }
 
 

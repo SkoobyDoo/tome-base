@@ -3091,7 +3091,7 @@ newEffect{
 	on_lose = function(self, err) return "#Target# is free from the deathmark.", "-Marked for Death" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "resists", {all=-eff.power})
-		self:effectParticles(eff, {type="circle", args={toback=true, oversize=2, a=255, shader=true, appear=12, img="marked_death_aura", speed=0, radius=0}})
+		self:effectParticles(eff, {type="circle", args={toback=true, oversize=1.8, base_rot=180, a=255, shader=true, appear=12, img="marked_death_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		if eff.turns >= eff.max_dur then
