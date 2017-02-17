@@ -21,6 +21,7 @@ base_size = 64
 toback = false
 can_shift = true
 
+local run = true
 return { generator = function()
 	local ad = rng.range(0, 360)
 	local a = math.rad(ad)
@@ -47,7 +48,8 @@ return { generator = function()
 	}
 end, },
 function(self)
-	self.ps:emit(1)
+	if run then self.ps:emit(1) end
+	run = not run
 end,
 32,
 "particles_images/apply_poison"..rng.range(1, 4)
