@@ -17,7 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-base_size = 32
+base_size = 64
 toback = false
 can_shift = true
 
@@ -27,13 +27,13 @@ return { generator = function()
 	local dir = math.rad(90)
 	local r = rng.range(18, 22)
 	local dirchance = rng.chance(2)
-	local x = rng.range(-10, 10)
-	local y = -4 + math.abs(math.sin(x / 16) * 8)
+	local x = rng.range(-6, 6) + x * 64
+	local y = rng.range(-6, -2) + y * 64
 
 	return {
 		trail = 2,
 		life = 32,
-		size = rng.range(3, 6), sizev = 0, sizea = -0.008,
+		size = rng.range(6, 12), sizev = 0, sizea = -0.016,
 
 		x = x, xv = 0, xa = 0,
 		y = y, yv = 0.2, ya = 0.04,

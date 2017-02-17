@@ -86,6 +86,8 @@ newTalent{
 	end,
 	activate = function(self, t)
 		local ret = {}
+		local h1x, h1y = self:attachementSpot("hand1", true) if h1x then self:talentParticles(ret, {type="apply_poison", args={x=h1x, y=h1y}}) end
+		local h2x, h2y = self:attachementSpot("hand2", true) if h2x then self:talentParticles(ret, {type="apply_poison", args={x=h2x, y=h2y}}) end
 		self:talentParticles(ret, {type="apply_poison", args={}})
 		return ret
 	end,
