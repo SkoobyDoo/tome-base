@@ -874,7 +874,7 @@ newTalent{
 	getPerc = function(self, t) return self:combatTalentSpellDamage(t, 15, 80) end,
 	info = function(self, t)
 		return ([[You share your powers with your minions, granting them %d%% of your resistances and saves.
-		In addition all damage done by your minions to you is reduced by %d%%.
+		In addition all damage done by your minions to you or your other minions is reduced by %d%%.
 		The effect will increase with your Spellpower.]]):
 		format(t.getPerc(self, t), self:getTalentLevelRaw(t) * 20)
 	end,
