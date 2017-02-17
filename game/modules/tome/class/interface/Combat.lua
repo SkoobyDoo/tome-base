@@ -1331,7 +1331,8 @@ end
 --- Gets the attack
 function _M:combatAttackBase(weapon, ammo)
 	weapon = weapon or self.combat or {}
-	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+	local talent = self:callTalent(self.T_WEAPON_COMBAT, "getAttack")
+	local atk = 4 + self.combat_atk + talent + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
 
 	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
 
@@ -2423,6 +2424,7 @@ function _M:combatShieldBlock()
 	local block = combat1.block or 0
 	if combat2 then block = block + (combat2.block or 0) end
 
+	if self:attr("block_bonus") then block = block + self:attr("block_bonus") end
 	return block
 end
 
