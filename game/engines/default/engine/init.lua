@@ -32,6 +32,7 @@ dofile("/engine/colors.lua")
 dofile("/engine/resolvers.lua")
 
 require "config"
+local I18N = require "engine.I18N"
 require "engine.Game"
 require "engine.version"
 require "engine.interface.GameMusic"
@@ -60,6 +61,7 @@ fs.setWritePath(engine.homepath)
 -- Loads default config & user config
 fs.mount(engine.homepath, "/")
 config.loadString[[
+locale = "en_US"
 audio.music_volume = 40
 audio.effects_volume = 100
 audio.enable = true

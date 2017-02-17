@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 require "engine.class"
+local I18N = require "engine.I18N"
 local Savefile = require "engine.Savefile"
 local UIBase = require "engine.ui.Base"
 local FontPackage = require "engine.FontPackage"
@@ -913,6 +914,12 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	-- Init the module directories
 	fs.mount(engine.homepath, "/")
 	mod.load("setup")
+
+	-- Load localizations
+	if mod.i18n_support then
+		I18N:loadLocale("/data/i18n/"..config.settings.locale..".lua")
+		I18N:setLocale(config.settings.locale or "en_US")
+	end
 
 	-- Load font packages
 	FontPackage:loadDefinition("/data/font/packages/default.lua")
