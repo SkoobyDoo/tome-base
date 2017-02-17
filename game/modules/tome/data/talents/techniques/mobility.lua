@@ -288,7 +288,7 @@ newTalent {
 	points = 5,
 	require = techs_dex_req4,
 	sustain_stamina = 10,
-	cooldown = 10,
+	cooldown = 0,
 	no_energy = true,
 	tactical = { DEFEND = 2 },
 --	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%

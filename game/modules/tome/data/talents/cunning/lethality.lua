@@ -104,7 +104,7 @@ newTalent{
 	no_break_stealth = true,
 	no_energy = true,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.30, 0.75) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
+	getDamage = function(self, t) return 1 end,
 	activate = function(self, t)
 		return {
 			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
@@ -146,8 +146,8 @@ newTalent{
 	type = {"cunning/lethality",4},
 	require = cuns_req4,
 	points = 5,
-	stamina = 50,
-	cooldown = 50,
+	stamina = 25,
+	cooldown = 30,
 	tactical = { BUFF = 1 },
 	fixed_cooldown = true,
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,

@@ -107,14 +107,13 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = cuns_req2,
-	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1, 2.7)) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 25) end,
+	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1, 5)) end,
 	on_kill = function(self, t, target)
 		local poisons = {}
 		local to_spread  = 0
 		for k, v in pairs(target.tmp) do
 			local e = target.tempeffect_def[k]
-			if e.subtype.poison and v.src == self and rng.percent(t.getChance(self, t)) then
+			if e.subtype.poison and v.src == self then
 				print("[Toxic Death] spreading poison", k, target.x, target.y)
 				poisons[k] = target:copyEffect(k) poisons[k]._from_toxic_death = true
 				to_spread = to_spread + 1
@@ -137,7 +136,7 @@ newTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[When you kill a creature, all of your poisons affecting it will have a %d%% chance to spread to foes in a radius of %d.]]):format(t.getChance(self, t), t.getRadius(self, t))
+		return ([[When you kill a creature, all of your poisons affecting it will spread to foes in a radius of %d.]]):format(t.getRadius(self, t))
 	end,
 }
 
