@@ -28,8 +28,6 @@
 #include "Box2D/Box2D.h"
 #endif
 
-// DGDGDGDG: worth considering https://github.com/skitzoid/Box2D-MT ?
-
 /*************************************************************************
  ** DORPhysic
  *************************************************************************/
