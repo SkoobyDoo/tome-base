@@ -234,7 +234,9 @@ newEffect{
 		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
 		old_eff.dur = dur
 		old_eff.power = (olddam + newdam) / dur
-		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
+		-- by default, can stack up to 5x power
+		old_eff.max_power = math.max(old_eff.max_power or old_eff.power, new_eff.max_power or new_eff.power*5)
+		old_eff.power = math.min(old_eff.power, old_eff.max_power)
 		return old_eff
 	end,
 	on_timeout = function(self, eff)
@@ -397,14 +399,16 @@ newEffect{
 		old_eff.time_to_stone = math.ceil(new_eff.time_to_stone*new_fct + old_eff.time_to_stone*(1-new_fct))
 		old_eff.dur = math.max(old_eff.dur, new_eff.dur)
 		old_eff.power = dam/old_eff.dur
-		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
-		old_eff._from_toxic_death = nil
+		-- by default, can stack up to 5x power
+		old_eff.max_power = math.max(old_eff.max_power or old_eff.power, new_eff.max_power or new_eff.power*5)
+		old_eff.power = math.min(old_eff.power, old_eff.max_power)
+--		old_eff._from_toxic_death = nil
 		return old_eff
 	end,
 	activate = function(self, eff)
 		if eff._from_toxic_death then -- reset turn counter if spread from Toxic Death
 			eff.turn_count = 0
-			eff._from_toxic_death = nil
+--			eff._from_toxic_death = nil
 		end
 	end,
 	deactivate = function(self, eff) -- chance to stone when deactivated
@@ -3156,7 +3160,9 @@ newEffect{
 		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
 		old_eff.dur = dur
 		old_eff.power = (olddam + newdam) / dur
-		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
+		-- by default, can stack up to 5x power
+		old_eff.max_power = math.max(old_eff.max_power or old_eff.power, new_eff.max_power or new_eff.power*5)
+		old_eff.power = math.min(old_eff.power, old_eff.max_power)
 		if old_eff.healid then 
 			self:removeTemporaryValue("healing_factor", old_eff.healid)
 			old_eff.healid = null
