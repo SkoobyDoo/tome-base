@@ -107,7 +107,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = cuns_req2,
-	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1, 5)) end,
+	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1.5, 3.5)) end,
 	on_kill = function(self, t, target)
 		local poisons = {}
 		local to_spread  = 0
@@ -119,6 +119,7 @@ newTalent{
 				to_spread = to_spread + 1
 			end
 		end
+		-- Note: New effects functions are called in order: merge, on_gain, activate
 		if to_spread > 0 then
 			local tg = {type="ball", range = 10, radius=t.getRadius(self, t), selffire = false, friendlyfire = false, talent=t, stop_block=true}
 			target.dead = false -- for combat log purposes
