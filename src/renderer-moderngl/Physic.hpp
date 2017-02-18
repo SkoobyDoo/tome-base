@@ -54,6 +54,7 @@ public:
 	void setLinearVelocity(float fx, float fy);
 	void applyTorque(float t);
 	void applyAngularImpulse(float t);
+	void sleep(bool v);
 	vec2 getLinearVelocity();
 
 	virtual void onKeyframe(float nb_keyframes);
@@ -82,6 +83,7 @@ public:
 	void setContactListener(int ref);
 	void use();
 	void pause(bool v) { paused = v; };
+	void sleepAll(bool v);
 
 	void step(float nb_keyframes);
 

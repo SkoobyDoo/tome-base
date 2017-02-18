@@ -1601,6 +1601,12 @@ static int body_get_linear_velocity(lua_State *L)
 	lua_pushnumber(L, v.y);
 	return 2;
 }
+static int body_sleep(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	p->sleep(lua_toboolean(L, 2));
+	return 0;
+}
 
 /******************************************************************
  ** Generic non object functions
@@ -1650,6 +1656,11 @@ static int physic_world_unit_to_pixel(lua_State *L) {
 
 static int physic_world_pause(lua_State *L) {
 	PhysicSimulator::current->pause(lua_toboolean(L, 1));
+	return 0;
+}
+
+static int physic_world_sleep_all(lua_State *L) {
+	PhysicSimulator::current->sleepAll(lua_toboolean(L, 1));
 	return 0;
 }
 
@@ -2040,6 +2051,7 @@ static const struct luaL_Reg physic_body_reg[] =
 	{"applyTorque", body_apply_torque},
 	{"applyAngularImpulse", body_apply_angular_impulse},
 	{"getLinearVelocity", body_get_linear_velocity},
+	{"sleep", body_sleep},
 	{NULL, NULL},
 };
 
@@ -2061,6 +2073,7 @@ const luaL_Reg rendererlib[] = {
 
 const luaL_Reg physicslib[] = {
 	{"pause", physic_world_pause},
+	{"sleepAll", physic_world_sleep_all},
 	{"setContactListener", physic_world_set_contact_listener},
 	{"rayCast", physic_world_raycast},
 	{"circleCast", physic_world_circlecast},

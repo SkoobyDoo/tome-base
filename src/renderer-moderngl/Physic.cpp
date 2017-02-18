@@ -69,16 +69,16 @@ void DORPhysic::setAngle(float a) {
 }
 
 void DORPhysic::applyForce(float fx, float fy, float apply_x, float apply_y) {
-	body->ApplyForce(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), true);
+	body->ApplyForce(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), false);
 }
 void DORPhysic::applyForce(float fx, float fy) {
-	body->ApplyForceToCenter(b2Vec2(fx, -fy), true);
+	body->ApplyForceToCenter(b2Vec2(fx, -fy), false);
 }
 void DORPhysic::applyLinearImpulse(float fx, float fy, float apply_x, float apply_y) {
-	body->ApplyLinearImpulse(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), true);
+	body->ApplyLinearImpulse(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), false);
 }
 void DORPhysic::applyLinearImpulse(float fx, float fy) {
-	body->ApplyLinearImpulseToCenter(b2Vec2(fx, -fy), true);
+	body->ApplyLinearImpulseToCenter(b2Vec2(fx, -fy), false);
 }
 void DORPhysic::setLinearVelocity(float fx, float fy) {
 	body->SetLinearVelocity(b2Vec2(fx, -fy));
@@ -90,6 +90,10 @@ void DORPhysic::applyTorque(float t) {
 
 void DORPhysic::applyAngularImpulse(float t) {
 	body->ApplyAngularImpulse(t, true);
+}
+
+void DORPhysic::sleep(bool v) {
+	body->SetAwake(!v);
 }
 
 vec2 DORPhysic::getLinearVelocity() {
@@ -107,40 +111,6 @@ void DORPhysic::onKeyframe(float nb_keyframes) {
 	me->translate(floor(position.x * unit_scale), -floor(position.y * unit_scale), me->z, true);
 	me->rotate(me->rot_x, me->rot_y, angle, true);
 }
-
-/*************************************************************
- ** Contacts
- *************************************************************/
-struct contact_info {
-	b2Body *a;
-	b2Body *b;
-	float velocity;
-};
-class TE4ContactListener : public b2ContactListener
-{
-public:
-	vector<contact_info> events;
-
-	void BeginContact(b2Contact* contact) {};
-	void EndContact(b2Contact* contact) {};
-	void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) {
-		b2WorldManifold worldManifold;
-		contact->GetWorldManifold(&worldManifold);
-		b2PointState state1[2], state2[2];
-		b2GetPointStates(state1, state2, oldManifold, contact->GetManifold());
-		if (state2[0] == b2_addState)
-		{
-			b2Body* bodyA = contact->GetFixtureA()->GetBody();
-			b2Body* bodyB = contact->GetFixtureB()->GetBody();
-			b2Vec2 point = worldManifold.points[0];
-			b2Vec2 vA = bodyA->GetLinearVelocityFromWorldPoint(point);
-			b2Vec2 vB = bodyB->GetLinearVelocityFromWorldPoint(point);
-			float32 approachVelocity = b2Dot(vB - vA, worldManifold.normal);
-			events.push_back({bodyA, bodyB, approachVelocity});
-		}
-	};
-	void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) {};
-};
 
 /*************************************************************
  ** Raycasting
@@ -330,19 +300,63 @@ void PhysicSimulator::circleCast(float x, float y, float radius, uint16 mask_bit
 	lua_pop(L, 1); // Pop the weak regisry table
 }
 
+/*************************************************************
+ ** Contacts
+ *************************************************************/
+struct contact_info {
+	b2Body *a;
+	b2Body *b;
+	float velocity;
+};
+class TE4ContactListener : public b2ContactListener
+{
+public:
+	vector<vector<contact_info>> events;
+	TE4ContactListener(int nb_threads) {
+		events.resize(nb_threads);
+	};
+
+	void BeginContact(b2Contact* contact) {};
+	void EndContact(b2Contact* contact) {};
+	void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) {
+		b2WorldManifold worldManifold;
+		contact->GetWorldManifold(&worldManifold);
+		b2PointState state1[2], state2[2];
+		b2GetPointStates(state1, state2, oldManifold, contact->GetManifold());
+		if (state2[0] == b2_addState)
+		{
+			b2Body* bodyA = contact->GetFixtureA()->GetBody();
+			b2Body* bodyB = contact->GetFixtureB()->GetBody();
+			b2Vec2 point = worldManifold.points[0];
+			b2Vec2 vA = bodyA->GetLinearVelocityFromWorldPoint(point);
+			b2Vec2 vB = bodyB->GetLinearVelocityFromWorldPoint(point);
+			float32 approachVelocity = b2Dot(vB - vA, worldManifold.normal);
+#ifdef BOX2D_MT
+			events[b2GetThreadId()].push_back({bodyA, bodyB, approachVelocity});
+#else
+			events[0].push_back({bodyA, bodyB, approachVelocity});
+#endif
+		}
+	};
+	void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) {};
+};
+
 /*************************************************************************
  ** PhysicSimulator
  *************************************************************************/
 #ifdef BOX2D_MT
 PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale, -y / unit_scale), &tp) {
 	printf("[PhysicSimulator] Initiated in multi-threaded mode\n");
+	contact_listener = new TE4ContactListener(b2_maxThreads);
+	world.SetContactListener(contact_listener);
+}
 #else
 PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale, -y / unit_scale)) {
 	printf("[PhysicSimulator] Initiated in single-threaded mode\n");
-#endif
-	contact_listener = new TE4ContactListener();
+	contact_listener = new TE4ContactListener(1);
 	world.SetContactListener(contact_listener);
 }
+#endif
 PhysicSimulator::~PhysicSimulator() {
 	if (contact_listener_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, contact_listener_ref);
 	delete contact_listener;
@@ -369,41 +383,50 @@ void PhysicSimulator::setContactListener(int ref) {
 	contact_listener_ref = ref;
 }
 
+void PhysicSimulator::sleepAll(bool v) {
+	for (b2Body* b = world.GetBodyList(); b; b = b->GetNext()) {
+		b->SetAwake(!v);
+	}
+}
+
 void PhysicSimulator::step(float nb_keyframes) {
+	// Grab weak DO registery
+	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+
 	// We do it this way because box2d doc says it realyl doesnt like changing the timestep
 	for (int f = 0; f < nb_keyframes * 60.0 / (float)NORMALIZED_FPS; f++) {
 		world.Step(1.0f / 60.0f, 6, 2);
 		if ((contact_listener_ref != LUA_NOREF) && contact_listener->events.size()) {
-			// Grab weak DO registery
-			lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
 
 			lua_rawgeti(L, LUA_REGISTRYINDEX, contact_listener_ref);
 			lua_newtable(L);
 			int i = 1;
-			for (auto &it : contact_listener->events) {
-				DisplayObject *a = static_cast<DisplayObject*>(it.a->GetUserData());
-				DisplayObject *b = static_cast<DisplayObject*>(it.b->GetUserData());
+			for (auto &events : contact_listener->events) {
+				for (auto &it : events) {
+					DisplayObject *a = static_cast<DisplayObject*>(it.a->GetUserData());
+					DisplayObject *b = static_cast<DisplayObject*>(it.b->GetUserData());
 
-				lua_newtable(L);
-				
-				lua_rawgeti(L, -4, a->getWeakSelfRef()); // The DO
-				lua_rawseti(L, -2, 1);
-				lua_rawgeti(L, -4, b->getWeakSelfRef()); // The DO
-				lua_rawseti(L, -2, 2);
-				lua_pushnumber(L, it.velocity);
-				lua_rawseti(L, -2, 3);
+					lua_newtable(L);
+					
+					lua_rawgeti(L, -4, a->getWeakSelfRef()); // The DO
+					lua_rawseti(L, -2, 1);
+					lua_rawgeti(L, -4, b->getWeakSelfRef()); // The DO
+					lua_rawseti(L, -2, 2);
+					lua_pushnumber(L, it.velocity);
+					lua_rawseti(L, -2, 3);
 
-				lua_rawseti(L, -2, i++); // Store the table in the list
+					lua_rawseti(L, -2, i++); // Store the table in the list
+				}
+				events.clear();
 			}
 
 			if (lua_pcall(L, 1, 0, 0)) {
 				printf("Contact Listener callback error: %s\n", lua_tostring(L, -1));
 			}
-			lua_pop(L, 1); // Pop the weak registry
-
-			contact_listener->events.clear();
 		}
 	}
+
+	lua_pop(L, 1); // Pop the weak registry
 }
 
 PhysicSimulator *PhysicSimulator::current = NULL;
