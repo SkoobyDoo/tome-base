@@ -22,7 +22,11 @@
 #define PHYSICS_H
 
 #include "renderer-moderngl/Renderer.hpp"
+#ifdef BOX2D_MT
+#include "Box2D-MT/Box2D.h"
+#else
 #include "Box2D/Box2D.h"
+#endif
 
 // DGDGDGDG: worth considering https://github.com/skitzoid/Box2D-MT ?
 
@@ -63,6 +67,9 @@ public:
 class TE4ContactListener;
 class PhysicSimulator {
 private:
+#ifdef BOX2D_MT
+	b2ThreadPool tp;
+#endif
 	TE4ContactListener *contact_listener;
 	int contact_listener_ref = LUA_NOREF;
 public:

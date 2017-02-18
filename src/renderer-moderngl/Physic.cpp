@@ -333,7 +333,13 @@ void PhysicSimulator::circleCast(float x, float y, float radius, uint16 mask_bit
 /*************************************************************************
  ** PhysicSimulator
  *************************************************************************/
+#ifdef BOX2D_MT
+PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale, -y / unit_scale), &tp) {
+	printf("[PhysicSimulator] Initiated in multi-threaded mode\n");
+#else
 PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale, -y / unit_scale)) {
+	printf("[PhysicSimulator] Initiated in single-threaded mode\n");
+#endif
 	contact_listener = new TE4ContactListener();
 	world.SetContactListener(contact_listener);
 }
