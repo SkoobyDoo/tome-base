@@ -189,14 +189,17 @@ newTalent{
 	require = techs_req1,
 	mode = "sustained",
 	points = 5,
-	cooldown = 30,
+	cooldown = 10,
 	sustain_stamina = 30,
 	tactical = { DEFEND = 2 },
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
-	getarmor = function(self,t) return self:combatScale((1+self:getDex(4))*self:getTalentLevel(t), 5, 0, 30, 25, 0.375) + self:combatTalentScale(self:getTalentLevel(self.T_SHIELD_EXPERTISE), 1, 5, 0.75) end, -- Scale separately with talent level and talent level of Shield Expertise
 	getDefense = function(self, t)
-		return self:combatScale((1 + self:getDex(4, true)) * self:getTalentLevel(t), 6.4, 1.4, 30, 25) + self:combatTalentScale(self:getTalentLevel(self.T_SHIELD_EXPERTISE), 2, 10, 0.75)
+		return t.getDexArmor(self, t) + t.getExpertiseArmor(self,t)
 	end,
+	getExpertiseArmor = function(self, t) return self:combatTalentScale(self:getTalentLevel(self.T_SHIELD_EXPERTISE), 1, 5, 0.5) end,
+	getDexArmor = function(self, t) return self:combatTalentStatDamage(t, "dex", 6, 20) end,
+	getArmor = function(self,t) return t.getDexArmor(self, t) + t.getExpertiseArmor(self,t) end, -- Scale separately with talent level and talent level of Shield Expertise
+	getBlock = function(self, t) return self:combatTalentStatDamage(t, "str", 40, 150) end,
 	stunKBresist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
 	activate = function(self, t)
 		local shield = self:hasShield()
@@ -207,9 +210,10 @@ newTalent{
 		local ret = {
 			stun = self:addTemporaryValue("stun_immune", t.stunKBresist(self, t)),
 			knock = self:addTemporaryValue("knockback_immune", t.stunKBresist(self, t)),
-			dam = self:addTemporaryValue("inc_damage", {[DamageType.PHYSICAL]=-20}),
 			def = self:addTemporaryValue("combat_def", t.getDefense(self, t)),
-			armor = self:addTemporaryValue("combat_armor", t.getarmor(self,t)),
+			armor = self:addTemporaryValue("combat_armor", t.getArmor(self,t)),
+			block = self:addTemporaryValue("block_bonus", t.getBlock(self,t)),
+
 		}
 		if core.shader.active(4) then
 			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="rotating_shield"}, shader={type="rotatingshield", noup=2.0, appearTime=0.2}})
@@ -220,15 +224,15 @@ newTalent{
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_def", p.def)
 		self:removeTemporaryValue("combat_armor", p.armor)
-		self:removeTemporaryValue("inc_damage", p.dam)
 		self:removeTemporaryValue("stun_immune", p.stun)
 		self:removeTemporaryValue("knockback_immune", p.knock)
+		self:removeTemporaryValue("block_bonus", p.block)
 		return true
 	end,
 	info = function(self, t)
-		return ([[Enter a protective battle stance, increasing Defense by %d and Armour by %d at the cost of -20%% physical damage. The Defense and Armor increase is based on your Dexterity.
+		return ([[Enter a protective battle stance, increasing Defense by %d, Armour by %d, and Block value by %d. The Defense and Armor increase is based on your Dexterity, the Block on your Strength.
 		It also grants %d%% resistance to stunning and knockback.]]):
-		format(t.getDefense(self, t), t.getarmor(self, t), 100*t.stunKBresist(self, t))
+		format(t.getDefense(self, t), t.getArmor(self, t), t.getBlock(self, t), 100*t.stunKBresist(self, t))
 	end,
 }
 
@@ -306,8 +310,8 @@ newTalent{
 	require = techs_req4,
 	mode = "sustained",
 	points = 5,
-	cooldown = 30,
-	sustain_stamina = 50,
+	cooldown = 6,
+	sustain_stamina = 30,
 	tactical = { DEFEND = 3 },
 	no_npc_use = true,
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,

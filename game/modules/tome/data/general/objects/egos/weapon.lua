@@ -75,6 +75,23 @@ newEntity{
 
 newEntity{
 	power_source = {technique=true},
+	name = "truestriking ", prefix=true, instant_resolve=true,
+	keywords = {truestriking=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 15,
+	cost = 40,
+	wielder = {
+		combat_atk = resolvers.mbonus_material(10, 5),
+		combat_apr = resolvers.mbonus_material(10, 5),
+		resists_pen = {
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(10, 5),
+		},
+	},
+}
+
+newEntity{
+	power_source = {technique=true},
 	name = "warbringer's ", prefix=true, instant_resolve=true,
 	keywords = {warbringer=true},
 	level_range = {30, 50},

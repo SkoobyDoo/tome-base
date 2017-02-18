@@ -56,7 +56,7 @@ newTalent{
 		return 0
 	end,
 	-- Called by _M:combatArmor in mod.class.interface.Combat.lua
-	getArmor = function(self, t) return self:combatTalentScale(t, 1, 7) * t.ArmorEffect(self, t) end,
+	getArmor = function(self, t) return self:combatTalentScale(t, 1, 7, 0.75) * t.ArmorEffect(self, t) end,
 	-- Called by _M:combatArmorHardiness in mod.class.interface.Combat.lua
 	getArmorHardiness = function(self, t) -- Matches previous progression for "heavy" armor
 		return math.max(0, self:combatLimit(self:getTalentLevel(t) * 5 * t.ArmorEffect(self, t), 100, 5, 3.75, 50, 37.5))
@@ -155,7 +155,7 @@ newTalent{
 	points = 5,
 	require = { level=function(level) return (level - 1) * 4 end },
 	mode = "passive",
-	getAttack = function(self, t) return self:combatTalentScale(t, 10, 50) end, -- match values at 1 and 5 for old formula
+	getAttack = function(self, t) return self:combatTalentScale(t, 10, 50, 0.75) end, -- match values at 1 and 5 for old formula
 	info = function(self, t)
 		local attack = t.getAttack(self, t)
 		return ([[Increases the accuracy of unarmed, melee and ranged weapons by %d.]]):
