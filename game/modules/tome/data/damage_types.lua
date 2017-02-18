@@ -1790,7 +1790,7 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
-		if _G.type(dam) == "number" then dam = {dam=dam, dur=7, heal_factor=dam} end
+		if _G.type(dam) == "number" then dam = {dam=dam, dur=7, heal_factor=150*dam/(dam+100)} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / dam.dur, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:canBe("poison") then
@@ -2581,7 +2581,7 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			target:setEffect(target.EFF_EMPOWERED_HEALING, 1, {power=(dam/200)})
+			target:setEffect(target.EFF_EMPOWERED_HEALING, 1, {power=(dam/(dam+50))})
 			if dam >= 100 then target:attr("allow_on_heal", 1) end
 			target:heal(dam, src)
 
@@ -3862,7 +3862,6 @@ newDamageType{
 	projector = function(src, x, y, t, dam, poison, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
-		local power
 		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam / 4)
 		local target = game.level.map(x, y, Map.ACTOR)
 		local chance = 0
@@ -3875,14 +3874,15 @@ newDamageType{
 		else chance = 1
 		end
 		if target and (target:canBe("poison") or rng.percent(dam.penetration or 0)) then
+			local apply = dam.apply_power or (src.combatAttack and src:combatAttack()) or 0
 			if chance == 1 then
-				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_BLIGHT_POISON, 4, {src=src, power=dam.dam / 4, apply_power=apply})
 			elseif chance == 2 then
-				target:setEffect(target.EFF_INSIDIOUS_BLIGHT, 4, {src=src, power=dam.dam / 4, heal_factor=dam.power*1.5, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_INSIDIOUS_BLIGHT, 4, {src=src, power=dam.dam / 4, heal_factor=dam.heal_factor or 150*dam.power/(dam.power + 100), apply_power=apply})
 			elseif chance == 3 then
-				target:setEffect(target.EFF_NUMBING_BLIGHT, 4, {src=src, power=dam.dam / 4, reduce=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_NUMBING_BLIGHT, 4, {src=src, power=dam.dam / 4, reduce=dam.power, apply_power=apply})
 			elseif chance == 4 then
-				target:setEffect(target.EFF_CRIPPLING_BLIGHT, 4, {src=src, power=dam.dam / 4, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+				target:setEffect(target.EFF_CRIPPLING_BLIGHT, 4, {src=src, power=dam.dam / 4, fail=dam.fail or 50*dam.power/(dam.power+100), apply_power=apply})
 			end
 		end
 		return realdam
@@ -3936,11 +3936,11 @@ newDamageType{
 			if rng.percent(dam.random_chance or 25) then
 				local chance = rng.range(1, 3)
 				if chance == 1 then
-					target:setEffect(target.EFF_INSIDIOUS_POISON, 5, {src=src, power=dam.dam / 6, heal_factor=dam.power*2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+					target:setEffect(target.EFF_INSIDIOUS_POISON, 5, {src=src, power=dam.dam / 6, heal_factor=150*dam.power/(dam.power+50), apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 				elseif chance == 2 then
-					target:setEffect(target.EFF_NUMBING_POISON, 5, {src=src, power=dam.dam / 6, reduce=dam.power*1.2, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+					target:setEffect(target.EFF_NUMBING_POISON, 5, {src=src, power=dam.dam / 6, reduce=2*dam.power^0.75, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 				elseif chance == 3 then
-					target:setEffect(target.EFF_CRIPPLING_POISON, 5, {src=src, power=dam.dam / 6, fail=dam.power, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
+					target:setEffect(target.EFF_CRIPPLING_POISON, 5, {src=src, power=dam.dam / 6, fail=50*dam.power/(dam.power+50), apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})
 				end
 			else
 				target:setEffect(target.EFF_POISONED, 5, {src=src, power=dam.dam / 6, apply_power=dam.apply_power or (src.combatAttack and src:combatAttack()) or 0})

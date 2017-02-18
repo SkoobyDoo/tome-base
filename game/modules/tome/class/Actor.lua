@@ -2053,38 +2053,28 @@ end
 
 --- Called before healing
 function _M:onHeal(value, src)
+	local raw_value = value
 	value = value * util.bound((self.healing_factor or 1), 0, 2.5)
+	
+	for cb in self:iterCallbacks("callbackOnHeal") do
+		local ret = cb(value, src, raw_value)
+		if ret then
+			raw_value = ret.raw_value or raw_value*ret.value/value
+			value = ret.value
+		end
+	end
 
-	-- Solipsism healing
+	-- Solipsism: divert some healing to psi
 	local psi_heal = 0
 	if self:knowTalent(self.T_SOLIPSISM) then
-		local t = self:getTalentFromId(self.T_SOLIPSISM)
-		local ratio = t.getConversionRatio(self, t)
+		local ratio = self:callTalent(self.T_SOLIPSISM, "getConversionRatio")
 		psi_heal = value * ratio
 		self:incPsi(psi_heal)
 		value = value - psi_heal
+		raw_value = raw_value*(1 - ratio)
 	end
 
-	if self:hasEffect(self.EFF_UNSTOPPABLE) then return 0 end
-	if self:attr("no_healing") then return 0 end
-
-	--if self:attr("stunned") then value = value / 2 end
-
-	local eff = self:hasEffect(self.EFF_HEALING_NEXUS)
-	if eff and value > 0 and not self.heal_leech_active then
-		eff.src.heal_leech_active = true
-		eff.src:heal(value * eff.pct, src)
-		eff.src.heal_leech_active = nil
-		eff.src:incEquilibrium(-eff.eq)
-		if not self.resting then
-			if eff.src == self then
-				game:delayedLogMessage(self, self, "healing_nexus"..(self.uid or ""), "#YELLOW_GREEN##Source#'s healing is amplified!")
-			else
-				game:delayedLogMessage(eff.src, self, "healing_nexus"..(eff.src.uid or ""), "#YELLOW_GREEN##Source# steals healing from #Target#!")
-				return 0
-			end
-		end
-	end
+	if self:attr("no_healing") or self:hasEffect(self.EFF_UNSTOPPABLE) then return 0 end
 
 	if self:attr("arcane_shield") and self:attr("allow_on_heal") and value > 0 then
 		self:setEffect(self.EFF_DAMAGE_SHIELD, 3, {power=value * self.arcane_shield / 100})
@@ -2100,12 +2090,7 @@ function _M:onHeal(value, src)
 			value = math.max(0, self:attr("blood_lock") - self.life)
 		end
 	end
-
-	for cb in self:iterCallbacks("callbackOnHeal") do
-		local ret = cb(value, src)
-		if ret then value = ret.value end
-	end
-
+	
 --	print("[HEALING]", self.uid, self.name, "for", value)
 	if (not self.resting and (not game.party:hasMember(self) or not game:getPlayer(true).resting)) and value + psi_heal >= 1 and not self:attr("silent_heal") then
 		if game.level.map.seens(self.x, self.y) then
@@ -3467,7 +3452,7 @@ function _M:onStatChange(stat, v)
 
 		-- heal mod
 		if self.stats.hf_id then self:removeTemporaryValue("healing_factor", self.stats.hf_id) end
-		self.stats.hf_id = self:addTemporaryValue("healing_factor", ((self:getCon()/10)^.5-1)*.25) -- 0 @ 10, 1.54 @ 100
+		self.stats.hf_id = self:addTemporaryValue("healing_factor", self:combatStatLimit("con", 1.5, 0, 0.5)) -- +0 @ 10, +0.50 @ 100
 	elseif stat == self.STAT_DEX then
 		self.ignore_direct_crits = (self.ignore_direct_crits or 0) + 0.3 * v
 	elseif stat == self.STAT_WIL then
@@ -5048,6 +5033,9 @@ function _M:logTalentMessage(ab)
 	end
 end
 
+--- List of callbacks that can be registered
+--	The index is the callback name, matching fields in "object" definitions (ActorTalent, ActorTemporaryEffects, Object)
+--  values correspond to the Actor table containing the associated callback info
 local sustainCallbackCheck = {
 	callbackOnTeleport = "talents_on_teleport",
 	callbackOnDealDamage = "talents_on_deal_damage",
@@ -5105,7 +5093,9 @@ local function callbackKeyLess(x, y)
 	else return ap < bp end
 end
 
--- Upgrade from pre-
+--- Update and sort registered callback information for a callback class
+--  callbacks are ordered in ascending priority (default 0)
+--  object definitions may contain the field callbackPriorities{event_name1 = priority1, event_name2 = priority2, ...) containing specific priority values to override the default
 local function upgradeStore(store, storename)
 	if store.__priorities then return end
 	print("[CALLBACK] upgrading to prioritized", storename)
@@ -5120,7 +5110,11 @@ local function upgradeStore(store, storename)
 	store.__sorted = sorted
 end
 
-
+--- Register an object's callbacks to be invoked later with _M:fireTalentCheck or _M:iterCallbacks
+--	@param objdef -- an "object" definition (ActorTalent, ActorTemporaryEffects, Object) containing callback functions
+--		Allowable callback types are stored in the _MsustainCallbackCheck table
+--  @param[string] -- the object id
+--  @param objtyp[string, default="talent"] -- the object type ("talent", "effect", "object", ...)
 function _M:registerCallbacks(objdef, objid, objtype)
 	for event, store in pairs(sustainCallbackCheck) do
 		if objdef[event] then
@@ -5128,7 +5122,7 @@ function _M:registerCallbacks(objdef, objid, objtype)
 			upgradeStore(cb, store)
 			if not cb[objid] then
 				cb[objid] = objtype
-				-- extract a priority, 0 by default
+				-- extract a priority, 0 by default, lower values evaluate first
 				cb.__priorities[objid] = (objdef.callbackPriorities and objdef.callbackPriorities[event]) or 0
 				self[store] = cb
 				-- insert into priorities
@@ -5146,6 +5140,10 @@ function _M:registerCallbacks(objdef, objid, objtype)
 	end
 end
 
+--- Unregister an object's callbacks
+--	@param objdef -- an object definition (ActorTalent, ActorTemporaryEffects, Object) containing callback functions
+--		indexed in the sustainCallbackCheck table
+--  @param objid -- the object id
 function _M:unregisterCallbacks(objdef, objid)
 	for event, store in pairs(sustainCallbackCheck) do
 		if self[store] and self[store][objid] then
@@ -5165,6 +5163,14 @@ function _M:unregisterCallbacks(objdef, objid)
 	end
 end
 
+--- Trigger all registered callbacks for an event
+--  @param event[string] = event name (index in the _M.sustainCallbackCheck table)
+--  @return ret[table or false] returned from the last callback to return a value[table]
+--  callbacks are called as follows:
+--  effects:  self:callEffect(effect_id, event, ...)
+--  objects:  object:check(event, self, ...)
+--  others (incl. talents): self:callTalent(tid, event, ...)
+--  (refer to specific invocations of this function for additional function arguments)
 function _M:fireTalentCheck(event, ...)
 	local store = sustainCallbackCheck[event]
 	local ret = false
@@ -5189,6 +5195,14 @@ function _M:fireTalentCheck(event, ...)
 	return ret
 end
 
+--- Generate an iterator to invoke all registered callbacks for an event
+--  @param event[string] = event name (index in the _M.sustainCallbackCheck table)
+--  @return a function (lua iterator) that will return wrapper functions that each invoke a registered callback for the event
+--  Each wrapper function executes as follows:
+--  effects:  return self:callEffect(effect_id, event, ...)
+--  objects:  return object:check(event, self, ...)
+--  others (incl. talents):  return self:callTalent(tid, event, ...)
+--  Additional arguments should be passed to the wrapper function when it is called.
 function _M:iterCallbacks(event)
 	local store = sustainCallbackCheck[event]
 	local cbs = {}

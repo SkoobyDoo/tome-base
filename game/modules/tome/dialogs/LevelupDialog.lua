@@ -854,7 +854,7 @@ function _M:getStatDesc(item)
 		local multi_life = 4 + (self.actor.inc_resource_multi.life or 0)
 		text:add("Max life: ", color, ("%0.2f"):format(diff * multi_life), dc, true)
 		text:add("Physical save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		text:add("Healing mod: ", color, ("%0.1f%%"):format(((self.actor:getCon()/10)^.5 - (self.actor_dup:getCon()/10)^.5)*.25*100), dc, true)
+		text:add("Healing mod: ", color, ("%0.1f%%"):format((self.actor:combatStatLimit("con", 1.5, 0, 0.5) - self.actor_dup:combatStatLimit("con", 1.5, 0, 0.5))*100), dc, true)
 	elseif stat_id == self.actor.STAT_WIL then
 		if self.actor:knowTalent(self.actor.T_MANA_POOL) then
 			local multi_mana = 5 + (self.actor.inc_resource_multi.mana or 0)

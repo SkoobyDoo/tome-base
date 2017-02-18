@@ -38,7 +38,7 @@ newTalent{
 	end,
 	getHealFactorChange = function(self, t)
 		local level = math.max(3 * self:getTalentTypeMastery(t.type[1]), self:getTalentLevel(t))
-		return -self:combatLimit(math.max(0,(level-2)^0.5), 1, 0, 0, 0.26, 1.73)  -- Limit < -100%
+		return -self:combatLimit(math.max(0,(level-2)^0.5), 1.5, 0, 0, 0.39, 1.73)  -- Limit < -150%
 	end,
 	getWoundDuration = function(self, t)
 		return 15

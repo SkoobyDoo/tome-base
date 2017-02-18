@@ -159,8 +159,8 @@ newEffect{
 	subtype = { wound=true, cut=true, bleed=true },
 	status = "detrimental",
 	parameters = {power=10, heal_factor=30},
-	on_gain = function(self, err) return "#Target# starts to bleed.", "+Deep Wounds" end,
-	on_lose = function(self, err) return "#Target# stops bleeding.", "-Deep Wounds" end,
+	on_gain = function(self, err) return "#Target# is cut deeply.", "+Deep Wounds" end,
+	on_lose = function(self, err) return "#Target#'s deep wound closes.", "-Deep Wounds" end,
 	activate = function(self, eff)
 		eff.healid = self:addTemporaryValue("healing_factor", -eff.heal_factor / 100)
 		if eff.src and eff.src:knowTalent(self.T_BLOODY_BUTCHER) then
@@ -1664,12 +1664,49 @@ newEffect{
 
 newEffect{
 	name = "HEALING_NEXUS", image = "talents/healing_nexus.png",
-	desc = "Healing Nexus",
-	long_desc = function(self, eff) return ("All healing done to the target is instead redirected to %s by %d%%."):format(eff.src.name, eff.pct * 100, eff.src.name) end,
+	desc = "Healing Nexus Redirection",
+	long_desc = function(self, eff)
+		return ("All direct healing done to the target fails, and is instead redirected to %s at %d%% effectiveness."):format(eff.src.name, eff.pct * 100, eff.src.name)
+	end,
 	type = "physical",
 	subtype = { nature=true, heal=true },
 	status = "detrimental",
 	parameters = { pct = 1 },
+	callbackPriorities={callbackOnHeal = -5},
+	callbackOnHeal = function(self, eff, value, src, raw_value)
+		if raw_value > 0 and eff.src then
+			game:delayedLogMessage(eff.src, self, "healing_nexus"..(eff.src.uid or ""), "#YELLOW_GREEN##Source# steals healing from #Target#!")
+			eff.src:heal(raw_value*eff.pct, src) -- use raw healing value to avoid compounding healing_factor
+			return {value = 0}
+		end
+	end,
+	activate = function(self, eff)
+		if self == eff.src then
+			self:setEffect(self.EFF_HEALING_NEXUS_BUFF, eff.dur, {pct=eff.pct})
+			self:removeEffect(eff.effect_id)
+		end
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "HEALING_NEXUS_BUFF", image = "talents/healing_nexus.png",
+	desc = "Healing Nexus",
+	long_desc = function(self, eff)
+		return ("All direct healing done to the target is increased by %d%% and each heal restores %0.1f equilibrium."):format(eff.pct * 100, eff.eq)
+	end,
+	type = "physical",
+	subtype = { nature=true, heal=true },
+	status = "beneficial",
+	parameters = { pct = 1, eq = 0 },
+	callbackOnHeal = function(self, eff, value, src, raw_value)
+		if value > 0 then
+			game:delayedLogMessage(self, self, "healing_nexus_buff", "#YELLOW_GREEN##Source#'s healing is amplified!")
+			self:incEquilibrium(-eff.eq)
+			return {value=value*(1 + eff.pct)}
+		end
+	end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)

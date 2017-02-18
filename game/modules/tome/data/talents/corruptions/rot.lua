@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ newTalent{
 		local hitted = self:attackTarget(target, nil, dam, true)
 		
 		if hitted then
-			self:project({type="hit"}, target.x, target.y, DamageType.BLIGHT_POISON, {dam=poison, power=0, poison=1, apply_power=self:combatSpellpower()})
+			self:project({type="hit"}, target.x, target.y, DamageType.BLIGHT_POISON, {dam=poison, power=0, poison=1, heal_factor=0, apply_power=self:combatSpellpower()})
 		end
 		
 		return true
