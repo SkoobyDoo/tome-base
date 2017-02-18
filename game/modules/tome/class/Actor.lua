@@ -3240,7 +3240,7 @@ function _M:die(src, death_note)
 			game.level.data.record_player_kills = game.level.data.record_player_kills + 1
 		end
 
-		p.last_kill_turn = game.turn
+		if p:reactionToward(self) < 0 then p.last_kill_turn = game.turn end
 	end
 
 	-- Ingredients
