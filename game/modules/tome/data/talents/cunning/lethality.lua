@@ -106,9 +106,14 @@ newTalent{
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.30, 0.75) end,
 	getDamage = function(self, t) return 1 end,
 	activate = function(self, t)
-		return {
+		local ret = {
 			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1.2, img="blade_flurry_shieldwall"}, shader={type="rotatingshield", noup=2.0, time_factor=500, appearTime=0.8}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1.2, img="blade_flurry_shieldwall"}, shader={type="rotatingshield", noup=1.0, time_factor=500, appearTime=0.8}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)

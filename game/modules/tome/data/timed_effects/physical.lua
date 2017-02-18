@@ -589,6 +589,9 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("evasion", eff.chance)
 		eff.pid = self:addTemporaryValue("projectile_evasion", eff.chance)
 		eff.defid = self:addTemporaryValue("combat_def", eff.defense)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={size_factor=1.5, img="evasion_tentacles2"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=700, noup=0.0}})
+		end
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("evasion", eff.tmpid)
@@ -3097,6 +3100,9 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "never_move", 1)
 		if eff.silence > 0 then eff.silenceid = self:addTemporaryValue("silence", 1) end
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=1, img="garrote_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, appearTime=0.3, time_factor=1000, noup=0.0}})
+		end
 	end,
 	charges = function(self, eff) return eff.silence end,
 	on_timeout = function(self, eff)
@@ -3311,6 +3317,9 @@ newEffect{
 	on_lose = function(self, err) game.logPlayer(self, "#GREY#You end your Shadow Dance.") end,
 	parameters = {rad=10},
 	activate = function(self, eff)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=true,  size_factor=2.5, y=0.25, img="shadow_dance_tentacle_wings"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=700, noup=0.0}})
+		end
 	end,
 	deactivate = function(self, eff)
 		if not eff.no_cancel_stealth and not rng.percent(self.hide_chance or 0) then
