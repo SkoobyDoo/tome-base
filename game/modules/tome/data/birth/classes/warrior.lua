@@ -104,7 +104,7 @@ newBirthDescriptor{
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +5 Strength, +2 Dexterity, +2 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
-		"#GOLD#Life per level:#LIGHT_BLUE# +2",
+		"#GOLD#Life per level:#LIGHT_BLUE# +6",
 	},
 	birth_example_particles = {
 		function(actor) if core.shader.active() then
