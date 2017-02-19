@@ -54,6 +54,7 @@ local function knives(self)
 		combat.dam = 0 + t.getBaseDamage(self, t)
 		combat.apr = 0 + t.getBaseApr(self, t)
 		combat.physcrit = 0 + t.getBaseCrit(self,t) + t2.getCrit(self,t2)
+		combat.crit_power = 0 + t2.getCritPower(self,t2)
 		combat.atk = 0 + self:combatAttack()
 	end
 	if self:knowTalent(self.T_LETHALITY) then 
@@ -73,13 +74,8 @@ local function throw(self, range, dam, x, y, dtype, special, fok)
 		if target and target ~= self then
 			local t = self:getTalentFromId(self.T_THROWING_KNIVES)
 			local t2 = self:getTalentFromId(self.T_PRECISE_AIM)
-			local critstore = self.combat_critical_power or 0
-			self.combat_critical_power = nil
-			self.combat_critical_power = critstore + t2.getCritPower(self,t2)
 			local combat = t.getKnives(self, t)
 			local hit = self:attackTargetWith(target, combat, dtype, dam)
-			self.combat_critical_power = nil
-			self.combat_critical_power = critstore
 			if hit then
 				if special==1 then
 					self:callTalent(self.T_VENOMOUS_STRIKE, "applyVenomousEffects", target)
@@ -174,6 +170,8 @@ newTalent{
 		local apr = self:combatAPR(combat)
 		local damrange = combat.damrange or 1.1
 		local crit = self:combatCrit(combat)
+		local crit_mult = (self.combat_critical_power or 0) + 150
+		if self:knowTalent(self.T_PRECISE_AIM) then crit_mult = crit_mult + self:callTalent(self.T_PRECISE_AIM, "getCritPower") end
 		
 		local stat_desc = {}
 		for stat, i in pairs(combat.dammod or {}) do
@@ -191,9 +189,10 @@ newTalent{
 Net Damage: %d - %d
 Accuracy: %d (%s)
 APR: %d
-Physical Crit Chance: %+d%%
+Crit Chance: %+d%%
+Crit mult: %d%%
 Uses Stats: %s
-]]):format(t.range(self, t), dmg, dmg*damrange, atk, talented, apr, crit, stat_desc)
+]]):format(t.range(self, t), dmg, dmg*damrange, atk, talented, apr, crit, crit_mult, stat_desc)
 	end,
 	info = function(self, t)
 		local nb = t.getNb(self,t)
