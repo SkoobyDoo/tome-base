@@ -442,8 +442,14 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 		end
 
+		--Dark Empathy (Reduce damage against summoner)
 		if src.necrotic_minion_be_nice and src.summoner == target then
 			dam = dam * (1 - src.necrotic_minion_be_nice)
+		end
+
+		--Dark Empathy (Reduce damage against other minions)
+		if src.necrotic_minion_be_nice and target.summoner and src.summoner == target.summoner then	
+			dam = dam * (1 - src.necrotic_minion_be_nice)	
 		end
 
 		-- Curse of Misfortune: Unfortunate End (chance to increase damage enough to kill)
