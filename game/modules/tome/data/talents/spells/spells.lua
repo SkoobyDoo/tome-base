@@ -225,7 +225,7 @@ function necroSetupSummon(self, m, x, y, level, no_control, no_decay)
 		if not p or not self.x or not self.y or not src.x or not src.y or core.fov.distance(self.x, self.y, src.x, src.y) > self.summoner.necrotic_aura_radius then return end
 		if w and rng.percent(w.chance) then
 			local t = src:getTalentFromId(src.T_WILL_O__THE_WISP)
-			ret = t.summon(src, t, w.dam, self, killer)
+			ret = t.summon(src, t, w.dam, self, killer, false)
 			if ret then return end
 		end
 		if src:getTalentLevel(src.T_AURA_MASTERY) >= 3 and rng.percent(25) then
