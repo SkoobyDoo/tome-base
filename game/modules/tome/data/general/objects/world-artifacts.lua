@@ -1973,11 +1973,11 @@ newEntity{ base = "BASE_CLOAK",
 	material_level = 5,
 	wielder = {
 		resists_cap = {
-			[DamageType.FIRE] = 5,
-			[DamageType.COLD] = 5,
-			[DamageType.LIGHTNING] = 5,
-			[DamageType.NATURE] = 5,
-			[DamageType.DARKNESS] = 5,
+			[DamageType.FIRE] = 10,
+			[DamageType.COLD] = 10,
+			[DamageType.LIGHTNING] = 10,
+			[DamageType.NATURE] = 10,
+			[DamageType.DARKNESS] = 10,
 			[DamageType.ARCANE] = -30,
 		},
 		resists = {
@@ -1988,6 +1988,7 @@ newEntity{ base = "BASE_CLOAK",
 			[DamageType.DARKNESS] = 20,
 			[DamageType.ARCANE] = -30,
 		},
+		max_life = 100,
 	},
 }
 
@@ -2010,6 +2011,8 @@ newEntity{ base = "BASE_DIGGER",
 		combat_spellresist = 7,
 		max_life = 50,
 	},
+	max_power = 30, power_regen = 1,
+	use_talent = { id = Talents.T_DIG, level = 4, power = 30 },
 	on_wear = function(self, who)
 		if who.descriptor and who.descriptor.race == "Dwarf" then
 			local Stats = require "engine.interface.ActorStats"
@@ -5366,11 +5369,11 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 }
 
 newEntity{ base = "BASE_SLING",
-	power_source = {arcane=true},
+	power_source = {technique=true},
 	unique = true,
 	name = "Nithan's Force", image = "object/artifact/nithans_force.png",
 	unided_name = "massive sling",
-	desc = [[This powerful sling is said to have belonged to a warrior so strong his shots could knock down a brick wall. It appears he may have had some magical assistance...]],
+	desc = [[This powerful sling is said to have belonged to a warrior so strong his shots could knock down a brick wall...]],
 	level_range = {35, 50},
 	rarity = 220,
 	require = { stat = { dex=32 }, },
@@ -5388,8 +5391,8 @@ newEntity{ base = "BASE_SLING",
 		resists_pen={[DamageType.PHYSICAL] = 15},
 		resists={[DamageType.PHYSICAL] = 10},
 	},
-	max_power = 25, power_regen = 1,
-	use_talent = { id = Talents.T_DIG, level = 3, power = 25 },
+	max_power = 16, power_regen = 1,
+	use_talent = { id = Talents.T_BULL_SHOT, level = 4, power = 16 },
 }
 
 newEntity{ base = "BASE_ARROW",
