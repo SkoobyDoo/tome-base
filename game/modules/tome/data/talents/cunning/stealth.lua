@@ -201,7 +201,7 @@ newTalent{
 	cooldown = function(self, t) return self:combatTalentLimit(t, 10, 30, 15) end,
 	tactical = { DEFEND = 2, ESCAPE = 2 },
 	getRadius = stealthRadius,
-	getDuration = function(self, t) return 1 + math.min(self:combatTalentScale(t, 1, 3),3) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 7, 2, 5)) end,
 	action = function(self, t)
 		if not self:isTalentActive(self.T_STEALTH) then
 			self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})
