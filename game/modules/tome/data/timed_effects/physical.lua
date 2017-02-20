@@ -4004,6 +4004,9 @@ newEffect{
 		return {dam=dam}
 	end,
 	activate = function(self, eff)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={size_factor=1.5, img="ureslak_tentacles"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=2000, noup=0.0}})
+		end
 	end,
 }
 

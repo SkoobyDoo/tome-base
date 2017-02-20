@@ -3678,6 +3678,7 @@ function _M:updateModdableTile()
 	i = self:getObjectModdableTile(self.INVEN_CLOAK); if config.settings.tome.show_cloak_hoods and i and i.moddable_tile_hood then add[#add+1] = {image = base..(i.moddable_tile):format("hood")..".png", auto_tall=1} done_head = true end
 	i = self:getObjectModdableTile(self.INVEN_HEAD); if not done_head and i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1} done_head = true end
 	if not done_head and self:attr("moddable_tile_head_underwear") then add[#add+1] = {image = base..self:attr("moddable_tile_head_underwear"), auto_tall=1} end
+	self:triggerHook{"Actor:updateModdableTile:middle", base=base, add=add}
 	i = self:getObjectModdableTile(self.INVEN_HANDS); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1} end
 	i = self:getObjectModdableTile(self.INVEN_QUIVER); if i and i.moddable_tile then add[#add+1] = {image = base..(i.moddable_tile)..".png", auto_tall=1} end
 	if not self:attr("disarmed") then
