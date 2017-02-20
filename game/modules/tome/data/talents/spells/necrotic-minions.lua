@@ -824,7 +824,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Your dark power radiates further as you grow stronger. Increases the radius of your necrotic aura by %d, and reduces the decay rate of your minions outside the aura by %d%%. 
-		At level 3, necrotic minions inside your aura have a 25%% chance to refund their soul on death. If a minion turns into a will o' the wisp then the wisp will have that chance instead.]]):
+		At level 5, necrotic minions inside your aura have a 25%% chance to refund their soul on death. If a minion turns into a will o' the wisp then the wisp will have that chance instead.]]):
 		format(math.floor(t.getbonusRadius(self, t)), math.min(7, self:getTalentLevelRaw(t)))
 	end,
 }
