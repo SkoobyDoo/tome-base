@@ -1877,6 +1877,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 
 	local chance = self:combatCrit(weapon) + (add_chance or 0)
 	crit_power_add = crit_power_add or 0
+	if weapon and weapon.crit_power then crit_power_add = crit_power_add + weapon.crit_power/100 end
 
 	if target and target:hasEffect(target.EFF_DISMAYED) then
 		chance = 100

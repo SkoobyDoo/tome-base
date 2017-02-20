@@ -929,7 +929,8 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		compare_fields(combat, compare_with, field, "atk", "%+d", "Accuracy: ", 1, false, false, add_table)
 		compare_fields(combat, compare_with, field, "apr", "%+d", "Armour Penetration: ", 1, false, false, add_table)
-		compare_fields(combat, compare_with, field, "physcrit", "%+.1f%%", "Physical crit. chance: ", 1, false, false, add_table)
+		compare_fields(combat, compare_with, field, "physcrit", "%+.1f%%", "Crit. chance: ", 1, false, false, add_table)
+		compare_fields(combat, compare_with, field, "crit_power", "%+.1f%%", "Crit. power: ", 1, false, false, add_table)
 		local physspeed_compare = function(orig, compare_with)
 			orig = 100 / orig
 			if compare_with then return ("%+.0f%%"):format(orig - 100 / compare_with)
