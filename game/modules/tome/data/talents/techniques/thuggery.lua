@@ -137,6 +137,9 @@ newTalent{
 			pen = self:addTemporaryValue("resists_pen", {[DamageType.PHYSICAL] = t.getPen(self, t)}),
 			speed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
 		}
+		if core.shader.active() then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1.5, y=-0.2, img="total_thuggery_tentacles2"}, shader={type="tentacles", wobblingType=1, appearTime=0.5, time_factor=1400, noup=0.0}})
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
