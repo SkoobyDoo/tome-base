@@ -3970,7 +3970,7 @@ newEffect{
 	name = "SHADOWSTRIKE", image = "talents/shadowstrike.png",
 	desc = "Shadowstrike",
 	long_desc = function(self, eff) return ("The target's critical strike damage bonus is increased by %d%%."):format(eff.power) end,
-	type = "magical",
+	type = "physical",
 	subtype = { darkness=true },
 	status = "beneficial",
 	parameters = { power=1 },
@@ -3978,5 +3978,46 @@ newEffect{
 	on_lose = function(self, err) return nil, true end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "combat_critical_power", eff.power)
+	end,
+}
+
+newEffect{
+	name = "URESLAK_MOLTEN_SCALES", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
+	desc = "Ureslak's Molten Scales",
+	long_desc = function(self, eff) return ("Reacts to attacks by raising resistances for 5 turns."):format() end,
+	type = "physical",
+	subtype = { nature=true, resist=true },
+	status = "beneficial",
+	parameters = { },
+	on_gain = function(self, err) return nil, true end,
+	on_lose = function(self, err) return nil, true end,
+	callbackOnTakeDamageBeforeResists = function(self, eff, src, x, y, type, dam, state)
+		if not self:hasEffect(self.EFF_URESLAK_MOLTEN_SCALES_RESIST) and dam > 0 and src ~= self and (
+		   (type == DamageType.FIRE) or 
+		   (type == DamageType.COLD) or 
+		   (type == DamageType.LIGHTNING) or 
+		   (type == DamageType.NATURE) or 
+		   (type == DamageType.DARKNESS)
+		) then
+			self:setEffect(self.EFF_URESLAK_MOLTEN_SCALES_RESIST, 5, {type=type})
+		end
+		return {dam=dam}
+	end,
+	activate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "URESLAK_MOLTEN_SCALES_RESIST", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
+	desc = "Ureslak's Molten Scales (Resistance)",
+	long_desc = function(self, eff) return ("%s resistance increased by 15%%."):format(DamageType:get(eff.type).name:capitalize()) end,
+	type = "physical",
+	subtype = { nature=true, resist=true },
+	status = "beneficial",
+	parameters = { },
+	on_gain = function(self, err) return "#OLIVE_DRAB##Target#'s molten scales react to the incomming damage and start glowing!", true end,
+	on_lose = function(self, err) return "#Target#'s molten scales do not glow anymore.", true end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "resists", {[eff.type] = 15})
 	end,
 }

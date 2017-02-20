@@ -1988,7 +1988,17 @@ newEntity{ base = "BASE_CLOAK",
 			[DamageType.DARKNESS] = 20,
 			[DamageType.ARCANE] = -30,
 		},
-		max_life = 100,
+	},
+	max_power = 50, power_regen = 1,
+	use_power = {
+		name = function(self, who) return "empower the scales for 16 turns, increasing a resistance (fire, cold, lightning, nature, darkness) by 15% when you are about to be hit (this effect can only happen once every 5 turns and lasts 5 turns)." end,
+		tactical = { BUFF = 1 },
+		power = 50,
+		use = function(self, who)
+			game.logSeen(who, "%s empowers %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			who:setEffect(who.EFF_URESLAK_MOLTEN_SCALES, 16, {})
+			return {id=true, used=true}
+		end,
 	},
 }
 

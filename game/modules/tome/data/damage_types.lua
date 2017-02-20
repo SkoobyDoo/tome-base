@@ -286,6 +286,19 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			return 0 + add_dam
 		end
 
+
+		local hd = {"DamageProjector:beforeResists", src=src, x=x, y=y, type=type, dam=dam, state=state}
+		if src:triggerHook(hd) then dam = hd.dam if hd.stopped then return hd.stopped end end
+		if target.iterCallbacks then
+			for cb in target:iterCallbacks("callbackOnTakeDamageBeforeResists") do
+				local ret = cb(src, x, y, type, dam, state)
+				if ret then
+					if ret.dam then dam = ret.dam end
+					if ret.stopped then return ret.stopped end
+				end
+			end
+		end
+
 		--target.T_STONE_FORTRESS could be checked/applied here (ReduceDamage function in Dwarven Fortress talent)
 
 		-- affinity healing, we store it to apply it after damage is resolved

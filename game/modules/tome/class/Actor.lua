@@ -5061,6 +5061,7 @@ local sustainCallbackCheck = {
 	callbackOnCrit = "talents_on_crit",
 	callbackOnStatChange = "talents_on_stat_change",
 	callbackOnTakeDamage = "talents_on_take_damage",
+	callbackOnTakeDamageBeforeResists = "talents_on_take_damage_before_resists",
 	callbackOnHeal = "talents_on_heal",
 	callbackOnQuickSwitchWeapons = "talents_on_quick_switch_weapon",
 	callbackOnWearTinker = "talents_on_wear_tinker",
