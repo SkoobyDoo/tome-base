@@ -769,7 +769,7 @@ function _M:displayResources(scale, bx, by, a)
 
 		local life_regen = player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5)
 		if not self.res.life or self.res.life.vc ~= player.life or self.res.life.vm ~= player.max_life or self.res.life.vr ~= life_regen then
-			local status_text = ("%s/%d"):format(player.life > 0 and math.round(player.life) or "???", math.round(player.max_life))
+			local status_text = ("%s/%d"):format(math.round(player.life), math.round(player.max_life))
 			local reg_text = string.limit_decimals(life_regen,3, "+")
 			self.res.life = {
 				vc = player.life, vm = player.max_life, vr = life_regen,
