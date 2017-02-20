@@ -365,7 +365,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
-		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0) end
+		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, (tg.archery.crit_power or 0) + (weapon.crit_power or 0)/100) end
 		print("[ATTACK ARCHERY] after crit", dam)
 
 		dam = dam * mult * (weapon.dam_mult or 1)
