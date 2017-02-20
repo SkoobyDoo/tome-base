@@ -228,7 +228,7 @@ function necroSetupSummon(self, m, x, y, level, no_control, no_decay)
 			ret = t.summon(src, t, w.dam, self, killer, false)
 			if ret then return end
 		end
-		if src:getTalentLevel(src.T_AURA_MASTERY) >= 5 and rng.percent(25) then
+		if src:getTalentLevel(src.T_AURA_MASTERY) >= 3 and rng.percent(25) then
 			src:incSoul(1)
 			src.changed = true
 			game.logPlayer(src, "A soul returns to %s.", src.name)
