@@ -827,38 +827,32 @@ newEntity{
 	name = " of projection", suffix=true, instant_resolve=true,
 	keywords = {projection=true},
 	level_range = {1, 50},
-	rarity = 5,
+	rarity = 25,
 	cost = 15,
-	resolvers.charm(function(self, who) 
-			return ("project a melee attack out to range %d, dealing 150%%%% (mind) weapon damage"):format(self.use_power.range)
-		end,
-		6,
-		function(self, who)
-			local tg = self.use_power.target(self, who)
-			local x, y = who:getTarget(tg)
-			if not x or not y then return nil end
-			local _ _, x, y = who:canProject(tg, x, y)
-			if not x or not y then return nil end
-			local target = game.level.map(x, y, engine.Map.ACTOR)
-			who:logCombat(target, "#Source# psionically attacks #target# with %s %s!", who:his_her(), self:getName({do_color=true, no_add_name=true}))
-			if target then
-				who:attackTarget(target, engine.DamageType.MIND, 1.5, true)
-			end
-			return {id=true, used=true}
-		end,
-		"T_GLOBAL_CD",
-		{range = 10,
-		requires_target = true,
-		tactical = { ATTACK = { MIND = 2 } },
-		target = function(self, who) return {type="hit", range=self.use_power.range} end}
-	),
+	greater_ego = 1,
 	combat = {
 		melee_project={
 			[DamageType.MIND] = resolvers.mbonus_material(15, 5),
 		},
+		special_on_hit = {desc="Strikes a different enemy in radius 10 for 30% weapon damage", fct=function(combat, who, target)
+			if who.turn_procs.ego_projection then return end
+			who.turn_procs.ego_projection = true			
+
+			local tg = {type="ball", radius=10}
+			local grids = who:project(tg, who.x, who.y, function() end)
+			local tgts = {}
+			for x, ys in pairs(grids) do for y, _ in pairs(ys) do
+				local target2 = game.level.map(x, y, engine.Map.ACTOR)
+				if target2 and target ~= target2 and who:reactionToward(target2) < 0 then tgts[#tgts+1] = target2 end
+			end end
+			local project_target = rng.tableRemove(tgts)
+			if project_target then
+				who:attackTarget(project_target, engine.DamageType.MIND, 0.3, true)			
+			end
+
+		end},
 	},
 }
-
 -- Merged with Psychic/redesigned a bit
 newEntity{
 	power_source = {psionic=true},
