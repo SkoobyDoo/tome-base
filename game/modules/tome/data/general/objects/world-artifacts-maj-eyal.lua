@@ -763,6 +763,17 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		end)
 		return {id=true, used=true}
 	end },
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","TELOS_TOP_HALF"} },
+	on_set_complete = function(self, who)
+		local DamageType = require "engine.DamageType"
+		self:specialSetAdd({"wielder","spell_cooldown_reduction"}, 0.1)
+		self:specialSetAdd({"wielder","all_damage_convert"}, DamageType.DRAINLIFE)
+		self:specialSetAdd({"wielder","all_damage_convert_percent"}, 10)
+		game.logSeen(game.player, "#CRIMSON#Telos's gem seems to flare and glow an unearthly colour.")
+	end,
+	on_set_broken = function(self, who)
+		game.logPlayer(game.player, "#CRIMSON#The unearthly glow fades away.")
+	end,
 }
 
 -- The staff that goes with the crystal above, it will not be generated randomly it is created by the crystal

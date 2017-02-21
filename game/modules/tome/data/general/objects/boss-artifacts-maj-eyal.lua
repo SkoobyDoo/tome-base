@@ -769,6 +769,11 @@ newEntity{ base = "BASE_STAFF",
 		inc_damage = {[DamageType.ARCANE] = 35 },
 		learn_talent = {[Talents.T_COMMAND_STAFF] = 1 },
 	},
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","GEM_TELOS"} },
+	on_set_complete = function(self, who)
+	end,
+	on_set_broken = function(self, who)
+	end,
 }
 
 newEntity{ base = "BASE_AMULET",
