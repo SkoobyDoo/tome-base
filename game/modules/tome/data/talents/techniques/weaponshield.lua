@@ -294,8 +294,8 @@ newTalent{
 	require = techs_req3,
 	mode = "passive",
 	points = 5,
-	getPhysical = function(self, t) return self:combatTalentScale(t, 1, 20) end,
-	getSpell = function(self, t) return self:combatTalentScale(t, 1, 10) end,
+	getPhysical = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
+	getSpell = function(self, t) return self:combatTalentScale(t, 3, 10, 0.75) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_physresist", t.getPhysical(self, t))
 		self:talentTemporaryValue(p, "combat_spellresist", t.getSpell(self, t))

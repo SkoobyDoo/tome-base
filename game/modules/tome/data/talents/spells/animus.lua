@@ -57,7 +57,7 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	getMax = function(self, t) return math.floor(self:combatTalentScale(t, 2, 8)) end,
-	getChance = function(self, t) return math.floor(self:combatTalentScale(t, 10, 80)) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 100, 20, 60) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "extra_soul_chance", t.getChance(self, t))
 		self:talentTemporaryValue(p, "max_soul", t.getMax(self, t))
