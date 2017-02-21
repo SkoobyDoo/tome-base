@@ -966,13 +966,14 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 	color = colors.WHITE, image = "object/artifact/crystal_focus.png",
 	level_range = {5, 12},
 	desc = [[This crystal radiates the power of the Spellblaze itself.]],
+	special_desc = function(self) return "(The created item can be activated to recover the Focus.)" end,
 	rarity = 200,
 	identified = false,
 	cost = 50,
 	material_level = 2,
 
 	max_power = 1, power_regen = 1,
-	use_power = { name = "combine with a weapon", power = 1, use = function(self, who, gem_inven, gem_item)
+	use_power = { name = "combine with a weapon (makes a non enchanted weapon into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
 		who:showInventory("Fuse with which weapon?", who:getInven("INVEN"), function(o) return (o.type == "weapon" or o.subtype == "hands" or o.subtype == "shield") and o.subtype ~= "mindstar" and not o.egoed and not o.unique and not o.rare and not o.archery end, function(o, item)
 			local oldname = o:getName{do_color=true}
 
@@ -1034,6 +1035,25 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 							o.special_combat.block = o.special_combat.block * 1.25
 						end
 					end
+					
+					o.power = 1
+					o.max_power = 1
+					o.power_regen = 1
+					o.use_no_wear = true
+					o.use_power = { name = "recover the Crystal Focus (destroys this weapon)", power = 1, use = function(self, who, inven, item)
+						local n = game.zone:finishEntity(game.level, "object", game.zone.object_list.CRYSTAL_FOCUS)
+						n:identify(true)
+						who:addObject(who.INVEN_INVEN, n)
+						who:sortInven(who.INVEN_INVEN)
+						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
+						for i, h in ipairs(who.hotkey) do
+							if h[2] == name then who.hotkey[i] = nil end
+						end
+						who:removeObject(inven, item, true)	
+						who:sortInven(who.INVEN_INVEN)		
+						who.changed = true
+						game.logPlayer(who, "You created: %s", n:getName{do_color=true})
+					end },
 				end),
 				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
 				fake_ego = true,
@@ -1057,7 +1077,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 
 			who:sortInven()
 			who.changed = true
-
+			
 			game.logPlayer(who, "You fix the crystal on the %s and create the %s.", oldname, o:getName{do_color=true})
 		end)
 	end,
@@ -1072,13 +1092,14 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 	color = colors.RED, image = "object/artifact/crystal_heart.png",
 	level_range = {35, 42},
 	desc = [[This crystal is huge, easily the size of your head. It sparkles brilliantly almost of its own accord.]],
+	special_desc = function(self) return "(The created item can be activated to recover the Heart.)" end,
 	rarity = 250,
 	identified = false,
 	cost = 200,
 	material_level = 5,
 
 	max_power = 1, power_regen = 1,
-	use_power = { name = "combine with a suit of body armor", power = 1, use = function(self, who, gem_inven, gem_item)
+	use_power = { name = "combine with a suit of body armor (makes a non enchanted armour into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
 		-- Body armour only, can be cloth, light, heavy, or massive though. No clue if o.slot works for this.
 		who:showInventory("Fuse with which armor?", who:getInven("INVEN"), function(o) return o.type == "armor" and o.slot == "BODY" and not o.egoed and not o.unique and not o.rare end, function(o, item)
 			local oldname = o:getName{do_color=true}
@@ -1121,6 +1142,25 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 					o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
 					-- Same for armour. Yay crap cloth!
 					o.wielder.combat_armor = ((o.wielder.combat_armor or 0) + 3) * 1.7
+					
+					o.power = 1
+					o.max_power = 1
+					o.power_regen = 1
+					o.use_no_wear = true
+					o.use_power = { name = "recover the Crystal Heart (destroys this armour)", power = 1, use = function(self, who, inven, item)
+						local n = game.zone:finishEntity(game.level, "object", game.zone.object_list.CRYSTAL_HEART)
+						n:identify(true)
+						who:addObject(who.INVEN_INVEN, n)
+						who:sortInven(who.INVEN_INVEN)
+						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
+						for i, h in ipairs(who.hotkey) do
+							if h[2] == name then who.hotkey[i] = nil end
+						end
+						who:removeObject(inven, item, true)	
+						who:sortInven(who.INVEN_INVEN)		
+						who.changed = true
+						game.logPlayer(who, "You created: %s", n:getName{do_color=true})
+					end },
 				end),
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
