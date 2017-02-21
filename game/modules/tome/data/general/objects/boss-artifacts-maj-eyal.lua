@@ -981,6 +981,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 		alt_damage_type = 'ARCANE_SILENCE',
 		particle = 'manathrust',
 	},
+	
+	wielder = {
+		inc_stats = {[Stats.STAT_MAG] = 5 },
+		inc_damage = {[DamageType.ARCANE] = 20, [DamageType.BLIGHT] = 20 },
+	},
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "combine with a weapon (makes a non enchanted weapon into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
@@ -1111,6 +1116,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 		damage_type = 'ARCANE',
 		alt_damage_type = 'ARCANE_SILENCE',
 		particle = 'manathrust',
+	},
+	
+	wielder = {
+		inc_stats = {[Stats.STAT_CON] = 5 },
+		resists = {[DamageType.ARCANE] = 20, [DamageType.BLIGHT] = 20 },
 	},
 
 	max_power = 1, power_regen = 1,
