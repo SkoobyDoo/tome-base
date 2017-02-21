@@ -650,8 +650,8 @@ static void call_draw(float nb_keyframes)
 	// Notify the particles threads that there are new keyframes
 	if (!anims_paused) {
 		thread_particle_new_keyframes(nb_keyframes);
-		interface_realtime(nb_keyframes);
 	}
+	interface_realtime(nb_keyframes);
 
 	if (current_game != LUA_NOREF)
 	{

@@ -126,12 +126,29 @@ function _M:switchItemExecute(item, create_if_needed, force)
 end
 
 function _M:erase()
+	if self.no_update_delay then
+		self:eraseExecute()
+	else
+		self.to_erase_delay = self.update_delay
+		self.to_erase = true
+	end
+end
+
+function _M:eraseExecute()
 	self.items = {}
 	self.cur_item = nil
 	self.do_container:clear()
 end
 
 function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
+	if self.to_erase then
+		if self.to_erase_delay == 0 then
+			self:eraseExecute()
+			self.to_erase = nil
+		else
+			self.to_erase_delay = self.to_erase_delay - 1
+		end
+	end
 	if self.to_switch then
 		if self.to_switch_delay == 0 then
 			self:switchItemExecute(unpack(self.to_switch))
