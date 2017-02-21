@@ -556,6 +556,11 @@ newEntity{ base = "BASE_GEM",
 	desc = [[A piece of the scorched wood taken from the remains of Snaproot.]],
 	cost = 100,
 	material_level = 4,
+	color_attributes = {
+		damage_type = 'FIRE',
+		alt_damage_type = 'FLAMESHOCK',
+		particle = 'flame',
+	},
 	identified = false,
 	imbue_powers = {
 		resists = { [DamageType.NATURE] = 25, [DamageType.DARKNESS] = 10, [DamageType.COLD] = 10 },
@@ -971,6 +976,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 	identified = false,
 	cost = 50,
 	material_level = 2,
+	color_attributes = {
+		damage_type = 'ARCANE',
+		alt_damage_type = 'ARCANE_SILENCE',
+		particle = 'manathrust',
+	},
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "combine with a weapon (makes a non enchanted weapon into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
@@ -1097,6 +1107,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'ARCANE',
+		alt_damage_type = 'ARCANE_SILENCE',
+		particle = 'manathrust',
+	},
 
 	max_power = 1, power_regen = 1,
 	use_power = { name = "combine with a suit of body armor (makes a non enchanted armour into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)

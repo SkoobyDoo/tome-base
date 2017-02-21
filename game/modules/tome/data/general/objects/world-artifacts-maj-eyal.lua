@@ -707,6 +707,11 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'BLIGHT',
+		alt_damage_type = 'DRAINLIFE',
+		particle = 'slime',
+	},
 	carrier = {
 		lite = 2,
 	},
