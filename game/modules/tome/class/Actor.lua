@@ -6072,7 +6072,7 @@ function _M:removeSustainsFilter(t, nb, check_remove)
 	return #found
 end
 
-function _M:removeEffectsSustainsFilter(t, nb, check_remove)
+function _M:removeEffectsSustainsFilter(t, nb, check_remove, silent, force)
 	t = t or {}
 	local objects = {}
 	for _, eff_id in ipairs(self:effectsFilter(t)) do
@@ -6085,9 +6085,9 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
-				self:removeEffect(obj[2])
+				self:removeEffect(obj[2], silent, force)
 			else
-				self:forceUseTalent(obj[2], {ignore_energy=true})
+				self:forceUseTalent(obj[2], {ignore_energy=true, silent=silent})
 			end
 			nbr = nbr + 1
 		end
@@ -6095,7 +6095,7 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	return nbr
 end
 
-function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
+function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove, silent, force)
 	t = t or {}
 	local objects = {}
 	for _, eff_id in ipairs(effs) do
@@ -6108,9 +6108,9 @@ function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
-				self:removeEffect(obj[2])
+				self:removeEffect(obj[2], silent, force)
 			else
-				self:forceUseTalent(obj[2], {ignore_energy=true})
+				self:forceUseTalent(obj[2], {ignore_energy=true, silent=silent})
 			end
 			nbr = nbr + 1
 		end
