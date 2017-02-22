@@ -5030,7 +5030,6 @@ newEntity{ base = "BASE_LIGHT_ARMOR", --Thanks SageAcrin!
 			[Stats.STAT_CUN] = 5, 
 			[Stats.STAT_DEX] = 5, 
 		},
-		healing_factor=-0.15,
 		on_melee_hit = {[DamageType.DARKNESS]=15, [DamageType.COLD]=15},
 		inc_stealth=10,
  		inc_damage={
