@@ -41,6 +41,7 @@ private:
 	bool no_linefeed = false;
 	vector<vec2> positions;
 	uint32_t last_glyph = 0;
+	font_style default_style = FONT_STYLE_NORMAL;
 
 	float shadow_x = 0, shadow_y = 0;
 	vec4 shadow_color;
@@ -77,11 +78,12 @@ public:
 	void setNoLinefeed(bool no_linefeed) { this->no_linefeed = no_linefeed; parseText(); };
 	void setMaxWidth(int width) { this->line_max_width = width; parseText(); };
 	void setMaxLines(int max) { this->max_lines = max; parseText(); };
+	void setTextStyle(font_style style) { default_style = style; };
 	void setTextColor(float r, float g, float b, float a) { font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a; parseText(); };
 
 	vec2 getLetterPosition(int idx);
 
-	void setText(const char *text);
+	void setText(const char *text, bool simple=false);
 	void center();
 
 	void setShadow(float offx, float offy, vec4 color) { shadow_x = offx; shadow_y = offy; shadow_color = color; };
@@ -94,6 +96,7 @@ public:
 
 private:
 	void parseText();
+	void parseTextSimple();
 	int getTextChunkSize(const char *str, size_t len, font_style style);
 	int addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a);
 };

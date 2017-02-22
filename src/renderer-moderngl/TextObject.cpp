@@ -176,7 +176,7 @@ void DORText::parseText() {
 	bool is_separator = false;
 	int i;
 	bool force_nl = false;
-	font_style style = FONT_STYLE_NORMAL;
+	font_style style = default_style;
 
 	last_glyph = 0;
 
@@ -383,12 +383,40 @@ void DORText::parseText() {
 	font_update_atlas(f); // Make sure any texture changes are upload to the GPU
 }
 
-void DORText::setText(const char *text) {
+void DORText::parseTextSimple() {
+	clear();
+	entities_container.clear();
+	positions.clear();
+	centered = false;
+	setChanged(true);
+
+	font_type *f = font;
+	if (!f) return;
+	size_t len = strlen(text);
+	if (!len) return;
+	const char *str = text;
+	float r = font_color.r, g = font_color.g, b = font_color.b, a = font_color.a;
+
+	setTexture(f->atlas->id, LUA_NOREF);
+
+	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
+	vertices.reserve(len * 4);
+
+	int font_h = f->lineskip * f->scale;
+	this->w = DORText::addCharQuad(str, len, default_style, 0, 0, r, g, b, a);
+	this->nb_lines = 1;
+	this->h = font_h;
+
+	font_update_atlas(f); // Make sure any texture changes are upload to the GPU
+}
+
+void DORText::setText(const char *text, bool simple) {
 	free((void*)this->text);
 	size_t len = strlen(text);
 	this->text = (char*)malloc(len + 1);
 	strcpy(this->text, text);
-	parseText();
+	if (simple) parseTextSimple();
+	else parseText();
 }
 
 void DORText::center() {

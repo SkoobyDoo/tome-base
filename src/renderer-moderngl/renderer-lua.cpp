@@ -1113,6 +1113,22 @@ static int gl_text_outline(lua_State *L)
 	return 1;
 }
 
+static int gl_text_style(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	const char *style = luaL_checkstring(L, 2);
+
+	if (!strcmp(style, "normal")) v->setTextStyle(FONT_STYLE_NORMAL);
+	else if (!strcmp(style, "bold")) v->setTextStyle(FONT_STYLE_BOLD);
+	else if (!strcmp(style, "italic")) v->setTextStyle(FONT_STYLE_ITALIC);
+	else if (!strcmp(style, "underline")) v->setTextStyle(FONT_STYLE_UNDERLINED);
+	else {
+		lua_pushstring(L, "text:style called without normal/bold/italic/underline");
+		lua_error(L);
+	}
+	return 0;
+}
+
 static int gl_text_text_color(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
@@ -1133,7 +1149,7 @@ static int gl_text_center(lua_State *L)
 static int gl_text_set(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
-	v->setText(luaL_checkstring(L, 2));
+	v->setText(luaL_checkstring(L, 2), lua_toboolean(L, 3));
 
 	lua_pushvalue(L, 1);
 	return 1;
