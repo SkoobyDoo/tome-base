@@ -33,13 +33,13 @@ newLore{
 
 #FIREBRICK#Pain#LAST#.  Everywhere, but where is worst...
 
-Abdomen.  Broken ribs?  Breathe in--  #FIREBRICK#yes they're broken#LAST#.  Shallow breaths.  Damned orcs.  Didn't expect them on this continent, much less in a Sher'Tul ruin.  Didn't even expect a Sher'Tul ruin...  Carrying Ziguranth weapons, preventing healing magic from working.  So now we've got #{italic}#two#{normal}# bands of past-their-prime savages working together to burn down civilization.  Lovely.
+Abdomen.  Broken ribs?  Breathe in--  #FIREBRICK#yes they're broken#LAST#.  Shallow breaths.  What happ--  right.  Damned orcs.  Didn't expect them on this continent, much less in a Sher'Tul ruin.  Didn't even expect a Sher'Tul ruin...  Carrying Ziguranth weapons, preventing healing magic from working.  So now we've got #{italic}#two#{normal}# bands of past-their-prime savages working together to burn down civilization.  Lovely.
 
-Elandar, leaning over me, can't hug me because of my ribcage.  Says I should be dead.  That he found what he thinks is the fabled Blood of Life, and poured it down my throat and into my wounds.  That I'm healing, but...  if he was wrong, we can't go back to them.  Back to #{italic}#her#{normal}# - not after last time.  I can't let them take me from Elandar, not after all he's done for me, no matter what they might find if they analyze what's left in that bottle.
+Elandar, leaning over me, can't hug me because of my ribcage.  Says I should be dead.  That he found what he thinks is the fabled Blood of Life, and poured it down my throat and into my wounds.  That I'm healing, but...  if he was wrong, we can't go back to them.  Back to #{italic}#her#{normal}# - not after what happened last time.  I can't let them take me from Elandar, not after all he's done for me, no matter what they might find if they analyze what's left in that bottle.
 
-The pain is fading - little by little, ribs mending minute by minute, I can breathe slightly deeper before hitting that sudden wall of agony.  It feels...  healthy.  Powerful, even.  Whatever my love may have found, his gift is definitely capable of nourishing living creatures...  but there are other feelings too.  Feelings of being trapped.  Lost.  Alone.  Homesick for a home I'm already standing in.
+The pain is fading - little by little, ribs mending minute by minute, I can breathe slightly deeper before #FIREBRICK#hitting#last# that sudden wall of #FIREBRICK#agony#LAST#.  It feels...  healthy.  Powerful, even.  Whatever my love may have found, his gift is definitely capable of nourishing living creatures...  but there are other feelings too.  Feelings of being trapped.  Lost.  Alone.  Homesick for a home I'm already lying in.
 
-I have my theories, unsettling as they are.  I believe I can use this bond...  productively, without breaking my love's heart or leaving a worse world behind.  I will be happy, Elandar will be happy, and #FIREBRICK#he#LAST# will be happy.]],
+I have my theories, unsettling as they are, as to what's coming over me - what I suspect to have invisibly replaced my subconscious already, what I constantly feel my conscious thoughts drifting towards if I'm not focusing, why that ability to hold conscious attention on anything else seems to be slipping more every minute.  Committing suicide or sending myself to an Angolwen asylum (assuming [i]she[/i] doesn't intervene further) are not options - egotistical as this sounds, I know the happiness I bring to Elandar's tragic life is the only thing that keeps him going.  I believe I can use this bond and the #FIREBRICK#painfully unnatural#LAST# urges that come with it...  productively, without breaking my love's heart or leaving a worse world behind.  I will be happy, Elandar will be happy, and #FIREBRICK#he#LAST# will be happy.]],
 }
 
 newLore{
@@ -57,11 +57,11 @@ newLore{
     id = "argoniel-2",
     category = "high peak",
     name = "Argoniel's blood-runed athame",
-    lore = [[#{italic}#On touching the blood-dripping knife, memories flood your mind - this time, with incredible intensity.  You drop the knife immediately, thankful you only picked it up by the plain handle, and not the rune-lit blade or the red pool under it.  Moments later, your mind starts parsing and interpreting what it just absorbed:#{normal}#
+    lore = [[#{italic}#On touching the blood-dripping knife, memories flood your mind - this time, with incredible intensity.  You drop the knife immediately, thankful you only touched the plain handle, and not the rune-lit blade or the red pool under it.  Moments later, your mind starts parsing and interpreting what it just absorbed:#{normal}#
 
 pain.  pain loneliness and cold, so much cold and it keeps growing.  in my dreams i can't move a muscle thanks to this #{italic}##FIREBRICK#[untranslatably foul profanity]#LAST##{normal}# goblin-built cage.  he never had his chance.  could've made the world in his image.  could've made a peaceful world, one of meadows and soft rolling hills, if the other gods hadn't fought with him over it.  might've made humans - in any case he watched over us, protected us from those #{italic}##FIREBRICK#[untranslatably ancient profanity]#LAST##{normal}# squid until they drove him into the void
 
-he suffers on a distant world, his power leeched out bit by bit for reasons never told to him by evildoers he's never seen.  this is not right.  he must be free.  i must be free.  he must come to eyal and our vision for it will be realized
+he suffers on a distant world, his power leeched out bit by bit for reasons never told to him by evildoers he's never seen.  this is not right.  he must be free.  i must be free.  he must come to eyal and we will wipe the slate clean so our vision for it can finally be realized
 
 it will be
 
@@ -78,7 +78,7 @@ newLore{
 
 ...So why can't I bring myself to stop her...?
 
-Argoniel, my love, I have sworn to hold your hand and walk beside you, no matter where you choose to go.  If that means joining you down the road to armageddon...  so be it.  
+Argoniel, my love, I have sworn to hold your hand and walk beside you, no matter where you choose to go.  If that means joining you down the road to a second Spellblaze...  so be it.  
 
 Forgive me, Eyal.]],
 }
