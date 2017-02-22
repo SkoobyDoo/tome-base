@@ -356,6 +356,7 @@ newTalent{
 					nil, false
 				)
 		end
+		game.level.map:particleEmitter(x, y, tg.radius, "shrapnel_explosion", {radius=tg.radius})
 	end,
 	archery_onhit = function(self, t, target, x, y)
 		if self:isTalentActive(self.T_PIERCING_AMMUNITION) then

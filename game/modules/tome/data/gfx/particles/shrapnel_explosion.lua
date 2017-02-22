@@ -19,30 +19,33 @@
 
 base_size = 64
 
-local r = r or 1
-local g = g or 1
-local b = b or 1
-local a = a or 1
+local nb = 0
 
-return { blend_mode = blend and core.particles.BLEND_SHINY or nil, system_rotation = dir or 0, system_rotationv = rotspeed or 0, generator = function()
+return { generator = function()
+	local ad = rng.range(0, 360)
+	local a = math.rad(ad)
+	local dir = math.rad(ad + 90)
+	local r = rng.range(1, 20)
+	local dirv = math.rad(rng.float(-1,1))
+	local life = rng.range(15,30)
+
 	return {
-		trail = 0,
-		life = 10,
-		size = 2*38 * (size_factor or 1), sizev = 0, sizea = 0,
+		trail = 1,
+		life = life,
+		size = rng.range(16, 32), sizev = -0.2, sizea = 0,
 
-		x = (x or 0) * 64, xv = 0, xa = 0,
-		y = (y or 0) * 64, yv = 0, ya = 0,
-		dir = 0, dirv = dirv, dira = 0,
-		vel = 0, velv = 0, vela = 0,
+		x = r * math.cos(a), xv = 0, xa = 0,
+		y = r * math.sin(a), yv = 0, ya = 0,
+		dir = dir, dirv = dirv, dira = -dirv/life,
+		vel = rng.float(0.7, 1.3) * radius * base_size / life, velv = 0, vela = 0,
 
-		r = r, rv = 0, ra = 0,
-		g = g, gv = 0, ga = 0,
-		b = b, bv = 0, ba = 0,
-		a = a, av = -0.02, aa = 0.005,
+		r = 1, rv = 0, ra = 0,
+		g = 1, gv = 0, ga = 0,
+		b = 1, bv = 0, ba = 0,
+		a = 0, av = 1 / (life/4), aa = -0.006,
 	}
 end, },
 function(self)
-	self.ps:emit(1)
+	if nb < 5 then self.ps:emit(10 * radius) nb = nb + 1 end
 end,
-1,
-"particles_images/"..(img or "shield7")
+50 * radius, "particles_images/shrapnel_particle_32"

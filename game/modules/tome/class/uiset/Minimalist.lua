@@ -1651,15 +1651,17 @@ function _M:displayMinimap(scale, bx, by)
 		game.mouse:registerZone(bx, by, mm_bg[6], mm_bg[7], desc_fct, nil, "minimap", true, scale)
 	end
 
-	game.zone_name_s:toScreenFull(
-		(mm_bg[6] - game.zone_name_w) / 2,
-		0,
-		game.zone_name_w, game.zone_name_h,
-		game.zone_name_tw, game.zone_name_th
-	)
+	if game.zone_name_s then
+		game.zone_name_s:toScreenFull(
+			(mm_bg[6] - game.zone_name_w) / 2,
+			0,
+			game.zone_name_w, game.zone_name_h,
+			game.zone_name_tw, game.zone_name_th
+		)
+	end
 
 	-- Compute how much space to reserve on the side
-	self:computePadding("minimap", bx, by, bx + mm_bg[6] * scale, by + (mm_bg[7] + game.zone_name_h) * scale)
+	self:computePadding("minimap", bx, by, bx + mm_bg[6] * scale, by + (mm_bg[7] + (game.zone_name_h or 0)) * scale)
 end
 
 function _M:displayGameLog(scale, bx, by)

@@ -17,32 +17,34 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local rot = rng.range(0,359)
+local img = "spinningwinds_perfect_strike"
+local radius = radius or 1
+
+use_shader = {type="spinningwinds", ellipsoidalFactor={1,1}, time_factor=4000, noup=0.0, verticalIntensityAdjust=-3.0}
 base_size = 64
 
-local r = r or 1
-local g = g or 1
-local b = b or 1
-local a = a or 1
-
-return { blend_mode = blend and core.particles.BLEND_SHINY or nil, system_rotation = dir or 0, system_rotationv = rotspeed or 0, generator = function()
+local first = true
+return {
+	system_rotation = rot, system_rotationv = 0,
+	generator = function()
 	return {
 		trail = 0,
 		life = 10,
-		size = 2*38 * (size_factor or 1), sizev = 0, sizea = 0,
+		size = 60, sizev = 12 * radius, sizea = 0,
 
-		x = (x or 0) * 64, xv = 0, xa = 0,
-		y = (y or 0) * 64, yv = 0, ya = 0,
+		x = 0, xv = 0, xa = 0,
+		y = 0, yv = 0, ya = 0,
 		dir = 0, dirv = dirv, dira = 0,
 		vel = 0, velv = 0, vela = 0,
 
-		r = r, rv = 0, ra = 0,
-		g = g, gv = 0, ga = 0,
-		b = b, bv = 0, ba = 0,
-		a = a, av = -0.02, aa = 0.005,
+		r = 1, rv = 0, ra = 0,
+		g = 1, gv = 0, ga = 0,
+		b = 1, bv = 0, ba = 0,
+		a = 1, av = -0.05, aa = 0,
 	}
 end, },
 function(self)
 	self.ps:emit(1)
 end,
-1,
-"particles_images/"..(img or "shield7")
+1, "particles_images/"..img

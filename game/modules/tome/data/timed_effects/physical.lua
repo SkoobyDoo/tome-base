@@ -1590,6 +1590,7 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("resists", {
 			[DamageType.PHYSICAL] = eff.inc,
 		})
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="exploit_weakness_debuff_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("resists", eff.tmpid)
@@ -3677,6 +3678,8 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "combat_physspeed", eff.power)
 		self:effectTemporaryValue(eff, "infinite_ammo", 1)
+		local h1x, h1y = self:attachementSpot("head", true)
+		self:effectParticles(eff, {type="circle", args={oversize=0.7, x=h1x, y=h1y-0.2, base_rot=0, a=220, shader=true, appear=12, img="true_shot_aura", speed=0, radius=0}})
 	end,
 }
 
