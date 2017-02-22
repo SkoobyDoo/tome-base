@@ -7316,7 +7316,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	},
 	special_desc = function(self, who)
 		local dam = who and who:damDesc(engine.DamageType.FIRE, self:trail_damage(who)) or 0
-		return ("Each step you take leaves a burning trail behind you lasting 5 turns that deals %d fire damage (based on Spellpower) to others who enter it."):format(dam)
+		return ("Each step you take leaves a burning trail behind you lasting 5 turns that deals %d fire damage (based on Spellpower) to foes who enter it."):format(dam)
 	end,
 	on_wear = function(self, who)
 		self.worn_by = who
@@ -7348,6 +7348,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 				5, nil,
 				{type="inferno"},
 				nil,
+				false,
 				false
 			)
 			ef.name = "fire trail"
