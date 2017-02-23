@@ -606,7 +606,7 @@ function _M:generateRandart(data)
 			else -- no ego found: increase budget for random powers to compensate
 				local xpoints = gr_ego and 8 or 5
 				print((" ** no ego found (+%d points)"):format(xpoints))
-				points = points + xpoints
+				points = points + (xpoints * 2)
 			end
 		end
 --		o.egos = nil o.egos_chance = nil o.force_ego = nil
@@ -1520,7 +1520,7 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 					end
 					-- Drop
 					for i = 1, data.nb_rares do -- generate rares as weak (1 ego) randarts
-						local fil = {lev=lev, egos=1, greater_egos_bias = 1, forbid_power_source=b.not_power_source,
+						local fil = {lev=lev, egos=1, greater_egos_bias = 0, power_points_factor = 3, forbid_power_source=b.not_power_source,
 							base_filter = {no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, 
 							special=function(e)
 								return (not e.unique and e.randart_able) and (not e.material_level or e.material_level >= 1) and true or false
