@@ -24,7 +24,7 @@ local g = g or 1
 local b = b or 1
 local a = a or 1
 
-return { blend_mode = blend and core.particles.BLEND_SHINY or nil, system_rotation = dir or 0, system_rotationv = 0, generator = function()
+return { blend_mode = blend and core.particles.BLEND_SHINY or nil, system_rotation = dir or 0, system_rotationv = rotspeed or 0, generator = function()
 	return {
 		trail = 0,
 		life = 10,

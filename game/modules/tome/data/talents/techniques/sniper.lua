@@ -226,11 +226,16 @@ newTalent{
 
 		local power = t.getPower(self,t)
 		local speed = t.getSpeed(self,t)
-		return {
+		local ret = {
 			atk = self:addTemporaryValue("combat_dam", power),
 			dam = self:addTemporaryValue("combat_atk", power),
 			speed = self:addTemporaryValue("slow_projectiles_outgoing", -speed),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="aim_shieldwall"}, shader={type="rotatingshield", noup=2.0, time_factor=600, appearTime=0.2}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="aim_shieldwall"}, shader={type="rotatingshield", noup=1.0, time_factor=600, appearTime=0.2}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("slow_projectiles_outgoing", p.speed)

@@ -2715,7 +2715,7 @@ newEffect{
 newEffect{
 	name = "UNSTOPPABLE", image = "talents/unstoppable.png",
 	desc = "Unstoppable",
-	long_desc = function(self, eff) return ("The target is unstoppable! It refuses to die, and at the end it will heal %d Life."):format(eff.kills * eff.hp_per_kill * self.max_life / 100) end,
+	long_desc = function(self, eff) return ("The target is unstoppable! It refuses to die and cannot heal.  When the effect ends, it will heal %d Life (%d%% of maximum life per foe slain during the frenzy)."):format(eff.kills * eff.hp_per_kill * self.max_life / 100, eff.hp_per_kill) end,
 	type = "other",
 	subtype = { frenzy=true },
 	status = "beneficial",
@@ -2724,10 +2724,12 @@ newEffect{
 		eff.kills = 0
 		eff.tmpid = self:addTemporaryValue("unstoppable", 1)
 		eff.healid = self:addTemporaryValue("no_life_regen", 1)
+		eff.nohealid = self:addTemporaryValue("no_healing", 1)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("unstoppable", eff.tmpid)
 		self:removeTemporaryValue("no_life_regen", eff.healid)
+		self:removeTemporaryValue("no_healing", eff.nohealid)
 		self:heal(eff.kills * eff.hp_per_kill * self.max_life / 100, eff)
 	end,
 }
@@ -3076,13 +3078,14 @@ newEffect{
 	display_desc = function(self, eff) return eff.stacks.." Knives" end,
 	long_desc = function(self, eff) return ("Has %d throwing knives prepared:\n\n%s"):format(eff.stacks, self:callTalent(self.T_THROWING_KNIVES, "knivesInfo")) end,
 	type = "other",
-	subtype = { },
+	subtype = { tactic=true },
 	status = "beneficial",
-	parameters = { stacks=1, max_stacks=10 },
+	parameters = { stacks=1, max_stacks=6 },
 	charges = function(self, eff) return eff.stacks end,
 	on_merge = function(self, old_eff, new_eff)
 		old_eff.dur = new_eff.dur
-		old_eff.stacks = util.bound(old_eff.stacks + new_eff.stacks, 1, new_eff.max_stacks)
+		old_eff.max_stacks = new_eff.max_stacks
+		old_eff.stacks = util.bound(old_eff.stacks + new_eff.stacks, 0, new_eff.max_stacks)
 		return old_eff
 	end,
 	activate = function(self, eff)

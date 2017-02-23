@@ -159,8 +159,8 @@ newEffect{
 	subtype = { wound=true, cut=true, bleed=true },
 	status = "detrimental",
 	parameters = {power=10, heal_factor=30},
-	on_gain = function(self, err) return "#Target# starts to bleed.", "+Deep Wounds" end,
-	on_lose = function(self, err) return "#Target# stops bleeding.", "-Deep Wounds" end,
+	on_gain = function(self, err) return "#Target# is cut deeply.", "+Deep Wounds" end,
+	on_lose = function(self, err) return "#Target#'s deep wound closes.", "-Deep Wounds" end,
 	activate = function(self, eff)
 		eff.healid = self:addTemporaryValue("healing_factor", -eff.heal_factor / 100)
 		if eff.src and eff.src:knowTalent(self.T_BLOODY_BUTCHER) then
@@ -234,7 +234,9 @@ newEffect{
 		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
 		old_eff.dur = dur
 		old_eff.power = (olddam + newdam) / dur
-		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
+		-- by default, can stack up to 5x power
+		old_eff.max_power = math.max(old_eff.max_power or old_eff.power, new_eff.max_power or new_eff.power*5)
+		old_eff.power = math.min(old_eff.power, old_eff.max_power)
 		return old_eff
 	end,
 	on_timeout = function(self, eff)
@@ -397,14 +399,16 @@ newEffect{
 		old_eff.time_to_stone = math.ceil(new_eff.time_to_stone*new_fct + old_eff.time_to_stone*(1-new_fct))
 		old_eff.dur = math.max(old_eff.dur, new_eff.dur)
 		old_eff.power = dam/old_eff.dur
-		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
-		old_eff._from_toxic_death = nil
+		-- by default, can stack up to 5x power
+		old_eff.max_power = math.max(old_eff.max_power or old_eff.power, new_eff.max_power or new_eff.power*5)
+		old_eff.power = math.min(old_eff.power, old_eff.max_power)
+--		old_eff._from_toxic_death = nil
 		return old_eff
 	end,
 	activate = function(self, eff)
 		if eff._from_toxic_death then -- reset turn counter if spread from Toxic Death
 			eff.turn_count = 0
-			eff._from_toxic_death = nil
+--			eff._from_toxic_death = nil
 		end
 	end,
 	deactivate = function(self, eff) -- chance to stone when deactivated
@@ -585,6 +589,9 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("evasion", eff.chance)
 		eff.pid = self:addTemporaryValue("projectile_evasion", eff.chance)
 		eff.defid = self:addTemporaryValue("combat_def", eff.defense)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={size_factor=1.5, img="evasion_tentacles2"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=700, noup=0.0}})
+		end
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("evasion", eff.tmpid)
@@ -1583,6 +1590,7 @@ newEffect{
 		eff.tmpid = self:addTemporaryValue("resists", {
 			[DamageType.PHYSICAL] = eff.inc,
 		})
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="exploit_weakness_debuff_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("resists", eff.tmpid)
@@ -1660,12 +1668,49 @@ newEffect{
 
 newEffect{
 	name = "HEALING_NEXUS", image = "talents/healing_nexus.png",
-	desc = "Healing Nexus",
-	long_desc = function(self, eff) return ("All healing done to the target is instead redirected to %s by %d%%."):format(eff.src.name, eff.pct * 100, eff.src.name) end,
+	desc = "Healing Nexus Redirection",
+	long_desc = function(self, eff)
+		return ("All direct healing done to the target fails, and is instead redirected to %s at %d%% effectiveness."):format(eff.src.name, eff.pct * 100, eff.src.name)
+	end,
 	type = "physical",
 	subtype = { nature=true, heal=true },
 	status = "detrimental",
 	parameters = { pct = 1 },
+	callbackPriorities={callbackOnHeal = -5},
+	callbackOnHeal = function(self, eff, value, src, raw_value)
+		if raw_value > 0 and eff.src then
+			game:delayedLogMessage(eff.src, self, "healing_nexus"..(eff.src.uid or ""), "#YELLOW_GREEN##Source# steals healing from #Target#!")
+			eff.src:heal(raw_value*eff.pct, src) -- use raw healing value to avoid compounding healing_factor
+			return {value = 0}
+		end
+	end,
+	activate = function(self, eff)
+		if self == eff.src then
+			self:setEffect(self.EFF_HEALING_NEXUS_BUFF, eff.dur, {pct=eff.pct})
+			self:removeEffect(eff.effect_id)
+		end
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "HEALING_NEXUS_BUFF", image = "talents/healing_nexus.png",
+	desc = "Healing Nexus",
+	long_desc = function(self, eff)
+		return ("All direct healing done to the target is increased by %d%% and each heal restores %0.1f equilibrium."):format(eff.pct * 100, eff.eq)
+	end,
+	type = "physical",
+	subtype = { nature=true, heal=true },
+	status = "beneficial",
+	parameters = { pct = 1, eq = 0 },
+	callbackOnHeal = function(self, eff, value, src, raw_value)
+		if value > 0 then
+			game:delayedLogMessage(self, self, "healing_nexus_buff", "#YELLOW_GREEN##Source#'s healing is amplified!")
+			self:incEquilibrium(-eff.eq)
+			return {value=value*(1 + eff.pct)}
+		end
+	end,
 	activate = function(self, eff)
 	end,
 	deactivate = function(self, eff)
@@ -3056,6 +3101,9 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "never_move", 1)
 		if eff.silence > 0 then eff.silenceid = self:addTemporaryValue("silence", 1) end
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=1, img="garrote_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, appearTime=0.3, time_factor=1000, noup=0.0}})
+		end
 	end,
 	charges = function(self, eff) return eff.silence end,
 	on_timeout = function(self, eff)
@@ -3091,6 +3139,7 @@ newEffect{
 	on_lose = function(self, err) return "#Target# is free from the deathmark.", "-Marked for Death" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "resists", {all=-eff.power})
+		self:effectParticles(eff, {type="circle", args={toback=true, oversize=1.8, base_rot=180, a=255, shader=true, appear=12, img="marked_death_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		if eff.turns >= eff.max_dur then
@@ -3136,7 +3185,7 @@ newEffect{
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then 
 			self:heal(eff.power, eff.src)
-		else
+		elseif self.x and self.y then
 			local dam = DamageType:get(DamageType.NATURE).projector(eff.src, self.x, self.y, DamageType.NATURE, eff.power)
 			if eff.volatile > 0 then
 				local tg = {type="ball", radius=1, friendlyfire=false, x=self.x, y=self.y, act_exclude={[self.uid]=true}}
@@ -3155,7 +3204,9 @@ newEffect{
 		local dur = math.ceil((old_eff.dur + new_eff.dur) / 2)
 		old_eff.dur = dur
 		old_eff.power = (olddam + newdam) / dur
-		if new_eff.max_power then old_eff.power = math.min(old_eff.power, new_eff.max_power) end
+		-- by default, can stack up to 5x power
+		old_eff.max_power = math.max(old_eff.max_power or old_eff.power, new_eff.max_power or new_eff.power*5)
+		old_eff.power = math.min(old_eff.power, old_eff.max_power)
 		if old_eff.healid then 
 			self:removeTemporaryValue("healing_factor", old_eff.healid)
 			old_eff.healid = null
@@ -3267,6 +3318,9 @@ newEffect{
 	on_lose = function(self, err) game.logPlayer(self, "#GREY#You end your Shadow Dance.") end,
 	parameters = {rad=10},
 	activate = function(self, eff)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=true,  size_factor=2.5, y=0.25, img="shadow_dance_tentacle_wings"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=700, noup=0.0}})
+		end
 	end,
 	deactivate = function(self, eff)
 		if not eff.no_cancel_stealth and not rng.percent(self.hide_chance or 0) then
@@ -3374,8 +3428,8 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("global_speed_add", eff.slowid)
-		self:removeTemporaryValue("never_move", eff.pinid)
+		if eff.slowid then self:removeTemporaryValue("global_speed_add", eff.slowid) end
+		if eff.pinid then self:removeTemporaryValue("never_move", eff.pinid) end
 	end,
 	on_timeout = function(self, eff)
 		if eff.dam > 0 then DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam) end
@@ -3624,6 +3678,8 @@ newEffect{
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "combat_physspeed", eff.power)
 		self:effectTemporaryValue(eff, "infinite_ammo", 1)
+		local h1x, h1y = self:attachementSpot("head", true)
+		self:effectParticles(eff, {type="circle", args={oversize=0.7, x=h1x, y=h1y-0.2, base_rot=0, a=220, shader=true, appear=12, img="true_shot_aura", speed=0, radius=0}})
 	end,
 }
 
@@ -3890,5 +3946,64 @@ newEffect{
 		if eff.cid then
 			self:removeTemporaryValue("confused", eff.cid)
 		end
+	end,
+}
+
+newEffect{
+	name = "SHADOWSTRIKE", image = "talents/shadowstrike.png",
+	desc = "Shadowstrike",
+	long_desc = function(self, eff) return ("The target's critical strike damage bonus is increased by %d%%."):format(eff.power) end,
+	type = "physical",
+	subtype = { darkness=true },
+	status = "beneficial",
+	parameters = { power=1 },
+	on_gain = function(self, err) return nil, true end,
+	on_lose = function(self, err) return nil, true end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_critical_power", eff.power)
+	end,
+}
+
+newEffect{
+	name = "URESLAK_MOLTEN_SCALES", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
+	desc = "Ureslak's Molten Scales",
+	long_desc = function(self, eff) return ("Reacts to attacks by raising resistances for 5 turns."):format() end,
+	type = "physical",
+	subtype = { nature=true, resist=true },
+	status = "beneficial",
+	parameters = { },
+	on_gain = function(self, err) return nil, true end,
+	on_lose = function(self, err) return nil, true end,
+	callbackOnTakeDamageBeforeResists = function(self, eff, src, x, y, type, dam, state)
+		if not self:hasEffect(self.EFF_URESLAK_MOLTEN_SCALES_RESIST) and dam > 0 and src ~= self and (
+		   (type == DamageType.FIRE) or 
+		   (type == DamageType.COLD) or 
+		   (type == DamageType.LIGHTNING) or 
+		   (type == DamageType.NATURE) or 
+		   (type == DamageType.DARKNESS)
+		) then
+			self:setEffect(self.EFF_URESLAK_MOLTEN_SCALES_RESIST, 5, {type=type})
+		end
+		return {dam=dam}
+	end,
+	activate = function(self, eff)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={size_factor=1.5, img="ureslak_tentacles"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=2000, noup=0.0}})
+		end
+	end,
+}
+
+newEffect{
+	name = "URESLAK_MOLTEN_SCALES_RESIST", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
+	desc = "Ureslak's Molten Scales (Resistance)",
+	long_desc = function(self, eff) return ("%s resistance increased by 15%%."):format(DamageType:get(eff.type).name:capitalize()) end,
+	type = "physical",
+	subtype = { nature=true, resist=true },
+	status = "beneficial",
+	parameters = { },
+	on_gain = function(self, err) return "#OLIVE_DRAB##Target#'s molten scales react to the incomming damage and start glowing!", true end,
+	on_lose = function(self, err) return "#Target#'s molten scales do not glow anymore.", true end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "resists", {[eff.type] = 15})
 	end,
 }

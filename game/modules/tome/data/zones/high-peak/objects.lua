@@ -23,6 +23,38 @@ load("/data/general/objects/lore/sunwall.lua")
 local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
+newEntity{ base = "BASE_LORE",
+	define_as = "ARGONIEL_DIAMOND", image = "object/artifact/atamathons_lost_ruby_eye.png",
+	name = "bloodsoaked diamond", lore="argoniel-1",
+	desc = [[A strangely wet diamond.]],
+	rarity = false,
+	encumberance = 0,
+}
+	
+newEntity{ base = "BASE_LORE",
+	define_as = "ARGONIEL_ATHAME", image = "object/artifact/blood_runed_athame.png",
+	name = "bloodsoaked athame", lore="argoniel-2",
+	desc = [[A strangely wet athame.]],
+	rarity = false,
+	encumberance = 0,
+}
+
+newEntity{ base = "BASE_LORE",
+	define_as = "ELANDAR_JOURNAL1",
+	name = "journal", lore="elandar-1",
+	desc = [[A magically-preserved journal.]],
+	rarity = false,
+	encumberance = 0,
+}
+
+newEntity{ base = "BASE_LORE",
+	define_as = "ELANDAR_JOURNAL2",
+	name = "journal", lore="elandar-2",
+	desc = [[A magically-preserved journal.]],
+	rarity = false,
+	encumberance = 0,
+}
+
 -- The staff of absorption, the reason the game exists!
 newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	power_source = {unknown=true},

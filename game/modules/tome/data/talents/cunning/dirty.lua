@@ -31,7 +31,7 @@ newTalent{
 	requires_target = true,
 	range = 1,
 	is_melee = true,
-	no_npc = true,
+	no_npc_use = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.5, 2.1) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 8)) end,

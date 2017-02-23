@@ -124,7 +124,7 @@ newTalent{
 			dam = dam - self.antimagic_shield
 		end
 
-		if src and src.x then
+		if src and src.x and src ~= self then
 			DamageType:get(DamageType.MANABURN).projector(self, src.x, src.y, DamageType.MANABURN, t.getBurn(self, t))
 			game.level.map:particleEmitter(src.x, src.y, 1, "slime")
 		end

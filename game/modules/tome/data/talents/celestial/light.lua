@@ -81,13 +81,14 @@ newTalent{
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
 		local heal = t.getHeal(self, t)
+		local heal_fact = heal/(heal+50)
 		local duration = t.getDuration(self, t)
 		return ([[A magical zone of Sunlight appears around you, healing and shielding all within a radius of %d for %0.2f per turn and increasing healing effects on everyone within by %d%%. The effect lasts for %d turns.
 		Existing damage shields will be added to instead of overwritten and have their duration set to 2 if it isn't higher.
 		If the same shield is refreshed 20 times it will become unstable and explode, removing it.
-		It also lights up the affected zone.
+		It also lights up the affected area.
 		The amount healed will increase with the Magic stat]]):
-		format(radius, heal, heal / 2, duration)
+		format(radius, heal, heal_fact*100, duration)
 	end,
 }
 

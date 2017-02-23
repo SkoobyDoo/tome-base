@@ -316,9 +316,14 @@ newTalent{
 		end
 
 		local speed = t.getAttackSpeed(self, t)
-		return {
+		local ret = {
 			speed = self:addTemporaryValue("combat_physspeed", speed),
 		}
+		if core.shader.active() then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1.5, rotspeed=7, img="rapid_shot_rotating_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, wobblingType=0, appearTime=0.4, time_factor=600, noup=2.0}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1.5, rotspeed=7, img="rapid_shot_rotating_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, wobblingType=0, appearTime=0.4, time_factor=600, noup=1.0}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_physspeed", p.speed)

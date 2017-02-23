@@ -22,3 +22,9 @@ load("/data/general/grids/forest.lua")
 load("/data/general/grids/sand.lua")
 load("/data/general/grids/water.lua")
 load("/data/general/grids/mountain.lua")
+
+newEntity{ base = "GENERIC_LEVER",
+	define_as = "GENERIC_LEVER_SAND",
+	subtype = "sand",
+	image = "terrain/sandfloor.png",
+}

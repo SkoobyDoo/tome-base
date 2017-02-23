@@ -340,7 +340,7 @@ function _M:onTakeHit(value, src, death_note)
 		if src then
 			if src.targetable and not self.ai_target.actor then self:setTarget(src) end
 			-- Get angry if hurt by a friend
-			if src.faction and self:reactionToward(src) >= 0 then
+			if src.faction and self:reactionToward(src) >= 0 and self.fov then
 				self:checkAngered(src, false, -50)
 
 				-- Share reaction with allies
@@ -551,23 +551,6 @@ function _M:addedToLevel(level, x, y)
 		end
 		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
 			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})
-		end
-
-		if profile and profile.auth and profile.auth.login == "raderak" then
-			if self.rank <= 3 and self.name == "snow giant boulder thrower" then
-				local b = game.state:createRandomBoss(self, {level=self.level})
-				if b then
-					local uid = self.uid
-					self:replaceWith(b)
-					self.uid = uid
-					self.desc = (self.desc or "").."\n#CRIMSON#Well Raderak, you wanted them buffed. I did... but ONLY FOR YOU ! :) *CACKLES EVILY*\n-- yours truly, DarkGod#LAST#"
-				end
-			end
-			if self.type == "vermin" and self.subtype == "rodent" then
-				self.max_life = self.max_life * 20
-				self.life = self.life * 20
-				self.desc = (self.desc or "").."\n#CRIMSON#Well Raderak, you wanted them buffed. I did... but ONLY FOR YOU ! :) *CACKLES EVILY*\n-- yours truly, DarkGod#LAST#"
-			end
 		end
 	end
 

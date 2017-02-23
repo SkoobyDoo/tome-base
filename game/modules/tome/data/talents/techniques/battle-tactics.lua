@@ -64,7 +64,7 @@ newTalent{
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	range = 1,
 	tactical = { ATTACK = { weapon = 1, cut = 1 }, DISABLE = 2 },
-	healloss = function(self,t) return self:combatTalentLimit(t, 100, 17, 50) end, -- Limit to < 100%
+	healloss = function(self,t) return self:combatTalentLimit(t, 150, 25, 75) end, -- Limit to < 150%
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)

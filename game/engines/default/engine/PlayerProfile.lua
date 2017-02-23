@@ -484,6 +484,7 @@ end
 
 function _M:eventAuth(e)
 	self.waiting_auth = false
+	self.connected = true
 	self.auth_tried = (self.auth_tried or 0) + 1
 	if e.ok then
 		self.auth = e.ok:unserialize()
