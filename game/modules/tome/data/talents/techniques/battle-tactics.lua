@@ -26,8 +26,9 @@ newTalent{
 	cooldown = 20,
 	stamina = 25,
 	tactical = { ATTACK = 3 },
-	getdur = function(self,t) return math.floor(self:combatTalentLimit(t, 20, 5.3, 10.5)) end, -- Limit to <20
-	getchance = function(self,t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 10, 90),100, 6.8, 6.8, 61, 61) end, -- Limit < 100%
+	no_energy = true,
+	getdur = function(self,t) return math.floor(self:combatTalentLimit(t, 8, 2, 6)) end, -- Limit to <10
+	getchance = function(self,t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 10, 60),100, 6.8, 6.8, 61, 61) end, -- Limit < 100%
 	action = function(self, t)
 		self:setEffect(self.EFF_GREATER_WEAPON_FOCUS, t.getdur(self,t), {chance=t.getchance(self, t)})
 		return true
@@ -104,6 +105,8 @@ newTalent{
 	mode = "sustained",
 	cooldown = 15,
 	sustain_stamina = 40,
+	callbackOnRest = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
+	callbackOnRun = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
 	tactical = { DEFEND = 2 }, -- AI for this could be better
 	--Note: this can result in > 100% resistancs (before cap) at high talent levels to keep up with opposing resistance lowering talents
 	resistCoeff = function(self, t) return self:combatTalentScale(t, 25, 45) end,
