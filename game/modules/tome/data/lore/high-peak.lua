@@ -82,7 +82,7 @@ newLore{
     id = "elandar-2",
     category = "high peak",
     name = "Elandar's journal (2)",
-    lore = [[...I awoke early this morning to see the love of my life altering the unique farportal we've been building together.  Our plans are all on track so far, the Staff of Absorption has been integrated into the portal so it'll drain Gerlyk the moment it summons him, the orcs are too busy suspecting each other to bother investigating us...  and then I discover that she's sabotaged it.  This portal will #{italic}#em#{normal}#power Gerlyk when it summons him - and he surely must be insane from the loneliness of tumbling in the void of space all this time.  In any case, even a sane god would be devastating to life as we know it.
+    lore = [[I awoke early this morning to see the love of my life altering the unique farportal we've been building together.  Our plans are all on track so far, the Staff of Absorption has been integrated into the portal so it'll drain Gerlyk the moment it summons him, the orcs are too busy suspecting each other to bother investigating us...  and then I discover that she's sabotaged it.  This portal will #{italic}#em#{normal}#power Gerlyk when it summons him - and he surely must be insane from the loneliness of tumbling in the void of space all this time.  In any case, even a sane god would be devastating to life as we know it.
     
 ...I can't bring myself to stop her.
 
