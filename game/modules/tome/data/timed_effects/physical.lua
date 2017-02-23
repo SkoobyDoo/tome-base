@@ -3696,26 +3696,6 @@ newEffect{
 }
 
 newEffect{
-	name = "PIN_DOWN",
-	desc = "Pinned Down", image = "talents/pin_down.png",
-	long_desc = function(self, eff) return ("Pinned down, preventing movement and giving attackers %d%% increased critical strike chance and critical strike damage."):format(eff.power) end,
-	type = "physical",
-	subtype = { pin=true },
-	status = "detrimental",
-	parameters = {power = 1},
-	on_gain = function(self, err) return nil, "+Pinned Down" end,
-	on_lose = function(self, err) return nil, "-Pinned Down" end,
-	activate = function(self, eff)
-		if eff.pin==1 then eff.tmpid = self:addTemporaryValue("never_move", 1) end
-		eff.critid = self:addTemporaryValue("combat_crit_vulnerable", eff.power)
-	end,
-	deactivate = function(self, eff)
-		if eff.tmpid then self:removeTemporaryValue("never_move", eff.tmpid) end
-		self:removeTemporaryValue("combat_crit_vulnerable", eff.critid)
-	end,
-}
-
-newEffect{
 	name = "RAPID_MOVEMENT", image = "talents/rapid_shot.png",
 	desc = "Rapid Movement",
 	long_desc = function(self, eff) return ("Increases movement speed by %d%%."):format(eff.power*100) end,
@@ -3859,7 +3839,7 @@ newEffect{
 	subtype = { tactic=true },
 	status = "beneficial",
 	charges = function(self, eff) return eff.charges end,
-	parameters = { power=5, duration=1, sight=1, dam=10, max_power=15, charges=3 },
+	parameters = { power=5, duration=1, sight=1, max_power=15, charges=3 },
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "cancel_damage_chance", eff.max_power)
 		self:effectTemporaryValue(eff, "sight", eff.sight)

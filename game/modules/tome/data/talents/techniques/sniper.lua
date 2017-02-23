@@ -130,31 +130,29 @@ newTalent{
 		end
 		return true
 	end,
-	getDamage = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
 	getAvoidance = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 10, 22)) end,
 	getSight = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, "log")) end,
 	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.5)) end,
 	sustain_lists = "break_with_stealth",
 	activate = function(self, t)
 		local ret = {}
-		self:setEffect(self.EFF_CONCEALMENT, 3, {power=t.getAvoidance(self,t), dam=t.getDamage(self,t), sight=t.getSight(self,t), charges=3})
+		self:setEffect(self.EFF_CONCEALMENT, 3, {power=t.getAvoidance(self,t), sight=t.getSight(self,t), charges=3})
 		return ret
 	end,
 	deactivate = function(self, t, p)
 		return true
 	end,
 	callbackOnActBase = function(self, t)
-		self:setEffect(self.EFF_CONCEALMENT, 3, {power=t.getAvoidance(self,t), max_power=t.getAvoidance(self,t)*3, dam=t.getDamage(self,t), sight=t.getSight(self,t), charges=3})
+		self:setEffect(self.EFF_CONCEALMENT, 3, {power=t.getAvoidance(self,t), max_power=t.getAvoidance(self,t)*3, sight=t.getSight(self,t), charges=3})
 	end,
 	info = function(self, t)
 		local avoid = t.getAvoidance(self,t)*3
-		local dam = t.getDamage(self,t)
 		local range = t.getSight(self,t)
 		local radius = t.getRadius(self,t)
-		return ([[Enter a concealed sniping stance, increasing our weapon's attack range and vision range by %d, giving all incoming damage a %d%% chance to miss you, and causing your Headshot, Volley and Called Shots to deal %d%% increased damage and behave as if the target was marked.
+		return ([[Enter a concealed sniping stance, increasing our weapon's attack range and vision range by %d, giving all incoming damage a %d%% chance to miss you, and causing your Headshot, Volley and Called Shots to behave as if the target was marked.
 Any non-instant, non-movement action will break concealment, but the increased range and vision and damage avoidance will persist for 3 turns, with the damage avoidance decreasing in power by 33%% each turn.
 This requires a bow to use, and cannot be used if there are foes in sight within range %d.]]):
-		format(range, avoid, dam, radius)
+		format(range, avoid, radius)
 	end,
 }
 
@@ -219,9 +217,9 @@ newTalent{
 	sustain_stamina = 50,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
-	getPower = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(8, true), 4, 0, 54, 50) end,
+	getPower = function(self, t)  return self:combatTalentStatDamage(t, "dex", 15, 50) end,
 	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 150, 50, 100)) end,
-	getDamage = function(self, t) return 1 + math.min(math.floor(self:getTalentLevel(t)),6) end, --we really don't want a flat damage bonus like this going up past 35%
+	getDamage = function(self, t) return self:combatTalentLimit(t, 8, 2, 6) end,
 	getMarkChance = function(self, t) return math.floor(self:combatTalentScale(t, 2, 10)) end,
 	sustain_slots = 'archery_stance',
 	activate = function(self, t)
@@ -246,7 +244,7 @@ newTalent{
 		local dam = t.getDamage(self,t)
 		local mark = t.getMarkChance(self,t)
 		return ([[Enter a calm, focused stance, increasing physical power and accuracy by %d, projectile speed by %d%% and the chance to mark targets by an additional %d%%.
-This makes your shots more effective at range, increasing all damage dealt by %d%% per tile travelled beyond 3, to a maximum of %d%% damage at range 8.
+This makes your shots more effective at range, increasing all damage dealt by %0.1f%% per tile travelled beyond 3, to a maximum of %0.1f%% damage at range 8.
 The physical power and accuracy increase with your Dexterity.]]):
 		format(power, speed, mark, dam, dam*5)
 	end,
@@ -257,7 +255,7 @@ newTalent{
 	type = {"technique/sniper", 4},
 	points = 5,
 	random_ego = "attack",
-	stamina = 30,
+	stamina = 20,
 	cooldown = 8,
 	require = techs_dex_req_high4,
 	range = archery_range,

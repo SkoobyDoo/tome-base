@@ -3230,3 +3230,17 @@ newEffect{
 		self:effectTemporaryValue(eff, "blind_fighted", 1)
 	end,
 }
+
+newEffect{
+	name = "PIN_DOWN",
+	desc = "Pinned Down", image = "talents/pin_down.png",
+	long_desc = function(self, eff) return ("The next Steady Shot or Shoot has 100%% chance to be a critical hit and mark."):format() end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	parameters = {power = 1},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
