@@ -658,7 +658,7 @@ newEntity{ base = "BASE_WARAXE",
 	require = { stat = { str=55 }, },
 	level_range = {35, 45},
 	rarity = 290,
-	cost = 375,
+	cost = 450,
 	material_level = 4,
 	combat = {
 		dam = 55,
@@ -668,10 +668,18 @@ newEntity{ base = "BASE_WARAXE",
 		damrange = 1.2,
 		burst_on_hit={[DamageType.BLIGHT] = 25},
 		lifesteal=5, --You can counter the life regen by fighting, muhuhahah
+		talent_on_hit = {
+				[Talents.T_CURSE_OF_VULNERABILITY] = {level=3, chance=10},
+				[Talents.T_CURSE_OF_DEATH] = {level=3, chance=10},
+		},
 	},
 	wielder = {
-		life_regen = -0.3,
+		combat_spellpower = 20,
 		inc_damage = { [DamageType.BLIGHT] = 20 },
+	},
+	talent_on_spell = {
+			{talent=Talents.T_CURSE_OF_DEFENSELESSNESS, level=3, chance=10},
+			{talent=Talents.T_CURSE_OF_IMPOTENCE, level=3, chance=10},
 	},
 }
 
