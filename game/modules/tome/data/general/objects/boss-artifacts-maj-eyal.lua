@@ -1061,9 +1061,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 					o.power_regen = 1
 					o.use_no_wear = true
 					o.use_power = { name = "recover the Crystal Focus (destroys this weapon)", power = 1, use = function(self, who, inven, item)
-						local n = game.zone:finishEntity(game.level, "object", game.zone.object_list.CRYSTAL_FOCUS)
-						n:identify(true)
-						who:addObject(who.INVEN_INVEN, n)
+						local art_list = mod.class.Object:loadList("/data/general/objects/boss-artifacts-maj-eyal.lua")
+						local o = art_list["CRYSTAL_FOCUS"]:clone()
+						o:resolve()
+						o:resolve(nil, true)
+						who:addObject(who.INVEN_INVEN, o)
 						who:sortInven(who.INVEN_INVEN)
 						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
 						for i, h in ipairs(who.hotkey) do
@@ -1072,7 +1074,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 						who:removeObject(inven, item, true)	
 						who:sortInven(who.INVEN_INVEN)		
 						who.changed = true
-						game.logPlayer(who, "You created: %s", n:getName{do_color=true})
+						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
 					end },
 				end),
 				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
@@ -1178,9 +1180,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 					o.power_regen = 1
 					o.use_no_wear = true
 					o.use_power = { name = "recover the Crystal Heart (destroys this armour)", power = 1, use = function(self, who, inven, item)
-						local n = game.zone:finishEntity(game.level, "object", game.zone.object_list.CRYSTAL_HEART)
-						n:identify(true)
-						who:addObject(who.INVEN_INVEN, n)
+						local art_list = mod.class.Object:loadList("/data/general/objects/boss-artifacts-maj-eyal.lua")
+						local o = art_list["CRYSTAL_HEART"]:clone()
+						o:resolve()
+						o:resolve(nil, true)
+						who:addObject(who.INVEN_INVEN, o)
 						who:sortInven(who.INVEN_INVEN)
 						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
 						for i, h in ipairs(who.hotkey) do
@@ -1189,7 +1193,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 						who:removeObject(inven, item, true)	
 						who:sortInven(who.INVEN_INVEN)		
 						who.changed = true
-						game.logPlayer(who, "You created: %s", n:getName{do_color=true})
+						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
 					end },
 				end),
 			}
