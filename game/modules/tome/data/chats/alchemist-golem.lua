@@ -62,7 +62,7 @@ local ans = {
 	{"I want to change your talents.", action=change_talents},
 	{"I want to change your tactics.", action=change_tactics},
 	{"I want to take direct control.", action=change_control},
-	{"I want to change your name.", cond = function() return golem.sentient_telos == 1 end, jump="name"},
+	{"I want to change your name.", cond = function() return golem.sentient_telos == 1 end, jump="name", action=function(npc, player) npc.name = "Telos the Great and Powerful (reluctant follower of "..npc.summoner.name..")" game.log("#ROYAL_BLUE#The golem decides to change it's name to #{bold}#%s#{normal}#.", npc.name) end},
 	{"I want to change your name.", cond = function() return not golem.sentient_telos end, action=change_name},
 	{"How is it that you speak?", cond = function() return golem.sentient_telos == 1 end, jump="how_speak"},
 	{"Nothing, let's go."},
@@ -74,7 +74,7 @@ newChat{ id="how_speak",
 }
 
 newChat{ id="name",
-	text = [[Change my name? I'm quite happy being 'Telos' thankyou. Though I wouldn't mind being 'Telos the Great and Powerful'...]],
+	text = [[Change my name? I'm quite happy being 'Telos' thankyou. Though I wouldn't mind being 'Telos the Great and Powerful'. Do that actually. Yes!]],
 	answers = ans
 }
 

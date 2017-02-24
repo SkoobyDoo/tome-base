@@ -773,6 +773,18 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 	on_set_broken = function(self, who)
 		game.logPlayer(game.player, "#CRIMSON#The unearthly glow fades away.")
 	end,
+	on_wear = function(self, who)
+		if who.is_alchemist_golem then
+			self.old_golem_name = who.name
+			who.name = "Telos Golem (reluctant follower of "..who.summoner.name..")"
+			game.log("#ROYAL_BLUE#The golem decides to change it's name to #{bold}#%s#{normal}#.", who.name)
+		end
+	end,
+	on_takeoff = function(self, who)
+		if who.is_alchemist_golem then
+			who.name = self.old_golem_name or "I feel lost!"
+		end
+	end,
 }
 
 -- The staff that goes with the crystal above, it will not be generated randomly it is created by the crystal
