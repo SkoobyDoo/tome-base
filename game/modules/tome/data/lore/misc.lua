@@ -710,7 +710,7 @@ Curse the dead all you want, but we've stayed afloat;
 we're the only ones blessed with the skillset to thrive.
 
 Our wit, strength, and teamwork outweigh cosmic powers;
-they've done what they could but Spydre is [b]ours.[/b]
+they've done what they could but Spydrë is [b]ours.[/b]
 }
 
 --------------------------------------------------------------
