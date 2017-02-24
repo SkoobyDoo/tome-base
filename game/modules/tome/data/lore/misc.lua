@@ -690,6 +690,28 @@ Welcome to Point Zero, agent. Enclosed are timespace coordinates to what is, qui
 PS: You might encounter a... benefactor of sorts in your travels. You'll know it when you see it, ham-fistedly yanking its puppets back from the brink of death; if you see it for yourself, we regret to inform you that you've taken a one-way trip off prime Timeline-E4-RL territory for a doomed offshoot unless "he" feels like weaving you back in - and it tends to only do that to people who narrowly avert its engineered apocalypses through incredible power or luck. If you have been chosen by its schemes, play along and you might get brought back from the temporal graveyard that is the Timeline-E4-EXPADV subnetwork. We do not know what it is - a runaway creation of our own, a competing culture's weapon, or something far above ourselves - but if it has hostile intent, it has already won. So far it's been... mostly cooperative. Just make a point not to remind it that we're its competition.]]
 }
 
+newLore{
+	id = "shiiak-mantra",
+	category = "spydrë",
+	name = "Mantra of a Shiiak",
+    lore = [[Each morning I wake, happy I'm alive;
+the traps of this tomb won't claim me today.
+Though its curse of hunger eats at my insides,
+I curse it one better by having outstayed.
+
+Say a curse for the goblins' tortures that remained,
+and a curse for the gods who stole half the world.
+Say a curse for the chill that leaves magic drained,
+and a curse for the star that grew dark as it swirled
+
+But most important of all is to note,
+in spite of fate's bias, only we survived.
+Curse the dead all you want, but we've stayed afloat;
+we're the only ones blessed with the skillset to thrive.
+
+Our wit, strength, and teamwork outweigh cosmic powers;
+they've done what they could but Spydrë is [b]ours.[/b] ]]
+}
 
 --------------------------------------------------------------
 -- Misc bosses

@@ -228,7 +228,7 @@ newTalent{
 			self.talents_cd[t.id] = math.max(cooldown - 1, 0)
 		end
 	end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.4, 2.6) end, --high damage, high opportunity cost
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.5) end, --high damage, high opportunity cost
 	getDist = function(self, t) if self:getTalentLevel(t) >= 3 then return 2 else return 1 end end,
 	archery_onhit = function(self, t, target, x, y)
 		if not target or not target:canBe("knockback") then return end
@@ -289,9 +289,9 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
-	getAttackSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20))/100 end,
-	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 25, 60))/100 end,
-	getTurn = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 10, 20)) end,
+	getAttackSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 40, 10, 25))/100 end,
+	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 25, 55))/100 end,
+	getTurn = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 5, 15)) end,
 	on_pre_use = function(self, t, silent)
 		if not archerPreUse(self, t, silent, "sling") then return false end
 		return true
