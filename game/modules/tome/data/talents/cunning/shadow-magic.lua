@@ -30,7 +30,13 @@ newTalent{
 	getDamage = function(self, t) return 2 + self:combatTalentSpellDamage(t, 2, 50) end,
 	getManaCost = function(self, t) return 2 end,
 	activate = function(self, t)
-		return {}
+		local ret = {}
+		if core.shader.active(4) then
+			local slow = rng.percent(50)
+			local h1x, h1y = self:attachementSpot("hand1", true) if h1x then self:talentParticles(ret, {type="shader_shield", args={img="shadowhands_01", dir=180, a=0.7, size_factor=0.4, x=h1x, y=h1y-0.1}, shader={type="flamehands", time_factor=slow and 700 or 1000}}) end
+			local h2x, h2y = self:attachementSpot("hand2", true) if h2x then self:talentParticles(ret, {type="shader_shield", args={img="shadowhands_01", dir=180, a=0.7, size_factor=0.4, x=h2x, y=h2y-0.1}, shader={type="flamehands", time_factor=not slow and 700 or 1000}}) end
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		return true

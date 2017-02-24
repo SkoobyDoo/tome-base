@@ -780,16 +780,17 @@ function _M:printResolvers(t)
 end
 
 --- Call when the entity is actually added to a level/whatever
--- This helps ensuring uniqueness of uniques
+-- This helps ensure uniqueness of uniques
 function _M:added()
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) + 1
-		print("Added unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tostring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) + 1
+		print("Added unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 
 --- Call when the entity is actually removed from existence
--- This helps ensuring uniqueness of uniques.
+-- This helps ensure uniqueness of uniques.
 -- This recursively removes inventories too, if you need anything special, overload this
 function _M:removed()
 	if self.inven then
@@ -803,9 +804,10 @@ function _M:removed()
 	if game and game.hasEntity and game:hasEntity(self) then game:removeEntity(self) end
 
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) - 1
-		if game.uniques[self.__CLASSNAME.."/"..self.unique] <= 0 then game.uniques[self.__CLASSNAME.."/"..self.unique] = nil end
-		print("Removed unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tostring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) - 1
+		if game.uniques[self.__CLASSNAME.."/"..ustr] <= 0 then game.uniques[self.__CLASSNAME.."/"..ustr] = nil end
+		print("Removed unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 

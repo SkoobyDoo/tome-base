@@ -85,8 +85,10 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		local ret = {
-		}
+		local ret = {}
+		local h1x, h1y = self:attachementSpot("hand1", true) if h1x then self:talentParticles(ret, {type="apply_poison", args={x=h1x, y=h1y}}) end
+		local h2x, h2y = self:attachementSpot("hand2", true) if h2x then self:talentParticles(ret, {type="apply_poison", args={x=h2x, y=h2y}}) end
+		self:talentParticles(ret, {type="apply_poison", args={}})
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -105,19 +107,19 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = cuns_req2,
-	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1, 2.7)) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 25) end,
+	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1.5, 3.5)) end,
 	on_kill = function(self, t, target)
 		local poisons = {}
 		local to_spread  = 0
 		for k, v in pairs(target.tmp) do
 			local e = target.tempeffect_def[k]
-			if e.subtype.poison and v.src == self and rng.percent(t.getChance(self, t)) then
+			if e.subtype.poison and v.src == self then
 				print("[Toxic Death] spreading poison", k, target.x, target.y)
 				poisons[k] = target:copyEffect(k) poisons[k]._from_toxic_death = true
 				to_spread = to_spread + 1
 			end
 		end
+		-- Note: New effects functions are called in order: merge, on_gain, activate
 		if to_spread > 0 then
 			local tg = {type="ball", range = 10, radius=t.getRadius(self, t), selffire = false, friendlyfire = false, talent=t, stop_block=true}
 			target.dead = false -- for combat log purposes
@@ -135,7 +137,7 @@ newTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[When you kill a creature, all of your poisons affecting it will have a %d%% chance to spread to foes in a radius of %d.]]):format(t.getChance(self, t), t.getRadius(self, t))
+		return ([[When you kill a creature, all of your poisons affecting it will spread to foes in a radius of %d.]]):format(t.getRadius(self, t))
 	end,
 }
 
@@ -198,16 +200,8 @@ newTalent{
 	stamina = 14,
 	require = cuns_req4,
 	requires_target = true,
-	on_learn = function(self, t)
-		if self:knowTalent(self.T_THROWING_KNIVES) and not self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:learnTalent(self.T_VENOMOUS_THROW, true, nil, {no_unlearn=true})
-		end
-	end,
-	on_unlearn = function(self, t)
-		if self:knowTalent(self.T_VENOMOUS_THROW) then
-			self:unlearnTalent(self.T_VENOMOUS_THROW)
-		end
-	end,
+	on_learn = venomous_throw_check,
+	on_unlearn = venomous_throw_check,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.1) end,
 	getSecondaryDamage = function (self, t) return self:combatTalentStatDamage(t, "cun", 50, 550) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4, "log")) end,
@@ -310,7 +304,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 13, 25) end, -- Limit effect to <100%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, -- Limit effect to <35%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -337,7 +331,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 35.5, 57.5) end, -- Limit -healing effect to <100%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 150, 45, 70) end, -- Limit -healing effect to <150%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -364,7 +358,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 50, 13, 25) end, --	Limit effect to < 50%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, --	Limit chance to < 35%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
@@ -444,7 +438,7 @@ newTalent{
 	no_unlearn_last = true,
 	getDamage = function(self, t) return self:combatStatScale("mag", 20, 50, 0.75) end,
 	info = function(self, t)
-	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity (for living targets) by 50%%.]]):
+	return ([[Whenever you apply Deadly Poison, you also apply an unresistable magical poison dealing %0.2f arcane damage (based on your Magic) each turn. This poison reduces all damage resistance by 10%% and poison immunity by 50%%.]]):
 	format(damDesc(self, DamageType.ARCANE, t.getDamage(self,t)))
 	end,
 }

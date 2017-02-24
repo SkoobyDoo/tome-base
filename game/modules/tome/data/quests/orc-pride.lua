@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 name = "The many Prides of the Orcs"
 desc = function(self, who)
 	local desc = {}

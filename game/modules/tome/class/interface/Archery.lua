@@ -48,7 +48,8 @@ function _M:archery_range(t, type)
 			return 1
 		end
 	end
-	return math.max(weapon and weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 0, pf_weapon and pf_weapon.combat and pf_weapon.combat.range or 0, self:attr("archery_range_override") or 0)
+	local br = (self.archery_bonus_range or 0)
+	return math.max(weapon and br + weapon.combat.range or 6, offweapon and offweapon.combat and br + offweapon.combat.range or 0, pf_weapon and pf_weapon.combat and br + pf_weapon.combat.range or 0, self:attr("archery_range_override") or 0)
 end
 
 --- Look for possible archery targets
@@ -81,7 +82,7 @@ function _M:archeryAcquireTargets(tg, params)
 		game.logPlayer(self, "You do not have enough ammo left!")
 		return nil
 	end
-
+	local br = (self.archery_bonus_range or 0)
 	print("[ARCHERY ACQUIRE TARGETS WITH]", weapon and weapon.name, ammo.name, offweapon and offweapon.name, pf_weapon and pf_weapon.name)
 	tg = tg or {}
 	local max_range, warn_range = self:attr("archery_range_override") or 1, 40
@@ -90,7 +91,7 @@ function _M:archeryAcquireTargets(tg, params)
 	local use_resources
 	if weapon then
 		weaponC = weapon.combat
-		max_range = math.max(max_range, weaponC.range or 6)
+		max_range =  math.max(max_range, weaponC.range or 6)
 		warn_range = math.min(warn_range, weaponC.range or 6)
 		-- check resources
 		use_resources = (weaponC.use_resources or ammo.combat.use_resources) and table.mergeAdd(table.clone(weaponC.use_resources) or {}, ammo.combat.use_resources or {}) or nil
@@ -105,7 +106,7 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 	if offweapon then
 		offweaponC = offweapon.combat
-		max_range = math.max(max_range, offweaponC.range or 6)
+		max_range =  math.max(max_range, offweaponC.range or 6)
 		warn_range = math.min(warn_range, offweaponC.range or 6)
 		use_resources = (offweaponC.use_resources or ammo.combat.use_resources) and table.mergeAdd(table.clone(offweaponC.use_resources) or {}, ammo.combat.use_resources or {}) or nil
 		if use_resources then
@@ -119,7 +120,7 @@ function _M:archeryAcquireTargets(tg, params)
 	end
 	if pf_weapon then
 		pf_weaponC = pf_weapon.combat
-		max_range = math.max(max_range, pf_weaponC.range or 6)
+		max_range =  math.max(max_range, pf_weaponC.range or 6)
 		warn_range = math.min(warn_range, pf_weaponC.range or 6)
 		use_resources = (pf_weaponC.use_resources or ammo.combat.use_resources) and table.mergeAdd(table.clone(pf_weaponC.use_resources) or {}, ammo.combat.use_resources or {}) or nil
 		if use_resources then
@@ -136,9 +137,9 @@ function _M:archeryAcquireTargets(tg, params)
 	-- at least one shot is possible, set up targeting
 	tg.type = tg.type or weaponC and weaponC.tg_type or offweaponC and offweaponC.tg_type or pf_weaponC and pf_weaponC.tg_type or ammo.combat.tg_type or "bolt"
 	if tg.range then
-		tg.warn_range, tg.max_range = math.min(tg.range, warn_range), math.min(tg.range, max_range)
+		tg.warn_range, tg.max_range = br + math.min(tg.range, warn_range), br + math.min(tg.range, max_range)
 	else
-		tg.warn_range, tg.max_range = warn_range, max_range
+		tg.warn_range, tg.max_range = br + warn_range, br + max_range
 	end
 	-- Pass friendly actors
 	if self:attr("archery_pass_friendly") then
@@ -191,7 +192,7 @@ function _M:archeryAcquireTargets(tg, params)
 	local runfire runfire = function(weapon, targets, realweapon)
 		--	Note: if shooters with built-in infinite ammo are reintroduced, handle it here by specifying ammo to use
 		-- calculate the range for the current weapon
-		local weapon_range = math.min(tg.range or 40, math.max(weapon.range or 6, self:attr("archery_range_override") or 1))
+		local weapon_range = math.min(tg.range or 40, math.max(br + weapon.range or 6, self:attr("archery_range_override") or 1))
 		-- don't fire at targets out of range unless in forced target mode
 		if not params.ignore_weapon_range and not core.key.modState("ctrl") and weapon_range < core.fov.distance(x, y, self.x, self.y) then
 			print("[archeryAcquireTargets runfire] NOT FIRING", realweapon.name, x, y, "range limit:", weapon_range)
@@ -364,7 +365,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
-		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0) end
+		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, (tg.archery.crit_power or 0) + (weapon.crit_power or 0)/100) end
 		print("[ATTACK ARCHERY] after crit", dam)
 
 		dam = dam * mult * (weapon.dam_mult or 1)
@@ -374,6 +375,14 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			local bonus = 1 + self:getAccuracyEffect(ammo, atk, def, 0.001, 0.1)
 			print("[ATTACK] mace accuracy bonus", atk, def, "=", bonus)
 			dam = dam * bonus
+		end
+		
+		if self and dam > 0 and self.knowTalent and self:isTalentActive(self.T_AIM) and self.__CLASSNAME ~= "mod.class.Grid" then
+			local dist = math.min(math.max(0, core.fov.distance(self.x, self.y, target.x, target.y) - 3),8)
+			if dist > 0 then 
+				local dammult = self:callTalent(self.T_AIM, "getDamage") * dist 
+				dam = dam * (1 + (dammult/100))
+			end
 		end
 
 		-- hook to resolve after a hit is determined, before damage has been projected
@@ -670,7 +679,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 	tg.talent = tg.talent or talent
 	
 	-- Pass friendly actors
-	if self:attr("archery_pass_friendly") then
+	if self:attr("archery_pass_friendly") or self:knowTalent(self.T_SHOOT_DOWN) then
 		tg.friendlyfire=false	
 		tg.friendlyblock=false
 	end
@@ -687,7 +696,7 @@ function _M:archeryShoot(targets, talent, tg, params)
 			tg.archery.weapon = weapon
 			tg.archery.ammo = targets[i].ammo or ammo.combat
 			-- calculate range, speed, type by shooter/ammo combination
-			tg.range = math.min(tg.range or 40, math.max(weapon.range or 6, self:attr("archery_range_override") or 1))
+			tg.range = math.min(tg.range or 40, math.max((self.archery_bonus_range or 0) + weapon.range or 6, self:attr("archery_range_override") or 1))
 			tg.speed = (tg.speed or 10) + (ammo.travel_speed or 0) + (weapon.travel_speed or 0) + (self.combat and self.combat.travel_speed or 0)
 			tg.type = tg.type or weapon.tg_type or tg.archery.ammo.tg_type or "bolt"
 			tg.display = tg.display or targets[i].display or self:archeryDefaultProjectileVisual(realweapon, ammo)

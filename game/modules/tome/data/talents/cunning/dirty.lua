@@ -31,10 +31,11 @@ newTalent{
 	requires_target = true,
 	range = 1,
 	is_melee = true,
+	no_npc_use = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.5) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.5, 2.1) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 8)) end,
-	getPower = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
+	getPower = function(self, t) return math.floor(self:combatTalentScale(t, 5, 25)) end,
 	speed = "weapon",
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -42,7 +43,7 @@ newTalent{
 		if not target or not self:canProject(tg, x, y) then return nil end
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true, true)
 		if hitted then
-			target:setEffect(target.EFF_DIRTY_FIGHTING, t.getDuration(self, t), {power = t.getPower(self,t), apply_power=self:combatAttack()})
+			target:setEffect(target.EFF_DIRTY_FIGHTING, t.getDuration(self, t), {power=t.getPower(self,t)})
 		end
 
 		return true
@@ -51,8 +52,8 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local power = t.getPower(self,t)
-		return ([[You make a low blow against a vulnerable point on the target, dealing %d%% unarmed damage. If your attack hits, the target is left reeling, reducing their stun, blind, confusion and pin resistance by 50%% and physical save by %d for %d turns.
-The chance to apply this effect increases with your Accuracy.]]):
+		return ([[You make a low blow against a sensitive point on the target, dealing %d%% unarmed damage. If your attack hits, the target is left reeling and vulnerable, reducing their physical save by %d and their stun, blind, confusion and pin immunities to 50%% of normal for %d turns.
+This effect bypasses saves.]]):
 		format(100 * damage, power, duration)
 	end,
 }
@@ -63,33 +64,37 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = cuns_req2,
-	getDamageBoost = function(self, t) return math.floor(self:combatTalentScale(t, 4, 10, 0.75)) end,
-	getDisableChance = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 1, 5)) end, -- Limit < 100%
+	getDamageBoost = function(self, t) return self:combatTalentScale(t, 4, 10) end,
+	getDisableChance = function(self, t) return self:combatTalentLimit(t, 30, 1, 5) end, -- Limit < 30%
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
-		if target then
-		
+		if target and hitted and dam > 0 then
 			local nb = 0
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
 				if (e.subtype.stun or e.subtype.blind or e.subtype.pin or e.subtype.disarm or e.subtype.cripple or e.subtype.confusion or e.subtype.silence)then nb = nb + 1 end
 			end
-			local chance = math.min(nb*t.getDisableChance(self,t),t.getDisableChance(self,t)*3)
-			if rng.percent(chance) then
-				if not self:checkHit(self:combatAttack(), target:combatPhysicalResist()) then return end
-				local effect = rng.range(1, 3)
-				if effect == 1 then
-					-- disarm
-					if target:canBe("disarm") then
-						target:setEffect(target.EFF_DISARMED, 2, {})
+			if nb == 0 then return end
+			local chance = math.min(nb, 3)*t.getDisableChance(self,t)
+			if rng.percent(chance) and self:checkHit(self:combatAttack(), target:combatPhysicalResist()) then
+				local effects = {target.EFF_DISARMED, target.EFF_PINNED, target.EFF_CRIPPLE}
+				while #effects > 0 do
+					local effect = rng.tableRemove(effects)
+					if not target:hasEffect(effect) then
+						if effect == target.EFF_DISARMED then -- disarm
+							if target:canBe("disarm") then
+								target:setEffect(effect, 2, {})
+							end
+							return
+						elseif effect == target.EFF_PINNED then	-- pin
+							if target:canBe("pin") then
+								target:setEffect(effect, 2, {})
+							end
+							return
+						elseif effect == target.EFF_CRIPPLE then -- cripple
+							target:setEffect(effect, 2, {speed=0.25})
+							return
+						end
 					end
-				elseif effect == 2 then
-					-- pin
-					if target:canBe("pinned") then
-						target:setEffect(target.EFF_PINNED, 2, {})
-					end
-				elseif effect == 3 then
-					-- cripple
-					target:setEffect(target.EFF_CRIPPLE, 2, {speed=0.4})
 				end
 			end
 		end
@@ -98,8 +103,9 @@ newTalent{
 	local dam = t.getDamageBoost(self, t)
 	local chance = t.getDisableChance(self,t)
 		return ([[Your quick wit gives you a big advantage against disabled targets, increasing your damage by %d%% for each disabling effect the target is under, to a maximum of %d%%.
-In addition, for each disabling effect the target is under, your melee attacks have a %d%% (to a maximum of %d%%) chance to disarm, cripple (40%% power) or pin them for 2 turns.
-Disabling effects are stun, blind, daze, confuse, pin, disarm, cripple and silence.]]):
+For this purpose, disabling effects are stun, blind, daze, confuse, pin, disarm, cripple and silence.
+In addition, for each disabling effect the target is under, your melee attacks have a %d%% (to a maximum of %d%%) chance to inflict a new effect on them (that they do not already have): either disarm, cripple (25%% power) or pin for 2 turns.
+The chance to further disable the target increases with your Accuracy.]]):
 		format(dam, dam*3, chance, chance*3)
 	end,
 }
@@ -121,7 +127,7 @@ newTalent{
 		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 5)) end,
-	getSlow = function(self, t) return math.ceil(self:combatTalentScale(t, 15, 30, 0.75)) end,
+	getSlow = function(self, t) return self:combatTalentLimit(t, 90, 15, 30) end, -- Limit < 90% speed loss
 	getAcc = function(self, t) return math.ceil(self:combatTalentScale(t, 8, 24, 0.75)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -136,7 +142,7 @@ newTalent{
 		local accuracy = t.getAcc(self,t)
 		local speed = t.getSlow(self,t)
 		local duration = t.getDuration(self, t)
-		return ([[Throw a cloud of blinding dust in a radius %d cone. Enemies within will be blinded, as well as having their accuracy reduced by %d and movement speed by %d%% for %d turns.
+		return ([[Throw a cloud of blinding dust in a radius %d cone. Enemies within will be blinded, as well as having their accuracy reduced by %d and movement speed decreased by %d%% for %d turns.
 		The chance to inflict these effects increase with your Accuracy.]]):format(self:getTalentRadius(t), accuracy, speed, duration)
 	end,
 }

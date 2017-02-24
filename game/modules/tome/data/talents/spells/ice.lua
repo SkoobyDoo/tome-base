@@ -167,7 +167,7 @@ newTalent{
 	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { BUFF = 2 },
-	getColdDamageIncrease = function(self, t) return self:getTalentLevelRaw(t) * 2 end,
+	getColdDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
 	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 17, 50) end, -- Limit < 100
 	getPierce = function(self, t) return math.min(100, self:getTalentLevelRaw(t) * 20) end, 
 	activate = function(self, t)
@@ -200,7 +200,7 @@ newTalent{
 		local damageinc = t.getColdDamageIncrease(self, t)
 		local ressistpen = t.getResistPenalty(self, t)
 		local pierce = t.getPierce(self, t)
-		return ([[Surround yourself with Uttercold, increasing all your cold damage by %d%% and ignoring %d%% cold resistance of your targets
+		return ([[Surround yourself with Uttercold, increasing all your cold damage by %0.1f%% and ignoring %d%% cold resistance of your targets
 		In addition you pierce through iceblocks easily, reducing damage absorbed from your attacks by iceblocks by %d%%.]])
 		:format(damageinc, ressistpen, pierce)
 	end,

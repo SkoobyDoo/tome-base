@@ -169,7 +169,7 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Normal mode#WHITE##{normal}#",
 		"Provides the normal level of challenges.",
-		"Stairs can not be used for 3 turns after a kill.",
+		"Stairs can not be used for 2 turns after a kill.",
 	},
 	descriptor_choices =
 	{
@@ -192,7 +192,7 @@ newBirthDescriptor{
 		"All zone levels increased by 50%",
 		"All creature talent levels increased by 30%",
 		"Rare creatures are slightly more frequent",
-		"Stairs can not be used for 5 turns after a kill.",
+		"Stairs can not be used for 3 turns after a kill.",
 		"Player can earn Nightmare version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -224,7 +224,7 @@ newBirthDescriptor{
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Nonrandom bosses will have randomly selected talents",
 		"All enemies have 20% more life",
-		"Stairs can not be used for 7 turns after a kill.",
+		"Stairs can not be used for 5 turns after a kill.",
 		"Player can earn Insane version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -257,7 +257,7 @@ newBirthDescriptor{
 		"All creature talent levels increased by 170%",
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Bosses will have randomly selected talents",
-		"Stairs can not be used for 10 turns after a kill.",
+		"Stairs can not be used for 9 turns after a kill.",
 		"Player is being hunted! Randomly all foes in a radius will get a feeling of where she/he is",
 		"Player can earn Madness version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},

@@ -842,6 +842,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			local dmg
 			local apr
 			local crit
+			local crit_power = 0
 			local aspeed
 			local range
 			local mspeed
@@ -858,6 +859,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 				atk = actor:combatAttack(mean)
 				apr = actor:combatAPR(mean)
 				crit = actor:combatCrit(mean)
+				crit_power = mean.crit_power
 				aspeed = 1/actor:combatSpeed(mean)
 				archery = false
 			else -- weapon combat
@@ -867,6 +869,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					atk = actor:combatAttackRanged(mean, dam)
 					dmg = actor:combatDamage(mean, nil, dam) * (mean.dam_mult or 1)
 					apr = actor:combatAPR(mean) + (dam.apr or 0)
+					crit_power = (mean.crit_power or 0) + (dam.crit_power or 0)
 					range = math.max(mean.range or 6, actor:attr("archery_range_override") or 1)
 					mspeed = 10 + (actor.combat.travel_speed or 0) + (mean.travel_speed or 0) + (dam.travel_speed or 0)
 				else -- melee combat
@@ -874,12 +877,13 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 					atk = actor:combatAttack(mean)
 					dmg = actor:combatDamage(mean) * (type == "offhand" and mean.talented ~= "shield" and actor:getOffHandMult(dam) or 1) * (mean.dam_mult or 1)
 					apr = actor:combatAPR(mean)
+					crit_power = mean.crit_power
 				end
 				crit = actor:combatCrit(dam)
 				aspeed = 1/actor:combatSpeed(mean)
 			end
 			if type == "psionic" then actor:attr("use_psi_combat", -1) end
-			return {obj=o, atk=atk, dmg=dmg, apr=apr, crit=crit, aspeed=aspeed, range=range, mspeed=mspeed, archery=archery, mean=mean, ammo=ammo, block=mean.block, talented=mean.talented}
+			return {obj=o, atk=atk, dmg=dmg, apr=apr, crit=crit, crit_power=crit_power, aspeed=aspeed, range=range, mspeed=mspeed, archery=archery, mean=mean, ammo=ammo, block=mean.block, talented=mean.talented}
 		end
 
 		-- display the combat (comparison) stats for a combat slot
@@ -913,6 +917,10 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			self:mouseTooltip(self.TOOLTIP_COMBAT_APR,    s:drawColorStringBlended(self.font, ("APR          : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.crit or combat.crit end, "%3d%%", "%+.0f%%", 1, false, false, dam)
 			self:mouseTooltip(self.TOOLTIP_COMBAT_CRIT,   s:drawColorStringBlended(self.font, ("Crit. chance : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			if combat.crit_power and combat.crit_power ~= 0 or combatc.crit_power and combatc.crit_power ~= 0 then
+				text = compare_fields(player, actor_to_compare, function(actor, ...) return 150 + (actor.combat_critical_power or 0) + (actor == actor_to_compare and combatc.crit_power or combat.crit_power) end, "%3d%%", "%+.0f%%", 1, false, false, dam)
+				self:mouseTooltip(self.TOOLTIP_INC_CRIT_POWER,   s:drawColorStringBlended(self.font, ("Crit. power  : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+			end
 			color = combat.aspeed
 			color = color >= 1 and "#LIGHT_GREEN#" or "#LIGHT_RED#"
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.aspeed or combat.aspeed end, color.."%.1f%%", "%+.1f%%", 100, false, false, mean)
@@ -955,6 +963,12 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 
 		h = 0
 		w = self.w * 0.25
+		s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Physical:", w, h, 255, 255, 255, true) h = h + self.font_h
+		text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatPhysicalpower() end, "%3d", "%+.0f")
+		self:mouseTooltip(self.TOOLTIP_PHYSICAL_POWER, s:drawColorStringBlended(self.font, ("Phys. Power: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatCrit() end, "%d%%", "%+.0f%%")
+		self:mouseTooltip(self.TOOLTIP_PHYSICAL_CRIT, s:drawColorStringBlended(self.font,  ("Crit. chance: #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
+		h = h + self.font_h
 		s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Magical:", w, h, 255, 255, 255, true) h = h + self.font_h
 		text = compare_fields(player, actor_to_compare, function(actor, ...) return actor:combatSpellpower() end, "%3d", "%+.0f")
 		self:mouseTooltip(self.TOOLTIP_SPELL_POWER, s:drawColorStringBlended(self.font, ("Spellpower  : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h

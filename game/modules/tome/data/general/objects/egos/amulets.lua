@@ -317,13 +317,12 @@ newEntity{
 	keywords = {murder=true},
 	level_range = {30, 50},
 	greater_ego = 1,
-	rarity = 16,
+	rarity = 20,
 	cost = 40,
 	wielder = {
-		combat_physcrit = resolvers.mbonus_material(3, 3),
 		combat_critical_power = resolvers.mbonus_material(10, 10),
 		combat_atk = resolvers.mbonus_material(5, 5),
-		combat_apr = resolvers.mbonus_material(4, 4),
+		combat_apr = resolvers.mbonus_material(10, 10),
 	},
 }
 

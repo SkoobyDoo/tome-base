@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,15 +28,18 @@ newTalent{
 	require = techs_dex_req1,
 	mode = "passive",
 	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
-		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 100, 15, 20, 60, 250) -- ~68% at TL 6.5, 55 dex
+		local chance = math.min(100, self:combatLimit(self:getTalentLevel(t)*self:getDex(), 90, 15, 20, 60, 250)) -- limit < 90%, ~67% at TL 6.5, 55 dex
+		local eff = self:hasEffect(self.EFF_FEINT)
+		if eff then chance = 100 - (100 - chance)*(1 - eff.parry_efficiency) end
+		return chance
 	end,
 	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
-		return math.max(0, self:combatTalentLimit(t, 100, 15, 50))
+		return math.max(0, self:combatTalentLimit(t, 100, 15, 40))
 	end,
 	-- deflect count handled in physical effect "PARRY" in mod.data.timed_effects.physical.lua
 	getDeflects = function(self, t, fake)
 		if fake or self:hasDualWeapon() then
-			return self:combatStatScale("cun", 2, 3)
+			return self:combatStatScale("cun", 2, 3) + (not fake and self:hasEffect(self.EFF_FEINT) and 1 or 0)
 		else return 0
 		end
 	end,
@@ -75,8 +78,7 @@ local function do_tempo(self, t, src) -- handle Tempo defensive bonuses
 	if mh and oh then
 		self:incStamina(t.getStamina(self,t))
 		self.energy.value = self.energy.value + game.energy_to_act*t.getSpeed(self,t)/100
-		local cooldown = self.talents_cd["T_FEINT"] or 0
-		if cooldown > 0 then self.talents_cd["T_FEINT"] = math.max(cooldown - 1, 0)	end
+		self:alterTalentCoolingdown(self.T_LUNGE, -1)
 	end
 	self.turn_procs.tempo = true
 end
@@ -107,71 +109,91 @@ newTalent{
 		local speed = t.getSpeed(self,t)
 		return ([[The flow of battle invigorates you, allowing you to press your advantage as the fight progresses.
 		Up to once each per turn, while dual wielding, you may:
-		Reposte -- If a melee or archery attack misses you, you parry it, or you avoid some of its damage (by Duelist's Focus), you instantly restore %0.1f stamina and gain %d%% of a turn.
+		Riposte -- If a melee or archery attack misses you or you parry it, you instantly restore %0.1f stamina and gain %d%% of a turn.
 		Recover -- On performing a critical strike with your offhand weapon, you instantly restore %0.1f stamina.]]):format(sta, speed, sta)
-	end,
-}
-
---This could be replaced with an APR/hit talent if more offense is needed.
-newTalent{
-	name = "Duelist's Focus",
-	type = {"technique/duelist", 3},
-	require = techs_dex_req3,
-	points = 5,
-	mode = "sustained",
-	sustain_stamina = 20,
-	cooldown = 30,
-	no_energy = true,
-	getChance = function(self, t) return self:combatTalentLimit(t, 25, 5, 15) end,
-	critResist = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
-	on_pre_use = function(self, t, silent, fake)
-		local armor = self:getInven("BODY") and self:getInven("BODY")[1]
-		if armor and (armor.subtype == "heavy" or armor.subtype == "massive") then
-			if not silent then game.logPlayer(self, "You cannot be so nimble with heavy armour!") end
-			return nil
-		end
-		return true
-	end,
-	activate = function(self, t)
-		local ret = {}
-		local chance = t.getChance(self, t)
-		local crit = t.critResist(self,t)
-		self:talentTemporaryValue(ret, "cancel_damage_chance", chance)
-		self:talentTemporaryValue(ret, "ignore_direct_crits", crit)
-		return ret
-	end,
-	deactivate = function(self, t, p)
-		return true
-	end,
-	info = function(self, t)
-		local chance = t.getChance(self,t)
-		local crit = t.critResist(self,t)
-		return ([[Your reflexes are lightning quick, giving you a %d%% chance to entirely ignore incoming damage and causing all direct critical hits (physical, mental, spells) against you to have a %d%% lower critical multiplier (but always do at least normal damage).
-		This requires unrestricted mobility, and so is not usable when wearing heavy or massive armour.]])
-		:format(chance, crit)
 	end,
 }
 
 newTalent{
 	name = "Feint",
-	type = {"technique/duelist", 4},
-	require = techs_dex_req4,
+	type = {"technique/duelist", 3},
+	require = techs_dex_req3,
 	points = 5,
-	cooldown = 18,
-	stamina = 20,
+	random_ego = "defensive",
+	cooldown = 8,
+	stamina = 6,
 	requires_target = true,
-	tactical = { DISABLE = 2, ATTACK = {weapon = 2} },
+	tactical = { DISABLE = {pin = 1}, DEFEND = 1 },
 	is_melee = true,
 	range = 1,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 8, 3, 5)) end,
-	getSpeedPenalty = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 5, 50), 100, 10, 0, 50, 35.7) end, -- Limit < 100%
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.5) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 6, 2, 3.4)) end, -- fix
+	getParryEfficiency = function(self, t) -- return increased parry efficiency
+		return math.floor(self:combatTalentLimit(t, 75, 15, 50))
+	end,
 	on_pre_use = function(self, t, silent)
 		if self:attr("never_move") then
 			if not silent then game.logPlayer(self, "You must be able to move to use this talent.") end
 			return false
-		elseif not self:hasDualWeapon() then
+		end
+		return true
+	end,
+	speed = "weapon",
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not target or not self:canProject(tg, x, y) then return nil end
+		local tx, ty, sx, sy = target.x, target.y, self.x, self.y
+
+		if not self.dead and tx == target.x and ty == target.y then
+		
+			if target:attr("never_move") then
+				game.logPlayer(self, "%s cannot move!", target.name:capitalize())
+				return false
+			elseif not self:canMove(tx,ty,true) or not target:canMove(sx,sy,true) then
+				self:logCombat(target, "Terrain prevents #Source# from switching places with #Target#.")
+				return false
+			end
+			if target:canBe("pin") then
+				target:setEffect(target.EFF_PINNED, 2, {apply_power=self:combatAttack()})
+			end
+			if target:canBe("stun") then
+				target:setEffect(target.EFF_DAZED, 2, {apply_power=self:combatAttack()})
+			end
+			self:setEffect(self.EFF_FEINT, t.getDuration(self, t), {parry_efficiency=t.getParryEfficiency(self, t)/100})
+			-- Displace
+			if not target.dead then
+				self:move(tx, ty, true)
+				target:move(sx, sy, true)
+			end
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		return ([[Make a cunning feint that tricks your target into swapping places with you.  While moving, you take the opportunity to trip them, pinning and dazing them for 2 turns.
+		Switching places distracts your foes and allows you to improve your defenses:  For %d turns, Dual Weapon Mastery yields one extra parry each turn and you are %d%% less likely to miss your parry opportunities.
+		The chance to pin and to daze increases with your Accuracy]]):
+		format(t.getDuration(self, t), t.getParryEfficiency(self, t))
+	end,
+}
+
+newTalent{
+	name = "Lunge",
+	type = {"technique/duelist", 4},
+	require = techs_dex_req4,
+	points = 5,
+	cooldown = 18,
+	stamina = 12,
+	requires_target = true,
+	tactical = { DISABLE = {disarm = 2}, ATTACK = {weapon = 2} },
+	is_melee = true,
+	range = 1,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 7)) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.8, 3.5) end, --super high scaling because this is offhand only
+	on_pre_use = function(self, t, silent)
+		if not self:hasDualWeapon() then
 			if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end
 			return false
 		end
@@ -180,48 +202,29 @@ newTalent{
 	speed = "weapon",
 	action = function(self, t)
 		local weapon, offweapon = self:hasDualWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Feint without dual wielding!")
+		if not offweapon then
+			game.logPlayer(self, "You cannot use Lunge without dual wielding!")
 			return nil
 		end
 
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or core.fov.distance(self.x, self.y, x, y) ~= 1 or not self:canProject(tg, x, y) then return nil end
-		local tx, ty, sx, sy = target.x, target.y, self.x, self.y
-		if target:attr("never_move") then
-			game.logPlayer(self, "%s cannot move!", target.name:capitalize())
-			return false
-		elseif not self:canMove(tx,ty,true) or not target:canMove(sx,sy,true) then
-			game.logPlayer(self, "Terrain prevents you from switching places with %s.", target.name:capitalize())
-			return false
-		end
-		
-		-- Displace
-		if not self.dead and tx == target.x and ty == target.y then
-			if not target.dead then
-				self:logCombat(target, "#Target# switches places with #Source#!")
-				self:move(tx, ty, true)
-				target:move(sx, sy, true)
-			end
-		end
 
 		-- Attack		
 		local dam = t.getDamage(self,t)
 		local spd, hitted, dmg = self:attackTargetWith(target, offweapon.combat, nil, self:getOffHandMult(offweapon.combat, dam))
 		if hitted then
-			local speed = t.getSpeedPenalty(self, t) / 100
-			target:setEffect(target.EFF_CRIPPLE, t.getDuration(self, t), {speed=speed, apply_power=self:combatAttack()})
+			target:setEffect(target.EFF_DISARMED, t.getDuration(self, t), {apply_power=self:combatAttack()})
 		end
 		return true
 	end,
 	info = function(self, t)
 		local dam = t.getDamage(self, t)
-		local speed = t.getSpeedPenalty(self,t)
 		local dur = t.getDuration(self,t)
-		return ([[Make a cunning feint that tricks your target into swapping places with you.  Taking advantage of the switch allows you to strike the target with a crippling blow, dealing %d%% offhand damage and reducing its melee, spellcasting, and mind speed by %d%% for %d turns.
-		The chance to cripple your target improves with your Accuracy, while the speed penalty increases with your Dexterity.
-		Tempo will reduce the cooldown of this talent by 1 turn each time it is triggered defensively.]]):
-		format(dam*100, speed, dur)
+		return ([[Exploiting a gap in your target's defenses, you make a lethal strike with your offhand weapon for %d%% damage that causes them to drop their weapon, disarming them for %d turns.
+		Tempo will reduce the cooldown of this talent by 1 turn each time it is triggered defensively.
+		The chance to disarm increases with your Accuracy.]]):
+		format(dam*100, dur)
 	end,
 }

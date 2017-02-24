@@ -20,43 +20,9 @@
 local Object = require "mod.class.Object"
 
 newTalent{
-	name = "Stone Skin",
-	type = {"spell/earth", 1},
-	mode = "sustained",
-	require = spells_req1,
-	points = 5,
-	sustain_mana = 30,
-	cooldown = 10,
-	tactical = { BUFF = 2 },
-	getArmor = function(self, t) return self:combatTalentSpellDamage(t, 10, 23) end,
-	activate = function(self, t)
-		game:playSoundNear(self, "talents/earth")
-		local ret = {
-			armor = self:addTemporaryValue("combat_armor", t.getArmor(self, t)),
-		}
-		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={0xD7/255, 0x8E/255, 0x45/255}}, "particles_images/spikes.png") then
-			ret.particle = self:addParticles(Particles.new("stone_skin", 1))
-		end
-		return ret
-	end,
-	deactivate = function(self, t, p)
-		self:removeShaderAura("stone_skin")
-		self:removeParticles(p.particle)
-		self:removeTemporaryValue("combat_armor", p.armor)
-		return true
-	end,
-	info = function(self, t)
-		local armor = t.getArmor(self, t)
-		return ([[The caster's skin grows as hard as stone, granting a %d bonus to Armour.
-		The bonus to Armour will increase with your Spellpower.]]):
-		format(armor)
-	end,
-}
-
-newTalent{
 	name = "Pulverizing Auger", short_name="DIG",
-	type = {"spell/earth",2},
-	require = spells_req2,
+	type = {"spell/earth",1},
+	require = spells_req1,
 	points = 5,
 	mana = 15,
 	cooldown = 6,
@@ -91,6 +57,58 @@ newTalent{
 		The beam also affect any creatures in its path, dealing %0.2f physical damage to all.
 		The damage will increase with your Spellpower.]]):
 		format(nb, damDesc(self, DamageType.PHYSICAL, damage))
+	end,
+}
+
+newTalent{
+	name = "Stone Skin",
+	type = {"spell/earth", 2},
+	mode = "sustained",
+	require = spells_req2,
+	points = 5,
+	sustain_mana = 30,
+	cooldown = 10,
+	tactical = { BUFF = 2 },
+	getArmor = function(self, t) return self:combatTalentSpellDamage(t, 10, 23) end,
+	getCDChance = function(self, t) return self:combatTalentLimit(t, 100, 30, 90) end,
+	callbackOnMeleeHit = function(self, t, src, dam)
+		if not rng.percent(t.getCDChance(self, t)) then return end
+		if self.turn_procs.stone_skin_cd or dam <= 0 then return end
+		self.turn_procs.stone_skin_cd = true
+		local tids = {}
+		for tid, lev in pairs(self.talents) do
+			local st = self:getTalentFromId(tid)
+			if st.type[1] and (st.type[1] == "spell/earth" or st.type[1] == "spell/stone") and self:isTalentCoolingDown(tid) then
+				tids[#tids+1] = tid
+			end
+		end
+		if #tids > 0 then
+			local tid = rng.table(tids)
+			self:alterTalentCoolingdown(tid, -2)
+		end
+	end,
+	activate = function(self, t)
+		game:playSoundNear(self, "talents/earth")
+		local ret = {
+			armor = self:addTemporaryValue("combat_armor", t.getArmor(self, t)),
+		}
+		if not self:addShaderAura("stone_skin", "crystalineaura", {time_factor=1500, spikeOffset=0.123123, spikeLength=0.9, spikeWidth=3, growthSpeed=2, color={0xD7/255, 0x8E/255, 0x45/255}}, "particles_images/spikes.png") then
+			ret.particle = self:addParticles(Particles.new("stone_skin", 1))
+		end
+		return ret
+	end,
+	deactivate = function(self, t, p)
+		self:removeShaderAura("stone_skin")
+		self:removeParticles(p.particle)
+		self:removeTemporaryValue("combat_armor", p.armor)
+		return true
+	end,
+	info = function(self, t)
+		local armor = t.getArmor(self, t)
+		return ([[The caster's skin grows as hard as stone, granting a %d bonus to Armour.
+		Each time you are hit in melee, you have a %d%% chance to reduce the cooldown of an Earth or Stone spell by 2 (this effect can only happen once per turn).
+		The bonus to Armour will increase with your Spellpower.]]):
+		format(armor, t.getCDChance(self, t))
 	end,
 }
 

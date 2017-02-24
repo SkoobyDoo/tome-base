@@ -22,7 +22,7 @@ newTalentType{ allow_random=true, type="cunning/stealth-base", name = "stealth",
 newTalentType{ allow_random=true, type="cunning/stealth", name = "stealth", description = "Allows the user to enter stealth." }
 newTalentType{ allow_random=true, type="cunning/trapping", name = "trapping", description = "The knowledge of trap laying and assorted trickeries." }
 newTalentType{ allow_random=true, type="cunning/traps", name = "traps", description = "Collection of known traps." }
-newTalentType{ allow_random=true, type="cunning/poisons", name = "poisons", min_lev = 10, description = "The knowledge of poisons and how to apply them to 'good' effects." }
+newTalentType{ allow_random=true, type="cunning/poisons", name = "poisons", description = "The knowledge of poisons and how to apply them to 'good' effects." }
 newTalentType{ allow_random=true, type="cunning/poisons-effects", name = "poisons", description = "Collection of known poisons." }
 newTalentType{ allow_random=true, type="cunning/dirty", name = "dirty fighting", description = "Teaches various talents to cripple your foes." }
 newTalentType{ allow_random=true, type="cunning/lethality", name = "lethality", description = "How to make your foes feel the pain." }

@@ -20,6 +20,7 @@
 newTalent{
 	name = "Thick Skin",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	points = 5,
 	require = { stat = { con=function(level) return 14 + level * 9 end }, },
@@ -37,6 +38,7 @@ newTalent{
 newTalent{
 	name = "Heavy Armour Training", short_name = "ARMOUR_TRAINING",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	no_unlearn_last = true,
 	points = 5,
@@ -54,13 +56,13 @@ newTalent{
 		return 0
 	end,
 	-- Called by _M:combatArmor in mod.class.interface.Combat.lua
-	getArmor = function(self, t)  return self:getTalentLevel(t) * t.ArmorEffect(self, t) * 1.4 end,
+	getArmor = function(self, t) return self:combatTalentScale(t, 1, 7, 0.75) * t.ArmorEffect(self, t) end,
 	-- Called by _M:combatArmorHardiness in mod.class.interface.Combat.lua
 	getArmorHardiness = function(self, t) -- Matches previous progression for "heavy" armor
 		return math.max(0, self:combatLimit(self:getTalentLevel(t) * 5 * t.ArmorEffect(self, t), 100, 5, 3.75, 50, 37.5))
 	end,
-	getCriticalChanceReduction = function(self, t) -- Matches previous progression for "heavy" armor
-		return math.max(0, self:combatScale(self:getTalentLevel(t) * 3.8 * (t.ArmorEffect(self, t)/2)^0.5, 3.8, 3.3, 19, 16.45, 0.75))
+	getCriticalChanceReduction = function(self, t)
+		return self:combatTalentScale(t, 1, 9) * t.ArmorEffect(self, t)
 	end,
 	on_unlearn = function(self, t)
 		for inven_id, inven in pairs(self.inven) do if inven.worn then
@@ -90,7 +92,7 @@ newTalent{
 		if self:knowTalent(self.T_STEALTH) then
 			classrestriction = "(Note that wearing mail or plate armour will interfere with stealth.)"
 		end
-		return ([[You become better at using your armour to deflect blows and protect your vital areas. Increases Armour value by %d, Armour hardiness by %d%%, and reduces chance to be critically hit by %d%% with your current body armour.
+		return ([[You become better at using your armour to deflect blows and protect your vital areas. Increases Armour value by %d, Armour hardiness by %d%%, and reduces the chance melee or ranged attacks critically hit you by %d%% with your current body armour.
 		(This talent only provides bonuses for heavy mail or massive plate armour.)
 		At level 1, it allows you to wear heavy mail armour, gauntlets, helms, and heavy boots.
 		At level 2, it allows you to wear shields.
@@ -103,9 +105,11 @@ newTalent{
 newTalent{
 	name = "Light Armour Training",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	mode = "passive",
 	levelup_screen_break_line = true,
 	points = 5,
+	no_npc_use = true,
 	require = {stat = {dex = function(level) return 16 + (level + 2) * (level - 1) end}},
 	getArmorHardiness = function(self, t)
 		return math.max(0, self:combatLimit(self:getTalentLevel(t) * 4, 100, 5, 3.75, 50, 37.5))
@@ -147,11 +151,11 @@ newTalent{
 newTalent{
 	name = "Combat Accuracy", short_name = "WEAPON_COMBAT",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { level=function(level) return (level - 1) * 4 end },
 	mode = "passive",
-	--getAttack = function(self, t) return self:getTalentLevel(t) * 10 end,
-	getAttack = function(self, t) return self:combatTalentScale(t, 10, 50) end, -- match values at 1 and 5 for old formula
+	getAttack = function(self, t) return self:combatTalentScale(t, 10, 50, 0.75) end, -- match values at 1 and 5 for old formula
 	info = function(self, t)
 		local attack = t.getAttack(self, t)
 		return ([[Increases the accuracy of unarmed, melee and ranged weapons by %d.]]):
@@ -162,6 +166,7 @@ newTalent{
 newTalent{
 	name = "Weapons Mastery",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { stat = { str=function(level) return 12 + level * 6 end }, },
 	mode = "passive",
@@ -179,6 +184,7 @@ newTalent{
 newTalent{
 	name = "Dagger Mastery", short_name = "KNIFE_MASTERY",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	points = 5,
 	require = { stat = { dex=function(level) return 10 + level * 6 end }, },
 	mode = "passive",
@@ -195,6 +201,7 @@ newTalent{
 newTalent{
 	name = "Exotic Weapons Mastery",
 	type = {"technique/combat-training", 1},
+	no_levelup_category_deps = true,
 	hide = true,
 	points = 5,
 	require = { stat = { str=function(level) return 10 + level * 6 end, dex=function(level) return 10 + level * 6 end }, },

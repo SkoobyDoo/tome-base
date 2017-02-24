@@ -314,6 +314,11 @@ newEntity{ base = "BASE_GEM",
 	cost = 200,
 	quest = 1,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'NATURE',
+		alt_damage_type = 'SPYDRIC_POISON',
+		particle = 'slime',
+	},
 	wielder = {
 		inc_stats = {[Stats.STAT_CON] = 15, },
 		healing_factor = 0.3,

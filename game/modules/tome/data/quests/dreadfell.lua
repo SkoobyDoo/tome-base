@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 -- Quest for the Dreadfell
 name = "The Island of Dread"
 desc = function(self, who)

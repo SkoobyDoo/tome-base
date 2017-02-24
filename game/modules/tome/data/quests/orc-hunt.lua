@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 -- Orc Hunting
 name = "Let's hunt some Orc"
 desc = function(self, who)

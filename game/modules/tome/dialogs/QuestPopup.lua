@@ -35,8 +35,22 @@ local statuses = {
 }
 
 function _M:init(quest, status)
+	local use_ui = "quest"
+	if quest.use_ui then use_ui = quest.use_ui end
+	if status == Quest.FAILED then use_ui = "quest-fail" end
+	
+	if status == Quest.DONE then
+		if use_ui == "quest-escort" then
+			if quest.to_zigur then self.dialog_h_middles_alter = {b8 = "ui/antimagic_complete_dialogframe_8_middle.png"}
+			else self.dialog_h_middles_alter = {b8 = "ui/normal_complete_dialogframe_8_middle.png"} end
+		elseif use_ui == "quest-idchallenge" then self.dialog_h_middles_alter = {b8 = "ui/complete_dialogframe_8_middle.png"}
+		elseif use_ui == "quest-main" then self.dialog_h_middles_alter = {b8 = "ui/complete_dialogframe_8_middle.png"}
+		elseif use_ui == "quest" then self.dialog_h_middles_alter = {b8 = "ui/complete_dialogframe_8_middle.png"}
+		end
+	end
+
 	self.quest = quest
-	self.ui = "quest"
+	self.ui = use_ui
 	Dialog.init(self, "", 666, 150)
 
 	local add = ''
@@ -53,7 +67,7 @@ function _M:init(quest, status)
 	info:setTextShadow(3)
 	info:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
 	
-	local status = Textzone.new{ui="quest", auto_width=true, auto_height=true, text="#cc9f33#"..(statuses[status] or "????"), has_box=true, font={FontPackage:getFont("bignews")}}
+	local status = Textzone.new{ui=use_ui, auto_width=true, auto_height=true, text="#cc9f33#"..(statuses[status] or "????"), has_box=true, font={FontPackage:getFont("bignews")}}
 	status:setTextShadow(3)
 	status:setShadowShader(Shader.default.textoutline and Shader.default.textoutline.shad, 2)
    

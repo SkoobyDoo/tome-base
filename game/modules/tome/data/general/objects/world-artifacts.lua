@@ -40,6 +40,11 @@ newEntity{ base = "BASE_GEM",
 	cost = 200,
 	identified = false,
 	material_level = 4,
+	color_attributes = {
+		damage_type = 'LIGHTNING',
+		alt_damage_type = 'LIGHTNING_DAZE',
+		particle = 'lightning_explosion',
+	},
 	wielder = {
 		inc_stats = {[Stats.STAT_DEX] = 8, [Stats.STAT_CUN] = 8 },
 		inc_damage = {[DamageType.LIGHTNING] = 20 },
@@ -327,6 +332,11 @@ newEntity{ base = "BASE_GEM",
 	identified = false,
 	rarity = 250,
 	material_level = 3,
+	color_attributes = {
+		damage_type = 'LIGHT',
+		alt_damage_type = 'LIGHT_BLIND',
+		particle = 'light',
+	},
 	desc = [[The first Halfling mages during the Age of Allure discovered how to capture the Sunlight and infuse gems with it.
 This star is the culmination of their craft. Light radiates from its ever-shifting yellow surface.]],
 	cost = 400,
@@ -938,7 +948,16 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 		resists={[DamageType.NATURE] = 30},
 		on_melee_hit={[DamageType.POISON] = 20, [DamageType.SLIME] = 20},
 	},
+	on_wear = function(self, who)
+		if not game.state.spydre_mantra then
+			game.state.spydre_mantra = true
+			require("engine.ui.Dialog"):simpleLongPopup("Huh?", "As you wear the strange set of robes, you notice something folded into one of its pockets...", 500, function()
+				game.party:learnLore("shiiak-mantra")
+			end)
+		end
+	end,
 }
+
 
 newEntity{ base = "BASE_HELM", define_as = "HELM_KROLTAR",
 	power_source = {technique=true},
@@ -1700,7 +1719,7 @@ newEntity{ base = "BASE_MACE",
 	unided_name = "a strangely colored bone", unique = true,
 	moddable_tile = "special/%s_club_ureslaks_femur",
 	moddable_tile_big = true,
-	desc = [[A shortened femur of the mighty prismatic dragon, this erratic club still pulses with Ureslak's volatile nature.]],
+	desc = [[A shortened femur of the mighty prismatic dragon Ureslak, this erratic club still resonates with his volatile nature.]],
 	level_range = {42, 50},
 	require = { stat = { str=45, dex=30 }, },
 	rarity = 400,
@@ -1762,6 +1781,71 @@ newEntity{ base = "BASE_MACE",
 			inc_damage = { all = 12, [DamageType.ARCANE] = 30 },
 		} },
 	},
+	set_list = { {"define_as","URESLAK_CLOAK"} },
+	set_desc = {
+		ureslak = "What would happen if more of Ureslak's remains were reunited?",
+	},
+}
+
+newEntity{ base = "BASE_CLOAK",
+	power_source = {nature=true},
+	unique = true,
+	name = "Ureslak's Molted Scales", define_as = "URESLAK_CLOAK", image = "object/artifact/ureslaks_molted_scales.png",
+	unided_name = "scaly multi-hued cloak",
+	desc = [[This cloak is fashioned from the scales of some large reptilian creature.  It appears to reflect every color of the rainbow.]],
+	level_range = {40, 50},
+	rarity = 400,
+	cost = 300,
+	material_level = 5,
+	wielder = {
+		resists_cap = {
+			[DamageType.FIRE] = 10,
+			[DamageType.COLD] = 10,
+			[DamageType.LIGHTNING] = 10,
+			[DamageType.NATURE] = 10,
+			[DamageType.DARKNESS] = 10,
+			[DamageType.ARCANE] = -30,
+		},
+		resists = {
+			[DamageType.FIRE] = 20,
+			[DamageType.COLD] = 20,
+			[DamageType.LIGHTNING] = 20,
+			[DamageType.NATURE] = 20,
+			[DamageType.DARKNESS] = 20,
+			[DamageType.ARCANE] = -30,
+		},
+	},
+	max_power = 50, power_regen = 1,
+	use_power = {
+		name = function(self, who)
+			local resists={"Fire", "Cold", "Lightning", "Nature", "Darkness"}
+			if self.set_complete then table.insert(resists, "Arcane") end
+			return ("energize the scales for 16 turns, increasing resistance to %s damage by 15%% just before you are damaged. (This effect lasts 5 turns and only works on one type of damage.)"):format(table.concatNice(resists, ", ", ", or "))
+		end,
+		tactical = { DEFEND = 1 },
+		power = 50,
+		use = function(self, who)
+			game.logSeen(who, "%s empowers %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			local resists = table.values({engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.NATURE, engine.DamageType.DARKNESS2, engine.DamageType.DARKNESS})
+			if self.set_complete then table.insert(resists, engine.DamageType.ARCANE) end
+			who:setEffect(who.EFF_CHROMATIC_RESONANCE, 16, {resist_types=resists})
+			return {id=true, used=true}
+		end,
+	},
+	set_list = { {"define_as","URESLAK_FEMUR"} },
+	set_desc = {
+		ureslak = "It would go well with another part of Ureslak.",
+	},
+	on_set_complete = function(self, who)
+		self:specialSetAdd({"wielder","equilibrium_regen"}, -1)
+		self:specialSetAdd({"wielder","resists"}, {[engine.DamageType.ARCANE]=15})
+		self:specialSetAdd({"wielder","resists_cap"}, {[engine.DamageType.ARCANE]=15})
+		game.logSeen(who, "#YELLOW_GREEN#An ironic harmony surrounds Ureslak's remains as they reunite.")
+	end,
+	on_set_broken = function(self, who)
+		self.wielder.equilibrium_regen = nil
+		game.logSeen(who, "#YELLOW_GREEN#Ureslak's remains seem more unsettled.")
+	end,
 }
 
 newEntity{ base = "BASE_WARAXE",
@@ -1961,36 +2045,6 @@ newEntity{ base = "BASE_AMULET",
 	use_talent = { id = Talents.T_ARCANE_EYE, level = 2, power = 60 },
 }
 
-newEntity{ base = "BASE_CLOAK",
-	power_source = {nature=true},
-	unique = true,
-	name = "Ureslak's Molted Scales", image = "object/artifact/ureslaks_molted_scales.png",
-	unided_name = "scaley multi-hued cloak",
-	desc = [[This cloak is fashioned from the scales of some large reptilian creature.  It appears to reflect every color of the rainbow.]],
-	level_range = {40, 50},
-	rarity = 400,
-	cost = 300,
-	material_level = 5,
-	wielder = {
-		resists_cap = {
-			[DamageType.FIRE] = 5,
-			[DamageType.COLD] = 5,
-			[DamageType.LIGHTNING] = 5,
-			[DamageType.NATURE] = 5,
-			[DamageType.DARKNESS] = 5,
-			[DamageType.ARCANE] = -30,
-		},
-		resists = {
-			[DamageType.FIRE] = 20,
-			[DamageType.COLD] = 20,
-			[DamageType.LIGHTNING] = 20,
-			[DamageType.NATURE] = 20,
-			[DamageType.DARKNESS] = 20,
-			[DamageType.ARCANE] = -30,
-		},
-	},
-}
-
 newEntity{ base = "BASE_DIGGER",
 	power_source = {technique=true},
 	unique = true,
@@ -2010,6 +2064,8 @@ newEntity{ base = "BASE_DIGGER",
 		combat_spellresist = 7,
 		max_life = 50,
 	},
+	max_power = 30, power_regen = 1,
+	use_talent = { id = Talents.T_DIG, level = 4, power = 30 },
 	on_wear = function(self, who)
 		if who.descriptor and who.descriptor.race == "Dwarf" then
 			local Stats = require "engine.interface.ActorStats"
@@ -4834,6 +4890,11 @@ newEntity{ base = "BASE_GEM", --Thanks SageAcrin and Graziel!
 	cost = 200,
 	identified = false,
 	material_level = 3,
+	color_attributes = {
+		damage_type = 'LIGHTNING',
+		alt_damage_type = 'LIGHTNING_DAZE',
+		particle = 'lightning_explosion',
+	},
 	wielder = {
 		inc_stats = {[Stats.STAT_MAG] = 5, [Stats.STAT_CON] = 5, },
 		inc_damage = {[DamageType.FIRE] = 10, [DamageType.COLD] = 10, [DamageType.LIGHTNING] = 10,  },
@@ -5366,11 +5427,11 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 }
 
 newEntity{ base = "BASE_SLING",
-	power_source = {arcane=true},
+	power_source = {technique=true},
 	unique = true,
 	name = "Nithan's Force", image = "object/artifact/nithans_force.png",
 	unided_name = "massive sling",
-	desc = [[This powerful sling is said to have belonged to a warrior so strong his shots could knock down a brick wall. It appears he may have had some magical assistance...]],
+	desc = [[This powerful sling is said to have belonged to a warrior so strong his shots could knock down a brick wall...]],
 	level_range = {35, 50},
 	rarity = 220,
 	require = { stat = { dex=32 }, },
@@ -5388,8 +5449,8 @@ newEntity{ base = "BASE_SLING",
 		resists_pen={[DamageType.PHYSICAL] = 15},
 		resists={[DamageType.PHYSICAL] = 10},
 	},
-	max_power = 25, power_regen = 1,
-	use_talent = { id = Talents.T_DIG, level = 3, power = 25 },
+	max_power = 16, power_regen = 1,
+	use_talent = { id = Talents.T_BULL_SHOT, level = 4, power = 16 },
 }
 
 newEntity{ base = "BASE_ARROW",

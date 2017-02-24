@@ -104,7 +104,7 @@ newTalent{
 	is_special_melee = true,
 	range = 1,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.1, 0.8, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
+	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.3, 1, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
 	tactical = { ATTACK = 2}, -- is there a way to make this consider the free Block?
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	action = function(self, t)
@@ -161,13 +161,13 @@ newTalent{
 		if not target or not self:canProject(tg, x, y) then return nil end
 
 		-- First attack with shield
-		local speed, hit = self:attackTargetWith(target, shield_combat, nil, self:combatTalentWeaponDamage(t, 1, 1.5, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
+		local speed, hit = self:attackTargetWith(target, shield_combat, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3, self:getTalentLevel(self.T_SHIELD_EXPERTISE)))
 
 		-- Second & third attack with weapon
 		if hit then
 			self.turn_procs.auto_phys_crit = true
-			self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1, 1.5), true)
-			self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1, 1.5), true)
+			self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3), true)
+			self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 0.8, 1.3), true)
 			self.turn_procs.auto_phys_crit = nil
 		end
 
@@ -175,7 +175,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Hits the target with your shield, doing %d%% damage. If it hits, you follow up with two automatic critical hits with your weapon, doing %d%% base damage each.]]):
-		format(100 * self:combatTalentWeaponDamage(t, 1, 1.5, self:getTalentLevel(self.T_SHIELD_EXPERTISE)), 100 * self:combatTalentWeaponDamage(t, 1, 1.5))
+		format(100 * self:combatTalentWeaponDamage(t, 0.8, 1.3, self:getTalentLevel(self.T_SHIELD_EXPERTISE)), 100 * self:combatTalentWeaponDamage(t, 0.8, 1.3))
 	end,
 }
 
@@ -189,14 +189,17 @@ newTalent{
 	require = techs_req1,
 	mode = "sustained",
 	points = 5,
-	cooldown = 30,
+	cooldown = 10,
 	sustain_stamina = 30,
 	tactical = { DEFEND = 2 },
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
-	getarmor = function(self,t) return self:combatScale((1+self:getDex(4))*self:getTalentLevel(t), 5, 0, 30, 25, 0.375) + self:combatTalentScale(self:getTalentLevel(self.T_SHIELD_EXPERTISE), 1, 5, 0.75) end, -- Scale separately with talent level and talent level of Shield Expertise
 	getDefense = function(self, t)
-		return self:combatScale((1 + self:getDex(4, true)) * self:getTalentLevel(t), 6.4, 1.4, 30, 25) + self:combatTalentScale(self:getTalentLevel(self.T_SHIELD_EXPERTISE), 2, 10, 0.75)
+		return t.getDexArmor(self, t) + t.getExpertiseArmor(self,t)
 	end,
+	getExpertiseArmor = function(self, t) return self:combatTalentScale(self:getTalentLevel(self.T_SHIELD_EXPERTISE), 1, 5, 0.5) end,
+	getDexArmor = function(self, t) return self:combatTalentStatDamage(t, "dex", 6, 20) end,
+	getArmor = function(self,t) return t.getDexArmor(self, t) + t.getExpertiseArmor(self,t) end, -- Scale separately with talent level and talent level of Shield Expertise
+	getBlock = function(self, t) return self:combatTalentStatDamage(t, "str", 40, 150) end,
 	stunKBresist = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.50) end, -- Limit <100%
 	activate = function(self, t)
 		local shield = self:hasShield()
@@ -207,9 +210,10 @@ newTalent{
 		local ret = {
 			stun = self:addTemporaryValue("stun_immune", t.stunKBresist(self, t)),
 			knock = self:addTemporaryValue("knockback_immune", t.stunKBresist(self, t)),
-			dam = self:addTemporaryValue("inc_damage", {[DamageType.PHYSICAL]=-20}),
 			def = self:addTemporaryValue("combat_def", t.getDefense(self, t)),
-			armor = self:addTemporaryValue("combat_armor", t.getarmor(self,t)),
+			armor = self:addTemporaryValue("combat_armor", t.getArmor(self,t)),
+			block = self:addTemporaryValue("block_bonus", t.getBlock(self,t)),
+
 		}
 		if core.shader.active(4) then
 			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="rotating_shield"}, shader={type="rotatingshield", noup=2.0, appearTime=0.2}})
@@ -220,15 +224,15 @@ newTalent{
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_def", p.def)
 		self:removeTemporaryValue("combat_armor", p.armor)
-		self:removeTemporaryValue("inc_damage", p.dam)
 		self:removeTemporaryValue("stun_immune", p.stun)
 		self:removeTemporaryValue("knockback_immune", p.knock)
+		self:removeTemporaryValue("block_bonus", p.block)
 		return true
 	end,
 	info = function(self, t)
-		return ([[Enter a protective battle stance, increasing Defense by %d and Armour by %d at the cost of -20%% physical damage. The Defense and Armor increase is based on your Dexterity.
+		return ([[Enter a protective battle stance, increasing Defense by %d, Armour by %d, and Block value by %d. The Defense and Armor increase is based on your Dexterity, the Block on your Strength.
 		It also grants %d%% resistance to stunning and knockback.]]):
-		format(t.getDefense(self, t), t.getarmor(self, t), 100*t.stunKBresist(self, t))
+		format(t.getDefense(self, t), t.getArmor(self, t), t.getBlock(self, t), 100*t.stunKBresist(self, t))
 	end,
 }
 
@@ -239,7 +243,8 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	cooldown = 10,
-	stamina = 30,
+	stamina = 20,
+	getShieldDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 2.5, self:getTalentLevel(self.T_SHIELD_EXPERTISE)) end,
 	tactical = { ESCAPE = { knockback = 2 }, DEFEND = { knockback = 0.5 } },
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	range = 0,
@@ -261,6 +266,9 @@ newTalent{
 		self:project(tg, self.x, self.y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target then
+				local damage = t.getShieldDamage(self, t)
+				local speed, hit = self:attackTargetWith(target, shield_combat, nil, damage)
+				if hit and self:getTalentFromId(game.player.T_RUSH) then self.talents_cd["T_RUSH"] = nil end
 				if target:checkHit(self:combatAttack(shield_combat), target:combatPhysicalResist(), 0, 95) and target:canBe("knockback") then --Deprecated checkHit call
 					target:knockback(self.x, self.y, t.getDist(self, t))
 					if target:canBe("stun") then target:setEffect(target.EFF_DAZED, t.getDuration(self, t), {}) end
@@ -269,15 +277,14 @@ newTalent{
 				end
 			end
 		end)
-
 		self:addParticles(Particles.new("meleestorm2", 1, {radius=2}))
-
 		return true
 	end,
 	info = function(self, t)
-		return ([[Let all your foes pile up on your shield, then put all your strength in one mighty thrust and repel them all away %d grids.
+		return ([[Smash your shield into the face of all adjacent foes dealing %d%% shield damage and knocking them back %d grids.
 		In addition, all creatures knocked back will also be dazed for %d turns.
-		The distance increases with your talent level, and the Daze duration with your Strength.]]):format(t.getDist(self, t), t.getDuration(self, t))
+		If known, activating this talent will refresh your Rush cooldown if the attack hits.
+		The distance increases with your talent level, and the Daze duration with your Strength.]]):format(t.getShieldDamage(self, t)*100, t.getDist(self, t), t.getDuration(self, t))
 	end,
 }
 
@@ -287,16 +294,14 @@ newTalent{
 	require = techs_req3,
 	mode = "passive",
 	points = 5,
-	on_learn = function(self, t)
-		self.combat_physresist = self.combat_physresist + 4
-		self.combat_spellresist = self.combat_spellresist + 2
-	end,
-	on_unlearn = function(self, t)
-		self.combat_physresist = self.combat_physresist - 4
-		self.combat_spellresist = self.combat_spellresist - 2
+	getPhysical = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
+	getSpell = function(self, t) return self:combatTalentScale(t, 3, 10, 0.75) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "combat_physresist", t.getPhysical(self, t))
+		self:talentTemporaryValue(p, "combat_spellresist", t.getSpell(self, t))
 	end,
 	info = function(self, t)
-		return ([[Improves your damage and defense with shield-based skills, and increases your Spell (+%d) and Physical (+%d) Saves.]]):format(2 * self:getTalentLevelRaw(t), 4 * self:getTalentLevelRaw(t))
+		return ([[Improves your damage and defense with shield-based skills, and increases your Spell (+%d) and Physical (+%d) Saves.]]):format(t.getSpell(self, t), t.getPhysical(self, t))
 	end,
 }
 
@@ -306,8 +311,8 @@ newTalent{
 	require = techs_req4,
 	mode = "sustained",
 	points = 5,
-	cooldown = 30,
-	sustain_stamina = 50,
+	cooldown = 6,
+	sustain_stamina = 30,
 	tactical = { DEFEND = 3 },
 	no_npc_use = true,
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,

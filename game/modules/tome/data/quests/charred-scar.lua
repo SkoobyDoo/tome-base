@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+use_ui = "quest-main"
+
 -- Ruysh Charred scar
 name = "The Doom of the World!"
 desc = function(self, who)

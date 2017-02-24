@@ -52,6 +52,7 @@ return {
 				up = "SAND",
 				down = "SAND",
 				door = "DOOR",
+				generic_leveler = "GENERIC_LEVER_SAND",
 
 				nb_rooms = {0,0,0,1},
 				rooms = {"lesser_vault"},

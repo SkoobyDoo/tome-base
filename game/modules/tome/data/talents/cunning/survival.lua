@@ -76,8 +76,8 @@ newTalent{
 
 newTalent{
 	name = "Track",
-	type = {"cunning/survival", 2},
-	require = cuns_req2,
+	type = {"cunning/survival", 3},
+	require = cuns_req3,
 	points = 5,
 	random_ego = "utility",
 	cooldown = 20,
@@ -102,8 +102,8 @@ newTalent{
 
 newTalent{
 	name = "Danger Sense",
-	type = {"cunning/survival", 3},
-	require = cuns_req3,
+	type = {"cunning/survival", 4},
+	require = cuns_req4,
 	points = 5,
 	random_boss_rarity = 50, -- make sure a reasonable number of randbosses don't take this
 	mode = "passive",
@@ -171,9 +171,9 @@ newTalent{
 				game.logPlayer(self, "#CADET_BLUE#You don't have the skill to disarm traps.")
 			elseif (x == self.x and y == self.y) or self:canMove(x, y) then
 				local px, py = self.x, self.y
-				self:move(x, y, true) -- temporarily move to make sure trap can trigger properly
+				mod.class.Actor.move(self, x, y, true) -- temporarily move to make sure trap can trigger properly
 				trap:trigger(self.x, self.y, self) -- then attempt to disarm the trap, which may trigger it
-				self:move(px, py, true)
+				mod.class.Actor.move(self, px, py, true)
 			else
 				game.logPlayer(self, "#CADET_BLUE#You cannot disarm traps in grids you cannot enter.")
 			end

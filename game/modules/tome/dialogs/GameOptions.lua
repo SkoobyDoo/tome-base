@@ -632,7 +632,7 @@ function _M:generateListMisc()
 		self.c_list:drawItem(item)
 		if self:isTome() and game.level then
 			for uid, e in pairs(game.level.entities) do
-				e:updateModdableTile()
+				if e.updateModdableTile then e:updateModdableTile() end
 			end
 		end
 	end,}

@@ -104,7 +104,7 @@ newBirthDescriptor{
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +5 Strength, +2 Dexterity, +2 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
-		"#GOLD#Life per level:#LIGHT_BLUE# +2",
+		"#GOLD#Life per level:#LIGHT_BLUE# +6",
 	},
 	birth_example_particles = {
 		function(actor) if core.shader.active() then
@@ -144,7 +144,7 @@ newBirthDescriptor{
 		},
 	},
 	copy_add = {
-		life_rating = 2,
+		life_rating = 6,
 	},
 }
 
@@ -166,26 +166,25 @@ newBirthDescriptor{
 	talents_types = {
 		["technique/archery-training"]={true, 0.3},
 		["technique/archery-utility"]={true, 0.3},
-		["technique/archery-bow"]={true, 0.3},
-		["technique/archery-sling"]={true, 0.3},
-		["technique/archery-excellence"]={false, 0.3},
-		["technique/combat-techniques-active"]={false, -0.1},
-		["technique/combat-techniques-passive"]={true, -0.1},
+		["technique/marksmanship"]={true, 0.3},
+		["technique/reflexes"]={true, 0.3},
+		["technique/combat-techniques-active"]={true, 0},
+		["technique/combat-techniques-passive"]={true, 0},
+		["technique/munitions"]={false, 0.3},
+		["technique/sniper"]={false, 0.3},
+		["technique/agility"]={false, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/mobility"]={true, 0},
 		["cunning/trapping"]={false, 0.2},
 		["cunning/survival"]={true, 0},
-		["cunning/dirty"]={false, 0},
-	},
-	unlockable_talents_types = {
-		["cunning/poisons"]={false, 0.2, "rogue_poisons"},
+		["technique/mobility"]={true, 0.2},
+		["technique/conditioning"]={false, 0},
 	},
 	talents = {
-		[ActorTalents.T_FLARE] = 1,
+		[ActorTalents.T_MASTER_MARKSMAN] = 1,
 		[ActorTalents.T_STEADY_SHOT] = 1,
-		[ActorTalents.T_BOW_MASTERY] = 1,
-		[ActorTalents.T_SLING_MASTERY] = 1,
+		[ActorTalents.T_HEADSHOT] = 1,
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
+		[ActorTalents.T_DISENGAGE] = 1,
 	},
 	copy = {
 		max_life = 110,

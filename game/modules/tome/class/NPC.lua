@@ -340,7 +340,7 @@ function _M:onTakeHit(value, src, death_note)
 		if src then
 			if src.targetable and not self.ai_target.actor then self:setTarget(src) end
 			-- Get angry if hurt by a friend
-			if src.faction and self:reactionToward(src) >= 0 then
+			if src.faction and self:reactionToward(src) >= 0 and self.fov then
 				self:checkAngered(src, false, -50)
 
 				-- Share reaction with allies
@@ -487,6 +487,7 @@ function _M:addedToLevel(level, x, y)
 				game.state:applyRandomClass(self, data, true)
 			end
 			-- Increase life
+			self.max_life_no_difficulty_boost = self.max_life
 			local lifeadd = self.max_life * 0.2
 			self.max_life = self.max_life + lifeadd
 			self.life = self.life + lifeadd
@@ -510,6 +511,7 @@ function _M:addedToLevel(level, x, y)
 				game.state:applyRandomClass(self, data, true)
 			end
 			-- Increase life
+			self.max_life_no_difficulty_boost = self.max_life
 			local lifeadd = self.max_life * self:getRankLifeAdjust(1) * self.level / 65 / 1.5
 			self.max_life = self.max_life + lifeadd
 			self.life = self.life + lifeadd

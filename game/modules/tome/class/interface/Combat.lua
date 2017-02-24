@@ -121,10 +121,10 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 		if self.player then self:logCombat(target, "#Target# notices you at the last moment!") end
 	end
 
-	if target:isTalentActive(target.T_INTUITIVE_SHOTS) and rng.percent(target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")) then
-		local ret = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
-		if ret then return false end
-	end
+--	if target:isTalentActive(target.T_INTUITIVE_SHOTS) and rng.percent(target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")) then
+--		local ret = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
+--		if ret then return false end
+--	end
 
 	if not target.turn_procs.warding_weapon and target:knowTalent(target.T_WARDING_WEAPON) and target:getTalentLevelRaw(target.T_WARDING_WEAPON) >= 5
 		and rng.percent(target:callTalent(target.T_WARDING_WEAPON, "getChance")) then
@@ -347,10 +347,14 @@ end
 
 --- Try to totally evade an attack
 function _M:checkEvasion(target)
-	if not target:attr("evasion") or self == target then return end
+	local evasion = target:attr("evasion")
+	if target:knowTalent(target.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(target.x, target.y) then
+		evasion = (evasion or 0) + 20
+	end
+
+	if not evasion or self == target then return end
 	if target:attr("no_evasion") then return end
 
-	local evasion = target:attr("evasion")
 	print("checkEvasion", evasion, target.level, self.level)
 	print("=> evasion chance", evasion)
 	return rng.percent(evasion)
@@ -473,6 +477,14 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		local chance = target:callTalent(target.T_BLADE_WARD, "getChance")
 		if rng.percent(chance) then
 			game.logSeen(target, "#ORCHID#%s parries the attack with %s dual weapons!#LAST#", target.name:capitalize(), string.his_her(target))
+			repelled = true
+		end
+	end
+	
+	if target:isTalentActive(target.T_INTUITIVE_SHOTS) then
+		local chance = target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")
+		self.turn_procs.intuitive_shots = self.turn_procs.intuitive_shots or target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
+		if self.turn_procs.intuitive_shots == true then
 			repelled = true
 		end
 	end
@@ -999,8 +1011,8 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if not hitted and not target.dead and target:knowTalent(target.T_COUNTER_ATTACK) and not target:attr("stunned") and not target:attr("dazed") and not target:attr("stoned") and target:knowTalent(target.T_COUNTER_ATTACK) and self:isNear(target.x,target.y, 1) then --Adjacency check
 		local cadam = target:callTalent(target.T_COUNTER_ATTACK,"checkCounterAttack")
 		if cadam then
-			game.logSeen(self, "%s counters the attack!", target.name:capitalize())
-			target:attackTarget(self, nil, cadam, true)
+			local t = target:getTalentFromId(target.T_COUNTER_ATTACK)
+			t.do_counter(target, self, t)
 		end
 	end
 
@@ -1137,8 +1149,8 @@ _M.weapon_talents = {
 	knife =   {"T_KNIFE_MASTERY", "T_STRENGTH_OF_PURPOSE"},
 	whip  =   "T_EXOTIC_WEAPONS_MASTERY",
 	trident = "T_EXOTIC_WEAPONS_MASTERY",
-	bow =     {"T_BOW_MASTERY", "T_STRENGTH_OF_PURPOSE"},
-	sling =   {"T_SLING_MASTERY", "T_SKIRMISHER_SLING_SUPREMACY"},
+	bow =     {"T_BOW_MASTERY", "T_STRENGTH_OF_PURPOSE", "T_MASTER_MARKSMAN"},
+	sling =   {"T_SLING_MASTERY", "T_SKIRMISHER_SLING_SUPREMACY", "T_MASTER_MARKSMAN"},
 	staff =   "T_STAFF_MASTERY",
 	mindstar ="T_PSIBLADES",
 	dream =   "T_DREAM_CRUSHER",
@@ -1281,6 +1293,9 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + self:callTalent(self.T_ARMOUR_OF_SHADOWS,"ArmourBonus")
 	end
+	if self:knowTalent(self.T_CORRUPTED_SHELL) then
+		add = add + self:getCon() / 3.5
+	end
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
@@ -1317,7 +1332,7 @@ function _M:combatArmorHardiness()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
 	end
-	if self:hasEffect(self.EFF_BREACH) or self:hasEffect(self.EXPOSE_WEAKNESS) then
+	if self:hasEffect(self.EFF_BREACH) then
 		multi = 0.5
 	end
 	return util.bound(30 + self.combat_armor_hardiness + add, 0, 100) * multi
@@ -1326,7 +1341,8 @@ end
 --- Gets the attack
 function _M:combatAttackBase(weapon, ammo)
 	weapon = weapon or self.combat or {}
-	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+	local talent = self:callTalent(self.T_WEAPON_COMBAT, "getAttack")
+	local atk = 4 + self.combat_atk + talent + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
 
 	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then atk = atk + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
 
@@ -1634,7 +1650,7 @@ function _M:getDammod(combat)
 		dammod[stat] = (dammod[stat] or 0) + val
 	end
 
-	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.3) end
+	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.4) end
 	if self:knowTalent(self.T_ARCANE_MIGHT) then add('mag', 0.5) end
 
 	return dammod
@@ -1870,6 +1886,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 
 	local chance = self:combatCrit(weapon) + (add_chance or 0)
 	crit_power_add = crit_power_add or 0
+	if weapon and weapon.crit_power then crit_power_add = crit_power_add + weapon.crit_power/100 end
 
 	if target and target:hasEffect(target.EFF_DISMAYED) then
 		chance = 100
@@ -2043,7 +2060,7 @@ function _M:combatMindpower(mod, add)
 	end
 
 	if self:knowTalent(self.T_SUPERPOWER) then
-		add = add + 50 * self:getStr() / 100
+		add = add + 60 * self:getStr() / 100
 	end
 
 	if self:knowTalent(self.T_GESTURE_OF_POWER) then
@@ -2417,6 +2434,7 @@ function _M:combatShieldBlock()
 	local block = combat1.block or 0
 	if combat2 then block = block + (combat2.block or 0) end
 
+	if self:attr("block_bonus") then block = block + self:attr("block_bonus") end
 	return block
 end
 
@@ -2545,7 +2563,16 @@ function _M:buildCombo()
 
 	if self:knowTalent(self.T_RELENTLESS_STRIKES) then
 		local t = self:getTalentFromId(self.T_RELENTLESS_STRIKES)
-		self:incStamina(t.getStamina(self, t))
+		local sta = t.getStamina(self, t)
+		local p = self:getCombo()
+		if rng.percent(t.getChance(self, t)) then
+			power = 2
+			sta = sta + sta
+		end
+		if p>=5 or (power==2 and p>=4) then 
+			sta = sta + sta 
+		end
+		self:incStamina(sta)
 	end
 
 	self:setEffect(self.EFF_COMBO, duration, {power=power})

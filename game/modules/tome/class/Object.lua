@@ -64,6 +64,24 @@ function _M:getRequirementDesc(who)
 		self.require = oldreq
 
 		return desc
+	elseif self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_AGILE_DEFENSE) then
+		local oldreq = rawget(self, "require")
+		self.require = table.clone(oldreq, true)
+		if self.require.stat and self.require.stat.str then
+			self.require.stat.dex, self.require.stat.str = self.require.stat.str, nil
+		end
+		if self.require.talent then for i, tr in ipairs(self.require.talent) do
+			if tr[1] == who.T_ARMOUR_TRAINING then
+				self.require.talent[i] = {who.T_AGILE_DEFENSE, 1}
+				break
+			end
+		end end
+
+		local desc = base_getRequirementDesc(self, who)
+
+		self.require = oldreq
+
+		return desc
 	elseif (self.type =="weapon" or self.type=="ammo") and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
 		local oldreq = rawget(self, "require")
 		self.require = table.clone(oldreq, true)
@@ -911,7 +929,8 @@ function _M:getTextualDesc(compare_with, use_actor)
 
 		compare_fields(combat, compare_with, field, "atk", "%+d", "Accuracy: ", 1, false, false, add_table)
 		compare_fields(combat, compare_with, field, "apr", "%+d", "Armour Penetration: ", 1, false, false, add_table)
-		compare_fields(combat, compare_with, field, "physcrit", "%+.1f%%", "Physical crit. chance: ", 1, false, false, add_table)
+		compare_fields(combat, compare_with, field, "physcrit", "%+.1f%%", "Crit. chance: ", 1, false, false, add_table)
+		compare_fields(combat, compare_with, field, "crit_power", "%+.1f%%", "Crit. power: ", 1, false, false, add_table)
 		local physspeed_compare = function(orig, compare_with)
 			orig = 100 / orig
 			if compare_with then return ("%+.0f%%"):format(orig - 100 / compare_with)
@@ -1566,6 +1585,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 		compare_fields(w, compare_with, field, "mana_regen", "%+.2f", "Mana each turn: ")
 		compare_fields(w, compare_with, field, "hate_regen", "%+.2f", "Hate each turn: ")
 		compare_fields(w, compare_with, field, "psi_regen", "%+.2f", "Psi each turn: ")
+		compare_fields(w, compare_with, field, "equilibrium_regen", "%+.2f", "Equilibrium each turn: ", nil, true, true)
 		compare_fields(w, compare_with, field, "vim_regen", "%+.2f", "Vim each turn: ")
 		compare_fields(w, compare_with, field, "positive_regen_ref_mod", "%+.2f", "P.Energy each turn: ")
 		compare_fields(w, compare_with, field, "negative_regen_ref_mod", "%+.2f", "N.Energy each turn: ")

@@ -239,11 +239,15 @@ function _M:newGame()
 	else
 		self.always_target = config.settings.tome.tactical_mode
 	end
-	local nb_unlocks, max_unlocks = self:countBirthUnlocks()
+	local nb_unlocks, max_unlocks, categories = self:countBirthUnlocks()
+	local unlocks_order = { class=1, race=2, cometic=3, other=4 }
+	local unlocks = {}
+	for cat, d in pairs(categories) do unlocks[#unlocks+1] = {desc=d.nb.."/"..d.max.." "..cat, order=unlocks_order[cat] or 99} end
+	table.sort(unlocks, "order")
 	self.creating_player = true
 	self.extra_birth_option_defs = {}
 	self:triggerHook{"ToME:extraBirthOptions", options = self.extra_birth_option_defs}
-	local birth; birth = Birther.new("Character Creation ("..nb_unlocks.."/"..max_unlocks.." unlocked birth options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
+	local birth; birth = Birther.new("Character Creation ("..table.concat(table.extract_field(unlocks, "desc", ipairs), ", ").." unlocked options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
 		if not loaded then
 			self.calendar = Calendar.new("/data/calendar_"..(self.player.calendar or "allied")..".lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
 			self.player:check("make_tile")
@@ -774,34 +778,40 @@ function _M:onLevelLoadRun()
 end
 
 function _M:noStairsTime()
-	local nb = 3
+	local nb = 2
 	if game.difficulty == game.DIFFICULTY_EASY then nb = 0
-	elseif game.difficulty == game.DIFFICULTY_NIGHTMARE then nb = 5
-	elseif game.difficulty == game.DIFFICULTY_INSANE then nb = 7
-	elseif game.difficulty == game.DIFFICULTY_MADNESS then nb = 10
+	elseif game.difficulty == game.DIFFICULTY_NIGHTMARE then nb = 3
+	elseif game.difficulty == game.DIFFICULTY_INSANE then nb = 5
+	elseif game.difficulty == game.DIFFICULTY_MADNESS then nb = 9
 	end
 	return nb * 10
 end
 
-function _M:changeLevel(lev, zone, params)
+function _M:changeLevelCheck(lev, zone, params)
 	params = params or {}
-	if self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime() then
+	if not params.direct_switch and (self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime()) and not config.settings.cheat then
 		local left = math.ceil((10 + self:getPlayer(true).last_kill_turn - self.turn + self:noStairsTime()) / 10)
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level so soon after a kill (%d game turns left to wait)!", left)
-		return
+		return false
 	end
 	if not self.player.can_change_level then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level without your own body!")
-		return
+		return false
 	end
 	if zone and not self.player.can_change_zone then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not leave the zone with this character!")
-		return
+		return false
 	end
 	if self.player:hasEffect(self.player.EFF_PARADOX_CLONE) or self.player:hasEffect(self.player.EFF_IMMINENT_PARADOX_CLONE) then
 		self.logPlayer(self.player, "#LIGHT_RED#You cannot escape your fate by leaving the level!")
-		return
+		return false
 	end
+	return true
+end
+
+function _M:changeLevel(lev, zone, params)
+	params = params or {}
+	if not self:changeLevelCheck(lev, zone, params) then return end
 
 	-- Transmo!
 	local p = self:getPlayer(true)
@@ -1104,15 +1114,15 @@ function _M:changeLevelReal(lev, zone, params)
 			if #list > 0 then x, y = unpack(rng.table(list)) end
 		end
 
-		if self.level.exited then -- use the last location, if defined
-			local turn = 0
-			if self.level.exited.down then
-				x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
-			end
-			if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
-				x, y = self.level.exited.up.x, self.level.exited.up.y
-			end
-		end
+		-- if self.level.exited then -- use the last location, if defined
+		-- 	local turn = 0
+		-- 	if self.level.exited.down then
+		-- 		x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
+		-- 	end
+		-- 	if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
+		-- 		x, y = self.level.exited.up.x, self.level.exited.up.y
+		-- 	end
+		-- end
 
 		if not x then -- Default to stairs
 			if lev > old_lev and not params.force_down and self.level.default_up then x, y = self.level.default_up.x, self.level.default_up.y
@@ -1347,6 +1357,7 @@ end
 
 --- Update the zone name, if needed
 function _M:updateZoneName()
+	if not self.zone_font then return end
 	local name
 	if self.zone.display_name then
 		name = self.zone.display_name()
@@ -1834,20 +1845,13 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			for _, ip in ipairs{
-				{"armor", "head"},
-			} do
-				for tier = 1, 5 do
-					local special = function(e) return e.material_level == tier and (not ip[3] or ip[3](e)) end
-					local o = game.zone:makeEntity(game.level, "object", {ignore_material_restriction=true, type=ip[1], subtype=ip[2], special=special, not_properties={"unique"}, ego_filter={ego_chance=100}}, nil, true)
-					if o then
-						o:identify(true)
-						game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y)
-					end
-				end
-			end
-do return end
 			self:changeLevel(game.level.level + 1)
+do return end
+			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)
+			local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[Map.ACTOR]=true})
+			if m and x then
+				game.zone:addEntity(game.level, m, "actor", x, y)
+			end
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
 			print(f, err)
@@ -2644,6 +2648,8 @@ unlocks_list = {
 	undead_skeleton = "Race: Skeleton",
 	yeek = "Race: Yeek",
 
+	race_ogre = "Race: Ogre",
+
 	mage = "Class: Archmage",
 	mage_tempest = "Class tree: Storm",
 	mage_geomancer = "Class tree: Stone",
@@ -2685,12 +2691,25 @@ unlocks_list = {
 function _M:countBirthUnlocks()
 	local nb = 0
 	local max = 0
+	local categories = {
+		class = {nb = 0, max = 0},
+		race = {nb = 0, max = 0},
+		cosmetic = {nb = 0, max = 0},
+		other = {nb = 0, max = 0},
+	}
 
-	for name, _ in pairs(self.unlocks_list) do
+	for name, dname in pairs(self.unlocks_list) do
+		local cat = "other"
+		if dname:find("^Class:") then cat = "class"
+		elseif dname:find("^Race:") then cat = "race"
+		elseif dname:find("^Cosmetic:") then cat = "cosmetic"
+		else cat = "other"
+		end
 		max = max + 1
-		if profile.mod.allow_build[name] then nb = nb + 1 end
+		categories[cat].max = categories[cat].max + 1
+		if profile.mod.allow_build[name] then nb = nb + 1 categories[cat].nb = categories[cat].nb + 1 end
 	end
-	return nb, max
+	return nb, max, categories
 end
 
 -- get a text-compatible texture (icon) for an entity

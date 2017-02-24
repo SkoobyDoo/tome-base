@@ -51,6 +51,7 @@ local function makeGolem(self)
 			if o.material_level > self.summoner:getTalentLevelRaw(self.summoner.T_GEM_GOLEM) then return "Master's Gem Golem talent too low for this gem" end
 		end,
 		equipdoll = "alchemist_golem",
+		is_alchemist_golem = 1,
 		infravision = 10,
 		rank = 3,
 		size_category = 4,
@@ -161,6 +162,7 @@ newTalent{
 	mana = 10,
 	no_energy = true,
 	no_npc_use = true,
+	cant_steal = true,
 	no_unlearn_last = true,
 	action = function(self, t)
 		if not self.alchemy_golem then return end
@@ -193,6 +195,7 @@ newTalent{
 	points = 1,
 	cooldown = 20,
 	mana = 10,
+	cant_steal = true,
 	no_npc_use = true,
 	no_unlearn_last = true,
 	on_pre_use = function(self, t) return not self.resting end,
@@ -387,20 +390,23 @@ newTalent{
 	mode = "passive",
 	require = spells_req2,
 	points = 5,
+	getHealingFactor = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.5) end,
 	on_learn = function(self, t)
 		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:learnTalent(Talents.T_THICK_SKIN, true, nil, {no_unlearn=true})
 		self.alchemy_golem:learnTalent(Talents.T_GOLEM_ARMOUR, true, nil, {no_unlearn=true})
-		self.alchemy_golem.healing_factor = (self.alchemy_golem.healing_factor or 1) + 0.1
 	end,
 	on_unlearn = function(self, t)
 		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:unlearnTalent(Talents.T_THICK_SKIN, nil, nil, {no_unlearn=true})
 		self.alchemy_golem:unlearnTalent(Talents.T_GOLEM_ARMOUR, nil, nil, {no_unlearn=true})
-		self.alchemy_golem.healing_factor = (self.alchemy_golem.healing_factor or 1) - 0.1
+	end,
+	passives = function(self, t, p)
+		if not self.alchemy_golem then return end -- Safety net
+		self:talentTemporaryValue(p, "alchemy_golem", {healing_factor=t.getHealingFactor(self, t)})
 	end,
 	info = function(self, t)
-		if not self.alchemy_golem then return "Improves your golem's armour training and damage resistance." end
+		if not self.alchemy_golem then return "Improves your golem's armour training, damage resistance, and healing efficiency." end
 		local rawlev = self:getTalentLevelRaw(t)
 		local oldh, olda = self.alchemy_golem.talents[Talents.T_THICK_SKIN], self.alchemy_golem.talents[Talents.T_GOLEM_ARMOUR]
 		self.alchemy_golem.talents[Talents.T_THICK_SKIN], self.alchemy_golem.talents[Talents.T_GOLEM_ARMOUR] = rawlev, 1 + rawlev
@@ -411,10 +417,10 @@ newTalent{
 		local crit = ta.getCriticalChanceReduction(self.alchemy_golem, ta) + ga.getCriticalChanceReduction(self.alchemy_golem, ga)
 		self.alchemy_golem.talents[Talents.T_THICK_SKIN], self.alchemy_golem.talents[Talents.T_GOLEM_ARMOUR] = oldh, olda
 
-		return ([[Improves your golem's armour training and damage resistance.
-		Increases all damage resistance by %d%%; increases Armour value by %d, Armour hardiness by %d%%, and reduces chance to be critically hit by %d%% when wearing heavy mail or massive plate armour; and increases healing factor by %d%%.
+		return ([[Improves your golem's armour training, damage resistance, and healing efficiency.
+		Increases all damage resistance by %d%%; increases Armour value by %d, Armour hardiness by %d%%, reduces chance to be critically hit by %d%% when wearing heavy mail or massive plate armour, and increases healing factor by %d%%.
 		The golem can always use any kind of armour, including massive armours.]]):
-		format(res, heavyarmor, hardiness, crit, rawlev * 10)
+		format(res, heavyarmor, hardiness, crit, t.getHealingFactor(self, t)*100)
 	end,
 }
 
@@ -425,6 +431,7 @@ newTalent{
 	points = 5,
 	mana = 10,
 	cooldown = 20,
+	cant_steal = true,
 	no_npc_use = true,
 	getPower = function(self, t) return self:combatTalentSpellDamage(t, 15, 50) end,
 	action = function(self, t)
@@ -461,6 +468,7 @@ newTalent{
 	require = spells_req4,
 	points = 5,
 	mana = 40,
+	cant_steal = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 14, 10, true)) end, -- Limit to > 0
 	action = function(self, t)
 		local mover, golem = getGolem(self)

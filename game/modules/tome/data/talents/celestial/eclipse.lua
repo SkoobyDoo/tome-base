@@ -45,7 +45,7 @@ newTalent{
 	fixed_cooldown = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	getResistancePenetration = function(self, t) return self:combatLimit(self:getCun()*self:getTalentLevel(t), 100, 5, 0, 55, 500) end, -- Limit to <100%
-	getCooldownReduction = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	getCooldownReduction = function(self, t) return math.floor(self:combatTalentScale(t, 3, 6, "log")) end,
 	action = function(self, t)
 		self:setEffect(self.EFF_TOTALITY, t.getDuration(self, t), {power=t.getResistancePenetration(self, t)})
 		for tid, cd in pairs(self.talents_cd) do

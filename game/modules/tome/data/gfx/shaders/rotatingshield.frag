@@ -73,7 +73,7 @@ void main(void)
     if(planarPos.y < 1.0 && planarPos.y > 0.0)
     {
       float glowMult = 1.0 + mix(3.0, 0.0, clamp(normTime / (appearTime * 1.5 + 1e-4), 0.0, 1.0));
-      float alphaSub = 1.0f - clamp(normTime / (appearTime + 1e-4), 0.0, 1.0);;
+      float alphaSub = 1.0 - clamp(normTime / (appearTime + 1e-4), 0.0, 1.0);;
       planarPos.x *= repeatTimes;
       planarPos.x = clamp(planarPos.x, 0.0, unbalancedSize);
       resultColor = texture2D(tex, planarPos);

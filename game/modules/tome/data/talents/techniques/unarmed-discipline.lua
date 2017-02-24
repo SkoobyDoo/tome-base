@@ -93,57 +93,18 @@ newTalent{
 }
 
 newTalent{
-	name = "Defensive Throw",
+	name = "Relentless Strikes",
 	type = {"technique/unarmed-discipline", 2},
 	require = techs_dex_req2,
-	mode = "passive",
 	points = 5,
-	-- Limit defensive throws/turn for balance using a buff (warns attacking players of the talent)
-	-- EFF_DEFENSIVE_GRAPPLING effect is refreshed each turn in _M:actBase in mod.class.Actor.lua
-	getDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 5, 50) * getUnarmedTrainingBonus(self) end,
-	getDamageTwo = function(self, t) return self:combatTalentPhysicalDamage(t, 10, 75) * getUnarmedTrainingBonus(self) end,
-	getchance = function(self, t)
-		return self:combatLimit(self:getTalentLevel(t) * (5 + self:getCun(5, true)), 100, 0, 0, 50, 50) -- Limit < 100%
-	end,
-	getThrows = function(self, t)
-		return self:combatScale(self:getStr() + self:getDex()-20, 0, 0, 2.24, 180)
-	end,
-	-- called by _M:attackTargetWith function in mod\class\interface\Combat.lua (includes adjacency check)
-	do_throw = function(self, target, t)
-		local ef = self:hasEffect(self.EFF_DEFENSIVE_GRAPPLING)
-		if not ef or not rng.percent(self.tempeffect_def.EFF_DEFENSIVE_GRAPPLING.throwchance(self, ef)) then return end
-		local grappled = target:isGrappled(self)
-		local hit = self:checkHit(self:combatAttack(), target:combatDefense(), 0, 95) and (grappled or not self:checkEvasion(target)) -- grappled target can't evade
-		ef.throws = ef.throws - 1
-		if ef.throws <= 0 then self:removeEffect(self.EFF_DEFENSIVE_GRAPPLING) end
-
-		if hit then
-			self:project(target, target.x, target.y, DamageType.PHYSICAL, self:physicalCrit(t.getDamageTwo(self, t), nil, target, self:combatAttack(), target:combatDefense()))
-			-- if grappled stun
-			if grappled and target:canBe("stun") then
-				target:setEffect(target.EFF_STUNNED, 2, {apply_power=self:combatAttack(), min_dur=1})
-				self:logCombat(target, "#Source# slams #Target# into the ground!")
-			-- if not grappled daze
-			else
-				self:logCombat(target, "#Source# throws #Target# to the ground!")
-				-- see if the throw dazes the enemy
-				if target:canBe("stun") then
-					target:setEffect(target.EFF_DAZED, 2, {apply_power=self:combatAttack(), min_dur=1})
-				end
-			end
-		else
-			self:logCombat(target, "#Source# misses a defensive throw against #Target#!", self.name:capitalize(),target.name:capitalize())
-		end
-	end,
-	on_unlearn = function(self, t)
-		self:removeEffect(self.EFF_DEFENSIVE_GRAPPLING)
-	end,
+	mode = "passive",
+	getStamina = function(self, t) return self:combatTalentLimit(t, 3, 0.5, 1.5) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 50, 15, 40) end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local damagetwo = t.getDamageTwo(self, t)
-		return ([[When you avoid a melee blow while unarmed, you have a %d%% chance to throw the target to the ground.  If the throw lands, the target will take %0.2f damage and be dazed for 2 turns, or %0.2f damage and be stunned for 2 turns if the target is grappled.  You may attempt up to %0.1f throws per turn.
-		The chance of throwing increases with your Accuracy, the damage scales with your Physical Power, and the number of attempts with your Strength and Dexterity.]]):
-		format(t.getchance(self,t), damDesc(self, DamageType.PHYSICAL, (damage)), damDesc(self, DamageType.PHYSICAL, (damagetwo)), t.getThrows(self, t))
+		local stamina = t.getStamina(self, t)
+		local chance = t.getChance(self, t)
+		return ([[When gaining a combo point, you have a %d%% chance to gain an extra combo point.  Additionally, every time you earn a combo point, you will regain %0.2f stamina, or %0.2f stamina if you would exceed 5 combo points.]])
+		:format(chance, stamina, stamina*2)
 	end,
 }
 
@@ -154,12 +115,12 @@ newTalent{
 	require = techs_dex_req3,
 	points = 5,
 	random_ego = "attack",
-	cooldown = 8,
-	stamina = 25,
+	cooldown = 6,
+	stamina = 5,
 	message = "@Source@ prepares to block incoming attacks.",
 	tactical = { ATTACK = 3, DEFEND = 3 },
 	requires_target = true,
-	getBlock = function(self, t) return self:combatTalentPhysicalDamage(t, 10, 75) end,
+	getBlock = function(self, t) return self:combatTalentPhysicalDamage(t, 30, 200) end,
 	action = function(self, t)
 		local blockval = t.getBlock(self, t) * self:getCombo()
 		self:setEffect(self.EFF_BRAWLER_BLOCK, 2, {block = blockval})
@@ -173,44 +134,72 @@ newTalent{
 		local maxblock = block*5
 		return ([[Toughen your body blocking up to %d damage per combo point (Max %d) across 2 turns.
 			Current block value:  %d
-			Using this talent removes your combo points.]])
-		:format(block, maxblock, block * self:getCombo())
+			Using this talent removes your combo points.
+			The damage absorbed scales with your Physical Power.]])
+		:format(block, block * 5, block * self:getCombo())
 	end,
 }
 
-
 newTalent{
-	name = "Roundhouse Kick",
+	name = "Touch of Death",
 	type = {"technique/unarmed-discipline", 4},
 	require = techs_dex_req4,
 	points = 5,
+	stamina = 40,
 	random_ego = "attack",
-	cooldown = 12,
-	stamina = 18,
-	range = 0,
-	radius = function(self, t) return 1 end,
-	tactical = { ATTACKAREA = { PHYSICAL = 2 }, DISABLE = { knockback = 2 } },
+	cooldown = 18,
+	is_melee = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
+	range = 1,
+	message = "@Source@ strikes a deadly pressure point on the target.",
+	tactical = { DISABLE = 3, ATTACK = { weapon = 3 } },
 	requires_target = true,
-	getDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 15, 150) * getUnarmedTrainingBonus(self) end,
-	target = function(self, t)
-		return {type="cone", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
-	end,
+	radius = function(self,t) return self:combatTalentScale(t, 1, 3) end,
+	getDamage = function(self, t) return 0.2 + getStrikingStyle(self, dam) end,
+	getMult = function(self, t) return self:combatTalentLimit(t, 100, 15, 40) end,
+	getLifePercent = function(self, t) return self:combatTalentLimit(t, 100, 25, 75) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
-		self:breakGrapples()
+		-- breaks active grapples if the target is not grappled
+		if not target:isGrappled(self) then
+			self:breakGrapples()
+		end
 
-		self:project(tg, x, y, DamageType.PHYSKNOCKBACK, {dam=t.getDamage(self, t), dist=4})
+		self.turn_procs.auto_melee_hit = true
+		-- store old values to restore later
+		local evasion = target.evasion
+		target.evasion = 0
+		local oldlife = target.life
+		self:logCombat(target, "#Source# strikes at a vital spot on #target#!")
+		local do_attack = function() self:attackTarget(target, nil, t.getDamage(self, t), true) end
+		local ok, err = pcall(do_attack)
+		target.evasion = evasion
+		if not ok then error(err) end
+		self.turn_procs.auto_melee_hit = nil
+		
+		local life_diff = oldlife - target.life
+		if life_diff > 0 then
+			game:onTickEnd(function()	
+				target:setEffect(target.EFF_TOUCH_OF_DEATH, 4, {dam=life_diff, power=t.getLifePercent(self,t)/100, mult=t.getMult(self,t)/100, radius=self:getTalentRadius(t), src=self})
+			end)
+		end
 
 		return true
+
 	end,
 	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		return ([[Attack your foes in a frontal arc with a roundhouse kick, which deals %0.2f physical damage and knocks your foes back.
-		This will break any grapples you're maintaining, and the damage will scale with your Physical Power.]]):
-		format(damDesc(self, DamageType.PHYSICAL, (damage)))
+		local damage = t.getDamage(self, t) * 100
+		local mult = t.getMult(self,t)
+		local finaldam = damage+(damage*(((mult/100)+1)^2))+(damage*(((mult/100)+1)^3))+(damage*(((mult/100)+1)^4))
+		local radius = self:getTalentRadius(t)
+		local life = t.getLifePercent(self,t)
+		return ([[Using your deep knowledge of anatomy, you strike a target in a vital pressure point for %d%% weapon damage, bypassing their defense and evasion.
+		This strike inflicts terrible wounds inside the target's body, causing them to take physical damage equal to 100%% of the initial strike each turn for 4 turns, increasing by %d%% each turn (so after 4 turns, they would have taken a total of %d%% damage).
+		If the target dies while under or from this effect their body will explode in a radius %d shower of bone and gore, inflicting physical damage equal to %d%% of their maximum life (divided by rank) to all enemies and granting you 4 combo points.]])
+		:format(damage, mult, finaldam, radius, life)
 	end,
 }
 

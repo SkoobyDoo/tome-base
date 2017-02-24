@@ -29,7 +29,7 @@ function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	self.data = data
 	self.grid_list = zone.grid_list
-	self.zoom = data.zoom or 12
+	self.zoom = data.zoom or 12 -- periodicity rate for "open" spaces when generating the cavern, lower values make open spaces wider
 	self.hurst = data.hurst or 0.2
 	self.lacunarity = data.lacunarity or 4
 	self.octave = data.octave or 1

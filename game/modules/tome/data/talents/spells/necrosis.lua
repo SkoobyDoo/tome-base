@@ -30,7 +30,7 @@ newTalent{
 		return 50 * self:getTalentLevelRaw(t) + self.max_life * self:combatTalentLimit(t, 1, .01, .05)
 	end,
 	activate = function(self, t)
-		if self.player and not self:hasQuest("lichform") and not self:attr("undead") then
+		if self.player and not self:attr("no_lichform_quest") and not self:hasQuest("lichform") and not self:attr("undead") then
 			self:grantQuest("lichform")
 			if game.state.birth.campaign_name ~= "maj-eyal" then self:setQuestStatus("lichform", engine.Quest.DONE) end
 			require("engine.ui.Dialog"):simplePopup("Lichform", "You have mastered the lesser arts of overcoming death, but your true goal is before you: the true immortality of Lichform!")
@@ -46,8 +46,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[The line between life and death blurs for you; you can only die when you reach -%d life.
-		However, when below 0 HP, you cannot see how much life you have left.]]):
+		return ([[The line between life and death blurs for you; you can only die when you reach -%d life.]]):
 		format(t.lifeBonus(self, t))
 	end,
 }
@@ -57,8 +56,8 @@ newTalent{
 	type = {"spell/necrosis",2},
 	require = spells_req2,
 	points = 5,
-	mana = 70,
-	cooldown = 30,
+	mana = 60,
+	cooldown = 25,
 	tactical = { ATTACK = { ARCANE = 3 }, DISABLE = 2 },
 	range = 7,
 	requires_target = true,
@@ -90,8 +89,8 @@ newTalent{
 	require = spells_req3,
 	points = 5,
 	random_ego = "attack",
-	mana = 35,
-	cooldown = 20,
+	mana = 30,
+	cooldown = 18,
 	tactical = { HEAL = 2 },
 	is_heal = true,
 	getHeal = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 70), 100, 20, 0,  66.7, 46.7) end, --Limit to <100%

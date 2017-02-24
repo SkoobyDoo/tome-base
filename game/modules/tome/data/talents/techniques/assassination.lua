@@ -108,7 +108,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self,t)
 		return ([[When you exit stealth, you reveal yourself dramatically, intimidating foes around you. 
-		All foes radius %d that witness you leaving stealth will be stricken with terror, which randomly inflicts stun, slow (40%% power), or confusion (50%% power) for %d turns.
+		All foes within radius %d that witness you leaving stealth will be stricken with terror, which randomly inflicts stun, slow (40%% power), or confusion (50%% power) for %d turns.
 		The chance to terrorize improves with your combat accuracy.]])
 		:format(radius, duration)
 	end,
@@ -125,24 +125,32 @@ newTalent{
 	requires_target = true,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 0.2, 0.6) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	getPower = function(self, t) return self:combatTalentLimit(t, 100, 8, 25) end, -- Limit < 100%
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	range = 1,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "show_gloves_combat", 1)
+	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
 		local dam = t.getDamage(self,t)
-		if target and self:isTalentActive(self.T_STEALTH) and not self:isTalentCoolingDown(t) then
-			if core.fov.distance(self.x, self.y, target.x, target.y) > 1 then return end
-			target:setEffect(target.EFF_GARROTE, t.getDuration(self, t), {power=dam, reduce=t.getPower(self,t), src=self, apply_power=self:combatAttack()})
+		if target and not target.dead and self:isTalentActive(self.T_STEALTH) and not self:isTalentCoolingDown(t) and core.fov.distance(self.x, self.y, target.x, target.y) <= 1 then
 			self:startTalentCooldown(t)
+			-- check takes the place of normal melee hit chance
+			if not self:checkHit(self:combatAttack(), target:combatPhysicalResist()) or not target:canBe("pin") then
+				self:logCombat(target, "#Target# avoids a garrote from #Source#!")
+				return
+			end
+			local silence = target:canBe("silence") and math.ceil(t.getDuration(self, t)/2) or 0
+			target:setEffect(target.EFF_GARROTE, t.getDuration(self, t), {power=dam, src=self, silence=silence})
 		end
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)*100
 		local dur = t.getDuration(self,t)
-		local reduce = t.getPower(self,t)
-		return ([[On attacking from stealth, you slip a garrote over the target’s neck (or other vulnerable part) and attempt to strangle them for %d turns. Strangled targets are pinned, deal %d%% reduced damage and suffer an automatic unarmed attack for %d%% damage each turn. 
-		This effect ends immediately if you are no longer adjacent to your target.]])
-		:format(dur, reduce, damage)
+		local sdur = math.ceil(t.getDuration(self,t)/2)
+		return ([[When attacking from stealth, you slip a garrote over the target’s neck (or other vulnerable part).  This strangles for %d turns and silences for %d turns.  Strangled targets are pinned and suffer an automatic unarmed attack for %d%% damage each turn. 
+		Your chance to apply the garrote increases with your Accuracy and you must stay adjacent to your target to maintain it.
+		This talent has a cooldown.]])
+		:format(dur, sdur, damage)
 	end,
 }
 
@@ -166,7 +174,7 @@ newTalent{
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
+		if not (x and y) or not self:canProject(tg, x, y) then return nil end
 		
 		self:project(tg, x, y, function(px, py)
 		    target = game.level.map(px, py, engine.Map.ACTOR)
@@ -184,6 +192,6 @@ newTalent{
 		If a target dies while marked, the cooldown of this ability is reset and the cost refunded.
 		This ability can be used without breaking stealth.
 		The base damage dealt will increase with your Dexterity.]]):
-		format(power, damDesc(self, DamageType.DARKNESS, dam), perc)
+		format(power, damDesc(self, DamageType.PHYSICAL, dam), perc)
 	end,
 }
