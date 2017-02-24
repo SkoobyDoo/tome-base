@@ -2499,6 +2499,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is speeding up.", "+Fast As Lightning" end,
 	on_lose = function(self, err) return "#Target# is slowing down.", "-Fast As Lightning" end,
 	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "phase_shift", 0.5)
 	end,
 	deactivate = function(self, eff)
 		if eff.particle then
