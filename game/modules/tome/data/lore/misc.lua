@@ -695,7 +695,7 @@ newLore{
 	category = "spydrë",
 	name = "Mantra of a Shiiak",
     lore = [[Each morning I wake, happy I'm alive;
-the traps of this tomb claim me today.
+the traps of this tomb won't claim me today.
 Though its curse of hunger eats at my insides,
 I curse it one better by having outstayed.
 
