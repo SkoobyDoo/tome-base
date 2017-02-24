@@ -937,16 +937,15 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 		inc_damage={[DamageType.NATURE] = 10, [DamageType.MIND] = 10, [DamageType.ACID] = 10},
 		resists={[DamageType.NATURE] = 30},
 		on_melee_hit={[DamageType.POISON] = 20, [DamageType.SLIME] = 20},
-	    on_wear = function(self, who)
-            self.worn_by = who
-			if not game.state.spydre_mantra then
-			    game.state.spydre_mantra = true
-			    require("engine.ui.Dialog"):simpleLongPopup("Huh?", "As you wear the strange set of robes, you notice something folded into one of its pockets...", 500, function()
-				game.party:learnLore("shiiak-mantra")
-			end
-		end,
-		
 	},
+	on_wear = function(self, who)
+		if not game.state.spydre_mantra then
+			game.state.spydre_mantra = true
+			require("engine.ui.Dialog"):simpleLongPopup("Huh?", "As you wear the strange set of robes, you notice something folded into one of its pockets...", 500, function()
+				game.party:learnLore("shiiak-mantra")
+			end)
+		end
+	end,
 }
 
 
