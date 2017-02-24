@@ -2503,6 +2503,9 @@ newEffect{
 		self:effectTemporaryValue(eff, "talent_cd_reduction", {[self.T_ANOMALY_REARRANGE] = -4, [self.T_ANOMALY_TEMPORAL_STORM] = -4})
 		self:learnTalent(self.T_ANOMALY_REARRANGE, true)
 		self:learnTalent(self.T_ANOMALY_TEMPORAL_STORM, true)
+		self:learnTalent(self.T_ANOMALY_FLAWED_DESIGN, true)
+		self:learnTalent(self.T_ANOMALY_GRAVITY_PULL, true)
+		self:learnTalent(self.T_ANOMALY_WORMHOLE, true)
 
 		self.replace_display = mod.class.Actor.new{
 			image = "npc/elemental_temporal_telugoroth.png",
@@ -2515,6 +2518,9 @@ newEffect{
 	deactivate = function(self, eff)
 		self:unlearnTalent(self.T_ANOMALY_REARRANGE)
 		self:unlearnTalent(self.T_ANOMALY_TEMPORAL_STORM)
+		self:unlearnTalent(self.T_ANOMALY_FLAWED_DESIGN)
+		self:unlearnTalent(self.T_ANOMALY_GRAVITY_PULL)
+		self:unlearnTalent(self.T_ANOMALY_WORMHOLE)
 		self.replace_display = nil
 		self:removeAllMOs()
 		game.level.map:updateMap(self.x, self.y)

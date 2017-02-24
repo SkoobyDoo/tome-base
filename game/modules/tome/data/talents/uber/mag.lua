@@ -119,7 +119,7 @@ uberTalent{
 	info = function(self, t)
 		return ([[You can wrap temporal threads around you, assuming the form of a telugoroth for 10 turns.
 		While in this form you gain pinning, bleeding, blindness and stun immunity, 30%% temporal resistance, your temporal damage bonus is set to your current highest damage bonus + 30%%, 50%% of the damage you deal becomes temporal, and you gain 20%% temporal resistance penetration.
-		You also are able to cast two anomalies: Anomaly Rearrange and Anomaly Temporal Storm.]])
+		You also are able to cast anomalies: Anomaly Rearrange, Anomaly Temporal Storm, Anomaly Flawed Design, Anomaly Gravity Pull and Anomaly Wormhole.]])
 		:format()
 	end,
 }
