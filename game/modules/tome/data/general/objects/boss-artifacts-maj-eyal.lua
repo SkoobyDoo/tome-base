@@ -1075,7 +1075,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 						who:sortInven(who.INVEN_INVEN)		
 						who.changed = true
 						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
-					end },
+					end }
 				end),
 				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
 				fake_ego = true,
@@ -1194,7 +1194,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 						who:sortInven(who.INVEN_INVEN)		
 						who.changed = true
 						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
-					end },
+					end }
 				end),
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
