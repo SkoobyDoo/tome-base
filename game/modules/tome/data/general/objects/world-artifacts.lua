@@ -1709,7 +1709,7 @@ newEntity{ base = "BASE_MACE",
 	unided_name = "a strangely colored bone", unique = true,
 	moddable_tile = "special/%s_club_ureslaks_femur",
 	moddable_tile_big = true,
-	desc = [[A shortened femur of the mighty prismatic dragon, this erratic club still pulses with Ureslak's volatile nature.]],
+	desc = [[A shortened femur of the mighty prismatic dragon Ureslak, this erratic club still resonates with his volatile nature.]],
 	level_range = {42, 50},
 	require = { stat = { str=45, dex=30 }, },
 	rarity = 400,
@@ -1771,6 +1771,71 @@ newEntity{ base = "BASE_MACE",
 			inc_damage = { all = 12, [DamageType.ARCANE] = 30 },
 		} },
 	},
+	set_list = { {"define_as","URESLAK_CLOAK"} },
+	set_desc = {
+		ureslak = "What would happen if more of Ureslak's remains were reunited?",
+	},
+}
+
+newEntity{ base = "BASE_CLOAK",
+	power_source = {nature=true},
+	unique = true,
+	name = "Ureslak's Molted Scales", define_as = "URESLAK_CLOAK", image = "object/artifact/ureslaks_molted_scales.png",
+	unided_name = "scaly multi-hued cloak",
+	desc = [[This cloak is fashioned from the scales of some large reptilian creature.  It appears to reflect every color of the rainbow.]],
+	level_range = {40, 50},
+	rarity = 400,
+	cost = 300,
+	material_level = 5,
+	wielder = {
+		resists_cap = {
+			[DamageType.FIRE] = 10,
+			[DamageType.COLD] = 10,
+			[DamageType.LIGHTNING] = 10,
+			[DamageType.NATURE] = 10,
+			[DamageType.DARKNESS] = 10,
+			[DamageType.ARCANE] = -30,
+		},
+		resists = {
+			[DamageType.FIRE] = 20,
+			[DamageType.COLD] = 20,
+			[DamageType.LIGHTNING] = 20,
+			[DamageType.NATURE] = 20,
+			[DamageType.DARKNESS] = 20,
+			[DamageType.ARCANE] = -30,
+		},
+	},
+	max_power = 50, power_regen = 1,
+	use_power = {
+		name = function(self, who)
+			local resists={"Fire", "Cold", "Lightning", "Nature", "Darkness"}
+			if self.set_complete then table.insert(resists, "Arcane") end
+			return ("energize the scales for 16 turns, increasing resistance to %s damage by 15%% just before you are damaged. (This effect lasts 5 turns and only works on one type of damage.)"):format(table.concatNice(resists, ", ", ", or "))
+		end,
+		tactical = { DEFEND = 1 },
+		power = 50,
+		use = function(self, who)
+			game.logSeen(who, "%s empowers %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			local resists = table.values({engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.NATURE, engine.DamageType.DARKNESS2, engine.DamageType.DARKNESS})
+			if self.set_complete then table.insert(resists, engine.DamageType.ARCANE) end
+			who:setEffect(who.EFF_CHROMATIC_RESONANCE, 16, {resist_types=resists})
+			return {id=true, used=true}
+		end,
+	},
+	set_list = { {"define_as","URESLAK_FEMUR"} },
+	set_desc = {
+		ureslak = "It would go well with another part of Ureslak.",
+	},
+	on_set_complete = function(self, who)
+		self:specialSetAdd({"wielder","equilibrium_regen"}, -1)
+		self:specialSetAdd({"wielder","resists"}, {[engine.DamageType.ARCANE]=15})
+		self:specialSetAdd({"wielder","resists_cap"}, {[engine.DamageType.ARCANE]=15})
+		game.logSeen(who, "#YELLOW_GREEN#An ironic harmony surrounds Ureslak's remains as they reunite.")
+	end,
+	on_set_broken = function(self, who)
+		self.wielder.equilibrium_regen = nil
+		game.logSeen(who, "#YELLOW_GREEN#Ureslak's remains seem more unsettled.")
+	end,
 }
 
 newEntity{ base = "BASE_WARAXE",
@@ -1968,47 +2033,6 @@ newEntity{ base = "BASE_AMULET",
 	},
 	max_power = 60, power_regen = 1,
 	use_talent = { id = Talents.T_ARCANE_EYE, level = 2, power = 60 },
-}
-
-newEntity{ base = "BASE_CLOAK",
-	power_source = {nature=true},
-	unique = true,
-	name = "Ureslak's Molted Scales", image = "object/artifact/ureslaks_molted_scales.png",
-	unided_name = "scaley multi-hued cloak",
-	desc = [[This cloak is fashioned from the scales of some large reptilian creature.  It appears to reflect every color of the rainbow.]],
-	level_range = {40, 50},
-	rarity = 400,
-	cost = 300,
-	material_level = 5,
-	wielder = {
-		resists_cap = {
-			[DamageType.FIRE] = 10,
-			[DamageType.COLD] = 10,
-			[DamageType.LIGHTNING] = 10,
-			[DamageType.NATURE] = 10,
-			[DamageType.DARKNESS] = 10,
-			[DamageType.ARCANE] = -30,
-		},
-		resists = {
-			[DamageType.FIRE] = 20,
-			[DamageType.COLD] = 20,
-			[DamageType.LIGHTNING] = 20,
-			[DamageType.NATURE] = 20,
-			[DamageType.DARKNESS] = 20,
-			[DamageType.ARCANE] = -30,
-		},
-	},
-	max_power = 50, power_regen = 1,
-	use_power = {
-		name = function(self, who) return "empower the scales for 16 turns, increasing a resistance (fire, cold, lightning, nature, darkness) by 15% when you are about to be hit (this effect can only happen once every 5 turns and lasts 5 turns)." end,
-		tactical = { BUFF = 1 },
-		power = 50,
-		use = function(self, who)
-			game.logSeen(who, "%s empowers %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
-			who:setEffect(who.EFF_URESLAK_MOLTEN_SCALES, 16, {})
-			return {id=true, used=true}
-		end,
-	},
 }
 
 newEntity{ base = "BASE_DIGGER",
