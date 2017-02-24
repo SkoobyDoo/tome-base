@@ -2150,7 +2150,7 @@ function _M:onTakeHit(value, src, death_note)
 		return 0
 	end
 
-	if self:attr("phase_shift") and not self.turn_procs.phase_shift then
+	if self:attr("phase_shift") and rng.percent(self:attr("phase_shift") * 100) and not self.turn_procs.phase_shift then
 		self.turn_procs.phase_shift = true
 		local nx, ny = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
 		if nx then

@@ -179,13 +179,15 @@ uberTalent{
 	on_learn = function(self, t)
 		self.inc_stats[self.STAT_LCK] = (self.inc_stats[self.STAT_LCK] or 0) + 40
 		self:onStatChange(self.STAT_LCK, 40)
+		self:attr("phase_shift", 0.1)
 	end,
 	on_unlearn = function(self, t)
 		self.inc_stats[self.STAT_LCK] = (self.inc_stats[self.STAT_LCK] or 0) - 40
 		self:onStatChange(self.STAT_LCK, -40)
+		self:attr("phase_shift", -0.1)
 	end,
 	info = function(self, t)
-		return ([[Every day is your lucky day! You gain a permanent +40 luck bonus.]])
+		return ([[Every day is your lucky day! You gain a permanent +40 luck bonus and 10%% to move out of the way of every attack.]])
 		:format()
 	end,
 }
