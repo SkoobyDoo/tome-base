@@ -40,6 +40,11 @@ newEntity{ base = "BASE_GEM",
 	cost = 200,
 	identified = false,
 	material_level = 4,
+	color_attributes = {
+		damage_type = 'LIGHTNING',
+		alt_damage_type = 'LIGHTNING_DAZE',
+		particle = 'lightning_explosion',
+	},
 	wielder = {
 		inc_stats = {[Stats.STAT_DEX] = 8, [Stats.STAT_CUN] = 8 },
 		inc_damage = {[DamageType.LIGHTNING] = 20 },
@@ -327,6 +332,11 @@ newEntity{ base = "BASE_GEM",
 	identified = false,
 	rarity = 250,
 	material_level = 3,
+	color_attributes = {
+		damage_type = 'LIGHT',
+		alt_damage_type = 'LIGHT_BLIND',
+		particle = 'light',
+	},
 	desc = [[The first Halfling mages during the Age of Allure discovered how to capture the Sunlight and infuse gems with it.
 This star is the culmination of their craft. Light radiates from its ever-shifting yellow surface.]],
 	cost = 400,
@@ -4880,6 +4890,11 @@ newEntity{ base = "BASE_GEM", --Thanks SageAcrin and Graziel!
 	cost = 200,
 	identified = false,
 	material_level = 3,
+	color_attributes = {
+		damage_type = 'LIGHTNING',
+		alt_damage_type = 'LIGHTNING_DAZE',
+		particle = 'lightning_explosion',
+	},
 	wielder = {
 		inc_stats = {[Stats.STAT_MAG] = 5, [Stats.STAT_CON] = 5, },
 		inc_damage = {[DamageType.FIRE] = 10, [DamageType.COLD] = 10, [DamageType.LIGHTNING] = 10,  },

@@ -707,6 +707,11 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'BLIGHT',
+		alt_damage_type = 'DRAINLIFE',
+		particle = 'slime',
+	},
 	carrier = {
 		lite = 2,
 	},
@@ -716,6 +721,7 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		confusion_immune = 0.3,
 		fear_immune = 0.3,
 		resists={[DamageType.MIND] = 30,},
+		sentient_telos = 1,
 	},
 	imbue_powers = {
 		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_DEX] = 5, [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 5, [Stats.STAT_CON] = 5, },
@@ -757,6 +763,16 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		end)
 		return {id=true, used=true}
 	end },
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","TELOS_TOP_HALF"} },
+	on_set_complete = function(self, who)
+		local DamageType = require "engine.DamageType"
+		self:specialSetAdd({"wielder","spell_cooldown_reduction"}, 0.1)
+		self:specialWearAdd({"wielder","melee_project"}, { [engine.DamageType.DRAINLIFE] = 50 } )
+		game.logSeen(game.player, "#CRIMSON#Telos's gem seems to flare and glows an unearthly colour.")
+	end,
+	on_set_broken = function(self, who)
+		game.logPlayer(game.player, "#CRIMSON#The unearthly glow fades away.")
+	end,
 }
 
 -- The staff that goes with the crystal above, it will not be generated randomly it is created by the crystal
