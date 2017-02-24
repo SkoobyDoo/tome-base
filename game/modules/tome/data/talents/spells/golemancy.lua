@@ -51,6 +51,7 @@ local function makeGolem(self)
 			if o.material_level > self.summoner:getTalentLevelRaw(self.summoner.T_GEM_GOLEM) then return "Master's Gem Golem talent too low for this gem" end
 		end,
 		equipdoll = "alchemist_golem",
+		is_alchemist_golem = 1,
 		infravision = 10,
 		rank = 3,
 		size_category = 4,

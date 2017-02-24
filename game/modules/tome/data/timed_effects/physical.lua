@@ -2499,6 +2499,7 @@ newEffect{
 	on_gain = function(self, err) return "#Target# is speeding up.", "+Fast As Lightning" end,
 	on_lose = function(self, err) return "#Target# is slowing down.", "-Fast As Lightning" end,
 	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "phase_shift", 0.5)
 	end,
 	deactivate = function(self, eff)
 		if eff.particle then
@@ -3752,26 +3753,6 @@ newEffect{
 }
 
 newEffect{
-	name = "PIN_DOWN",
-	desc = "Pinned Down", image = "talents/pin_down.png",
-	long_desc = function(self, eff) return ("Pinned down, preventing movement and giving attackers %d%% increased critical strike chance and critical strike damage."):format(eff.power) end,
-	type = "physical",
-	subtype = { pin=true },
-	status = "detrimental",
-	parameters = {power = 1},
-	on_gain = function(self, err) return nil, "+Pinned Down" end,
-	on_lose = function(self, err) return nil, "-Pinned Down" end,
-	activate = function(self, eff)
-		if eff.pin==1 then eff.tmpid = self:addTemporaryValue("never_move", 1) end
-		eff.critid = self:addTemporaryValue("combat_crit_vulnerable", eff.power)
-	end,
-	deactivate = function(self, eff)
-		if eff.tmpid then self:removeTemporaryValue("never_move", eff.tmpid) end
-		self:removeTemporaryValue("combat_crit_vulnerable", eff.critid)
-	end,
-}
-
-newEffect{
 	name = "RAPID_MOVEMENT", image = "talents/rapid_shot.png",
 	desc = "Rapid Movement",
 	long_desc = function(self, eff) return ("Increases movement speed by %d%%."):format(eff.power*100) end,
@@ -3915,7 +3896,7 @@ newEffect{
 	subtype = { tactic=true },
 	status = "beneficial",
 	charges = function(self, eff) return eff.charges end,
-	parameters = { power=5, duration=1, sight=1, dam=10, max_power=15, charges=3 },
+	parameters = { power=5, duration=1, sight=1, max_power=15, charges=3 },
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "cancel_damage_chance", eff.max_power)
 		self:effectTemporaryValue(eff, "sight", eff.sight)
@@ -3984,29 +3965,40 @@ newEffect{
 	end,
 }
 
+-- Premptive Chromatic resistance
 newEffect{
-	name = "URESLAK_MOLTEN_SCALES", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
-	desc = "Ureslak's Molten Scales",
-	long_desc = function(self, eff) return ("Reacts to attacks by raising resistances for 5 turns."):format() end,
+	name = "CHROMATIC_RESONANCE", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
+	desc = "Chromatic Resonance",
+	long_desc = function(self, eff)
+		local dt_descs = table.concatNice(eff.type_descs, ", ", ", or ")
+		return ("Preemptively reacts to %s damage, increasing the appropriate resistance by %d for 5 turns."):format(dt_descs, eff.power)
+	end,
 	type = "physical",
 	subtype = { nature=true, resist=true },
 	status = "beneficial",
-	parameters = { },
-	on_gain = function(self, err) return nil, true end,
-	on_lose = function(self, err) return nil, true end,
+	parameters = {power=15, resist_types={"FIRE", "COLD", "LIGHTNING", "NATURE", "DARKNESS"} },
+	on_gain = function(self, err) return "#Target##OLIVE_DRAB# shimmers in multiple hues.", true end,
+	on_lose = function(self, err) return "#Target#'s#OLIVE_DRAB# multi-hued shimmer fades.", true end,
 	callbackOnTakeDamageBeforeResists = function(self, eff, src, x, y, type, dam, state)
-		if not self:hasEffect(self.EFF_URESLAK_MOLTEN_SCALES_RESIST) and dam > 0 and src ~= self and (
-		   (type == DamageType.FIRE) or 
-		   (type == DamageType.COLD) or 
-		   (type == DamageType.LIGHTNING) or 
-		   (type == DamageType.NATURE) or 
-		   (type == DamageType.DARKNESS)
-		) then
-			self:setEffect(self.EFF_URESLAK_MOLTEN_SCALES_RESIST, 5, {type=type})
+		if dam > 0 and src ~= self and not self:hasEffect(self.EFF_CHROMATIC_RESISTANCE) then
+			for i, r_type in ipairs(eff.resist_types) do
+				if type == r_type then
+					self:setEffect(self.EFF_CHROMATIC_RESISTANCE, 5, {type=type, power=eff.power})
+					break
+				end
+			end
 		end
 		return {dam=dam}
 	end,
 	activate = function(self, eff)
+		eff.type_descs = {}
+		for i = #eff.resist_types, 1, -1 do
+			local dt = DamageType[eff.resist_types[i]] and DamageType:get(eff.resist_types[i])
+			if dt then
+				table.insert(eff.type_descs, (dt.text_color or "#aaaaaa#")..dt.name:capitalize().."#LAST#")
+			else table.remove(eff.resist_types, i)
+			end
+		end
 		if core.shader.active() then
 			self:effectParticles(eff, {type="shader_shield", args={size_factor=1.5, img="ureslak_tentacles"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=2000, noup=0.0}})
 		end
@@ -4014,16 +4006,36 @@ newEffect{
 }
 
 newEffect{
-	name = "URESLAK_MOLTEN_SCALES_RESIST", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
-	desc = "Ureslak's Molten Scales (Resistance)",
-	long_desc = function(self, eff) return ("%s resistance increased by 15%%."):format(DamageType:get(eff.type).name:capitalize()) end,
+	name = "CHROMATIC_RESISTANCE", image = "shockbolt/object/artifact/ureslaks_molted_scales.png",
+	desc = "Chromatic Resistance",
+	long_desc = function(self, eff)
+		local dt = DamageType[eff.type] and DamageType:get(eff.type)
+		local type_desc = dt and ((dt.text_color or "#aaaaaa#")..dt.name:capitalize().."#LAST# ") or ""
+		return ("%sresistance increased by %d%%."):format(type_desc, eff.power)
+	end,
 	type = "physical",
 	subtype = { nature=true, resist=true },
+	charges = function(self, eff) return eff.dtype.name:capitalize() end,
 	status = "beneficial",
-	parameters = { },
-	on_gain = function(self, err) return "#OLIVE_DRAB##Target#'s molten scales react to the incomming damage and start glowing!", true end,
-	on_lose = function(self, err) return "#Target#'s molten scales do not glow anymore.", true end,
+	parameters = { power=15 },
+	on_gain = function(self, eff)
+		local dt = DamageType[eff.type] and DamageType:get(eff.type)
+		if dt then
+			eff.dtype = dt
+			return "#Target##OLIVE_DRAB# resonates with "..(dt.text_color or "#aaaaaa#")..dt.name:capitalize().."#LAST# damage!", true
+		else eff.type = nil
+		end
+	end,
+	on_lose = function(self, eff)
+		if eff.dtype then
+			return "#Target##OLIVE_DRAB# no longer resonates with "..(eff.dtype.text_color or "#aaaaaa#")..eff.dtype.name:capitalize().."#LAST# damage.", true
+		end
+	end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "resists", {[eff.type] = 15})
+		if eff.type then
+			self:effectTemporaryValue(eff, "resists", {[eff.type] = eff.power})
+		else
+			self:removeEffect(eff.effect_id)
+		end
 	end,
 }

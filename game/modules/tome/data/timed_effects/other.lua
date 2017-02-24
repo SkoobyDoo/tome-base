@@ -2359,20 +2359,22 @@ newEffect{
 newEffect{
 	name = "THROUGH_THE_CROWD", image = "talents/through_the_crowd.png",
 	desc = "Through The Crowd",
-	long_desc = function(self, eff) return ("Increases physical save, spell save, and mental save by %d."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Increases physical save, spell save, and mental save by %d. Global speed increased by %d%%."):format(eff.power * 10, util.bound(eff.power, 0, 5) * 3) end,
 	type = "other",
 	subtype = { miscellaneous=true },
 	status = "beneficial",
 	parameters = { power=10 },
 	activate = function(self, eff)
-		eff.presid = self:addTemporaryValue("combat_physresist", eff.power)
-		eff.sresid = self:addTemporaryValue("combat_spellresist", eff.power)
-		eff.mresid = self:addTemporaryValue("combat_mentalresist", eff.power)
+		eff.presid = self:addTemporaryValue("combat_physresist", eff.power * 10)
+		eff.sresid = self:addTemporaryValue("combat_spellresist", eff.power * 10)
+		eff.mresid = self:addTemporaryValue("combat_mentalresist", eff.power * 10)
+		eff.speedid = self:addTemporaryValue("global_speed_add", util.bound(eff.power, 0, 5) * 0.03)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_physresist", eff.presid)
 		self:removeTemporaryValue("combat_spellresist", eff.sresid)
 		self:removeTemporaryValue("combat_mentalresist", eff.mresid)
+		self:removeTemporaryValue("global_speed_add", eff.speedid)
 	end,
 }
 
@@ -3231,5 +3233,19 @@ newEffect{
 		if self:attr("invisible") then self:effectTemporaryValue(eff, "invisible", -eff.power) end
 		self:effectTemporaryValue(eff, "combat_def", -eff.power)
 		self:effectTemporaryValue(eff, "blind_fighted", 1)
+	end,
+}
+
+newEffect{
+	name = "PIN_DOWN",
+	desc = "Pinned Down", image = "talents/pin_down.png",
+	long_desc = function(self, eff) return ("The next Steady Shot or Shoot has 100%% chance to be a critical hit and mark."):format() end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	parameters = {power = 1},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
 	end,
 }

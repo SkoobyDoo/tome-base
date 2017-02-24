@@ -2150,7 +2150,7 @@ function _M:onTakeHit(value, src, death_note)
 		return 0
 	end
 
-	if self:attr("phase_shift") and not self.turn_procs.phase_shift then
+	if self:attr("phase_shift") and rng.percent(self:attr("phase_shift") * 100) and not self.turn_procs.phase_shift then
 		self.turn_procs.phase_shift = true
 		local nx, ny = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
 		if nx then
@@ -5077,6 +5077,8 @@ local sustainCallbackCheck = {
 	callbackOnBlock = "talents_on_block",
 	callbackOnChangeLevel = "talents_on_change_level",
 	callbackOnEffectSave = "talents_on_effect_save",
+	callbackOnPartyAdd = "talents_on_party_add",
+	callbackOnPartyRemove = "talents_on_party_remove",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -5813,6 +5815,7 @@ function _M:getTalentCooldown(t, base)
 
 	if self.talent_cd_reduction[t.id] then cd = cd - self.talent_cd_reduction[t.id] end
 	if self.talent_cd_reduction.all then cd = cd - self.talent_cd_reduction.all end
+	if self.talent_cd_reduction.allpct then cd = cd - math.ceil(self.talent_cd_reduction.allpct * cd) end
 
 	local eff = self:hasEffect(self.EFF_BURNING_HEX)
 	if eff and not self:attr("talent_reuse") then
