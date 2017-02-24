@@ -347,10 +347,14 @@ end
 
 --- Try to totally evade an attack
 function _M:checkEvasion(target)
-	if not target:attr("evasion") or self == target then return end
-	if target:attr("no_evasion") then return end
-	
 	local evasion = target:attr("evasion")
+	if target:knowTalent(target.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(target.x, target.y) then
+		evasion = (evasion or 0) + 20
+	end
+
+	if not evasion or self == target then return end
+	if target:attr("no_evasion") then return end
+
 	print("checkEvasion", evasion, target.level, self.level)
 	print("=> evasion chance", evasion)
 	return rng.percent(evasion)

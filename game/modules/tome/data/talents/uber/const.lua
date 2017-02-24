@@ -112,7 +112,7 @@ uberTalent{
 		self:attr("darkness_darkens", -1)
 	end,
 	info = function(self, t)
-		return ([[You know how to protect yourself with the deepest shadows. As long as you stand on an unlit tile you gain %d armour and 50%% armour hardiness.
+		return ([[You know how to protect yourself with the deepest shadows. As long as you stand on an unlit tile you gain %d armour, 50%% armour hardiness and 20%% evasion.
 		Any time you deal darkness damage, you will unlight both the target tile and yours.
 		The armor bonus scales with your Constitution.]])
 		:format(t.ArmourBonus(self,t))
