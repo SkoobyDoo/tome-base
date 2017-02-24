@@ -1640,7 +1640,7 @@ function _M:getDammod(combat)
 		dammod[stat] = (dammod[stat] or 0) + val
 	end
 
-	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.3) end
+	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.4) end
 	if self:knowTalent(self.T_ARCANE_MIGHT) then add('mag', 0.5) end
 
 	return dammod
@@ -2051,7 +2051,7 @@ function _M:combatMindpower(mod, add)
 	end
 
 	if self:knowTalent(self.T_SUPERPOWER) then
-		add = add + 50 * self:getStr() / 100
+		add = add + 60 * self:getStr() / 100
 	end
 
 	if self:knowTalent(self.T_GESTURE_OF_POWER) then

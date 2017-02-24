@@ -102,12 +102,14 @@ uberTalent{
 			end
 		end)
 
-		self:attackTarget(target, nil, 1.5 + (destroyed and 3.5 or 0), true)
+		if self:attackTarget(target, nil, 1.5 + (destroyed and 3.5 or 0), true) then
+			target:setEffect(target.EFF_COUNTERSTRIKE, 2, {power=20, no_ct_effect=true, src=self, nb=1})
+		end
 		return true
 	end,
 	info = function(self, t)
-		return ([[You deal a massive blow to your foe, smashing it for 150%% weapon damage and knocking it back 4 tiles.
-		If the knockback makes it hit a wall, it will smash down the wall and deal an additional 350%% weapon damage.]])
+		return ([[You deal a massive blow to your foe, smashing it for 150%% weapon damage and knocking it back 4 tiles (ignoring knockback resistance or physical save).
+		If the knockback makes it hit a wall, it will smash down the wall, deal an additional 350%% weapon damage and apply the Counterstrike effect.]])
 		:format()
 	end,
 }
@@ -154,16 +156,18 @@ uberTalent{
 	mode = "passive",
 	require = { special={desc="Be able to use massive armours", fct=function(self) return self:getTalentLevelRaw(self.T_ARMOUR_TRAINING) >= 3 end} },
 	on_learn = function(self, t)
+		self:attr("size_category", 1)
 		self:attr("max_encumber", 500)
-		self:incIncStat(self.STAT_STR, 40)
+		self:incIncStat(self.STAT_STR, 50)
 	end,
 	on_unlearn = function(self, t)
+		self:attr("size_category", -1)
 		self:attr("max_encumber", -500)
-		self:incIncStat(self.STAT_STR, -40)
+		self:incIncStat(self.STAT_STR, -50)
 	end,
 	info = function(self, t)
 		return ([[Your strength is legendary; fatigue and physical exertion mean nothing to you.
-		Your fatigue is permanently set to 0, carrying capacity increased by 500, and strength increased by 40.]])
+		Your fatigue is permanently set to 0, carrying capacity increased by 500, and strength increased by 50 and you gain a size category.]])
 		:format()
 	end,
 }
@@ -219,8 +223,8 @@ uberTalent{
 	mode = "passive",
 	info = function(self, t)
 		return ([[A strong body is key to a strong mind, and a strong mind can be powerful enough to make a strong body.
-		This prodigy grants a Mindpower bonus equal to 50%% of your Strength.
-		Additionally, you treat all weapons as having an additional 30%% Willpower modifier.]])
+		This prodigy grants a Mindpower bonus equal to 60%% of your Strength.
+		Additionally, you treat all weapons as having an additional 40%% Willpower modifier.]])
 		:format()
 	end,
 }
