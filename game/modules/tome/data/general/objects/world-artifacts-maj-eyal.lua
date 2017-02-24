@@ -767,9 +767,8 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 	on_set_complete = function(self, who)
 		local DamageType = require "engine.DamageType"
 		self:specialSetAdd({"wielder","spell_cooldown_reduction"}, 0.1)
-		self:specialSetAdd({"wielder","all_damage_convert"}, DamageType.DRAINLIFE)
-		self:specialSetAdd({"wielder","all_damage_convert_percent"}, 10)
-		game.logSeen(game.player, "#CRIMSON#Telos's gem seems to flare and glow an unearthly colour.")
+		self:specialWearAdd({"wielder","melee_project"}, { [engine.DamageType.DRAINLIFE] = 50 } )
+		game.logSeen(game.player, "#CRIMSON#Telos's gem seems to flare and glows an unearthly colour.")
 	end,
 	on_set_broken = function(self, who)
 		game.logPlayer(game.player, "#CRIMSON#The unearthly glow fades away.")

@@ -1061,10 +1061,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 					o.power_regen = 1
 					o.use_no_wear = true
 					o.use_power = { name = "recover the Crystal Focus (destroys this weapon)", power = 1, use = function(self, who, inven, item)
-						local art_list = mod.class.Object:loadList("/data/general/objects/boss-artifacts-maj-eyal.lua")
+						local art_list = mod.class.Object:loadList("/data/general/objects/objects-maj-eyal.lua")
 						local o = art_list["CRYSTAL_FOCUS"]:clone()
 						o:resolve()
 						o:resolve(nil, true)
+						o:identify(true)
 						who:addObject(who.INVEN_INVEN, o)
 						who:sortInven(who.INVEN_INVEN)
 						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
@@ -1180,10 +1181,11 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 					o.power_regen = 1
 					o.use_no_wear = true
 					o.use_power = { name = "recover the Crystal Heart (destroys this armour)", power = 1, use = function(self, who, inven, item)
-						local art_list = mod.class.Object:loadList("/data/general/objects/boss-artifacts-maj-eyal.lua")
-						local o = art_list["CRYSTAL_HEART"]:clone()
+						local art_list = mod.class.Object:loadList("/data/general/objects/objects-maj-eyal.lua")
+						local o = art_list["CRYSTAL_FOCUS"]:clone()
 						o:resolve()
 						o:resolve(nil, true)
+						o:identify(true)
 						who:addObject(who.INVEN_INVEN, o)
 						who:sortInven(who.INVEN_INVEN)
 						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
