@@ -20,7 +20,7 @@
 uberTalent{
 	name = "Draconic Body",
 	mode = "passive",
-	cooldown = 20,
+	cooldown = 15,
 	require = { special={desc="Be close to the draconic world", fct=function(self) return game.state.birth.ignore_prodigies_special_reqs or (self:attr("drake_touched") and self:attr("drake_touched") >= 2) end} },
 	trigger = function(self, t, value)
 		if self.life - value < self.max_life * 0.3 and not self:isTalentCoolingDown(t) then
@@ -77,7 +77,7 @@ uberTalent{
 uberTalent{
 	name = "Never Stop Running",
 	mode = "sustained",
-	cooldown = 20,
+	cooldown = 8,
 	sustain_stamina = 10,
 	tactical = { CLOSEIN = 2, ESCAPE = 2 },
 	no_energy = true,
@@ -193,8 +193,8 @@ uberTalent{
 	end,
 	info = function(self, t)
 		return ([[Thanks to your newfound knowledge of corruption, you've learned some tricks for toughening your body... but only if you are healthy enough to withstand the strain from the changes.
-		Improves your life by 250, your Defense by %d, your Armour Hardiness by 20%% and your saves by %d as your natural toughness and reflexes are pushed beyond their normal limits.
-		Your saves and Defense will improve with your Constitution.]])
-		:format(self:getCon() / 3, self:getCon() / 3)
+		Improves your life by 250, your defense by %d, your armour by %d, your armour hardiness by 20%% and your saves by %d as your natural toughness and reflexes are pushed beyond their normal limits.
+		Your saves armour and defense will improve with your Constitution.]])
+		:format(self:getCon() / 3, self:getCon() / 3.5, self:getCon() / 3)
 	end,
 }

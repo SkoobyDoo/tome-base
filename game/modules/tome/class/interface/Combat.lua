@@ -1286,6 +1286,9 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + self:callTalent(self.T_ARMOUR_OF_SHADOWS,"ArmourBonus")
 	end
+	if self:knowTalent(self.T_CORRUPTED_SHELL) then
+		add = add + self:getCon() / 3.5
+	end
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
