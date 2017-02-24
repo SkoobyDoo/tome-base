@@ -23,20 +23,20 @@ newTalent{
 	type = {"technique/battle-tactics", 1},
 	require = techs_req_high1,
 	points = 5,
-	cooldown = 20,
+	cooldown = 15,
 	stamina = 25,
 	tactical = { ATTACK = 3 },
 	no_energy = true,
-	getdur = function(self,t) return math.floor(self:combatTalentLimit(t, 8, 2, 6)) end, -- Limit to <10
-	getchance = function(self,t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 10, 60),100, 6.8, 6.8, 61, 61) end, -- Limit < 100%
+	getdur = function(self,t) return math.floor(self:combatTalentLimit(t, 10, 3, 8)) end, -- Limit to <10
+	getchance = function(self,t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 10, 90),100, 6.8, 6.8, 61, 61) end, -- Limit < 100%
 	action = function(self, t)
 		self:setEffect(self.EFF_GREATER_WEAPON_FOCUS, t.getdur(self,t), {chance=t.getchance(self, t)})
 		return true
 	end,
 	info = function(self, t)
-		return ([[Concentrate on your blows; each strike has a %d%% chance to deal another, similar, blow for %d turns.
-		This works for all blows, even ones from other talents and from shield bashes.
-		The chance increases with your Dexterity.]]):format(t.getchance(self, t), t.getdur(self, t))
+		return ([[Concentrate on your blows; for %d turns, each successful strike you land has a %d%% chance to trigger another, similar strike.
+		This works for all blows, even those from other talents and from shield bashes, but can happen only once each turn.
+		The chance increases with your Dexterity.]]):format(t.getdur(self, t), t.getchance(self, t))
 	end,
 }
 

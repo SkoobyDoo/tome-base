@@ -1302,12 +1302,20 @@ newEffect{
 newEffect{
 	name = "GREATER_WEAPON_FOCUS", image = "talents/greater_weapon_focus.png",
 	desc = "Greater Weapon Focus",
-	long_desc = function(self, eff) return ("%d%% chance to score a secondary blow."):format(eff.chance) end,
+	long_desc = function(self, eff) return ("Each melee blow landed has a %d%% chance to trigger an additional melee blow (up to once per turn)."):format(eff.chance) end,
 	type = "physical",
 	subtype = { tactic=true },
 	status = "beneficial",
-	parameters = { chance=50 },
+	parameters = { chance=25 },
+	-- trigger once per turn for targets
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam, hd)
+		if hitted and weapon and not self.turn_procs._gwf and not target.dead and rng.percent(eff.chance) then
+			self.turn_procs._gwf = true
+			self:attackTargetWith(target, weapon, damtype, mult)
+		end
+	end,
 	activate = function(self, eff)
+		eff.src = self
 	end,
 	deactivate = function(self, eff)
 	end,
