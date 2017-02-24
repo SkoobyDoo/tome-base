@@ -335,7 +335,7 @@ newEntity{ base = "BASE_GEM",
 	color_attributes = {
 		damage_type = 'LIGHT',
 		alt_damage_type = 'LIGHT_BLIND',
-		particle = 'light',},
+		particle = 'light',
 	},
 	desc = [[The first Halfling mages during the Age of Allure discovered how to capture the Sunlight and infuse gems with it.
 This star is the culmination of their craft. Light radiates from its ever-shifting yellow surface.]],
