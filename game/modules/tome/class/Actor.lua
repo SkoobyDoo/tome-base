@@ -5813,6 +5813,7 @@ function _M:getTalentCooldown(t, base)
 
 	if self.talent_cd_reduction[t.id] then cd = cd - self.talent_cd_reduction[t.id] end
 	if self.talent_cd_reduction.all then cd = cd - self.talent_cd_reduction.all end
+	if self.talent_cd_reduction.allpct then cd = cd - math.ceil(self.talent_cd_reduction.allpct * cd) end
 
 	local eff = self:hasEffect(self.EFF_BURNING_HEX)
 	if eff and not self:attr("talent_reuse") then

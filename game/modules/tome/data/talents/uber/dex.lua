@@ -120,16 +120,18 @@ uberTalent{
 	on_learn = function(self, t)
 		self:attr("global_speed_add", 0.2)
 		self:attr("avoid_pressure_traps", 1)
+		self.talent_cd_reduction.allpct = (self.talent_cd_reduction.allpct or 0) + 0.1
 		self:recomputeGlobalSpeed()
 	end,
 	on_unlearn = function(self, t)
 		self:attr("global_speed_add", -0.2)
 		self:attr("avoid_pressure_traps", -1)
+		self.talent_cd_reduction.allpct = self.talent_cd_reduction.allpct - 0.1
 		self:recomputeGlobalSpeed()
 	end,
 	info = function(self, t)
 		return ([[You are attuned with Nature, and she helps you in your fight against the arcane forces.
-		You gain 20%% permanent global speed and do not trigger pressure traps.]])
+		You gain 20%% permanent global speed, 10%% cooldowns reduction and do not trigger pressure traps.]])
 		:format()
 	end,
 }
@@ -145,7 +147,7 @@ uberTalent{
 			(self.damage_log.weapon.other and self.damage_log.weapon.other >= 50000)
 		)
 	end} },
-	cooldown = 20,
+	cooldown = 12,
 	radius = 1,
 	range = 10,
 	is_melee = true,
@@ -173,6 +175,8 @@ uberTalent{
 			self:setMoveAnim(ox, oy, 8, 5)
 		end
 
+		self:removeEffectsFilter({subtype={stun=true, daze=true, pin=true, pinned=true, pinning=true}}, 50)
+
 		self:project(tg, self.x, self.y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target and target ~= self then
@@ -186,7 +190,8 @@ uberTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[You accurately jump to the target and deal 200%% weapon damage to all foes within radius 1 on impact as well as dazing them for 3 turns.]])
+		return ([[You accurately jump to the target and deal 200%% weapon damage to all foes within radius 1 on impact as well as dazing them for 3 turns.
+		When you jump you free yourself from any stun, daze and pinning effects.]])
 		:format()
 	end,
 }
