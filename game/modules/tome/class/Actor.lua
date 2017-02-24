@@ -5077,6 +5077,8 @@ local sustainCallbackCheck = {
 	callbackOnBlock = "talents_on_block",
 	callbackOnChangeLevel = "talents_on_change_level",
 	callbackOnEffectSave = "talents_on_effect_save",
+	callbackOnPartyAdd = "talents_on_party_add",
+	callbackOnPartyRemove = "talents_on_party_remove",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
