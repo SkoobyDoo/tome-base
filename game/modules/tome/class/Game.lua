@@ -1357,6 +1357,7 @@ end
 
 --- Update the zone name, if needed
 function _M:updateZoneName()
+	if not self.zone_font then return end
 	local name
 	if self.zone.display_name then
 		name = self.zone.display_name()

@@ -73,6 +73,10 @@ return {
 		},
 	},
 	post_process = function(level)
+		-- Place a lore notes
+		if level.level == 5 then game:placeRandomLoreObject("ARGONIEL_DIAMOND") end
+		if level.level == 8 then game:placeRandomLoreObject("ELANDAR_JOURNAL1") end
+
 		game.player:grantQuest("high-peak")
 		for uid, e in pairs(level.entities) do e.faction = e.hard_faction or "sorcerers" end
 

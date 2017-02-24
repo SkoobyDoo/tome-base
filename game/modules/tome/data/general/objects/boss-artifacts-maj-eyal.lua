@@ -556,6 +556,11 @@ newEntity{ base = "BASE_GEM",
 	desc = [[A piece of the scorched wood taken from the remains of Snaproot.]],
 	cost = 100,
 	material_level = 4,
+	color_attributes = {
+		damage_type = 'FIRE',
+		alt_damage_type = 'FLAMESHOCK',
+		particle = 'flame',
+	},
 	identified = false,
 	imbue_powers = {
 		resists = { [DamageType.NATURE] = 25, [DamageType.DARKNESS] = 10, [DamageType.COLD] = 10 },
@@ -772,6 +777,11 @@ newEntity{ base = "BASE_STAFF",
 		inc_damage = {[DamageType.ARCANE] = 35 },
 		learn_talent = {[Talents.T_COMMAND_STAFF] = 1 },
 	},
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","GEM_TELOS"} },
+	on_set_complete = function(self, who)
+	end,
+	on_set_broken = function(self, who)
+	end,
 }
 
 newEntity{ base = "BASE_AMULET",
@@ -974,13 +984,24 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 	color = colors.WHITE, image = "object/artifact/crystal_focus.png",
 	level_range = {5, 12},
 	desc = [[This crystal radiates the power of the Spellblaze itself.]],
+	special_desc = function(self) return "(The created item can be activated to recover the Focus.)" end,
 	rarity = 200,
 	identified = false,
 	cost = 50,
 	material_level = 2,
+	color_attributes = {
+		damage_type = 'ARCANE',
+		alt_damage_type = 'ARCANE_SILENCE',
+		particle = 'manathrust',
+	},
+	
+	wielder = {
+		inc_stats = {[Stats.STAT_MAG] = 5 },
+		inc_damage = {[DamageType.ARCANE] = 20, [DamageType.BLIGHT] = 20 },
+	},
 
 	max_power = 1, power_regen = 1,
-	use_power = { name = "combine with a weapon", power = 1, use = function(self, who, gem_inven, gem_item)
+	use_power = { name = "combine with a weapon (makes a non enchanted weapon into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
 		who:showInventory("Fuse with which weapon?", who:getInven("INVEN"), function(o) return (o.type == "weapon" or o.subtype == "hands" or o.subtype == "shield") and o.subtype ~= "mindstar" and not o.egoed and not o.unique and not o.rare and not o.archery end, function(o, item)
 			local oldname = o:getName{do_color=true}
 
@@ -1042,6 +1063,27 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 							o.special_combat.block = o.special_combat.block * 1.25
 						end
 					end
+					
+					o.power = 1
+					o.max_power = 1
+					o.power_regen = 1
+					o.use_no_wear = true
+					o.use_power = { name = "recover the Crystal Focus (destroys this weapon)", power = 1, use = function(self, who, inven, item)
+						local art_list = mod.class.Object:loadList("/data/general/objects/objects-maj-eyal.lua")
+						local o = art_list.CRYSTAL_FOCUS:clone()
+						o:resolve()
+						o:resolve(nil, true)
+						o:identify(true)
+						who:addObject(who.INVEN_INVEN, o)
+						who:sortInven(who.INVEN_INVEN)
+						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
+						for i, h in ipairs(who.hotkey) do
+							if h[2] == name then who.hotkey[i] = nil end
+						end
+						who.changed = true
+						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
+						return {used=true, id=true, destroy=true}
+					end }
 				end),
 				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
 				fake_ego = true,
@@ -1065,7 +1107,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 
 			who:sortInven()
 			who.changed = true
-
+			
 			game.logPlayer(who, "You fix the crystal on the %s and create the %s.", oldname, o:getName{do_color=true})
 		end)
 	end,
@@ -1080,13 +1122,24 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 	color = colors.RED, image = "object/artifact/crystal_heart.png",
 	level_range = {35, 42},
 	desc = [[This crystal is huge, easily the size of your head. It sparkles brilliantly almost of its own accord.]],
+	special_desc = function(self) return "(The created item can be activated to recover the Heart.)" end,
 	rarity = 250,
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'ARCANE',
+		alt_damage_type = 'ARCANE_SILENCE',
+		particle = 'manathrust',
+	},
+	
+	wielder = {
+		inc_stats = {[Stats.STAT_CON] = 5 },
+		resists = {[DamageType.ARCANE] = 20, [DamageType.BLIGHT] = 20 },
+	},
 
 	max_power = 1, power_regen = 1,
-	use_power = { name = "combine with a suit of body armor", power = 1, use = function(self, who, gem_inven, gem_item)
+	use_power = { name = "combine with a suit of body armor (makes a non enchanted armour into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
 		-- Body armour only, can be cloth, light, heavy, or massive though. No clue if o.slot works for this.
 		who:showInventory("Fuse with which armor?", who:getInven("INVEN"), function(o) return o.type == "armor" and o.slot == "BODY" and not o.egoed and not o.unique and not o.rare end, function(o, item)
 			local oldname = o:getName{do_color=true}
@@ -1129,6 +1182,27 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 					o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
 					-- Same for armour. Yay crap cloth!
 					o.wielder.combat_armor = ((o.wielder.combat_armor or 0) + 3) * 1.7
+					
+					o.power = 1
+					o.max_power = 1
+					o.power_regen = 1
+					o.use_no_wear = true
+					o.use_power = { name = "recover the Crystal Heart (destroys this armour)", power = 1, use = function(self, who, inven, item)
+						local art_list = mod.class.Object:loadList("/data/general/objects/objects-maj-eyal.lua")
+						local o = art_list["CRYSTAL_FOCUS"]:clone()
+						o:resolve()
+						o:resolve(nil, true)
+						o:identify(true)
+						who:addObject(who.INVEN_INVEN, o)
+						who:sortInven(who.INVEN_INVEN)
+						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
+						for i, h in ipairs(who.hotkey) do
+							if h[2] == name then who.hotkey[i] = nil end
+						end
+						who.changed = true
+						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
+						return {used=true, id=true, destroy=true}
+					end }
 				end),
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)

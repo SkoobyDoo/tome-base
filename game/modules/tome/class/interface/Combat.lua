@@ -347,10 +347,14 @@ end
 
 --- Try to totally evade an attack
 function _M:checkEvasion(target)
-	if not target:attr("evasion") or self == target then return end
-	if target:attr("no_evasion") then return end
-	
 	local evasion = target:attr("evasion")
+	if target:knowTalent(target.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(target.x, target.y) then
+		evasion = (evasion or 0) + 20
+	end
+
+	if not evasion or self == target then return end
+	if target:attr("no_evasion") then return end
+
 	print("checkEvasion", evasion, target.level, self.level)
 	print("=> evasion chance", evasion)
 	return rng.percent(evasion)
@@ -1286,6 +1290,9 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + self:callTalent(self.T_ARMOUR_OF_SHADOWS,"ArmourBonus")
 	end
+	if self:knowTalent(self.T_CORRUPTED_SHELL) then
+		add = add + self:getCon() / 3.5
+	end
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
@@ -1640,7 +1647,7 @@ function _M:getDammod(combat)
 		dammod[stat] = (dammod[stat] or 0) + val
 	end
 
-	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.3) end
+	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.4) end
 	if self:knowTalent(self.T_ARCANE_MIGHT) then add('mag', 0.5) end
 
 	return dammod
@@ -2051,7 +2058,7 @@ function _M:combatMindpower(mod, add)
 	end
 
 	if self:knowTalent(self.T_SUPERPOWER) then
-		add = add + 50 * self:getStr() / 100
+		add = add + 60 * self:getStr() / 100
 	end
 
 	if self:knowTalent(self.T_GESTURE_OF_POWER) then

@@ -62,6 +62,7 @@ uberTalent{
 	end,
 	info = function(self, t)
 		return ([[When moving over 800%% speed for at least 3 steps in the same direction, you become so fast you can blink through obstacles as if they were not there.
+		While moving this fast you have 50%% chances to fully ignore an attack by displacing yourself (this may only happen once per turn).
 		Changing direction will break the effect.]])
 		:format()
 	end,

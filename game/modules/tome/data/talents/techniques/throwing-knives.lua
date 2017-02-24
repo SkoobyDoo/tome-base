@@ -239,6 +239,14 @@ newTalent{
 			if not target then return end
 			tgts[#tgts+1] = {act=target, cnt=0}
 		end)
+
+		local dir = math.atan2(x-self.x, -y+self.y) - math.pi / 2
+		local tile = "shockbolt/object/knife_voratun"
+		for i = -6, 6 do
+			local dir = dir + math.pi / 28 * i
+			game.level.map:particleEmitter(self.x, self.y, 1, "fan_of_knives", {tile=tile, dir=dir, radius=tg.radius})
+		end
+
 		local tgt_cnt = #tgts
 		if tgt_cnt > 0 then
 			local tgt_max = math.min(3, math.ceil(count/tgt_cnt))

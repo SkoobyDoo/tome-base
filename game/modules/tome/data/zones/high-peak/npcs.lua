@@ -87,6 +87,7 @@ newEntity{
 		{type="armor", subtype="head", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="feet", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 	},
+	resolvers.drops{chance=100, nb=1, {defined="ELANDAR_JOURNAL2"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
 	resolvers.talents{
@@ -166,6 +167,7 @@ newEntity{
 		{type="armor", subtype="head", name="voratun helm", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="hands", name="voratun gauntlets", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 	},
+	resolvers.drops{chance=100, nb=1, {defined="ARGONIEL_ATHAME"} },
 	resolvers.drops{chance=100, nb=1, {defined="PEARL_LIFE_DEATH"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 

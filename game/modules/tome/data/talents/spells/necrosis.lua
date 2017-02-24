@@ -46,8 +46,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[The line between life and death blurs for you; you can only die when you reach -%d life.
-		However, when below 0 HP, you cannot see how much life you have left.]]):
+		return ([[The line between life and death blurs for you; you can only die when you reach -%d life.]]):
 		format(t.lifeBonus(self, t))
 	end,
 }
