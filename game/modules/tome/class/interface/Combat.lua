@@ -1025,15 +1025,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		t.do_throw(target, self, t)
 	end
 
-	-- Greater Weapon Focus
-	local gwf = self:hasEffect(self.EFF_GREATER_WEAPON_FOCUS)
-	if hitted and not target.dead and weapon and gwf and not gwf.inside and rng.percent(gwf.chance) then
-		gwf.inside = true
-		game.logSeen(self, "%s focuses and gains an extra blow!", self.name:capitalize())
-		self:attackTargetWith(target, weapon, damtype, mult)
-		gwf.inside = nil
-	end
-
 	-- Zero gravity
 	if hitted and game.level.data.zero_gravity and rng.percent(util.bound(dam, 0, 100)) then
 		target:knockback(self.x, self.y, math.ceil(math.log(dam)))
