@@ -46,7 +46,7 @@ return {
 			pride = "grushnak",
 			nb_rooms = 10,
 			lite_room_chance = 20,
-			rooms = {"forest_clearing", {"money_vault",5}, {"pit",7}, {"greater_vault",8}},
+			rooms = {"forest_clearing", {"pit",4}, {"greater_vault",2}},
 			rooms_config = {pit={filters={{subtype="orc"},{subtype="troll"}}}},
 			['.'] = "UNDERGROUND_FLOOR",
 			['#'] = "UNDERGROUND_TREE",
