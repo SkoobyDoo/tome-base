@@ -46,6 +46,7 @@ return {
 			pride = "grushnak",
 			nb_rooms = 10,
 			lite_room_chance = 20,
+			required_rooms = {"greater_vault"},
 			rooms = {"forest_clearing", {"pit",4}, {"greater_vault",2}},
 			rooms_config = {pit={filters={{subtype="orc"},{subtype="troll"}}}},
 			['.'] = "UNDERGROUND_FLOOR",
@@ -80,10 +81,28 @@ return {
 			actor = { nb_npc = {0, 0} },
 			object = { nb_object = {0, 0} },
 		}},
+		[2] = { generator = {
+			map = { static_replace_tiles = {
+					FLOOR = "UNDERGROUND_FLOOR",
+					DOOR = "UNDERGROUND_FLOOR",
+					WALL = "UNDERGROUND_TREE",
+					HARDWALL = "UNDERGROUND_HARDTREE",
+					DOOR_VAULT = "UNDERGROUND_VAULT",
+			}, },
+		}},
 		[3] = { generator = {
 			map = { class = "engine.generator.map.Static", map = "zones/prides-middle" },
 			actor = { nb_npc = {0, 0} },
 			object = { nb_object = {0, 0} },
+		}},
+		[4] = { generator = {
+			map = { static_replace_tiles = {
+					FLOOR = "UNDERGROUND_FLOOR",
+					DOOR = "UNDERGROUND_FLOOR",
+					WALL = "UNDERGROUND_TREE",
+					HARDWALL = "UNDERGROUND_HARDTREE",
+					DOOR_VAULT = "UNDERGROUND_VAULT",
+			}, },
 		}},
 		[5] = { generator = {
 			map = { class = "engine.generator.map.Static", map = "zones/prides-middle" },
@@ -92,6 +111,13 @@ return {
 		}},
 		[6] = {
 			generator = { map = {
+				static_replace_tiles = {
+					FLOOR = "UNDERGROUND_FLOOR",
+					DOOR = "UNDERGROUND_FLOOR",
+					WALL = "UNDERGROUND_TREE",
+					HARDWALL = "UNDERGROUND_HARDTREE",
+					DOOR_VAULT = "UNDERGROUND_VAULT",
+				},
 				['.'] = {
 					"UNDERGROUND_FLOOR",
 					"UNDERGROUND_FLOOR",

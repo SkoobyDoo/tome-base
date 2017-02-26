@@ -42,6 +42,14 @@ return {
 			up = "BONE_LADDER_UP",
 			down = "BONE_LADDER_DOWN",
 			door = "BONE_DOOR",
+			static_replace_tiles = {
+				FLOOR = "BONEFLOOR",
+				DOOR = "BONE_DOOR",
+				WALL = "BONEWALL",
+				HARDWALL = "HARDBONEWALL",
+				DOOR_VAULT = "BONE_VAULT_DOOR",
+			},
+			required_rooms = {"greater_vault"},
 			rooms = {{"forest_clearing",2}, "random_room", {"lesser_vault",2}, {"greater_vault",4}},
 			lesser_vaults_list = {"orc-armoury", "double-t", "crypt", "hostel", "horror-chamber"},
 			lite_room_chance = 100,
@@ -91,6 +99,13 @@ return {
 					down = "BONEFLOOR",
 					door = "BONE_DOOR",
 
+					static_replace_tiles = {
+						FLOOR = "BONEFLOOR",
+						DOOR = "BONE_DOOR",
+						WALL = "BONEWALL",
+						HARDWALL = "HARDBONEWALL",
+						DOOR_VAULT = "BONE_VAULT_DOOR",
+					},
 					nb_rooms = {1,1,2,3},
 					rooms = {"lesser_vault", "greater_vault"},
 					lesser_vaults_list = {"orc-armoury", "double-t", "crypt", "hostel", "horror-chamber"},
