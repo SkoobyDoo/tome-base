@@ -831,28 +831,35 @@ newEntity{
 	cost = 15,
 	greater_ego = 1,
 	combat = {
-		melee_project={
-			[DamageType.MIND] = resolvers.mbonus_material(15, 5),
-		},
-		special_on_hit = {desc="Strikes a different enemy in radius 10 for 30% weapon damage", fct=function(combat, who, target)
-			if who.turn_procs.ego_projection then return end
-			who.turn_procs.ego_projection = true			
+		projection_targets = resolvers.mbonus_material(2, 1),
+		special_on_hit = {
+			on_kill = 1,
+			desc=function(self, who, special)
+				local targets = self.combat.projection_targets
+				return ("Projects up to %d attacks dealing 30%% weapon damage to random targets in range 10 (cannot hit the initial target)"):format(targets)
+			end,
+			fct=function(combat, who, target)
+				if who.turn_procs.ego_projection then return end
+				who.turn_procs.ego_projection = true
 
-			local tg = {type="ball", radius=10}
-			local grids = who:project(tg, who.x, who.y, function() end)
-			local tgts = {}
-			for x, ys in pairs(grids) do for y, _ in pairs(ys) do
-				local target2 = game.level.map(x, y, engine.Map.ACTOR)
-				if target2 and target ~= target2 and who:reactionToward(target2) < 0 then tgts[#tgts+1] = target2 end
-			end end
-			local project_target = rng.tableRemove(tgts)
-			if project_target then
-				who:attackTarget(project_target, engine.DamageType.MIND, 0.3, true)			
-			end
+				local tg = {type="ball", radius=10}
+				local grids = who:project(tg, who.x, who.y, function() end)
+				local tgts = {}
+				for x, ys in pairs(grids) do for y, _ in pairs(ys) do
+					local target2 = game.level.map(x, y, engine.Map.ACTOR)
+					if target2 and target ~= target2 and who:reactionToward(target2) < 0 then tgts[#tgts+1] = target2 end
+				end end
 
+				for i = 1,combat.projection_targets do
+					local project_target = rng.tableRemove(tgts) -- Don't strike the same target more than once
+					if project_target then
+						who:attackTarget(project_target, engine.DamageType.MIND, 0.3, true)
+					end
+				end
 		end},
 	},
 }
+
 -- Merged with Psychic/redesigned a bit
 newEntity{
 	power_source = {psionic=true},
