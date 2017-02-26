@@ -317,6 +317,7 @@ newTalent{
 	callbackOnRest = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
 	callbackOnRun = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
 	no_npc_use = true,
+	no_energy = true,
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	lifebonus = function(self,t, base_life) -- Scale bonus with max life
 		return self:combatTalentStatDamage(t, "con", 30, 500) + (base_life or self.max_life) * self:combatTalentLimit(t, 1, 0.02, 0.10) -- Limit <100% of base life
@@ -348,6 +349,7 @@ newTalent{
 		self:removeTemporaryValue("never_move", p.nomove)
 		self:removeTemporaryValue("die_at", p.dieat)
 		self:removeTemporaryValue("life", p.extra_life)
+		self:useEnergy(game.energy_to_act)
 		return true
 	end,
 	info = function(self, t)
