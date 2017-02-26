@@ -35,6 +35,7 @@ local changer = function(id)
 	for i = 1, #npc_list do npc_list[i].faction = "enemies" end
 
 	local walltype = "HARDWALL"
+	if game.level.data.generator and game.level.data.generator.map and game.level.data.generator.map.subvault_exterior_wall then walltype = game.level.data.generator.map.subvault_exterior_wall end
 	-- if game.level.data.generator and game.level.data.generator.map and game.level.data.generator.map.wall then walltype = game.level.data.generator.map.wall end
 	-- if game.level.data.generator and game.level.data.generator.map and game.level.data.generator.map['#'] then walltype = game.level.data.generator.map['#'] end
 

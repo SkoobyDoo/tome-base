@@ -1015,7 +1015,7 @@ newEffect{
 		eff.leveid = game.zone.short_name.."-"..game.level.level
 	end,
 	deactivate = function(self, eff)
-		if (eff.allow_override or (self:canBe("worldport") and not self:attr("never_move"))) and eff.dur <= 0 then
+		if (eff.allow_override or (self == game:getPlayer(true) and self:canBe("worldport") and not self:attr("never_move"))) and eff.dur <= 0 then
 			game:onTickEnd(function()
 				if eff.leveid == game.zone.short_name.."-"..game.level.level and game.player.can_change_zone then
 					game.logPlayer(self, "You are yanked out of this place!")
@@ -1041,6 +1041,7 @@ newEffect{
 		eff.leveid = game.zone.short_name.."-"..game.level.level
 	end,
 	deactivate = function(self, eff)
+		if self ~= game:getPlayer(true) then return end
 		local seen = false
 		-- Check for visible monsters, only see LOS actors, so telepathy wont prevent it
 		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 20, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
@@ -1078,6 +1079,7 @@ newEffect{
 		eff.leveid = game.zone.short_name.."-"..game.level.level
 	end,
 	deactivate = function(self, eff)
+		if self ~= game:getPlayer(true) then return end
 		local seen = false
 		-- Check for visible monsters, only see LOS actors, so telepathy wont prevent it
 		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 20, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)

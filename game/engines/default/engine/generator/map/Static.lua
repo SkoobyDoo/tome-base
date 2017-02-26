@@ -33,6 +33,7 @@ function _M:init(zone, map, level, data)
 	self.grid_list = zone.grid_list
 	self.subgen = {}
 	self.spots = {}
+	data.static_replace_tiles = data.static_replace_tiles or {}
 	self.data = data
 	data.__import_offset_x = data.__import_offset_x or 0
 	data.__import_offset_y = data.__import_offset_y or 0
@@ -101,6 +102,7 @@ function _M:getLoader(t)
 			self.subgen[#self.subgen+1] = g
 		end,
 		defineTile = function(char, grid, obj, actor, trap, status, spot)
+			grid = self.data.static_replace_tiles[grid] or grid
 			t[char] = {grid=grid, object=obj, actor=actor, trap=trap, status=status, define_spot=spot}
 		end,
 		quickEntity = function(char, e, status, spot)
