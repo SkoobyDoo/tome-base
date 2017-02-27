@@ -62,7 +62,7 @@ newTalent{
 		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
-			self:talentTemporaryValue(ret, "negative_regen_ref", t2.getBonusRegen(self, t2))
+			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
 		
 		return ret
@@ -132,7 +132,7 @@ newTalent{
 		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
-			self:talentTemporaryValue(ret, "negative_regen_ref", t2.getBonusRegen(self, t2))
+			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
 		
 		return ret
@@ -201,7 +201,7 @@ newTalent{
 		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
-			self:talentTemporaryValue(ret, "negative_regen_ref", t2.getBonusRegen(self, t2))
+			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
 		
 		return ret

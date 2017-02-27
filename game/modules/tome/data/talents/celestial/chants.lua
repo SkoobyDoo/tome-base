@@ -60,7 +60,7 @@ newTalent{
 			local t2 = self:getTalentFromId(self.T_HP_CHANT_RADIANT)
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.LIGHT] = t2.getLightDamageIncrease(self, t2), [DamageType.FIRE] = t2.getLightDamageIncrease(self, t2)})
 			self:talentTemporaryValue(ret, "positive_regen", t2.getBonusRegen(self, t2))
-			self:talentTemporaryValue(ret, "positive_regen_ref", t2.getBonusRegen(self, t2))
+			self:talentTemporaryValue(ret, "positive_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
 		
 		return ret
@@ -123,7 +123,7 @@ newTalent{
 			local t2 = self:getTalentFromId(self.T_HP_CHANT_RADIANT)
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.LIGHT] = t2.getLightDamageIncrease(self, t2), [DamageType.FIRE] = t2.getLightDamageIncrease(self, t2)})
 			self:talentTemporaryValue(ret, "positive_regen", t2.getBonusRegen(self, t2))
-			self:talentTemporaryValue(ret, "positive_regen_ref", t2.getBonusRegen(self, t2))
+			self:talentTemporaryValue(ret, "positive_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
 		
 		return ret
@@ -204,7 +204,7 @@ newTalent{
 			local t2 = self:getTalentFromId(self.T_HP_CHANT_RADIANT)
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.LIGHT] = t2.getLightDamageIncrease(self, t2), [DamageType.FIRE] = t2.getLightDamageIncrease(self, t2)})
 			self:talentTemporaryValue(ret, "positive_regen", t2.getBonusRegen(self, t2))
-			self:talentTemporaryValue(ret, "positive_regen_ref", t2.getBonusRegen(self, t2))
+			self:talentTemporaryValue(ret, "positive_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
 		
 		return ret
