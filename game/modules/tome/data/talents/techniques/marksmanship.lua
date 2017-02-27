@@ -166,7 +166,7 @@ newTalent{
 	no_energy = true,
 	points = 5,
 	cooldown = 25,
-	stamina = 50,
+	stamina = 30,
 	require = techs_dex_req4,
 	random_ego = "attack",
 	tactical = { BUFF = 3 },

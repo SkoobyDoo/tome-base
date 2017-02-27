@@ -520,13 +520,13 @@ function _M:actBase()
 
 	if self:attr("positive_at_rest") then
 		local v = self.positive_at_rest * self.max_positive / 100
-		if self:getPositive() > v or self:attr("positive_at_rest_disable") then self.positive_regen = -self.positive_regen_ref
+		if self:getPositive() > v or self:attr("positive_at_rest_disable") then self.positive_regen = -self.positive_regen_ref + (self.positive_regen_ref_mod or 0)
 		elseif self:getPositive() < v then self.positive_regen = self.positive_regen_ref + (self.positive_regen_ref_mod or 0)
 		end
 	end
 	if self:attr("negative_at_rest") then
 		local v = self.negative_at_rest * self.max_negative / 100
-		if self:getNegative() > v or self:attr("negative_at_rest_disable")  then self.negative_regen = -self.negative_regen_ref
+		if self:getNegative() > v or self:attr("negative_at_rest_disable")  then self.negative_regen = -self.negative_regen_ref + (self.negative_regen_ref_mod or 0)
 		elseif self:getNegative() < v then self.negative_regen = self.negative_regen_ref + (self.negative_regen_ref_mod or 0)
 		end
 	end
@@ -2150,7 +2150,7 @@ function _M:onTakeHit(value, src, death_note)
 		return 0
 	end
 
-	if self:attr("phase_shift") and not self.turn_procs.phase_shift then
+	if self:attr("phase_shift") and rng.percent(self:attr("phase_shift") * 100) and not self.turn_procs.phase_shift then
 		self.turn_procs.phase_shift = true
 		local nx, ny = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
 		if nx then
@@ -5077,6 +5077,8 @@ local sustainCallbackCheck = {
 	callbackOnBlock = "talents_on_block",
 	callbackOnChangeLevel = "talents_on_change_level",
 	callbackOnEffectSave = "talents_on_effect_save",
+	callbackOnPartyAdd = "talents_on_party_add",
+	callbackOnPartyRemove = "talents_on_party_remove",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -5813,6 +5815,7 @@ function _M:getTalentCooldown(t, base)
 
 	if self.talent_cd_reduction[t.id] then cd = cd - self.talent_cd_reduction[t.id] end
 	if self.talent_cd_reduction.all then cd = cd - self.talent_cd_reduction.all end
+	if self.talent_cd_reduction.allpct then cd = cd - math.ceil(self.talent_cd_reduction.allpct * cd) end
 
 	local eff = self:hasEffect(self.EFF_BURNING_HEX)
 	if eff and not self:attr("talent_reuse") then
@@ -6072,7 +6075,7 @@ function _M:removeSustainsFilter(t, nb, check_remove)
 	return #found
 end
 
-function _M:removeEffectsSustainsFilter(t, nb, check_remove)
+function _M:removeEffectsSustainsFilter(t, nb, check_remove, silent, force)
 	t = t or {}
 	local objects = {}
 	for _, eff_id in ipairs(self:effectsFilter(t)) do
@@ -6085,9 +6088,9 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
-				self:removeEffect(obj[2])
+				self:removeEffect(obj[2], silent, force)
 			else
-				self:forceUseTalent(obj[2], {ignore_energy=true})
+				self:forceUseTalent(obj[2], {ignore_energy=true, silent=silent})
 			end
 			nbr = nbr + 1
 		end
@@ -6095,7 +6098,7 @@ function _M:removeEffectsSustainsFilter(t, nb, check_remove)
 	return nbr
 end
 
-function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
+function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove, silent, force)
 	t = t or {}
 	local objects = {}
 	for _, eff_id in ipairs(effs) do
@@ -6108,9 +6111,9 @@ function _M:removeEffectsSustainsTable(effs, susts, nb, check_remove)
 	for obj in rng.tableSampleIterator(objects, nb) do
 		if not check_remove or check_remove(self, obj) then
 			if obj[1] == "effect" then
-				self:removeEffect(obj[2])
+				self:removeEffect(obj[2], silent, force)
 			else
-				self:forceUseTalent(obj[2], {ignore_energy=true})
+				self:forceUseTalent(obj[2], {ignore_energy=true, silent=silent})
 			end
 			nbr = nbr + 1
 		end

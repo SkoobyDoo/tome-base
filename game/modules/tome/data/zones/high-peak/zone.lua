@@ -73,6 +73,10 @@ return {
 		},
 	},
 	post_process = function(level)
+		-- Place a lore notes
+		if level.level == 5 then game:placeRandomLoreObject("ARGONIEL_DIAMOND") end
+		if level.level == 8 then game:placeRandomLoreObject("ELANDAR_JOURNAL1") end
+
 		game.player:grantQuest("high-peak")
 		for uid, e in pairs(level.entities) do e.faction = e.hard_faction or "sorcerers" end
 
@@ -112,6 +116,14 @@ return {
 					up = "CAVEFLOOR",
 					down = "CAVE_HIGH_PEAK_UP",
 					door = "CAVEFLOOR",
+					subvault_exterior_wall = "HARDCAVEWALL",
+					static_replace_tiles = {
+						FLOOR = "CAVEFLOOR",
+						DOOR = "CAVEDOOR",
+						WALL = "CAVEWALL",
+						HARDWALL = "HARDCAVEWALL",
+						DOOR_VAULT = "CAVE_ROCK_VAULT",
+					},
 				},
 			},
 		},
@@ -124,6 +136,14 @@ return {
 					up = "CAVEFLOOR",
 					down = "CAVE_HIGH_PEAK_UP",
 					door = "CAVEFLOOR",
+					subvault_exterior_wall = "HARDCAVEWALL",
+					static_replace_tiles = {
+						FLOOR = "CAVEFLOOR",
+						DOOR = "CAVEDOOR",
+						WALL = "CAVEWALL",
+						HARDWALL = "HARDCAVEWALL",
+						DOOR_VAULT = "CAVE_ROCK_VAULT",
+					},
 				},
 			},
 		},
@@ -136,6 +156,14 @@ return {
 					up = "CAVEFLOOR",
 					down = "CAVE_HIGH_PEAK_UP",
 					door = "CAVEFLOOR",
+					subvault_exterior_wall = "HARDCAVEWALL",
+					static_replace_tiles = {
+						FLOOR = "CAVEFLOOR",
+						DOOR = "CAVEDOOR",
+						WALL = "CAVEWALL",
+						HARDWALL = "HARDCAVEWALL",
+						DOOR_VAULT = "CAVE_ROCK_VAULT",
+					},
 				},
 			},
 		},
@@ -148,6 +176,14 @@ return {
 					up = "CAVEFLOOR",
 					down = "CAVE_HIGH_PEAK_UP",
 					door = "CAVEFLOOR",
+					subvault_exterior_wall = "HARDCAVEWALL",
+					static_replace_tiles = {
+						FLOOR = "CAVEFLOOR",
+						DOOR = "CAVEDOOR",
+						WALL = "CAVEWALL",
+						HARDWALL = "HARDCAVEWALL",
+						DOOR_VAULT = "CAVE_ROCK_VAULT",
+					},
 				},
 			},
 		},

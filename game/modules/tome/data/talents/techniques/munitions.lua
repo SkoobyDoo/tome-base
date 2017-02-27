@@ -356,6 +356,7 @@ newTalent{
 					nil, false
 				)
 		end
+		game.level.map:particleEmitter(x, y, tg.radius, "shrapnel_explosion", {radius=tg.radius})
 	end,
 	archery_onhit = function(self, t, target, x, y)
 		if self:isTalentActive(self.T_PIERCING_AMMUNITION) then
@@ -443,8 +444,8 @@ newTalent{
 	require = techs_dex_req_high3,
 	fixed_cooldown = true,
 	getFireDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 10, 100) end,
-	getPoisonDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 20, 240) end,
-	getResistPenalty = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 5, 20)) end,
+	getPoisonDamage = function(self, t) return self:combatTalentPhysicalDamage(t, 20, 250) end,
+	getResistPenalty = function(self, t) return math.floor(self:combatTalentLimit(t, 35, 10, 25)) end,
 	info = function(self, t)
 		local fire = t.getFireDamage(self,t)
 		local poison = t.getPoisonDamage(self,t)

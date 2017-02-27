@@ -80,6 +80,39 @@ for i = 1, 30 do
 end
 
 newEntity{
+	define_as = "UNDERGROUND_HARDTREE",
+	type = "wall", subtype = "underground",
+	name = "underground thick vegetation",
+	image = "terrain/tree.png",
+	display = '#', color=colors.PURPLE, back_color=colors.UMBER,
+	always_remember = true,
+	can_pass = {pass_tree=1},
+	does_block_move = true,
+	block_sight = true,
+	block_esp = true,
+	block_sense = true,
+	nice_tiler = { method="replace", base={"UNDERGROUND_HARDTREE", 100, 1, 30}},
+}
+for i = 1, 30 do
+	newEntity(class:makeNewTrees({base="UNDERGROUND_HARDTREE", define_as = "UNDERGROUND_HARDTREE"..i, image = "terrain/underground_floor.png"}, treesdef, nil, "terrain/mushrooms/"))
+end
+
+newEntity{
+	define_as = "UNDERGROUND_VAULT",
+	type = "wall", subtype = "underground",
+	name = "huge loose rock", image = "terrain/underground_floor.png", add_mos = {{image="terrain/huge_rock.png"}},
+	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	block_sense = true,
+	block_esp = true,
+	is_door = true,
+	door_player_check = "This rock is loose, you think you can move it away.",
+	door_opened = "UNDERGROUND_FLOOR",
+}
+
+newEntity{
 	define_as = "UNDERGROUND_LADDER_DOWN",
 	type = "floor", subtype = "underground",
 	name = "ladder to the next level", image = "terrain/underground_floor.png", add_displays = {class.new{image="terrain/ladder_down.png"}},

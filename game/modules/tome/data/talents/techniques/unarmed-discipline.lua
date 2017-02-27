@@ -98,8 +98,8 @@ newTalent{
 	require = techs_dex_req2,
 	points = 5,
 	mode = "passive",
-	getStamina = function(self, t) return self:combatTalentLimit(t, 3, 0.5, 1.5) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 50, 15, 40) end,
+	getStamina = function(self, t) return self:combatTalentLimit(t, 6, 1, 4) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 70, 15, 60) end,
 	info = function(self, t)
 		local stamina = t.getStamina(self, t)
 		local chance = t.getChance(self, t)
@@ -123,7 +123,7 @@ newTalent{
 	getBlock = function(self, t) return self:combatTalentPhysicalDamage(t, 30, 200) end,
 	action = function(self, t)
 		local blockval = t.getBlock(self, t) * self:getCombo()
-		self:setEffect(self.EFF_BRAWLER_BLOCK, 2, {block = blockval})
+		self:setEffect(self.EFF_BRAWLER_BLOCK, 3, {block = blockval})
 
 		self:clearCombo()
 

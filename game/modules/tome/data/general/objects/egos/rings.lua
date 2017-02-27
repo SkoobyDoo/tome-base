@@ -632,6 +632,7 @@ newEntity{
 	},
 }
 
+-- Multihit synergy and early anti-armor 
 newEntity{
 	power_source = {arcane=true},
 	name = " of blinding strikes", suffix=true, instant_resolve=true,
@@ -642,9 +643,11 @@ newEntity{
 	cost = 60,
 	wielder = {
 		melee_project = {
+			[DamageType.LIGHT] = resolvers.mbonus_material(30, 20),
 			[DamageType.ITEM_LIGHT_BLIND] = resolvers.mbonus_material(25, 10),
 		},
 		ranged_project = {
+			[DamageType.LIGHT] = resolvers.mbonus_material(30, 20),
 			[DamageType.ITEM_LIGHT_BLIND] = resolvers.mbonus_material(25, 10),
 		},
 	},

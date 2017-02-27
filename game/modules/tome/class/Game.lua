@@ -1357,6 +1357,7 @@ end
 
 --- Update the zone name, if needed
 function _M:updateZoneName()
+	if not self.zone_font then return end
 	local name
 	if self.zone.display_name then
 		name = self.zone.display_name()
@@ -1574,7 +1575,7 @@ end
 
 --- Queue combat damage values and messages for later display with displayDelayedLogDamage
 -- @param src: source (primary) actor dealing the damage
--- @param target: target (secondary) actor recieving the damage
+-- @param target: target (secondary) actor receiving the damage
 -- @param dam: [type=number] damage effectively dealt, added to total
 --		negative dam is counted as healing and summed separately
 -- @param desc: [type=string] text description of damage dealth, passed directly to log message

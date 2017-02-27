@@ -85,11 +85,14 @@ newTalent {
 	tactical = { STAMINA = 2 },
 	random_ego = "utility",
 	activate = function(self, t)
-		-- Superloads Combat:combatFatigue.
-		local eff = {}
-		self:talentTemporaryValue(eff, "global_speed_add", -t.getSlow(self, t))
-		self:talentTemporaryValue(eff, "fatigue", -t.getReduction(self, t))
-		return eff
+		local ret = {}
+		self:talentTemporaryValue(ret, "global_speed_add", -t.getSlow(self, t))
+		self:talentTemporaryValue(ret, "fatigue", -t.getReduction(self, t))
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="pace_yourself_shieldwall"}, shader={type="rotatingshield", noup=2.0, time_factor=2500, appearTime=0.2}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="pace_yourself_shieldwall"}, shader={type="rotatingshield", noup=1.0, time_factor=2500, appearTime=0.2}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p) return true end,
 	getSlow = function(self, t)

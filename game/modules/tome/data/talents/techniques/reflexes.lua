@@ -229,7 +229,7 @@ newTalent{
 	tactical = { ESCAPE = 2, DEFEND = 2 },
 	getDamageReduction = function(self, t) return self:combatTalentLimit(t, 70, 15, 60) end,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 150, 350) end,
-	getStamina = function(self, t) return self:combatTalentScale(t, 10, 22) end,
+	getStamina = function(self, t) return self:combatTalentScale(t, 10, 20) end,
 	action = function(self, t)
 		local power = t.getDamageReduction(self,t)
 		local speed = t.getSpeed(self,t)
