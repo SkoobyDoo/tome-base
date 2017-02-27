@@ -660,7 +660,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			self.__attacktargetwith_recursing_procs_reduce = weapon.attack_recurse_procs_reduce
 		end
 
-		if self.__attacktargetwith_recursing > 0 then
+		if self.__attacktargetwith_recursing > 0 and not self.turn_procs._no_melee_recursion then
 			local _, newhitted, newdam = self:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			hitted = newhitted or hitted
 			dam = math.max(dam, newdam)

@@ -34,8 +34,8 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Concentrate on your blows; for %d turns, each successful strike you land has a %d%% chance to trigger another, similar strike.
-		This works for all blows, even those from other talents and from shield bashes, but can happen only once each turn.
+		return ([[Concentrate on your blows; for %d turns, each strike you land on your target in melee range has a %d%% chance to trigger another, similar strike.
+		This works for all blows, even those from other talents and from shield bashes, but you can gain no more than one extra blow with each weapon during a turn.
 		The chance increases with your Dexterity.]]):format(t.getdur(self, t), t.getchance(self, t))
 	end,
 }
