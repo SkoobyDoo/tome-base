@@ -280,7 +280,7 @@ trapping_CreateTrap = function(self, t, dur, add)
 					end
 				end
 				if self.particles then game.level.map:removeParticleEmitter(self.particles) end
-				game.level:removeEntity(self)
+				game.level:removeEntity(self, true)
 			end
 		end,
 	}
@@ -1113,7 +1113,7 @@ newTalent{
 							if self.old_feat then game.level.map(self.target.x, self.target.y, engine.Map.TERRAIN+1, self.old_feat)
 							else game.level.map:remove(self.target.x, self.target.y, engine.Map.TERRAIN+1) end
 							game.nicer_tiles:updateAround(game.level, self.target.x, self.target.y)
-							game.level:removeEntity(self)
+							game.level:removeEntity(self, true)
 							game.level.map:removeParticleEmitter(self.particles)
 							
 							-- return the actor and reset their values

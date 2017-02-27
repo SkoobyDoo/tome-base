@@ -198,6 +198,7 @@ function _M:onDisarm(x, y, who)
 			local success, consec, msg = false, 0
 			local oldrestCheck = rawget(who, "restCheck") -- hack restCheck to perform action each turn
 			who.restCheck = function(player)
+				if not player.resting then player.restCheck = oldrestCheck return false, "not resting" end
 				if player.resting.cnt >= diff_level then -- start making checks at diff_level turns
 					if rng.percent(chance) then
 						consec = consec + 1
