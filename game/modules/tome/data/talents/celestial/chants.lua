@@ -43,21 +43,21 @@ newTalent{
 		self:talentTemporaryValue(ret, "max_life", t.getLifePct(self, t)*self.max_life)
 		ret.particle = self:addParticles(Particles.new("golden_shield", 1))
 		
-		if self:knowTalent(self.T_HP_CHANT_ILLUMINATE) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_ILLUMINATE)
+		if self:knowTalent(self.T_CHANT_ILLUMINATE) then
+			local t2 = self:getTalentFromId(self.T_CHANT_ILLUMINATE)
 			self:talentTemporaryValue(ret, "on_melee_hit", {[DamageType.LIGHT]=t2.getDamageOnMeleeHit(self, t2)})
 			self:talentTemporaryValue(ret, "mana_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "stamina_regen", t2.getBonusRegen(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HP_CHANT_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_ADEPT)
+		if self:knowTalent(self.T_CHANT_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_CHANT_ADEPT)
 			self:talentTemporaryValue(ret, "lite", t2.getBonusLight(self, t2))
 			t2.doCure(self, t2, "mental")
 		end
 		
-		if self:knowTalent(self.T_HP_CHANT_RADIANT) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_RADIANT)
+		if self:knowTalent(self.T_CHANT_RADIANT) then
+			local t2 = self:getTalentFromId(self.T_CHANT_RADIANT)
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.LIGHT] = t2.getLightDamageIncrease(self, t2), [DamageType.FIRE] = t2.getLightDamageIncrease(self, t2)})
 			self:talentTemporaryValue(ret, "positive_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "positive_regen_ref_mod", t2.getBonusRegen(self, t2))
@@ -106,21 +106,21 @@ newTalent{
 		self:talentTemporaryValue(ret, "combat_armor_hardiness", 10)
 		ret.particle = self:addParticles(Particles.new("golden_shield", 1))
 		
-		if self:knowTalent(self.T_HP_CHANT_ILLUMINATE) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_ILLUMINATE)
+		if self:knowTalent(self.T_CHANT_ILLUMINATE) then
+			local t2 = self:getTalentFromId(self.T_CHANT_ILLUMINATE)
 			self:talentTemporaryValue(ret, "on_melee_hit", {[DamageType.LIGHT]=t2.getDamageOnMeleeHit(self, t2)})
 			self:talentTemporaryValue(ret, "mana_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "stamina_regen", t2.getBonusRegen(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HP_CHANT_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_ADEPT)
+		if self:knowTalent(self.T_CHANT_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_CHANT_ADEPT)
 			self:talentTemporaryValue(ret, "lite", t2.getBonusLight(self, t2))
 			t2.doCure(self, t2, "physical")
 		end
 		
-		if self:knowTalent(self.T_HP_CHANT_RADIANT) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_RADIANT)
+		if self:knowTalent(self.T_CHANT_RADIANT) then
+			local t2 = self:getTalentFromId(self.T_CHANT_RADIANT)
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.LIGHT] = t2.getLightDamageIncrease(self, t2), [DamageType.FIRE] = t2.getLightDamageIncrease(self, t2)})
 			self:talentTemporaryValue(ret, "positive_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "positive_regen_ref_mod", t2.getBonusRegen(self, t2))
@@ -187,21 +187,21 @@ newTalent{
 		self:talentTemporaryValue(ret, "combat_spellresist", spell)
 		ret.particle = self:addParticles(Particles.new("golden_shield", 1))
 		
-		if self:knowTalent(self.T_HP_CHANT_ILLUMINATE) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_ILLUMINATE)
+		if self:knowTalent(self.T_CHANT_ILLUMINATE) then
+			local t2 = self:getTalentFromId(self.T_CHANT_ILLUMINATE)
 			self:talentTemporaryValue(ret, "on_melee_hit", {[DamageType.LIGHT]=t2.getDamageOnMeleeHit(self, t2)})
 			self:talentTemporaryValue(ret, "mana_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "stamina_regen", t2.getBonusRegen(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HP_CHANT_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_ADEPT)
+		if self:knowTalent(self.T_HCHANT_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_CHANT_ADEPT)
 			self:talentTemporaryValue(ret, "lite", t2.getBonusLight(self, t2))
 			t2.doCure(self, t2, "magical")
 		end
 		
-		if self:knowTalent(self.T_HP_CHANT_RADIANT) then
-			local t2 = self:getTalentFromId(self.T_HP_CHANT_RADIANT)
+		if self:knowTalent(self.T_CHANT_RADIANT) then
+			local t2 = self:getTalentFromId(self.T_CHANT_RADIANT)
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.LIGHT] = t2.getLightDamageIncrease(self, t2), [DamageType.FIRE] = t2.getLightDamageIncrease(self, t2)})
 			self:talentTemporaryValue(ret, "positive_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "positive_regen_ref_mod", t2.getBonusRegen(self, t2))

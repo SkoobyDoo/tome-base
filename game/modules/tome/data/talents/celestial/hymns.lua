@@ -34,8 +34,8 @@ newTalent{
 	castSpeed = function(self, t) return self:combatTalentSpellDamage(t, 10, 30) end,
 	evade = function(self, t) return self:combatStatLimit(self:combatTalentSpellDamage(t, 10, 100), 90, 10, 40) end,
 	callbackOnActBase = function(self, t)
-		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
+		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			t2.do_beams(self, t2)
 		end
 	end,
@@ -48,19 +48,19 @@ newTalent{
 		self:talentTemporaryValue(ret, "evasion", t.evade(self, t))
 		ret.particle = self:addParticles(Particles.new("darkness_shield", 1))
 		
-		if self:knowTalent(self.T_HP_HYMN_INCANTOR) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_INCANTOR)
+		if self:knowTalent(self.T_HYMN_INCANTOR) then
+			local t2 = self:getTalentFromId(self.T_HYMN_INCANTOR)
 			self:talentTemporaryValue(ret, "on_melee_hit", {[DamageType.DARKNESS]=t2.getDamageOnMeleeHit(self, t2)})
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.DARKNESS] = t2.getDarkDamageIncrease(self, t2)})
 		end
 		
-		if self:knowTalent(self.T_HP_HYMN_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_ADEPT)
+		if self:knowTalent(self.T_HYMN_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
 			self:talentTemporaryValue(ret, "infravision", t2.getBonusInfravision(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
+		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
@@ -70,8 +70,8 @@ newTalent{
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
 		
-		if self:knowTalent(self.T_HP_HYMN_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_ADEPT)
+		if self:knowTalent(self.T_HYMN_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
 			game:onTickEnd(function() self:setEffect(self.EFF_WILD_SPEED, 1, {power=t2.getSpeed(self, t2)}) end)
 		end
 		
@@ -104,8 +104,8 @@ newTalent{
 	getSeeStealth = function(self, t) return self:combatTalentSpellDamage(t, 2, 25) end,
 	critPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
 	callbackOnActBase = function(self, t)
-		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
+		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			t2.do_beams(self, t2)
 		end
 	end,
@@ -118,19 +118,19 @@ newTalent{
 		self:talentTemporaryValue(ret, "combat_critical_power", t.critPower(self, t))
 		ret.particle = self:addParticles(Particles.new("darkness_shield", 1))
 		
-		if self:knowTalent(self.T_HP_HYMN_INCANTOR) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_INCANTOR)
+		if self:knowTalent(self.T_HYMN_INCANTOR) then
+			local t2 = self:getTalentFromId(self.T_HYMN_INCANTOR)
 			self:talentTemporaryValue(ret, "on_melee_hit", {[DamageType.DARKNESS]=t2.getDamageOnMeleeHit(self, t2)})
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.DARKNESS] = t2.getDarkDamageIncrease(self, t2)})
 		end
 		
-		if self:knowTalent(self.T_HP_HYMN_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_ADEPT)
+		if self:knowTalent(self.T_HYMN_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
 			self:talentTemporaryValue(ret, "infravision", t2.getBonusInfravision(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
+		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
@@ -140,8 +140,8 @@ newTalent{
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
 		
-		if self:knowTalent(self.T_HP_HYMN_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_ADEPT)
+		if self:knowTalent(self.T_HYMN_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
 			self:setEffect(self.EFF_INVISIBILITY, t2.invisDur(self, t2), {power=t2.invisPower(self, t2), penalty=0.4})
 		end
 		
@@ -173,8 +173,8 @@ newTalent{
 	range = 10,
 	getImmunities = function(self, t) return self:combatTalentLimit(t, 1, 0.16, 0.4) end, -- Limit < 100%
 	callbackOnActBase = function(self, t)
-		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
+		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			t2.do_beams(self, t2)
 		end
 	end,
@@ -187,19 +187,19 @@ newTalent{
 		self:talentTemporaryValue(ret, "blind_immune", t.getImmunities(self, t))
 		ret.particle = self:addParticles(Particles.new("darkness_shield", 1))
 		
-		if self:knowTalent(self.T_HP_HYMN_INCANTOR) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_INCANTOR)
+		if self:knowTalent(self.T_HYMN_INCANTOR) then
+			local t2 = self:getTalentFromId(self.T_HYMN_INCANTOR)
 			self:talentTemporaryValue(ret, "on_melee_hit", {[DamageType.DARKNESS]=t2.getDamageOnMeleeHit(self, t2)})
 			self:talentTemporaryValue(ret, "inc_damage", {[DamageType.DARKNESS] = t2.getDarkDamageIncrease(self, t2)})
 		end
 		
-		if self:knowTalent(self.T_HP_HYMN_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_ADEPT)
+		if self:knowTalent(self.T_HYMN_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
 			self:talentTemporaryValue(ret, "infravision", t2.getBonusInfravision(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HP_HYMN_NOCTURNALIST) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_NOCTURNALIST)
+		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
 		end
@@ -209,8 +209,8 @@ newTalent{
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
 		
-		if self:knowTalent(self.T_HP_HYMN_ADEPT) then
-			local t2 = self:getTalentFromId(self.T_HP_HYMN_ADEPT)
+		if self:knowTalent(self.T_HYMN_ADEPT) then
+			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
 			self:setEffect(self.EFF_DAMAGE_SHIELD, t2.shieldDur(self, t2), {power=t2.shieldPower(self, t2)})
 		end
 		
