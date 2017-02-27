@@ -108,7 +108,8 @@ cd t-engine4-osx-"$ver"
 mkdir T-Engine.app/
 cp -a ../../mac/base_app/* T-Engine.app/
 cp -a ../../bootstrap/ T-Engine.app/Contents/MacOS/
-cp -a ../t-engine4-src-"$ver"/game/ .
+cp ../../utils/boot-osx-standalone-apple-sucks.lua T-Engine.app/Contents/MacOS/bootstrap/boot.lua
+cp -a ../t-engine4-src-"$ver"/game/ T-Engine.app/Contents/Resources/
 cp -a ../../C* .
 find . -name '*~' -or -name '.svn' | xargs rm -rf
 zip -r -9 ../t-engine4-osx-"$ver".zip *
