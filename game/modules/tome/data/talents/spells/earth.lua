@@ -20,10 +20,51 @@
 local Object = require "mod.class.Object"
 
 newTalent{
-	name = "Stone Skin",
-	type = {"spell/earth", 1},
-	mode = "sustained",
+	name = "Pulverizing Auger", short_name="DIG",
+	type = {"spell/earth",1},
 	require = spells_req1,
+	points = 5,
+	mana = 15,
+	cooldown = 6,
+	range = function(self, t) return math.min(10, math.floor(self:combatTalentScale(t, 3, 7))) end,
+	tactical = { ATTACK = {PHYSICAL = 2} },
+	direct_hit = true,
+	requires_target = true,
+	target = function(self, t)
+		local tg = {type="beam", range=self:getTalentRange(t), talent=t}
+		return tg
+	end,
+	allow_for_arcane_combat = true,
+	getDigs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+
+		for i = 1, t.getDigs(self, t) do self:project(tg, x, y, DamageType.DIG, 1) end
+
+		self:project(tg, x, y, DamageType.PHYSICAL, self:spellCrit(t.getDamage(self, t)), nil)
+		local _ _, x, y = self:canProject(tg, x, y)
+		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "earth_beam", {tx=x-self.x, ty=y-self.y})
+		game:playSoundNear(self, "talents/earth")
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local nb = t.getDigs(self, t)
+		return ([[Fire a powerful beam of stone-shaterring force, digging out any walls in its path up to %d.
+		The beam also affect any creatures in its path, dealing %0.2f physical damage to all.
+		The damage will increase with your Spellpower.]]):
+		format(nb, damDesc(self, DamageType.PHYSICAL, damage))
+	end,
+}
+
+newTalent{
+	name = "Stone Skin",
+	type = {"spell/earth", 2},
+	mode = "sustained",
+	require = spells_req2,
 	points = 5,
 	sustain_mana = 30,
 	cooldown = 10,
@@ -68,47 +109,6 @@ newTalent{
 		Each time you are hit in melee, you have a %d%% chance to reduce the cooldown of an Earth or Stone spell by 2 (this effect can only happen once per turn).
 		The bonus to Armour will increase with your Spellpower.]]):
 		format(armor, t.getCDChance(self, t))
-	end,
-}
-
-newTalent{
-	name = "Pulverizing Auger", short_name="DIG",
-	type = {"spell/earth",2},
-	require = spells_req2,
-	points = 5,
-	mana = 15,
-	cooldown = 6,
-	range = function(self, t) return math.min(10, math.floor(self:combatTalentScale(t, 3, 7))) end,
-	tactical = { ATTACK = {PHYSICAL = 2} },
-	direct_hit = true,
-	requires_target = true,
-	target = function(self, t)
-		local tg = {type="beam", range=self:getTalentRange(t), talent=t}
-		return tg
-	end,
-	allow_for_arcane_combat = true,
-	getDigs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-
-		for i = 1, t.getDigs(self, t) do self:project(tg, x, y, DamageType.DIG, 1) end
-
-		self:project(tg, x, y, DamageType.PHYSICAL, self:spellCrit(t.getDamage(self, t)), nil)
-		local _ _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "earth_beam", {tx=x-self.x, ty=y-self.y})
-		game:playSoundNear(self, "talents/earth")
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local nb = t.getDigs(self, t)
-		return ([[Fire a powerful beam of stone-shaterring force, digging out any walls in its path up to %d.
-		The beam also affect any creatures in its path, dealing %0.2f physical damage to all.
-		The damage will increase with your Spellpower.]]):
-		format(nb, damDesc(self, DamageType.PHYSICAL, damage))
 	end,
 }
 

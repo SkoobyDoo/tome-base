@@ -27,6 +27,17 @@ local Chat = require "engine.Chat"
 artifice_tool_tids = {T_HIDDEN_BLADES="T_ASSASSINATE", T_SMOKESCREEN="T_SMOKESCREEN_MASTERY", T_ROGUE_S_BREW="T_ROGUE_S_BREW_MASTERY", T_DART_LAUNCHER="T_DART_LAUNCHER_MASTERY", T_GRAPPLING_HOOK="T_GRAPPLING_HOOK_MASTERY",}
 Talents.artifice_tool_tids = artifice_tool_tids
 
+-- Hook to show artifices on the doll
+class:bindHook("Actor:updateModdableTile:middle", function(self, data)
+	if not self.artifice_tools then return end
+	for _, tool in pairs(self.artifice_tools) do
+		local img = self:callTalent(tool, "getDollImage")
+		if img then
+			data.add[#data.add+1] = {image = data.base..img..".png", auto_tall=1}
+		end
+	end
+end)
+
 --- initialize artifice tools, update mastery level and unlearn any unselected tools talents
 function artifice_tools_setup(self, t)
 	self.artifice_tools = self.artifice_tools or {}
@@ -123,6 +134,7 @@ newTalent{
 		end}
 		local tool_id, m_id = self:talentDialog(d)
 		artifice_tools_setup(self, t)
+		self:updateModdableTile()
 		return tool_id ~= nil -- only use energy/cooldown if a tool was prepared
 	end,
 	info = function(self, t)
@@ -154,6 +166,7 @@ newTalent{
 		end}
 		local tool_id, m_id = self:talentDialog(d)
 		artifice_tools_setup(self, t)
+		self:updateModdableTile()
 		return tool_id ~= nil -- only use energy/cooldown if a tool was prepared
 	end,
 	info = function(self, t)
@@ -186,6 +199,7 @@ newTalent{
 		end}
 		local tool_id, m_id = self:talentDialog(d)
 		artifice_tools_setup(self, t)
+		self:updateModdableTile()
 		return tool_id ~= nil -- only use energy/cooldown if a tool was prepared
 	end,
 	info = function(self, t)
@@ -240,6 +254,7 @@ newTalent{
 		end}
 		local tool_id = self:talentDialog(d)
 		artifice_tools_setup(self, t)
+		self:updateModdableTile()
 		return tool_id ~= nil -- only use energy/cooldown if a new tool was mastered
 	end,
 	info = function(self, t)
@@ -286,6 +301,7 @@ newTalent{
 	mode = "passive",
 	points = 1,
 	cooldown = 4,
+	getDollImage = function(self, t) return self:knowTalent(self.T_ASSASSINATE) and "artifices/mastery_hidden_blades" or "artifices/hidden_blades" end,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.8) end,
 	callbackOnCrit = function(self, t, kind, dam, chance, target)
 		if not target then return end
@@ -391,6 +407,7 @@ newTalent{
 	type = {"cunning/tools", 1},
 	points = 1,
 	cooldown = 20,
+	getDollImage = function(self, t) return self:knowTalent(self.T_ROGUE_S_BREW_MASTERY) and "artifices/mastery_rogues_brew" or "artifices/rogues_brew" end,
 	tactical = { HEAL = 1.5, STAMINA = 1.5,
 		CURE = function(self, t, target)
 			local num, max = 0, t.getCure(self, t)
@@ -489,6 +506,7 @@ newTalent{
 	requires_target = true,
 	no_break_stealth = true,
 	radius = 2,
+	getDollImage = function(self, t) return self:knowTalent(self.T_SMOKESCREEN_MASTERY) and "artifices/mastery_smokescreen" or "artifices/smokescreen" end,
 	getDamage = function(self,t) 
 		if self:knowTalent(self.T_SMOKESCREEN_MASTERY) then
 			return self:callTalent(self.T_SMOKESCREEN_MASTERY, "getDamage")
@@ -596,6 +614,7 @@ newTalent{
 	stamina = 5,
 	requires_target = true,
 	no_break_stealth = true,
+	getDollImage = function(self, t) return self:knowTalent(self.T_DART_LAUNCHER_MASTERY) and "artifices/mastery_dart_launcher" or "artifices/dart_launcher" end,
 	getDamage = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 12, 150) end,
 	getSleepPower = function(self, t) return 15 + self:combatTalentStatDamage(t, "cun", 15, 180) end,
 	target = function(self, t)
@@ -668,6 +687,7 @@ newTalent{
 	cooldown = 8,
 	stamina = 14,
 	requires_target = true,
+	getDollImage = function(self, t) return self:knowTalent(self.T_GRAPPLING_HOOK_MASTERY) and "artifices/mastery_grappling_hook" or "artifices/grappling_hook" end,
 	target = function(self, t) return {type="bolt", range=t.range(self,t), talent=t} end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)

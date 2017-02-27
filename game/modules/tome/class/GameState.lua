@@ -606,7 +606,7 @@ function _M:generateRandart(data)
 			else -- no ego found: increase budget for random powers to compensate
 				local xpoints = gr_ego and 8 or 5
 				print((" ** no ego found (+%d points)"):format(xpoints))
-				points = points + xpoints
+				points = points + (xpoints * 2)
 			end
 		end
 --		o.egos = nil o.egos_chance = nil o.force_ego = nil
@@ -1519,8 +1519,8 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 						b.inc_damage.all = (b.inc_damage.all or 0) - 40 * (20 - data.level + 1) / 20
 					end
 					-- Drop
-					for i = 1, data.nb_rares do -- generate rares as weak (1 ego) randarts
-						local fil = {lev=lev, egos=1, greater_egos_bias = 0, forbid_power_source=b.not_power_source,
+					for i = 1, data.nb_rares do -- generate rares as weak (1 ego) randarts with more and stronger powers
+						local fil = {lev=lev, egos=1, greater_egos_bias = 0, power_points_factor = 3, nb_powers_add = 2, forbid_power_source=b.not_power_source,
 							base_filter = {no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, 
 							special=function(e)
 								return (not e.unique and e.randart_able) and (not e.material_level or e.material_level >= 1) and true or false
@@ -2505,14 +2505,14 @@ function _M:infiniteDungeonChallenge(zone, lev, data, id_layout_name, id_grids_n
 	self.id_challenge.count = self.id_challenge.count + 1
 
 	local challenges = {
-		-- { id = "exterminator", rarity = 1 },
-		-- { id = "pacifist", rarity = 2 },
+		{ id = "exterminator", rarity = 1 },
+		{ id = "pacifist", rarity = 2 },
 		{ id = "fast-exit", rarity = 2, min_lev = 8 },
-		-- { id = "near-sighted", rarity = 3, min_lev = 4 },
-		-- { id = "mirror-match", rarity = 4, min_lev = 5 },
-		-- { id = "multiplicity", rarity = 6, min_lev = 10 },
-		-- { id = "dream-horror", rarity = 8, min_lev = 15 },
-		-- { id = "headhunter", rarity = 10, min_lev = 12 },
+		{ id = "near-sighted", rarity = 3, min_lev = 4 },
+		{ id = "mirror-match", rarity = 4, min_lev = 5 },
+		{ id = "multiplicity", rarity = 6, min_lev = 10 },
+		{ id = "dream-horror", rarity = 8, min_lev = 15 },
+		{ id = "headhunter", rarity = 10, min_lev = 12 },
 	}
 	
 	self:triggerHook{"InfiniteDungeon:getChallenges", challenges=challenges}

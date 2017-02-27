@@ -674,7 +674,7 @@ newTalent{
 	getDuration = function(self,t) return math.floor(self:combatTalentScale(t, 5, 13)) end,
 	getLife = function(self, t) return self:getCun()*self:combatTalentLimit(t, 5, 1, 2) end,
 	getArmor = function(self, t) return math.floor(self:combatTalentScale(t, 10, 25)) end,
-	getResist = function(self, t) return self:combatTalentLimit(t, 100, 70, 80) end,
+	getResist = function(self, t) return self:combatTalentLimit(t, 90, 65, 75) end,
 	speed = "combat",
 	action = function(self, t)
 		local tg = {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, simple_dir_request=true, talent=t}

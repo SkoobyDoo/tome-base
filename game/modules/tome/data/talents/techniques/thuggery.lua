@@ -121,6 +121,7 @@ newTalent{
 	mode = "sustained",
 	cooldown = 30,
 	sustain_stamina = 40,
+	drain_stamina = 6,
 	no_energy = true,
 	require = techs_req4,
 	range = 1,
@@ -128,13 +129,17 @@ newTalent{
 	getCrit = function(self, t) return self:combatTalentStatDamage(t, "dex", 10, 50) / 1.5 end,
 	getPen = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "str", 10, 50), 100, 0, 0, 35.7, 35.7) end, -- Limit to <100%
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.20, 0.75) end,
-	drain_stamina = 6,
+	callbackOnRest = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
+	callbackOnRun = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
 	activate = function(self, t)
 		local ret = {
 			crit = self:addTemporaryValue("combat_physcrit", t.getCrit(self, t)),
 			pen = self:addTemporaryValue("resists_pen", {[DamageType.PHYSICAL] = t.getPen(self, t)}),
 			speed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
 		}
+		if core.shader.active() then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1.5, y=-0.2, img="total_thuggery_tentacles2"}, shader={type="tentacles", wobblingType=1, appearTime=0.5, time_factor=1400, noup=0.0}})
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -145,7 +150,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You go all out, trying to burn down your foes as fast as possible.
-		You gain +%d%% attack speed, +%d%% critical chance and +%d%% physical resistance penetration, but this talent drains 6 stamina each turn.]]):
+		You gain +%d%% attack speed, +%d%% critical chance and +%d%% physical resistance penetration, but this talent drains 6 stamina each turn.
+		This effect is disabled automatically on rest or run.
+		]]):
 		format(t.getSpeed(self,t)*100, t.getCrit(self, t), t.getPen(self, t))
 	end,
 }

@@ -53,8 +53,8 @@ return {
 				up = "FLOOR",
 				down = "FLOOR",
 
-				nb_rooms = {0,0,0,1},
-				rooms = {"lesser_vault"},
+				nb_rooms = {1,1,2,3},
+				rooms = {"lesser_vault", "greater_vault"},
 				lesser_vaults_list = {"orc-armoury", "double-t", "circle", "hostel", "orc-necromancer", "horror-chamber"},
 				lite_room_chance = 100,
 			},

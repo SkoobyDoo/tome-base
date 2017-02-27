@@ -124,18 +124,16 @@ newTalent{
 	positive = -20,
 	cooldown = 30,
 	tactical = { HEAL = 1, CURE = 3 },
-	getRegeneration = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		self:setEffect(self.EFF_PROVIDENCE, t.getDuration(self, t), {power=t.getRegeneration(self, t)})
+		self:setEffect(self.EFF_PROVIDENCE, t.getDuration(self, t), {})
 		game:playSoundNear(self, "talents/heal")
 		return true
 	end,
 	info = function(self, t)
 		local regen = t.getRegeneration(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Places you under the protection of Light itself. For %d turns, the light heals %d life and removes a single negative effect from you.
-		The amount healed will increase with your Spellpower.]]):
+		return ([[Places you under the protection of a ray of sunlight. For %d turns, the light removes a single negative effect from you every turn.]]):
 		format(duration, regen)
 	end,
 }

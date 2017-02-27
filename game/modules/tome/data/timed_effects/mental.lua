@@ -1736,6 +1736,7 @@ newEffect{
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("combat_atk", eff.power)
 		eff.bid = self:addTemporaryValue("blind_fight", 1)
+		self:effectParticles(eff, {type="perfect_strike", args={radius=1}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_atk", eff.tmpid)
@@ -3032,7 +3033,7 @@ newEffect{
 					self:attackTargetWith(target, o.combat, nil, t.getWeaponDamage(self, t))
 				end
 			end
-			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarmed") then
+			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarm") then
 				target:setEffect(target.EFF_DISARMED, 3, {apply_power=self:combatMindpower()})
 			end
 		end
