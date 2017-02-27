@@ -59,6 +59,10 @@ rm -rf game/modules/rogue
 rm -rf game/modules/gruesome
 find . -name '*~' -or -name '.svn' -or -name '.keep' | xargs rm -rf
 
+# stamp the releases
+echo "version_desc = '$ver'" >> game/engines/default/modules/boot/init.lua
+echo "version_desc = '$ver'" >> game/modules/tome/init.lua
+
 # create teae/teams
 cd game/engines
 te4_pack_engine.sh default/ te4-"$ever"
