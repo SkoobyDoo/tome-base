@@ -30,11 +30,11 @@ newTalent{
 	dont_provide_pool = true,
 	tactical = { BUFF = 2 },
 	range = 0,
-	moveSpeed = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
-	castSpeed = function(self, t) return self:combatTalentSpellDamage(t, 10, 30) end,
-	evade = function(self, t) return self:combatStatLimit(self:combatTalentSpellDamage(t, 10, 100), 90, 10, 40) end,
+	moveSpeed = function(self, t) return self:combatTalentSpellDamage(t, 10, 40) end,
+	castSpeed = function(self, t) return self:combatTalentSpellDamage(t, 5, 20) end,
+	evade = function(self, t) return self:combatStatLimit(self:combatTalentSpellDamage(t, 10, 100), 50, 5, 25) end,
 	callbackOnActBase = function(self, t)
-		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+		if self:isTalentActive(self.T_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			t2.do_beams(self, t2)
 		end
@@ -59,7 +59,7 @@ newTalent{
 			self:talentTemporaryValue(ret, "infravision", t2.getBonusInfravision(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+		if self:isTalentActive(self.T_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
@@ -78,7 +78,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Chant the glory of the Moon, gaining the agility of shadows.
+		return ([[Chant the glory of the Moons, gaining the agility of shadows.
 		This increases your movement speed by %d%%, your spell speed by %d%% and grant %d%% evasion.
 		You may only have one Hymn active at once.
 		The effects will increase with your Spellpower.]]):
@@ -104,7 +104,7 @@ newTalent{
 	getSeeStealth = function(self, t) return self:combatTalentSpellDamage(t, 2, 25) end,
 	critPower = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
 	callbackOnActBase = function(self, t)
-		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+		if self:isTalentActive(self.T_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			t2.do_beams(self, t2)
 		end
@@ -129,7 +129,7 @@ newTalent{
 			self:talentTemporaryValue(ret, "infravision", t2.getBonusInfravision(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+		if self:isTalentActive(self.T_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
@@ -150,7 +150,7 @@ newTalent{
 	info = function(self, t)
 		local invis = t.getSeeInvisible(self, t)
 		local stealth = t.getSeeStealth(self, t)
-		return ([[Chant the glory of the Moon, granting you stealth detection (+%d power), and invisibility detection (+%d power). 
+		return ([[Chant the glory of the Moons, granting you stealth detection (+%d power), and invisibility detection (+%d power). 
 		You may also attack creatures you cannot see without penalty and your critical hits do %d%% more damage.
 		You may only have one Hymn active at once.
 		The stealth and invisibility detection will increase with your Spellpower.]]):
@@ -173,7 +173,7 @@ newTalent{
 	range = 10,
 	getImmunities = function(self, t) return self:combatTalentLimit(t, 1, 0.16, 0.4) end, -- Limit < 100%
 	callbackOnActBase = function(self, t)
-		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+		if self:isTalentActive(self.T_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			t2.do_beams(self, t2)
 		end
@@ -198,7 +198,7 @@ newTalent{
 			self:talentTemporaryValue(ret, "infravision", t2.getBonusInfravision(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HYMN_NOCTURNALIST) then
+		if self:isTalentActive(self.T_HYMN_NOCTURNALIST) then
 			local t2 = self:getTalentFromId(self.T_HYMN_NOCTURNALIST)
 			self:talentTemporaryValue(ret, "negative_regen", t2.getBonusRegen(self, t2))
 			self:talentTemporaryValue(ret, "negative_regen_ref_mod", t2.getBonusRegen(self, t2))
@@ -218,7 +218,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local immunities = t.getImmunities(self, t)
-		return ([[Chant the glory of the Moon, granting you %d%% stun, blindness and confusion resistance.
+		return ([[Chant the glory of the Moons, granting you %d%% stun, blindness and confusion resistance.
 		You may only have one Hymn active at once.]]):
 		format(100 * (immunities))
 	end,
@@ -283,7 +283,7 @@ newTalent{
 		local targetcount = t.getTargetCount(self, t)
 		local damage = t.getDamage(self, t)
 		local drain = t.getNegativeDrain(self, t)
-		return ([[Chant the glory of the Moon, conjuring a shroud of dancing shadows that follows you as long as this spell is active.
+		return ([[Chant the glory of the Moons, conjuring a shroud of dancing shadows that follows you as long as this spell is active.
 		Each turn, a shadowy beam will hit up to %d of your foes within radius 5 for 1 to %0.2f damage.
 		This powerful spell will drain %0.1f negative energy for each beam; no beam will fire if your negative energy is too low.
 		You may only have one Hymn active at once.
@@ -328,7 +328,7 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	getDamageOnMeleeHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 50) end,
-	getDarkDamageIncrease = function(self, t) return self:combatTalentSpellDamage(t, 20, 50) end,
+	getDarkDamageIncrease = function(self, t) return self:combatTalentSpellDamage(t, 10, 30) end,
 	info = function(self, t)
 		return ([[Your Hymns now focus darkness near you, which increases your darkness damage by %d%% and does %0.2f darkness damage to anyone who hits you in melee.
 		These values scale with your Spellpower.]]):format(t.getDarkDamageIncrease(self, t), damDesc(self, DamageType.DARKNESS, t.getDamageOnMeleeHit(self, t)))
@@ -345,7 +345,7 @@ newTalent{
 	getBonusInfravision = function(self, t) return math.floor(self:combatTalentScale(t, 0.75, 3.5, 0.75)) end,
 	getSpeed = function(self, t) return self:combatTalentSpellDamage(t, 300, 600) end,
 	shieldDur = function(self, t) return self:combatTalentSpellDamage(t, 5, 10) end,
-	shieldPower = function(self, t) return self:combatTalentSpellDamage(t, 50, 400) end,
+	shieldPower = function(self, t) return self:combatTalentSpellDamage(t, 50, 500) end,
 	invisDur = function(self, t) return self:combatTalentSpellDamage(t, 5, 10) end,
 	invisPower = function(self, t) return self:combatTalentSpellDamage(t, 20, 30) end,
 	info = function(self, t)
@@ -363,8 +363,8 @@ newTalent{
 	type = {"celestial/hymns", 7},
 	require = divi_req4,
 	points = 5,
-	mode = "passive",
-	negative = 1, -- This is just to ensure they have a negative pool
+	mode = "sustained",
+	sustain_negative = 10,
 	range = 5,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 7, 80) end,
 	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
@@ -405,6 +405,12 @@ newTalent{
 			game:playSoundNear(self, "talents/spell_generic")
 			self:incNegative(-drain)
 		end
+	end,
+	activate = function(self, t)
+		return {}
+	end,
+	deactivate = function(self, t, p)
+		return true
 	end,
 	info = function(self, t)
 		return ([[Your passion for singing the praises of the Moons reaches its zenith, increasing your negative energy regeneration by %0.2f per turn.

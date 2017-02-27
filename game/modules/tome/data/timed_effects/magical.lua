@@ -1212,7 +1212,7 @@ newEffect{
 newEffect{
 	name = "PROVIDENCE", image = "talents/providence.png",
 	desc = "Providence",
-	long_desc = function(self, eff) return ("The target is under protection and its life regeneration is boosted by %d."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is under protection, removing one negative effect per turn."):format() end,
 	type = "magical",
 	subtype = { light=true, shield=true },
 	status = "beneficial",
@@ -1235,7 +1235,6 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("life_regen", eff.power)
 		if core.shader.active(4) then
 			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
 			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
@@ -1244,7 +1243,6 @@ newEffect{
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
-		self:removeTemporaryValue("life_regen", eff.tmpid)
 	end,
 }
 

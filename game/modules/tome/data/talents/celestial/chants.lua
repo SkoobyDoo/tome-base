@@ -32,7 +32,7 @@ newTalent{
 	tactical = { BUFF = 2 },
 	range = 0,
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 60) end,
-	getLifePct = function(self, t) return self:combatTalentLimit(t, 1, 0.10, 0.25) end, -- Limit < 100% bonus
+	getLifePct = function(self, t) return self:combatTalentLimit(t, 1, 0.10, 0.20) end,
 	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
 		local power = t.getResists(self, t)
@@ -93,7 +93,7 @@ newTalent{
 	dont_provide_pool = true,
 	tactical = { BUFF = 2 },
 	range = 0,
-	getPhysicalResistance = function(self, t) return math.floor(self:combatTalentSpellDamage(t, 10, 30)) end,
+	getPhysicalResistance = function(self, t) return math.floor(self:combatTalentSpellDamage(t, 8, 25)) end,
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 60) end,
 	sustain_slots = 'celestial_chant',
 	activate = function(self, t)
@@ -103,7 +103,7 @@ newTalent{
 		self:talentTemporaryValue(ret, "resists", {[DamageType.PHYSICAL] = t.getPhysicalResistance(self, t)})
 		self:talentTemporaryValue(ret, "combat_physresist", power)
 		self:talentTemporaryValue(ret, "combat_armor", t.getPhysicalResistance(self, t))
-		self:talentTemporaryValue(ret, "combat_armor_hardiness", 10)
+		self:talentTemporaryValue(ret, "combat_armor_hardiness", 15)
 		ret.particle = self:addParticles(Particles.new("golden_shield", 1))
 		
 		if self:knowTalent(self.T_CHANT_ILLUMINATE) then
@@ -135,7 +135,7 @@ newTalent{
 	info = function(self, t)
 		local physicalresistance = t.getPhysicalResistance(self, t)
 		local saves = t.getResists(self, t)
-		return ([[You chant the glory of the Sun, granting you %d%% physical damage resistance, %d physical save, %d armour and +10%% armour hardiness.
+		return ([[You chant the glory of the Sun, granting you %d%% physical damage resistance, %d physical save, %d armour and +15%% armour hardiness.
 		You may only have one Chant active at once.
 		The effects will increase with your Spellpower.]]):
 		format(physicalresistance, saves, physicalresistance)
@@ -368,7 +368,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Your skill at Chanting now extends the cloak of light, increasing your light radius by %d.
-		Also, when you start a new Chant, you will be cured of all cross-teir effects and cured of up to %d debuffs.
+		Also, when you start a new Chant, you will be cured of all cross-tier effects and cured of up to %d debuffs.
 		Chant of Fortitude cures mental effects.
 		Chant of Fortress cures physical effects.
 		Chant of Resistance cures magical effects.]]):format(t.getBonusLight(self, t), t.getDebuffCures(self, t))
@@ -381,7 +381,7 @@ newTalent{
 	require = divi_req4,
 	points = 5,
 	mode = "passive",
-	getLightDamageIncrease = function(self, t) return self:combatTalentSpellDamage(t, 20, 50) end,
+	getLightDamageIncrease = function(self, t) return self:combatTalentSpellDamage(t, 10, 30) end,
 	getBonusRegen = function(self, t) return self:combatTalentScale(t, 0.7, 4.0, 0.75) / 10 end,
 	callbackOnRest = function(self, t)
 		if not self:knowTalent(self.T_POSITIVE_POOL) then return false end
