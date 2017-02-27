@@ -23,19 +23,20 @@ newTalent{
 	type = {"technique/battle-tactics", 1},
 	require = techs_req_high1,
 	points = 5,
-	cooldown = 20,
+	cooldown = 15,
 	stamina = 25,
 	tactical = { ATTACK = 3 },
-	getdur = function(self,t) return math.floor(self:combatTalentLimit(t, 20, 5.3, 10.5)) end, -- Limit to <20
+	no_energy = true,
+	getdur = function(self,t) return math.floor(self:combatTalentLimit(t, 10, 3, 8)) end, -- Limit to <10
 	getchance = function(self,t) return self:combatLimit(self:combatTalentStatDamage(t, "dex", 10, 90),100, 6.8, 6.8, 61, 61) end, -- Limit < 100%
 	action = function(self, t)
 		self:setEffect(self.EFF_GREATER_WEAPON_FOCUS, t.getdur(self,t), {chance=t.getchance(self, t)})
 		return true
 	end,
 	info = function(self, t)
-		return ([[Concentrate on your blows; each strike has a %d%% chance to deal another, similar, blow for %d turns.
-		This works for all blows, even ones from other talents and from shield bashes.
-		The chance increases with your Dexterity.]]):format(t.getchance(self, t), t.getdur(self, t))
+		return ([[Concentrate on your blows; for %d turns, each strike you land on your target in melee range has a %d%% chance to trigger another, similar strike.
+		This works for all blows, even those from other talents and from shield bashes, but you can gain no more than one extra blow with each weapon during a turn.
+		The chance increases with your Dexterity.]]):format(t.getdur(self, t), t.getchance(self, t))
 	end,
 }
 
@@ -58,7 +59,7 @@ newTalent{
 	require = techs_req_high3,
 	points = 5,
 	cooldown = 12,
-	stamina = 24,
+	stamina = 14,
 	requires_target = true,
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
@@ -96,37 +97,45 @@ newTalent{
 	end,
 }
 
--- Banned from NPCs because they tend to ignore stamina costs and in general uncapped scaling resistance is dangerous at high talent levels
--- More ideally numbers could be tweaked to make it sane on NPCs, but it would actually be pretty complicated to do
 newTalent{
 	name = "True Grit",
 	type = {"technique/battle-tactics", 4},
 	require = techs_req_high4,
 	points = 5,
 	mode = "sustained",
-	cooldown = 30,
-	sustain_stamina = 70,
-	tactical = { BUFF = 2 },
---	no_npc_use = true,
+	cooldown = 15,
+	sustain_stamina = 40,
+	callbackOnRest = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
+	callbackOnRun = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
+	tactical = { DEFEND = 2 }, -- AI for this could be better
 	--Note: this can result in > 100% resistancs (before cap) at high talent levels to keep up with opposing resistance lowering talents
 	resistCoeff = function(self, t) return self:combatTalentScale(t, 25, 45) end,
 	getCapApproach = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.5) end,
+	getResist = function(self, t) return (1 - self.life / self.max_life)*t.resistCoeff(self, t) end,
+	getResistCap = function(self, t) return util.bound((100-(self.resists_cap.all or 100))*t.getCapApproach(self, t), 0, 100) end,
 	callbackOnActBase = function(self, t) --called by mod.class.Actor:actBase
 		local p = self:isTalentActive(t.id)
 		if p.resid then self:removeTemporaryValue("resists", p.resid) end
 		if p.cresid then self:removeTemporaryValue("resists_cap", p.cresid) end
+		if p.stamina then self:removeTemporaryValue("stamina_regen", p.stamina) end
+		if p.turns then p.turns = p.turns + 1 end
+		p.stamina = self:addTemporaryValue("stamina_regen", t.getStaminaDrain(self, t) + -0.3 * p.turns)
+
 		--This makes it impossible to get 100% resist all cap from this talent, and most npc's will get no cap increase
-		local resistbonus = (1 - self.life / self.max_life)*t.resistCoeff(self, t)
+		local resistbonus = t.getResist(self, t)
 		p.resid = self:addTemporaryValue("resists", {all=resistbonus})
-		local capbonus = util.bound((100-(self.resists_cap.all or 100))*t.getCapApproach(self, t), 0, 100)
+		local capbonus = t.getResistCap(self, t)
 		p.cresid = self:addTemporaryValue("resists_cap", {all=capbonus})
 	end,
 	getStaminaDrain = function(self, t)
-		return self:combatTalentLimit(t, 0, -14, -6 ) -- Limit <0 (no stamina regen)
+		return -1
 	end,
 	activate = function(self, t)
 		return {
-			stamina = self:addTemporaryValue("stamina_regen", t.getStaminaDrain(self, t))
+			turns = 0,
+			stamina = self:addTemporaryValue("stamina_regen", t.getStaminaDrain(self, t)),
+			resid = self:addTemporaryValue("resists", {all = t.getResist(self, t)}),
+			cresid = self:addTemporaryValue("resists_cap", {all = t.getResistCap(self, t)})
 		}
 	end,
 	deactivate = function(self, t, p)
@@ -142,7 +151,7 @@ newTalent{
 		While wounded, you gain all damage resistance equal to %d%% of your missing health.
 		(So if you have lost 70%% of your life, you gain %d%% all resistance.)
 		In addition, your all damage resistance cap increases %0.1f%% closer to 100%%.
-		This consumes stamina rapidly (%d stamina/turn).
+		This consumes stamina rapidly the longer it is sustained (%d stamina increasing by -0.3/turn).
 		The effects are refreshed at the start of each turn.]]):
 		format(resistC, resistC*0.7, t.getCapApproach(self, t)*100, drain)
 	end,
