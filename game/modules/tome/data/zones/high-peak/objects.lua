@@ -24,7 +24,7 @@ local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
 newEntity{ base = "BASE_LORE",
-	define_as = "ARGONIEL_DIAMOND", image = "object/artifact/atamathons_lost_ruby_eye.png",
+	define_as = "ARGONIEL_DIAMOND", image = "object/artifact/bloodsoaked_resonating_diamond.png",
 	name = "bloodsoaked diamond", lore="argoniel-1",
 	desc = [[A strangely wet diamond.]],
 	rarity = false,
@@ -32,7 +32,7 @@ newEntity{ base = "BASE_LORE",
 }
 	
 newEntity{ base = "BASE_LORE",
-	define_as = "ARGONIEL_ATHAME", image = "object/artifact/blood_runed_athame.png",
+	define_as = "ARGONIEL_ATHAME", image = "object/artifact/bloodsoaked_runed_athame.png",
 	name = "bloodsoaked athame", lore="argoniel-2",
 	desc = [[A strangely wet athame.]],
 	rarity = false,
@@ -41,7 +41,7 @@ newEntity{ base = "BASE_LORE",
 
 newEntity{ base = "BASE_LORE",
 	define_as = "ELANDAR_JOURNAL1",
-	name = "journal", lore="elandar-1",
+	name = "journal", lore="elandar-1", image = "object/artifact/elandars_journal.png",
 	desc = [[A magically-preserved journal.]],
 	rarity = false,
 	encumberance = 0,
@@ -49,7 +49,7 @@ newEntity{ base = "BASE_LORE",
 
 newEntity{ base = "BASE_LORE",
 	define_as = "ELANDAR_JOURNAL2",
-	name = "journal", lore="elandar-2",
+	name = "journal", lore="elandar-2", image = "object/artifact/elandars_journal.png",
 	desc = [[A magically-preserved journal.]],
 	rarity = false,
 	encumberance = 0,
