@@ -131,10 +131,9 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local regen = t.getRegeneration(self, t)
 		local duration = t.getDuration(self, t)
 		return ([[Places you under the protection of a ray of sunlight. For %d turns, the light removes a single negative effect from you every turn.]]):
-		format(duration, regen)
+		format(duration)
 	end,
 }
 
