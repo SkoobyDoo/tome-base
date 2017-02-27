@@ -660,7 +660,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			self.__attacktargetwith_recursing_procs_reduce = weapon.attack_recurse_procs_reduce
 		end
 
-		if self.__attacktargetwith_recursing > 0 then
+		if self.__attacktargetwith_recursing > 0 and not self.turn_procs._no_melee_recursion then
 			local _, newhitted, newdam = self:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			hitted = newhitted or hitted
 			dam = math.max(dam, newdam)
@@ -1023,15 +1023,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if not hitted and not target.dead and target:knowTalent(target.T_DEFENSIVE_THROW) and not target:attr("stunned") and not target:attr("dazed") and not target:attr("stoned") and target:isNear(self.x,self.y,1) then
 		local t = target:getTalentFromId(target.T_DEFENSIVE_THROW)
 		t.do_throw(target, self, t)
-	end
-
-	-- Greater Weapon Focus
-	local gwf = self:hasEffect(self.EFF_GREATER_WEAPON_FOCUS)
-	if hitted and not target.dead and weapon and gwf and not gwf.inside and rng.percent(gwf.chance) then
-		gwf.inside = true
-		game.logSeen(self, "%s focuses and gains an extra blow!", self.name:capitalize())
-		self:attackTargetWith(target, weapon, damtype, mult)
-		gwf.inside = nil
 	end
 
 	-- Zero gravity

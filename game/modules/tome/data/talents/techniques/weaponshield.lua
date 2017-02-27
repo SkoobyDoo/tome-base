@@ -98,8 +98,8 @@ newTalent{
 	require = techs_req3,
 	points = 5,
 	random_ego = "attack",
-	cooldown = 15,
-	stamina = 15,
+	cooldown = 10,
+	stamina = 12,
 	requires_target = true,
 	is_special_melee = true,
 	range = 1,
@@ -311,15 +311,19 @@ newTalent{
 	require = techs_req4,
 	mode = "sustained",
 	points = 5,
-	cooldown = 6,
+	cooldown = 8,
 	sustain_stamina = 30,
 	tactical = { DEFEND = 3 },
+	callbackOnRest = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
+	callbackOnRun = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
 	no_npc_use = true,
+	no_energy = true,
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a weapon and a shield to use this talent.") end return false end return true end,
 	lifebonus = function(self,t, base_life) -- Scale bonus with max life
 		return self:combatTalentStatDamage(t, "con", 30, 500) + (base_life or self.max_life) * self:combatTalentLimit(t, 1, 0.02, 0.10) -- Limit <100% of base life
 	end,
-	getDefense = function(self, t) return self:combatScale(self:getDex(4, true) * self:getTalentLevel(t), 5, 0, 25, 20) end,
+	getDefense = function(self, t) return self:combatTalentStatDamage(t, "dex", 6, 20) end,
+	getArmor = function(self, t) return self:combatTalentStatDamage(t, "dex", 6, 20) end,
 	activate = function(self, t)
 		local shield = self:hasShield()
 		if not shield then
@@ -331,17 +335,16 @@ newTalent{
 			base_life = self.max_life,
 			max_life = self:addTemporaryValue("max_life", hp),
 			def = self:addTemporaryValue("combat_def", t.getDefense(self, t)),
+			armor = self:addTemporaryValue("combat_armor", t.getArmor(self, t)),
 			nomove = self:addTemporaryValue("never_move", 1),
 			dieat = self:addTemporaryValue("die_at", -hp),
 			extra_life = self:addTemporaryValue("life", hp), -- Avoid healing effects
 		}
---		if not self:attr("talent_reuse") then
---			self:heal(hp)
---		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_def", p.def)
+		self:removeTemporaryValue("combat_armor", p.armor)
 		self:removeTemporaryValue("max_life", p.max_life)
 		self:removeTemporaryValue("never_move", p.nomove)
 		self:removeTemporaryValue("die_at", p.dieat)
@@ -355,9 +358,9 @@ newTalent{
 		else
 			hp = t.lifebonus(self,t)
 		end
-		return ([[You brace yourself for the final stand, increasing Defense by %d, maximum and current life by %d, but making you unable to move.
-		Your stand lets you concentrate on every blow, allowing you to avoid death from normally fatal wounds. You can only die when reaching -%d life; however below 0 life you can not see how much you have left.
-		The increase in Defense is based on your Dexterity, and the increase in life is based on your Constitution and normal maximum life.]]):
+		return ([[You brace yourself for the final stand, increasing Defense and Armor by %d, maximum and current life by %d, but making you unable to move.
+		Your stand lets you concentrate on every blow, allowing you to avoid death from normally fatal wounds. You can only die when reaching -%d life.
+		The increase in Defense and Armor is based on your Dexterity, and the increase in life is based on your Constitution and normal maximum life.]]):
 		format(t.getDefense(self, t), hp, hp)
 	end,
 }

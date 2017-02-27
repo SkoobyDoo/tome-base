@@ -1302,12 +1302,28 @@ newEffect{
 newEffect{
 	name = "GREATER_WEAPON_FOCUS", image = "talents/greater_weapon_focus.png",
 	desc = "Greater Weapon Focus",
-	long_desc = function(self, eff) return ("%d%% chance to score a secondary blow."):format(eff.chance) end,
+	long_desc = function(self, eff) return ("Each melee blow landed has a %d%% chance to trigger an additional melee blow (up to once per turn for each weapon)."):format(eff.chance) end,
 	type = "physical",
 	subtype = { tactic=true },
 	status = "beneficial",
-	parameters = { chance=50 },
+	parameters = { chance=25 },
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam, hd)
+	-- trigger up to once per turn for each weapon
+	-- checks self.turn_procs._no_melee_recursion to limit possible compounded recursion or other needed special cases
+		if hitted and weapon and not (self.turn_procs._gwf_active or self.turn_procs._no_melee_recursion or target.dead) then
+			local gwf = self.turn_procs._gwf or {}
+			self.turn_procs._gwf = gwf
+			if not gwf[weapon] and rng.percent(eff.chance) then
+				gwf[weapon] = true
+				print("[ATTACK]", eff.effect_id, "callbackOnMeleeAttack triggered with weapon", weapon)
+				self.turn_procs._gwf_active = true -- safety net to prevent recursive recursion
+				self:attackTargetWith(target, weapon, damtype, mult)
+				self.turn_procs._gwf_active = nil
+			end
+		end
+	end,
 	activate = function(self, eff)
+		eff.src = self
 	end,
 	deactivate = function(self, eff)
 	end,
