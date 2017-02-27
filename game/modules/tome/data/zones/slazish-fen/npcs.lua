@@ -93,7 +93,7 @@ newEntity{ base = "BASE_NPC_NAGA", define_as = "NAGA_TIDECALLER",
 }
 
 newEntity{ base = "BASE_NPC_NAGA",
-	name = "naga nereid", color=colors.YELLOW,
+	name = "naga nereid", color=colors.YELLOW, resolvers.nice_tile{tall=1},
 	desc = [[Green eyes stare out from behind strands of long, golden hair, which falls down in waves over smooth, pale skin. Your eyes are drawn to the bare flesh, but as they look further they see dark scales stretching out into a long serpent's tail. You look up as she moves, her hair parting to reveal a slim and beautiful face with high cheekbones and full lips. Yet for all the allure of this wondrous creature the terror of the serpentine tail sends shivers down your spine.]],
 	level_range = {2, nil}, exp_worth = 3, female = true,
 	rarity = 1,
