@@ -50,25 +50,19 @@ vec4 GetColor(const int layerIndex, vec2 texPos)
 
 vec2 GetDistortion(vec2 texPos, int layerIndex, int distortionType, float deformRate)
 {
-	switch(distortionType)
-	{
-		case 0:
-		{
-			float alpha = 0.2 * sin(tick / time_factor * (layerIndex * 0.5 + 1.0) + layerIndex * 100.0) * deformRate;
-			mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
+	if (distortionType == 0) {
+		float alpha = 0.2 * sin(tick / time_factor * (layerIndex * 0.5 + 1.0) + layerIndex * 100.0) * deformRate;
+		mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
 
-			return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
-		}break;
-		case 1:
-		{
-			float phase = length(texPos - vec2(0.5));
-			float alpha = 0.2 * sin(-tick / time_factor * (layerIndex * 0.5 + 1.0) + phase * 30.0 + layerIndex * 100.0) * deformRate;
-			mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
+		return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
+	} else if (distortionType == 1) {
+		float phase = length(texPos - vec2(0.5));
+		float alpha = 0.2 * sin(-tick / time_factor * (layerIndex * 0.5 + 1.0) + phase * 30.0 + layerIndex * 100.0) * deformRate;
+		mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
 
-			return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
+		return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
 
-			return clamp(texPos, 0.01, 0.99);
-		}break;
+		return clamp(texPos, 0.01, 0.99);
 	}
 	return clamp(texPos, 0.01, 0.99);
 }
