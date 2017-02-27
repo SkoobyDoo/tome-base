@@ -433,19 +433,6 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 			end
 		end
 
-		-- Chant of Fortress, reduces damage from attackers over range 2
-		if target.isTalentActive and target:isTalentActive(target.T_CHANT_OF_FORTRESS) and target:knowTalent(target.T_CHANT_OF_FORTRESS) then
-			if src and src.x and src.y then
-				-- assume instantaneous projection and check range to source
-				local t = target:getTalentFromId(target.T_CHANT_OF_FORTRESS)
-				if core.fov.distance(target.x, target.y, src.x, src.y) > 2 then
-					t = target:getTalentFromId(target.T_CHANT_OF_FORTRESS)
-					dam = dam * (100 + t.getDamageChange(target, t)) / 100
-					print("[PROJECTOR] Chant of Fortress (source) dam", dam)
-				end
-			end
-		end
-
 		-- Psychic Projection
 		if src.attr and src:attr("is_psychic_projection") and not game.zone.is_dream_scape then
 			if (target.subtype and target.subtype == "ghost") or mind_linked then
