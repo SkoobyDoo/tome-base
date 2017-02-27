@@ -390,7 +390,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Your passion for singing the praises of the Sun reaches its zenith.
-		Your Chanting now increases your light and fire damage by %d%% and increases your positive energy regeneration by %0.1f per turn.
+		Your Chanting now increases your light and fire damage by %d%% and increases your positive energy regeneration by %0.2f per turn.
 		These values scale with your Spellpower.]]):format(t.getLightDamageIncrease(self, t), t.getBonusRegen(self, t))
 	end,
 }
