@@ -3891,6 +3891,10 @@ newEffect{
 		self.hotkey = nil -- Prevent assigning hotkey, we just did
 		self:learnTalent(self.T_SNIPE_FIRE, true, 1, {no_unlearn=true})
 		self.hotkey = ohk
+
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={size_factor=1.5, img="snipe_tentacles2"}, shader={type="tentacles", appearTime=0.6, time_factor=1600, noup=0.0}})
+		end
 	end,
 	deactivate = function(self, eff)
 		if self.hotkey and self.isHotkeyBound then
