@@ -86,7 +86,7 @@ newBirthDescriptor{
 	talents = {
 		[ActorTalents.T_SUN_BEAM] = 1,
 		[ActorTalents.T_WEAPON_OF_LIGHT] = 1,
-		[ActorTalents.T_CHANT_OF_FORTITUDE] = 1,
+		[ActorTalents.T_CHANT_ACOLYTE] = 1,
 		[ActorTalents.T_ARMOUR_TRAINING] = 2,
 	},
 	copy = {
@@ -140,7 +140,7 @@ newBirthDescriptor{
 	talents = {
 		[ActorTalents.T_SEARING_LIGHT] = 1,
 		[ActorTalents.T_MOONLIGHT_RAY] = 1,
-		[ActorTalents.T_HYMN_OF_SHADOWS] = 1,
+		[ActorTalents.T_HYMN_ACOLYTE] = 1,
 		[ActorTalents.T_TWILIGHT] = 1,
 	},
 	copy = {
