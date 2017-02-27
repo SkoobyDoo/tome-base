@@ -330,7 +330,7 @@ newTalent{
 	info = function(self, t)
 		local dam = t.getDamage(self, t)
 		local slot = "not prepared"
-		for slot_id, tool_id in pairs(self.artifice_tools) do
+		for slot_id, tool_id in pairs(self.artifice_tools or {}) do
 			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
 		return ([[You conceal spring loaded blades within your equipment. On scoring a critical strike against an adjacent target, you follow up with your blades for %d%% damage (as an unarmed attack).
@@ -472,7 +472,7 @@ newTalent{
 	local sta = t.getStam(self, t)
 	local cure = t.getCure(self,t)
 	local slot = "not prepared"
-	for slot_id, tool_id in pairs(self.artifice_tools) do
+	for slot_id, tool_id in pairs(self.artifice_tools or {}) do
 		if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 	end
 	return ([[Imbibe a potent mixture of energizing and restorative substances, restoring %d life, %d stamina and curing %d detrimental physical effects.  The restorative effects improve with your Cunning.
@@ -574,7 +574,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local slot = "not prepared"
-		for slot_id, tool_id in pairs(self.artifice_tools) do
+		for slot_id, tool_id in pairs(self.artifice_tools or {}) do
 			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
 		return ([[Throw a vial of volatile liquid that explodes in a radius %d cloud of smoke lasting %d turns.  The smoke blocks line of sight, and enemies within will have their vision range reduced by %d.
@@ -652,7 +652,7 @@ newTalent{
 		local dam = t.getDamage(self,t)
 		local power = t.getSleepPower(self,t)
 		local slot = "not prepared"
-		for slot_id, tool_id in pairs(self.artifice_tools) do
+		for slot_id, tool_id in pairs(self.artifice_tools or {}) do
 			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
 		return ([[Fire a poisoned dart from a silent, concealed launcher on your person that deals %0.2f physical damage and puts the target (living only) to sleep for 4 turns, rendering them unable to act. Every %d points of damage the target takes brings it closer to waking by 1 turn.
@@ -793,7 +793,7 @@ newTalent{
 	info = function(self, t)
 		local range = t.range(self,t)
 		local slot = "not prepared"
-		for slot_id, tool_id in pairs(self.artifice_tools) do
+		for slot_id, tool_id in pairs(self.artifice_tools or {}) do
 			if tool_id == t.id then slot = self:getTalentFromId(slot_id).name break end
 		end
 		return ([[Toss out a grappling hook to a target within range %d.  If this strikes either a wall or a creature that is immovable or larger than you, you will pull yourself towards it, otherwise, you will drag the target towards you.  Creatures struck by the hook will be pinned for 2 turns.
