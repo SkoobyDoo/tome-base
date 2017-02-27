@@ -311,7 +311,7 @@ newTalent{
 	require = techs_req4,
 	mode = "sustained",
 	points = 5,
-	cooldown = 6,
+	cooldown = 8,
 	sustain_stamina = 30,
 	tactical = { DEFEND = 3 },
 	callbackOnRest = function(self, t) self:forceUseTalent(t.id, {ignore_cooldown=true, ignore_energy=true}) end,
@@ -349,7 +349,6 @@ newTalent{
 		self:removeTemporaryValue("never_move", p.nomove)
 		self:removeTemporaryValue("die_at", p.dieat)
 		self:removeTemporaryValue("life", p.extra_life)
-		self:useEnergy(game.energy_to_act)
 		return true
 	end,
 	info = function(self, t)
