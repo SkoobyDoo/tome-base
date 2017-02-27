@@ -325,7 +325,7 @@ newEntity{ base = "BASE_RUNE",
 
 	inscription_kind = "protect",
 	inscription_data = {
-		cooldown = resolvers.rngrange(14, 24),
+		cooldown = resolvers.rngrange(14, 20),
 		dur = resolvers.mbonus_level(5, 3),
 		power = resolvers.mbonus_level(500, 50, function(e, v) return v * 0.06 end),
 		use_stat_mod = 3,
