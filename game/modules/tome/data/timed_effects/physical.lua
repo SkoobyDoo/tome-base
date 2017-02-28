@@ -1387,6 +1387,9 @@ newEffect{
 		if (eff.slow > 0) then
 			self:effectTemporaryValue(eff, "global_speed_add", -eff.slow)
 		end
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=1.5, img="grappled_debuff_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, appearTime=0.3, time_factor=1000, noup=0.0}})
+		end
 	end,
 	on_timeout = function(self, eff)
 		if not self.x or not eff.src or not eff.src.x or core.fov.distance(self.x, self.y, eff.src.x, eff.src.y) > 1 or eff.src.dead or not game.level:hasEntity(eff.src) then
@@ -3814,6 +3817,7 @@ newEffect{
 	on_lose = function(self, err) return "#Target#'s armour is more intact.", "-Punctured Armour" end,
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "resists", {all=-eff.power})
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="pierced_armour_debuff_aura", speed=0, radius=0}})
 	end,
 }
 

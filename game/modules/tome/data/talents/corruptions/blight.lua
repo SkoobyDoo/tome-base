@@ -31,6 +31,9 @@ newTalent{
 		local ret = {
 			per = self:addTemporaryValue("combat_critical_power", self:combatTalentSpellDamage(t, 20, 60)),
 		}
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then self:talentParticles(ret, {type="circle", args={toback=true, shader=true, oversize=0.7, a=225, appear=8, speed=0, img="dark_ritual_aura", base_rot=0, radius=0, x=h1x, y=h1y}}) end
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
