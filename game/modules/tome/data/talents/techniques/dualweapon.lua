@@ -345,15 +345,11 @@ newTalent{
 		-- Attack
 		if not core.fov.distance(self.x, self.y, x, y) == 1 then return nil end
 		
-		local critstore = self.combat_critical_power or 0
-		self.combat_critical_power = nil
-		self.combat_critical_power = critstore + t.getCrit(self,t)
-			
+		local cpow = t.getCrit(self,t)
+		self:attr("combat_critical_power", cpow)			
 		self:attackTarget(target, nil, t.getDamage(self,t), true)
+		self:attr("combat_critical_power", -cpow)			
 		
-		self.combat_critical_power = nil
-		self.combat_critical_power = critstore
-
 		return true
 	end,
 	info = function(self, t)
