@@ -934,6 +934,7 @@ newEffect{
 	parameters = { power=10 },
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("inc_damage", {[DamageType.BLIGHT] = eff.power, [DamageType.ACID] = eff.power})
+		self:effectParticles(eff, {type="perfect_strike", args={radius=0.5, time_factor=6000, img="spinningwinds_blood_fury_triggered"}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("inc_damage", eff.tmpid)
@@ -2078,6 +2079,7 @@ newEffect{
 	parameters = {},
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("bloodcasting", 1)
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="bloodcasting_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("bloodcasting", eff.tmpid)

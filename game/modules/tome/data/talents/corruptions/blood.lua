@@ -128,6 +128,10 @@ newTalent{
 		local ret = {
 			per = self:addTemporaryValue("combat_spellcrit", self:combatTalentSpellDamage(t, 10, 14)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="blood_fury_sustain_shieldwall"}, shader={type="rotatingshield", noup=2.0, appearTime=0.4}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="blood_fury_sustain_shieldwall"}, shader={type="rotatingshield", noup=1.0, appearTime=0.4}})
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
