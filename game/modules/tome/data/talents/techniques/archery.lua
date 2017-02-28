@@ -548,6 +548,11 @@ newTalent{
 	getDamage = function(self, t)
 		return self:combatTalentWeaponDamage(t, 0.6, 1.4)
 	end,
+	archery_onhit = function(self, t, target, x, y, tg)
+		if tg.primarytarget == target then
+			game.level.map:particleEmitter(x, y, tg.primaryeffect, "volley", {radius=tg.primaryeffect})
+		end
+	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
@@ -561,7 +566,7 @@ newTalent{
 		
 		if not targets then return nil end
 		local dam = t.getDamage(self,t)
-		self:archeryShoot(targets, t, {type = "hit", speed = 200}, {mult=dam})
+		self:archeryShoot(targets, t, {type = "hit", speed = 200, primaryeffect=tg.radius, primarytarget=target}, {mult=dam})
 		
 		--acquire secondary targets
 		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 

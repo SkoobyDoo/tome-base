@@ -233,6 +233,11 @@ newTalent{
 			combo = true
 		end
 
+		if hit1 or hit2 or hit3 then
+			local a = util.dirToAngle(util.getDir(x, self.y, self.x, y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, y=0.33, base_rot=90 + a, a=250, appear=6, limit_life=6, speed=0, img="spinning_backhand_on_hit", radius=0})
+		end
+
 		if combo then
 			if hit1 then
 				self:buildCombo()
