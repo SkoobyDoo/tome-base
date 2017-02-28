@@ -163,7 +163,7 @@ newTalent{
 		local list = {}
 		for tid, cd in pairs(self.talents_cd) do 
 			local tt = self:getTalentFromId(tid)
-			if tt.mode ~= "passive" and not tt.uber then list[#list+1] = tid end
+			if tt.mode ~= "passive" and not tt.fixed_cooldown and not tt.uber then list[#list+1] = tid end
 		end
 		while #list > 0 and nb > 0 do
 			self.talents_cd[rng.tableRemove(list)] = nil
