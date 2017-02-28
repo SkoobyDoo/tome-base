@@ -70,12 +70,27 @@ newTalent{
 			end
 		end
 
+		local dispeltypes = {}
 		local nb = t.getStrikes(self, t)
 		talents = table.keys(talents)
 		while #talents > 0 and nb > 0 do
 			local tid = rng.tableRemove(talents)
 			target:forceUseTalent(tid, {ignore_energy=true})
 			nb = nb - 1
+			local tt = self:getTalentFromId(tid)
+			if tt.is_spell then dispeltypes.spell = true
+			elseif tt.is_mind then dispeltypes.mind = true
+			else dispeltypes.physical = true end
+		end
+
+		if next(dispeltypes) then
+			local img = "combination_kicks_1"
+			if dispeltypes.spell and not dispeltypes.mind then img = "combination_kicks_2"
+			elseif not dispeltypes.spell and dispeltypes.mind then img = "combination_kicks_2"
+			elseif dispeltypes.spell and dispeltypes.mind then img = "combination_kicks_3"
+			end
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=45 + a, a=250, appear=6, limit_life=6, speed=0, img=img, radius=-0.5})
 		end
 
 		self:clearCombo()

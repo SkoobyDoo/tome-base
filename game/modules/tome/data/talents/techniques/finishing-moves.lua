@@ -52,6 +52,9 @@ newTalent{
 			else
 				game.logSeen(target, "%s resists the stun!", target.name:capitalize())
 			end
+
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=90 + a, a=250, appear=6, limit_life=4, speed=0, img="uppercut_on_hit", radius=-0.5})
 		end
 
 		self:clearCombo()
@@ -183,6 +186,7 @@ newTalent{
 				local hit = self:attackTarget(target, nil, totalDamage, true)
 			end
 		end)
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "butterfly_kick", {radius=tg.radius})
 
 		self:clearCombo()
 		return true
@@ -236,6 +240,9 @@ newTalent{
 			elseif target.life > 0 and target.life < target.max_life * 0.2 then
 				game.logSeen(target, "%s resists the death blow!", target.name:capitalize())
 			end
+
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=45 + a, a=250, appear=6, limit_life=4, speed=0, img="heymaker_on_hit", radius=-0.3})
 		end
 
 		-- restore stamina

@@ -300,6 +300,9 @@ newTalent{
 		if hit1 then
 			self:buildCombo()
 			self:buildCombo()
+
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=45 + a, a=250, appear=6, limit_life=4, speed=0, img="axe_kick_on_hit", radius=-0.3})
 		end
 		return true
 

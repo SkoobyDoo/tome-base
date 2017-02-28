@@ -1531,6 +1531,7 @@ newEffect{
 		eff.mental = self:addTemporaryValue("combat_mentalresist", -eff.power)
 		eff.spell = self:addTemporaryValue("combat_spellresist", -eff.power)
 		eff.physical = self:addTemporaryValue("combat_physresist", -eff.power)
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="set_up_debuff_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_mentalresist", eff.mental)
@@ -2298,6 +2299,9 @@ newEffect{
 	parameters = {block = 0},
 	activate = function(self, eff)
 		self.brawler_block = eff.block
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=2, img="open_palm_block_tentacles2"}, shader={type="tentacles", backgroundLayersCount=-4, appearTime=0.3, time_factor=500, noup=0.0}})
+		end
 	end,
 	deactivate = function(self, eff)
 		self.brawler_block = nil
@@ -3797,6 +3801,9 @@ newEffect{
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("global_speed_add", -eff.slow)
 		eff.resid = self:addTemporaryValue("resists", {[DamageType.FIRE] = -eff.resist})
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=2, img="sticky_pitch_debuff_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, appearTime=0.3, time_factor=500, noup=0.0}})
+		end
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("global_speed_add", eff.tmpid)
