@@ -2995,10 +2995,12 @@ newEffect{
 	parameters = { power=10 },
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "die_at", -eff.power)
-		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
+		self:effectParticles(eff, {type="darkness_power"})
+		-- if core.shader.active() then
+		-- 	self:effectParticles(eff, {type="circle", args={shader=true, oversize=1.5, a=225, appear=8, speed=0, img="shadow_decoy_aura", base_rot=0, radius=0}})
+		-- end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
 	end,
 }
 

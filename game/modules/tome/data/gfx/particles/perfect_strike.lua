@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 local rot = rng.range(0,359)
-local img = "spinningwinds_perfect_strike"
+local img = img or "spinningwinds_perfect_strike"
 local radius = radius or 1
 
 use_shader = {type="spinningwinds", ellipsoidalFactor={1,1}, time_factor=4000, noup=0.0, verticalIntensityAdjust=-3.0}
