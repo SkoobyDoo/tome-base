@@ -189,7 +189,10 @@ newTalent{
 			DamageType.BLIGHT_POISON, {dam=dam, power=power, heal_factor=heal_factor, fail=fail, penetration=t.getPoisonPenetration(self,t), poison=t.getPoison(self,t), apply_power=actor:combatSpellpower()},
 			radius,
 			5, nil,
-			MapEffect.new{color_br=20, color_bg=220, color_bb=70, effect_shader="shader_images/poison_effect.png"},
+			MapEffect.new{
+				color_br=20, color_bg=220, color_bb=70, effect_shader="shader_images/poison_effect.png",
+				overlay_particle = { zdepth=6, only_one=true, type="perfect_strike", args={img="spinningwinds_poison_storm", radius=radius}},
+			},
 			function(e)
 				e.x = e.src.x
 				e.y = e.src.y
