@@ -2223,6 +2223,7 @@ newEffect{
 	activate = function(self, eff)
 		eff.power = self.life
 		eff.tmpid = self:addTemporaryValue("blood_lock", eff.power)
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="blood_lock_debuff_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("blood_lock", eff.tmpid)
