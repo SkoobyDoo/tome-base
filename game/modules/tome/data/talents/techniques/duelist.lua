@@ -55,7 +55,7 @@ newTalent{
 		if weapon then
 			dam = self:combatDamage(weapon.combat) * self:getOffHandMult(weapon.combat)
 		end
-		return self:combatScale(dam, 10, 30, 50, 250)
+		return self:combatScale(dam, 5, 10, 50, 250)
 	end,
 	getoffmult = function(self,t) return self:combatTalentLimit(t, 1, 0.6, 0.80) end, -- limit <100%
 	callbackOnActBase = function(self, t)
