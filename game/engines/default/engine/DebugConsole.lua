@@ -139,9 +139,8 @@ function _M:init()
 
 	self:setupUI(false, false)
 
-	self.renderer:zSort("full")
 	self.textinput = Input.new(nil, "", colors.simple(colors.GREEN), w - 15, self.font_h)
-	self.full_container:add(self.textinput:get())
+	self.full_container:add(core.renderer.renderer():add(self.textinput:get()))
 	self.textinput:translate(0, h - self.textinput.h, 0)
 	self.textinput:onFocusChange(true)
 
@@ -187,7 +186,7 @@ function _M:init()
 				end
 				_M.line = _M.commands[_M.com_sel]
 			end
-			self.changed = true
+			self.changed_input = true
 		end,
 		_DOWN = function()
 			_M.com_sel = util.bound(_M.com_sel + 1, 1, #_M.commands)
@@ -200,31 +199,31 @@ function _M:init()
 				_M.line = ""
 				_M.line_pos = 0
 			end
-			self.changed = true
+			self.changed_input = true
 		end,
 		_LEFT = function()
 			_M.line_pos = util.bound(_M.line_pos - 1, 0, #_M.line)
-			self.changed = true
+			self.changed_input = true
 		end,
 		_RIGHT = function()
 			_M.line_pos = util.bound(_M.line_pos + 1, 0, #_M.line)
-			self.changed = true
+			self.changed_input = true
 		end,
 		_HOME = function()
 			_M.line_pos = 0
-			self.changed = true
+			self.changed_input = true
 		end,
 		[{"_a","ctrl"}] = function()
 			_M.line_pos = 0
-			self.changed = true
+			self.changed_input = true
 		end,
 		_END = function()
 			_M.line_pos = #_M.line
-			self.changed = true
+			self.changed_input = true
 		end,
 		[{"_e","ctrl"}] = function()
 			_M.line_pos = #_M.line
-			self.changed = true
+			self.changed_input = true
 		end,
 		_ESCAPE = function()
 			game:unregisterDialog(self)
@@ -234,31 +233,31 @@ function _M:init()
 				_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
 				_M.line_pos = _M.line_pos - 1
 			end
-			self.changed = true
+			self.changed_input = true
 		end,
 		_DELETE = function()
 			_M.line = _M.line:sub(1, _M.line_pos) .. _M.line:sub(_M.line_pos + 2)
-			self.changed = true
+			self.changed_input = true
 		end,
 		[{"_END", "ctrl"}] = function()
 			_M.line = _M.line:sub(1, _M.line_pos)
-			self.changed = true
+			self.changed_input = true
 		end,
 		[{"_k", "ctrl"}] = function()
 			_M.line = _M.line:sub(1, _M.line_pos)
-			self.changed = true
+			self.changed_input = true
 		end,
 		__TEXTINPUT = function(c)
 			_M.line = _M.line:sub(1, _M.line_pos) .. c .. _M.line:sub(_M.line_pos + 1)
 			_M.line_pos = util.bound(_M.line_pos + 1, 0, #_M.line)
-			self.changed = true
+			self.changed_input = true
 		end,
 		[{"_v", "ctrl"}] = function(c)
 			local s = core.key.getClipboard()
 			if s then
 				_M.line = _M.line:sub(1, _M.line_pos) .. s .. _M.line:sub(_M.line_pos + 1)
 				_M.line_pos = util.bound(_M.line_pos + #s, 0, #_M.line)
-				self.changed = true
+				self.changed_input = true
 			end
 		end,
 		[{"_c", "ctrl"}] = function(c)
@@ -326,34 +325,38 @@ end
 --- Display function
 -- This is not super efficient as we rerender all text, but meh we don't really care either for a debug console
 function _M:display()
-	if not self.changed then return end
-
-	local line = _M.line
-	if line:match("^=") then line = "return "..line:sub(2) end
-	local f, err = loadstring(line)
-	if not f then
-		self.textinput.text:textColor(unpack(colors.simple1(colors.RED)))
-	else
-		self.textinput.text:textColor(unpack(colors.simple1(colors.GREEN)))
+	if self.changed_input then
+		local line = _M.line
+		if line:match("^=") then line = "return "..line:sub(2) end
+		local f, err = loadstring(line)
+		if not f then
+			self.textinput.text:textColor(unpack(colors.simple1(colors.RED)))
+		else
+			self.textinput.text:textColor(unpack(colors.simple1(colors.GREEN)))
+		end
+		self.textinput:setText(self.line)
+		self.textinput:setPos(self.line_pos+1)
 	end
 
-	self.history_container:clear()
-	self.textinput:setText(self.line)
-	self.textinput:setPos(self.line_pos+1)
+	if self.changed then
+		self.history_container:clear()
 
-	local i = #_M.history - _M.offset
-	local dh = self.h - self.textinput.h - self.font_h
-	while dh > 0 and i > 0 do
-		local text = core.renderer.text(self.font)
-		self:applyShadowOutline(text)
-		text:text(_M.history[i])
-		text:translate(0, dh, 0)
-		self.history_container:add(text)
-		local w, h = text:getStats()
-		dh = dh - h
-		i = i - 1
+		local i = #_M.history - _M.offset
+		local dh = self.h - self.textinput.h - self.font_h
+		while dh > 0 and i > 0 do
+			local text = core.renderer.text(self.font)
+			self:applyShadowOutline(text)
+			text:text(_M.history[i], true)
+			text:translate(0, dh, 0)
+			self.history_container:add(text)
+			local w, h = text:getStats()
+			dh = dh - h
+			i = i - 1
+		end
 	end
+	
 	self.changed = false
+	self.changed_input = false
 end
 
 --- Scroll the zone
