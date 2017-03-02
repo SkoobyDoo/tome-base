@@ -39,7 +39,7 @@ Abdomen.  Broken ribs?  Breathe in--  #FIREBRICK#yes they're broken#LAST#.  Shal
 
 Elandar, leaning over me, can't hug me because of my ribcage.  Says I should be dead.  That he found what he thinks is the fabled Blood of Life, and poured it down my throat and into my wounds.  That I'm healing, but...  if he was wrong, we can't go back to them.  Back to #{italic}#her#{normal}# - not after last time.  I can't let them take me from Elandar, not after all he's done for me, no matter what they might find if they analyze what's left in that bottle.
 
-The pain is fading - little by little, ribs mending minute by minute, I can breathe slightly deeper before #FIREBRICK#hitting#last# that sudden wall of #FIREBRICK#agony#LAST#.  It feels...  healthy.  Powerful, even.  Whatever my love may have found, his gift is definitely capable of nourishing living creatures...  but there are other feelings too.  Feelings of being trapped.  Lost.  Alone.  Homesick for a home I'm already lying in.
+The pain is fading - little by little, ribs mending minute by minute, I can breathe slightly deeper before #FIREBRICK#hitting#LAST# that sudden wall of #FIREBRICK#agony#LAST#.  It feels...  healthy.  Powerful, even.  Whatever my love may have found, his gift is definitely capable of nourishing living creatures...  but there are other feelings too.  Feelings of being trapped.  Lost.  Alone.  Homesick for a home I'm already lying in.
 
 [...]
 
