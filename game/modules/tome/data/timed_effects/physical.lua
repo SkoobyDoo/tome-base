@@ -3703,6 +3703,7 @@ newEffect{
 		self:effectTemporaryValue(eff, "combat_physspeed", eff.power)
 		self:effectTemporaryValue(eff, "infinite_ammo", 1)
 		local h1x, h1y = self:attachementSpot("head", true)
+		h1x, h1y = h1x or 0, h1y or 0
 		self:effectParticles(eff, {type="circle", args={oversize=0.7, x=h1x, y=h1y-0.2, base_rot=0, a=220, shader=true, appear=12, img="true_shot_aura", speed=0, radius=0}})
 	end,
 }
