@@ -242,6 +242,17 @@ function core.renderer.fromTextureTableCut(t, x, y, w, h, py, ph, r, g, b, a, v)
 	return v, w, h
 end
 
+function core.renderer.line(t, x1, y1, x2, y2, width)
+	local dx, dy = x2 - x1, y2 - y1
+	local a = math.atan2(dy, dx)
+	local d = math.sqrt(dx*dx + dy*dy)
+	local d2 = math.ceil(d / 2)
+	local h = width
+	local h2 = math.ceil(width / 2)
+	local v = core.renderer.fromTextureTable(t, 0, -h2, d, h)
+	v:rotate(0, 0, a):translate(x1,y1)
+	return v
+end
 
 function core.renderer.targetDisplay(target, tid, did)
 	local v = core.renderer.vertexes()
