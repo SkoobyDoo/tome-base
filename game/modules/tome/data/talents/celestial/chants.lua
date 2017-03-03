@@ -194,7 +194,7 @@ newTalent{
 			self:talentTemporaryValue(ret, "stamina_regen", t2.getBonusRegen(self, t2))
 		end
 		
-		if self:knowTalent(self.T_HCHANT_ADEPT) then
+		if self:knowTalent(self.T_CHANT_ADEPT) then
 			local t2 = self:getTalentFromId(self.T_CHANT_ADEPT)
 			self:talentTemporaryValue(ret, "lite", t2.getBonusLight(self, t2))
 			t2.doCure(self, t2, "magical")
