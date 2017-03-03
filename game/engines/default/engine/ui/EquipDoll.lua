@@ -228,7 +228,7 @@ function _M:generateEquipDollFrames()
 	self.uis = uis
 	self.uis_container:clear()
 	for _, ui in ipairs(self.uis) do
-		self.do_container:add(ui.ui.do_container:translate(ui.x, ui.y))
+		self.uis_container:add(ui.ui.do_container:translate(ui.x, ui.y))
 	end
 
 	self:setFocus(1)
