@@ -63,6 +63,13 @@ function rng.mbonus(max, level, max_level)
 	return val
 end
 
+local rngavg = rng.avg
+function rng.avg(min, max, nb)
+	if max > min then return rngavg(min, max, nb)
+	else return rngavg(max, min, nb)
+	end
+end
+
 function rng.table(t)
 	local id = rng.range(1, #t)
 	return t[id], id
