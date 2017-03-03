@@ -69,6 +69,7 @@ newTalent{
 	end,
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
+		if self.turn_procs.resetting_talents then return true end
 		
 		if self:knowTalent(self.T_HYMN_ADEPT) then
 			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
@@ -139,6 +140,7 @@ newTalent{
 	end,
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
+		if self.turn_procs.resetting_talents then return true end
 		
 		if self:knowTalent(self.T_HYMN_ADEPT) then
 			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
@@ -208,7 +210,8 @@ newTalent{
 	end,
 	deactivate = function(self, t, p)
 		self:removeParticles(p.particle)
-		
+		if self.turn_procs.resetting_talents then return true end
+
 		if self:knowTalent(self.T_HYMN_ADEPT) then
 			local t2 = self:getTalentFromId(self.T_HYMN_ADEPT)
 			self:setEffect(self.EFF_DAMAGE_SHIELD, t2.shieldDur(self, t2), {power=t2.shieldPower(self, t2)})
@@ -377,7 +380,8 @@ newTalent{
 	require = divi_req4,
 	points = 5,
 	mode = "sustained",
-	sustain_negative = 10,
+	cooldown = 10,
+	sustain_negative = 5,
 	range = 5,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 7, 80) end,
 	getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
@@ -420,9 +424,23 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
+		game:onTickEnd(function()
+			self.turn_procs.resetting_talents = true
+			if self:isTalentActive(self.T_HYMN_OF_SHADOWS) then self:forceUseTalent(self.T_HYMN_OF_SHADOWS, {ignore_cooldown=true, ignore_energy=true}) self:forceUseTalent(self.T_HYMN_OF_SHADOWS, {ignore_energy=true, ignore_cd=true, no_talent_fail=true}) end
+			if self:isTalentActive(self.T_HYMN_OF_PERSEVERANCE) then self:forceUseTalent(self.T_HYMN_OF_PERSEVERANCE, {ignore_cooldown=true, ignore_energy=true}) self:forceUseTalent(self.T_HYMN_OF_PERSEVERANCE, {ignore_energy=true, ignore_cd=true, no_talent_fail=true}) end
+			if self:isTalentActive(self.T_HYMN_OF_DETECTION) then self:forceUseTalent(self.T_HYMN_OF_DETECTION, {ignore_cooldown=true, ignore_energy=true}) self:forceUseTalent(self.T_HYMN_OF_DETECTION, {ignore_energy=true, ignore_cd=true, no_talent_fail=true}) end
+			self.turn_procs.resetting_talents = nil
+		end)
 		return {}
 	end,
 	deactivate = function(self, t, p)
+		game:onTickEnd(function()
+			self.turn_procs.resetting_talents = true
+			if self:isTalentActive(self.T_HYMN_OF_SHADOWS) then self:forceUseTalent(self.T_HYMN_OF_SHADOWS, {ignore_cooldown=true, ignore_energy=true}) self:forceUseTalent(self.T_HYMN_OF_SHADOWS, {ignore_energy=true, ignore_cd=true, no_talent_fail=true}) end
+			if self:isTalentActive(self.T_HYMN_OF_PERSEVERANCE) then self:forceUseTalent(self.T_HYMN_OF_PERSEVERANCE, {ignore_cooldown=true, ignore_energy=true}) self:forceUseTalent(self.T_HYMN_OF_PERSEVERANCE, {ignore_energy=true, ignore_cd=true, no_talent_fail=true}) end
+			if self:isTalentActive(self.T_HYMN_OF_DETECTION) then self:forceUseTalent(self.T_HYMN_OF_DETECTION, {ignore_cooldown=true, ignore_energy=true}) self:forceUseTalent(self.T_HYMN_OF_DETECTION, {ignore_energy=true, ignore_cd=true, no_talent_fail=true}) end
+			self.turn_procs.resetting_talents = nil
+		end)
 		return true
 	end,
 	info = function(self, t)

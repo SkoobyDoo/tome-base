@@ -408,7 +408,7 @@ function _M:forceUseTalent(t, def)
 	if def.ignore_energy then self.energy.value = 10000 end
 
 	if def.ignore_ressources then self:attr("force_talent_ignore_ressources", 1) end
-	local ret = {self:useTalent(t, def.force_who, def.force_level, def.ignore_cd, def.force_target, def.silent, true)}
+	local ret = {self:useTalent(t, def.force_who, def.force_level, def.ignore_cd or def.ignore_cooldown, def.force_target, def.silent, true)}
 	if def.ignore_ressources then self:attr("force_talent_ignore_ressources", -1) end
 
 	if def.ignore_energy then
