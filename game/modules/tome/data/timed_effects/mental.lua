@@ -170,13 +170,13 @@ newEffect{
 		local lifeb = self.max_life * eff.power/100
 		local stamb = self.max_stamina * eff.power/100
 		eff.max_lifeID = self:addTemporaryValue("max_life", lifeb) --Avoid healing effects
-		eff.lifeID = self:addTemporaryValue("life",lifeb)
+		if not self:attr("no_healing") then eff.lifeID = self:addTemporaryValue("life",lifeb) end
 		eff.max_stamina = self:addTemporaryValue("max_stamina", stamb)
 		self:incStamina(stamb)
 		eff.stamina = stamb
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("life", eff.lifeID)
+		if eff.lifeID then self:removeTemporaryValue("life", eff.lifeID) end
 		self:removeTemporaryValue("max_life", eff.max_lifeID)
 		self:removeTemporaryValue("max_stamina", eff.max_stamina)
 		self:incStamina(-eff.stamina)
