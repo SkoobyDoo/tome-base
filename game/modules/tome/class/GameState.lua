@@ -2140,7 +2140,6 @@ function _M:createRandomBoss(base, data)
 	end
 	print("Creating random boss ", b.name, data.level, "level", data.nb_classes, "classes")
 	if data.force_classes then print("  * forcing classes:",table.concat(table.keys(data.force_classes),",")) end
-	data.force_classes = {Alchemist = true}
 	b.unique = b.name
 	b.randboss = true
 	local boss_id = "RND_BOSS_"..b.name:upper():gsub("[^A-Z]", "_")
