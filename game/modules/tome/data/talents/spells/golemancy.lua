@@ -346,6 +346,7 @@ newTalent{
 	mode = "passive",
 	require = spells_req1,
 	points = 5,
+	cant_steal = true,
 	on_learn = function(self, t)
 		if self:getTalentLevelRaw(t) == 1 and not self.innate_alchemy_golem then
 			self:learnTalent(self.T_REFIT_GOLEM, true)
@@ -391,6 +392,7 @@ newTalent{
 	require = spells_req2,
 	points = 5,
 	getHealingFactor = function(self, t) return self:combatTalentLimit(t, 1, 0.15, 0.5) end,
+	cant_steal = true,
 	on_learn = function(self, t)
 		if not self.alchemy_golem then return end -- Safety net
 		self.alchemy_golem:learnTalent(Talents.T_THICK_SKIN, true, nil, {no_unlearn=true})
