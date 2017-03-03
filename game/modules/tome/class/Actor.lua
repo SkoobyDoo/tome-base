@@ -6704,6 +6704,10 @@ function _M:doWear(inven, item, o, dst, force_inven, force_item)
 		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
+	if self:attr("no_equipment_changes") then
+		game.logPlayer(self, "You cannot change your equipment!")
+		return
+	end
 
 	dst:removeObject(inven, item, true)
 	local ro, rs = self:wearObject(o, true, true, force_inven, force_item) -- removed object and remaining stack if any
@@ -6767,6 +6771,11 @@ function _M:doTakeoff(inven, item, o, simple, dst, force)
 		game.logPlayer(self, "You cannot change your equipment while sleeping!")
 		return
 	end
+	if self:attr("no_equipment_changes") then
+		game.logPlayer(self, "You cannot change your equipment!")
+		return
+	end
+
 	if self:takeoffObject(inven, item) then
 		dst:addObject(dst.INVEN_INVEN, o, true) --note: moves a whole stack
 	end
@@ -6853,6 +6862,10 @@ function _M:canUseTinker(tinker)
 end
 
 function _M:doTakeoffTinker(base_o, oldo, only_remove)
+	if self:attr("no_equipment_changes") then
+		game.logPlayer(self, "You cannot change your equipment!")
+		return
+	end
 	if base_o.tinker ~= oldo then return end
 
 	local _, base_inven
@@ -6885,6 +6898,11 @@ function _M:doTakeoffTinker(base_o, oldo, only_remove)
 end
 
 function _M:doWearTinker(wear_inven, wear_item, wear_o, base_inven, base_item, base_o, can_remove)
+	if self:attr("no_equipment_changes") then
+		game.logPlayer(self, "You cannot change your equipment!")
+		return
+	end
+
 	if not base_o and base_inven and base_item then base_o = base_inven[base_item] end
 	if not base_o then
 		game.logPlayer(self, "You can not use a tinker without the corresponding item.")
