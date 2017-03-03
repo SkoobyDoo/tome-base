@@ -149,8 +149,8 @@ end
 
 reenter_derth = function(self)
 	if (self:isCompleted() or self:isEnded()) and not self:isCompleted("restored-derth") then
-		game.level.map:setShown(unpack(game.level.map.color_shown))
-		game.level.map:setObscure(unpack(game.level.map.color_obscure))
+		game.level.map:setShown(unpack(self.old_shown))
+		game.level.map:setObscure(unpack(self.old_obscure))
 		game.level.data.background = nil
 
 		game.player:setQuestStatus(self.id, engine.Quest.COMPLETED, "restored-derth")
