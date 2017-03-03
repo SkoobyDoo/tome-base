@@ -36,9 +36,11 @@ newKind{
 			txt = tostring(actor:isTalentCoolingDown(t))
 		elseif actor:isTalentActive(t.id) then
 			pie_color = {1,1,0,0.4}
+			pie_angle = 0
 			frame = "sustain"
 		elseif not actor:preUseTalent(t, true, true) then
 			pie_color = {0.745,0.745,0.745,0.4}
+			pie_angle = 0
 			frame = "disabled"
 		end
 		return display_entity, pie_color, pie_angle, frame, txt
