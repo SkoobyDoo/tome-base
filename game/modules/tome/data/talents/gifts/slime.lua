@@ -116,7 +116,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your skin drips with acid, damaging all that hit you for %0.1f Acid damage.
+		return ([[Your skin drips with acid, damaging all that hit you for %0.1f disarming acid damage.
 		The damage increases with your Mindpower.]]):format(damDesc(self, DamageType.ACID, t.getDamage(self, t)))
 	end,
 }
