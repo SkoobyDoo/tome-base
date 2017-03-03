@@ -1015,7 +1015,7 @@ function _M:restCheck()
 				if not res_def.invert_values then
 					if self[res_def.regen_prop] > 0.0001 and self:check(res_def.getFunction) < self:check(res_def.getMaxFunction) then return true end
 				else
-					if self[res_def.regen_prop] < 0.0001 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
+					if self[res_def.regen_prop] < -0.0001 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
 				end
 			end
 		end

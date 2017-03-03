@@ -484,6 +484,7 @@ end
 
 function _M:eventAuth(e)
 	self.waiting_auth = false
+	self.connected = true
 	self.auth_tried = (self.auth_tried or 0) + 1
 	if e.ok then
 		self.auth = e.ok:unserialize()
@@ -739,13 +740,15 @@ function _M:sendError(what, err)
 	for _, a in pairs(game.__mod_info.addons or {}) do
 		addons[#addons+1] = a.version_name or "--"
 	end
+	local version = game.__mod_info.version_name
+	if game.__mod_info.version_desc then version = game.__mod_info.version_name.." ("..tostring(game.__mod_info.version_desc)..")" end
 	core.profile.pushOrder(table.serialize{
 		o="SendError",
 		login=self.login,
 		what=what,
 		err=err,
 		module=game.__mod_info.short_name,
-		version=game.__mod_info.version_name,
+		version=version,
 		addons=table.concat(addons, ", "),
 	})
 end

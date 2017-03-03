@@ -1372,11 +1372,7 @@ int main(int argc, char *argv[])
 	}
 #ifdef SELFEXE_MACOSX
 	if (!is_zygote) {
-		const char *self = get_self_executable(g_argc, g_argv);
-		const char *name = "../../../te4_log.txt";
-		char *logname = malloc(strlen(self) + strlen(name) + 1);
-		strcpy(logname, self);
-		strcpy(logname + strlen(self), name);
+		const char *logname = "/tmp/te4_log.txt";
 		logfile = freopen(logname, "w", stdout);
 		if (os_autoflush) setlinebuf(logfile);
 	}

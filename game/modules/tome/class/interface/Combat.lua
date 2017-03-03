@@ -347,10 +347,14 @@ end
 
 --- Try to totally evade an attack
 function _M:checkEvasion(target)
-	if not target:attr("evasion") or self == target then return end
-	if target:attr("no_evasion") then return end
-	
 	local evasion = target:attr("evasion")
+	if target:knowTalent(target.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(target.x, target.y) then
+		evasion = (evasion or 0) + 20
+	end
+
+	if not evasion or self == target then return end
+	if target:attr("no_evasion") then return end
+
 	print("checkEvasion", evasion, target.level, self.level)
 	print("=> evasion chance", evasion)
 	return rng.percent(evasion)
@@ -656,7 +660,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			self.__attacktargetwith_recursing_procs_reduce = weapon.attack_recurse_procs_reduce
 		end
 
-		if self.__attacktargetwith_recursing > 0 then
+		if self.__attacktargetwith_recursing > 0 and not self.turn_procs._no_melee_recursion then
 			local _, newhitted, newdam = self:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			hitted = newhitted or hitted
 			dam = math.max(dam, newdam)
@@ -1021,15 +1025,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		t.do_throw(target, self, t)
 	end
 
-	-- Greater Weapon Focus
-	local gwf = self:hasEffect(self.EFF_GREATER_WEAPON_FOCUS)
-	if hitted and not target.dead and weapon and gwf and not gwf.inside and rng.percent(gwf.chance) then
-		gwf.inside = true
-		game.logSeen(self, "%s focuses and gains an extra blow!", self.name:capitalize())
-		self:attackTargetWith(target, weapon, damtype, mult)
-		gwf.inside = nil
-	end
-
 	-- Zero gravity
 	if hitted and game.level.data.zero_gravity and rng.percent(util.bound(dam, 0, 100)) then
 		target:knockback(self.x, self.y, math.ceil(math.log(dam)))
@@ -1286,6 +1281,9 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + self:callTalent(self.T_ARMOUR_OF_SHADOWS,"ArmourBonus")
 	end
+	if self:knowTalent(self.T_CORRUPTED_SHELL) then
+		add = add + self:getCon() / 3.5
+	end
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
@@ -1331,7 +1329,8 @@ end
 --- Gets the attack
 function _M:combatAttackBase(weapon, ammo)
 	weapon = weapon or self.combat or {}
-	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+	local talent = self:callTalent(self.T_WEAPON_COMBAT, "getAttack")
+	local atk = 4 + self.combat_atk + talent + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
 
 	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
 
@@ -1639,7 +1638,7 @@ function _M:getDammod(combat)
 		dammod[stat] = (dammod[stat] or 0) + val
 	end
 
-	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.3) end
+	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.4) end
 	if self:knowTalent(self.T_ARCANE_MIGHT) then add('mag', 0.5) end
 
 	return dammod
@@ -1876,6 +1875,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 
 	local chance = self:combatCrit(weapon) + (add_chance or 0)
 	crit_power_add = crit_power_add or 0
+	if weapon and weapon.crit_power then crit_power_add = crit_power_add + weapon.crit_power/100 end
 
 	if target and target:hasEffect(target.EFF_DISMAYED) then
 		chance = 100
@@ -2049,7 +2049,7 @@ function _M:combatMindpower(mod, add)
 	end
 
 	if self:knowTalent(self.T_SUPERPOWER) then
-		add = add + 50 * self:getStr() / 100
+		add = add + 60 * self:getStr() / 100
 	end
 
 	if self:knowTalent(self.T_GESTURE_OF_POWER) then
@@ -2423,6 +2423,7 @@ function _M:combatShieldBlock()
 	local block = combat1.block or 0
 	if combat2 then block = block + (combat2.block or 0) end
 
+	if self:attr("block_bonus") then block = block + self:attr("block_bonus") end
 	return block
 end
 

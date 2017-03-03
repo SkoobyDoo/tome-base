@@ -206,6 +206,7 @@ newTalent{
 			target.dream_plane_on_die = target.on_die
 			target.on_die = function(self, ...)
 				self.dream_plane_trapper:removeEffect(self.EFF_DREAMSCAPE)
+				self.dream_plane_trapper = nil
 				local args = {...}
 				game:onTickEnd(function()
 					if self.dream_plane_on_die then self:dream_plane_on_die(unpack(args)) end

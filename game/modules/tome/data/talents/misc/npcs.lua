@@ -344,11 +344,11 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
-		self:attackTarget(target, DamageType.POISON, t.getMult(self, t), true)
+		self:attackTarget(target, DamageType.POISON, t.getMult(self, t), true, true)
 		return true
 	end,
 	info = function(self, t)
-		return ([[Bites the target, doing %d%% damage and injecting it with poison.]]):format(100 * t.getMult(self, t))
+		return ([[Bites the target (an unarmed attack), doing %d%% damage and injecting it with poison.]]):format(100 * t.getMult(self, t))
 	end,
 }
 

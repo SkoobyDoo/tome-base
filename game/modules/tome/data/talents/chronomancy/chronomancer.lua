@@ -310,8 +310,8 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 	alt_nodes._last_mo = false
 	alt_nodes.add_mos = false
 	alt_nodes.add_displays = false
-	alt_nodes.fov = false
-	alt_nodes.distance_map = false
+	alt_nodes.fov = {actors={}, actors_dist={}}
+	alt_nodes.distance_map = {}
 
 	-- Don't copy some additional fields for short-lived clones
 	if duration == 0 then

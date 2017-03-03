@@ -82,6 +82,20 @@ newEntity{
 	dig = "CAVEFLOOR",
 }
 
+newEntity{
+	define_as = "CAVE_DOOR",
+	type = "wall", subtype = "grass",
+	name = "huge loose rock", image = "terrain/cave/cave_floor_1_01.png", add_mos = {{image="terrain/huge_rock.png"}},
+	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	block_sense = true,
+	block_esp = true,
+	door_opened = "CAVEFLOOR",
+	dig = "CAVEFLOOR",
+}
+
 -----------------------------------------
 -- Cavy exits
 -----------------------------------------

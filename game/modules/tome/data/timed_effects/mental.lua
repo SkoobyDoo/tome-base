@@ -1629,6 +1629,12 @@ newEffect{
 		if self:canBe("stun") then
 			self:setEffect(self.EFF_DAZED, 3, {})
 		end
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, oversize=0.5, a=225, appear=8, speed=0, img="pacification_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
+		end
+	end,
+	deactivate = function(self, eff)
+		if eff.particle then self:removeParticles(eff.particle) end
 	end,
 }
 
@@ -1659,8 +1665,12 @@ newEffect{
 	on_lose = function(self, err) return "#Target# is free from the hex.", "-Empathic hex" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("martyrdom", eff.power)
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {toback=true, shader=true, oversize=0.5, a=225, appear=8, speed=0, img="empathic_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
+		end
 	end,
 	deactivate = function(self, eff)
+		if eff.particle then self:removeParticles(eff.particle) end
 		self:removeTemporaryValue("martyrdom", eff.tmpid)
 	end,
 }
@@ -1679,8 +1689,12 @@ newEffect{
 		self:setTarget() -- clear ai target
 		eff.olf_faction = self.faction
 		self.faction = eff.src.faction
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, oversize=1, a=225, appear=8, speed=0, img="domination_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
+		end
 	end,
 	deactivate = function(self, eff)
+		if eff.particle then self:removeParticles(eff.particle) end
 		self.faction = eff.olf_faction
 	end,
 }
@@ -1736,6 +1750,7 @@ newEffect{
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("combat_atk", eff.power)
 		eff.bid = self:addTemporaryValue("blind_fight", 1)
+		self:effectParticles(eff, {type="perfect_strike", args={radius=1}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_atk", eff.tmpid)
@@ -2980,10 +2995,12 @@ newEffect{
 	parameters = { power=10 },
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "die_at", -eff.power)
-		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
+		self:effectParticles(eff, {type="darkness_power"})
+		if core.shader.active() then
+			self:effectParticles(eff, {type="circle", args={shader=true, oversize=1.5, a=225, appear=8, speed=0, img="shadow_decoy_aura", base_rot=0, radius=0}})
+		end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -3032,7 +3049,7 @@ newEffect{
 					self:attackTargetWith(target, o.combat, nil, t.getWeaponDamage(self, t))
 				end
 			end
-			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarmed") then
+			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarm") then
 				target:setEffect(target.EFF_DISARMED, 3, {apply_power=self:combatMindpower()})
 			end
 		end
@@ -3064,7 +3081,7 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
+		if eff.particle then self:removeParticles(eff.particle) end
 	end,
 }
 

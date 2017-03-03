@@ -105,9 +105,12 @@ newTalent{
 	points = 5,
 	equilibrium = 15,
 	cooldown = 30,
+	fixed_cooldown = true,
 	no_energy = true,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 1 },
 	on_pre_use = function(self, t) return self:hasEffect(self.EFF_INFUSION_COOLDOWN) end,
+	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4, "log")) end,
+	getCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 2, 5, "log")) end,
 	action = function(self, t)
 		self:removeEffect(self.EFF_INFUSION_COOLDOWN)
 		local tids = {}
@@ -119,15 +122,15 @@ newTalent{
 		for i = 1, nb do
 			if #tids == 0 then break end
 			local tid = rng.tableRemove(tids)
-			self.talents_cd[tid] = self.talents_cd[tid] - (1 + math.floor(self:getTalentLevel(t) / 2))
+			self.talents_cd[tid] = self.talents_cd[tid] - t.getCooldown(self, t)
 			if self.talents_cd[tid] <= 0 then self.talents_cd[tid] = nil end
 		end
 		game:playSoundNear(self, "talents/spell_generic2")
 		return true
 	end,
 	info = function(self, t)
-		local turns = 1 + math.floor(self:getTalentLevel(t) / 2)
-		local nb = self:getTalentLevelRaw(t)
+		local turns = t.getCooldown(self, t)
+		local nb = t.getNb(self, t)
 		return ([[Commune with nature, removing the infusion saturation effect and reducing the cooldown of %d infusions by %d turns.]]):
 		format(nb, turns)
 	end,
@@ -141,27 +144,34 @@ newTalent{
 	equilibrium = 24,
 	cooldown = 20,
 	range = 10,
-	tactical = { DISABLE = 3, HEAL = 0.5 },
+	tactical = { DISABLE = 2, HEAL = 0.5 },
 	direct_hit = true,
 	requires_target = true,
 	range = 0,
-	radius = function(self, t) return 1 + self:getTalentLevelRaw(t) end,
-	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=true, talent=t} end,
+	radius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 2, 5.2)) end, -- Limit < 10
+	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t} end, -- To be improved after AI update
+	getDur = function(self, t) return math.floor(self:combatTalentLimit(t, 20, 4, 8)) end, -- Limit < 20
+	getPct = function(self, t) return self:combatTalentLimit(t, 1, 0.4, 0.7) end, -- Limit < 100% healing transfer
+	getEquilibrium = function(self, t) return self:combatTalentScale(t, 5, 10, "log", 0, 3) end, -- slow scaling since this can affect a lot of heals quickly
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local grids = self:project(tg, self.x, self.y, function(px, py)
+		local dur, pct, eq = t.getDur(self, t), t.getPct(self, t), t.getEquilibrium(self, t)
+		self:setEffect(self.EFF_HEALING_NEXUS_BUFF, dur, {src=self, pct=pct, eq=eq})
+		self:project(tg, self.x, self.y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
-			target:setEffect(target.EFF_HEALING_NEXUS, 3 + self:getTalentLevelRaw(t), {src=self, pct=0.4 + self:getTalentLevel(t) / 10, eq=5 + self:getTalentLevel(t)})
+			target:setEffect(target.EFF_HEALING_NEXUS, dur, {src=self, pct=pct, eq=eq})
 		end)
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "ball_acid", {radius=tg.radius})
 		game:playSoundNear(self, "talents/spell_generic2")
 		return true
 	end,
 	info = function(self, t)
-		return ([[A wave of natural energies flow around you in a radius of %d; all creatures hit will suffer from the Healing Nexus status for %d turns.
-		While under the effect, all healing done to the creature will instead heal you for %d%% of the heal value (and no healing at all goes to the target).
-		Each heal leeched will also restore %d equilibrium.]]):
-		format(self:getTalentRadius(t), 3 + self:getTalentLevelRaw(t), (0.4 + self:getTalentLevel(t) / 10) * 100, 5 + self:getTalentLevel(t))
+		local pct = t.getPct(self, t)*100
+		return ([[A wave of natural energies flow around you in a radius of %d.  All creatures in the area will be affected by the Healing Nexus effect for %d turns.
+		On you, this effect causes each heal received to restore %d equilibrium and be %d%% effective.
+		On other creatures, all healing is intercepted and redirected to you at %d%% efficiency.
+		Only direct healing (not normal regeneration) is affected.]]):
+		format(self:getTalentRadius(t), t.getDur(self, t), t.getEquilibrium(self, t), 100 + pct, pct)
 	end,
 }

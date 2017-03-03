@@ -606,7 +606,7 @@ function _M:generateRandart(data)
 			else -- no ego found: increase budget for random powers to compensate
 				local xpoints = gr_ego and 8 or 5
 				print((" ** no ego found (+%d points)"):format(xpoints))
-				points = points + xpoints
+				points = points + (xpoints * 2)
 			end
 		end
 --		o.egos = nil o.egos_chance = nil o.force_ego = nil
@@ -1514,8 +1514,8 @@ function _M:entityFilterPost(zone, level, type, e, filter)
 						b.inc_damage.all = (b.inc_damage.all or 0) - 40 * (20 - data.level + 1) / 20
 					end
 					-- Drop
-					for i = 1, data.nb_rares do -- generate rares as weak (1 ego) randarts
-						local fil = {lev=lev, egos=1, greater_egos_bias = 0, forbid_power_source=b.not_power_source,
+					for i = 1, data.nb_rares do -- generate rares as weak (1 ego) randarts with more and stronger powers
+						local fil = {lev=lev, egos=1, greater_egos_bias = 0, power_points_factor = 3, nb_powers_add = 2, forbid_power_source=b.not_power_source,
 							base_filter = {no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, 
 							special=function(e)
 								return (not e.unique and e.randart_able) and (not e.material_level or e.material_level >= 1) and true or false
@@ -2642,6 +2642,14 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 					if self.turns_left >= 0 then who:setQuestStatus(self.id, self.COMPLETED) end
 				end,
 				on_act_base = function(self, who)
+					if game.level.turn_counter then
+						game.level.turn_counter = game.level.turn_counter - 10
+						game.player.changed = true
+						if game.level.turn_counter < 0 then
+							game.level.turn_counter = nil
+						end
+					end
+
 					self.turns_left = self.turns_left - 1
 					if self.turns_left < 0 then
 						who:setQuestStatus(self.id, self.FAILED)
@@ -2649,6 +2657,9 @@ function _M:infiniteDungeonChallengeFinish(zone, level)
 				end,
 			})
 			self:locationRevealAround(level.default_down.x, level.default_down.y)
+			level.turn_counter = turns * 10
+			level.max_turn_counter = turns * 10
+			level.turn_counter_desc = "Find the exit! It is marked on your map."
 		end
 	elseif id_challenge == "dream-horror" then
 		local m = zone:makeEntity(level, "actor", {name="dreaming horror", random_boss=true}, nil, true)

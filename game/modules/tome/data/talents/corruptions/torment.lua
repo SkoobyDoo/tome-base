@@ -126,10 +126,14 @@ newTalent{
 	activate = function(self, t)
 		local l, c = t.getPower(self, t)
 		game:playSoundNear(self, "talents/flame")
-		return {
+		local ret = {
 			l = self:addTemporaryValue("reduce_spell_cooldown_on_hit", l),
 			c = self:addTemporaryValue("reduce_spell_cooldown_on_hit_chance", c),
 		}
+		if core.shader.active(4) then
+			self:effectParticles(ret, {type="shader_ring_rotating", args={rotation=0, radius=1.1, img="blood_vengeance_lightningshield"}, shader={type="lightningshield"}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("reduce_spell_cooldown_on_hit", p.l)

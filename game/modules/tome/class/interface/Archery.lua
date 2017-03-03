@@ -365,7 +365,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
-		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0) end
+		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, (tg.archery.crit_power or 0) + (weapon.crit_power or 0)/100) end
 		print("[ATTACK ARCHERY] after crit", dam)
 
 		dam = dam * mult * (weapon.dam_mult or 1)
@@ -437,17 +437,17 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		if not tg.no_archery_particle then game.level.map:particleEmitter(target.x, target.y, 1, "archery") end
 		hitted = true
 
-		if talent.archery_onhit then talent.archery_onhit(self, talent, target, target.x, target.y) end
+		if talent.archery_onhit then talent.archery_onhit(self, talent, target, target.x, target.y, tg) end
 
 		-- add damage conversion back in so the total damage still gets passed
 		dam = dam + ammo_conversion + weapon_conversion
-		target:fireTalentCheck("callbackOnArcheryHit", self, dam)
+		target:fireTalentCheck("callbackOnArcheryHit", self, dam, tg)
 	else
 		self:logCombat(target, "#Source# misses #target#.")
 
 		if talent.archery_onmiss then talent.archery_onmiss(self, talent, target, target.x, target.y) end
 
-		target:fireTalentCheck("callbackOnArcheryMiss", self)
+		target:fireTalentCheck("callbackOnArcheryMiss", self, tg)
 	end
 
 	-- Ranged project

@@ -600,7 +600,7 @@ newTalent{
 			local count, t = 0
 			for tid, _ in pairs(aitarget.talents) do
 				t = aitarget.talents_def[tid]
-				if type(t.tactical) == "table" and type(t.tactical.disable) == "table" and (t.tactical.disable.stun or t.tactical.disable.pin) then
+				if t and type(t.tactical) == "table" and type(t.tactical.disable) == "table" and (t.tactical.disable.stun or t.tactical.disable.pin) then
 					count = count + 1
 					if count > 1 then break end
 				end

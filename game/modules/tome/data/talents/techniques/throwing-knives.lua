@@ -54,6 +54,7 @@ local function knives(self)
 		combat.dam = 0 + t.getBaseDamage(self, t)
 		combat.apr = 0 + t.getBaseApr(self, t)
 		combat.physcrit = 0 + t.getBaseCrit(self,t) + t2.getCrit(self,t2)
+		combat.crit_power = 0 + t2.getCritPower(self,t2)
 		combat.atk = 0 + self:combatAttack()
 	end
 	if self:knowTalent(self.T_LETHALITY) then 
@@ -73,13 +74,8 @@ local function throw(self, range, dam, x, y, dtype, special, fok)
 		if target and target ~= self then
 			local t = self:getTalentFromId(self.T_THROWING_KNIVES)
 			local t2 = self:getTalentFromId(self.T_PRECISE_AIM)
-			local critstore = self.combat_critical_power or 0
-			self.combat_critical_power = nil
-			self.combat_critical_power = critstore + t2.getCritPower(self,t2)
 			local combat = t.getKnives(self, t)
 			local hit = self:attackTargetWith(target, combat, dtype, dam)
-			self.combat_critical_power = nil
-			self.combat_critical_power = critstore
 			if hit then
 				if special==1 then
 					self:callTalent(self.T_VENOMOUS_STRIKE, "applyVenomousEffects", target)
@@ -108,12 +104,18 @@ newTalent{
 	},
 	on_learn = function(self, t)
 		venomous_throw_check(self)
-		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
-		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=max, max_stacks=max })
+		local max = t.getNb(self, t)
+		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=game.party:hasMember(self) and 0 or max, max_stacks=max})
 	end,
 	on_unlearn = function(self, t)
 		venomous_throw_check(self)
-		self:removeEffect(self.EFF_THROWING_KNIVES)
+		if self:knowTalent(t.id) then
+			if self:hasEffect(self.EFF_THROWING_KNIVES) then
+				self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=0, max_stacks=t.getNb(self, t)})
+			end
+		else
+			self:removeEffect(self.EFF_THROWING_KNIVES)		
+		end
 	end,
 	speed = "throwing",
 	proj_speed = 10,
@@ -125,12 +127,10 @@ newTalent{
 	end,
 	on_pre_use = function(self, t)
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if eff then
-			return true
-		end	
+		if eff and eff.stacks > 0 then return true end
 	end,
 	callbackOnActBase = function(self, t)
-		if self.resting then
+		if self.resting or not self.player and not table.get(self, "ai_target","actor") then -- bit kludgy, npc's don't rest
 			local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
 			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
 			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
@@ -170,6 +170,8 @@ newTalent{
 		local apr = self:combatAPR(combat)
 		local damrange = combat.damrange or 1.1
 		local crit = self:combatCrit(combat)
+		local crit_mult = (self.combat_critical_power or 0) + 150
+		if self:knowTalent(self.T_PRECISE_AIM) then crit_mult = crit_mult + self:callTalent(self.T_PRECISE_AIM, "getCritPower") end
 		
 		local stat_desc = {}
 		for stat, i in pairs(combat.dammod or {}) do
@@ -187,9 +189,10 @@ newTalent{
 Net Damage: %d - %d
 Accuracy: %d (%s)
 APR: %d
-Physical Crit Chance: %+d%%
+Crit Chance: %+d%%
+Crit mult: %d%%
 Uses Stats: %s
-]]):format(t.range(self, t), dmg, dmg*damrange, atk, talented, apr, crit, stat_desc)
+]]):format(t.range(self, t), dmg, dmg*damrange, atk, talented, apr, crit, crit_mult, stat_desc)
 	end,
 	info = function(self, t)
 		local nb = t.getNb(self,t)
@@ -236,6 +239,14 @@ newTalent{
 			if not target then return end
 			tgts[#tgts+1] = {act=target, cnt=0}
 		end)
+
+		local dir = math.atan2(x-self.x, -y+self.y) - math.pi / 2
+		local tile = "shockbolt/object/knife_voratun"
+		for i = -6, 6 do
+			local dir = dir + math.pi / 28 * i
+			game.level.map:particleEmitter(self.x, self.y, 1, "fan_of_knives", {tile=tile, dir=dir, radius=tg.radius})
+		end
+
 		local tgt_cnt = #tgts
 		if tgt_cnt > 0 then
 			local tgt_max = math.min(3, math.ceil(count/tgt_cnt))
@@ -306,7 +317,7 @@ newTalent{
 		if not hitted or self.turn_procs.quickdraw or core.fov.distance(self.x, self.y, target.x, target.y) > 1 or not rng.percent(t.getChance(self,t)) then return nil end
 		
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if not eff then return end
+		if not eff or eff.stacks <= 0 then return end
 		
 		local tg = {type="ball", range=0, radius=7, friendlyfire=false, selffire=false }
 		local tgts = {}
@@ -353,9 +364,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t)
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if eff then
-			return true
-		end	
+		if eff and eff.stacks > 0 then return true end
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)

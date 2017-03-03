@@ -748,7 +748,7 @@ end
 
 function _M:changeLevelCheck(lev, zone, params)
 	params = params or {}
-	if not params.direct_switch and (self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime()) then
+	if not params.direct_switch and (self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime()) and not config.settings.cheat then
 		local left = math.ceil((10 + self:getPlayer(true).last_kill_turn - self.turn + self:noStairsTime()) / 10)
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level so soon after a kill (%d game turns left to wait)!", left)
 		return false
@@ -1073,15 +1073,15 @@ function _M:changeLevelReal(lev, zone, params)
 			if #list > 0 then x, y = unpack(rng.table(list)) end
 		end
 
-		if self.level.exited then -- use the last location, if defined
-			local turn = 0
-			if self.level.exited.down then
-				x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
-			end
-			if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
-				x, y = self.level.exited.up.x, self.level.exited.up.y
-			end
-		end
+		-- if self.level.exited then -- use the last location, if defined
+		-- 	local turn = 0
+		-- 	if self.level.exited.down then
+		-- 		x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
+		-- 	end
+		-- 	if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
+		-- 		x, y = self.level.exited.up.x, self.level.exited.up.y
+		-- 	end
+		-- end
 
 		if not x then -- Default to stairs
 			if lev > old_lev and not params.force_down and self.level.default_up then x, y = self.level.default_up.x, self.level.default_up.y
@@ -1316,6 +1316,7 @@ end
 
 --- Update the zone name, if needed
 function _M:updateZoneName()
+	if not self.zone_font then return end
 	local name
 	if self.zone.display_name then
 		name = self.zone.display_name()
@@ -1529,7 +1530,7 @@ end
 
 --- Queue combat damage values and messages for later display with displayDelayedLogDamage
 -- @param src: source (primary) actor dealing the damage
--- @param target: target (secondary) actor recieving the damage
+-- @param target: target (secondary) actor receiving the damage
 -- @param dam: [type=number] damage effectively dealt, added to total
 --		negative dam is counted as healing and summed separately
 -- @param desc: [type=string] text description of damage dealth, passed directly to log message

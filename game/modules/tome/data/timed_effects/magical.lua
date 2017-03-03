@@ -309,6 +309,36 @@ newEffect{
 	end,
 }
 
+
+newEffect{
+	name = "VIMSENSE_DETECT", image = "talents/vimsense.png",
+	desc = "Sensing (Vim)",
+	long_desc = function(self, eff) return "Improves senses, allowing the detection of unseen things." end,
+	type = "magical",
+	subtype = { sense=true, corruption=true },
+	status = "beneficial",
+	parameters = { range=10, actor=1, object=0, trap=0 },
+	activate = function(self, eff)
+		if core.shader.active() then
+			self:effectParticles(eff, {type="shader_shield", args={toback=true,  size_factor=1.5, img="05_vimsense"}, shader={type="tentacles", appearTime=0.6, time_factor=1000, noup=2.0}})
+			self:effectParticles(eff, {type="shader_shield", args={toback=false, size_factor=1.5, img="05_vimsense"}, shader={type="tentacles", appearTime=0.6, time_factor=1000, noup=1.0}})
+		end
+		eff.rid = self:addTemporaryValue("detect_range", eff.range)
+		eff.aid = self:addTemporaryValue("detect_actor", eff.actor)
+		eff.oid = self:addTemporaryValue("detect_object", eff.object)
+		eff.tid = self:addTemporaryValue("detect_trap", eff.trap)
+		self.detect_function = eff.on_detect
+		game.level.map.changed = true
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("detect_range", eff.rid)
+		self:removeTemporaryValue("detect_actor", eff.aid)
+		self:removeTemporaryValue("detect_object", eff.oid)
+		self:removeTemporaryValue("detect_trap", eff.tid)
+		self.detect_function = nil
+	end,
+}
+
 newEffect{
 	name = "SENSE_HIDDEN", image = "talents/keen_senses.png",
 	desc = "Sense Hidden",
@@ -904,6 +934,7 @@ newEffect{
 	parameters = { power=10 },
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("inc_damage", {[DamageType.BLIGHT] = eff.power, [DamageType.ACID] = eff.power})
+		self:effectParticles(eff, {type="perfect_strike", args={radius=0.5, time_factor=6000, img="spinningwinds_blood_fury_triggered"}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("inc_damage", eff.tmpid)
@@ -985,7 +1016,7 @@ newEffect{
 		eff.leveid = game.zone.short_name.."-"..game.level.level
 	end,
 	deactivate = function(self, eff)
-		if (eff.allow_override or (self:canBe("worldport") and not self:attr("never_move"))) and eff.dur <= 0 then
+		if (eff.allow_override or (self == game:getPlayer(true) and self:canBe("worldport") and not self:attr("never_move"))) and eff.dur <= 0 then
 			game:onTickEnd(function()
 				if eff.leveid == game.zone.short_name.."-"..game.level.level and game.player.can_change_zone then
 					game.logPlayer(self, "You are yanked out of this place!")
@@ -1011,6 +1042,7 @@ newEffect{
 		eff.leveid = game.zone.short_name.."-"..game.level.level
 	end,
 	deactivate = function(self, eff)
+		if self ~= game:getPlayer(true) then return end
 		local seen = false
 		-- Check for visible monsters, only see LOS actors, so telepathy wont prevent it
 		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 20, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
@@ -1048,6 +1080,7 @@ newEffect{
 		eff.leveid = game.zone.short_name.."-"..game.level.level
 	end,
 	deactivate = function(self, eff)
+		if self ~= game:getPlayer(true) then return end
 		local seen = false
 		-- Check for visible monsters, only see LOS actors, so telepathy wont prevent it
 		core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 20, function(_, x, y) return game.level.map:opaque(x, y) end, function(_, x, y)
@@ -1182,7 +1215,7 @@ newEffect{
 newEffect{
 	name = "PROVIDENCE", image = "talents/providence.png",
 	desc = "Providence",
-	long_desc = function(self, eff) return ("The target is under protection and its life regeneration is boosted by %d."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is under protection, removing one negative effect per turn."):format() end,
 	type = "magical",
 	subtype = { light=true, shield=true },
 	status = "beneficial",
@@ -1205,7 +1238,6 @@ newEffect{
 		end
 	end,
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("life_regen", eff.power)
 		if core.shader.active(4) then
 			eff.particle1 = self:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=2.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
 			eff.particle2 = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, y=-0.3, img="healcelestial"}, {type="healing", time_factor=4000, noup=1.0, beamColor1={0xd8/255, 0xff/255, 0x21/255, 1}, beamColor2={0xf7/255, 0xff/255, 0x9e/255, 1}, circleColor={0,0,0,0}, beamsCount=5}))
@@ -1214,7 +1246,6 @@ newEffect{
 	deactivate = function(self, eff)
 		self:removeParticles(eff.particle1)
 		self:removeParticles(eff.particle2)
-		self:removeTemporaryValue("life_regen", eff.tmpid)
 	end,
 }
 
@@ -2048,6 +2079,7 @@ newEffect{
 	parameters = {},
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("bloodcasting", 1)
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="bloodcasting_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("bloodcasting", eff.tmpid)
@@ -2191,6 +2223,7 @@ newEffect{
 	activate = function(self, eff)
 		eff.power = self.life
 		eff.tmpid = self:addTemporaryValue("blood_lock", eff.power)
+		self:effectParticles(eff, {type="circle", args={oversize=1, a=220, base_rot=180, shader=true, appear=12, img="blood_lock_debuff_aura", speed=0, radius=0}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("blood_lock", eff.tmpid)
@@ -2473,6 +2506,9 @@ newEffect{
 		self:effectTemporaryValue(eff, "talent_cd_reduction", {[self.T_ANOMALY_REARRANGE] = -4, [self.T_ANOMALY_TEMPORAL_STORM] = -4})
 		self:learnTalent(self.T_ANOMALY_REARRANGE, true)
 		self:learnTalent(self.T_ANOMALY_TEMPORAL_STORM, true)
+		self:learnTalent(self.T_ANOMALY_FLAWED_DESIGN, true)
+		self:learnTalent(self.T_ANOMALY_GRAVITY_PULL, true)
+		self:learnTalent(self.T_ANOMALY_WORMHOLE, true)
 
 		self.replace_display = mod.class.Actor.new{
 			image = "npc/elemental_temporal_telugoroth.png",
@@ -2485,6 +2521,9 @@ newEffect{
 	deactivate = function(self, eff)
 		self:unlearnTalent(self.T_ANOMALY_REARRANGE)
 		self:unlearnTalent(self.T_ANOMALY_TEMPORAL_STORM)
+		self:unlearnTalent(self.T_ANOMALY_FLAWED_DESIGN)
+		self:unlearnTalent(self.T_ANOMALY_GRAVITY_PULL)
+		self:unlearnTalent(self.T_ANOMALY_WORMHOLE)
 		self.replace_display = nil
 		self:removeAllMOs()
 		game.level.map:updateMap(self.x, self.y)
@@ -2943,11 +2982,15 @@ newEffect{
 	parameters = { power=10 },
 	on_gain = function(self, err) return nil, "+Healing Inversion" end,
 	on_lose = function(self, err) return nil, "-Healing Inversion" end,
-	callbackOnHeal = function(self, eff, value, src)
-		local dam = value * eff.power / 100
-		if not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
+	callbackPriorities={callbackOnHeal = 1}, -- trigger after (most) other healing callbacks
+	callbackOnHeal = function(self, eff, value, src, raw_value)
+		if raw_value > 0 and not eff.projecting then -- avoid feedback; it's bad to lose out on dmg but it's worse to break the game
 			eff.projecting = true
-			DamageType:get(DamageType.BLIGHT).projector(eff.src or self, self.x, self.y, DamageType.BLIGHT, dam)
+			local dam = raw_value * eff.power / 100
+			local psrc = eff.src or src or self
+			psrc.__project_source = eff
+			DamageType:get(DamageType.BLIGHT).projector(psrc, self.x, self.y, DamageType.BLIGHT, dam)
+			psrc.__project_source = nil
 			eff.projecting = false
 		end
 		return {value=0}
@@ -3716,8 +3759,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = { power=10 },
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Blight Poison" end,
-	on_lose = function(self, err) return "#Target# stops being poisoned.", "-Blight Poison" end,
+	on_gain = function(self, err) return "#Target# is poisoned with blight!", "+Blight Poison" end,
+	on_lose = function(self, err) return "#Target# is free from the blighted poison.", "-Blight Poison" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the poison
 		local olddam = old_eff.power * old_eff.dur
@@ -3743,8 +3786,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = {power=10, heal_factor=30},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Insidious Blight" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Insidious Blight" end,
+	on_gain = function(self, err) return "#Target# is poisoned with insidious blight!!", "+Insidious Blight" end,
+	on_lose = function(self, err) return "#Target# is free from the insidious blight.", "-Insidious Blight" end,
 	activate = function(self, eff)
 		eff.healid = self:addTemporaryValue("healing_factor", -eff.heal_factor / 100)
 	end,
@@ -3763,7 +3806,6 @@ newEffect{
 	end,
 }
 
-
 newEffect{
 	name = "CRIPPLING_BLIGHT", image = "talents/crippling_poison.png",
 	desc = "Crippling Blight",
@@ -3772,8 +3814,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = {power=10, fail=5},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Crippling Blight" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Crippling Blight" end,
+	on_gain = function(self, err) return "#Target# is poisoned with crippling blight!", "+Crippling Blight" end,
+	on_lose = function(self, err) return "#Target# is free from the crippling blight.", "-Crippling Blight" end,
 	-- Damage each turn
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then self:heal(eff.power, eff.src)
@@ -3801,8 +3843,8 @@ newEffect{
 	subtype = { poison=true, blight=true }, no_ct_effect = true,
 	status = "detrimental",
 	parameters = {power=10, reduce=5},
-	on_gain = function(self, err) return "#Target# is poisoned!", "+Numbing Blight" end,
-	on_lose = function(self, err) return "#Target# is no longer poisoned.", "-Numbing Blight" end,
+	on_gain = function(self, err) return "#Target# is poisoned numbing blight!", "+Numbing Blight" end,
+	on_lose = function(self, err) return "#Target# is free from the numbing blight.", "-Numbing Blight" end,
 	-- Damage each turn
 	on_timeout = function(self, eff)
 		if self:attr("purify_poison") then self:heal(eff.power, eff.src)

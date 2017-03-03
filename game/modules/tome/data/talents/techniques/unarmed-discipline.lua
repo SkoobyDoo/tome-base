@@ -70,12 +70,27 @@ newTalent{
 			end
 		end
 
+		local dispeltypes = {}
 		local nb = t.getStrikes(self, t)
 		talents = table.keys(talents)
 		while #talents > 0 and nb > 0 do
 			local tid = rng.tableRemove(talents)
 			target:forceUseTalent(tid, {ignore_energy=true})
 			nb = nb - 1
+			local tt = self:getTalentFromId(tid)
+			if tt.is_spell then dispeltypes.spell = true
+			elseif tt.is_mind then dispeltypes.mind = true
+			else dispeltypes.physical = true end
+		end
+
+		if next(dispeltypes) then
+			local img = "combination_kicks_1"
+			if dispeltypes.spell and not dispeltypes.mind then img = "combination_kicks_2"
+			elseif not dispeltypes.spell and dispeltypes.mind then img = "combination_kicks_2"
+			elseif dispeltypes.spell and dispeltypes.mind then img = "combination_kicks_3"
+			end
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=45 + a, a=250, appear=6, limit_life=6, speed=0, img=img, radius=-0.5})
 		end
 
 		self:clearCombo()
@@ -98,8 +113,8 @@ newTalent{
 	require = techs_dex_req2,
 	points = 5,
 	mode = "passive",
-	getStamina = function(self, t) return self:combatTalentLimit(t, 3, 0.5, 1.5) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 50, 15, 40) end,
+	getStamina = function(self, t) return self:combatTalentLimit(t, 6, 1, 4) end,
+	getChance = function(self, t) return self:combatTalentLimit(t, 70, 15, 60) end,
 	info = function(self, t)
 		local stamina = t.getStamina(self, t)
 		local chance = t.getChance(self, t)
@@ -123,7 +138,7 @@ newTalent{
 	getBlock = function(self, t) return self:combatTalentPhysicalDamage(t, 30, 200) end,
 	action = function(self, t)
 		local blockval = t.getBlock(self, t) * self:getCombo()
-		self:setEffect(self.EFF_BRAWLER_BLOCK, 2, {block = blockval})
+		self:setEffect(self.EFF_BRAWLER_BLOCK, 3, {block = blockval})
 
 		self:clearCombo()
 

@@ -44,19 +44,25 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 	require = techs_dex_req2,
 	-- called by _M:combatDefenseBase in mod.class.interface.Combat.lua
 	getDefense = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 45.7, 500) end,
+	callbackOnLevelup = function(self, t, level) -- make sure NPC's start with the parry buff active
+		if not self.player then
+			game:onTickEnd(function()
+				if not self:hasEffect(self.EFF_PARRY) then
+					t.callbackOnActBase(self, t)
+				end
+			end, self.uid.."PARRY")
+		end
+	end,
 	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
 		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 90, 15, 20, 60, 250) -- limit < 90%, ~67% at TL 6.5, 55 dex
 	end,
-	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
-		return math.max(0, self:combatTalentLimit(t, 100, 15, 40))
-	end,
-	getDamageChange = function(self, t, fake)
+	getDamageChange = function(self, t)
 		local dam,_,weapon = 0,self:hasDualWeapon()
 		if not weapon or weapon.subtype=="mindstar" and not fake then return 0 end
 		if weapon then
 			dam = self:combatDamage(weapon.combat) * self:getOffHandMult(weapon.combat)
 		end
-		return t.getDeflectPercent(self, t) * dam/100
+		return self:combatScale(dam, 5, 10, 50, 250)
 	end,
 	-- deflect count handled in physical effect "PARRY" in mod.data.timed_effects.physical.lua
 	getDeflects = function(self, t, fake)
@@ -77,9 +83,9 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 	info = function(self, t)
 		return ([[You have learned to block incoming blows with your offhand weapon.
 		When dual wielding, your defense is increased by %d.
-		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee attack.
+		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (based on your your offhand weapon damage) from a melee attack.
 		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  Partial parries have a proportionally reduced chance to succeed.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.
-		The defense and chance to parry improve with Dexterity.  The number of parries increases with Cunning.]]):format(t.getDefense(self, t), t.getDeflects(self, t, true), t.getDeflectChance(self,t), t.getDamageChange(self, t, true), t.getDeflectPercent(self,t))
+		The defense and chance to parry improve with Dexterity.  The number of parries increases with Cunning.]]):format(t.getDefense(self, t), t.getDeflects(self, t, true), t.getDeflectChance(self,t), t.getDamageChange(self, t, true))
 	end,
 }
 
@@ -339,15 +345,11 @@ newTalent{
 		-- Attack
 		if not core.fov.distance(self.x, self.y, x, y) == 1 then return nil end
 		
-		local critstore = self.combat_critical_power or 0
-		self.combat_critical_power = nil
-		self.combat_critical_power = critstore + t.getCrit(self,t)
-			
+		local cpow = t.getCrit(self,t)
+		self:attr("combat_critical_power", cpow)			
 		self:attackTarget(target, nil, t.getDamage(self,t), true)
+		self:attr("combat_critical_power", -cpow)			
 		
-		self.combat_critical_power = nil
-		self.combat_critical_power = critstore
-
 		return true
 	end,
 	info = function(self, t)

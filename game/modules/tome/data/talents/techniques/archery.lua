@@ -90,6 +90,10 @@ newTalent{
 				self.turn_procs.first_blood_shoot = target.life
 			end
 		end
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = true end
+	end,
+	archery_onmiss = function(self, talent, target, x, y)
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = nil end
 	end,
 	archery_onhit = function(self, t, target, x, y)
 		if self:knowTalent(self.T_MASTER_MARKSMAN) then
@@ -97,8 +101,9 @@ newTalent{
 			if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
 			if target:hasEffect(target.EFF_PIN_DOWN) then 
 				local eff = target:hasEffect(target.EFF_PIN_DOWN)
-				chance = chance + eff.mark
-				eff.mark = 0
+				chance = 100
+				self.turn_procs.auto_phys_crit = nil
+				target:removeEffect(target.EFF_PIN_DOWN)
 			end
 			if self.turn_procs.first_blood_shoot then chance = chance + 50 end
 			if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
@@ -202,13 +207,18 @@ newTalent{
 				self.turn_procs.first_blood_ss = target.life
 			end
 		end
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = true end
+	end,
+	archery_onmiss = function(self, talent, target, x, y)
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = nil end
 	end,
 	archery_onhit = function(self, t, target, x, y)
 		local chance = t.getChance(self,t)
 		if target:hasEffect(target.EFF_PIN_DOWN) then 
 			local eff = target:hasEffect(target.EFF_PIN_DOWN)
-			chance = chance + eff.mark
-			eff.mark = 0
+			chance = 100
+			self.turn_procs.auto_phys_crit = nil
+			target:removeEffect(target.EFF_PIN_DOWN)
 		end
 		if self.turn_procs.first_blood_ss then chance = chance + 50 end
 		if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
@@ -255,7 +265,6 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.4) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5)) end,
 	getMarkChance = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
-	getCritPower = function(self, t) return math.floor(self:combatTalentScale(t, 8, 20)) end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getChance = function(self,t) 
 		local chance = 20
@@ -266,11 +275,10 @@ newTalent{
 		return chance
 	end,
 	archery_onhit = function(self, t, target, x, y)
-		if target:canBe("pin") and target:checkHit(self:combatAttack(), target:combatPhysicalResist()) then
-			target:setEffect(target.EFF_PIN_DOWN, t.getDuration(self, t), {power=t.getCritPower(self,t), pin=1, mark=100})
-		else
-			target:setEffect(target.EFF_PIN_DOWN, t.getDuration(self, t), {power=t.getCritPower(self,t), pin=0, mark=100})
+		if target:canBe("pin") then
+			target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=self:combatAttack()})
 		end
+		target:setEffect(target.EFF_PIN_DOWN, t.getDuration(self, t), {src=self})
 		local chance = t.getChance(self,t)
 		if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
 	end,
@@ -287,12 +295,11 @@ newTalent{
 		local dam = t.getDamage(self,t)*100
 		local dur = t.getDuration(self,t)
 		local mark = t.getMarkChance(self,t)
-		local power = t.getCritPower(self,t)
 		local chance = t.getChance(self,t)
-		return ([[You fire a shot for %d%% damage that attempts to pin your target to the ground for %d turns, as well as increasing your critical strike chance and critical strike damage against the target by %d%% and increasing chance to mark by 100%% with your next Shoot or Steady Shot.
+		return ([[You fire a shot for %d%% damage that attempts to pin your target to the ground for %d turns, as well as giving your next Steady Shot or Shoot 100%% increased chance to critically hit and mark (regardless of whether the pin succeeds).
 		This shot has a 20%% chance to mark the target.
 		The chance to pin increases with your Accuracy.]]):
-		format(dam, dur, mark, power, chance)
+		format(dam, dur, mark, chance)
 	end,
 }
 
@@ -316,7 +323,7 @@ newTalent{
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.5) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	getSpeedPenalty = function(self, t) return math.floor(self:combatTalentScale(t, 10, 35))/100 end,
+	getSpeedPenalty = function(self, t) return math.floor(self:combatTalentLimit(t, 50, 10, 40))/100 end,
 	getChance = function(self,t) 
 		local chance = 20
 		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
@@ -361,7 +368,7 @@ newTalent{
 	stamina = 15,
 	require = techs_dex_req4,
 	range = 0,
-	radius = function(self, t) return 2 + math.floor(self:combatTalentScale(t, 3.5, 5.5)) end,
+	radius = function(self, t) return 2 + math.floor(self:combatTalentLimit(t, 8, 3.5, 5.5)) end,
 	tactical = { ATTACKAREA = { weapon = 2 }, ESCAPE = { knockback = 2 } },
 	requires_target = true,
 	target = function(self, t)
@@ -370,7 +377,7 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.7, 1.5) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 5)) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 5)) end,
 	getChance = function(self,t) 
 		local chance = 20
 		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
@@ -437,7 +444,7 @@ newTalent{
 		local chance = t.getChance(self,t)
 		return ([[Fires a wave of projectiles in a radius %d cone, dealing %d%% weapon damage. All targets struck by this will be knocked back to the maximum range of the cone and stunned for %d turns.
 		Each target struck has a %d%% chance to be marked.
-		The chance to knockback and daze increases with your Accuracy.]])
+		The chance to knockback and stun increases with your Accuracy.]])
 		:format(rad, dam, dur, chance)
 	end,
 }
@@ -452,20 +459,16 @@ newTalent{
 		if self.ai and self.ai == "party_member" then 
 			return 0
 		elseif self.ai then
-			return 3
+			return 6
 		else
-			return 3
+			return 6
 		end
 	end,	require = techs_dex_req1,
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
 	getDamage = function(self, t)
-		local dam = self:combatTalentWeaponDamage(t, 1.1, 2.4)
-		if self:isTalentActive(self.T_CONCEALMENT) then
-			dam = dam + (dam * self:callTalent(self.T_CONCEALMENT, "getDamage")/100)
-		end
-		return dam
+		return self:combatTalentWeaponDamage(t, 1.1, 2.3)
 	end,
 	getApr = function(self, t) return self:getDex(40,true) end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
@@ -543,11 +546,12 @@ newTalent{
 	end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getDamage = function(self, t)
-		local dam = self:combatTalentWeaponDamage(t, 0.6, 1.4)
-		if self:isTalentActive(self.T_CONCEALMENT) then
-			dam = dam + (dam * self:callTalent(self.T_CONCEALMENT, "getDamage")/100)
+		return self:combatTalentWeaponDamage(t, 0.6, 1.4)
+	end,
+	archery_onhit = function(self, t, target, x, y, tg)
+		if tg.primarytarget == target then
+			game.level.map:particleEmitter(x, y, tg.primaryeffect, "volley", {radius=tg.primaryeffect})
 		end
-		return dam
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -562,7 +566,7 @@ newTalent{
 		
 		if not targets then return nil end
 		local dam = t.getDamage(self,t)
-		self:archeryShoot(targets, t, {type = "hit", speed = 200}, {mult=dam})
+		self:archeryShoot(targets, t, {type = "hit", speed = 200, primaryeffect=tg.radius, primarytarget=target}, {mult=dam})
 		
 		--acquire secondary targets
 		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 
@@ -629,18 +633,18 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
 	getDamage = function(self, t)
-		local dam = self:combatTalentWeaponDamage(t, 0.7, 1.5)
-		if self:isTalentActive(self.T_CONCEALMENT) then
-			dam = dam + (dam * self:callTalent(self.T_CONCEALMENT, "getDamage")/100)
-		end
-		return dam
+		return self:combatTalentWeaponDamage(t, 0.7, 1.5)
 	end,
+	no_npc_use = true,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:hasEffect(target.EFF_MARKED) then 
 			target:removeEffect(target.EFF_MARKED) 
-			if self:knowTalent(self.T_BULLSEYE) then self:callTalent(self.T_BULLSEYE, "proc") end
+			if self:knowTalent(self.T_BULLSEYE) and not self.turn_procs.bullseye then
+				self.turn_procs.bullseye = true
+				self:callTalent(self.T_BULLSEYE, "proc") 
+			end --stop this proccing repeatedly
 		end
 		if not target.turn_procs.called_shot_silence then
 			target.turn_procs.called_shot_silence = true
@@ -652,14 +656,14 @@ newTalent{
 		elseif not target.turn_procs.called_shot_disarm then
 			target.turn_procs.called_shot_disarm = true
 			if target:canBe("disarm") then
-				target:setEffect(target.EFF_DISARMED, t.getDuration(self, t), {apply_power=self:combatAttack()})
+				target:setEffect(target.EFF_DISARMED, t.getDuration(self, t), {apply_power=self:combatAttack(), no_ct_effect=true})
 			else
 				game.logSeen(target, "%s resists the disarm!", target.name:capitalize())
 			end
 		elseif not target.turn_procs.called_shot_slow then
 			target.turn_procs.called_shot_slow = true
 			if target:canBe("slow") then
-				target:setEffect(target.EFF_SLOW_MOVE, t.getDuration(self, t), {power=0.5, apply_power=self:combatAttack()})
+				target:setEffect(target.EFF_SLOW_MOVE, t.getDuration(self, t), {power=0.5, apply_power=self:combatAttack(), no_ct_effect=true})
 			else
 				game.logSeen(target, "%s resists the slow!", target.name:capitalize())
 			end
@@ -676,13 +680,16 @@ newTalent{
 		local target = game.level.map(x, y, game.level.map.ACTOR)
 		
 		if not target then return nil end 
-		local shots=1
-		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then shots=3 end 
-		local targets = self:archeryAcquireTargets(tg, {multishots=shots, x=target.x, y=target.y})
+		local targets = self:archeryAcquireTargets(tg, {x=target.x, y=target.y})
 
 		if not targets then return nil end
 		local dam = t.getDamage(self,t)
 		self:archeryShoot(targets, t, nil, {mult=dam})
+		
+		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 		
+			local targets2 = self:archeryAcquireTargets(tg, {multishots=2, x=target.x, y=target.y})
+			self:archeryShoot(targets2, t, nil, {mult=dam*0.25})
+		end 
 
 		return true
 	end,
@@ -702,9 +709,9 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = techs_dex_req4,
-	getSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 10, 35))/100 end,
+	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 50, 10, 30))/100 end,
 	getTalentCount = function(self, t) return math.floor(self:combatTalentLimit(t, 4, 1, 2.5)) end,
-	getCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end,
+	getCooldown = function(self, t) return math.floor(self:combatTalentLimit(t, 5, 1, 3)) end,
 	proc = function(self, t)
 		if not self:isTalentCoolingDown(t) then 
 			self:setEffect(self.EFF_BULLSEYE, 2, {src=self, power=self:callTalent(self.T_BULLSEYE, "getSpeed")})

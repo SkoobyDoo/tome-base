@@ -271,13 +271,15 @@ newTalent{
 		end
 
 		if stone then
-			game.level.map:remove(self.x, self.y, Map.ACTOR)
-			game.level.map:remove(stone.x, stone.y, Map.ACTOR)
-			game.level.map(self.x, self.y, Map.ACTOR, stone)
-			game.level.map(stone.x, stone.y, Map.ACTOR, self)
-			self.x, self.y, stone.x, stone.y = stone.x, stone.y, self.x, self.y
-			game.level.map:particleEmitter(stone.x, stone.y, 1, "teleport")
-			game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+			if self:hasLOS(stone.x, stone.y, 10) then
+				game.level.map:remove(self.x, self.y, Map.ACTOR)
+				game.level.map:remove(stone.x, stone.y, Map.ACTOR)
+				game.level.map(self.x, self.y, Map.ACTOR, stone)
+				game.level.map(stone.x, stone.y, Map.ACTOR, self)
+				self.x, self.y, stone.x, stone.y = stone.x, stone.y, self.x, self.y
+				game.level.map:particleEmitter(stone.x, stone.y, 1, "teleport")
+				game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+			end
 
 			self:project({type="ball", radius=self:getTalentRadius(t), friendlyfire=false}, self.x, self.y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
@@ -290,7 +292,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You call upon the immediate help of your Halves.
-		Your Stone Half will trade places with you and all creatures currently targetting you in a radius of %d will target it instead.
+		Your Stone Half will trade places (if in sight) with you and all creatures currently targetting you in a radius of %d will target it instead.
 		Your Crystaline Half will instantly fire a volley of level %d earthen missiles at all foes near the stone half (or you if the stone half is dead) in radius %d.
 		In addition, as passive effect, your halves now also learn your level of Combat Accuracy.]]):
 		format(self:getTalentRadius(t), self:getTalentLevelRaw(t), self:getTalentRadius(t))

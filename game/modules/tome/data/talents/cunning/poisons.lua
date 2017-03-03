@@ -85,8 +85,10 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		local ret = {
-		}
+		local ret = {}
+		local h1x, h1y = self:attachementSpot("hand1", true) if h1x then self:talentParticles(ret, {type="apply_poison", args={x=h1x, y=h1y}}) end
+		local h2x, h2y = self:attachementSpot("hand2", true) if h2x then self:talentParticles(ret, {type="apply_poison", args={x=h2x, y=h2y}}) end
+		self:talentParticles(ret, {type="apply_poison", args={}})
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -105,19 +107,19 @@ newTalent{
 	points = 5,
 	mode = "passive",
 	require = cuns_req2,
-	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1, 2.7)) end,
-	getChance = function(self, t) return self:combatTalentLimit(t, 50, 10, 25) end,
+	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 1.5, 3.5)) end,
 	on_kill = function(self, t, target)
 		local poisons = {}
 		local to_spread  = 0
 		for k, v in pairs(target.tmp) do
 			local e = target.tempeffect_def[k]
-			if e.subtype.poison and v.src == self and rng.percent(t.getChance(self, t)) then
+			if e.subtype.poison and v.src == self then
 				print("[Toxic Death] spreading poison", k, target.x, target.y)
 				poisons[k] = target:copyEffect(k) poisons[k]._from_toxic_death = true
 				to_spread = to_spread + 1
 			end
 		end
+		-- Note: New effects functions are called in order: merge, on_gain, activate
 		if to_spread > 0 then
 			local tg = {type="ball", range = 10, radius=t.getRadius(self, t), selffire = false, friendlyfire = false, talent=t, stop_block=true}
 			target.dead = false -- for combat log purposes
@@ -135,7 +137,7 @@ newTalent{
 		end
 	end,
 	info = function(self, t)
-		return ([[When you kill a creature, all of your poisons affecting it will have a %d%% chance to spread to foes in a radius of %d.]]):format(t.getChance(self, t), t.getRadius(self, t))
+		return ([[When you kill a creature, all of your poisons affecting it will spread to foes in a radius of %d.]]):format(t.getRadius(self, t))
 	end,
 }
 
@@ -329,7 +331,7 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	no_unlearn_last = true,
-	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 35.5, 57.5) end, -- Limit -healing effect to <100%
+	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 150, 45, 70) end, -- Limit -healing effect to <150%
 	activate = function(self, t)
 		cancelPoisons(self)
 		self.vile_poisons = self.vile_poisons or {}
