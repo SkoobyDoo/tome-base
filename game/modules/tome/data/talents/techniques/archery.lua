@@ -444,7 +444,7 @@ newTalent{
 		local chance = t.getChance(self,t)
 		return ([[Fires a wave of projectiles in a radius %d cone, dealing %d%% weapon damage. All targets struck by this will be knocked back to the maximum range of the cone and stunned for %d turns.
 		Each target struck has a %d%% chance to be marked.
-		The chance to knockback and daze increases with your Accuracy.]])
+		The chance to knockback and stun increases with your Accuracy.]])
 		:format(rad, dam, dur, chance)
 	end,
 }
