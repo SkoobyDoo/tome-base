@@ -289,15 +289,28 @@ newTalent{
 		self:unlearnTalent(self.T_CHANT_OF_RESISTANCE)
 	end,
 	info = function(self, t)
-		local t1 = self:getTalentFromId(self.T_CHANT_OF_FORTITUDE)
-		local t2 = self:getTalentFromId(self.T_CHANT_OF_FORTRESS)
-		local t3 = self:getTalentFromId(self.T_CHANT_OF_RESISTANCE)
-		return ([[You have learned to sing the praises of the Sun, in the form of three defensive Chants.
-		Chant of Fortitute: Increases your mental save by %d and maximum life by %d%%.
-		Chant of Fortress: Increases your physical save by %d, your physical resistance by %d%%, your armour by %d and your armour hardiness by 10%%.
-		Chant of Resistance: Increases you spell save by %d, your fire/cold/lightning/acid resistances by %d%% and reduces all damage that comes from distant enemies (3 spaces or more) by %d%%.
-		You may only have one Chant active at a time.]]):
-		format(t1.getResists(self, t1), t1.getLifePct(self, t1)*100, t2.getResists(self, t2), t2.getPhysicalResistance(self, t2), t2.getPhysicalResistance(self, t2), t3.getSpellResists(self, t3), t3.getResists(self, t3), t3.getDamageChange(self, t3))
+		local ret = ""
+		local old1 = self.talents[self.T_CHANT_OF_FORTITUDE]
+		local old2 = self.talents[self.T_CHANT_OF_FORTRESS]
+		local old3 = self.talents[self.T_CHANT_OF_RESISTANCE]
+		self.talents[self.T_CHANT_OF_FORTITUDE] = (self.talents[t.id] or 0)
+		self.talents[self.T_CHANT_OF_FORTRESS] = (self.talents[t.id] or 0)
+		self.talents[self.T_CHANT_OF_RESISTANCE] = (self.talents[t.id] or 0)
+		pcall(function() -- Be very paranoid, even if some addon or whatever manage to make that crash, we still restore values
+			local t1 = self:getTalentFromId(self.T_CHANT_OF_FORTITUDE)
+			local t2 = self:getTalentFromId(self.T_CHANT_OF_FORTRESS)
+			local t3 = self:getTalentFromId(self.T_CHANT_OF_RESISTANCE)
+			ret = ([[You have learned to sing the praises of the Sun, in the form of three defensive Chants.
+			Chant of Fortitute: Increases your mental save by %d and maximum life by %d%%.
+			Chant of Fortress: Increases your physical save by %d, your physical resistance by %d%%, your armour by %d and your armour hardiness by 10%%.
+			Chant of Resistance: Increases you spell save by %d, your fire/cold/lightning/acid resistances by %d%% and reduces all damage that comes from distant enemies (3 spaces or more) by %d%%.
+			You may only have one Chant active at a time.]]):
+			format(t1.getResists(self, t1), t1.getLifePct(self, t1)*100, t2.getResists(self, t2), t2.getPhysicalResistance(self, t2), t2.getPhysicalResistance(self, t2), t3.getSpellResists(self, t3), t3.getResists(self, t3), t3.getDamageChange(self, t3))
+		end)
+		self.talents[self.T_CHANT_OF_FORTITUDE] = old1
+		self.talents[self.T_CHANT_OF_FORTRESS] = old2
+		self.talents[self.T_CHANT_OF_RESISTANCE] = old3
+		return ret
 	end,
 }
 

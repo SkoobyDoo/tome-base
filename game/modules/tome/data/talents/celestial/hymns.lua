@@ -309,15 +309,28 @@ newTalent{
 		self:unlearnTalent(self.T_HYMN_OF_PERSEVERANCE)
 	end,
 	info = function(self, t)
-		local t1 = self:getTalentFromId(self.T_HYMN_OF_SHADOWS)
-		local t2 = self:getTalentFromId(self.T_HYMN_OF_DETECTION)
-		local t3 = self:getTalentFromId(self.T_HYMN_OF_PERSEVERANCE)
-		return ([[You have learned to sing the praises of the Moons, in the form of three defensive Hymns.
-		Hymn of Shadows: Increases your movement speed by %d%%, your spell casting speed by %d%% and grants %d%% evasion.
-		Hymn of Detection: Increases your ability to see stealthy creatures by %d and invisible creatures by %d, and increases your critical power by %d%%.
-		Hymn of Perseverance: Increases your resistance to stun, confusion and blinding by %d%%.
-		You may only have one Hymn active at a time.]]):
-		format(t1.moveSpeed(self, t1), t1.castSpeed(self, t1), t1.evade(self, t1), t2.getSeeStealth(self, t2), t2.getSeeInvisible(self, t2), t2.critPower(self, t2), t3.getImmunities(self, t3)*100)
+		local ret = ""
+		local old1 = self.talents[self.T_HYMN_OF_SHADOWS]
+		local old2 = self.talents[self.T_HYMN_OF_DETECTION]
+		local old3 = self.talents[self.T_HYMN_OF_PERSEVERANCE]
+		self.talents[self.T_HYMN_OF_SHADOWS] = (self.talents[t.id] or 0)
+		self.talents[self.T_HYMN_OF_DETECTION] = (self.talents[t.id] or 0)
+		self.talents[self.T_HYMN_OF_PERSEVERANCE] = (self.talents[t.id] or 0)
+		pcall(function() -- Be very paranoid, even if some addon or whatever manage to make that crash, we still restore values
+			local t1 = self:getTalentFromId(self.T_HYMN_OF_SHADOWS)
+			local t2 = self:getTalentFromId(self.T_HYMN_OF_DETECTION)
+			local t3 = self:getTalentFromId(self.T_HYMN_OF_PERSEVERANCE)
+			ret = ([[You have learned to sing the praises of the Moons, in the form of three defensive Hymns.
+			Hymn of Shadows: Increases your movement speed by %d%%, your spell casting speed by %d%% and grants %d%% evasion.
+			Hymn of Detection: Increases your ability to see stealthy creatures by %d and invisible creatures by %d, and increases your critical power by %d%%.
+			Hymn of Perseverance: Increases your resistance to stun, confusion and blinding by %d%%.
+			You may only have one Hymn active at a time.]]):
+			format(t1.moveSpeed(self, t1), t1.castSpeed(self, t1), t1.evade(self, t1), t2.getSeeStealth(self, t2), t2.getSeeInvisible(self, t2), t2.critPower(self, t2), t3.getImmunities(self, t3)*100)
+		end)
+		self.talents[self.T_HYMN_OF_SHADOWS] = old1
+		self.talents[self.T_HYMN_OF_DETECTION] = old2
+		self.talents[self.T_HYMN_OF_PERSEVERANCE] = old3
+		return ret
 	end,
 }
 
