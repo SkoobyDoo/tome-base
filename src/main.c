@@ -54,7 +54,6 @@
 #define HEIGHT 600
 #define DEFAULT_IDLE_FPS (2)
 #define WINDOW_ICON_PATH ("/engines/default/data/gfx/te4-icon.png")
-#define JOY_DEADZONE 0.21
 
 int start_xpos = -1, start_ypos = -1;
 char *override_home = NULL;
@@ -66,7 +65,9 @@ int locked_w = 0, locked_h = 0;
 SDL_Window *window = NULL;
 SDL_Surface *windowIconSurface = NULL;
 SDL_GLContext maincontext; /* Our opengl context handle */
-SDL_Joystick* gamepad = NULL;
+SDL_GameController *gamepad = NULL;
+SDL_Joystick *gamepadjoy = NULL;
+int gamepad_instance_id = -1;
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
 lua_State *L = NULL;
@@ -75,6 +76,7 @@ bool no_debug = FALSE;
 bool safe_mode = FALSE;
 int current_mousehandler = LUA_NOREF;
 int current_keyhandler = LUA_NOREF;
+int current_gamepadhandler = LUA_NOREF;
 int current_game = LUA_NOREF;
 core_boot_type *core_def = NULL;
 bool exit_engine = FALSE;
@@ -538,68 +540,60 @@ bool on_event(SDL_Event *event)
 			docall(L, 6, 0);
 		}
 		return TRUE;
-	case SDL_JOYAXISMOTION:
-		if (current_mousehandler != LUA_NOREF)
+	case SDL_CONTROLLERDEVICEADDED:
+		if (current_gamepadhandler != LUA_NOREF)
 		{
-			float v = (float)event->jaxis.value / 32770;
-			if (v > -JOY_DEADZONE && v < JOY_DEADZONE) return FALSE;
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyAxis");
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveDevice");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jaxis.axis);
-			lua_pushnumber(L, MIN(1, MAX(-1, v)));
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushboolean(L, TRUE);
+			lua_pushnumber(L, event->cdevice.which);
 			docall(L, 3, 0);
 		}
 		return TRUE;
-	case SDL_JOYBALLMOTION:
-		if (current_mousehandler != LUA_NOREF)
+
+	case SDL_CONTROLLERDEVICEREMOVED:
+		if (current_gamepadhandler != LUA_NOREF)
 		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyBall");
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveDevice");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jball.ball);
-			lua_pushnumber(L, event->jball.xrel);
-			lua_pushnumber(L, event->jball.yrel);
-			docall(L, 4, 0);
-		}
-		return TRUE;
-	case SDL_JOYHATMOTION:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyHat");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jhat.hat);
-			switch (event->jhat.value) {
-				case SDL_HAT_UP: lua_pushnumber(L, 8); break;
-				case SDL_HAT_DOWN: lua_pushnumber(L, 2); break;
-				case SDL_HAT_LEFT: lua_pushnumber(L, 4); break;
-				case SDL_HAT_RIGHT: lua_pushnumber(L, 6); break;
-				case SDL_HAT_LEFTUP: lua_pushnumber(L, 7); break;
-				case SDL_HAT_LEFTDOWN: lua_pushnumber(L, 1); break;
-				case SDL_HAT_RIGHTUP: lua_pushnumber(L, 9); break;
-				case SDL_HAT_RIGHTDOWN: lua_pushnumber(L, 3); break;
-			}
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushboolean(L, FALSE);
+			lua_pushnumber(L, event->cdevice.which);
 			docall(L, 3, 0);
 		}
 		return TRUE;
-	case SDL_JOYBUTTONDOWN:
-	case SDL_JOYBUTTONUP:
-		if (current_mousehandler != LUA_NOREF)
+
+	case SDL_CONTROLLERBUTTONDOWN:
+	case SDL_CONTROLLERBUTTONUP:
+		if (current_gamepadhandler != LUA_NOREF)
 		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushstring(L, "receiveJoyButton");
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveButton");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushnumber(L, event->jbutton.button);
-			lua_pushboolean(L, event->jbutton.state == SDL_RELEASED ? TRUE : FALSE);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, SDL_GameControllerGetStringForButton(event->cbutton.button));
+			lua_pushboolean(L, event->cbutton.state == SDL_RELEASED ? TRUE : FALSE);
+			docall(L, 3, 0);
+		}
+		return TRUE;
+
+	case SDL_CONTROLLERAXISMOTION:
+		if (current_gamepadhandler != LUA_NOREF)
+		{
+			float v = (float)event->caxis.value / 32770;
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveAxis");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, SDL_GameControllerGetStringForAxis(event->caxis.axis));
+			lua_pushnumber(L, v);
 			docall(L, 3, 0);
 		}
 		return TRUE;
@@ -1121,6 +1115,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_physfs(L);
 		luaopen_core(L);
 		luaopen_core_mouse(L);
+		luaopen_core_gamepad(L);
 		luaopen_font(L);
 		luaopen_fov(L);
 		luaopen_socket_core(L);
@@ -1404,7 +1399,7 @@ int main(int argc, char *argv[])
 	}
 
 	// initialize engine and set up resolution and depth
-	Uint32 flags=SDL_INIT_TIMER | SDL_INIT_JOYSTICK;
+	Uint32 flags=SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER;
 	if (SDL_Init (flags) < 0) {
 		printf("cannot initialize SDL: %s\n", SDL_GetError ());
 		return 1;
@@ -1415,9 +1410,13 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 
-	if (SDL_NumJoysticks() >= 1) {
-		if (gamepad = SDL_JoystickOpen(0)) {
-			printf("Found gamepad, enabling support\n");
+	for (i = 0; i < SDL_NumJoysticks(); i++) {
+		if (SDL_IsGameController(i)) {
+			gamepad = SDL_GameControllerOpen(i);
+			gamepadjoy = SDL_GameControllerGetJoystick(gamepad);
+			gamepad_instance_id = SDL_JoystickInstanceID(gamepadjoy);
+
+			printf("Found gamepad, enabling support: %s\n", SDL_GameControllerMapping(gamepad));
 		}
 	}
 

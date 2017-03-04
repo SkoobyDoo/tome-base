@@ -41,6 +41,7 @@ typedef struct
 	GLfloat *textures;
 } lua_vertexes;
 
+extern int luaopen_core_gamepad(lua_State *L);
 extern int luaopen_core_mouse(lua_State *L);
 extern int luaopen_core(lua_State *L);
 extern int init_blank_surface();

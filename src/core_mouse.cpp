@@ -77,14 +77,6 @@ static int lua_is_touch_enabled(lua_State *L)
 	return 1;
 }
 
-static int lua_is_gamepad_enabled(lua_State *L)
-{
-	if (!SDL_NumJoysticks()) return 0;
-	const char *str = SDL_JoystickNameForIndex(0);
-	lua_pushstring(L, str);
-	return 1;
-}
-
 int mouse_cursor_s_ref = LUA_NOREF;
 int mouse_cursor_down_s_ref = LUA_NOREF;
 SDL_Surface *mouse_cursor_s = NULL;
@@ -171,7 +163,6 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 static const struct luaL_Reg mouselib[] =
 {
 	{"touchCapable", lua_is_touch_enabled},
-	{"gamepadCapable", lua_is_gamepad_enabled},
 	{"setMouseCursor", sdl_set_mouse_cursor},
 	{"setMouseDrag", sdl_set_mouse_cursor_drag},
 	{"show", lua_mouse_show},
