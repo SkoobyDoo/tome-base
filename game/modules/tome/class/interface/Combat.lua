@@ -676,7 +676,7 @@ end
 --- handle various on hit procs for melee combat
 function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
 	if self:isAccuracyEffect(weapon, "staff") then
-		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 2.5, 2)
+		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 0.025, 2)
 		print("[ATTACK] staff accuracy bonus", atk, def, "=", bonus)
 		self.__global_accuracy_damage_bonus = bonus
 	end
