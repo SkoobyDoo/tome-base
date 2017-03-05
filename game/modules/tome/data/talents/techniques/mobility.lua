@@ -208,7 +208,7 @@ newTalent{
 	require = techs_dex_req2,
 	random_ego = "defensive",
 	tactical = { ESCAPE = 2, DEFEND = 2 },
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 15, 30, 20)) end, --shorter cooldown but less duration - as especially on randbosses a long duration evasion is frustrating, this makes it a bit more useful for hit and run
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 28, 15)) end, --shorter cooldown but less duration - as especially on randbosses a long duration evasion is frustrating, this makes it a bit more useful for hit and run
 	base_stamina = 25,
 	stamina = mobility_stamina,
 	no_energy = true,
@@ -242,7 +242,7 @@ newTalent {
 	points = 5,
 	random_ego = "attack",
 	on_pre_use = mobility_pre_use,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 4, 13, 7)) end,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 4, 11, 5)) end,
 	no_energy = true,
 	no_break_stealth = true,
 	tactical = { CLOSEIN = 2 },
@@ -305,7 +305,7 @@ newTalent {
 	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
 		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.6))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.5, 50) -- vs TL/def: 1/10 == ~08%, 1.3/10 == ~10%, 1.3/50 == ~16%, 6.5/50 == ~32%, 6.5/100 = ~40%
 	end,
-	getStamina = function(self, t) return 12*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end,
+	getStamina = function(self, t) return 12*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.45)) end,
 	getLifeTrigger = function(self, t)
 		return self:combatTalentLimit(t, 10, 30, 15) -- Limit trigger > 10% life
 	end,
