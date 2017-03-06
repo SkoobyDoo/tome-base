@@ -86,7 +86,7 @@ newEntity{
 	use_no_blind = true,
 	use_no_silence = true,
 	fire_destroy = {{10,1}, {20,2}, {40,5}, {60,10}, {120,20}},
-	desc = [[Corrupted taints may be inscribed onto your body, granting you an on-demand ability.]],
+	desc = [[Corrupted taints may be inscribed onto your body, granting you an on-demand ability.  Activating a taint is taxing, costing you 20%% of your maximum life.]],
 	egos = "/data/general/objects/egos/infusions.lua", egos_chance = resolvers.mbonus(30, 5),
 
 	power_source = {arcane=true},
@@ -210,24 +210,6 @@ newEntity{ base = "BASE_INFUSION",
 }
 
 newEntity{ base = "BASE_INFUSION",
-	name = "sun infusion",
-	level_range = {1, 50},
-	rarity = 13,
-	cost = 10,
-	material_level = 1,
-
-	inscription_kind = "attack",
-	inscription_data = {
-		cooldown = resolvers.rngrange(9, 15),
-		range = resolvers.mbonus_level(5, 5, function(e, v) return v * 0.1 end),
-		turns = resolvers.rngrange(3, 5),
-		power = resolvers.mbonus_level(5, 20, function(e, v) return v * 0.1 end),
-		use_stat_mod = 1.2,
-	},
-	inscription_talent = "INFUSION:_SUN",
-}
-
-newEntity{ base = "BASE_INFUSION",
 	name = "heroism infusion",
 	level_range = {25, 50},
 	rarity = 16,
@@ -262,44 +244,9 @@ newEntity{ base = "BASE_INFUSION",
 	},
 	inscription_talent = "INFUSION:_INSIDIOUS_POISON",
 }
-
 -----------------------------------------------------------
 -- Runes
 -----------------------------------------------------------
-newEntity{ base = "BASE_RUNE",
-	name = "phase door rune",
-	level_range = {1, 50},
-	rarity = 15,
-	cost = 10,
-	material_level = 1,
-
-	inscription_kind = "teleport",
-	inscription_data = {
-		cooldown = resolvers.rngrange(8, 10),
-		dur = resolvers.mbonus_level(5, 3),
-		power = resolvers.mbonus_level(30, 15, function(e, v) return v * 1 end),
-		range = resolvers.mbonus_level(10, 5, function(e, v) return v * 1 end),
-		use_stat_mod = 0.07,
-	},
-	inscription_talent = "RUNE:_PHASE_DOOR",
-}
-
-newEntity{ base = "BASE_RUNE",
-	name = "controlled phase door rune",
-	level_range = {35, 50},
-	rarity = 17,
-	cost = 50,
-	material_level = 4,
-
-	inscription_kind = "movement",
-	inscription_data = {
-		cooldown = resolvers.rngrange(10, 12),
-		range = resolvers.mbonus_level(6, 5, function(e, v) return v * 3 end),
-		use_stat_mod = 0.05,
-	},
-	inscription_talent = "RUNE:_CONTROLLED_PHASE_DOOR",
-}
-
 newEntity{ base = "BASE_RUNE",
 	name = "teleportation rune",
 	level_range = {10, 50},
@@ -331,59 +278,6 @@ newEntity{ base = "BASE_RUNE",
 		use_stat_mod = 3,
 	},
 	inscription_talent = "RUNE:_SHIELDING",
-}
-
-newEntity{ base = "BASE_RUNE",
-	name = "invisibility rune",
-	level_range = {18, 50},
-	rarity = 19,
-	cost = 40,
-	material_level = 3,
-
-	inscription_kind = "utility",
-	inscription_data = {
-		cooldown = resolvers.rngrange(14, 24),
-		dur = resolvers.mbonus_level(9, 4, function(e, v) return v * 1 end),
-		power = resolvers.mbonus_level(8, 7, function(e, v) return v * 1 end),
-		use_stat_mod = 0.08,
-	},
-	inscription_talent = "RUNE:_INVISIBILITY",
-}
-
-newEntity{ base = "BASE_RUNE",
-	name = "vision rune",
-	level_range = {15, 50},
-	rarity = 16,
-	cost = 30,
-	material_level = 2,
-
-	inscription_kind = "detection",
-	inscription_data = {
-		cooldown = resolvers.rngrange(20, 30),
-		range = resolvers.mbonus_level(10, 8),
-		dur = resolvers.mbonus_level(20, 12),
-		power = resolvers.mbonus_level(20, 10, function(e, v) return v * 0.3 end),
-		esp = resolvers.rngtable{"humanoid","demon","dragon","horror","undead","animal"},
-		use_stat_mod = 0.14,
-	},
-	inscription_talent = "RUNE:_VISION",
-}
-
-newEntity{ base = "BASE_RUNE",
-	name = "heat beam rune",
-	level_range = {25, 50},
-	rarity = 16,
-	cost = 20,
-	material_level = 2,
-
-	inscription_kind = "attack",
-	inscription_data = {
-		cooldown = resolvers.rngrange(12, 20),
-		range = resolvers.mbonus_level(5, 4),
-		power = resolvers.mbonus_level(200, 60, function(e, v) return v * 0.1 end),
-		use_stat_mod = 1.8,
-	},
-	inscription_talent = "RUNE:_HEAT_BEAM",
 }
 
 -- Very strong debuff, very low damage and scaling
@@ -427,23 +321,6 @@ newEntity{ base = "BASE_RUNE",
 }
 
 newEntity{ base = "BASE_RUNE",
-	name = "lightning rune",
-	level_range = {25, 50},
-	rarity = 16,
-	cost = 20,
-	material_level = 3,
-
-	inscription_kind = "attack",
-	inscription_data = {
-		cooldown = resolvers.rngrange(15, 25),
-		range = resolvers.mbonus_level(5, 4),
-		power = resolvers.mbonus_level(400, 50, function(e, v) return v * 0.1 end),
-		use_stat_mod = 1.8,
-	},
-	inscription_talent = "RUNE:_LIGHTNING",
-}
-
-newEntity{ base = "BASE_RUNE",
 	name = "manasurge rune",
 	level_range = {1, 50},
 	rarity = 22,
@@ -459,7 +336,6 @@ newEntity{ base = "BASE_RUNE",
 	},
 	inscription_talent = "RUNE:_MANASURGE",
 }
-
 -----------------------------------------------------------
 -- Taints
 -----------------------------------------------------------
@@ -501,3 +377,130 @@ newEntity{ base = "BASE_TAINT",
 	inscription_talent = "TAINT:_INSANITY",
 }
 --]]
+
+-----------------------------------------------------------
+-- Legacy/depreciated
+-----------------------------------------------------------
+
+newEntity{ base = "BASE_RUNE",
+	name = "lightning rune",
+	level_range = {25, 50},
+	rarity = 0,
+	cost = 20,
+	material_level = 3,
+
+	inscription_kind = "attack",
+	inscription_data = {
+		cooldown = resolvers.rngrange(15, 25),
+		range = resolvers.mbonus_level(5, 4),
+		power = resolvers.mbonus_level(400, 50, function(e, v) return v * 0.1 end),
+		use_stat_mod = 1.8,
+	},
+	inscription_talent = "RUNE:_LIGHTNING",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "invisibility rune",
+	level_range = {18, 50},
+	rarity = 19,
+	cost = 40,
+	material_level = 3,
+
+	inscription_kind = "utility",
+	inscription_data = {
+		cooldown = resolvers.rngrange(14, 24),
+		dur = resolvers.mbonus_level(9, 4, function(e, v) return v * 1 end),
+		power = resolvers.mbonus_level(8, 7, function(e, v) return v * 1 end),
+		use_stat_mod = 0.08,
+	},
+	inscription_talent = "RUNE:_INVISIBILITY",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "vision rune",
+	level_range = {15, 50},
+	rarity = 0,
+	cost = 30,
+	material_level = 2,
+
+	inscription_kind = "detection",
+	inscription_data = {
+		cooldown = resolvers.rngrange(20, 30),
+		range = resolvers.mbonus_level(10, 8),
+		dur = resolvers.mbonus_level(20, 12),
+		power = resolvers.mbonus_level(20, 10, function(e, v) return v * 0.3 end),
+		esp = resolvers.rngtable{"humanoid","demon","dragon","horror","undead","animal"},
+		use_stat_mod = 0.14,
+	},
+	inscription_talent = "RUNE:_VISION",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "heat beam rune",
+	level_range = {25, 50},
+	rarity = 0,
+	cost = 20,
+	material_level = 2,
+
+	inscription_kind = "attack",
+	inscription_data = {
+		cooldown = resolvers.rngrange(12, 20),
+		range = resolvers.mbonus_level(5, 4),
+		power = resolvers.mbonus_level(200, 60, function(e, v) return v * 0.1 end),
+		use_stat_mod = 1.8,
+	},
+	inscription_talent = "RUNE:_HEAT_BEAM",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "phase door rune",
+	level_range = {1, 50},
+	rarity = 0,
+	cost = 10,
+	material_level = 1,
+
+	inscription_kind = "teleport",
+	inscription_data = {
+		cooldown = resolvers.rngrange(8, 10),
+		dur = resolvers.mbonus_level(5, 3),
+		power = resolvers.mbonus_level(30, 15, function(e, v) return v * 1 end),
+		range = resolvers.mbonus_level(10, 5, function(e, v) return v * 1 end),
+		use_stat_mod = 0.07,
+	},
+	inscription_talent = "RUNE:_PHASE_DOOR",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "controlled phase door rune",
+	level_range = {35, 50},
+	rarity = 0,
+	cost = 50,
+	material_level = 4,
+
+	inscription_kind = "movement",
+	inscription_data = {
+		cooldown = resolvers.rngrange(10, 12),
+		range = resolvers.mbonus_level(6, 5, function(e, v) return v * 3 end),
+		use_stat_mod = 0.05,
+	},
+	inscription_talent = "RUNE:_CONTROLLED_PHASE_DOOR",
+}
+
+newEntity{ base = "BASE_INFUSION",
+	name = "sun infusion",
+	level_range = {1, 50},
+	rarity = 0,
+	cost = 10,
+	material_level = 1,
+
+	inscription_kind = "attack",
+	inscription_data = {
+		cooldown = resolvers.rngrange(9, 15),
+		range = resolvers.mbonus_level(5, 5, function(e, v) return v * 0.1 end),
+		turns = resolvers.rngrange(3, 5),
+		power = resolvers.mbonus_level(5, 20, function(e, v) return v * 0.1 end),
+		use_stat_mod = 1.2,
+	},
+	inscription_talent = "INFUSION:_SUN",
+}
+
