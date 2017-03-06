@@ -209,7 +209,9 @@ newEntity{
 		purse = 10,
 		empty_before_restock = false,
 		filters = {
-			{type="scroll", subtype="rune", id=true},
+			{type="scroll", subtype="rune", id=true, ego_chance = 100},
+			{type="scroll", subtype="taint", id=true, ego_chance = 100},
+
 		},
 	},
 }
@@ -292,7 +294,9 @@ newEntity{
 		purse = 10,
 		empty_before_restock = false,
 		filters = {
-			{type="scroll", subtype="rune", id=true},
+			{type="scroll", subtype="rune", id=true, ego_chance = 100},
+			{type="scroll", subtype="taint", id=true, ego_chance = 100},
+
 		},
 		fixed = {
 			{id=true, defined="LINANIIL_LECTURE"},
