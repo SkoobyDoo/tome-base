@@ -707,8 +707,98 @@ newInscription{
 	end,
 }
 
+-- New name for the merged Phase Doors
+newInscription{
+	name = "Rune: Blink",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	is_teleport = true,
+	tactical = { CLOSEIN = 2 },
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=data.range + data.inc_stat, radius=1, requires_knowledge=false}
+		local x, y = self:getTarget(tg)
+		if not x then return end
+		if not self:hasLOS(x, y) then return end
+
+		local _ _, x, y = self:canProject(tg, x, y)
+		local rad = 1
+		
+
+		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+		self:teleportRandom(x, y, rad)
+		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to teleport up to %d spaces within line of sight.]]):format(data.range + data.inc_stat)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[range %d]]):format(data.range + data.inc_stat)
+	end,
+}
+
+-- Invisibility updated to have combat value and more escape options
+newInscription{
+	name = "Rune: Ethereal",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	getDur = function(self, t) return 5 end,
+	getDamageMod = function(self, t) return 50 end, -- placeholder
+	getPower = function(self, t) return 50 end, -- placeholder
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		self:setEffect(self.EFF_ETHEREAL, t.getDur(self, t), {power=t.getPower(self, t), t.getDamageMod(self, t)})
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to become ethereal for %d turns.
+		While ethereal all damage you deal and take is reduced by %d%%, you are invisible (power %d), and you can move through most forms of obstruction.
+		If your turn ends while inside a wall you will be teleported back to the first obstructed space you entered.
+		]]):format(t.getDur(self, t), t.getDamageMod(self, t), t.getPower(self, t))
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[power %d, damage %d%%, %d turns]]):format(t.getPower(self, t), t.getDamageMod(self, t), t.getDur(self, t))
+	end,
+}
+
+-- Lightning Rune replacement, concept partially kept
+-- Numbers on this must be done carefully
+-- This concept may not work as a generalized mechanic for both balance and infringement on Corruption class identity, but lets give it a run for now
+newInscription{
+	name = "Rune: Stormshield",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	getDur = function(self, t) return 5 end,
+	getThreshold = function(self, t) return 50 end, -- placeholder
+	getBlocks = function(self, t) return 10 end, -- placeholder
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		self:setEffect(self.EFF_STORMSHIELD, t.getDur(self, t), {threshold=t.getThreshold(self, t), blocks=t.getBlocks(self, t)})
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to summon a protective storm around you for %d turns.
+			While active the storm will completely block all damage over %d up to %d times.]])
+				:format(t.getDur(self, t), t.getThreshold(self, t), t.getBlocks(self, t) )
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[threshold %d, blocks %d, %d turns]]):format(t.getThreshold(self, t), t.getBlocks(self, t), t.getDur(self, t) )
+	end,
+}
 -----------------------------------------------------------------------
--- Taints
+-- Taints:  Arcane, activating a taint costs a % of maximum life representing the strain on the body and differentiating them from runes
 -----------------------------------------------------------------------
 newInscription{
 	name = "Taint: Devourer",
@@ -800,6 +890,40 @@ newInscription{
 	end,
 }
 
+-- Unreliable for healing when used to cleanse only 1-2 effects
+newInscription{
+	name = "Taint: Consume Affliction",
+	type = {"inscriptions/infusions", 1},
+	points = 1,
+	tactical = { HEAL = 2 },
+	is_heal = true,
+	no_energy = true,
+	getHeal = function(self, t) return 1 end,
+	action = function(self, t)
+		self:takeHit(self.max_life * 0.2, self)
+
+		local consumed = 0
+		consumed = consumed + self:removeEffectsFilter(function(e) return e.type.physical end, 1)
+		consumed = consumed + self:removeEffectsFilter(function(e) return e.type.magical end, 1)
+		consumed = consumed + self:removeEffectsFilter(function(e) return e.subtype.mental end, 1)
+
+		self:attr("allow_on_heal", 1)
+		self:heal(t.getHeal(self, t) * consumed, t)
+		self:attr("allow_on_heal", -1)
+
+
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Lose 20%% of your maximum life.
+			Activate the taint to instantly cleanse 1 physical, mental, and magical effect.  For each effect cleansed you heal for %d life.  ]]):format(t.getHeal(self, t))
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[heal %d]]):format(t.getHeal(self, t))
+	end,
+}
 -----------------------------------------------------------------------
 -- Legacy:  These inscriptions aren't on the drop tables and are only kept for legacy compatibility and occasionally NPC use
 -----------------------------------------------------------------------
