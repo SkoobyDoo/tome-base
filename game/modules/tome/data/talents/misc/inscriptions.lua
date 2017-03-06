@@ -245,45 +245,6 @@ newInscription{
 }
 
 newInscription{
-	name = "Infusion: Sun",
-	type = {"inscriptions/infusions", 1},
-	points = 1,
-	tactical = {DISABLE = { blind = 2 } },
-	range = 0,
-	radius = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return data.range
-	end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t}
-	end,
-	requires_target = true,
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local tg = self:getTalentTarget(t)
-		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
-		
-		self:project(tg, self.x, self.y, engine.DamageType.BLINDCUSTOMMIND, {power=apply, turns=data.turns})
-		self:project(tg, self.x, self.y, engine.DamageType.BREAK_STEALTH, {power=apply/2, turns=data.turns})
-		tg.selffire = true
-		self:project(tg, self.x, self.y, engine.DamageType.LITE, apply >= 19 and 100 or 1)
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
-		return ([[Activate the infusion to brighten the area in a radius of %d and illuminate stealthy creatures, possibly revealing them (reduces stealth power by %d).%s
-		It will also blind any creatures caught inside (power %d) for %d turns.]]):
-		format(data.range, apply/2, apply >= 19 and "\nThe light is so powerful it will also banish magical darkness" or "", apply, data.turns)
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
-		return ([[rad %d; power %d; turns %d%s]]):format(data.range, apply, data.turns, apply >= 19 and "; dispels darkness" or "")
-	end,
-}
-
-newInscription{
 	name = "Infusion: Heroism",
 	type = {"inscriptions/infusions", 1},
 	points = 1,
@@ -307,6 +268,7 @@ newInscription{
 	end,
 }
 
+-- Kept for now
 newInscription{
 	name = "Infusion: Insidious Poison",
 	type = {"inscriptions/infusions", 1},
@@ -386,78 +348,6 @@ newInscription{
 -----------------------------------------------------------------------
 -- Runes
 -----------------------------------------------------------------------
-newInscription{
-	name = "Rune: Phase Door",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_spell = true,
-	is_teleport = true,
-	tactical = { ESCAPE = 2 },
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
-		self:teleportRandom(self.x, self.y, data.range + data.inc_stat)
-		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
-		self:setEffect(self.EFF_OUT_OF_PHASE, data.dur or 3, {
-			defense=(data.power or data.range) + data.inc_stat * 3 + (self:attr("defense_on_teleport") or 0),
-			resists=(data.power or data.range) + data.inc_stat * 3 + (self:attr("resist_all_on_teleport") or 0),
-			effect_reduction=(data.power or data.range) + data.inc_stat * 3 + (self:attr("effect_reduction_on_teleport") or 0),
-		})
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local power = (data.power or data.range) + data.inc_stat * 3
-		return ([[Activate the rune to teleport randomly in a range of %d.
-		Afterwards you stay out of phase for %d turns. In this state all new negative status effects duration is reduced by %d%%, your defense is increased by %d and all your resistances by %d%%.]]):
-		format(data.range + data.inc_stat, data.dur or 3, power, power, power)
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local power = (data.power or data.range) + data.inc_stat * 3
-		return ([[range %d; power %d; dur %d]]):format(data.range + data.inc_stat, power, data.dur or 3)
-	end,
-}
-
-newInscription{
-	name = "Rune: Controlled Phase Door",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_spell = true,
-	is_teleport = true,
-	tactical = { CLOSEIN = 2 },
--- update this to allow for escape tactic (after AI update)
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=data.range + data.inc_stat, radius=3, requires_knowledge=false}
-		local x, y = self:getTarget(tg)
-		if not x then return nil end
-		-- Target code does not restrict the target coordinates to the range, it lets the project function do it
-		-- but we cant ...
-		local _ _, x, y = self:canProject(tg, x, y)
-
-		-- Check LOS
-		local rad = 3
-		if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
-			game.logPlayer(self, "The targetted phase door fizzles and works randomly!")
-			x, y = self.x, self.y
-			rad = tg.range
-		end
-
-		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
-		self:teleportRandom(x, y, rad)
-		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to teleport in a range of %d.]]):format(data.range + data.inc_stat)
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[range %d]]):format(data.range + data.inc_stat)
-	end,
-}
 
 newInscription{
 	name = "Rune: Teleportation",
@@ -538,142 +428,6 @@ newInscription{
 		local power = 100+5*self:getMag()
 		if data.power and data.inc_stat then power = data.power + data.inc_stat end
 		return ([[absorb and reflect %d for %d turns]]):format(power, data.dur or 5)
-	end,
-}
-
-newInscription{
-	name = "Rune: Invisibility",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_spell = true,
-	tactical = { DEFEND = 3, ESCAPE = 2 },
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_INVISIBILITY, data.dur, {power=data.power + data.inc_stat, penalty=0.4})
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to become invisible (power %d) for %d turns.
-		As you become invisible you fade out of phase with reality, all your damage is reduced by 40%%.
-		]]):format(data.power + data.inc_stat, data.dur)
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[power %d for %d turns]]):format(data.power + data.inc_stat, data.dur)
-	end,
-}
-
-newInscription{
-	name = "Rune: Speed",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_spell = true,
-	no_energy = true,
-	tactical = { BUFF = 4 },
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_SPEED, data.dur, {power=(data.power + data.inc_stat) / 100})
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to increase your global speed by %d%% for %d turns.]]):format(data.power + data.inc_stat, data.dur)
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[speed %d%% for %d turns]]):format(data.power + data.inc_stat, data.dur)
-	end,
-}
-
-
-newInscription{
-	name = "Rune: Vision",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_spell = true,
-	no_npc_use = true,
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		self:magicMap(data.range, self.x, self.y, function(x, y)
-			local g = game.level.map(x, y, Map.TERRAIN)
-			if g and (g.always_remember or g:check("block_move")) then
-				for _, coord in pairs(util.adjacentCoords(x, y)) do
-					local g2 = game.level.map(coord[1], coord[2], Map.TERRAIN)
-					if g2 and not g2:check("block_move") then return true end
-				end
-			end
-		end)
-		self:setEffect(self.EFF_SENSE_HIDDEN, data.dur, {power=data.power + data.inc_stat})
-		self:setEffect(self.EFF_RECEPTIVE_MIND, data.dur, {what=data.esp or "humanoid"})
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to get a vision of the area surrounding you (%d radius) and to allow you to see invisible and stealthed creatures (power %d) for %d turns.
-		Your mind will become more receptive for %d turns, allowing you to sense any %s around.]]):
-		format(data.range, data.power + data.inc_stat, data.dur, data.dur, data.esp or "humanoid")
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[radius %d; dur %d; see %s]]):format(data.range, data.dur, data.esp or "humanoid")
-	end,
-}
-
-local function attack_rune(self, btid)
-	for tid, lev in pairs(self.talents) do
-		if tid ~= btid and self.talents_def[tid].is_attack_rune and not self.talents_cd[tid] then
-			self.talents_cd[tid] = 1
-		end
-	end
-end
-
-newInscription{
-	name = "Rune: Heat Beam",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_attack_rune = true,
-	no_energy = true,
-	is_spell = true,
-	tactical = { ATTACK = { FIRE = 1 }, CURE = function(self, t, target)
-			local nb = 0
-			local data = self:getInscriptionData(t.short_name)
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if e.type == "physical" and e.status == "detrimental" then nb = nb + 1 end
-			end
-			return nb
-		end },
-	requires_target = true,
-	direct_hit = true,
-	range = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return data.range
-	end,
-	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t}
-	end,
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.FIREBURN, {dur=5, initial=0, dam=data.power + data.inc_stat})
-		local _ _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, tg.radius, "flamebeam", {tx=x-self.x, ty=y-self.y})
-		self:removeEffectsFilter({status="detrimental", type="physical", ignore_crosstier=true}, 1)
-		game:playSoundNear(self, "talents/fire")
-		attack_rune(self, t.id)
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to fire a beam of heat, doing %0.2f fire damage over 5 turns
-		The intensity of the heat will also remove one random detrimental physical effect from you.]]):format(damDesc(self, DamageType.FIRE, data.power + data.inc_stat))
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[%d fire damage]]):format(damDesc(self, DamageType.FIRE, data.power + data.inc_stat))
 	end,
 }
 
@@ -812,50 +566,7 @@ newInscription{
 	end,
 }
 
-newInscription{
-	name = "Rune: Lightning",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_attack_rune = true,
-	no_energy = true,
-	is_spell = true,
-	tactical = { ATTACK = { LIGHTNING = 1 } },
-	requires_target = true,
-	direct_hit = true,
-	range = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return data.range
-	end,
-	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t}
-	end,
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		local dam = data.power + data.inc_stat
-		self:project(tg, x, y, DamageType.LIGHTNING, rng.avg(dam / 3, dam, 3))
-		local _ _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning", {tx=x-self.x, ty=y-self.y})
-		self:setEffect(self.EFF_ELEMENTAL_SURGE_LIGHTNING, 2, {})
-		game:playSoundNear(self, "talents/lightning")
-		attack_rune(self, t.id)
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local dam = damDesc(self, DamageType.LIGHTNING, data.power + data.inc_stat)
-		return ([[Activate the rune to fire a beam of lightning, doing %0.2f to %0.2f lightning damage.
-		Also transform you into pure lightning for %d turns; any damage will teleport you to an adjacent tile and ignore the damage (can only happen once per turn)]]):
-		format(dam / 3, dam, 2)
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[%d lightning damage]]):format(damDesc(self, DamageType.LIGHTNING, data.power + data.inc_stat))
-	end,
-}
-
+-- Incredibly specific to one resource top, a generalization applying to the other arcane resources is worth considering
 newInscription{
 	name = "Rune: Manasurge",
 	type = {"inscriptions/runes", 1},
@@ -895,53 +606,6 @@ newInscription{
 		return ([[%d%% regen over %d turns; %d instant mana]]):format(data.mana + data.inc_stat, data.dur, (data.mana + data.inc_stat) / 20)
 	end,
 }
-
-newInscription{
-	name = "Rune: Frozen Spear",
-	type = {"inscriptions/runes", 1},
-	points = 1,
-	is_attack_rune = true,
-	no_energy = true,
-	is_spell = true,
-	tactical = { ATTACK = { COLD = 1 }, DISABLE = { stun = 1 }, CURE = function(self, t, target)
-			local nb = 0
-			local data = self:getInscriptionData(t.short_name)
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if e.type == "mental" and e.status == "detrimental" then nb = nb + 1 end
-			end
-			return nb
-		end },
-	requires_target = true,
-	range = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return data.range
-	end,
-	target = function(self, t)
-		return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_ice", trail="icetrail"}}
-	end,
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		self:project(tg, x, y, DamageType.ICE, data.power + data.inc_stat, {type="freeze"})
-		self:removeEffectsFilter({status="detrimental", type="mental", ignore_crosstier=true}, 1)
-		game:playSoundNear(self, "talents/ice")
-		attack_rune(self, t.id)
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to fire a bolt of ice, doing %0.2f cold damage with a chance to freeze the target.
-		The deep cold also crystalizes your mind, removing one random detrimental mental effect from you.]]):format(damDesc(self, DamageType.COLD, data.power + data.inc_stat))
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[%d cold damage]]):format(damDesc(self, DamageType.COLD, data.power + data.inc_stat))
-	end,
-}
-
 
 -- This is mostly a copy of Time Skip :P
 newInscription{
@@ -1097,6 +761,7 @@ newInscription{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
+		self:takeHit(self.max_life * 0.2, self)
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
@@ -1135,6 +800,48 @@ newInscription{
 	end,
 }
 
+-----------------------------------------------------------------------
+-- Legacy:  These inscriptions aren't on the drop tables and are only kept for legacy compatibility and occasionally NPC use
+-----------------------------------------------------------------------
+newInscription{
+	name = "Infusion: Sun",
+	type = {"inscriptions/infusions", 1},
+	points = 1,
+	tactical = {DISABLE = { blind = 2 } },
+	range = 0,
+	radius = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.range
+	end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t}
+	end,
+	requires_target = true,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local tg = self:getTalentTarget(t)
+		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
+		
+		self:project(tg, self.x, self.y, engine.DamageType.BLINDCUSTOMMIND, {power=apply, turns=data.turns})
+		self:project(tg, self.x, self.y, engine.DamageType.BREAK_STEALTH, {power=apply/2, turns=data.turns})
+		tg.selffire = true
+		self:project(tg, self.x, self.y, engine.DamageType.LITE, apply >= 19 and 100 or 1)
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
+		return ([[Activate the infusion to brighten the area in a radius of %d and illuminate stealthy creatures, possibly revealing them (reduces stealth power by %d).%s
+		It will also blind any creatures caught inside (power %d) for %d turns.]]):
+		format(data.range, apply/2, apply >= 19 and "\nThe light is so powerful it will also banish magical darkness" or "", apply, data.turns)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local apply = self:rescaleCombatStats((data.power + data.inc_stat))
+		return ([[rad %d; power %d; turns %d%s]]):format(data.range, apply, data.turns, apply >= 19 and "; dispels darkness" or "")
+	end,
+}
+
 newInscription{
 	name = "Taint: Telepathy",
 	type = {"inscriptions/taints", 1},
@@ -1142,6 +849,8 @@ newInscription{
 	is_spell = true,
 	range = 10,
 	action = function(self, t)
+		self:takeHit(self.max_life * 0.2, self)
+
 		local rad = self:getTalentRange(t)
 		self:setEffect(self.EFF_SENSE, 5, {
 			range = rad,
@@ -1160,3 +869,277 @@ newInscription{
 	end,
 }
 
+newInscription{
+	name = "Rune: Frozen Spear",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_attack_rune = true,
+	no_energy = true,
+	is_spell = true,
+	tactical = { ATTACK = { COLD = 1 }, DISABLE = { stun = 1 }, CURE = function(self, t, target)
+			local nb = 0
+			local data = self:getInscriptionData(t.short_name)
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "mental" and e.status == "detrimental" then nb = nb + 1 end
+			end
+			return nb
+		end },
+	requires_target = true,
+	range = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.range
+	end,
+	target = function(self, t)
+		return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_ice", trail="icetrail"}}
+	end,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		self:project(tg, x, y, DamageType.ICE, data.power + data.inc_stat, {type="freeze"})
+		self:removeEffectsFilter({status="detrimental", type="mental", ignore_crosstier=true}, 1)
+		game:playSoundNear(self, "talents/ice")
+		attack_rune(self, t.id)
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to fire a bolt of ice, doing %0.2f cold damage with a chance to freeze the target.
+		The deep cold also crystalizes your mind, removing one random detrimental mental effect from you.]]):format(damDesc(self, DamageType.COLD, data.power + data.inc_stat))
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[%d cold damage]]):format(damDesc(self, DamageType.COLD, data.power + data.inc_stat))
+	end,
+}
+
+newInscription{
+	name = "Rune: Heat Beam",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_attack_rune = true,
+	no_energy = true,
+	is_spell = true,
+	tactical = { ATTACK = { FIRE = 1 }, CURE = function(self, t, target)
+			local nb = 0
+			local data = self:getInscriptionData(t.short_name)
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "physical" and e.status == "detrimental" then nb = nb + 1 end
+			end
+			return nb
+		end },
+	requires_target = true,
+	direct_hit = true,
+	range = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.range
+	end,
+	target = function(self, t)
+		return {type="beam", range=self:getTalentRange(t), talent=t}
+	end,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		self:project(tg, x, y, DamageType.FIREBURN, {dur=5, initial=0, dam=data.power + data.inc_stat})
+		local _ _, x, y = self:canProject(tg, x, y)
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "flamebeam", {tx=x-self.x, ty=y-self.y})
+		self:removeEffectsFilter({status="detrimental", type="physical", ignore_crosstier=true}, 1)
+		game:playSoundNear(self, "talents/fire")
+		attack_rune(self, t.id)
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to fire a beam of heat, doing %0.2f fire damage over 5 turns
+		The intensity of the heat will also remove one random detrimental physical effect from you.]]):format(damDesc(self, DamageType.FIRE, data.power + data.inc_stat))
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[%d fire damage]]):format(damDesc(self, DamageType.FIRE, data.power + data.inc_stat))
+	end,
+}
+
+newInscription{
+	name = "Rune: Speed",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	no_energy = true,
+	tactical = { BUFF = 4 },
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		self:setEffect(self.EFF_SPEED, data.dur, {power=(data.power + data.inc_stat) / 100})
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to increase your global speed by %d%% for %d turns.]]):format(data.power + data.inc_stat, data.dur)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[speed %d%% for %d turns]]):format(data.power + data.inc_stat, data.dur)
+	end,
+}
+
+newInscription{
+	name = "Rune: Vision",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	no_npc_use = true,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		self:magicMap(data.range, self.x, self.y, function(x, y)
+			local g = game.level.map(x, y, Map.TERRAIN)
+			if g and (g.always_remember or g:check("block_move")) then
+				for _, coord in pairs(util.adjacentCoords(x, y)) do
+					local g2 = game.level.map(coord[1], coord[2], Map.TERRAIN)
+					if g2 and not g2:check("block_move") then return true end
+				end
+			end
+		end)
+		self:setEffect(self.EFF_SENSE_HIDDEN, data.dur, {power=data.power + data.inc_stat})
+		self:setEffect(self.EFF_RECEPTIVE_MIND, data.dur, {what=data.esp or "humanoid"})
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to get a vision of the area surrounding you (%d radius) and to allow you to see invisible and stealthed creatures (power %d) for %d turns.
+		Your mind will become more receptive for %d turns, allowing you to sense any %s around.]]):
+		format(data.range, data.power + data.inc_stat, data.dur, data.dur, data.esp or "humanoid")
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[radius %d; dur %d; see %s]]):format(data.range, data.dur, data.esp or "humanoid")
+	end,
+}
+
+local function attack_rune(self, btid)
+	for tid, lev in pairs(self.talents) do
+		if tid ~= btid and self.talents_def[tid].is_attack_rune and not self.talents_cd[tid] then
+			self.talents_cd[tid] = 1
+		end
+	end
+end
+
+newInscription{
+	name = "Rune: Phase Door",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	is_teleport = true,
+	tactical = { ESCAPE = 2 },
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+		self:teleportRandom(self.x, self.y, data.range + data.inc_stat)
+		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+		self:setEffect(self.EFF_OUT_OF_PHASE, data.dur or 3, {
+			defense=(data.power or data.range) + data.inc_stat * 3 + (self:attr("defense_on_teleport") or 0),
+			resists=(data.power or data.range) + data.inc_stat * 3 + (self:attr("resist_all_on_teleport") or 0),
+			effect_reduction=(data.power or data.range) + data.inc_stat * 3 + (self:attr("effect_reduction_on_teleport") or 0),
+		})
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local power = (data.power or data.range) + data.inc_stat * 3
+		return ([[Activate the rune to teleport randomly in a range of %d.
+		Afterwards you stay out of phase for %d turns. In this state all new negative status effects duration is reduced by %d%%, your defense is increased by %d and all your resistances by %d%%.]]):
+		format(data.range + data.inc_stat, data.dur or 3, power, power, power)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local power = (data.power or data.range) + data.inc_stat * 3
+		return ([[range %d; power %d; dur %d]]):format(data.range + data.inc_stat, power, data.dur or 3)
+	end,
+}
+
+newInscription{
+	name = "Rune: Controlled Phase Door",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	is_teleport = true,
+	tactical = { CLOSEIN = 2 },
+-- update this to allow for escape tactic (after AI update)
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=data.range + data.inc_stat, radius=3, requires_knowledge=false}
+		local x, y = self:getTarget(tg)
+		if not x then return nil end
+		-- Target code does not restrict the target coordinates to the range, it lets the project function do it
+		-- but we cant ...
+		local _ _, x, y = self:canProject(tg, x, y)
+
+		-- Check LOS
+		local rad = 3
+		if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
+			game.logPlayer(self, "The targetted phase door fizzles and works randomly!")
+			x, y = self.x, self.y
+			rad = tg.range
+		end
+
+		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+		self:teleportRandom(x, y, rad)
+		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to teleport in a range of %d.]]):format(data.range + data.inc_stat)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[range %d]]):format(data.range + data.inc_stat)
+	end,
+}
+
+newInscription{
+	name = "Rune: Lightning",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_attack_rune = true,
+	no_energy = true,
+	is_spell = true,
+	tactical = { ATTACK = { LIGHTNING = 1 } },
+	requires_target = true,
+	direct_hit = true,
+	range = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.range
+	end,
+	target = function(self, t)
+		return {type="beam", range=self:getTalentRange(t), talent=t}
+	end,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		local dam = data.power + data.inc_stat
+		self:project(tg, x, y, DamageType.LIGHTNING, rng.avg(dam / 3, dam, 3))
+		local _ _, x, y = self:canProject(tg, x, y)
+		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning", {tx=x-self.x, ty=y-self.y})
+		self:setEffect(self.EFF_ELEMENTAL_SURGE_LIGHTNING, 2, {})
+		game:playSoundNear(self, "talents/lightning")
+		attack_rune(self, t.id)
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local dam = damDesc(self, DamageType.LIGHTNING, data.power + data.inc_stat)
+		return ([[Activate the rune to fire a beam of lightning, doing %0.2f to %0.2f lightning damage.
+		Also transform you into pure lightning for %d turns; any damage will teleport you to an adjacent tile and ignore the damage (can only happen once per turn)]]):
+		format(dam / 3, dam, 2)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[%d lightning damage]]):format(damDesc(self, DamageType.LIGHTNING, data.power + data.inc_stat))
+	end,
+}
