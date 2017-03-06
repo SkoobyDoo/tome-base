@@ -349,6 +349,14 @@ newInscription{
 -- Runes
 -----------------------------------------------------------------------
 
+local function attack_rune(self, btid)
+	for tid, lev in pairs(self.talents) do
+		if tid ~= btid and self.talents_def[tid].is_attack_rune and not self.talents_cd[tid] then
+			self.talents_cd[tid] = 1
+		end
+	end
+end
+
 newInscription{
 	name = "Rune: Teleportation",
 	type = {"inscriptions/runes", 1},
@@ -717,7 +725,7 @@ newInscription{
 	tactical = { CLOSEIN = 2 },
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=data.range + data.inc_stat, radius=1, requires_knowledge=false}
+		local tg = {type="beam", nolock=true, pass_terrain=false, nowarning=true, range=data.distance + data.inc_stat, radius=1, requires_knowledge=false}
 		local x, y = self:getTarget(tg)
 		if not x then return end
 		if not self:hasLOS(x, y) then return end
@@ -725,7 +733,6 @@ newInscription{
 		local _ _, x, y = self:canProject(tg, x, y)
 		local rad = 1
 		
-
 		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
 		self:teleportRandom(x, y, rad)
 		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
@@ -733,11 +740,11 @@ newInscription{
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to teleport up to %d spaces within line of sight.]]):format(data.range + data.inc_stat)
+		return ([[Activate the rune to teleport up to %d spaces within line of sight.]]):format(data.distance + data.inc_stat)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[range %d]]):format(data.range + data.inc_stat)
+		return ([[range %d]]):format(data.distance + data.inc_stat)
 	end,
 }
 
@@ -749,11 +756,17 @@ newInscription{
 	is_spell = true,
 	--tactical = { DEFEND = 3, ESCAPE = 2 },
 	getDur = function(self, t) return 5 end,
-	getDamageMod = function(self, t) return 50 end, -- placeholder
-	getPower = function(self, t) return 50 end, -- placeholder
+	getDamageMod = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.damage
+	end,
+	getPower = function(self, t) 
+		local data = self:getInscriptionData(t.short_name)
+		return data.power + data.inc_stat
+	end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_ETHEREAL, t.getDur(self, t), {power=t.getPower(self, t), t.getDamageMod(self, t)})
+		self:setEffect(self.EFF_ETHEREAL, t.getDur(self, t), {power=t.getPower(self, t), damage=t.getDamageMod(self, t)})
 		return true
 	end,
 	info = function(self, t)
@@ -778,9 +791,18 @@ newInscription{
 	points = 1,
 	is_spell = true,
 	--tactical = { DEFEND = 3, ESCAPE = 2 },
-	getDur = function(self, t) return 5 end,
-	getThreshold = function(self, t) return 50 end, -- placeholder
-	getBlocks = function(self, t) return 10 end, -- placeholder
+	getDur = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.dur
+	end,
+	getThreshold = function(self, t) 
+		local data = self:getInscriptionData(t.short_name)
+		return data.threshold
+	end,
+	getBlocks = function(self, t) 
+		local data = self:getInscriptionData(t.short_name)
+		return data.blocks + data.inc_stat
+	end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		self:setEffect(self.EFF_STORMSHIELD, t.getDur(self, t), {threshold=t.getThreshold(self, t), blocks=t.getBlocks(self, t)})
@@ -793,13 +815,14 @@ newInscription{
 				:format(t.getDur(self, t), t.getThreshold(self, t), t.getBlocks(self, t) )
 	end,
 	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
 		return ([[threshold %d, blocks %d, %d turns]]):format(t.getThreshold(self, t), t.getBlocks(self, t), t.getDur(self, t) )
 	end,
 }
 -----------------------------------------------------------------------
 -- Taints:  Arcane, activating a taint costs a % of maximum life representing the strain on the body and differentiating them from runes
 -----------------------------------------------------------------------
+-- Not quite moving to legacy.. If gloves of dispersion are acceptable than some form of this might be too.
+-- But probably not.
 newInscription{
 	name = "Taint: Devourer",
 	type = {"inscriptions/taints", 1},
@@ -882,7 +905,8 @@ newInscription{
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the taint on a foe, removing up to %d magical or physical effects or sustains from it and healing you for %d for each effect.]]):format(data.effects, data.heal + data.inc_stat)
+		return ([[#RED#Lose 20%% of your maximum life.#LAST#
+			Activate the taint on a foe, removing up to %d magical or physical effects or sustains from it and healing you for %d for each effect.]]):format(data.effects, data.heal + data.inc_stat)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
@@ -893,34 +917,37 @@ newInscription{
 -- Unreliable for healing when used to cleanse only 1-2 effects
 newInscription{
 	name = "Taint: Consume Affliction",
-	type = {"inscriptions/infusions", 1},
+	type = {"inscriptions/taints", 1},
 	points = 1,
 	tactical = { HEAL = 2 },
 	is_heal = true,
+	is_spell = true,
 	no_energy = true,
-	getHeal = function(self, t) return 1 end,
+	getHeal = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.heal + data.inc_stat
+	end,
 	action = function(self, t)
 		self:takeHit(self.max_life * 0.2, self)
 
+		self:removeEffectsFilter({subtype={["cross tier"] = true}, status="detrimental"}, 3)
 		local consumed = 0
-		consumed = consumed + self:removeEffectsFilter(function(e) return e.type.physical end, 1)
-		consumed = consumed + self:removeEffectsFilter(function(e) return e.type.magical end, 1)
-		consumed = consumed + self:removeEffectsFilter(function(e) return e.subtype.mental end, 1)
+		consumed = consumed + self:removeEffectsFilter({type="physical", status="detrimental"}, 1)
+		consumed = consumed + self:removeEffectsFilter({type="magical", status="detrimental"}, 1)
+		consumed = consumed + self:removeEffectsFilter({type="mental", status="detrimental"}, 1)
 
 		self:attr("allow_on_heal", 1)
 		self:heal(t.getHeal(self, t) * consumed, t)
 		self:attr("allow_on_heal", -1)
 
-
 		return true
 	end,
 	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Lose 20%% of your maximum life.
-			Activate the taint to instantly cleanse 1 physical, mental, and magical effect.  For each effect cleansed you heal for %d life.  ]]):format(t.getHeal(self, t))
+		return ([[#RED#Lose 20%% of your maximum life.#LAST#
+			Activate the taint to instantly cleanse 1 physical, mental, and magical effect.  For each effect cleansed you heal for %d life.
+			Crosstier effects are cleansed free but do not count towards the heal.]]):format(t.getHeal(self, t))
 	end,
 	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
 		return ([[heal %d]]):format(t.getHeal(self, t))
 	end,
 }
@@ -1142,14 +1169,6 @@ newInscription{
 		return ([[radius %d; dur %d; see %s]]):format(data.range, data.dur, data.esp or "humanoid")
 	end,
 }
-
-local function attack_rune(self, btid)
-	for tid, lev in pairs(self.talents) do
-		if tid ~= btid and self.talents_def[tid].is_attack_rune and not self.talents_cd[tid] then
-			self.talents_cd[tid] = 1
-		end
-	end
-end
 
 newInscription{
 	name = "Rune: Phase Door",

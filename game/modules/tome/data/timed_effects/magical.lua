@@ -309,6 +309,71 @@ newEffect{
 	end,
 }
 
+newEffect{
+	name = "ETHEREAL", image = "effects/invisibility.png",
+	desc = "Ethereal",
+	long_desc = function(self, eff) return ("Invisible (power %d), reduced damage taken and dealt by %d%%, able to walk through walls."):format(eff.power, eff.damage) end,
+	type = "magical",
+	subtype = { phantasm=true },
+	status = "beneficial",
+	parameters = { power=10, damage=0},
+	on_gain = function(self, err) return "#Target# phases partially out of reality.", "+Ethereal" end,
+	on_lose = function(self, err) return "#Target# is no longer ethereal.", "-Ethereal" end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("invisible", eff.power)
+		eff.penaltyid = self:addTemporaryValue("invisible_damage_penalty", eff.damage)
+		eff.damid = self:addTemporaryValue("resists", {all = eff.damage})
+		eff.wallid = self:addTemporaryValue("can_pass", {pass_wall=20})
+		
+		if not self.shader then
+			eff.set_shader = true
+			self.shader = "invis_edge"
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
+		end
+	end,
+	deactivate = function(self, eff)
+		if eff.set_shader then
+			self.shader = nil
+			self:removeAllMOs()
+			game.level.map:updateMap(self.x, self.y)
+		end
+		self:removeTemporaryValue("invisible", eff.tmpid)
+		self:removeTemporaryValue("invisible_damage_penalty", eff.penaltyid)
+		self:removeTemporaryValue("resists", eff.damid)
+		self:removeTemporaryValue("can_pass", eff.wallid)
+		self:resetCanSeeCacheOf()
+	end,
+}
+
+newEffect{
+	name = "STORMSHIELD", image = "talents/suncloak.png",
+	desc = "Stormshield",
+	long_desc = function(self, eff) return ("The target is protected a raging storm deflecting up to %d instances of damage over %d."):
+		format(eff.blocks, eff.threshold) end,
+	type = "magical",
+	subtype = { lightning=true, },
+	status = "beneficial",
+	parameters = {threshold = 1, blocks = 1,},
+	on_gain = function(self, err) return "#Target# summons a storm to protect him!", "+Stormshield" end,
+	on_lose = function(self, err) return "#Target#'s storm dissipates.", "-Stormshield" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
+		if dam < eff.threshold then return end
+		local d_color = DamageType:get(type).text_color or "#ORCHID#"
+		game:delayedLogDamage(src, self, 0, ("%s(%d stormshielded#LAST#%s)#LAST#"):format(d_color, dam, d_color), false)
+		eff.blocks = eff.blocks - 1
+		if eff.blocks <= 0 then
+			src:logCombat(self, "#BLUE##Target#'s stormshield is out of charges and disspitates!#LAST#.")
+			self:removeEffect(self.EFF_STORMSHIELD)
+		end
+	return {dam = 0}
+
+	end,
+}
 
 newEffect{
 	name = "VIMSENSE_DETECT", image = "talents/vimsense.png",

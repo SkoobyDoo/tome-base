@@ -336,9 +336,72 @@ newEntity{ base = "BASE_RUNE",
 	},
 	inscription_talent = "RUNE:_MANASURGE",
 }
+
+newEntity{ base = "BASE_RUNE",
+	name = "blink rune",
+	level_range = {5, 50},
+	rarity = 15,
+	cost = 20,
+	material_level = 1,
+	inscription_kind = "movement",
+	inscription_data = {
+		cooldown = resolvers.rngrange(8, 15),
+		distance = resolvers.mbonus_level(5, 2, function(e, v) return v * 0.06 end),
+		use_stat_mod = 0.02,
+	},
+	inscription_talent = "RUNE:_BLINK",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "stormshield rune",
+	level_range = {5, 50},
+	rarity = 15,
+	cost = 20,
+	material_level = 1,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = resolvers.rngrange(12, 17),
+		dur = 3,
+		threshold = resolvers.mbonus_level(100, 10), -- Not strictly good or bad so we use a high variance
+		blocks = resolvers.mbonus_level(10, 1, function(e, v) return v * 0.06 end),
+		use_stat_mod = 0.03,
+	},
+	inscription_talent = "RUNE:_STORMSHIELD",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "ethereal rune",
+	level_range = {5, 50},
+	rarity = 15,
+	cost = 20,
+	material_level = 1,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = resolvers.rngrange(16, 22),
+		dur = resolvers.mbonus_level(5, 3),
+		power = resolvers.mbonus_level(50, 10, function(e, v) return v * 0.06 end),
+		damage = resolvers.mbonus_level(40, 20),
+		use_stat_mod = 0.2,
+	},
+	inscription_talent = "RUNE:_ETHEREAL",
+}
 -----------------------------------------------------------
 -- Taints
 -----------------------------------------------------------
+newEntity{ base = "BASE_TAINT",
+	name = "taint of consume affliction",
+	level_range = {1, 50},
+	rarity = 20,
+	cost = 10,
+	material_level = 1,
+	inscription_kind = "heal",
+	inscription_data = {
+		cooldown = resolvers.rngrange(12, 17),
+		heal = resolvers.mbonus_level(150, 50, function(e, v) return v * 0.06 end),
+		use_stat_mod = 1.5,
+	},
+	inscription_talent = "TAINT:_CONSUME_AFFLICTION",
+}
 
 --[[
 newEntity{ base = "BASE_TAINT",
@@ -381,8 +444,7 @@ newEntity{ base = "BASE_TAINT",
 -----------------------------------------------------------
 -- Legacy/depreciated
 -----------------------------------------------------------
-
-newEntity{ base = "BASE_RUNE",
+--[[newEntity{ base = "BASE_RUNE",
 	name = "lightning rune",
 	level_range = {25, 50},
 	rarity = 0,
@@ -503,4 +565,4 @@ newEntity{ base = "BASE_INFUSION",
 	},
 	inscription_talent = "INFUSION:_SUN",
 }
-
+--]]
