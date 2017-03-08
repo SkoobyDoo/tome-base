@@ -42,12 +42,18 @@ int get_number_cpus()
 #elif defined(SELFEXE_BSD)
 #include <limits.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/sysctl.h>
 const char *get_self_executable(int argc, char **argv)
 {
 	static char res[PATH_MAX];
-	// Like linux, but /proc is not always mounted
-	//  return 0 if it's not
-	if (realpath("/proc/curproc/file", res)) return NULL;
+	int mib[4];
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = -1;
+	size_t cb = sizeof(res);
+	sysctl(mib,4,res,&cb,NULL,0);
 	return res;
 }
 
@@ -55,11 +61,7 @@ const char *get_self_executable(int argc, char **argv)
 
 int get_number_cpus()
 {
-	int count;
-	size_t size=sizeof(count);
-	
-	if (sysctlbyname("hw.ncpu",&count,&size,NULL,0)) return 1;
-	return count;
+       return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
 #elif defined(SELFEXE_WINDOWS)
