@@ -271,7 +271,7 @@ function _M:installOldGame(version_string)
 		local ok = d:start()
 		if ok then
 			local wdir = fs.getWritePath()
-			local _, _, dir, name = modfile:find("(.+)/([^/]+)$")
+			local _, _, dir, name = modfile:find("(.+/)([^/]+)$")
 			if dir then
 				fs.setWritePath(fs.getRealPath(dir))
 				fs.delete(name)
