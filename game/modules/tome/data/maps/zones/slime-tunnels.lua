@@ -35,7 +35,7 @@ subGenerator{
 	},
 }
 
-startx = 240
+startx = 0
 starty = 15
 
 return [[
