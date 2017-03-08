@@ -19,7 +19,7 @@
 
 newTalent{
 	name = "Hymn of Shadows",
-	type = {"celestial/hymns", 1},
+	type = {"celestial/other", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -89,7 +89,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn of Detection",
-	type = {"celestial/hymns", 1},
+	type = {"celestial/other", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -162,7 +162,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn of Perseverance",
-	type = {"celestial/hymns",1},
+	type = {"celestial/other",1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,

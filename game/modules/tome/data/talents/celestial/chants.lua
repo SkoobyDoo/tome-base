@@ -20,7 +20,7 @@
 -- Looks weaker than the other options, but extra life is a more universally useful stat and mind save is generally lower for celestial classes.
 newTalent{
 	name = "Chant of Fortitude",
-	type = {"celestial/chants", 1},
+	type = {"celestial/other", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -82,7 +82,7 @@ newTalent{
 -- Physical and weapon protection Chant.
 newTalent{
 	name = "Chant of Fortress",
-	type = {"celestial/chants", 1},
+	type = {"celestial/other", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -146,7 +146,7 @@ newTalent{
 -- This can be swapped to reactively with a projectile already in the air
 newTalent{
 	name = "Chant of Resistance",
-	type = {"celestial/chants",1},
+	type = {"celestial/other",1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
