@@ -162,6 +162,8 @@ function _M:login()
 		if self.steam_token_email then
 			self:command("STM_ EMAIL", self.steam_token_email)
 			self:read("200")
+			self:command("STM_ NEWS", self.steam_token_news and 'yes' or 'no')
+			self:read("200")
 		end
 		self:command("STM_ AUTH", self.steam_token)
 		if not self:read("200") then
@@ -303,7 +305,10 @@ end
 function _M:orderSteamLogin(o)
 	self.steam_token = o.token
 	self.steam_token_name = o.name
-	if o.email and #o.email > 1 then self.steam_token_email = o.email end
+	if o.email and #o.email > 1 then
+		self.steam_token_email = o.email
+		self.steam_token_news = o.news
+	end
 
 	if not self.sock then cprofile.pushEvent("e='Disconnected'") return end
 
