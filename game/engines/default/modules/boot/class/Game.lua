@@ -594,7 +594,7 @@ function _M:createProfile(loginItem)
 	else
 		self.auth_tried = nil
 		local d = Dialog:simpleWaiter("Registering...", "Registering on http://te4.org/, please wait...") core.display.forceRedraw()
-		local ok, err = profile:newProfile(loginItem.login, loginItem.name, loginItem.pass, loginItem.email)
+		local ok, err = profile:newProfile(loginItem.login, loginItem.name, loginItem.pass, loginItem.email, loginItem.news)
 		profile:waitFirstAuth()
 		d:done()
 		if profile.auth then
