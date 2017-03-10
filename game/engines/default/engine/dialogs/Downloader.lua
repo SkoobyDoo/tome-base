@@ -36,7 +36,7 @@ function _M:init(t)
 	if fs.exists(self.dest) then
 		self.dest = fs.getRealPath(self.dest)
 	else
-		local _, _, dir, name = self.dest:find("(.+)/([^/]+)$")
+		local _, _, dir, name = self.dest:find("(.+/)([^/]+)$")
 		if dir then
 			self.dest = fs.getRealPath(dir)..fs.getPathSeparator()..name
 		end
