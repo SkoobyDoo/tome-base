@@ -318,7 +318,7 @@ newTalent{
 -- Might also make some people consider Chants as an escort reward.
 newTalent{
 	name = "Chant Illuminate",
-	type = {"celestial/chants", 5},
+	type = {"celestial/chants", 2},
 	require = divi_req2,
 	points = 5,
 	mode = "passive",
@@ -333,7 +333,7 @@ newTalent{
 -- Remember that Chants can be swapped instantly.
 newTalent{
 	name = "Chant Adept",
-	type = {"celestial/chants", 6},
+	type = {"celestial/chants", 3},
 	require = divi_req3,
 	points = 5,
 	mode = "passive",
@@ -390,7 +390,7 @@ newTalent{
 
 newTalent{
 	name = "Chant Radiant",
-	type = {"celestial/chants", 7},
+	type = {"celestial/chants", 4},
 	require = divi_req4,
 	points = 5,
 	mode = "passive",
