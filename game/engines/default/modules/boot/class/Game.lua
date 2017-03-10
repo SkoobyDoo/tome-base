@@ -281,7 +281,7 @@ function _M:grabAddons()
 					local ok = d:start()
 					if ok then
 						local wdir = fs.getWritePath()
-						local _, _, dir, name = add.file:find("(.+)/([^/]+)$")
+						local _, _, dir, name = add.file:find("(.+/)([^/]+)$")
 						if dir then
 							fs.setWritePath(fs.getRealPath(dir))
 							fs.delete(name)
