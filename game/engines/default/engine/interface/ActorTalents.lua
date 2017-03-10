@@ -891,7 +891,7 @@ end
 --- Is talent in cooldown?
 function _M:isTalentCoolingDown(t)
 	t = self:getTalentFromId(t)
-	if not t.cooldown then return false end
+	if not t or not t.cooldown then return false end
 	if self.talents_cd[t.id] and self.talents_cd[t.id] > 0 then return self.talents_cd[t.id] else return false end
 end
 
