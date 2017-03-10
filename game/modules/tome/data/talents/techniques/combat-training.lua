@@ -141,7 +141,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local defense = t.getDefense(self,t)
-		return ([[You learn to maintain your agility and manage your combat posture while wearing light armour.  When wearing armour no heavier than leather, you gain %d Defense, %d%% Armour hardiness, and %d%% reduced Fatigue.
+		return ([[You learn to maintain your agility and manage your combat posture while wearing light armour.  When wearing armour no heavier than leather in your main body slot, you gain %d Defense, %d%% Armour hardiness, and %d%% reduced Fatigue.
 		In addition, when you step adjacent to a (visible) enemy, you use the juxtaposition to increase your total Defense by %d for 2 turns.
 		The Defense bonus scales with your Dexterity.]]):
 		format(defense, t.getArmorHardiness(self,t), t.getFatigue(self, t, true), defense/2)
