@@ -133,7 +133,7 @@ function _M:update(nb_keyframes)
 			local config = configs[UI.ui] or configs.dark
 			self.do_container:shown(true)
 			if self.player_do then self.do_container:remove(self.player_do) end
-			self.player_do = self:getPlayerDO()
+			self.player_do = player:getDO()
 			self.do_container:add(self.player_do) self.player_do:translate(config.player.x, config.player.y, 1)
 		end
 	end
@@ -175,21 +175,6 @@ end
 
 function _M:getPlayer()
 	return game:getPlayer()
-end
-
-function _M:getPlayerDO()
-	local tiles = Map.tiles
-	if game.level and game.level.map then tiles = game.level.map.tiles end
-	return self:getPlayer():getEntityDisplayObject(tiles, 40, 40, 1, false, true, true)
-	-- We dont use Entity:getEntityDisplayObject because we need no caching
-
-	-- local mos = {}
-	-- local list = {}
-	-- self:getPlayer():getMapObjects(tiles, mos, 1)
-	-- for i = 1, Map.zdepth do
-	-- 	if mos[i] then list[#list+1] = mos[i] end
-	-- end
-	-- return core.map.mapObjectsToDisplayObject(40, 40, 1, false, true, unpack(list))
 end
 
 function _M:move(x, y)

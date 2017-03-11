@@ -675,6 +675,14 @@ function _M:getDisplayString(tstr)
 	end
 end
 
+--- Simplyfied DO method to get a basic one
+function _M:getDO(w, h, a)
+	local Map = require "engine.Map"
+	local tiles = Map.tiles
+	if game.level and game.level.map then tiles = game.level.map.tiles end
+	return self:getEntityDisplayObject(tiles, w or 64, h or 64, a or 1, false, true, true)
+end
+
 --- Displays an entity somewhere on screen, outside the map
 -- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles, it will if this is null)
 -- @int x where to display

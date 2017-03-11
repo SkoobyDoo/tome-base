@@ -94,6 +94,7 @@ function _M:generate()
 	self.key:reset()
 	self.do_container:clear()
 	self.uis_container = core.renderer.renderer()
+	self.actor_container = core.renderer.renderer()
 
 	self:generateEquipDollFrames()
 	
@@ -105,6 +106,7 @@ function _M:generate()
 		self.do_container:add(self.title_do:translate((self.w - w) / 2, 5, 10))
 	end
 
+	self.do_container:add(self.actor_container):translate(0, 0, 50)
 	self.do_container:add(self.uis_container):translate(0, 0, 100)
 
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -125,6 +127,15 @@ function _M:generate()
 		_UP = function() self:moveFocus(-1) end,
 		_DOWN = function() self:moveFocus(1) end,
 	}
+
+	self:updateActor()
+end
+
+function _M:updateActor()
+	local doll = self.equipdoll
+	if doll.doll_x and doll.doll_y and doll.doll_x > 0 and doll.doll_y > 0 then
+		self.actor_container:clear():add(self.actor:getDO(doll.doll_w or doll.w*2.6, doll.doll_h or doll.h*2.6):translate(doll.doll_x, self.base_doll_y + doll.doll_y))
+	end
 end
 
 function _M:keyTrigger(c)
