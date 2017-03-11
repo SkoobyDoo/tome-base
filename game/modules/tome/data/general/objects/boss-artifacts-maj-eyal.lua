@@ -869,6 +869,11 @@ newEntity{ define_as = "RUNED_SKULL",
 	encumber = 3,
 	material_level = 5,
 	desc = [[Dull red runes are etched all over this blackened skull.]],
+	color_attributes = {
+		damage_type = 'FIRE',
+		alt_damage_type = 'FLAMESHOCK',
+		particle = 'flame',
+	},
 
 	carrier = {
 		combat_spellpower = 7,
