@@ -119,6 +119,7 @@ end
 function _M:loaded()
 	self.w, self.h, self.fullscreen = core.display.size()
 	self.dialogs = {}
+	self.events_ui = {}
 	self.key = engine.Key.current
 	self.mouse = engine.Mouse.new()
 	self.mouse:setCurrent()

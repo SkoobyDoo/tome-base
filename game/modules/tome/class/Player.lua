@@ -1628,4 +1628,9 @@ function _M:attackOrMoveDir(dir)
 	game_or_player.bump_attack_disabled = tmp
 end
 
+function _M:updateModdableTile()
+	mod.class.Actor.updateModdableTile(self)
+	game:triggerEventUI("Player:updateModdableTile", self)
+end
+
 return _M

@@ -128,6 +128,11 @@ function _M:generate()
 		_DOWN = function() self:moveFocus(1) end,
 	}
 
+	game:registerEventUI(self, "Player:updateModdableTile")
+	self:updateActor()
+end
+
+function _M:onEventUI(kind, who)
 	self:updateActor()
 end
 
