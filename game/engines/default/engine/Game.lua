@@ -42,6 +42,7 @@ function _M:init(keyhandler)
 	self.level = nil
 	self.w, self.h, self.fullscreen = core.display.size()
 	self.dialogs = {}
+	self.events_ui = {}
 	self.save_name = ""
 	self.player_name = ""
 
@@ -398,6 +399,21 @@ end
 -- @param[type=FlyingText] fl 
 function _M:setFlyingText(fl)
 	self.flyers = fl
+end
+
+--- Registers a UI event callback
+-- The handler must have a method "onEventUI"
+function _M:registerEventUI(handler, kind)
+	self.events_ui[kind] = self.events_ui[kind] or setmetatable({}, {__mode='k'})
+	self.events_ui[kind][handler] = true
+end
+
+--- Triggers a UI event
+function _M:triggerEventUI(kind, ...)
+	if not self.events_ui[kind] then return end
+	for h, _ in pairs(self.events_ui[kind]) do
+		h:onEventUI(kind, ...)
+	end
 end
 
 --- Registers a dialog to display
