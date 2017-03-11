@@ -700,7 +700,7 @@ newTalent{
 		
 		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 		
 			local targets2 = self:archeryAcquireTargets(tg, {multishots=2, x=target.x, y=target.y})
-			self:archeryShoot(targets2, t, nil, {mult=dam*0.25})
+			if targets2 then self:archeryShoot(targets2, t, nil, {mult=dam*0.25}) end
 		end 
 
 		return true
