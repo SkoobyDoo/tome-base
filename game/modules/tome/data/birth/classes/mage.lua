@@ -192,7 +192,7 @@ newBirthDescriptor{
 		["spell/storm"]={false, 0.3, "mage_tempest"},
 	},
 	talents = {
-		[ActorTalents.T_ARCANE_POWER] = 1,
+		[ActorTalents.T_MANATHRUST] = 1,
 		[ActorTalents.T_FLAME] = 1,
 		[ActorTalents.T_LIGHTNING] = 1,
 		[ActorTalents.T_PHASE_DOOR] = 1,

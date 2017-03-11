@@ -1781,7 +1781,7 @@ newDamageType{
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
-		if _G.type(dam) == "number" then dam = {dam=dam, dur=3, heal_factor=dam.fail} end
+		if _G.type(dam) == "number" then dam = {dam=dam, dur=3, fail=50*dam.power/(dam.power+50)} end
 		DamageType:get(DamageType.NATURE).projector(src, x, y, DamageType.NATURE, dam.dam / dam.dur, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:canBe("poison") then

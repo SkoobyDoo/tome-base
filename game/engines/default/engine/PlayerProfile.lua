@@ -386,10 +386,11 @@ function _M:performlogin(login, pass)
 	end
 end
 
-function _M:performloginSteam(token, name, email)
+function _M:performloginSteam(token, name, email, news)
 	self.steam_token = token
 	self.steam_token_name = name
 	if email then self.steam_token_email = email end
+	if news ~= nil then self.steam_token_news = news end
 	print("[ONLINE PROFILE] attempting log in steam", token)
 	self.auth_tried = nil
 	self:tryAuth()
@@ -579,7 +580,7 @@ function _M:tryAuth()
 	print("[ONLINE PROFILE] auth")
 	self.auth_last_error = nil
 	if self.steam_token then
-		core.profile.pushOrder(table.serialize{o="SteamLogin", token=self.steam_token, name=self.steam_token_name, email=self.steam_token_email})
+		core.profile.pushOrder(table.serialize{o="SteamLogin", token=self.steam_token, name=self.steam_token_name, email=self.steam_token_email, news=self.steam_token_news})
 	else
 		core.profile.pushOrder(table.serialize{o="Login", l=self.login, p=self.pass})
 	end
@@ -861,10 +862,10 @@ function _M:currentCharacter(module, title, uuid)
 	print("[ONLINE PROFILE] current character ", title)
 end
 
-function _M:newProfile(Login, Name, Password, Email)
-	print("[ONLINE PROFILE] profile options ", Login, Email, Name)
+function _M:newProfile(Login, Name, Password, Email, Newsletter)
+	print("[ONLINE PROFILE] profile options ", Login, Email, Name, Newsletter)
 
-	core.profile.pushOrder(table.serialize{o="NewProfile2", login=Login, email=Email, name=Name, pass=Password})
+	core.profile.pushOrder(table.serialize{o="NewProfile2", login=Login, email=Email, name=Name, pass=Password, newsletter=Newsletter and 'yes' or 'no'})
 	local id = nil
 	local reason = nil
 	self:waitEvent("NewProfile2", function(e) id = e.uid reason = e.reason end)

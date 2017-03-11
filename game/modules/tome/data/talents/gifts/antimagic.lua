@@ -127,7 +127,7 @@ newTalent{
 		if src and src.x and src ~= self then
 			self.turn_procs.antimagic_shield_feedback = self.turn_procs.antimagic_shield_feedback or 0
 			if self.turn_procs.antimagic_shield_feedback < 10 then
-				DamageType:get(DamageType.MANABURN).projector(self, src.x, src.y, DamageType.MANABURN, t.getBurn(self, t))
+				DamageType:get(DamageType.MANABURN).projector(self, src.x, src.y, DamageType.MANABURN, t.getBurn(self, t) * 0.75 ^ self.turn_procs.antimagic_shield_feedback)
 				game.level.map:particleEmitter(src.x, src.y, 1, "slime")
 				self.turn_procs.antimagic_shield_feedback = self.turn_procs.antimagic_shield_feedback + 1
 			end
@@ -157,7 +157,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Surround yourself with a shield that will absorb at most %d non-physical, non-mind element damage per attack.
 		Each time damage is absorbed by the shield, your equilibrium increases by 1 for every 30 points of damage and a check is made. If the check fails, the shield will crumble and Antimagic Shield will go on cooldown.
-		Each creature whose attack on you is absorbed or reduced by the shield also takes a backlash dealing %0.2f manaburn damage (see description in the Mana Clash talent), this may only happen up to 10 times per turn.
+		Each creature whose attack on you is absorbed or reduced by the shield also takes a backlash dealing %0.2f manaburn damage (see description in the Mana Clash talent), this may only happen up to 10 times per turn and each time the damage is reduced by 25%%.
 		The damage the shield can absorb will increase with your Mindpower or Physical power (whichever is greater).]]):
 		format(t.getMax(self, t), t.getBurn(self, t))
 	end,

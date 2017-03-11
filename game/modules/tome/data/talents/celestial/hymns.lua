@@ -19,7 +19,7 @@
 
 newTalent{
 	name = "Hymn of Shadows",
-	type = {"celestial/hymns", 1},
+	type = {"celestial/other", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -89,7 +89,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn of Detection",
-	type = {"celestial/hymns", 1},
+	type = {"celestial/other", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -162,7 +162,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn of Perseverance",
-	type = {"celestial/hymns",1},
+	type = {"celestial/other",1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -339,7 +339,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn Incantor",
-	type = {"celestial/hymns", 5},
+	type = {"celestial/hymns", 2},
 	require = divi_req2,
 	points = 5,
 	mode = "passive",
@@ -354,7 +354,7 @@ newTalent{
 -- Remember that Hymns can be swapped instantly.
 newTalent{
 	name = "Hymn Adept",
-	type = {"celestial/hymns", 6},
+	type = {"celestial/hymns", 3},
 	require = divi_req3,
 	points = 5,
 	mode = "passive",
@@ -376,7 +376,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn Nocturnalist",
-	type = {"celestial/hymns", 7},
+	type = {"celestial/hymns", 4},
 	require = divi_req4,
 	points = 5,
 	mode = "sustained",

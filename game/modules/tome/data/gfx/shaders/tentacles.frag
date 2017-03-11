@@ -50,14 +50,15 @@ vec4 GetColor(const int layerIndex, vec2 texPos)
 
 vec2 GetDistortion(vec2 texPos, int layerIndex, int distortionType, float deformRate)
 {
+	float layerIndexF = float(layerIndex);
 	if (distortionType == 0) {
-		float alpha = 0.2 * sin(tick / time_factor * (layerIndex * 0.5 + 1.0) + layerIndex * 100.0) * deformRate;
+		float alpha = 0.2 * sin(tick / time_factor * (layerIndexF * 0.5 + 1.0) + layerIndexF * 100.0) * deformRate;
 		mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
 
 		return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
 	} else if (distortionType == 1) {
 		float phase = length(texPos - vec2(0.5));
-		float alpha = 0.2 * sin(-tick / time_factor * (layerIndex * 0.5 + 1.0) + phase * 30.0 + layerIndex * 100.0) * deformRate;
+		float alpha = 0.2 * sin(-tick / time_factor * (layerIndexF * 0.5 + 1.0) + phase * 30.0 + layerIndexF * 100.0) * deformRate;
 		mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
 
 		return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
@@ -83,8 +84,8 @@ void main(void)
 	int backLayersCount = int(backgroundLayersCount + 0.5);
 	for(int layerIndex = 0; layerIndex < 4; layerIndex++)
 	{
-		if(noup == 1 && layerIndex < backLayersCount) continue;
-		if(noup == 2 && layerIndex >= backLayersCount) continue;
+		if(noup == 1.0 && layerIndex < backLayersCount) continue;
+		if(noup == 2.0 && layerIndex >= backLayersCount) continue;
 		float deformRate = GetDistortionRange(layerIndex, pos);
 		vec2 texPos = GetDistortion(pos, layerIndex, distortionType, deformRate);
 		vec4 layerColor = GetColor(layerIndex, texPos);

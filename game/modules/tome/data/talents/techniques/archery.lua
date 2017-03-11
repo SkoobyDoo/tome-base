@@ -94,10 +94,14 @@ newTalent{
 	end,
 	archery_onmiss = function(self, talent, target, x, y)
 		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = nil end
+		if self.mark_steady then self.mark_steady = nil end
 	end,
 	archery_onhit = function(self, t, target, x, y)
 		if self:knowTalent(self.T_MASTER_MARKSMAN) then
-			local chance = 15
+			local chance = 15 + (self.mark_steady or 0)
+			if self:isTalentActive(self.T_AIM) then	
+				chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
+			end
 			if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
 			if target:hasEffect(target.EFF_PIN_DOWN) then 
 				local eff = target:hasEffect(target.EFF_PIN_DOWN)
@@ -115,6 +119,7 @@ newTalent{
 				target:setEffect(target.EFF_CUT, 5, {power=life_diff * scale / 5, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
 			end
 		end
+		if self.mark_steady then self.mark_steady = nil end
 		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
 	end,
 	action = function(self, t)
@@ -124,7 +129,13 @@ newTalent{
 		if not wardenPreUse(self, t, true, "sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 			if not targets then if swap then doWardenWeaponSwap(self, t, "blade") end return end
-			self:archeryShoot(targets, t, nil) -- use_psi_archery set by Archery:archeryShoot
+			if self:knowTalent(self.T_STEADY_SHOT) and not self:isTalentCoolingDown(self.T_STEADY_SHOT) then
+				self:archeryShoot(targets, t, nil, {mult=self:callTalent(self.T_STEADY_SHOT, "getDamage")} )
+				self.mark_steady = self:callTalent(self.T_STEADY_SHOT, "getBonusMark")
+				self:startTalentCooldown(self.T_STEADY_SHOT)
+			else
+				self:archeryShoot(targets, t, nil) -- use_psi_archery set by Archery:archeryShoot
+			end
 			return true
 		end
 		
@@ -178,7 +189,6 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	cooldown = 3,
-	stamina = 8,
 	require = techs_dex_req1,
 	range = archery_range,
 	requires_target = true,
@@ -187,8 +197,9 @@ newTalent{
 		local dam = self:combatTalentWeaponDamage(t, 1.0, 1.8)
 		return dam
 	end,
+	getBonusMark = function(self,t) return 5 + math.floor(self:combatTalentScale(t, 2, 10)) end,
 	getChance = function(self,t) 
-		local chance = 20 + math.floor(self:combatTalentScale(t, 2, 10))
+		local chance = 15 + t.getBonusMark(self,t)
 		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
 		if self:isTalentActive(self.T_AIM) then	
 			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
@@ -245,7 +256,8 @@ newTalent{
 	info = function(self, t)
 		local dam = t.getDamage(self,t)*100
 		local chance = t.getChance(self,t)
-		return ([[Fire a steady shot, doing %d%% damage with a %d%% chance to mark the target.]]):
+		return ([[Fire a steady shot, doing %d%% damage with a %d%% chance to mark the target.
+If Steady Shot is not on cooldown, this talent will automatically replace your normal attacks (and trigger the cooldown).]]):
 		format(dam, chance)
 	end,
 }
@@ -637,7 +649,7 @@ newTalent{
 	end,
 	no_npc_use = true,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 5)) end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:hasEffect(target.EFF_MARKED) then 
 			target:removeEffect(target.EFF_MARKED) 
@@ -688,7 +700,7 @@ newTalent{
 		
 		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 		
 			local targets2 = self:archeryAcquireTargets(tg, {multishots=2, x=target.x, y=target.y})
-			self:archeryShoot(targets2, t, nil, {mult=dam*0.25})
+			if targets2 then self:archeryShoot(targets2, t, nil, {mult=dam*0.25}) end
 		end 
 
 		return true
