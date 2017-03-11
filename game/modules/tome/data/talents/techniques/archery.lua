@@ -601,7 +601,7 @@ newTalent{
 			for i = 1, #targets do
 				local target = targets[i]
 				game.target.forced = {target.x, target.y, target}
-				local targets = self:archeryAcquireTargets({type = "hit", speed = 200}, {one_shot=true, infinite=true, no_energy = fired})
+				local targets = self:archeryAcquireTargets({type = "hit", speed = 200}, {one_shot=true, infinite=true, no_energy = true})
 				if targets then
 					local params = table.clone(shot_params_base)
 					local target = targets.dual and targets.main[1] or targets[1]
@@ -699,7 +699,7 @@ newTalent{
 		self:archeryShoot(targets, t, nil, {mult=dam})
 		
 		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 		
-			local targets2 = self:archeryAcquireTargets(tg, {multishots=2, x=target.x, y=target.y})
+			local targets2 = self:archeryAcquireTargets(tg, {multishots=2, x=target.x, y=target.y, no_energy = true})
 			if targets2 then self:archeryShoot(targets2, t, nil, {mult=dam*0.25}) end
 		end 
 
