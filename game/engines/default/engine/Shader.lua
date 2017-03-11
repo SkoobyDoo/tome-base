@@ -123,6 +123,11 @@ function _M:getFragment(name)
 		code[#code+1] = l
 	end
 	f:close()
+	-- if config.settings.cheat then
+	-- 	print("====== FRAG")
+	-- 	local nb = 1 for line in table.concat(code):gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- 	print("======")
+	-- end
 	self.frags[name] = core.shader.newShader(table.concat(code))
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
@@ -139,6 +144,11 @@ function _M:getVertex(name)
 		code[#code+1] = l
 	end
 	f:close()
+	-- if config.settings.cheat then
+	-- 	print("====== VERT")
+	-- 	local nb = 1 for line in table.concat(code):gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- 	print("======")
+	-- end
 	self.verts[name] = core.shader.newShader(table.concat(code), true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]
