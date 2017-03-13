@@ -51,7 +51,7 @@ function _M:generate()
 	self.scroll_container = core.renderer.container()
 	self.do_container:add(self.scroll_container)
 
-	self.sel = 0
+	self.sel = 1
 
 	local fw, fh = self.w, self.font_h + 6
 	self.fw, self.fh = fw, fh
@@ -88,7 +88,7 @@ function _M:generate()
 		if button == "wheelup" and event == "button" then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 10
 		elseif button == "wheeldown" and event == "button" then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 10 end
 
-		self:selectByY(self.scrollbar.pos + y)
+		self:selectByY((self.scrollbar and self.scrollbar.pos or 0) + y)
 		if (self.all_clicks or button == "left") and event == "button" then self:onUse(button) end
 		if event == "motion" and button == "left" and self.on_drag then self.on_drag(self.list[self.sel], self.sel) end
 	end)
@@ -97,12 +97,12 @@ function _M:generate()
 		MOVE_UP = function()
 			self.sel = util.boundWrap(self.sel - 1, 1, self.max)
 			self:onSelect()
-			self.scrollbar.pos = self.list[self.sel]._entry.y
+			if self.scrollbar then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) end
 		end,
 		MOVE_DOWN = function()
 			self.sel = util.boundWrap(self.sel + 1, 1, self.max)
 			self:onSelect()
-			self.scrollbar.pos = self.list[self.sel]._entry.y
+			if self.scrollbar then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) self.oldpos = self.scrollbar.max end
 		end,
 	}
 	self.key:addCommands{
