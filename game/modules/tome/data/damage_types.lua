@@ -89,8 +89,10 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		return dam
 	end
 
+	local source_talent = src.__projecting_for and src.__projecting_for.project_type and (src.__projecting_for.project_type.talent_id or src.__projecting_for.project_type.talent) and src.getTalentFromId and src:getTalentFromId(src.__projecting_for.project_type.talent or src.__projecting_for.project_type.talent_id)
+
 	local terrain = game.level.map(x, y, Map.TERRAIN)
-	if terrain then terrain:check("damage_project", src, x, y, type, dam) end
+	if terrain then terrain:check("damage_project", src, x, y, type, dam, source_talent) end
 
 	local target = game.level.map(x, y, Map.ACTOR)
 	if target then
@@ -485,7 +487,6 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 
 		print("[PROJECTOR] final dam after hooks and callbacks", dam)
 
-		local source_talent = src.__projecting_for and src.__projecting_for.project_type and (src.__projecting_for.project_type.talent_id or src.__projecting_for.project_type.talent) and src.getTalentFromId and src:getTalentFromId(src.__projecting_for.project_type.talent or src.__projecting_for.project_type.talent_id)
 		local dead
 		dead, dam = target:takeHit(dam, src, {damtype=type, source_talent=source_talent, initial_dam=initial_dam})
 
