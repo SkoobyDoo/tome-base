@@ -27,14 +27,15 @@ module(..., package.seeall, class.inherit(Block))
 function _M:getWidth()
 	local UIBase = require "engine.ui.Base"
 	local middle = UIBase:getAtlasTexture("ui/scrollbar.png")
-	return middle.w
+	local sel_t = UIBase:getAtlasTexture("ui/scrollbar-sel.png")
+	return math.max(middle.w, sel_t.w)
 end
 
 function _M:init(t, size, max, pos, inverse)
 	Block.init(self, t)
 
 	self.inverse = inverse
-	self.max = max
+	self.max = max or 1
 	self.pos = util.minBound(pos or 0, 0, self.max)
 
 	local top = self.parent:getAtlasTexture("ui/scrollbar_top.png")

@@ -128,7 +128,7 @@ function _M:drawItem(item)
 	local text = item[self.display_prop]
 
 	if not item._entry then
-		item._entry = Entry.new(nil, "", color, self.fw, self.fh, nil, true)
+		item._entry = Entry.new(nil, "", color, self.fw, self.fh, nil, 1, true)
 		self.do_container:add(item._entry:get())
 	end
 	item._entry:setText(text, item.color, true)

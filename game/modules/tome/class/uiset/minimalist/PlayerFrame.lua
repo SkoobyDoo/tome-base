@@ -107,6 +107,8 @@ function _M:init(minimalist, w, h)
 		game.key:triggerVirtual("SHOW_CHARACTER_SHEET")
 	end, "Click to assign stats and talents!"), nil, "charsheet", false, 1)
 
+	game:registerEventUI(self, "Player:updateModdableTile")
+
 	self:update(0)
 end
 
@@ -120,6 +122,11 @@ function _M:getDefaultGeometry()
 	local w = self.def_w
 	local h = self.def_h
 	return x, y, w, h
+end
+
+function _M:onEventUI(kind, who)
+	self.old_player = nil
+	self:update(0)
 end
 
 function _M:update(nb_keyframes)

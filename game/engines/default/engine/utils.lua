@@ -56,6 +56,10 @@ function math.scale(i, imin, imax, dmin, dmax)
 	return bi * dm / bm + dmin
 end
 
+function math.sign(v)
+	return v >= 0 and 1 or -1
+end
+
 function lpeg.anywhere (p)
 	return lpeg.P{ p + 1 * lpeg.V(1) }
 end

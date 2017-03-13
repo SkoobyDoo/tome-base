@@ -24,7 +24,7 @@ local Block = require "engine.ui.blocks.Block"
 -- @classmod engine.ui.blocks.block
 module(..., package.seeall, class.inherit(Block))
 
-function _M:init(t, text, color, w, h, offset, default_unseen)
+function _M:init(t, text, color, w, h, offset, max_lines, default_unseen)
 	color = color or {255,255,255}
 	self.color = color
 	self.offset = offset
@@ -37,6 +37,13 @@ function _M:init(t, text, color, w, h, offset, default_unseen)
 	t = t or {}
 	self.t = t
 	self.w, self.h = w, h
+	self.max_lines = max_lines or 1
+
+	if self.max_lines > 1 then
+		local list = text:splitLines(self.w, self.parent.font)
+		self.max_lines = #list
+		self.h = self.h + (#list - 1) * self.font_h
+	end
 
 	if default_unseen then
 		self:shown(false)
@@ -55,9 +62,9 @@ function _M:generateContainer()
 	self.cur_frame = self.frame
 
 	self.max_text_w = w - self.frame.b4.w - self.frame.b6.w
-	self.up_text_h = (h - self.font_h) / 2
+	self.up_text_h = (h - self.font_h * self.max_lines) / 2
 	self.text = core.renderer.text(self.parent.font):translate(0, 0, 10)
-	self.text:maxLines(1)
+	self.text:maxLines(self.max_lines)
 	self.text:textColor(self.color[1] / 255, self.color[2] / 255, self.color[3] / 255, 1)
 
 	self.text_container = core.renderer.container()
