@@ -23,9 +23,9 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = cuns_req1,
-	critpower = function(self, t) return self:combatTalentScale(t, 7.5, 20, 0.75) end,
+	critpower = function(self, t) return self:combatTalentScale(t, 7.5, 20, 0.1) end,
 	-- called by _M:combatCrit in mod.class.interface.Combat.lua
-	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.75) end,
+	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.1) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_critical_power", t.critpower(self, t))
 	end,
@@ -100,7 +100,7 @@ newTalent{
 	cooldown = 30,
 	sustain_stamina = 50,
 	tactical = { BUFF = 2 },
-	drain_stamina = 6,
+	drain_stamina = 4,
 	no_break_stealth = true,
 	no_energy = true,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.30, 0.75) end,
