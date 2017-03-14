@@ -162,7 +162,7 @@ newEntity{ theme={defense=true, physical=true}, name="def", points = 1, rarity =
 				combat_def_ranged = resolvers.randartmax(3, 9), },
 }
 newEntity{ theme={defense=true, physical=true}, name="armor", points = 1, rarity = 10, level_range = {1, 50},
-	wielder = { combat_armor = resolvers.randartmax(3, 9), },
+	wielder = { combat_armor = resolvers.randartmax(2, 6), },
 }
 ----------------------------------------------------------------
 -- Saves
@@ -513,7 +513,7 @@ newEntity{ theme={defense=true, mental=true}, name="save mental greater", points
 }
 
 newEntity{ theme={defense=true, physical=true}, name="armor greater", points = 2, rarity = 10, level_range = {30, 50},
-	wielder = { combat_armor = resolvers.randartmax(3, 15), },
+	wielder = { combat_armor = resolvers.randartmax(2, 14), },
 }
 
 
