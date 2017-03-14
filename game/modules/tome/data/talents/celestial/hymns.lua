@@ -19,7 +19,7 @@
 
 newTalent{
 	name = "Hymn of Shadows",
-	type = {"celestial/other", 1},
+	type = {"celestial/hymns-hymns", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -89,7 +89,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn of Detection",
-	type = {"celestial/other", 1},
+	type = {"celestial/hymns-hymns", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -162,7 +162,7 @@ newTalent{
 
 newTalent{
 	name = "Hymn of Perseverance",
-	type = {"celestial/other",1},
+	type = {"celestial/hymns-hymns",1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -230,7 +230,7 @@ newTalent{
 -- Depreciated, but retained for compatability.
 newTalent{
 	name = "Hymn of Moonlight",
-	type = {"celestial/other",1},
+	type = {"celestial/hymns-hymns",1},
 	mode = "sustained",
 	require = divi_req4,
 	points = 5,
@@ -301,6 +301,9 @@ newTalent{
 	require = divi_req1,
 	points = 5,
 	mode = "passive",
+	passives = function(self, t)
+		self:setTalentTypeMastery("celestial/hymns-hymns", self:getTalentMastery(t))
+	end,
 	on_learn = function(self, t)
 		self:learnTalent(self.T_HYMN_OF_SHADOWS, true, nil, {no_unlearn=true})
 		self:learnTalent(self.T_HYMN_OF_DETECTION, true, nil, {no_unlearn=true})
