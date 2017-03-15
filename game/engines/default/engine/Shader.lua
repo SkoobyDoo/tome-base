@@ -135,9 +135,9 @@ function _M:getFragment(name, def)
 	if self.frags[name] then return self.frags[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".frag")
 	code = self:rewriteShaderFrag(code, def)
-	print("====== FRAG")
-	local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
-	print("======")
+	-- print("====== FRAG")
+	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- print("======")
 	self.frags[name] = core.shader.newShader(code)
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
@@ -148,9 +148,9 @@ function _M:getVertex(name, def)
 	if self.verts[name] then print("[SHADER] reusing vertex shader from /data/gfx/shaders/"..name..".vert") return self.verts[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".vert")
 	code = self:rewriteShaderVert(code, def)
-	print("====== VERT")
-	local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
-	print("======")
+	-- print("====== VERT")
+	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- print("======")
 	self.verts[name] = core.shader.newShader(code, true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]
