@@ -169,7 +169,7 @@ function _M:uiLoginSteam(uis)
 end
 
 function _M:uiStats(uis)
-	self.logged_url = "http://te4.org/users/"..profile.auth.page
+	self.logged_url = "https://te4.org/users/"..profile.auth.page
 	local str1 = Textzone.new{auto_width=true, auto_height=true, text="#GOLD#Online Profile#WHITE#"}
 	local str2 = Textzone.new{auto_width=true, auto_height=true, text="#LIGHT_BLUE##{underline}#"..self.logged_url.."#LAST##{normal}#", fct=function() util.browserOpenUrl(self.logged_url, {is_external=true}) end}
 
