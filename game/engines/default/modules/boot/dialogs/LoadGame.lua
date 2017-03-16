@@ -181,11 +181,11 @@ function _M:playSave(ignore_mod_compat)
 		Dialog:yesnoLongPopup("Incompatible savefile", [[Due to huge changes in 1.2.0 all previous savefiles will not work with it.
 This savefile requires a game version lower than 1.2.0 and thus can not be loaded.
 
-But despair not, if you wish to finish it you can simply download the old version corresponding to the savefile on #{italic}##LIGHT_BLUE#http://te4.org/download#WHITE##{normal}#.
+But despair not, if you wish to finish it you can simply download the old version corresponding to the savefile on #{italic}##LIGHT_BLUE#https://te4.org/download#WHITE##{normal}#.
 
 We apologize for the annoyance, most of the time we try to keep compatibility but this once it was simply not possible.]],
 			700, function(ret) if ret then
-				util.browserOpenUrl("http://te4.org/download", {webview=true, steam=true})
+				util.browserOpenUrl("https://te4.org/download", {webview=true, steam=true})
 			end end, "Go to download in your browser", "Cancel"
 		)
 		return
@@ -243,17 +243,17 @@ function _M:installOldGame(version_string)
 	local dls = {}
 	-- Later on we can request the server for a list, but heh
 	if version_string == "tome-1.2.5" then
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
 	elseif version_string == "tome-1.3.3" then
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3-gfx.team", name="tome-1.3.3-gfx.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3-music.team", name="tome-1.3.3-music.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3.team", name="tome-1.3.3.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3-gfx.team", name="tome-1.3.3-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3-music.team", name="tome-1.3.3-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3.team", name="tome-1.3.3.team"}
 	elseif version_string == "tome-1.4.9" then
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.4.9-gfx.team", name="tome-1.4.9-gfx.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.4.9-music.team", name="tome-1.4.9-music.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.4.9.team", name="tome-1.4.9.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9-gfx.team", name="tome-1.4.9-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9-music.team", name="tome-1.4.9-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9.team", name="tome-1.4.9.team"}
 	end
 
 	if #dls == 0 then

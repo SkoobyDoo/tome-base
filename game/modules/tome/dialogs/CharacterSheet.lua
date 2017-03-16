@@ -446,7 +446,7 @@ function _M:drawDialog(kind, actor_to_compare)
 	local dur_text = ""
 
 	if player.__te4_uuid and profile.auth and profile.auth.drupid then
-		local path = "http://te4.org/characters/"..profile.auth.drupid.."/tome/"..player.__te4_uuid
+		local path = "https://te4.org/characters/"..profile.auth.drupid.."/tome/"..player.__te4_uuid
 		local LinkTxt = "Online URL: #LIGHT_BLUE##{underline}#"..path.."#{normal}#"
 		local Link_w, Link_h = self.font:size(LinkTxt)
 		h = self.c_desc.h - Link_h
@@ -590,9 +590,8 @@ function _M:drawDialog(kind, actor_to_compare)
 		if player.die_at ~=  0 or (actor_to_compare and actor_to_compare.die_at ~=0) then 
 			text = text .. " #a08080#[" .. compare_fields(player, actor_to_compare, "die_at", "die:%+d","%+.0f", 1, true) .. "]"
 		end
-		if player.life < 0 then self:mouseTooltip(self.TOOLTIP_LIFE, s:drawColorStringBlended(self.font, ("#c00000#Life    : #00ff00#???/%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
-		else self:mouseTooltip(self.TOOLTIP_LIFE, s:drawColorStringBlended(self.font, ("#c00000#Life    : #00ff00#%d/%s"):format(player.life, text), w, h, 255, 255, 255, true)) h = h + self.font_h
-		end
+		self:mouseTooltip(self.TOOLTIP_LIFE, s:drawColorStringBlended(self.font, ("#c00000#Life    : #00ff00#%d/%s"):format(player.life, text), w, h, 255, 255, 255, true)) h = h + self.font_h
+
 		-- general resources
 		for res, res_def in ipairs(player.resources_def) do
 			local rname = res_def.short_name

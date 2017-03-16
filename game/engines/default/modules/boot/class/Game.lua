@@ -119,7 +119,7 @@ end
 
 function _M:makeWebtooltip()
 	self.webtooltip = require("engine.ui.WebView").new{width=380, height=500, has_box="ui/tooltip/", has_box_alpha=0.75, never_clean=true, allow_popup=true,
-		url = ("http://te4.org/tooltip-ingame?steam=%d&vM=%d&vm=%d&vp=%d"):format(core.steam and 1 or 0, engine.version[1], engine.version[2], engine.version[3])
+		url = ("https://te4.org/tooltip-ingame?steam=%d&vM=%d&vm=%d&vp=%d"):format(core.steam and 1 or 0, engine.version[1], engine.version[2], engine.version[3])
 	}
 	if self.webtooltip.unusable then self.webtooltip = nil end
 end
@@ -168,7 +168,7 @@ function _M:run()
 	if not self.news then
 		self.news = {
 			title = "Welcome to T-Engine and the Tales of Maj'Eyal",
-			text = [[#GOLD#"Tales of Maj'Eyal"#WHITE# is the main game, you can also install more addons or modules by by going to http://te4.org/
+			text = [[#GOLD#"Tales of Maj'Eyal"#WHITE# is the main game, you can also install more addons or modules by by going to https://te4.org/
 
 When inside a module remember you can press Escape to bring up a menu to change keybindings, resolution and other module specific options.
 
@@ -559,7 +559,7 @@ function _M:onQuit()
 	end, "Quit", "Continue")
 end
 
-profile_help_text = [[#LIGHT_GREEN#T-Engine4#LAST# allows you to sync your player profile with the website #LIGHT_BLUE#http://te4.org/#LAST#
+profile_help_text = [[#LIGHT_GREEN#T-Engine4#LAST# allows you to sync your player profile with the website #LIGHT_BLUE#https://te4.org/#LAST#
 
 This allows you to:
 * Play from several computers without having to copy unlocks and achievements.
@@ -568,7 +568,7 @@ This allows you to:
 * Cool statistics for each module to help sharpen your gameplay style
 * Help the game developers balance and refine the game
 
-You will also have a user page on http://te4.org/ where you can show off your achievements to your friends.
+You will also have a user page on https://te4.org/ where you can show off your achievements to your friends.
 This is all optional, you are not forced to use this feature at all, but the developers would thank you if you did as it will make balancing easier.
 Online profile requires an internet connection, if not available it will wait and sync when it finds one.]]
 
@@ -613,7 +613,7 @@ function _M:createProfile(loginItem)
 		end
 	else
 		self.auth_tried = nil
-		local d = Dialog:simpleWaiter("Registering...", "Registering on http://te4.org/, please wait...") core.display.forceRedraw()
+		local d = Dialog:simpleWaiter("Registering...", "Registering on https://te4.org/, please wait...") core.display.forceRedraw()
 		local ok, err = profile:newProfile(loginItem.login, loginItem.name, loginItem.pass, loginItem.email, loginItem.news)
 		profile:waitFirstAuth()
 		d:done()
@@ -621,9 +621,9 @@ function _M:createProfile(loginItem)
 			Dialog:simplePopup(self.justlogin and "Logged in!" or "Profile created!", "Your online profile is now active. Have fun!", function() end )
 		else
 			if err ~= "unknown" and err then
-				Dialog:simplePopup("Profile creation failed!", "Creation failed: "..err.." (you may also register on http://te4.org/)", function() end )
+				Dialog:simplePopup("Profile creation failed!", "Creation failed: "..err.." (you may also register on https://te4.org/)", function() end )
 			else
-				Dialog:simplePopup("Profile creation failed!", "Try again in in a few moments, or try online at http://te4.org/", function() end )
+				Dialog:simplePopup("Profile creation failed!", "Try again in in a few moments, or try online at https://te4.org/", function() end )
 			end
 		end
 	end

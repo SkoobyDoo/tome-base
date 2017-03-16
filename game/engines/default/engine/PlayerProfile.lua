@@ -756,7 +756,7 @@ end
 
 function _M:registerNewCharacter(module)
 	if not self.auth or not self.hash_valid then return end
-	local dialog = Dialog:simpleWaiter("Registering character", "Character is being registered on http://te4.org/")
+	local dialog = Dialog:simpleWaiter("Registering character", "Character is being registered on https://te4.org/")
 	core.display.forceRedraw()
 
 	core.profile.pushOrder(table.serialize{o="RegisterNewCharacter", module=module})

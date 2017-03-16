@@ -148,6 +148,19 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 
+		-- Leap
+		local tg = {type="hit", range=t.getDist(self,t)}
+		local x, y  = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, x, y = self:canProject(tg, x, y)
+
+		if game.level.map(x, y, Map.ACTOR) then
+			x, y = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
+			if not x then return end
+		end
+
+		if game.level.map:checkAllEntities(x, y, "block_move") then return end
+
 		-- Modify shield combat to use dex.
 		local combat = table.clone(shield_combat, true)
 		if combat.dammod.str and combat.dammod.str > 0 then
@@ -167,19 +180,6 @@ newTalent{
 			end
 		end
 		
-		-- Leap
-		local tg = {type="hit", range=t.getDist(self,t)}
-		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
-		local _ _, x, y = self:canProject(tg, x, y)
-
-		if game.level.map(x, y, Map.ACTOR) then
-			x, y = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
-			if not x then return end
-		end
-
-		if game.level.map:checkAllEntities(x, y, "block_move") then return end
-
 		local ox, oy = self.x, self.y
 		self:move(x, y, true)
 		if config.settings.tome.smooth_move > 0 then
