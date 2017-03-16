@@ -32,11 +32,11 @@ function _M:init()
 	Dialog.init(self, "Configure Addons", game.w * 0.8, game.h * 0.8)
 
 	local webaddonload = function()
-		local method, d = util.browserOpenUrl("http://te4.org/addons/tome", {steam=true})
+		local method, d = util.browserOpenUrl("https://te4.org/addons/tome", {steam=true})
 		if method == "webview" and d then d.unload = function() self:regen() end end
 	end
 	local webdlcload = function()
-		local method, d = util.browserOpenUrl("http://te4.org/tome/dlc", {steam=true})
+		local method, d = util.browserOpenUrl("https://te4.org/tome/dlc", {steam=true})
 		if method == "webview" and d then d.unload = function() self:regen() end end
 	end
 
