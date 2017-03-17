@@ -49,7 +49,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 	self.c_inven = Inventory.new{actor=actor_actor, inven=actor_inven, filter=actor_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10,
 		columns={
 			{name="", width={30,"fixed"}, display_prop="char", sort="id"},
-			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, x, y) item.object:toScreen(nil, x+4, y, 16, 16) end},
+			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
 			{name="Inventory", width=80, display_prop="name", sort="name"},
 			{name="Category", width=20, display_prop="cat", sort="cat"},
 			{name="Price", width={70,"fixed"}, display_prop=function(item) return self.descprice("sell", item.object) end, sort=function(a, b) return descprice("sell", a.object) < descprice("sell", b.object) end},
@@ -61,35 +61,10 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 		on_drag_end=function() self:onDragTakeoff("store-buy") end,
 	}
 
-	local direct_draw= function(item, x, y, w, h, total_w, total_h, loffset_x, loffset_y, dest_area)
-		-- if there is object and is withing visible bounds
-		if item.object and total_h + h > loffset_y and total_h < loffset_y + dest_area.h then
-			local clip_y_start, clip_y_end = 0, 0
-			-- if it started before visible area then compute its top clip
-			if total_h < loffset_y then
-				clip_y_start = loffset_y - total_h
-			end
-			-- if it ended after visible area then compute its bottom clip
-			if total_h + h > loffset_y + dest_area.h then
-			   clip_y_end = total_h + h - loffset_y - dest_area.h
-			end
-			-- DGDGDGDG getEntityFinalTexture doesnt exist anymore
-			return 0, 0, 0, 0, 0, 0
-			--[[
-			-- get entity texture with everything it has i.e particles
-			local texture = item.object:getEntityFinalTexture(nil, h, h)
-			local one_by_tex_h = 1 / h
-			texture:toScreenPrecise(x, y, h, h - clip_y_start - clip_y_end, 0, 1, clip_y_start * one_by_tex_h, (h - clip_y_end) * one_by_tex_h)
-			return h, h, 0, 0, clip_y_start, clip_y_end
-			]]
-		end
-		return 0, 0, 0, 0, 0, 0
-	end
-
 	self.c_store = Inventory.new{actor=store_actor, inven=store_inven, filter=store_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, tabslist=false,
 		columns={
 			{name="", width={30,"fixed"}, display_prop="char", sort="id"},
-			{name="", width={24,"fixed"}, display_prop="object", direct_draw=direct_draw},
+			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
 			{name="Store", width=80, display_prop="name"},
 			{name="Category", width=20, display_prop="cat"},
 			{name="Price", width={70,"fixed"}, display_prop=function(item) return self.descprice("buy", item.object) end, sort=function(a, b) return descprice("buy", a.object) < descprice("buy", b.object) end},

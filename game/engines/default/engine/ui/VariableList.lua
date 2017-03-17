@@ -77,11 +77,10 @@ function _M:generate()
 	self.max = #self.list
 
 	-- Draw the scrollbar
-	if self.scrollbar then
-		self.scrollbar = Scrollbar.new(nil, self.h, max_h - self.h)
-		self.scrollbar:translate(self.fw, 0, 1)
-		self.do_container:add(self.scrollbar:get())
-	end
+	local sc = self.scrollbar
+	self.scrollbar = Scrollbar.new(nil, self.h, max_h - self.h)
+	self.scrollbar:translate(self.fw, 0, 1)
+	if sc then self.do_container:add(self.scrollbar:get()) end
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -97,12 +96,12 @@ function _M:generate()
 		MOVE_UP = function()
 			self.sel = util.boundWrap(self.sel - 1, 1, self.max)
 			self:onSelect()
-			if self.scrollbar then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) end
+			if not self:isOnScreen(self.list[self.sel]._entry.y) then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) end
 		end,
 		MOVE_DOWN = function()
 			self.sel = util.boundWrap(self.sel + 1, 1, self.max)
 			self:onSelect()
-			if self.scrollbar then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) self.oldpos = self.scrollbar.max end
+			if not self:isOnScreen(self.list[self.sel]._entry.y) then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) self.oldpos = self.scrollbar.max end
 		end,
 	}
 	self.key:addCommands{
@@ -133,6 +132,10 @@ end
 function _M:select(i)
 	self.sel = util.bound(i, 1, self.max)
 	self:onSelect()
+end
+
+function _M:isOnScreen(y)
+	if y >= self.scrollbar.pos and y < self.scrollbar.pos + self.h then return true end
 end
 
 function _M:selectByY(y)

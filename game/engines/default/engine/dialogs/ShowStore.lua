@@ -42,7 +42,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 
 	self.c_inven = ListColumns.new{width=math.floor(self.iw / 2 - 10), height=self.ih - 10, sortable=true, scrollbar=true, columns={
 		{name="", width={20,"fixed"}, display_prop="char", sort="id"},
-		{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, x, y) item.object:toScreen(nil, x+4, y, 16, 16) end},
+		{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
 		{name="Inventory", width=80, display_prop="name", sort="name"},
 		{name="Category", width=20, display_prop="cat", sort="cat"},
 		{name="Price", width={50,"fixed"}, display_prop="desc_price", sort=function(a, b) return descprice("sell", a.object) <descprice("sell", b.object) end},
@@ -50,7 +50,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 
 	self.c_store = ListColumns.new{width=math.floor(self.iw / 2 - 10), height=self.ih - 10, sortable=true, scrollbar=true, columns={
 		{name="", width={20,"fixed"}, display_prop="char", sort="id"},
-		{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, x, y) item.object:toScreen(nil, x+4, y, 16, 16) end},
+		{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
 		{name="Store", width=80, display_prop="name"},
 		{name="Category", width=20, display_prop="cat"},
 		{name="Price", width={50,"fixed"}, display_prop="desc_price", sort=function(a, b) return descprice("buy", a.object) <descprice("buy", b.object) end},
