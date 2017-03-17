@@ -576,7 +576,7 @@ function _M:roomCheck(room, zone, level, map)
 		end
 	end
 	if room.roomcheck then 
-		local check, failure = room.roomcheck(room, zone, level, map)
+		local check, failure = room.roomcheck(self, room, zone, level, map)
 		if not check then
 			print("[RoomsLoader:roomCheck] ", room.name, " rejected by roomcheck function:", failure)
 			return false, failure or "roomcheck function"
@@ -669,7 +669,7 @@ function _M:roomPlace(room, id, x, y)
 	self.map.room_map.rooms[#self.map.room_map.rooms+1] = ret -- update the rooms list
 
 	if room.onplace then -- perform any post placement actions
-		room.onplace(room, self.zone, self.level, self.map, ret)
+		room.onplace(self, room, self.zone, self.level, self.map, ret)
 	end
 	
 	return ret
