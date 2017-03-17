@@ -63,7 +63,7 @@ newTalent{
 	require = spells_req2,
 	points = 5,
 	random_ego = "attack",
-	mana = 40,
+	mana = 30,
 	cooldown = 8,
 	tactical = { ATTACKAREA = {LIGHTNING = 2} }, --note: only considers the primary target
 	range = 10,
@@ -193,7 +193,7 @@ newTalent{
 	require = spells_req4,
 	points = 5,
 	mode = "sustained",
-	sustain_mana = 100,
+	sustain_mana = 30,
 	cooldown = 15,
 	tactical = { ATTACKAREA = {LIGHTNING = 2} },
 	range = 6,
