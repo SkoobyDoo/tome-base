@@ -72,7 +72,7 @@ local theme = get_theme(filters, zone, level)
 
 mapData({theme = theme})
 
-roomcheck = function(room, zone, level, map)
+roomcheck = function(gen, room, zone, level, map)
 	if resolvers.current_level < 15 then return nil, "inappropriate level" end
 	if not room.theme then room.theme = get_theme(filters, zone, level) end
 	return room.theme, not room.theme and "no appropriate npcs"
@@ -102,18 +102,20 @@ local trigger = function(self, who)
 			if not tx then
 				game.logPlayer(who, "#YELLOW#The Portal repels you briefly before becoming quiescent.  The other side seems to be blocked.")
 			else
-				game.logPlayer(who, "#YELLOW#An overcome intense #LIGHT_BLUE#REPULSIVE FORCES#LAST# as you traverse the Portal.")
-				game:playSoundNear(who, "talents/distortion")
-				who:move(tx, ty, true)
+				require("engine.ui.Dialog"):yesnoPopup("Malevolant Portal", "An ominous aura emanates from this portal. Are you sure you want to go through?", function(ret) if ret then
+					game.logPlayer(who, "#YELLOW#An overcome intense #LIGHT_BLUE#REPULSIVE FORCES#LAST# as you traverse the Portal.")
+					game:playSoundNear(who, "talents/distortion")
+					who:move(tx, ty, true)					
+				end end, "Teleport", "Cancel")
 			end
-		else
-			if not tx then
-				game.logSeen(who, "#YELLOW#The Portal repels %s briefly as %s approaches it.", who.name:capitalize(), who:he_she())
-			else
-				who:logCombat(nil, "#YELLOW#The Portal #LIGHT_BLUE#VIOLENTLY DISTORTS#LAST# before #source# emerges from it.")
-				game:playSoundNear(who, "talents/distortion")
-				who:move(tx, ty, true)
-			end
+		-- else
+		-- 	if not tx then
+		-- 		game.logSeen(who, "#YELLOW#The Portal repels %s briefly as %s approaches it.", who.name:capitalize(), who:he_she())
+		-- 	else
+		-- 		who:logCombat(nil, "#YELLOW#The Portal #LIGHT_BLUE#VIOLENTLY DISTORTS#LAST# before #source# emerges from it.")
+		-- 		game:playSoundNear(who, "talents/distortion")
+		-- 		who:move(tx, ty, true)
+		-- 	end
 		end
 	else
 		game.logPlayer(who, "#YELLOW#Nothing happens when you use the Portal.")
@@ -150,8 +152,8 @@ TeleportIn = mod.class.Grid.new{
 	change_level_check = trigger,
 	get_locations = get_locations,
 	block_move = function(self, x, y) -- makes Map:updateMap update coordinates
-			self._locations = self.get_locations()
-			table.merge(self._locations, {outx=x, outy=y})
+		self._locations = self.get_locations()
+		table.merge(self._locations, {outx=x, outy=y})
 		if self._locations.inx and self._locations.iny and self._locations.outx and self._locations.outy then self.block_move = nil end
 		return false
 	end,
@@ -188,8 +190,7 @@ map_data={startx=2, starty=2},
 local portal_room = RoomsLoader:roomParse(portal_def)
 
 -- Set up the satellite room as a way into the vault
-onplace = function(room, zone, level, map, placement_data)
-	local gen = zone:getGenerator("map", level, zone.generator.map)
+onplace = function(gen, room, zone, level, map, placement_data)
 	local rooms = gen.map.room_map.rooms
 	TeleportIn.change_level = level.level
 	TeleportOut.change_level = level.level
