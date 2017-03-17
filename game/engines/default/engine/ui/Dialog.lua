@@ -472,14 +472,14 @@ function _M:generate()
 
 	self.frame_container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
 
-	self.frame_container:add(fromTextureTable(b7, cx + 0, cy + 0, nil, nil, nil, r, g, b, a))
-	self.frame_container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, nil, nil, nil, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b7, cx + 0, cy + 0, b7.w, b7.h, nil, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, b9.w, b9.h, nil, r, g, b, a))
 
-	self.frame_container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, nil, nil, false, r, g, b, a))
-	self.frame_container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, nil, nil, false, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, b1.w, b1.h, false, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, b3.w, b3.h, false, r, g, b, a))
 
-	self.frame_container:add(fromTextureTable(b4, cx + 0, cy + b7.h, nil, h - b7.h - b1.h, true, r, g, b, a))
-	self.frame_container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, nil, h - b9.h - b3.h, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b4, cx + 0, cy + b7.h, b4.w, h - b7.h - b1.h, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, b6.w, h - b9.h - b3.h, true, r, g, b, a))
 
 	if self.frame.dialog_h_middles then
 		local mw = math.floor(self.frame.w / 2)
@@ -856,77 +856,78 @@ function _M:cleanup()
 	end
 end
 
-function _M:drawFrame(x, y, r, g, b, a)
-	x = x + self.frame.ox1
-	y = y + self.frame.oy1
+-- DGDGDGDG some stuff to steal still, blood & such
+-- function _M:drawFrame(x, y, r, g, b, a)
+-- 	x = x + self.frame.ox1
+-- 	y = y + self.frame.oy1
 
-	-- Sides
-	if self.frame.dialog_h_middles then
-		local mw = math.floor(self.frame.w / 2)
-		local b8hw = math.floor(self.b8.w / 2)
-		self.b8l.t:toScreenFull(x + self.b7.w, y, mw - self.b7.w - b8hw, self.b8l.h, self.b8l.tw, self.b8l.th, r, g, b, a)
-		self.b8r.t:toScreenFull(x + mw + b8hw, y, mw - self.b9.w - b8hw, self.b8r.h, self.b8r.tw, self.b8r.th, r, g, b, a)
-		self.b8.t:toScreenFull(x + mw - b8hw, y, self.b8.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+-- 	-- Sides
+-- 	if self.frame.dialog_h_middles then
+-- 		local mw = math.floor(self.frame.w / 2)
+-- 		local b8hw = math.floor(self.b8.w / 2)
+-- 		self.b8l.t:toScreenFull(x + self.b7.w, y, mw - self.b7.w - b8hw, self.b8l.h, self.b8l.tw, self.b8l.th, r, g, b, a)
+-- 		self.b8r.t:toScreenFull(x + mw + b8hw, y, mw - self.b9.w - b8hw, self.b8r.h, self.b8r.tw, self.b8r.th, r, g, b, a)
+-- 		self.b8.t:toScreenFull(x + mw - b8hw, y, self.b8.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
 
-		local b2hw = math.floor(self.b2.w / 2)
-		self.b2l.t:toScreenFull(x + self.b1.w, y + self.frame.h - self.b3.h, mw - self.b1.w - b2hw, self.b2l.h, self.b2l.tw, self.b2l.th, r, g, b, a)
-		self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
-		self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
-	else
-		self.b8.t:toScreenFull(x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
-		self.b2.t:toScreenFull(x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
-	end
-	self.b4.t:toScreenFull(x, y + self.b7.h, self.b4.w, self.frame.h - self.b7.h - self.b1.h, self.b4.tw, self.b4.th, r, g, b, a)
-	self.b6.t:toScreenFull(x + self.frame.w - self.b9.w, y + self.b7.h, self.b6.w, self.frame.h - self.b7.h - self.b1.h, self.b6.tw, self.b6.th, r, g, b, a)
+-- 		local b2hw = math.floor(self.b2.w / 2)
+-- 		self.b2l.t:toScreenFull(x + self.b1.w, y + self.frame.h - self.b3.h, mw - self.b1.w - b2hw, self.b2l.h, self.b2l.tw, self.b2l.th, r, g, b, a)
+-- 		self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
+-- 		self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+-- 	else
+-- 		self.b8.t:toScreenFull(x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+-- 		self.b2.t:toScreenFull(x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+-- 	end
+-- 	self.b4.t:toScreenFull(x, y + self.b7.h, self.b4.w, self.frame.h - self.b7.h - self.b1.h, self.b4.tw, self.b4.th, r, g, b, a)
+-- 	self.b6.t:toScreenFull(x + self.frame.w - self.b9.w, y + self.b7.h, self.b6.w, self.frame.h - self.b7.h - self.b1.h, self.b6.tw, self.b6.th, r, g, b, a)
 
-	-- Corners
-	self.b1.t:toScreenFull(x, y + self.frame.h - self.b1.h, self.b1.w, self.b1.h, self.b1.tw, self.b1.th, r, g, b, a)
-	self.b7.t:toScreenFull(x, y, self.b7.w, self.b7.h, self.b7.tw, self.b7.th, r, g, b, a)
-	self.b9.t:toScreenFull(x + self.frame.w - self.b9.w, y, self.b9.w, self.b9.h, self.b9.tw, self.b9.th, r, g, b, a)
-	self.b3.t:toScreenFull(x + self.frame.w - self.b3.w, y + self.frame.h - self.b3.h, self.b3.w, self.b3.h, self.b3.tw, self.b3.th, r, g, b, a)
+-- 	-- Corners
+-- 	self.b1.t:toScreenFull(x, y + self.frame.h - self.b1.h, self.b1.w, self.b1.h, self.b1.tw, self.b1.th, r, g, b, a)
+-- 	self.b7.t:toScreenFull(x, y, self.b7.w, self.b7.h, self.b7.tw, self.b7.th, r, g, b, a)
+-- 	self.b9.t:toScreenFull(x + self.frame.w - self.b9.w, y, self.b9.w, self.b9.h, self.b9.tw, self.b9.th, r, g, b, a)
+-- 	self.b3.t:toScreenFull(x + self.frame.w - self.b3.w, y + self.frame.h - self.b3.h, self.b3.w, self.b3.h, self.b3.tw, self.b3.th, r, g, b, a)
 
-	-- Body
-	self.b5.t:toScreenFull(x + self.b7.w, y + self.b7.h, self.frame.w - self.b7.w - self.b3.w , self.frame.h - self.b7.h - self.b3.h, self.b5.tw, self.b5.th, r, g, b, a)
+-- 	-- Body
+-- 	self.b5.t:toScreenFull(x + self.b7.w, y + self.b7.h, self.frame.w - self.b7.w - self.b3.w , self.frame.h - self.b7.h - self.b3.h, self.b5.tw, self.b5.th, r, g, b, a)
 
-	-- Overlays
-	for i = 1, #self.overs do
-		local ov = self.overs[i]
-		ov.t:toScreenFull(x + ov.x, y + ov.y, ov.w , ov.h, ov.tw, ov.th, r, g, b, a * ov.a)
-	end
+-- 	-- Overlays
+-- 	for i = 1, #self.overs do
+-- 		local ov = self.overs[i]
+-- 		ov.t:toScreenFull(x + ov.x, y + ov.y, ov.w , ov.h, ov.tw, ov.th, r, g, b, a * ov.a)
+-- 	end
 
-	if self.frame.particles then
-		for i, pdef in ipairs(self.frame.particles) do
-			if rng.chance(pdef.chance) then
-				local p = Particles.new(pdef.name, 1, pdef.args)
-				local pos = {x=0, y=0}
-				if pdef.position.base == 7 then
-					pos.x = pdef.position.ox
-					pos.y = pdef.position.oy
-				elseif pdef.position.base == 9 then
-					pos.x = self.w + pdef.position.ox + self.b9.w
-					pos.y = pdef.position.oy
-				elseif pdef.position.base == 1 then
-					pos.x = pdef.position.ox
-					pos.y = self.h + pdef.position.oy + self.b1.h
-				elseif pdef.position.base == 3 then
-					pos.x = self.w + pdef.position.ox + self.b3.w
-					pos.y = self.h + pdef.position.oy + self.b3.h
-				end
-				self.particles[p] = pos
-			end
-		end
-	end
+-- 	if self.frame.particles then
+-- 		for i, pdef in ipairs(self.frame.particles) do
+-- 			if rng.chance(pdef.chance) then
+-- 				local p = Particles.new(pdef.name, 1, pdef.args)
+-- 				local pos = {x=0, y=0}
+-- 				if pdef.position.base == 7 then
+-- 					pos.x = pdef.position.ox
+-- 					pos.y = pdef.position.oy
+-- 				elseif pdef.position.base == 9 then
+-- 					pos.x = self.w + pdef.position.ox + self.b9.w
+-- 					pos.y = pdef.position.oy
+-- 				elseif pdef.position.base == 1 then
+-- 					pos.x = pdef.position.ox
+-- 					pos.y = self.h + pdef.position.oy + self.b1.h
+-- 				elseif pdef.position.base == 3 then
+-- 					pos.x = self.w + pdef.position.ox + self.b3.w
+-- 					pos.y = self.h + pdef.position.oy + self.b3.h
+-- 				end
+-- 				self.particles[p] = pos
+-- 			end
+-- 		end
+-- 	end
 
-	if next(self.particles) then
-		for p, pos in pairs(self.particles) do
-			if p.ps:isAlive() then
-				p.ps:toScreen(x + pos.x, y + pos.y, true, 1)
-			else
-				self.particles[p] = nil
-			end
-		end
-	end
-end
+-- 	if next(self.particles) then
+-- 		for p, pos in pairs(self.particles) do
+-- 			if p.ps:isAlive() then
+-- 				p.ps:toScreen(x + pos.x, y + pos.y, true, 1)
+-- 			else
+-- 				self.particles[p] = nil
+-- 			end
+-- 		end
+-- 	end
+-- end
 
 function _M:innerDisplayBack(x, y, nb_keyframes)
 end

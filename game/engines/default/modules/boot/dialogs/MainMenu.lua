@@ -134,7 +134,7 @@ function _M:updateUI()
 ----------------------------
 ----------------------------DGDGDGDG remove this
 ----------------------------
--- [[
+--[[
 	local test = require("engine.ui.VariableList").new{scrollbar=true, width=self.iw, height=self.ih / 2, list={
 		-- {name='this is a long text 1\nthis is a long text 1\nthis is a long text 1\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo'},
 		{name='this is a long text 1\nplpo\nplpo2'},
