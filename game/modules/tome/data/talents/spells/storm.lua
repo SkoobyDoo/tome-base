@@ -101,7 +101,7 @@ newTalent{
 	require = spells_req_high3,
 	points = 5,
 	mode = "sustained",
-	sustain_mana = 100,
+	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { DISABLE = 2, BUFF = 2 },
 	range = 10,
