@@ -32,7 +32,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 28, 170) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 28, 200) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local dam = self:spellCrit(t.getDamage(self, t))
@@ -76,7 +76,7 @@ newTalent{
 	range = 10,
 	requires_target = true,
 	reflectable = true,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 200) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 280) end,
 	action = function(self, t)
 		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_lightning", trail="lightningtrail"}}
 		local x, y = self:getTarget(tg)
