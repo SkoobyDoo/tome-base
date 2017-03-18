@@ -22,7 +22,7 @@
 --border = 2
 rotates = {"default", "90", "180", "270", "flipx", "flipy"}
 prefer_location = function(map) return math.ceil(map.w/2-20), math.ceil(map.h/2-20) end -- try to place in the center of the map
-onplace = function(gen, room, zone, level, map)
+onplace = function(room, zone, level, map)
 	game.log("#PINK# Test vault onplace function called: zone:%s, level:%s, map:%s", zone, level, map)
 end
 roomCheck(function(room, zone, level, map)
