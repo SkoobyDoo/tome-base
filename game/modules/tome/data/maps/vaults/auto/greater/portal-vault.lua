@@ -72,7 +72,7 @@ local theme = get_theme(filters, zone, level)
 
 mapData({theme = theme})
 
-roomcheck = function(gen, room, zone, level, map)
+roomcheck = function(room, zone, level, map)
 	if resolvers.current_level < 15 then return nil, "inappropriate level" end
 	if not room.theme then room.theme = get_theme(filters, zone, level) end
 	return room.theme, not room.theme and "no appropriate npcs"
@@ -190,7 +190,7 @@ map_data={startx=2, starty=2},
 local portal_room = RoomsLoader:roomParse(portal_def)
 
 -- Set up the satellite room as a way into the vault
-onplace = function(gen, room, zone, level, map, placement_data)
+onplace = function(room, zone, level, map, placement_data, gen)
 	local rooms = gen.map.room_map.rooms
 	TeleportIn.change_level = level.level
 	TeleportOut.change_level = level.level

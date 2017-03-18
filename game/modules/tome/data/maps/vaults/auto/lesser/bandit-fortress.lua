@@ -22,7 +22,7 @@ setStatusAll{no_teleport=true, vault_only_door_open=true, room_map = {can_open=t
 unique = "bandit-fortress" -- one per map
 --startx, starty = 40, 19
 border = 0
-roomcheck = function(gen, room, zone, level, map) -- one per zone, level restricted
+roomcheck = function(room, zone, level, map) -- one per zone, level restricted
 	return not zone._bandit_fortress and resolvers.current_level >= 10 and zone.npc_list.__loaded_files["/data/general/npcs/thieve.lua"]
 end
 specialList("actor", {
@@ -32,7 +32,7 @@ specialList("actor", {
 	"/data/general/npcs/troll.lua",
 	"/data/general/npcs/thieve.lua",
 })
-onplace = function(gen, room, zone, level, map, data) -- flag the map as having this vault
+onplace = function(room, zone, level, map, data) -- flag the map as having this vault
 	map._bandit_fortress = level.level
 end
 onGenerated(function(zone, level, map) -- update the zone after the vault is placed (in case the level was regenerated)
