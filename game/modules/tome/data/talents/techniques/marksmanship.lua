@@ -170,7 +170,7 @@ newTalent{
 	require = techs_dex_req4,
 	random_ego = "attack",
 	tactical = { BUFF = 3 },
-	getSpeed = function(self, t) return self:combatTalentLimit(t, 60, 15, 45)/100 end,
+	getSpeed = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	action = function(self, t)
 		local dur = t.getDuration(self,t)
