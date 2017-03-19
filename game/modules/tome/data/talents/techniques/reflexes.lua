@@ -141,7 +141,7 @@ newTalent{
 		if not weapon then return end
 		local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=target.x, y=target.y}) --Ammo check done here
 		if not targets then return end
-		if not target.turn_procs.intuitive_shots and not self:isTalentActive(self.T_CONCEALMENT) then self:archeryShoot(targets, t, nil, {mult=t.getDamage(self,t)}) end
+		if not target.turn_procs.intuitive_shots and not (self:isTalentActive(self.T_CONCEALMENT) or self:hasEffect(self.EFF_WILD_SPEED) or self:hasEffect(self.EFF_ESCAPE)) then self:archeryShoot(targets, t, nil, {mult=t.getDamage(self,t)}) end
 		target.turn_procs.intuitive_shots = true
 		self.energy.value = old
 		return true
@@ -234,7 +234,7 @@ newTalent{
 		local power = t.getDamageReduction(self,t)
 		local speed = t.getSpeed(self,t)
 		local stamina = t.getStamina(self,t)
-		self:setEffect(self.EFF_ESCAPE, 4, {src=self, power=power, stamina=stamina, speed=speed})
+		game:onTickEnd(function() self:setEffect(self.EFF_ESCAPE, 4, {src=self, power=power, stamina=stamina, speed=speed}) end)
 		return true
 	end,
 	info = function(self, t)
