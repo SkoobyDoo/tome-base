@@ -130,7 +130,7 @@ newTalent{
 		end
 		return true
 	end,
-	getAvoidance = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 10, 22)) end,
+	getAvoidance = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 5, 15)) end,
 	getSight = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, "log")) end,
 	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 8.9, 4.5)) end,
 	sustain_lists = "break_with_stealth",
@@ -219,7 +219,7 @@ newTalent{
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	getPower = function(self, t)  return self:combatTalentStatDamage(t, "dex", 15, 50) end,
 	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 150, 50, 100)) end,
-	getDamage = function(self, t) return self:combatTalentLimit(t, 8, 2, 6) end,
+	getDamage = function(self, t) return self:combatTalentLimit(t, 8.0, 2.0, 4.0) end,
 	getMarkChance = function(self, t) return math.floor(self:combatTalentScale(t, 2, 10)) end,
 	sustain_slots = 'archery_stance',
 	activate = function(self, t)
@@ -261,7 +261,7 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	stamina = 20,
-	cooldown = 8,
+	cooldown = 10,
 	require = techs_dex_req_high4,
 	range = archery_range,
 	requires_target = true,
