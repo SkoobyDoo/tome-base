@@ -173,6 +173,7 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2.7)) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 1.9) end,
 	getSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
+	getCooldownReduction = function(self, t) return math.min(10, math.floor(self:combatTalentScale(t, 2, 8))) end,
 	target = function(self, t)
 		local weapon, ammo = self:hasArcheryWeapon()
 		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), selffire=false, display=self:archeryDefaultProjectileVisual(weapon, ammo)}
@@ -189,8 +190,8 @@ newTalent{
 		self:archeryShoot(targets, t, nil, {mult=dam})
 		game:onTickEnd(function()
 			if self:knowTalent(self.T_CONCEALMENT) and not self:isTalentActive(self.T_CONCEALMENT) then
-				self:alterTalentCoolingdown(self.T_CONCEALMENT, -20)
-				self:forceUseTalent(self.T_CONCEALMENT, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})
+				self:alterTalentCoolingdown(self.T_CONCEALMENT, -t.getCooldownReduction(self,t))
+				if not self:isTalentCoolingDown(self.T_CONCEALMENT) then self:forceUseTalent(self.T_CONCEALMENT, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true}) end
 			end
 		end)
 		game.level.map:redisplay()
@@ -200,10 +201,11 @@ newTalent{
 		local dam = t.getDamage(self,t)*100
 		local radius = self:getTalentRadius(t)
 		local sight = t.getSightLoss(self,t)
+		local cooldown = t.getCooldownReduction(self,t)
 		return ([[Fire an arrow tipped with a smoke bomb inflicting %d%% damage and creating a radius %d cloud of thick, disorientating smoke. Those caught within will be confused (power 50%%) and have their vision range reduced by %d for 5 turns.
-You take advantage of this distraction to immediately enter Concealment, regardless of it's cooldown.
+The distraction caused by this effect reduces the cooldown of your Concealment by %d turns. If the cooldown is reduced to 0, you instantly activate Concealment regardless of whether foes are too close.
 The chance for the smoke bomb to affect your targets increases with your Accuracy.]]):
-		format(dam, radius, sight)
+		format(dam, radius, sight, cooldown)
 	end,
 }
 
