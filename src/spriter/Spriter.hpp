@@ -169,6 +169,7 @@ public:
 	void setTriggerCallback(int ref);
 
 	void load(const char *file, const char *name);
+	void startAnim(const char *name, float blendtime);
 	void startAnim(const char *name);
 
 	void setShader(shader_type *s) { shader = s; };

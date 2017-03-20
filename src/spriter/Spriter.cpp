@@ -102,6 +102,9 @@ void TE4SpriterTriggerObjectInfo::playTrigger() {
  ** Spriter image stuff
  ****************************************************************************/
 TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData) : ImageFile(initialFilePath,initialDefaultPivot) {	
+	string id = initialFilePath.erase()
+printf("!!!! %s\n", id.c_str());
+
 	if (!atlasData.active) {		
 		texture = DORSpriterCache::getTexture(initialFilePath);
 		aw = w = texture->w; ah = h = texture->h;
@@ -275,6 +278,12 @@ void DORSpriter::load(const char *file, const char *name) {
 	instance = spritermodel->getNewEntityInstance(name);
 }
 
+void DORSpriter::startAnim(const char *name, float blendtime) {
+	if (!instance) return;
+	currently_processing = this;
+	instance->setCurrentAnimation(name, blendtime * 1000.0);
+}
+
 void DORSpriter::startAnim(const char *name) {
 	if (!instance) return;
 	currently_processing = this;
@@ -286,6 +295,10 @@ void DORSpriter::onKeyframe(float nb_keyframe) {
 	currently_processing = this;
 	instance->setTimeElapsed(1000.0 * nb_keyframe / KEYFRAMES_PER_SEC);
 	setChanged();
+
+	if (instance->animationJustFinished(true)) {
+		printf("anim end %s\n", instance->currentAnimationName().c_str());
+	}
 }
 
 void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
