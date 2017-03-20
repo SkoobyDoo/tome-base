@@ -89,13 +89,17 @@ void TE4SpriterTriggerObjectInfo::playTrigger() {
 	DORSpriter *spriter = DORSpriter::currently_processing;
 	if (spriter->trigger_cb_lua_ref == LUA_NOREF) return;
 
+	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
 	lua_rawgeti(L, LUA_REGISTRYINDEX, spriter->trigger_cb_lua_ref);
+	lua_rawgeti(L, -2, spriter->getWeakSelfRef());
+	lua_pushstring(L, triggerName.c_str());
 	lua_pushnumber(L, getTriggerCount());
-	if (lua_pcall(L, 1, 0, 0))
+	if (lua_pcall(L, 3, 0, 0))
 	{
 		printf("DORSpriter trigger callback error: %s\n", lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
+	lua_pop(L, 1); // weak registery
 }
 
 /****************************************************************************
@@ -277,6 +281,14 @@ void DORSpriter::load(const char *file, const char *name) {
 	scml = file;
 	spritermodel = DORSpriterCache::getModel(file);
 	instance = spritermodel->getNewEntityInstance(name);
+}
+
+vec2 DORSpriter::getObjectPosition(const char *name) {
+	UniversalObjectInterface *so = instance->getObjectInstance(name);
+	if (so) {
+		return {so->getPosition().x, so->getPosition().y};
+	}
+	return {0, 0};
 }
 
 void DORSpriter::startAnim(const char *name, float blendtime) {
