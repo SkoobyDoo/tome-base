@@ -160,13 +160,13 @@ newTalent{
 	require = techs_dex_req_high4,
 	points = 5,
 	cooldown = 25,
-	stamina = 30,
 	range = 10,
+	stamina = 30,
 	requires_target = true,
 	no_break_stealth = true,
 	tactical = { ATTACK = { PHYSICAL = 2 }, BUFF = 1},
-	getPower = function(self, t) return self:combatTalentScale(t, 10, 25) end,
-	getPercent = function(self, t) return self:combatTalentLimit(t, 100, 5, 25) end,
+	getPower = function(self, t) return self:combatTalentScale(t, 15, 40) end,
+	getPercent = function(self, t) return self:combatTalentLimit(t, 100, 10, 35) end,
 	getDamage = function(self,t) return self:combatTalentStatDamage(t, "dex", 15, 180) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -179,7 +179,7 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 		    target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return end
-				target:setEffect(target.EFF_MARKED_FOR_DEATH, 6, {src=self, power=t.getPower(self,t), perc=t.getPercent(self,t)/100, dam = t.getDamage(self,t), stam = t.stamina, max_dur=6})
+				target:setEffect(target.EFF_MARKED_FOR_DEATH, 4, {src=self, power=t.getPower(self,t), perc=t.getPercent(self,t)/100, dam = t.getDamage(self,t), stam = t.stamina, max_dur=4})
 		end)
 
 		return true
@@ -188,7 +188,7 @@ newTalent{
 		power = t.getPower(self,t)
 		perc = t.getPercent(self,t)
 		dam = t.getDamage(self,t)
-		return ([[You mark a target for death for 6 turns, causing them to take %d%% increased damage from all sources. When this effect ends they will immediately take physical damage equal to %0.2f plus %d%% of all damage taken while marked.
+		return ([[You mark a target for death for 4 turns, causing them to take %d%% increased damage from all sources. When this effect ends they will immediately take physical damage equal to %0.2f plus %d%% of all damage taken while marked.
 		If a target dies while marked, the cooldown of this ability is reset and the cost refunded.
 		This ability can be used without breaking stealth.
 		The base damage dealt will increase with your Dexterity.]]):
