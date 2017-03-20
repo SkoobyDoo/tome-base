@@ -36,6 +36,7 @@ function _M:init(chat, id, width)
 	self.chat = chat
 	self.npc = chat.npc
 	self.player = chat.player
+	self.no_offscreen = "bottom"
 	Dialog.init(self, self.npc.name, width or 500, 400)
 
 	local xoff = 0
