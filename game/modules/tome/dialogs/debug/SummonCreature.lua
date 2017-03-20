@@ -26,7 +26,7 @@ module(..., package.seeall, class.inherit(engine.ui.Dialog))
 
 function _M:init()
 	self:generateList()
-	engine.ui.Dialog.init(self, "Summon Creature", 1, 1)
+	engine.ui.Dialog.init(self, "DEBUG -- Summon Creature", 1, 1)
 
 	local list = List.new{width=400, height=500, list=self.list, fct=function(item) self:use(item) end}
 
@@ -45,7 +45,13 @@ function _M:init()
 			if v.name:sub(1, 1):lower() == c:lower() then list:select(i) return end
 		end
 	end}
-	self.key:addBinds{ EXIT = function() game:unregisterDialog(self) end, }
+	self.key:addBinds{ EXIT = function() game:unregisterDialog(self) end,
+		LUA_CONSOLE = function()
+			if config.settings.cheat then
+				local DebugConsole = require "engine.DebugConsole"
+				game:registerDialog(DebugConsole.new())
+			end
+		end,}
 end
 
 function _M:on_register()
@@ -56,10 +62,34 @@ function _M:use(item)
 	if not item then return end
 	game:unregisterDialog(self)
 
-	local n = game.zone:finishEntity(game.level, "actor", item.e)
-	local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[engine.Map.ACTOR]=true})
-	if not x then return end
-	game.zone:addEntity(game.level, n, "actor", x, y)
+	if item.action then
+		item:action()
+	else
+		local m = game.zone:finishEntity(game.level, "actor", item.e)
+		self:placeCreature(m)
+	end
+end
+
+function _M:placeCreature(m)
+	local p = game.player
+	local tg = {type="hit", range=100, no_restrict=true, nowarning=true, act_exclude={[p.uid]=true}}
+	local x, y, act
+	local co = coroutine.create(function()
+			x, y, act = p:getTarget(tg)
+			if x and y then
+				if act then
+					game.log("#LIGHT_BLUE#Actor [%s]%s already occupies (%d, %d)", act.uid, act.name, x, y)
+					return
+				end
+				game.zone:addEntity(game.level, m, "actor", x, y)
+				local Dstring = m.getDisplayString and m:getDisplayString() or ""
+				game.log("#LIGHT_BLUE#Added %s[%s]%s at (%d, %d)", Dstring, m.uid, m.name, x, y)
+				return x, y, act
+			end
+			return
+		end
+	)
+	coroutine.resume(co)
 end
 
 function _M:generateList()
@@ -74,6 +104,23 @@ function _M:generateList()
 		return a.name < b.name
 	end)
 
+	table.insert(list, 1, {name = " Test Dummy", action=function(item)
+		local m = mod.class.NPC.new{define_as="TRAINING_DUMMY",
+			type = "training", subtype = "dummy",
+			name = "Test Dummy", color=colors.GREY,
+			desc = "Test dummy.", image = "npc/lure.png",
+			level_range = {1, 1}, exp_worth = 0,
+			rank = 3,
+			max_life = 300000, life_rating = 0,
+			life_regen = 300000,
+			never_move = 1,
+			training_dummy = 1,
+		}
+		m:resolve()
+		m:resolve(nil, true)
+		self:placeCreature(m)
+	end})
+	
 	local chars = {}
 	for i, v in ipairs(list) do
 		v.name = v.name
