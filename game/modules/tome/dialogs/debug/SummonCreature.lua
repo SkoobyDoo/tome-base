@@ -72,7 +72,14 @@ end
 
 function _M:placeCreature(m)
 	local p = game.player
-	local tg = {type="hit", range=100, no_restrict=true, nowarning=true, act_exclude={[p.uid]=true}}
+	local fx, fy = util.findFreeGrid(p.x, p.y, 20, true, {[engine.Map.ACTOR]=true})
+	if fx and fy then
+		game.target.target.entity = nil
+		game.target.target.x = fx
+		game.target.target.y = fy
+	end
+
+	local tg = {type="hit", range=100, nolock=true, no_restrict=true, nowarning=true, no_start_scan=true, act_exclude={[p.uid]=true}}
 	local x, y, act
 	local co = coroutine.create(function()
 			x, y, act = p:getTarget(tg)

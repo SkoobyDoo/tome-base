@@ -157,13 +157,13 @@ function _M:generateList()
 	list[#list+1] = {name="Reveal all map", action="magic_map"}
 	list[#list+1] = {name="Toggle Demi-Godmode", action="demigodmode"}
 	list[#list+1] = {name="Toggle Godmode", action="godmode"}
+	list[#list+1] = {name="Alter Faction", dialog="AlterFaction"}
 	list[#list+1] = {name="Summon a Creature", dialog="SummonCreature"}
 	list[#list+1] = {name="Create Items", dialog="CreateItem"}
 	list[#list+1] = {name="Create a Trap", dialog="CreateTrap"}
-	list[#list+1] = {name="Remove or Kill all creatures", action="remove-all"}
-	list[#list+1] = {name="Advance Player", dialog="AdvanceActor"}
 	list[#list+1] = {name="Grant/Alter Quests", dialog="GrantQuest"}
-	list[#list+1] = {name="Alter Faction", dialog="AlterFaction"}
+	list[#list+1] = {name="Advance Player", dialog="AdvanceActor"}
+	list[#list+1] = {name="Remove or Kill all creatures", action="remove-all"}
 	list[#list+1] = {name="Give Sher'tul fortress energy", action="shertul-energy"}
 	list[#list+1] = {name="Give all ingredients", action="all-ingredients"}
 	list[#list+1] = {name="Weakdamage", action="weakdamage"}
