@@ -102,8 +102,9 @@ void TE4SpriterTriggerObjectInfo::playTrigger() {
  ** Spriter image stuff
  ****************************************************************************/
 TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData) : ImageFile(initialFilePath,initialDefaultPivot) {	
-	string id = initialFilePath.erase()
-printf("!!!! %s\n", id.c_str());
+	size_t pos = initialFilePath.find_last_of('/');
+	size_t epos = initialFilePath.find_last_of('.');
+	id = initialFilePath.substr(pos+1, epos-pos-1);
 
 	if (!atlasData.active) {		
 		texture = DORSpriterCache::getTexture(initialFilePath);

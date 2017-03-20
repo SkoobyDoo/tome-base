@@ -103,6 +103,7 @@ public:
 class TE4SpriterImageFile : public ImageFile
 {
 private:
+	string id;
 	texture_cache *texture = NULL;
 	float w = 1, h = 1, aw = 1, ah = 1, tx1 = 0, ty1 = 0, tx2 = 1, ty2 = 1, xoff = 0, yoff = 0;
 	bool rotated = false;
