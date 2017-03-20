@@ -524,11 +524,13 @@ function _M:loadUI(t)
 end
 
 function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
+	local gamew, gameh = core.display.size()
 	local mw, mh = nil, nil
 
 	local padding = 3 -- to not glue stuff to each other
 
 --	resizex, resizey = true, true
+	local nw, nh
 	if resizex or resizey then
 		mw, mh = 0, 0
 		local addw, addh = 0, 0
@@ -560,11 +562,20 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		mh = mh + addh + 5 + 22 + 3 + (addmh or 0) + th + padding
 
 		if on_resize then on_resize(resizex and mw or self.w, resizey and mh or self.h) end
-		self:resize(resizex and mw or self.w, resizey and mh or self.h)
+		nw, nh = resizex and mw or self.w, resizey and mh or self.h
 	else
 		if on_resize then on_resize(self.w, self.h) end
-		self:resize(self.w, self.h)
+		nw, nh = self.w, self.h
 	end
+
+	local disx = math.floor(self.force_x or (gamew - nw) / 2)
+	local disy = math.floor(self.force_y or (gameh - nh) / 2)
+	if self.no_offscreen == "bottom" then if disy + nh >= gameh then self.force_y = gameh - nh end
+	elseif self.no_offscreen == "top" then if disy + nh < 0 then self.force_y = 0 end
+	elseif self.no_offscreen == "right" then if disx + nw >= gamew then self.force_x = gamew - nw end
+	elseif self.no_offscreen == "left" then if disx + nw < 0 then self.force_x = 0 end
+	end
+	self:resize(nw, nh)
 
 	for i, ui in ipairs(self.uis) do
 		local ux, uy
