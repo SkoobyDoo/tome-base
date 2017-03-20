@@ -128,7 +128,7 @@ uberTalent{
 uberTalent{
 	name = "Windtouched Speed",
 	mode = "passive",
-	require = { special={desc="Know at least 20 talent levels of equilibrium-using talents", fct=function(self) return knowRessource(self, "equilibrium", 20) end} },
+	require = { special={desc="Know at least 10 talent levels of equilibrium-using talents", fct=function(self) return knowRessource(self, "equilibrium", 10) end} },
 	on_learn = function(self, t)
 		self:attr("global_speed_add", 0.2)
 		self:attr("avoid_pressure_traps", 1)
