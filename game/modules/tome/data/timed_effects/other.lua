@@ -3249,3 +3249,63 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "DEMI_GODMODE",
+	desc = "Demigod Mode", --image = "",
+	long_desc = function(self, eff) return ("DEMI-GODMODE: Target has 10000 additional life and regenerates 2000 life per turn.  It deals +500%% damage, and has full ESP."):format() end,
+	type = "other",
+	subtype = { cheat=true },
+	status = "beneficial",
+	parameters = {power = 1},
+	decrease = 0, no_remove = true,
+	activate = function(self, eff)
+		eff.ignore_prodigies_special_reqs = game.state.birth.ignore_prodigies_special_reqs
+		self:effectTemporaryValue(eff, "invulnerable", 0)
+		self:effectTemporaryValue(eff, "negative_status_effect_immune", 0)
+		self:effectTemporaryValue(eff, "esp_all", 1)
+		self:effectTemporaryValue(eff, "esp_range", 500)
+--		self:effectTemporaryValue(eff, "no_breath", 1)
+		self:effectTemporaryValue(eff, "auto_id", 100)
+		self:effectTemporaryValue(eff, "max_life", 10000)
+		self:effectTemporaryValue(eff, "life_regen", 2000)
+		self:effectTemporaryValue(eff, "inc_damage", {all=500})
+		self:effectTemporaryValue(eff, "resists_pen", {all=0})
+--		self:resetToFull()
+		game.state.birth.ignore_prodigies_special_reqs = true
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+	deactivate = function(self, eff)
+		game.state.birth.ignore_prodigies_special_reqs = eff.ignore_prodigies_special_reqs
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+}
+
+newEffect{
+	name = "GODMODE",
+	desc = "God Mode", --image = "",
+	long_desc = function(self, eff) return ("GODMODE: Target is invulnerable to damage, immune to bad status effects, deals +10000%% damage (100%% penetration), does not need to breathe, and has full ESP."):format() end,
+	type = "other",
+	subtype = { cheat=true },
+	status = "beneficial",
+	parameters = {power = 1},
+	decrease = 0, no_remove = true,
+	activate = function(self, eff)
+		eff.ignore_prodigies_special_reqs = game.state.birth.ignore_prodigies_special_reqs
+		self:effectTemporaryValue(eff, "invulnerable", 1)
+		self:effectTemporaryValue(eff, "negative_status_effect_immune", 1)
+		self:effectTemporaryValue(eff, "esp_all", 1)
+		self:effectTemporaryValue(eff, "esp_range", 500)
+		self:effectTemporaryValue(eff, "no_breath", 1)
+		self:effectTemporaryValue(eff, "auto_id", 100)
+		self:effectTemporaryValue(eff, "inc_damage", {all=10000})
+		self:effectTemporaryValue(eff, "resists_pen", {all=100})
+		game.state.birth.ignore_prodigies_special_reqs = true
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+	deactivate = function(self, eff)
+		game.state.birth.ignore_prodigies_special_reqs = eff.ignore_prodigies_special_reqs
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+}
+
