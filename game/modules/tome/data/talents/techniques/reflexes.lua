@@ -227,7 +227,7 @@ newTalent{
 	require = techs_dex_req4,
 	random_ego = "defensive",
 	tactical = { ESCAPE = 2, DEFEND = 2 },
-	getDamageReduction = function(self, t) return self:combatTalentLimit(t, 70, 15, 60) end,
+	getDamageReduction = function(self, t) return self:combatTalentLimit(t, 70, 15, 40) end,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 150, 350) end,
 	getStamina = function(self, t) return self:combatTalentScale(t, 5, 10) end,
 	action = function(self, t)
