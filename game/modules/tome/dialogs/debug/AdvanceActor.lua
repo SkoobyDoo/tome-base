@@ -34,7 +34,6 @@ _M.last_actors = {}
 
 function _M:init(data)
 	self.actor = data and data.actor or game.player
-table.set(game, "debug", "AdvanceActor", self) -- debugging
 	
 	Dialog.init(self, ("DEBUG -- Levelup Actor: [%s] %s"):format(self.actor.uid, self.actor.name), 800, 500)
 
@@ -46,7 +45,6 @@ The actor is backed up before changes are made.  (Use the "Restore" button to re
 ]]}
 	local top = self.c_tut.h + 10
 	local lev_box = Numberbox.new{title="Advance to level: ", number=self.actor.level or 50, max=1000, min=1, chars=10, fct=function(value)
-game.log("setting levelup to %s", value)
 			self.inputs.levelup = value
 			self:finish()
 		end
@@ -216,7 +214,7 @@ end
 -- Levelup the actor
 function _M:finish()
 	self.inputs.levelup = self.inputs.levelup or tonumber(self.lev_box.number)
-	print("[ForceLevelUp] inputs:", self.inputs) table.print(self.inputs, '\t_inputs_')
+--	print("[ForceLevelUp] inputs:", self.inputs) table.print(self.inputs, '\t_inputs_')
 	game:unregisterDialog(self)
 	local data = table.clone(self.inputs)
 	data.stat_level = self.inputs.levelup_stats and (self.inputs.stat_levelup or self:autoStatLevel(self.inputs.levelup))

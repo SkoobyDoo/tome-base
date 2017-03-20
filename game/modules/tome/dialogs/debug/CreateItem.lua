@@ -33,20 +33,15 @@ function _M:init()
 	Dialog.init(self, "DEBUG -- Create Object", 1, 1)
 	self.list_width = 500
 	
-table.set(game, "debug", "CreateItem", self) -- debugging
-	
 	local get_global = Checkbox.new{title="Load from other zones ", default=false, check_last=false,
 		fct=function(checked)
---game.log("Load Global accept %s", checked)
 			self:setFocus(self.o_list)
 		end,
 		on_change=function(checked)
---game.log("Load Global check box change %s", checked)
 			if checked then
 				if not self.o_list2 then
 					local obj_list = table.clone(game.zone.object_list, true)
 					obj_list.ignore_loaded = true
-table.set(game, "debug", "obj_list", obj_list) -- debugging
 
 					-- protected load of objects from a file
 					local function load_file(file, obj_list)
@@ -74,7 +69,6 @@ table.set(game, "debug", "obj_list", obj_list) -- debugging
 					
 						for i, dir in ipairs(fs.list(base.."/zones/")) do
 							file = base.."/zones/"..dir.."/objects.lua"
---game.log("#GREY#loading from %s #ORANGE#%s #LIGHT_BLUE#(base:%s, add:%s, dir:%s", file, fs.exists(file), base, add, dir)
 							if dir ~= game.zone.short_name and fs.exists(file) and not dir:find("infinite%-dungeon") and not dir:find("noxious%-caldera") then
 								load_file(file, obj_list)
 							end
@@ -120,12 +114,10 @@ table.set(game, "debug", "obj_list", obj_list) -- debugging
 
 	local id_check = Checkbox.new{title="Generate examples (right-click refreshes) ", text="Text", default=false, check_last=false,
 		fct=function(checked)
---game.log("Set identify: %s", checked)
 			self.do_ids = checked
 			self:setFocus(self.o_list)
 		end,
 		on_change=function(checked)
---game.log("Set identify: %s", checked)
 			self.do_ids = checked
 			self:setFocus(self.o_list)
 		end
@@ -176,7 +168,6 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	if self.o_list.focused then
 		local item = self.o_list.list[self.o_list.sel]
 		if item and button == "right" and event == "button-down" then
---game.log("#ORANGE# right click item %s: %s", self.o_list.sel, item.name)
 			item.obj, item.desc = nil, nil
 			self:list_select(item, self.o_list.sel)
 		end
