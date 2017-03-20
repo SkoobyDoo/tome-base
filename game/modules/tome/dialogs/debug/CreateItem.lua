@@ -94,9 +94,9 @@ function _M:init()
 				self.o_list = self.o_list2
 				self.list = self.o_list.list
 				self.alt_uis = {
+					{left=0, top=self.get_global.h+10, ui=self.o_list2},
 					{left=10, top=0, ui=self.get_global},
 					{left=self.get_global.w + 20, top=0, ui=self.id_check},
-					{left=0, top=self.get_global.h+10, ui=self.o_list2},
 				}
 				self:loadUI(self.alt_uis)
 				self:setupUI(true, true)
@@ -130,9 +130,9 @@ function _M:init()
 	}
 	self.o_list = self.o_list1
 	self.base_uis = {
+		{left=0, top=get_global.h+10, ui=self.o_list},
 		{left=10, top=0, ui=self.get_global},
 		{left=self.get_global.w + 20, top=0, ui=self.id_check},
-		{left=0, top=get_global.h+10, ui=self.o_list},
 	}
 	self:loadUI(self.base_uis)
 	self:setupUI(true, true)
@@ -149,15 +149,22 @@ function _M:init()
 			local v = self.o_list.list[i]
 			if v.name:sub(1, 1):lower() == c:lower() then self.o_list:select(i) return end
 		end
+		self:setFocus(self.o_list)
 	end}
+	self.key:addCommands{
+		_UP = function() self.o_list.key:triggerVirtual("MOVE_UP") end,
+		_DOWN = function() self.o_list.key:triggerVirtual("MOVE_DOWN") end,
+	}
 	self.key:addBinds{ EXIT = function() game:unregisterDialog(self) end,
+		ACCEPT = function() self.o_list.key:triggerVirtual("ACCEPT") end,
 		LUA_CONSOLE = function()
 			if config.settings.cheat then
 				local DebugConsole = require "engine.DebugConsole"
 				game:registerDialog(DebugConsole.new())
 			end
-		end,}
-	self:setFocus(self.o_list)
+		end,
+	}
+	-- game:onTickEnd(function() self:setFocus(self:getUIElement(3).ui, "mouse") end)
 end
 
 function _M:on_register()
