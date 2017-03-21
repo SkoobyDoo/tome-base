@@ -1322,8 +1322,7 @@ static int gl_spriter_get_object_position(lua_State *L)
 static int gl_spriter_set_anim(lua_State *L)
 {
 	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
-	if (lua_isnumber(L, 3)) v->startAnim(luaL_checkstring(L, 2), lua_tonumber(L, 3));
-	else v->startAnim(luaL_checkstring(L, 2));
+	v->startAnim(luaL_checkstring(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
 	lua_pushvalue(L, 1);
 	return 1;
 }

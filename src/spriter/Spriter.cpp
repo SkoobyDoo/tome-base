@@ -296,16 +296,13 @@ vec2 DORSpriter::getObjectPosition(const char *name) {
 	return {0, 0};
 }
 
-void DORSpriter::startAnim(const char *name, float blendtime) {
+void DORSpriter::startAnim(const char *name, float blendtime, float speed) {
 	if (!instance) return;
 	currently_processing = this;
-	instance->setCurrentAnimation(name, blendtime * 1000.0);
-}
-
-void DORSpriter::startAnim(const char *name) {
-	if (!instance) return;
-	currently_processing = this;
-	instance->setCurrentAnimation(name);
+	if (speed) instance->setPlaybackSpeedRatio(speed);
+	else instance->setPlaybackSpeedRatio(1);
+	if (blendtime) instance->setCurrentAnimation(name, blendtime * 1000.0);
+	else instance->setCurrentAnimation(name);
 }
 
 void DORSpriter::onKeyframe(float nb_keyframe) {

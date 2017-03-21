@@ -170,8 +170,7 @@ public:
 	void setTriggerCallback(int ref);
 
 	void load(const char *file, const char *name);
-	void startAnim(const char *name, float blendtime);
-	void startAnim(const char *name);
+	void startAnim(const char *name, float blendtime=0, float speed=1);
 
 	vec2 getObjectPosition(const char *name);
 
