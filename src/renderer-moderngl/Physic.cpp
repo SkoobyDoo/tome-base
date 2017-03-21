@@ -69,16 +69,16 @@ void DORPhysic::setAngle(float a) {
 }
 
 void DORPhysic::applyForce(float fx, float fy, float apply_x, float apply_y) {
-	body->ApplyForce(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), false);
+	body->ApplyForce(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), true);
 }
 void DORPhysic::applyForce(float fx, float fy) {
-	body->ApplyForceToCenter(b2Vec2(fx, -fy), false);
+	body->ApplyForceToCenter(b2Vec2(fx, -fy), true);
 }
 void DORPhysic::applyLinearImpulse(float fx, float fy, float apply_x, float apply_y) {
-	body->ApplyLinearImpulse(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), false);
+	body->ApplyLinearImpulse(b2Vec2(fx, -fy), b2Vec2(apply_x / PhysicSimulator::unit_scale, -apply_y / PhysicSimulator::unit_scale), true);
 }
 void DORPhysic::applyLinearImpulse(float fx, float fy) {
-	body->ApplyLinearImpulseToCenter(b2Vec2(fx, -fy), false);
+	body->ApplyLinearImpulseToCenter(b2Vec2(fx, -fy), true);
 }
 void DORPhysic::setLinearVelocity(float fx, float fy) {
 	body->SetLinearVelocity(b2Vec2(fx, -fy));
