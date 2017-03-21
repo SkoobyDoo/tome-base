@@ -286,7 +286,12 @@ void DORSpriter::load(const char *file, const char *name) {
 vec2 DORSpriter::getObjectPosition(const char *name) {
 	UniversalObjectInterface *so = instance->getObjectInstance(name);
 	if (so) {
-		return {so->getPosition().x, so->getPosition().y};
+		float x = so->getPosition().x * scale_x, y = so->getPosition().y * scale_y;
+		float c = cos(rot_z);
+		float s = sin(rot_z);
+		float xnew = x * c - y * s;
+		float ynew = x * s + y * c;
+		return {xnew, ynew};
 	}
 	return {0, 0};
 }
@@ -310,7 +315,17 @@ void DORSpriter::onKeyframe(float nb_keyframe) {
 	setChanged();
 
 	if (instance->animationJustFinished(true)) {
-		printf("anim end %s\n", instance->currentAnimationName().c_str());
+		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+		lua_rawgeti(L, LUA_REGISTRYINDEX, trigger_cb_lua_ref);
+		lua_rawgeti(L, -2, getWeakSelfRef());
+		lua_pushstring(L, "animStop");
+		lua_pushstring(L, instance->currentAnimationName().c_str());
+		if (lua_pcall(L, 3, 0, 0))
+		{
+			printf("DORSpriter trigger callback error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1); // weak registery
 	}
 }
 
