@@ -289,9 +289,9 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
-	getAttackSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 40, 10, 25))/100 end,
-	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 25, 55))/100 end,
-	getTurn = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 5, 15)) end,
+	getAttackSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 35, 10, 25))/100 end,
+	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 25, 50))/100 end,
+	getTurn = function(self, t) return math.floor(self:combatTalentLimit(t, 20, 4, 12)) end,
 	on_pre_use = function(self, t, silent)
 		if not archerPreUse(self, t, silent, "sling") then return false end
 		return true

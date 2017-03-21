@@ -97,6 +97,13 @@ function _M:init(actor, on_finish, on_birth)
 	self:setupUI()
 
 	self.key:addCommands{
+		[{"_p","ctrl"}] = function() if config.settings.cheat then
+			local tid = self.last_drawn_talent
+			if tid then
+				-- package.loaded["mod.dialogs.debug.PlotTalent"] = nil
+				game:registerDialog(require("mod.dialogs.debug.PlotTalent").new(self.actor, self.actor:getTalentFromId(tid)))
+			end
+		end end,
 		__TEXTINPUT = function(c)
 			if self.focus_ui.ui.last_mz then
 				if c == "+" and self.focus_ui and self.focus_ui.ui.onUse then
@@ -910,6 +917,7 @@ end
 
 
 function _M:getTalentDesc(item)
+	self.last_drawn_talent = item.talent
 	local text = tstring{}
 
  	text:add({"color", "GOLD"}, {"font", "bold"}, util.getval(item.rawname, item), {"color", "LAST"}, {"font", "normal"})
