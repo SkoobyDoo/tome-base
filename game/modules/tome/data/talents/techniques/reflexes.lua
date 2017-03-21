@@ -131,8 +131,8 @@ newTalent{
 	no_energy = true,
 	require = techs_dex_req2,
 	tactical = { BUFF = 2 },
-	getChance = function(self, t) return math.floor(self:combatTalentLimit(t, 45, 10, 35)) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 0.9) end,
+	getChance = function(self, t) return math.floor(self:combatTalentLimit(t, 40, 10, 30)) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.2, 0.6) end,
 	-- called by _M:attackTarget in mod.class.interface.Combat.lua
 	proc = function(self, t, target)
 		if not rng.percent(t.getChance(self,t)) then return end
@@ -141,7 +141,7 @@ newTalent{
 		if not weapon then return end
 		local targets = self:archeryAcquireTargets(nil, {one_shot=true, x=target.x, y=target.y}) --Ammo check done here
 		if not targets then return end
-		if not target.turn_procs.intuitive_shots then self:archeryShoot(targets, t, nil, {mult=self:combatTalentWeaponDamage(t, 0.4, 0.9)}) end
+		if not target.turn_procs.intuitive_shots and not (self:isTalentActive(self.T_CONCEALMENT) or self:hasEffect(self.EFF_WILD_SPEED) or self:hasEffect(self.EFF_ESCAPE)) then self:archeryShoot(targets, t, nil, {mult=t.getDamage(self,t)}) end
 		target.turn_procs.intuitive_shots = true
 		self.energy.value = old
 		return true
@@ -223,18 +223,18 @@ newTalent{
 	type = {"technique/reflexes", 4},
 	no_energy = true,
 	points = 5,
-	cooldown = 20,
+	cooldown = 25,
 	require = techs_dex_req4,
 	random_ego = "defensive",
 	tactical = { ESCAPE = 2, DEFEND = 2 },
-	getDamageReduction = function(self, t) return self:combatTalentLimit(t, 70, 15, 60) end,
+	getDamageReduction = function(self, t) return self:combatTalentLimit(t, 70, 15, 40) end,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 150, 350) end,
-	getStamina = function(self, t) return self:combatTalentScale(t, 10, 20) end,
+	getStamina = function(self, t) return self:combatTalentScale(t, 5, 10) end,
 	action = function(self, t)
 		local power = t.getDamageReduction(self,t)
 		local speed = t.getSpeed(self,t)
 		local stamina = t.getStamina(self,t)
-		self:setEffect(self.EFF_ESCAPE, 4, {src=self, power=power, stamina=stamina, speed=speed})
+		game:onTickEnd(function() self:setEffect(self.EFF_ESCAPE, 4, {src=self, power=power, stamina=stamina, speed=speed}) end)
 		return true
 	end,
 	info = function(self, t)
@@ -242,7 +242,7 @@ newTalent{
 		local sta = t.getStamina(self,t)
 		local speed = t.getSpeed(self,t)
 		return ([[You put all your focus into escaping combat for 4 turns. While under this effect you gain %d%% increased resistance to all damage, %0.1f increased stamina regeneration, immunity to stun, pin, daze and slowing effects and %d%% increased movement speed. 
-This breaks if you make a melee or ranged attack.]]):
+Any action other than movement will cancel this effect.]]):
 		format(power, sta, speed)
 	end,
 }

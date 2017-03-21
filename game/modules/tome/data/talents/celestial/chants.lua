@@ -20,7 +20,7 @@
 -- Looks weaker than the other options, but extra life is a more universally useful stat and mind save is generally lower for celestial classes.
 newTalent{
 	name = "Chant of Fortitude",
-	type = {"celestial/chants", 1},
+	type = {"celestial/chants-chants", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -82,7 +82,7 @@ newTalent{
 -- Physical and weapon protection Chant.
 newTalent{
 	name = "Chant of Fortress",
-	type = {"celestial/chants", 1},
+	type = {"celestial/chants-chants", 1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -146,7 +146,7 @@ newTalent{
 -- This can be swapped to reactively with a projectile already in the air
 newTalent{
 	name = "Chant of Resistance",
-	type = {"celestial/chants",1},
+	type = {"celestial/chants-chants",1},
 	mode = "sustained",
 	hide = true,
 	require = divi_req1,
@@ -227,7 +227,7 @@ newTalent{
 -- Depreciated, but retained for compatability.
 newTalent{
 	name = "Chant of Light",
-	type = {"celestial/other", 4},
+	type = {"celestial/chants-chants", 4},
 	mode = "sustained",
 	require = divi_req4,
 	points = 5,
@@ -278,6 +278,9 @@ newTalent{
 	require = divi_req1,
 	points = 5,
 	mode = "passive",
+	passives = function(self, t)
+		self:setTalentTypeMastery("celestial/chants-chants", self:getTalentMastery(t))
+	end,
 	on_learn = function(self, t)
 		self:learnTalent(self.T_CHANT_OF_FORTITUDE, true, nil, {no_unlearn=true})
 		self:learnTalent(self.T_CHANT_OF_FORTRESS, true, nil, {no_unlearn=true})
@@ -318,7 +321,7 @@ newTalent{
 -- Might also make some people consider Chants as an escort reward.
 newTalent{
 	name = "Chant Illuminate",
-	type = {"celestial/chants", 5},
+	type = {"celestial/chants", 2},
 	require = divi_req2,
 	points = 5,
 	mode = "passive",
@@ -333,7 +336,7 @@ newTalent{
 -- Remember that Chants can be swapped instantly.
 newTalent{
 	name = "Chant Adept",
-	type = {"celestial/chants", 6},
+	type = {"celestial/chants", 3},
 	require = divi_req3,
 	points = 5,
 	mode = "passive",
@@ -390,7 +393,7 @@ newTalent{
 
 newTalent{
 	name = "Chant Radiant",
-	type = {"celestial/chants", 7},
+	type = {"celestial/chants", 4},
 	require = divi_req4,
 	points = 5,
 	mode = "passive",

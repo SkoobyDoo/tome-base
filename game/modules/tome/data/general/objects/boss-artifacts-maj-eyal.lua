@@ -877,6 +877,11 @@ newEntity{ define_as = "RUNED_SKULL",
 	encumber = 3,
 	material_level = 5,
 	desc = [[Dull red runes are etched all over this blackened skull.]],
+	color_attributes = {
+		damage_type = 'FIRE',
+		alt_damage_type = 'FLAMESHOCK',
+		particle = 'flame',
+	},
 
 	carrier = {
 		combat_spellpower = 7,
@@ -1189,7 +1194,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 					o.use_no_wear = true
 					o.use_power = { name = "recover the Crystal Heart (destroys this armour)", power = 1, use = function(self, who, inven, item)
 						local art_list = mod.class.Object:loadList("/data/general/objects/objects-maj-eyal.lua")
-						local o = art_list["CRYSTAL_FOCUS"]:clone()
+						local o = art_list["CRYSTAL_HEART"]:clone()
 						o:resolve()
 						o:resolve(nil, true)
 						o:identify(true)

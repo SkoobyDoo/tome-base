@@ -117,6 +117,10 @@ newBirthDescriptor{
 				self.unused_generics = self.unused_generics + 1
 				if self.level % 5 == 0 then self.unused_talents = self.unused_talents + 1 end
 				if self.level % 5 == 0 then self.unused_generics = self.unused_generics - 1 end
+
+				if self.extra_talent_point_every and self.level % self.extra_talent_point_every == 0 then self.unused_talents = self.unused_talents + 1 end
+				if self.extra_generic_point_every and self.level % self.extra_generic_point_every == 0 then self.unused_generics = self.unused_generics + 1 end
+
 				if self.level == 10 or self.level == 20 or self.level == 36 or self.level == 46 then
 					self.unused_talents_types = self.unused_talents_types + 1
 				end

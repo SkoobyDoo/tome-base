@@ -836,13 +836,13 @@ newEntity{
 			on_kill = 1,
 			desc=function(self, who, special)
 				local targets = self.combat.projection_targets
-				return ("Projects up to %d attacks dealing 30%% weapon damage to random targets in range 10 (cannot hit the initial target)"):format(targets or 0)
+				return ("Projects up to %d attacks dealing 30%% weapon damage to random targets in range 7 (cannot hit the initial target)"):format(targets or 0)
 			end,
 			fct=function(combat, who, target)
 				if who.turn_procs.ego_projection then return end
 				who.turn_procs.ego_projection = true
 
-				local tg = {type="ball", radius=10}
+				local tg = {type="ball", radius=7}
 				local grids = who:project(tg, who.x, who.y, function() end)
 				local tgts = {}
 				for x, ys in pairs(grids) do for y, _ in pairs(ys) do
