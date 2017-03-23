@@ -254,7 +254,7 @@ local unided_names = {"glowing","scintillating","rune-covered","unblemished","je
 _M.power_themes = {
 	'physical', 'mental', 'spell', 'defense', 'misc', 'fire',
 	'lightning', 'acid', 'mind', 'arcane', 'blight', 'nature',
-	'temporal', 'light', 'dark', 'antimagic'
+	'temporal', 'light', 'dark', 'antimagic', 'cold'
 }
 
 --- defined power sources, used for equipment generation, defined in class descriptors

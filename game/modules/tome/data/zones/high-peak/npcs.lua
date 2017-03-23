@@ -160,7 +160,7 @@ newEntity{
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, FEET=1, HEAD=1, HANDS=1 },
 	resolvers.equip{
-		{type="weapon", subtype="sword", force_drop=true,  forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
+		{type="weapon", subtype="longsword", force_drop=true,  forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="weapon", subtype="waraxe", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="massive", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="feet", name="pair of voratun boots", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
