@@ -675,6 +675,7 @@ function _M:syncOnline(module, mod_def)
 end
 
 function _M:checkModuleHash(module, md5)
+	--[[
 	self.hash_valid = false
 	if not self.auth then return nil, "no online profile active" end
 	if config.settings.cheat then return nil, "cheat mode active" end
@@ -686,11 +687,13 @@ function _M:checkModuleHash(module, md5)
 
 	if not ok then return nil, "bad game version" end
 	print("[ONLINE PROFILE] module hash is valid")
+	--]]
 	self.hash_valid = true
 	return true
 end
 
 function _M:checkAddonHash(module, addon, md5)
+	--[[
 	if not self.auth then return nil, "no online profile active" end
 	if config.settings.cheat then return nil, "cheat mode active" end
 	if game and game:isTainted() then return nil, "savefile tainted" end
@@ -700,6 +703,7 @@ function _M:checkAddonHash(module, addon, md5)
 	self:waitEvent("CheckAddonHash", function(e) ok = e.ok end, 10000)
 
 	if not ok then return nil, "bad game addon version" end
+	--]]
 	print("[ONLINE PROFILE] addon hash is valid")
 	return true
 end
@@ -720,6 +724,7 @@ function _M:checkAddonUpdates(list)
 end
 
 function _M:checkBatchHash(list)
+	--[[
 	if not self.auth then return nil, "no online profile active" end
 	if config.settings.cheat then return nil, "cheat mode active" end
 	if game and game:isTainted() then return nil, "savefile tainted" end
@@ -730,6 +735,7 @@ function _M:checkBatchHash(list)
 	self:waitEvent("CheckBatchHash", function(e) ok = e.ok error = e.error end, 10000)
 
 	if not ok then return nil, error or "unknown error" end
+	--]]
 	print("[ONLINE PROFILE] all hashes are valid")
 	self.hash_valid = true
 	return true

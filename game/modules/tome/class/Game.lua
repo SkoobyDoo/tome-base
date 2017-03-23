@@ -177,6 +177,7 @@ end
 
 --- Checks if the current character is "tainted" by cheating
 function _M:isTainted()
+	return false
 	if config.settings.cheat then return true end
 	return (game.player and game.player.__cheated) and true or false
 end
