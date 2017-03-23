@@ -71,6 +71,7 @@ static StaticSubRenderer *bloom_do = NULL;
 static particle_draw_last *pdls_head = NULL;
 static particle_draw_last *blooms_head = NULL;
 static shader_type *default_particles_shader = NULL;
+static vector<tuple<int, float, float>> trigger_cbs(1000);
 void thread_add(particles_type *ps);
 
 /********************************************
@@ -129,6 +130,16 @@ static int particles_flush_last(lua_State *L)
 		blooms_head = blooms_head->next;
 		free(pdl);
 	}
+	for (auto &t : trigger_cbs) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, std::get<0>(t));
+		lua_pushnumber(L, std::get<1>(t));
+		lua_pushnumber(L, std::get<2>(t));
+		if (lua_pcall(L, 2, 0, 0)) {
+			printf("Particle trigger error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+	}
+	trigger_cbs.clear();
 	return 0;
 }
 
@@ -534,13 +545,7 @@ static void particles_draw(particles_type *ps, mat4 model)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	if (ps->trigger_cb != LUA_NOREF && ps->trigger != ps->trigger_old) {
-		lua_rawgeti(L, LUA_REGISTRYINDEX, ps->trigger_cb);
-		lua_pushnumber(L, ps->trigger);
-		lua_pushnumber(L, ps->trigger_old);
-		if (lua_pcall(L, 2, 0, 0)) {
-			printf("Particle trigger error: %s\n", lua_tostring(L, -1));
-			lua_pop(L, 1);
-		}
+		trigger_cbs.push_back(make_tuple(ps->trigger_cb, ps->trigger, ps->trigger_old));
 		ps->trigger_old = ps->trigger;
 	}
 
@@ -910,6 +915,9 @@ int luaopen_particles(lua_State *L)
 	// Make a table to store all textures
 	lua_newtable(L);
 	textures_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	trigger_cbs.clear();
+	trigger_cbs.reserve(1000);
 
 	return 1;
 }
