@@ -36,6 +36,7 @@ typedef struct {
 	float r, g, b, a, rv, gv, bv, av, ra, ga, ba, aa;
 	int life;
 	int trail;
+	float u1, u2, v1, v2;
 } particle_type;
 
 struct s_plist;

@@ -84,8 +84,8 @@ function _M:loaded()
 	end
 
 	gl = gl or "particle"
-	if not __particles_gl[gl] then local s = core.display.loadImage("/data/gfx/"..gl..".png") if s then __particles_gl[gl] = s:glTexture() end end
-	if not __particles_gl[gl] then __particles_gl[gl] = core.display.loadImage("/data/gfx/particle.png"):glTexture() end
+	if not __particles_gl[gl] then local s = core.display.loadImage("/data/gfx/"..gl..".png") if s then __particles_gl[gl] = s:glTexture(false, false, true) end end
+	if not __particles_gl[gl] then __particles_gl[gl] = core.display.loadImage("/data/gfx/particle.png"):glTexture(false, false, true) end
 	gl = __particles_gl[gl]
 
 	-- Zoom accordingly

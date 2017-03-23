@@ -370,10 +370,10 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						float sangle = sin(angle);
 						// printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,angle*180/M_PI,p->x,p->y,p->size);
 
-						vertices[ps->batch_nb++] = particles_vertex({{lx + cangle * lsize / 2, ly + sangle * lsize / 2, 0, 1}, {0, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{lx - cangle * lsize / 2, ly - sangle * lsize / 2, 0, 1}, {1, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->x - cangle * p->size / 2, p->y - sangle * p->size / 2, 0, 1}, {1, 1}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->x + cangle * p->size / 2, p->y + sangle * p->size / 2, 0, 1}, {0, 1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{lx + cangle * lsize / 2, ly + sangle * lsize / 2, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{lx - cangle * lsize / 2, ly - sangle * lsize / 2, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x - cangle * p->size / 2, p->y - sangle * p->size / 2, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x + cangle * p->size / 2, p->y + sangle * p->size / 2, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 					}
 				} else {
 					if (!p->trail)
@@ -381,40 +381,40 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						i = p->x * zoom - p->size / 2;
 						j = p->y * zoom - p->size / 2;
 
-						vertices[ps->batch_nb++] = particles_vertex({{i, j, 0, 1}, {0, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, j, 0, 1}, {1, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, p->size + j, 0, 1}, {1, 1}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{i, p->size + j, 0, 1}, {0, 1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{i, j, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, j, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, p->size + j, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{i, p->size + j, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 					}
 					else
 					{
 						if ((p->ox <= p->x) && (p->oy <= p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 						else if ((p->ox <= p->x) && (p->oy > p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 						else if ((p->ox > p->x) && (p->oy <= p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 						else if ((p->ox > p->x) && (p->oy > p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 					}
 				}
@@ -794,6 +794,11 @@ static int particles_emit(lua_State *L)
 					getparticulefield(L, "a", &(p->a));
 					getparticulefield(L, "av", &(p->av));
 					getparticulefield(L, "aa", &(p->aa));
+
+					getparticulefield(L, "u1", &(p->u1));
+					getparticulefield(L, "v1", &(p->v1));
+					getparticulefield(L, "u2", &(p->u2)); if (!p->u2) p->u2 = 1;
+					getparticulefield(L, "v2", &(p->v2)); if (!p->v2) p->v2 = 1;
 				}
 				lua_pop(L, 1);
 				lua_pop(L, 1); // global table
