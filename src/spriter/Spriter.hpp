@@ -172,6 +172,10 @@ public:
 	void load(const char *file, const char *name);
 	void startAnim(const char *name, float blendtime=0, float speed=1);
 
+
+	void applyCharacterMap(const char *name);
+	void removeCharacterMap(const char *name);
+
 	vec2 getObjectPosition(const char *name);
 
 	void setShader(shader_type *s) { shader = s; };

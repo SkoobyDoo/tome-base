@@ -283,6 +283,14 @@ void DORSpriter::load(const char *file, const char *name) {
 	instance = spritermodel->getNewEntityInstance(name);
 }
 
+void DORSpriter::applyCharacterMap(const char *name) {
+	instance->applyCharacterMap(name);
+}
+
+void DORSpriter::removeCharacterMap(const char *name) {
+	instance->removeCharacterMap(name);
+}
+
 vec2 DORSpriter::getObjectPosition(const char *name) {
 	UniversalObjectInterface *so = instance->getObjectInstance(name);
 	if (so) {

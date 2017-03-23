@@ -1310,6 +1310,19 @@ static int gl_spriter_free(lua_State *L)
 	return 1;
 }
 
+static int gl_spriter_shader(lua_State *L)
+{
+	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	if (lua_isnil(L, 2)) {
+		v->setShader(NULL);
+	} else {
+		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		v->setShader(shader);
+	}
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_spriter_get_object_position(lua_State *L)
 {
 	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
@@ -1317,6 +1330,14 @@ static int gl_spriter_get_object_position(lua_State *L)
 	lua_pushnumber(L, pos.x);
 	lua_pushnumber(L, pos.y);
 	return 2;
+}
+
+static int gl_spriter_character_map(lua_State *L)
+{
+	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	if (lua_toboolean(L, 3)) v->applyCharacterMap(lua_tostring(L, 2));
+	else v->removeCharacterMap(lua_tostring(L, 2));
+	return 0;
 }
 
 static int gl_spriter_set_anim(lua_State *L)
@@ -2022,6 +2043,7 @@ static const struct luaL_Reg gl_spriter_reg[] =
 {
 	{"__gc", gl_spriter_free},
 	{"triggerCallback", gl_spriter_trigger_callback},
+	{"characterMap", gl_spriter_character_map},
 	{"setAnim", gl_spriter_set_anim},
 	{"getObjectPosition", gl_spriter_get_object_position},
 	{"getKind", gl_generic_getkind},
@@ -2031,6 +2053,7 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{"getScale", gl_generic_scale_get},
 	{"getShown", gl_generic_shown_get},
 	{"shown", gl_generic_shown},
+	{"shader", gl_spriter_shader},
 	{"color", gl_generic_color},
 	{"resetMatrix", gl_generic_reset_matrix},
 	{"physicCreate", gl_generic_physic_create},
