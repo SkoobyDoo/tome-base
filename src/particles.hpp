@@ -98,6 +98,9 @@ struct s_particles_type {
 	bool allow_bloom;
 	bool fboalter;
 
+	float trigger_pass, trigger, trigger_old;
+	int trigger_cb;
+
 	GLuint vbo, vbo_elements;
 
 	struct s_particles_type *sub;

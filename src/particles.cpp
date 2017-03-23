@@ -193,6 +193,10 @@ static int particles_new(lua_State *L)
 	ps->vertices = NULL;
 	ps->particles = NULL;
 	ps->init = FALSE;
+	ps->trigger_old = 0;
+	ps->trigger = 0;
+	ps->trigger_pass = 0;
+	ps->trigger_cb = LUA_NOREF;
 	ps->texture = texture->tex;
 	ps->shader = s;
 	ps->fboalter = fboalter;
@@ -212,6 +216,15 @@ static int particles_set_sub(lua_State *L)
 	particles_type *subps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 2);
 
 	ps->sub = subps;
+
+	return 0;
+}
+
+static int particles_trigger_cb(lua_State *L) 
+{
+	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
+	lua_pushvalue(L, 2);
+	ps->trigger_cb = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	return 0;
 }
@@ -271,6 +284,8 @@ static int particles_free(lua_State *L)
 
 	if (ps->vbo) glDeleteBuffers(1, &ps->vbo);
 	if (ps->vbo_elements) glDeleteBuffers(1, &ps->vbo_elements);
+
+	if (ps->trigger_cb != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ps->trigger_cb);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -424,6 +439,8 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 
 	if (last)
 	{
+		ps->trigger = ps->trigger_pass;
+
 		if (!no_update) ps->alive = alive || ps->no_stop;
 
 		SDL_mutexV(ps->lock);
@@ -515,6 +532,17 @@ static void particles_draw(particles_type *ps, mat4 model)
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	if (ps->trigger_cb != LUA_NOREF && ps->trigger != ps->trigger_old) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, ps->trigger_cb);
+		lua_pushnumber(L, ps->trigger);
+		lua_pushnumber(L, ps->trigger_old);
+		if (lua_pcall(L, 2, 0, 0)) {
+			printf("Particle trigger error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+		ps->trigger_old = ps->trigger;
+	}
 
 	SDL_mutexV(ps->lock);
 }
@@ -840,6 +868,7 @@ static const struct luaL_Reg particles_reg[] =
 	{"setSub", particles_set_sub},
 	{"shift", particles_shift},
 	{"die", particles_die},
+	{"trigger", particles_trigger_cb},
 	{"getDO", particles_get_do},
 	{NULL, NULL},
 };
@@ -916,12 +945,14 @@ void thread_particle_run(particle_thread *pt, plist *l)
 			lua_pop(L, 1);
 
 			if (run) {
-				if (lua_pcall(L, 1, 0, 0))
+				if (lua_pcall(L, 1, 1, 0))
 				{
 	//				printf("L(%x) Particle updater error %x (%d, %d): %s\n", (int)L, (int)l, l->updator_ref, l->emit_ref, lua_tostring(L, -1));
 	//				ps->i_want_to_die = TRUE;
 					lua_pop(L, 1);
 				}
+				ps->trigger_pass = lua_tonumber(L, -1);
+				lua_pop(L, 1);
 			}
 		}
 		lua_pop(L, 1); // global table
