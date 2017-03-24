@@ -312,16 +312,16 @@ newEffect{
 newEffect{
 	name = "ETHEREAL", image = "effects/invisibility.png",
 	desc = "Ethereal",
-	long_desc = function(self, eff) return ("Invisible (power %d), reduced damage taken and dealt by %d%%, able to walk through walls."):format(eff.power, eff.damage) end,
+	long_desc = function(self, eff) return ("Invisible (power %d), damage dealt reduced by %d%%, all resistances increased by %d%%, able to walk through walls."):format(eff.power, eff.reduction * 100, eff.damage) end,
 	type = "magical",
 	subtype = { phantasm=true },
 	status = "beneficial",
-	parameters = { power=10, damage=0},
+	parameters = { power=10, damage=0, reduction=0,},
 	on_gain = function(self, err) return "#Target# phases partially out of reality.", "+Ethereal" end,
 	on_lose = function(self, err) return "#Target# is no longer ethereal.", "-Ethereal" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("invisible", eff.power)
-		eff.penaltyid = self:addTemporaryValue("invisible_damage_penalty", eff.damage)
+		eff.penaltyid = self:addTemporaryValue("invisible_damage_penalty", eff.reduction)
 		eff.damid = self:addTemporaryValue("resists", {all = eff.damage})
 		eff.wallid = self:addTemporaryValue("can_pass", {pass_wall=20})
 		
@@ -372,6 +372,56 @@ newEffect{
 		end
 	return {dam = 0}
 
+	end,
+}
+
+newEffect{
+	name = "PRISMATIC_SHIELD", image = "talents/ward.png",
+	desc = "Prismatic Shield",
+	long_desc = function(self, eff) return ("The target is protected by a prismatic shield blocking many instances of damage"): -- add tooltip
+		format() end,
+	type = "magical",
+	subtype = { ward=true, },
+	status = "beneficial",
+	parameters = { wards = {} },
+	on_gain = function(self, err) return "#Target# summons a prismatic shield to protect him!", "+Prismatic" end,
+	on_lose = function(self, err) return "#Target#'s prismatic shield fades.", "-Prismatic" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
+		for k,v in pairs(eff.wards) do
+			if k == type then
+				local d_color = DamageType:get(type).text_color or "#ORCHID#"
+				game:delayedLogDamage(src, self, 0, ("%s(%d prism#LAST#%s)#LAST#"):format(d_color, dam, d_color), false)
+				eff.wards[k] = eff.wards[k] - 1
+				if eff.wards[k] <= 0 then eff.wards[k] = nil end
+				game.logPlayer(game.player, "Found")
+			end
+			return {dam = 0}
+		end
+	end,
+}
+
+newEffect{
+	name = "PURGING", image = "talents/jumpgate.png",
+	desc = "PURGING",
+	long_desc = function(self, eff) return ("The target is protected by an arcane incantation cleansing 1 physical debuff each turn."):
+		format() end,
+	type = "magical",
+	subtype = { arcane=true, },
+	status = "beneficial",
+	parameters = {},
+	on_gain = function(self, err) return "#Target# is being purged of his physical ailments!", "+Purging" end,
+	on_lose = function(self, err) return "#Target#'s is no longer being purged.", "-Purging" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+	on_timeout = function(self, eff)
+		local cleanse = self:removeEffectsFilter({type="physical", status="detrimental"}, 1)
+		if cleanse > 0 then eff.dur = eff.dur + 1 end
 	end,
 }
 

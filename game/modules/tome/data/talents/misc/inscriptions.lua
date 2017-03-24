@@ -151,7 +151,9 @@ newInscription{
 		local removed = 0
 
 		removed = target:removeEffectsFilter({types=data.what, subtype={["cross tier"] = true}, status="detrimental"})
-		removed = removed + target:removeEffectsFilter({types=data.what, status="detrimental"}, 1)
+		for k,v in pairs(data.what) do
+			removed = removed + target:removeEffectsFilter({type=k, status="detrimental"}, 1)
+		end
 
 		if removed > 0 then
 			game.logSeen(self, "%s is cured!", self.name:capitalize())
@@ -161,7 +163,7 @@ newInscription{
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		local what = table.concatNice(table.keys(data.what), ", ", " or ")
+		local what = table.concatNice(table.keys(data.what), ", ", " and ")
 
 		return ([[Activate the infusion to cure yourself of one random %s effect and reduce all damage taken by %d%% for %d turns.
 
@@ -175,6 +177,7 @@ Also removes cross-tier effects of the affected types for free.]]):format(what, 
 }
 
 -- fixedart wild variant
+-- Needs update with 1.6
 newInscription{
 	name = "Infusion: Primal", image = "talents/infusion__wild.png",
 	type = {"inscriptions/infusions", 1},
@@ -268,47 +271,7 @@ newInscription{
 	end,
 }
 
--- Kept for now
-newInscription{
-	name = "Infusion: Insidious Poison",
-	type = {"inscriptions/infusions", 1},
-	points = 1,
-	tactical = { ATTACK = { NATURE = 1 }, DISABLE= {poison = 1}, CURE = function(self, t, target)
-			local nb = 0
-			local data = self:getInscriptionData(t.short_name)
-			for eff_id, p in pairs(self.tmp) do
-				local e = self.tempeffect_def[eff_id]
-				if e.type == "magical" and e.status == "detrimental" then nb = nb + 1 end
-			end
-			return nb
-		end },
-	requires_target = true,
-	range = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return data.range
-	end,
-	action = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime", trail="slimetrail"}}
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-		self:projectile(tg, x, y, DamageType.INSIDIOUS_POISON, {dam=data.power + data.inc_stat, dur=7, heal_factor=data.heal_factor}, {type="slime"})
-		self:removeEffectsFilter({status="detrimental", type="magical", ignore_crosstier=true}, 1)
-		game:playSoundNear(self, "talents/slime")
-		return true
-	end,
-	info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the infusion to spit a bolt of poison doing %0.2f nature damage per turn for 7 turns, and reducing the target's healing received by %d%%.
-		The sudden stream of natural forces also strips you of one random detrimental magical effect.]]):format(damDesc(self, DamageType.NATURE, data.power + data.inc_stat) / 7, data.heal_factor)
-	end,
-	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
-		return ([[%d nature damage, %d%% healing reduction]]):format(damDesc(self, DamageType.NATURE, data.power + data.inc_stat) / 7, data.heal_factor)
-	end,
-}
-
--- Opportunity cost for this is HUGE, it should not hit friendly, also buffed duration
+-- Tree walls?  Tree summons?
 newInscription{
 	name = "Infusion: Wild Growth",
 	type = {"inscriptions/infusions", 1},
@@ -357,6 +320,7 @@ local function attack_rune(self, btid)
 	end
 end
 
+-- Activate a second time to return?
 newInscription{
 	name = "Rune: Teleportation",
 	type = {"inscriptions/runes", 1},
@@ -615,7 +579,7 @@ newInscription{
 	end,
 }
 
--- This is mostly a copy of Time Skip :P
+-- Upgrade me
 newInscription{
 	name = "Rune of the Rift",
 	type = {"inscriptions/runes", 1},
@@ -723,9 +687,10 @@ newInscription{
 	is_spell = true,
 	is_teleport = true,
 	tactical = { CLOSEIN = 2 },
+	getDur = function(self, t) return 3 end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		local tg = {type="beam", nolock=true, pass_terrain=false, nowarning=true, range=data.distance + data.inc_stat, radius=1, requires_knowledge=false}
+		local tg = {type="beam", nolock=true, pass_terrain=false, nowarning=true, range=data.range + data.inc_stat, radius=1, requires_knowledge=false}
 		local x, y = self:getTarget(tg)
 		if not x then return end
 		if not self:hasLOS(x, y) then return end
@@ -736,19 +701,30 @@ newInscription{
 		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
 		self:teleportRandom(x, y, rad)
 		game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+
+		self:setEffect(self.EFF_OUT_OF_PHASE, data.dur or 3, {
+			defense = data.power + data.inc_stat * 3 + (self:attr("defense_on_teleport") or 0), -- This is a very odd way to handle OOP merging, fix me
+			resists = data.power + data.inc_stat * 3 + (self:attr("resist_all_on_teleport") or 0),
+			effect_reduction = data.power + data.inc_stat * 3 + (self:attr("effect_reduction_on_teleport") or 0),
+		})
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to teleport up to %d spaces within line of sight.]]):format(data.distance + data.inc_stat)
+		local power = data.power + data.inc_stat * 3
+		return ([[Activate the rune to teleport up to %d spaces within line of sight.  Afterwards you stay out of phase for %d turns. In this state all new negative status effects duration is reduced by %d%%, your defense is increased by %d and all your resistances by %d%%.]]):
+			format(data.range + data.inc_stat, t.getDur(self, t), power, power, power)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[range %d]]):format(data.distance + data.inc_stat)
+		local power = data.power + data.inc_stat * 3
+		return ([[range %d; power %d; dur %d]]):format(data.range + data.inc_stat, power, t.getDur(self, t) )
 	end,
 }
 
 -- Invisibility updated to have combat value and more escape options
+-- TODO:  Teleport back to entry space, move through trees
+-- Possibly drop wall phase for movement speed
 newInscription{
 	name = "Rune: Ethereal",
 	type = {"inscriptions/runes", 1},
@@ -758,7 +734,11 @@ newInscription{
 	getDur = function(self, t) return 5 end,
 	getDamageMod = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return data.damage
+		return data.damage + (data.inc_stat / 4)
+	end,
+	getReduction = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.reduction
 	end,
 	getPower = function(self, t) 
 		local data = self:getInscriptionData(t.short_name)
@@ -766,25 +746,23 @@ newInscription{
 	end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_ETHEREAL, t.getDur(self, t), {power=t.getPower(self, t), damage=t.getDamageMod(self, t)})
+		self:setEffect(self.EFF_ETHEREAL, t.getDur(self, t), {power=t.getPower(self, t), reduction=t.getReduction(self, t), damage=t.getDamageMod(self, t)})
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		return ([[Activate the rune to become ethereal for %d turns.
-		While ethereal all damage you deal and take is reduced by %d%%, you are invisible (power %d), and you can move through most forms of obstruction.
-		If your turn ends while inside a wall you will be teleported back to the first obstructed space you entered.
-		]]):format(t.getDur(self, t), t.getDamageMod(self, t), t.getPower(self, t))
+		While ethereal all damage you deal is reduced by %d%%, you gain %d%% all resistance, and you are invisible (power %d), and you can move through most forms of obstruction.
+		If your turn ends while inside a wall or area you cannot walk out of you will be teleported back to the first obstructed space you entered.
+		]]):format(t.getDur(self, t),t.getReduction(self, t) * 100, t.getDamageMod(self, t), t.getPower(self, t))
 	end,
 	short_info = function(self, t)
-		local data = self:getInscriptionData(t.short_name)
 		return ([[power %d, damage %d%%, %d turns]]):format(t.getPower(self, t), t.getDamageMod(self, t), t.getDur(self, t))
 	end,
 }
 
 -- Lightning Rune replacement, concept partially kept
 -- Numbers on this must be done carefully
--- This concept may not work as a generalized mechanic for both balance and infringement on Corruption class identity, but lets give it a run for now
 newInscription{
 	name = "Rune: Stormshield",
 	type = {"inscriptions/runes", 1},
@@ -818,11 +796,216 @@ newInscription{
 		return ([[threshold %d, blocks %d, %d turns]]):format(t.getThreshold(self, t), t.getBlocks(self, t), t.getDur(self, t) )
 	end,
 }
+
+-- Fixedart generated with a random ward set
+newInscription{
+	name = "Rune: Prismatic",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	getDur = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.dur
+	end,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		self:setEffect(self.EFF_PRISMATIC_SHIELD, t.getDur(self, t), {wards = data.wards})
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local str = ""
+		for k,v in pairs(data.wards) do
+			str = str .. ", " .. v .. " " .. k:lower()
+		end
+		str = string.sub(str, 2)
+		return ([[Activate the rune to create a shield blocking several instances of damage of the following types:%s]]) -- color me
+				:format(str)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local str = table.concat(table.keys(data.wards), ", ")
+		return ([[%d turns, %s]]):format(t.getDur(self, t), str:lower() )
+	end,
+}
+
+-- Effective HP primarily, roughly the counterpart to Heroism
+-- Stat snapshotting is intentionally allowed
+-- All values placeholder, overpowered as fuck atm, inheritance mechanics unfinished
+newInscription{
+	name = "Rune: Mirror Image",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	getDur = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.dur
+	end,
+	getInheritance = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.inheritance + data.inc_stat
+	end,
+	getInheritedResist = function(self, t)
+		local res = {}
+		for k,v in pairs(self.resists) do
+			res[k] = (t.getInheritance(self, t) * (self.resists[k]) or 0)
+		end
+		return res
+	end,
+	action = function(self, t)
+			if not self:canBe("summon") then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
+
+			-- Find all actors in radius 10 and add them to a table
+			local tg = {type="ball", radius=self.sight}
+			local grids = self:project(tg, self.x, self.y, function() end)
+			local tgts = {}
+			for x, ys in pairs(grids) do for y, _ in pairs(ys) do
+				local target = game.level.map(x, y, Map.ACTOR)
+				if target and self:reactionToward(target) < 0 then tgts[#tgts+1] = target end
+			end end
+
+			for _ = 1,3 do
+				local target = rng.tableRemove(tgts)
+				if target then
+					local tx, ty = util.findFreeGrid(target.x, target.y, 10, true, {[Map.ACTOR]=true})
+					if tx then
+						local Talents = require "engine.interface.ActorTalents"
+						local NPC = require "mod.class.NPC"
+						local caster = self
+						local image = NPC.new{
+							name = "Mirror Image",
+							type = "image", subtype = "image",
+							desc = "A blurred image.",
+							image = caster.image,
+							add_mos = caster.add_mos, -- this is horribly wrong isn't it?
+							rank = 1,
+							combat_armor_hardiness = caster:combatArmorHardiness(),
+							combat_def = caster:combatArmor(),
+							--stats = caster.stats,
+							size_category = caster.size_category,
+							resists = t.getInheritedResist(self, t),
+							no_breath = 1,
+							cant_be_moved = 1,
+							never_move = 1,
+							resolvers.talents{
+								[Talents.T_TAUNT]=1, -- Add the talent so the player can see it even though we cast it manually
+							},
+							on_act = function(self) -- avoid any interaction with .. uh, anything, for now
+								self:forceUseTalent(self.T_TAUNT, {})
+							end,
+							faction = caster.faction,
+							summoner = caster, summoner_gain_exp=true,
+							summon_time=t.getDur(self, t),
+						}
+
+						image:resolve()
+						image.remove_from_party_on_death = true
+						
+						game.zone:addEntity(game.level, image, "actor", tx, ty)
+						game.party:addMember(image, {
+							control=false,
+							type="summon",
+							title="Summon",
+							orders = {target=true, leash=true, anchor=true, talents=true},
+						})
+					end
+				end
+			end
+
+
+		return true
+	end,
+	info = function(self, t)
+		return ([[Activate the rune to create up to 3 images of yourself that taunt nearby enemies.
+			Only one image can be created per enemy in radius 10 with the first being created near the closest enemy.
+			Images inherit %d%% of your maximum life and resistances and all of your armor and armor hardiness.]])
+				:format(t.getInheritance(self, t) )
+	end,
+	short_info = function(self, t)
+		return ([[%d turns, %d%% inheritance]]):format(t.getDur(self, t), t.getInheritance(self, t))
+	end
+}
+
+-- Counter to mass multitype debuff spam
+-- This is the counterpart to Wild but scales differently, acknowledging the fact that triple type cleanse becomes better as the game progresses
+newInscription{
+	name = "Rune: Shatter Afflictions",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	tactical = { },
+	is_spell = true,
+	no_energy = true,
+	getShield = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.shield + data.inc_stat
+	end,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		
+		self:removeEffectsFilter({subtype={["cross tier"] = true}, status="detrimental"}, 3)
+		local cleansed = 0
+		cleansed = cleansed + self:removeEffectsFilter({type="physical", status="detrimental"}, 1)
+		cleansed = cleansed + self:removeEffectsFilter({type="magical", status="detrimental"}, 1)
+		cleansed = cleansed + self:removeEffectsFilter({type="mental", status="detrimental"}, 1)
+
+		if cleansed > 0 then self:setEffect(self.EFF_DAMAGE_SHIELD, 3, {power=(data.shield + data.inc_stat) * cleansed}) else return false end
+
+		return true
+	end,
+	info = function(self, t)
+		return ([[Activate the rune to instantly dissipate the energy of your ailments, cleansing all cross tier effects and 1 physical, mental, and magical effect.
+				You use the dissipated energy to create a shield lasting 3 turns and blocking %d damage per debuff cleansed.]]):format(t.getShield(self, t))
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[cooldown %d, shield %d ]]):format(data.cooldown, data.shield + data.inc_stat)
+	end,
+}
+
+newInscription{
+	name = "Rune: Dissipation",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	tactical = {},
+	range = 10,
+	direct_hit = true,
+	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
+	action = function(self, t)
+		local tg = {type="hit", range=self:getTalentRange(t)}
+		local x, y, target = self:getTarget(tg)
+		if not (x and y) or not target or not self:canProject(tg, x, y) then return nil end
+
+		self:removeEffectsFilter({type="magical", status="detrimental"}, 10)
+		target:removeEffectsFilter({type="magical", status="beneficial"}, 10)
+
+		-- Go through all sustained spells
+		for tid, act in pairs(target.sustain_talents) do
+			if act then
+				local talent = target:getTalentFromId(tid)
+				if talent.is_spell then target:forceUseTalent(tid, {ignore_energy=true}) end
+			end
+		end
+		game:playSoundNear(self, "talents/spell_generic")
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to remove all beneficial magical effects and sustains from the target and all magical debuffs from you.]]):
+		format()
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[ ]]):format()
+	end,
+}
+
+
 -----------------------------------------------------------------------
--- Taints:  Arcane, activating a taint costs a % of maximum life representing the strain on the body and differentiating them from runes
+-- Taints:
 -----------------------------------------------------------------------
--- Not quite moving to legacy.. If gloves of dispersion are acceptable than some form of this might be too.
--- But probably not.
 newInscription{
 	name = "Taint: Devourer",
 	type = {"inscriptions/taints", 1},
@@ -874,7 +1057,6 @@ newInscription{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		self:takeHit(self.max_life * 0.2, self)
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
@@ -905,8 +1087,7 @@ newInscription{
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[#RED#Lose 20%% of your maximum life.#LAST#
-			Activate the taint on a foe, removing up to %d magical or physical effects or sustains from it and healing you for %d for each effect.]]):format(data.effects, data.heal + data.inc_stat)
+		return ([[Activate the taint on a foe, removing up to %d magical or physical effects or sustains from it and healing you for %d for each effect.]]):format(data.effects, data.heal + data.inc_stat)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
@@ -914,43 +1095,33 @@ newInscription{
 	end,
 }
 
--- Unreliable for healing when used to cleanse only 1-2 effects
+-- Counter to mass minor physical debuff spam
+-- Alchemist quest?
 newInscription{
-	name = "Taint: Consume Affliction",
-	type = {"inscriptions/taints", 1},
+	name = "Taint: Purging",
+	type = {"inscriptions/runes", 1},
 	points = 1,
-	tactical = { HEAL = 2 },
-	is_heal = true,
 	is_spell = true,
-	no_energy = true,
-	getHeal = function(self, t)
+	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	getDur = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return data.heal + data.inc_stat
+		return data.dur + data.inc_stat
 	end,
 	action = function(self, t)
-		self:takeHit(self.max_life * 0.2, self)
-
-		self:removeEffectsFilter({subtype={["cross tier"] = true}, status="detrimental"}, 3)
-		local consumed = 0
-		consumed = consumed + self:removeEffectsFilter({type="physical", status="detrimental"}, 1)
-		consumed = consumed + self:removeEffectsFilter({type="magical", status="detrimental"}, 1)
-		consumed = consumed + self:removeEffectsFilter({type="mental", status="detrimental"}, 1)
-
-		self:attr("allow_on_heal", 1)
-		self:heal(t.getHeal(self, t) * consumed, t)
-		self:attr("allow_on_heal", -1)
-
+		self:setEffect(self.EFF_PURGING, t.getDur(self, t), {})
 		return true
 	end,
 	info = function(self, t)
-		return ([[#RED#Lose 20%% of your maximum life.#LAST#
-			Activate the taint to instantly cleanse 1 physical, mental, and magical effect.  For each effect cleansed you heal for %d life.
-			Crosstier effects are cleansed free but do not count towards the heal.]]):format(t.getHeal(self, t))
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the taint to purge your body of physical afflictions for %d turns.
+			Each turn the purge will attempt to cleanse 1 physical debuff from you, and if one is removed, increase its duration by 1.]])
+				:format(t.getDur(self, t) )
 	end,
 	short_info = function(self, t)
-		return ([[heal %d]]):format(t.getHeal(self, t))
+		return ([[%d turns]]):format(t.getDur(self, t) )
 	end,
 }
+
 -----------------------------------------------------------------------
 -- Legacy:  These inscriptions aren't on the drop tables and are only kept for legacy compatibility and occasionally NPC use
 -----------------------------------------------------------------------
@@ -1284,5 +1455,67 @@ newInscription{
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		return ([[%d lightning damage]]):format(damDesc(self, DamageType.LIGHTNING, data.power + data.inc_stat))
+	end,
+}
+
+newInscription{
+	name = "Infusion: Insidious Poison",
+	type = {"inscriptions/infusions", 1},
+	points = 1,
+	tactical = { ATTACK = { NATURE = 1 }, DISABLE= {poison = 1}, CURE = function(self, t, target)
+			local nb = 0
+			local data = self:getInscriptionData(t.short_name)
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "magical" and e.status == "detrimental" then nb = nb + 1 end
+			end
+			return nb
+		end },
+	requires_target = true,
+	range = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return data.range
+	end,
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime", trail="slimetrail"}}
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+		self:projectile(tg, x, y, DamageType.INSIDIOUS_POISON, {dam=data.power + data.inc_stat, dur=7, heal_factor=data.heal_factor}, {type="slime"})
+		self:removeEffectsFilter({status="detrimental", type="magical", ignore_crosstier=true}, 1)
+		game:playSoundNear(self, "talents/slime")
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the infusion to spit a bolt of poison doing %0.2f nature damage per turn for 7 turns, and reducing the target's healing received by %d%%.
+		The sudden stream of natural forces also strips you of one random detrimental magical effect.]]):format(damDesc(self, DamageType.NATURE, data.power + data.inc_stat) / 7, data.heal_factor)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[%d nature damage, %d%% healing reduction]]):format(damDesc(self, DamageType.NATURE, data.power + data.inc_stat) / 7, data.heal_factor)
+	end,
+}
+
+newInscription{
+	name = "Rune: Invisibility",
+	type = {"inscriptions/runes", 1},
+	points = 1,
+	is_spell = true,
+	tactical = { DEFEND = 3, ESCAPE = 2 },
+	action = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		self:setEffect(self.EFF_INVISIBILITY, data.dur, {power=data.power + data.inc_stat, penalty=0.4})
+		return true
+	end,
+	info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[Activate the rune to become invisible (power %d) for %d turns.
+		As you become invisible you fade out of phase with reality, all your damage is reduced by 40%%.
+		]]):format(data.power + data.inc_stat, data.dur)
+	end,
+	short_info = function(self, t)
+		local data = self:getInscriptionData(t.short_name)
+		return ([[power %d for %d turns]]):format(data.power + data.inc_stat, data.dur)
 	end,
 }

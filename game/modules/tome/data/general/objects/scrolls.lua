@@ -169,14 +169,14 @@ newEntity{ base = "BASE_INFUSION",
 	rarity = 13,
 	cost = 20,
 	material_level = 1,
-
+	chance = resolvers.rngrange(50, 1), -- increase chance of 2 cleanses with ilvl
 	inscription_kind = "protect",
 	inscription_data = resolvers.generic(function(e)
 		local what = {}
 		local effects = {physical=true, mental=true, magical=true}
 		local eff1 = rng.tableIndex(effects)
 		what[eff1] = true
-		local two = rng.percent(20) and true or false
+		local two = rng.percent(e.chance) and true or false
 		if two then
 			local eff2 = rng.tableIndex(effects, {eff1})
 			what[eff2] = true
@@ -227,23 +227,6 @@ newEntity{ base = "BASE_INFUSION",
 	inscription_talent = "INFUSION:_HEROISM",
 }
 
-newEntity{ base = "BASE_INFUSION",
-	name = "insidious poison infusion",
-	level_range = {10, 50},
-	rarity = 16,
-	cost = 20,
-	material_level = 2,
-
-	inscription_kind = "attack",
-	inscription_data = {
-		cooldown = resolvers.rngrange(15, 25),
-		range = resolvers.mbonus_level(3, 3),
-		heal_factor = resolvers.mbonus_level(50, 20, function(e, v) return v * 0.1 end),
-		power = resolvers.mbonus_level(300, 70, function(e, v) return v * 0.1 end),
-		use_stat_mod = 2,
-	},
-	inscription_talent = "INFUSION:_INSIDIOUS_POISON",
-}
 -----------------------------------------------------------
 -- Runes
 -----------------------------------------------------------
@@ -345,9 +328,10 @@ newEntity{ base = "BASE_RUNE",
 	material_level = 1,
 	inscription_kind = "movement",
 	inscription_data = {
-		cooldown = resolvers.rngrange(8, 15),
-		distance = resolvers.mbonus_level(5, 2, function(e, v) return v * 0.06 end),
-		use_stat_mod = 0.02,
+		cooldown = resolvers.rngrange(8, 12),
+		range = resolvers.mbonus_level(4, 2, function(e, v) return v * 0.06 end),
+		power = resolvers.mbonus_level(20, 10, function(e, v) return v * 1 end),
+		use_stat_mod = 0.04, -- +4 range at 100 stat
 	},
 	inscription_talent = "RUNE:_BLINK",
 }
@@ -362,11 +346,26 @@ newEntity{ base = "BASE_RUNE",
 	inscription_data = {
 		cooldown = resolvers.rngrange(12, 17),
 		dur = 3,
-		threshold = resolvers.mbonus_level(100, 10), -- Not strictly good or bad so we use a high variance
-		blocks = resolvers.mbonus_level(10, 1, function(e, v) return v * 0.06 end),
+		threshold = resolvers.mbonus_level(100, 0), -- Not strictly good or bad so we use a high variance
+		blocks = resolvers.mbonus_level(6, 4, function(e, v) return v * 0.06 end),
 		use_stat_mod = 0.03,
 	},
 	inscription_talent = "RUNE:_STORMSHIELD",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "rune of shatter afflictions",
+	level_range = {1, 50},
+	rarity = 15,
+	cost = 10,
+	material_level = 1,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = resolvers.rngrange(12, 17),
+		shield = resolvers.mbonus_level(100, 50, function(e, v) return v * 0.06 end),
+		use_stat_mod = 1 
+	},
+	inscription_talent = "RUNE:_SHATTER_AFFLICTIONS",
 }
 
 newEntity{ base = "BASE_RUNE",
@@ -379,29 +378,51 @@ newEntity{ base = "BASE_RUNE",
 	inscription_data = {
 		cooldown = resolvers.rngrange(16, 22),
 		dur = resolvers.mbonus_level(5, 3),
-		power = resolvers.mbonus_level(50, 10, function(e, v) return v * 0.06 end),
+		power = resolvers.mbonus_level(8, 7, function(e, v) return v * 1 end),
 		damage = resolvers.mbonus_level(40, 20),
-		use_stat_mod = 0.2,
+		reduction = 0.5,
+		use_stat_mod = 0.08, -- divided by 4 for resist all
 	},
 	inscription_talent = "RUNE:_ETHEREAL",
 }
+
+newEntity{ base = "BASE_RUNE",
+	name = "mirror image rune",
+	level_range = {5, 50},
+	rarity = 15,
+	cost = 20,
+	material_level = 1,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = resolvers.rngrange(16, 20),
+		dur = resolvers.mbonus_level(5, 2),
+		inheritance = 100, -- placeholder
+		use_stat_mod = 0.2,
+	},
+	inscription_talent = "RUNE:_MIRROR_IMAGE",
+}
+
+--[[
+newEntity{ base = "BASE_RUNE",
+	name = "sanctuary rune",
+	level_range = {5, 50},
+	rarity = 15,
+	cost = 20,
+	material_level = 1,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = resolvers.rngrange(16, 20),
+		dur = resolvers.mbonus_level(5, 2),
+		inheritance = 100,
+		use_stat_mod = 0.2,
+	},
+	inscription_talent = "RUNE:_MIRROR_IMAGE",
+}
+]]
+
 -----------------------------------------------------------
 -- Taints
 -----------------------------------------------------------
-newEntity{ base = "BASE_TAINT",
-	name = "taint of consume affliction",
-	level_range = {1, 50},
-	rarity = 20,
-	cost = 10,
-	material_level = 1,
-	inscription_kind = "heal",
-	inscription_data = {
-		cooldown = resolvers.rngrange(12, 17),
-		heal = resolvers.mbonus_level(150, 50, function(e, v) return v * 0.06 end),
-		use_stat_mod = 1.5,
-	},
-	inscription_talent = "TAINT:_CONSUME_AFFLICTION",
-}
 
 --[[
 newEntity{ base = "BASE_TAINT",
@@ -421,25 +442,6 @@ newEntity{ base = "BASE_TAINT",
 	inscription_talent = "TAINT:_DEVOURER",
 }
 ]]
-
---[[
-newEntity{ base = "BASE_TAINT",
-	name = "taint of insanity",
-	level_range = {1, 50},
-	rarity = 15,
-	cost = 10,
-	material_level = 1,
-
-	inscription_kind = "defense",
-	inscription_data = {
-		cooldown = resolvers.rngrange(12, 17),
-		effects = resolvers.mbonus_level(3, 2, function(e, v) return v * 0.06 end),
-		heal = resolvers.mbonus_level(70, 40, function(e, v) return v * 0.06 end),
-		use_stat_mod = 0.6,
-	},
-	inscription_talent = "TAINT:_INSANITY",
-}
---]]
 
 -----------------------------------------------------------
 -- Legacy/depreciated
@@ -564,5 +566,25 @@ newEntity{ base = "BASE_INFUSION",
 		use_stat_mod = 1.2,
 	},
 	inscription_talent = "INFUSION:_SUN",
+}
+--]]
+
+--[[
+newEntity{ base = "BASE_INFUSION",
+	name = "insidious poison infusion",
+	level_range = {10, 50},
+	rarity = 16,
+	cost = 20,
+	material_level = 2,
+
+	inscription_kind = "attack",
+	inscription_data = {
+		cooldown = resolvers.rngrange(15, 25),
+		range = resolvers.mbonus_level(3, 3),
+		heal_factor = resolvers.mbonus_level(50, 20, function(e, v) return v * 0.1 end),
+		power = resolvers.mbonus_level(300, 70, function(e, v) return v * 0.1 end),
+		use_stat_mod = 2,
+	},
+	inscription_talent = "INFUSION:_INSIDIOUS_POISON",
 }
 --]]

@@ -88,6 +88,64 @@ newEntity{ base = "BASE_INFUSION",
 	inscription_talent = "INFUSION:_PRIMAL",
 }
 
+-- Unique but generated randomly without any link to tier/level
+newEntity{ base = "BASE_RUNE",
+	name = "Prismatic Rune", unique=true, define_as="RUNE_PRISMATIC",
+	level_range = {5, 50},
+	rarity = 300,
+	cost = 20,
+	material_level = 3,
+	inscription_kind = "protect",
+	types = {"FIRE", "LIGHTNING", "COLD", "ACID", "MIND", "ARCANE", "BLIGHT", "NATURE", "TEMPORAL", "LIGHT", "DARK"},
+	inscription_data = {
+		cooldown = 18,
+		dur = 6,
+		use_stat_mod = 0.03,
+		num_types = resolvers.rngrange(2, 5),
+		wards = {PHYSICAL = 5 }, -- Guarantee physical wards
+		--wards = {},
+		resolvers.genericlast(function(e)
+			e.inscription_data.wards["PHYSICAL"] = resolvers.rngrange(3, 5) -- guarantee physical wards
+			for _ = 1,e.inscription_data.num_types do
+				local pick = rng.tableRemove(e.types)
+				e.inscription_data.wards[pick] = resolvers.rngrange(3, 5)
+			end
+		end)
+	},
+	inscription_talent = "RUNE:_PRISMATIC",
+}
+
+-- Left on drop tables for testing purposes, but will be moved to rune or a quest reward
+newEntity{ base = "BASE_TAINT",
+	name = "Taint of Purging", unique = true, define_as = "TAINT_PURGING",
+	level_range = {5, 50},
+	rarity = 300,
+	cost = 20,
+	material_level = 3,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = 20,
+		dur = 5,
+		use_stat_mod = 0,
+	},
+	inscription_talent = "TAINT:_PURGING",
+}
+
+-- Temporarily on drop table
+newEntity{ base = "BASE_RUNE",
+	name = "Rune of Dissipation", unique=true, define_as="RUNE_DISSIPATION",
+	level_range = {5, 50},
+	rarity = 300,
+	cost = 20,
+	material_level = 3,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = 10,
+		use_stat_mod = 0,
+	},
+	inscription_talent = "RUNE:_DISSIPATION",
+}
+
 newEntity{ base = "BASE_STAFF",
 	power_source = {arcane=true},
 	unique = true,

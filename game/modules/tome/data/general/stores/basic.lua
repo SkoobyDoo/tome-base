@@ -210,7 +210,12 @@ newEntity{
 		empty_before_restock = false,
 		filters = {
 			{type="scroll", subtype="rune", id=true, ego_chance = 100},
-			{type="scroll", subtype="taint", id=true, ego_chance = 100},
+			{type="scroll", subtype="taint", id=true, ego_chance = 100}, -- just enabled for beta
+		},
+		fixed = {
+			{id=true, defined="RUNE_PRISMATIC"},
+			{id=true, defined="TAINT_PURGING"},
+			{id=true, defined="RUNE_DISSIPATION"},
 
 		},
 	},
@@ -295,7 +300,6 @@ newEntity{
 		empty_before_restock = false,
 		filters = {
 			{type="scroll", subtype="rune", id=true, ego_chance = 100},
-			{type="scroll", subtype="taint", id=true, ego_chance = 100},
 
 		},
 		fixed = {
