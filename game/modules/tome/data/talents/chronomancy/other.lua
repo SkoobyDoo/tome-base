@@ -366,7 +366,6 @@ newTalent{
 		ai_tactic = resolvers.tactic("ranged")
 		-- Try to use stored AI talents to preserve tweaking over multiple summons
 		m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
---		m:removeAllMOs()
 		
 		-- Remove some talents
 		local tids = {}

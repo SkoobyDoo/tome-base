@@ -72,8 +72,7 @@ end
 --- cloneActor default alt_node fields (controls fields copied by cloneCustom)
 -- modules should update this as needed
 _M.clone_nodes = {player=false, x=false, y=false,
-	fov_computed=false,
-	fov={v={actors={}, actors_dist={}}}, distance_map={v={}},
+	fov_computed=false,	fov={v={actors={}, actors_dist={}}}, distance_map={v={}},
 	_mo=false, _last_mo=false, add_mos=false, add_displays=false,
 	shader=false, shader_args=false,
 }
@@ -89,11 +88,8 @@ _M.clone_copy = nil
 --		to be merged with self.clone_nodes
 -- @return the cloned actor
 function _M:cloneActor(post_copy, alt_nodes)
-print("[cloneActor]", self.uid, self.name, "post_copy=", post_copy, "alt_nodes=", alt_nodes) -- debugging
---table.print(post_copy, "\t_pc_\t") table.print(alt_nodes, "\t_an_\t") -- debugging
 	alt_nodes = table.merge(alt_nodes or {}, self.clone_nodes, true)
 	if post_copy or self.clone_copy then post_copy = post_copy or {} table.update(post_copy, self.clone_copy or {}, true) end
-table.set(game, "debug", "cloneActor", {post_copy=post_copy, alt_nodes=alt_nodes}) -- debugging
 	local a = self:cloneCustom(alt_nodes, post_copy), post_copy
 	a:removeAllMOs()
 	return a, post_copy
