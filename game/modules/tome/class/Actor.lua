@@ -74,6 +74,27 @@ _M._no_save_fields.resting = true
 -- No need to save __project_source either, it's a turn by turn thing
 _M._no_save_fields.__project_source = true
 
+-- alt_node fields (controls fields copied with cloneActor by default)
+_M.clone_nodes = table.merge({running_fov=false, running_prev=false,
+	-- spawning/death fields:
+	make_escort=false, escort_quest=false, summon=false, on_added_to_level=false, on_added=false, clone_on_hit=false, on_die=false, die=false, self_ressurect=false,
+	-- AI fields:
+	on_acquire_target=false, seen_by=false,
+	-- NPC interaction:
+	on_take_hit=false,  can_talk=false,
+	-- player fields:
+	puuid=false, quests=false, random_escort_levels=false, achievements=false, achievement_data=false, game_ender=false,
+	last_learnt_talents = false, died=false, died_times=false, killedBy=false, all_kills=false,	all_kills_kind=false,
+	
+	 
+},_M.clone_nodes, true)
+
+--- cloneActor default post copy fields (merged by cloneActor)
+_M.clone_copy = table.merge({no_drops=true, no_rod_recall=true, no_inventory_access=true, no_levelup_access=true,
+	remove_from_party_on_death=true, keep_inventory_on_death=false,
+	energy={value=0},
+	}, _M.clone_copy or {})
+	
 -- Use distance maps
 _M.__do_distance_map = true
 
@@ -2854,6 +2875,7 @@ function _M:takeHit(value, src, death_note)
 	return dead, val
 end
 
+--- Remove certain effects when cloned
 function _M:removeTimedEffectsOnClone()
 	local todel = {}
 	for eff, p in pairs(self.tmp) do
@@ -2862,6 +2884,17 @@ function _M:removeTimedEffectsOnClone()
 		end
 	end
 	while #todel > 0 do self:removeEffect(table.remove(todel)) end
+end
+
+--- Unlearn certain talents when cloned
+function _M:unlearnTalentsOnClone()
+	local todel = {}
+	for tid, lev in pairs(self.talents) do
+		if _M.talents_def[tid].unlearn_on_clone then
+			todel[#todel+1] = tid
+		end
+	end
+	while #todel > 0 do self:unlearnTalentFull(table.remove(todel)) end
 end
 
 function _M:resolveSource()

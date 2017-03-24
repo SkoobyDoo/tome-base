@@ -349,38 +349,25 @@ newTalent{
 			return
 		end
 
-		local sex = game.player.female and "she" or "he"
-		local m = require("mod.class.NPC").new(self:cloneFull{
-			no_drops = true, keep_inven_on_death = false,
-			faction = self.faction,
-			summoner = self, summoner_gain_exp=true,
-			exp_worth = 0,
-			summon_time = t.getDuration(self, t),
-			ai_target = {actor=nil},
-			ai = "summoned", ai_real = "tactical",
-			ai_tactic = resolvers.tactic("ranged"), ai_state = { talent_in=1, ally_compassion=10},
-			desc = [[The real you... or so ]]..sex..[[ says.]]
-		})
-		m:removeAllMOs()
-		m.make_escort = nil
-		m.on_added_to_level = nil
-
-		m.energy.value = 0
-		m.player = nil
-		m.puuid = nil
-		m.max_life = m.max_life
-		m.life = util.bound(m.life, 0, m.max_life)
+		local m = makeParadoxClone(self, self, t.getDuration(self, t))
+		-- Change some values
+		m.name = self.name.."'s Paradox Clone"
+		m.desc = ([[The real %s... or so %s says.]]):format(self.name, self:he_she())
+		m.life = util.bound(m.life, m.die_at, m.max_life)
 		m.forceLevelup = function() end
-		m.die = nil
-		m.on_die = nil
-		m.on_acquire_target = nil
-		m.seen_by = nil
-		m.can_talk = nil
-		m.on_takehit = nil
-		m.no_inventory_access = true
-		m.clone_on_hit = nil
-		m.remove_from_party_on_death = true
-
+		m.summoner = self
+		m.summoner_gain_exp = true
+		m.exp_worth = 0
+		m.ai_target = {actor=nil}
+		m.ai = "summoned"
+		m.ai_real = "tactical"
+		-- Handle some AI stuff
+		m.ai_state = { talent_in=1, ally_compassion=10 }
+		ai_tactic = resolvers.tactic("ranged")
+		-- Try to use stored AI talents to preserve tweaking over multiple summons
+		m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+--		m:removeAllMOs()
+		
 		-- Remove some talents
 		local tids = {}
 		for tid, _ in pairs(m.talents) do
@@ -392,6 +379,7 @@ newTalent{
 		end
 
 		game.zone:addEntity(game.level, m, "actor", x, y)
+		m:resolve()
 		game.level.map:particleEmitter(x, y, 1, "temporal_teleport")
 		game:playSoundNear(self, "talents/teleport")
 
@@ -516,7 +504,7 @@ newTalent{
 	tactical = { ATTACK = 2, DISABLE = 2 },
 	requires_target = true,
 	range = 10,
-	remove_on_clone = true,
+	unlearn_on_clone = true,
 	target = function (self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t, nowarning=true}
 	end,
@@ -550,7 +538,6 @@ newTalent{
 		m.generic_damage_penalty = t.getDamagePenalty(self, t)
 		m.max_life = m.max_life * (100 - t.getDamagePenalty(self, t))/100
 		m.life = m.max_life
-		m.remove_from_party_on_death = true
 
 		-- Handle some AI stuff
 		m.ai_state = { talent_in=2, ally_compassion=10 }
