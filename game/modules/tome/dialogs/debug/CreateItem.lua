@@ -284,7 +284,7 @@ function _M:generateList(obj_list)
 	obj_list = obj_list or game.zone.object_list
 	self.raw_list = obj_list
 	for i, e in ipairs(obj_list) do
-		if e.name and e.rarity and not (e.unique and self.uniques[e.unique]) then
+		if e.name and not (e.unique and self.uniques[e.unique]) then
 			list[#list+1] = {name=e.name, unique=e.unique, e=e}
 			if e.unique then self.uniques[e.unique] = true end
 		end
