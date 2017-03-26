@@ -23,6 +23,8 @@ if not x then return false end
 
 local id = "naga-invasion-"..game.turn
 
+print("Placing event", id, "at", x, y)
+
 local changer = function(id)
 	local npcs = mod.class.NPC:loadList{"/data/general/npcs/naga.lua"}
 	local objects = mod.class.Object:loadList("/data/general/objects/objects.lua")
@@ -101,6 +103,7 @@ local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "naga invasion coral portal"
 g.always_remember = true
 g.display='&' g.color_r=0 g.color_g=0 g.color_b=255 g.notice = true
+g.special_minimap = colors.VIOLET
 g.change_level=1 g.change_zone=id g.glow=true
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
@@ -116,12 +119,17 @@ g.grow = nil g.dig = nil
 g:initGlow()
 g.special = true
 g.real_change = changer
-g.change_level_check = function(self)
-	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
-	self.change_level_check = nil
-	self.real_change = nil
+g.break_portal = function(self)
+	game.log("#VIOLET#The portal is broken!")
 	self.broken = true
+	self.name = "broken naga invasion coral portal"
+	self.change_level = nil
+	self.autoexplore_ignore = true
 	self.show_tooltip = false
+end
+g.change_level_check = function(self)
+	self:break_portal()
+	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
 	return true
 end
 g.on_move = function(self, x, y, who, act, couldpass)
@@ -135,16 +143,11 @@ g.on_move = function(self, x, y, who, act, couldpass)
 			game.log("#VIOLET#Ignoring the portal...")
 			return
 		end
-		
-		game.log("#VIOLET#The portal is broken!")
 		if not ret then
 			self:change_level_check()
+		else self:break_portal()
 		end
-		self.broken = true
-		self.name = "broken naga invasion coral portal"
-		self.change_level = nil
-		self.autoexplore_ignore = true
-		self.special_minimap = colors.VIOLET
+
 	end, "Destroy", "Enter", false, "Quit")
 	
 	return false
@@ -155,25 +158,33 @@ game.zone:addEntity(game.level, g, "terrain", x, y)
 local respawn = function(self)
 	local portal = game.level.map(self.naga_portal_x, self.naga_portal_y, engine.Map.TERRAIN)
 	if not portal or portal.broken then return end
-	local i, j = util.findFreeGrid(self.naga_portal_x, self.naga_portal_y+1, 10, true, {[engine.Map.ACTOR]=true})
-	if not i then return end
 
 	local npcs = mod.class.NPC:loadList{"/data/general/npcs/naga.lua"}
 	local m = game.zone:makeEntity(game.level, "actor", {base_list=npcs}, nil, true)
 	if not m then return end
 
-	m.naga_portal_x = self.naga_portal_x
-	m.naga_portal_y = self.naga_portal_y
-	m.naga_respawn = self.naga_respawn
-	m.exp_worth = 0
-	m.no_drops = true
-	m.faction = "vargh-republic"
-	m.on_die = function(self) self:naga_respawn() end
-	game.zone:addEntity(game.level, m, "actor", i, j)
-	game.logSeen(m, "#VIOLET#A naga steps out of the coral portal!")
+	local adjacent = util.adjacentCoords(self.naga_portal_x, self.naga_portal_y)
+	adjacent[5] = {self.naga_portal_x, self.naga_portal_y}
+
+	repeat
+		local grid = rng.tableRemove(adjacent)
+		if m:canMove(grid[1], grid[2]) then
+			m.naga_portal_x = self.naga_portal_x
+			m.naga_portal_y = self.naga_portal_y
+			m.naga_respawn = self.naga_respawn
+			m.exp_worth = 0
+			m.no_drops = true
+			m.ingredient_on_death = nil
+			m.faction = "vargh-republic"
+			m.on_die = function(self) self:naga_respawn() end
+			game.zone:addEntity(game.level, m, "actor", grid[1], grid[2])
+			game.logSeen(m, "#VIOLET#A naga steps out of the %s!", portal.name)
+			break
+		end
+	until #adjacent <= 0
 end
 
--- Spawn two that will keep on being replenished
+-- Spawn two nagas that will keep on being replenished
 local base = {naga_portal_x=x, naga_portal_y=y, naga_respawn=respawn}
 respawn(base)
 respawn(base)

@@ -79,7 +79,6 @@ local changer = function(id)
 				class = "mod.class.generator.actor.Random",
 				nb_npc = {12, 12},
 				guardian = {random_elite={life_rating=function(v) return v * 1.5 + 4 end, nb_rares=4, name_scheme="#rng# the Invader", on_die=function(self) world:gainAchievement("EVENT_FEARSCAPE", game:getPlayer(true)) end}},
-				},
 			},
 			object = {
 				class = "engine.generator.object.Random",
@@ -152,6 +151,7 @@ g.name = "fearscape invasion portal"
 g.always_remember = true
 g.show_tooltip = true
 g.display='&' g.color_r=0 g.color_g=0 g.color_b=255 g.notice = true
+g.special_minimap = colors.VIOLET
 g.change_level=1 g.change_zone=id g.glow=true
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
@@ -164,11 +164,18 @@ g:altered()
 g:initGlow()
 g.special = true
 g.real_change = changer
+g.break_portal = function(self)
+	self.broken = true
+	game.log("#VIOLET#The portal is broken!")
+	self.name = "broken fearscape invasion portal"
+	self.change_level = nil
+	self.autoexplore_ignore = true
+	self.show_tooltip = false
+end
 g.change_level_check = function(self)
+	self:break_portal()
 	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
 	game.player:attr("planetary_orbit", 1)
-	self.change_level_check = nil
-	self.real_change = nil
 	return true
 end
 g.on_move = function(self, x, y, who, act, couldpass)
@@ -183,17 +190,10 @@ g.on_move = function(self, x, y, who, act, couldpass)
 			game.log("#VIOLET#Ignoring the portal...")
 			return
 		end
-		game.log("#VIOLET#The portal is broken!")
 		if not ret then
 			self:change_level_check()
+		else self:break_portal()
 		end
-		self.broken = true
-		self.name = "broken fearscape invasion portal"
-		self.change_level = nil
-		self.change_level_check = nil
-		self.show_tooltip = false
-		self.autoexplore_ignore = true
-		self.special_minimap = colors.VIOLET
 	end, "Destroy", "Enter", false, "Quit")
 	
 	return false
@@ -204,25 +204,33 @@ game.zone:addEntity(game.level, g, "terrain", x, y)
 local respawn = function(self)
 	local portal = game.level.map(self.fearscape_portal_x, self.fearscape_portal_y, engine.Map.TERRAIN)
 	if not portal or portal.broken then return end
-	local i, j = util.findFreeGrid(self.fearscape_portal_x, self.fearscape_portal_y+1, 10, true, {[engine.Map.ACTOR]=true})
-	if not i then return end
 
 	local npcs = mod.class.NPC:loadList{"/data/general/npcs/major-demon.lua"}
 	local m = game.zone:makeEntity(game.level, "actor", {base_list=npcs}, nil, true)
 	if not m then return end
 
-	m.fearscape_portal_x = self.fearscape_portal_x
-	m.fearscape_portal_y = self.fearscape_portal_y
-	m.fearscape_respawn = self.fearscape_respawn
-	m.exp_worth = 0
-	m.no_drops = true
-	m.faction = "fearscape"
-	m.on_die = function(self) self:fearscape_respawn() end
-	game.zone:addEntity(game.level, m, "actor", i, j)
-	game.logSeen(m, "#VIOLET#A demon steps out of the %s!", portal.name)
+	local adjacent = util.adjacentCoords(self.fearscape_portal_x, self.fearscape_portal_y)
+	adjacent[5] = {self.fearscape_portal_x, self.fearscape_portal_y}
+
+	repeat
+		local grid = rng.tableRemove(adjacent)
+		if m:canMove(grid[1], grid[2]) then
+			m.fearscape_portal_x = self.fearscape_portal_x
+			m.fearscape_portal_y = self.fearscape_portal_y
+			m.fearscape_respawn = self.fearscape_respawn
+			m.exp_worth = 0
+			m.no_drops = true
+			m.ingredient_on_death = nil
+			m.faction = "fearscape"
+			m.on_die = function(self) self:fearscape_respawn() end
+			game.zone:addEntity(game.level, m, "actor", grid[1], grid[2])
+			game.logSeen(m, "#VIOLET#A demon steps out of the %s!", portal.name)
+			break
+		end
+	until #adjacent <= 0
 end
 
--- Spawn two that will keep on being replenished
+-- Spawn two demons that will keep on being replenished
 local base = {fearscape_portal_x=x, fearscape_portal_y=y, fearscape_respawn=respawn}
 respawn(base)
 respawn(base)
