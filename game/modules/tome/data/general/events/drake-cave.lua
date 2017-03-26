@@ -64,7 +64,10 @@ local changer = function(id, kind)
 			actor = {
 				class = "mod.class.generator.actor.Random",
 				nb_npc = {25, 25},
-				guardian = {special=function(e) return e.rank and e.rank >= 2 end, random_elite={life_rating=function(v) return v * 1.5 + 4 end, nb_rares=3}},
+				guardian = {special=function(e) return e.rank and e.rank >= 2 end, random_elite={life_rating=function(v) return v * 1.5 + 4 end,
+				nb_rares=(rng.percent(resolvers.current_level-50) and 4 or 3),
+				nb_classes=(rng.percent(resolvers.current_level-50) and 2 or 1)}
+				},
 			},
 			object = {
 				class = "engine.generator.object.Random",

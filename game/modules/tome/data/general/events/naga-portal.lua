@@ -78,7 +78,10 @@ local changer = function(id)
 			actor = {
 				class = "mod.class.generator.actor.Random",
 				nb_npc = {12, 12},
-				guardian = {random_elite={life_rating=function(v) return v * 1.5 + 4 end, nb_rares=4, name_scheme="#rng# the Tidebender", on_die=function(self) world:gainAchievement("EVENT_NAGA", game:getPlayer(true)) end}},
+				guardian = {random_elite={life_rating=function(v) return v * 1.5 + 4 end, name_scheme="#rng# the Tidebender", on_die=function(self) world:gainAchievement("EVENT_NAGA", game:getPlayer(true)) end,
+				nb_rares=(rng.percent(resolvers.current_level-50) and 4 or 3),
+				nb_classes=(rng.percent(resolvers.current_level-50) and 2 or 1)
+				}},
 			},
 			object = {
 				class = "engine.generator.object.Random",
