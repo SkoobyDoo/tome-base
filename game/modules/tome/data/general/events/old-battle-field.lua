@@ -42,9 +42,19 @@ if tries < 100 then
 		local terrains = mod.class.Grid:loadList("/data/general/grids/cave.lua")
 		terrains.CAVE_LADDER_UP_WILDERNESS.change_level_shift_back = true
 		terrains.CAVE_LADDER_UP_WILDERNESS.change_zone_auto_stairs = true
+		terrains.CAVE_LADDER_UP_WILDERNESS.change_level = 1
+		terrains.CAVE_LADDER_UP_WILDERNESS.name = "ramp up to "..game.zone.name
+		terrains.CAVE_LADDER_UP_WILDERNESS.change_zone = game.zone.short_name
+		terrains.CAVE_LADDER_UP_WILDERNESS.change_level_check = function(self, who)
+			game.log("#VIOLET# The ramp crumbles as you climb it, followed by the collapse of the cavern.")
+			-- May delete old zone file here?
+			return
+		end
 		local zone = mod.class.Zone.new(id, {
 			name = "Cavern beneath tombstones",
-			level_range = {game.zone:level_adjust_level(game.level, game.zone, "actor"), game.zone:level_adjust_level(game.level, game.zone, "actor")},
+			level_range = game.zone.actor_adjust_level and {math.floor(game.zone:actor_adjust_level(game.level, game.player)*1.05),
+			math.ceil(game.zone:actor_adjust_level(game.level, game.player)*1.15)} or {game.zone.base_level, game.zone.base_level}, -- 5-15% higher levels
+			__applied_difficulty = true, -- Difficulty already applied to parent zone
 			level_scheme = "player",
 			max_level = 1,
 			actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
@@ -52,8 +62,10 @@ if tries < 100 then
 			ambient_music = "Swashing the buck.ogg",
 			reload_lists = false,
 			persistent = "zone",
-			min_material_level = game.zone.min_material_level,
-			max_material_level = game.zone.max_material_level,
+
+			no_worldport = game.zone.no_worldport,
+			min_material_level = util.getval(game.zone.min_material_level),
+			max_material_level = util.getval(game.zone.max_material_level),
 			generator =  {
 				map = {
 					class = "engine.generator.map.Static",
@@ -110,11 +122,12 @@ if tries < 100 then
 	end
 
 	local grids = check(x, y)
+	local graves = {}
 	for i = 1, 5 do
 		local p = rng.tableRemove(grids)
 
 		local g = game.level.map(p.x, p.y, engine.Map.TERRAIN):cloneFull()
-		g.name = "grave"
+		g.name = "grave" g.x, g.y = p.x, p.y
 		g.display='&' g.color_r=255 g.color_g=255 g.color_b=255 g.notice = true
 		g.always_remember = true g.special_minimap = colors.OLIVE_DRAB
 		g:removeAllMOs()
@@ -124,25 +137,14 @@ if tries < 100 then
 		end
 		g.grow = nil g.dig = nil
 		g.special = true
+		g.graves = graves
 		g:altered()
 		g.block_move = function(self, x, y, who, act, couldpass)
 			if not who or not who.player or not act then return false end
 			if game.level.event_battlefield_entered then return false end
 			who:runStop("grave")
 			require("engine.ui.Dialog"):yesnoPopup("Grave", "Do you wish to disturb the grave?", function(ret) if ret then
-				local g = game.level.map(x, y, engine.Map.TERRAIN)
-				g:removeAllMOs()
-				if g.add_displays then
-					local ov = g.add_displays[#g.add_displays]
-					ov.image = "terrain/grave_opened_0"..rng.range(1, 3).."_64.png"
-				end
-				g.name = "grave (opened)"
-				game.level.map:updateMap(x, y)
-
-				self.block_move = nil
-				self.autoexplore_ignore = true
 				self:change_level_check()
-				require("engine.ui.Dialog"):simplePopup("Fall...", "As you tried to dig the grave the ground fell under you. You find yourself stranded in an eerie lit cavern.")
 			end end)
 			return false
 		end
@@ -150,14 +152,28 @@ if tries < 100 then
 		g.real_change = changer
 		g.change_level_check = function(self)
 			if game.level.event_battlefield_entered then return true end
+			self:removeAllMOs()
+			if self.add_displays then
+				local ov = self.add_displays[#self.add_displays]
+				ov.image = "terrain/grave_opened_0"..rng.range(1, 3).."_64.png"
+			end
+			self.name = "opened grave"
+			game.level.map:updateMap(self.x, self.y)
 			game.level.event_battlefield_entered = true
 			game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
+			require("engine.ui.Dialog"):simplePopup("Fall...", "As you began digging up the grave, the ground collapsed beneath you. You fall into an eerily lit cavern.")
+			for i, gr in ipairs(self.graves) do
+				gr.change_level_check = nil
+				gr.change_level = nil
+				gr.block_move = nil
+				gr.autoexplore_ignore = true
+			end
 			return true
 		end
 
 		game.zone:addEntity(game.level, g, "terrain", p.x, p.y)
-		print("[EVENT] grave placed at ", p.x, p.y)
+		table.insert(graves, g)
 	end
 end
 
-return true
+return x, y

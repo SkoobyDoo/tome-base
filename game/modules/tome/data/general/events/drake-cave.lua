@@ -18,17 +18,14 @@
 -- darkgod@te4.org
 
 -- Find a random spot
-local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-local tries = 0
-while not game.state:canEventGrid(level, x, y) and tries < 100 do
-	x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-	tries = tries + 1
-end
-if tries >= 100 then return false end
+local x, y = game.state:findEventGrid(level)
+if not x then return false end
 
 local kind = rng.table{"fire", "fire", "cold", "cold", "storm", "storm", "multihued"}
 
 local id = kind.."-dragon-cave-"..game.turn
+
+print("Placing event", id, "at", x, y)
 
 local changer = function(id, kind)
 	local npcs = mod.class.NPC:loadList{"/data/general/npcs/"..kind.."-drake.lua"}
@@ -36,9 +33,13 @@ local changer = function(id, kind)
 	local terrains = mod.class.Grid:loadList("/data/general/grids/cave.lua")
 	terrains.CAVE_LADDER_UP_WILDERNESS.change_level_shift_back = true
 	terrains.CAVE_LADDER_UP_WILDERNESS.change_zone_auto_stairs = true
+	terrains.CAVE_LADDER_UP_WILDERNESS.name = "ladder back to "..game.zone.name
+	terrains.CAVE_LADDER_UP_WILDERNESS.change_zone = game.zone.short_name
 	local zone = mod.class.Zone.new(id, {
 		name = "Intimidating Cave",
-		level_range = {game.zone:level_adjust_level(game.level, game.zone, "actor"), game.zone:level_adjust_level(game.level, game.zone, "actor")},
+		level_range = game.zone.actor_adjust_level and {math.floor(game.zone:actor_adjust_level(game.level, game.player)*1.05),
+			math.ceil(game.zone:actor_adjust_level(game.level, game.player)*1.15)} or {game.zone.base_level, game.zone.base_level}, -- 5-15% higher levels
+		__applied_difficulty = true, --Difficulty already applied to parent zone
 		level_scheme = "player",
 		max_level = 1,
 		actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
@@ -46,8 +47,10 @@ local changer = function(id, kind)
 		ambient_music = "Swashing the buck.ogg",
 		reload_lists = false,
 		persistent = "zone",
-		min_material_level = game.zone.min_material_level,
-		max_material_level = game.zone.max_material_level,
+		
+		no_worldport = game.zone.no_worldport,
+		min_material_level = util.getval(game.zone.min_material_level),
+		max_material_level = util.getval(game.zone.max_material_level),
 		generator =  {
 			map = {
 				class = "engine.generator.map.Cavern",
@@ -73,7 +76,6 @@ local changer = function(id, kind)
 				nb_trap = {6, 9},
 			},
 		},
---		levels = { [1] = { generator = { map = { up = "CAVEFLOOR", }, }, }, },
 		npc_list = npcs,
 		grid_list = terrains,
 		object_list = objects,
@@ -85,12 +87,14 @@ end
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "intimidating cave"
 g.display='>' g.color_r=0 g.color_g=0 g.color_b=255 g.notice = true
+g.always_remember = true
 g.change_level=1 g.change_zone=id g.glow=true
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
 	g.add_displays = g.add_displays or {}
 	g.add_displays[#g.add_displays+1] = mod.class.Grid.new{image="terrain/crystal_ladder_down.png", z=5}
 end
+g.nice_tiler = nil
 g:altered()
 g:initGlow()
 g.dragon_kind = kind
@@ -99,6 +103,7 @@ g.change_level_check = function(self)
 	game:changeLevel(1, self.real_change(self.change_zone, self.dragon_kind), {temporary_zone_shift=true, direct_switch=true})
 	self.change_level_check = nil
 	self.real_change = nil
+	self.special_minimap = colors.VIOLET
 	return true
 end
 game.zone:addEntity(game.level, g, "terrain", x, y)
@@ -113,4 +118,4 @@ if m then
 	game.zone:addEntity(game.level, m, "actor", i, j)
 end
 
-return true
+return x, y

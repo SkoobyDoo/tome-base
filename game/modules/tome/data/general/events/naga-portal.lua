@@ -18,13 +18,8 @@
 -- darkgod@te4.org
 
 -- Find a random spot
-local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-local tries = 0
-while not game.state:canEventGrid(level, x, y) and tries < 100 do
-	x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-	tries = tries + 1
-end
-if tries >= 100 then return false end
+local x, y = game.state:findEventGrid(level)
+if not x then return false end
 
 local id = "naga-invasion-"..game.turn
 
@@ -36,30 +31,35 @@ local changer = function(id)
 		type = "floor", subtype = "underwater",
 		display = "&", color = colors.BLUE,
 		name = "coral invasion portal",
+		name = "portal back to "..game.zone.name,
 		image = "terrain/underwater/subsea_floor_02.png",
 		add_displays = {mod.class.Grid.new{z=18, image="terrain/naga_portal.png", display_h=2, display_y=-1, embed_particles = {
 			{name="naga_portal_smoke", rad=2, args={smoke="particles_images/smoke_whispery_bright"}},
 			{name="naga_portal_smoke", rad=2, args={smoke="particles_images/smoke_heavy_bright"}},
 			{name="naga_portal_smoke", rad=2, args={smoke="particles_images/smoke_dark"}},
 		}}},
-		change_level = 1, change_zone = "wilderness",
+		change_level = 1,
+		change_zone = game.zone.short_name,
 		change_level_shift_back = true,
 		change_zone_auto_stairs = true,
 	}
 	local zone = mod.class.Zone.new(id, {
 		name = "water cavern",
-		level_range = {game.zone:level_adjust_level(game.level, game.zone, "actor"), game.zone:level_adjust_level(game.level, game.zone, "actor")},
+		level_range = game.zone.actor_adjust_level and {math.floor(game.zone:actor_adjust_level(game.level, game.player)*1.05),
+			math.ceil(game.zone:actor_adjust_level(game.level, game.player)*1.15)} or {game.zone.base_level, game.zone.base_level}, -- 5-15% higher levels
+		__applied_difficulty = true, -- Difficulty already applied to parent zone
 		level_scheme = "player",
 		max_level = 1,
 		actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
 		width = 30, height = 30,
 		ambient_music = "Dark Secrets.ogg",
 		reload_lists = false,
+		no_worldport = game.zone.no_worldport,
 		color_shown = {0.5, 1, 0.8, 1},
 		color_obscure = {0.5*0.6, 1*0.6, 0.8*0.6, 0.6},
 		persistent = "zone",
-		min_material_level = game.zone.min_material_level,
-		max_material_level = game.zone.max_material_level,
+		min_material_level = util.getval(game.zone.min_material_level),
+		max_material_level = util.getval(game.zone.max_material_level),
 		effects = {"EFF_ZONE_AURA_UNDERWATER"},
 		generator =  {
 			map = {
@@ -89,7 +89,6 @@ local changer = function(id)
 			},
 		},
 		post_process = function(level) for uid, e in pairs(level.entities) do e.faction = e.hard_faction or "vargh-republic" end end,
---		levels = { [1] = { generator = { map = { up = "CAVEFLOOR", }, }, }, },
 		npc_list = npcs,
 		grid_list = terrains,
 		object_list = objects,
@@ -100,6 +99,7 @@ end
 
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "naga invasion coral portal"
+g.always_remember = true
 g.display='&' g.color_r=0 g.color_g=0 g.color_b=255 g.notice = true
 g.change_level=1 g.change_zone=id g.glow=true
 g:removeAllMOs()
@@ -120,26 +120,33 @@ g.change_level_check = function(self)
 	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
 	self.change_level_check = nil
 	self.real_change = nil
+	self.broken = true
+	self.show_tooltip = false
 	return true
 end
-g.on_move = function(self, x, y, who)
+g.on_move = function(self, x, y, who, act, couldpass)
 	if not who or not who.player then return false end
 	if self.broken then
 		game.log("#VIOLET#The portal is already broken!")
 		return false
 	end
-
-	require("engine.ui.Dialog"):yesnoPopup("Coral Portal", "Do you wish to enter the portal or just destroy it?", function(ret)
+	require("engine.ui.Dialog"):yesnoPopup("Coral Portal", "Do you wish to enter the portal, destroy it, or ignore it (press escape)?", function(ret)
+		if ret == "Quit" then
+			game.log("#VIOLET#Ignoring the portal...")
+			return
+		end
+		
 		game.log("#VIOLET#The portal is broken!")
 		if not ret then
 			self:change_level_check()
 		end
 		self.broken = true
-		self.name = "broken "..self.name
+		self.name = "broken naga invasion coral portal"
 		self.change_level = nil
 		self.autoexplore_ignore = true
-	end, "Destroy", "Enter")
-
+		self.special_minimap = colors.VIOLET
+	end, "Destroy", "Enter", false, "Quit")
+	
 	return false
 end
 
@@ -171,4 +178,4 @@ local base = {naga_portal_x=x, naga_portal_y=y, naga_respawn=respawn}
 respawn(base)
 respawn(base)
 
-return true
+return x, y
