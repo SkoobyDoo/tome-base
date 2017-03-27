@@ -370,8 +370,7 @@ newEffect{
 			src:logCombat(self, "#BLUE##Target#'s stormshield is out of charges and disspitates!#LAST#.")
 			self:removeEffect(self.EFF_STORMSHIELD)
 		end
-	return {dam = 0}
-
+		return {dam = 0}
 	end,
 }
 
@@ -391,16 +390,17 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
+		if dam <= 0 then return end
 		for k,v in pairs(eff.wards) do
 			if k == type then
-				local d_color = DamageType:get(type).text_color or "#ORCHID#"
-				game:delayedLogDamage(src, self, 0, ("%s(%d prism#LAST#%s)#LAST#"):format(d_color, dam, d_color), false)
+				local d_color = DamageType:get(type).text_color or "#ORCHID#" -- fix display
+				game:delayedLogDamage(src, self, 0, ("%s(%d to prism#LAST#%s)#LAST#"):format(d_color, dam, d_color), false)
 				eff.wards[k] = eff.wards[k] - 1
 				if eff.wards[k] <= 0 then eff.wards[k] = nil end
-				game.logPlayer(game.player, "Found")
+				return {dam = 0}
 			end
-			return {dam = 0}
 		end
+		return {dam=dam}
 	end,
 }
 

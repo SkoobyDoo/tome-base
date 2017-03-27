@@ -810,7 +810,7 @@ newInscription{
 	end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_PRISMATIC_SHIELD, t.getDur(self, t), {wards = data.wards})
+		self:setEffect(self.EFF_PRISMATIC_SHIELD, t.getDur(self, t), {wards = table.clone(data.wards)})
 		return true
 	end,
 	info = function(self, t)
