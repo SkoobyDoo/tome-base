@@ -1504,6 +1504,7 @@ end
 -- raw if true specifies use of raw talent level
 function _M:combatTalentScale(t, low, high, power, add, shift, raw)
 	local tl = type(t) == "table" and (raw and self:getTalentLevelRaw(t) or self:getTalentLevel(t)) or t
+	if tl <= 0 then tl = 0.1 end
 	power, add, shift = power or 0.5, add or 0, shift or 0
 	local x_low, x_high = 1, 5 -- Implied talent levels to fit
 	local x_low_adj, x_high_adj
@@ -1565,6 +1566,7 @@ end
 function _M:combatTalentLimit(t, limit, low, high, raw)
 	local x_low, x_high = 1,5 -- Implied talent levels for low and high values respectively
 	local tl = type(t) == "table" and (raw and self:getTalentLevelRaw(t) or self:getTalentLevel(t)) or t
+	if tl <= 0 then tl = 0.1 end
 	if low then
 		local p = limit*(x_high-x_low)
 		local m = x_high*high - x_low*low
