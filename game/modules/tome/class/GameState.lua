@@ -2389,16 +2389,15 @@ function _M:startEvents()
 		local evts, mevts = {}, {}
 		for i, e in ipairs(game.zone.events) do
 			if e.name then -- add a single event to the events list
---print("[STARTEVENTS] Adding Event:", i, tostring(e.name))
 				if e.minor then	mevts[#mevts+1] = e else evts[#evts+1] = e end
 			elseif e.group then -- load events from a group file and add them to the events list
---print("[STARTEVENTS] loading events group", e.group)
+				--	print("[STARTEVENTS] loading events group", e.group)
 				local f, err = loadfile(self:eventBaseName("groups/", e.group))
 				if not f then error(err) end
 				setfenv(f, setmetatable({level=game.level, zone=game.zone}, {__index=_G}))
 				local list = f()
 				for j, ee in ipairs(list) do
---					print("[STARTEVENTS]\t\tAdding Group Event:", j, tostring(ee.name))
+				--	print("[STARTEVENTS]\t\tAdding Group Event:", j, tostring(ee.name))
 					if ee.name then
 						if e.percent_factor and ee.percent then ee.percent = math.floor(ee.percent * e.percent_factor) end
 						if e.forbid then ee.forbid = table.append(ee.forbid or {}, e.forbid) end
@@ -2414,9 +2413,6 @@ function _M:startEvents()
 				end
 			end
 		end
-
---table.set(game.zone, "debug", "evts", evts) -- debugging
---table.set(game.zone, "debug", "mevts", mevts) -- debugging
 
 		-- Randomize the order they are checked as
 		print("[STARTEVENTS] Zone compiled events list: one_per_level=", game.zone.events.one_per_level)
@@ -2495,7 +2491,6 @@ function _M:startEvents()
 		end
 
 		game.zone.assigned_events = levels
---table.set(game.zone, "debug", "assigned_events", table.clone(levels, true))--debugging
 	end
 
 	-- return a wrapper function to load and run all assigned events files
