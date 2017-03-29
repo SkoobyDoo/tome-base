@@ -2294,11 +2294,11 @@ end
 
 --- Has event been triggered in this game state?
 -- @param id = the event id
--- @param[optional = number] increment the event count for id
--- @return nil or the number of times this event has been triggered
+-- @param[optional = number] v increment the event count for id
+-- @return false or the number of times this event has been triggered
 function _M:doneEvent(id, v)
-	if v then self.used_events[id] = (self.used_events[id] or 0) + 1 end
-	return self.used_events[id]
+	if v then self.used_events[id] = (self.used_events[id] or 0) + v end
+	return self.used_events[id] and self.used_events[id] > 0 and self.used_events[id] or false
 end
 
 function _M:canEventGrid(level, x, y)
@@ -2458,7 +2458,7 @@ function _M:startEvents()
 				if lev then
 					lev = levels[lev]
 					lev[#lev+1] = e.name
-					self:doneEvent(e.name, 1)
+					self:doneEvent(e.name, 1) -- mark as done when assigned
 				end
 			end
 		end
@@ -2476,13 +2476,13 @@ function _M:startEvents()
 			for lv = start, stop do
 				if (e.always or rng.percent(e.percent)) and not forbid[lv] and (not e.special or e.special(lv)) then
 					local lev = levels[lv]
-					lev[#lev+1] = e.name
+					lev[#lev+1] = e.name self:doneEvent(e.name, 1) -- mark as done when assigned
 					if e.max_repeat then -- try to repeat the event with diminishing probability
 						local nb = 1
 						local p = e.percent or 100
 						while nb <= e.max_repeat do
 							if e.always or rng.percent(p) and (not e.special or e.special(lv)) then
-								lev[#lev+1] = e.name
+								lev[#lev+1] = e.name self:doneEvent(e.name, 1) -- mark as done when assigned
 								nb = nb + 1
 								p = p/2
 							else
@@ -2506,8 +2506,9 @@ function _M:startEvents()
 		for i, e in ipairs(game.zone.assigned_events[game.level.level] or {}) do
 			local f, err = loadfile(self:eventBaseName("", e))
 			if not f then error(err) end
-			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e.name, Map=Map}, {__index=_G}))
-			f()
+			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e, Map=Map}, {__index=_G}))
+			self:doneEvent(e, -1) -- unmark as done (for event code)
+			if f() then self:doneEvent(e, 1) end -- remark as done if event completed
 		end
 		game.zone.assigned_events[game.level.level] = {}
 		if game.zone.events_by_level then game.zone.assigned_events = nil end
