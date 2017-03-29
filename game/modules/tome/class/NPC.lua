@@ -528,7 +528,9 @@ function _M:addedToLevel(level, x, y)
 			for i = #MainInven, 1, -1 do
 				o = MainInven[i]
 				local inven, worn = self:getInven(o:wornInven())
-				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
+					--print("[NPC:addedToLevel]", self.name, self.uid, "checking", o.name, "type", o.type)
+				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") and not (o.type and o.type == "weapon" and self.no_npc_weapon_equip) then -- check restrictions
+					--print("[NPC:addedToLevel]", self.name, self.uid, "passed restriction check", o.name)
 					local ro, replace = inven and inven[1], false
 					o = self:removeObject(self.INVEN_INVEN, i)
 					if o then
