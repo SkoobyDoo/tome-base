@@ -20,8 +20,8 @@
 -- Find a random spot
 local x, y = game.state:findEventGrid(level)
 if not x then return false end
-print("placing sub-vault at", x, y)
 local id = "sub-vault"..game.turn.."-"..rng.range(1,9999)
+print("[EVENT] Placing event", id, "at", x, y)
 
 local changer = function(id)
 	local grid_list = table.clone(game.zone.grid_list)

@@ -2292,7 +2292,12 @@ function _M:locationRevealAround(x, y)
 	end
 end
 
-function _M:doneEvent(id)
+--- Has event been triggered in this game state?
+-- @param id = the event id
+-- @param[optional = number] increment the event count for id
+-- @return nil or the number of times this event has been triggered
+function _M:doneEvent(id, v)
+	if v then self.used_events[id] = (self.used_events[id] or 0) + 1 end
 	return self.used_events[id]
 end
 
@@ -2333,6 +2338,10 @@ function _M:findEventGridRadius(level, radius, min)
 	return self:canEventGridRadius(level, x, y, radius, min)
 end
 
+--- Get the file name for an event
+-- @param[string] subdirectory of the base events directory containing the event file
+-- @param[string] name the short name of the event
+-- @return the complete file path for the event file (resolved for addons)
 function _M:eventBaseName(sub, name)
 	local base = "/data"
 	local _, _, addon, rname = name:find("^([^+]+)%+(.+)$")
@@ -2343,8 +2352,30 @@ function _M:eventBaseName(sub, name)
 	return base.."/general/events/"..sub..name..".lua"
 end
 
+--- Process the zone.events table, managing spawning of events on each level
+-- 	If zone.events_by_level is true, events will be assigned to each level as it's generated
+--		otherwise events will be preassigned to each level (stored in zone.assigned_events)
+--		If zone.events.one_per_level is true, only one major event will be preassigned to each level
+--			(Some events may not spawn if there are not enough levels.)
+-- Each event in the events list can have the following fields:
+-- name: short name of the event (resolved with game.state:eventBaseName(dir, name) to get the full file path
+-- group: if name is not set, load all events present in the associated group file in the groups subdirectory
+-- 		percent_factor: percent multiplier for the loaded group events only
+--		forbid, level_range will be merged
+-- minor: flag event as a minor event that can spawn multiple times on the level
+-- percent: (required) % chance for the event to be assigned to a given level
+-- always: set true to force 100% spawn chance
+-- level_range: table {low, high} containing the range of levels the event is allowed to spawn on
+-- forbid: table of levels the event cannot spawn on
+-- special: a function(lev) that, if present, must return true to allow the event to spawn on level lev
+-- minor event fields:
+-- 	max_repeat: attempt to spawn the event extra times (% chance halved after each repeat)
+-- major event fields:
+-- 	unique: set true to allow only one instance of the event for this game state
+-- @return a function(level) to place events on the level (loaded from the event file)
+--		this function loads and executes all of the required events files to modify the map, etc.
 function _M:startEvents()
-	if not game.zone.events then print("No zone events loaded") return end
+	if not game.zone.events then print("[STARTEVENTS] No zone events loaded") return end
 
 	if not game.zone.assigned_events then
 		local levels = {}
@@ -2354,58 +2385,80 @@ function _M:startEvents()
 			for i = 1, game.zone.max_level do levels[i] = {} end
 		end
 
-		-- Generate the events list for this zone, eventually loading from group files
+		-- Generate the events list for this zone, possibly loading from group files
 		local evts, mevts = {}, {}
 		for i, e in ipairs(game.zone.events) do
-			if e.name then if e.minor then mevts[#mevts+1] = e else evts[#evts+1] = e end
-			elseif e.group then
+			if e.name then -- add a single event to the events list
+--print("[STARTEVENTS] Adding Event:", i, tostring(e.name))
+				if e.minor then	mevts[#mevts+1] = e else evts[#evts+1] = e end
+			elseif e.group then -- load events from a group file and add them to the events list
+--print("[STARTEVENTS] loading events group", e.group)
 				local f, err = loadfile(self:eventBaseName("groups/", e.group))
 				if not f then error(err) end
 				setfenv(f, setmetatable({level=game.level, zone=game.zone}, {__index=_G}))
 				local list = f()
 				for j, ee in ipairs(list) do
-					if e.percent_factor and ee.percent then ee.percent = math.floor(ee.percent * e.percent_factor) end
-					if e.forbid then ee.forbid = table.append(ee.forbid or {}, e.forbid) end
-					if ee.name then if ee.minor then mevts[#mevts+1] = ee else evts[#evts+1] = ee end end
+--					print("[STARTEVENTS]\t\tAdding Group Event:", j, tostring(ee.name))
+					if ee.name then
+						if e.percent_factor and ee.percent then ee.percent = math.floor(ee.percent * e.percent_factor) end
+						if e.forbid then ee.forbid = table.append(ee.forbid or {}, e.forbid) end
+						if e.level_range then
+							if ee.level_range then
+								ee.level_range = {math.max(e.level_range[1] or 1, ee.level_range[1] or 1),
+									math.min(e.level_range[2] or math.huge, ee.level_range[2] or math.huge)}
+							else ee.level_range = e.level_range
+							end
+						end
+						if ee.minor then mevts[#mevts+1] = ee else evts[#evts+1] = ee end
+					end
 				end
 			end
 		end
 
+--table.set(game.zone, "debug", "evts", evts) -- debugging
+--table.set(game.zone, "debug", "mevts", mevts) -- debugging
+
 		-- Randomize the order they are checked as
+		print("[STARTEVENTS] Zone compiled events list: one_per_level=", game.zone.events.one_per_level)
 		table.shuffle(evts)
-		print("[STARTEVENTS] Zone events list:")
 		table.print(evts)
 		table.shuffle(mevts)
 		table.print(mevts)
 		for i, e in ipairs(evts) do
-			-- If we allow it, try to find a level to host it
-			if (e.always or rng.percent(e.percent) or (e.special and e.special() == true)) and (not e.unique or not self:doneEvent(e.name)) then
+			-- If allowed, find a level to host the (major) event
+			if (e.always or rng.percent(e.percent)) and (not e.unique or not self:doneEvent(e.name)) then
 				local lev = nil
 				local forbid = e.forbid or {}
 				forbid = table.reverse(forbid)
 				if game.zone.events_by_level then
 					lev = game.level.level
+					if forbid[lev] then lev = nil
+					elseif e.level_range and (lev < (e.level_range[1] or 1) or lev > (e.level_range[2] or game.zone.max_level)) then lev = nil end
 				else
-					if game.zone.events.one_per_level then
+					local start, stop = 1, game.zone.max_level
+					if e.level_range then start, stop = e.level_range[1] or start, e.level_range[2] or stop end
+					if game.zone.events.one_per_level then -- find a random level with no assigned event
 						local list = {}
-						for i = 1, #levels do if #levels[i] == 0 and not forbid[i] then list[#list+1] = i end end
+						for i = start, stop do
+							if #levels[i] == 0 and not forbid[i] and (not e.special or e.special(i)) then
+								list[#list+1] = i
+							end
+						end
 						if #list > 0 then
 							lev = rng.table(list)
 						end
-					else
-						if forbid then
-							local t = table.genrange(1, game.zone.max_level, true)
-							t = table.minus_keys(t, forbid)
-							lev = rng.table(table.keys(t))
-						else
-							lev = rng.range(1, game.zone.max_level)
-						end
+					else -- pick an allowed level at random to assign the event to
+						local t = table.genrange(start, stop, true)
+						if e.special then table.foreach(t, function(i, v) t[i] = e.special(i) and t[i] or nil end) end
+						t = table.minus_keys(t, forbid)
+						lev = rng.table(table.keys(t))
 					end
 				end
 
 				if lev then
 					lev = levels[lev]
 					lev[#lev+1] = e.name
+					self:doneEvent(e.name, 1)
 				end
 			end
 		end
@@ -2414,23 +2467,27 @@ function _M:startEvents()
 			forbid = table.reverse(forbid)
 
 			local start, stop = 1, game.zone.max_level
-			if game.zone.events_by_level then start, stop = game.level.level, game.level.level end
-			for lev = start, stop do
-				if rng.percent(e.percent) and not forbid[lev] then
-					local lev = levels[lev]
+			if game.zone.events_by_level then
+				start, stop = game.level.level, game.level.level
+			end
+			if e.level_range then
+				start, stop = math.max(start, e.level_range[1] or start), math.min(stop, e.level_range[2] or stop)
+			end
+			for lv = start, stop do
+				if (e.always or rng.percent(e.percent)) and not forbid[lv] and (not e.special or e.special(lv)) then
+					local lev = levels[lv]
 					lev[#lev+1] = e.name
-
-					if e.max_repeat then
+					if e.max_repeat then -- try to repeat the event with diminishing probability
 						local nb = 1
-						local p = e.percent
+						local p = e.percent or 100
 						while nb <= e.max_repeat do
-							if rng.percent(p) then
+							if e.always or rng.percent(p) and (not e.special or e.special(lv)) then
 								lev[#lev+1] = e.name
 								nb = nb + 1
+								p = p/2
 							else
 								break
 							end
-							p = p / 2
 						end
 					end
 				end
@@ -2438,8 +2495,10 @@ function _M:startEvents()
 		end
 
 		game.zone.assigned_events = levels
+--table.set(game.zone, "debug", "assigned_events", table.clone(levels, true))--debugging
 	end
 
+	-- return a wrapper function to load and run all assigned events files
 	return function()
 		print("[STARTEVENTS] Assigned events list:")
 		table.print(game.zone.assigned_events)
@@ -2986,4 +3045,116 @@ function _M:unlockTalentCheck(tid, who)
 		end
 	end
 	return false, self.unlocked_talents[tid]
+end
+
+function _M:startEventsOld()
+	if not game.zone.events then print("No zone events loaded") return end
+
+	if not game.zone.assigned_events then
+		local levels = {}
+		if game.zone.events_by_level then
+			levels[game.level.level] = {}
+		else
+			for i = 1, game.zone.max_level do levels[i] = {} end
+		end
+
+		-- Generate the events list for this zone, eventually loading from group files
+		local evts, mevts = {}, {}
+		for i, e in ipairs(game.zone.events) do
+			if e.name then if e.minor then mevts[#mevts+1] = e else evts[#evts+1] = e end
+			elseif e.group then
+				local f, err = loadfile(self:eventBaseName("groups/", e.group))
+				if not f then error(err) end
+				setfenv(f, setmetatable({level=game.level, zone=game.zone}, {__index=_G}))
+				local list = f()
+				for j, ee in ipairs(list) do
+					if e.percent_factor and ee.percent then ee.percent = math.floor(ee.percent * e.percent_factor) end
+					if e.forbid then ee.forbid = table.append(ee.forbid or {}, e.forbid) end
+					if ee.name then if ee.minor then mevts[#mevts+1] = ee else evts[#evts+1] = ee end end
+				end
+			end
+		end
+
+		-- Randomize the order they are checked as
+		table.shuffle(evts)
+		print("[STARTEVENTS] Zone events list:")
+		table.print(evts)
+		table.shuffle(mevts)
+		table.print(mevts)
+		for i, e in ipairs(evts) do
+			-- If we allow it, try to find a level to host it
+			if (e.always or rng.percent(e.percent) or (e.special and e.special() == true)) and (not e.unique or not self:doneEvent(e.name)) then
+				local lev = nil
+				local forbid = e.forbid or {}
+				forbid = table.reverse(forbid)
+				if game.zone.events_by_level then
+					lev = game.level.level
+				else
+					if game.zone.events.one_per_level then
+						local list = {}
+						for i = 1, #levels do if #levels[i] == 0 and not forbid[i] then list[#list+1] = i end end
+						if #list > 0 then
+							lev = rng.table(list)
+						end
+					else
+						if forbid then
+							local t = table.genrange(1, game.zone.max_level, true)
+							t = table.minus_keys(t, forbid)
+							lev = rng.table(table.keys(t))
+						else
+							lev = rng.range(1, game.zone.max_level)
+						end
+					end
+				end
+
+				if lev then
+					lev = levels[lev]
+					lev[#lev+1] = e.name
+				end
+			end
+		end
+		for i, e in ipairs(mevts) do
+			local forbid = e.forbid or {}
+			forbid = table.reverse(forbid)
+
+			local start, stop = 1, game.zone.max_level
+			if game.zone.events_by_level then start, stop = game.level.level, game.level.level end
+			for lev = start, stop do
+				if rng.percent(e.percent) and not forbid[lev] then
+					local lev = levels[lev]
+					lev[#lev+1] = e.name
+
+					if e.max_repeat then
+						local nb = 1
+						local p = e.percent
+						while nb <= e.max_repeat do
+							if rng.percent(p) then
+								lev[#lev+1] = e.name
+								nb = nb + 1
+							else
+								break
+							end
+							p = p / 2
+						end
+					end
+				end
+			end
+		end
+
+		game.zone.assigned_events = levels
+	end
+
+	return function()
+		print("[STARTEVENTS] Assigned events list:")
+		table.print(game.zone.assigned_events)
+
+		for i, e in ipairs(game.zone.assigned_events[game.level.level] or {}) do
+			local f, err = loadfile(self:eventBaseName("", e))
+			if not f then error(err) end
+			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e.name, Map=Map}, {__index=_G}))
+			f()
+		end
+		game.zone.assigned_events[game.level.level] = {}
+		if game.zone.events_by_level then game.zone.assigned_events = nil end
+	end
 end

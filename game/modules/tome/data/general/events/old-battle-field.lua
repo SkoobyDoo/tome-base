@@ -171,6 +171,7 @@ if tries < 100 then
 			return true
 		end
 
+		print("[EVENT] Placing grave for event", id, "at", p.x, p.y)
 		game.zone:addEntity(game.level, g, "terrain", p.x, p.y)
 		table.insert(graves, g)
 	end

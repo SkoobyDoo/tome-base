@@ -19,7 +19,7 @@
 
 return { one_per_level=true,
 	{group="majeyal-generic", percent_factor=0.5},
-	{name="cultists", percent=5},
+	{name="cultists", percent=5, level_range={5,nil}, unique=true},
 	{name="icy-ground", minor=true, percent=20},
 	{name="font-life", minor=true, percent=20},
 	{name="whistling-vortex", minor=true, percent=20},
@@ -31,4 +31,12 @@ return { one_per_level=true,
 	{name="protective-aura", minor=true, percent=20},
 	{name="spellblaze-scar", minor=true, percent=20},
 	{name="glowing-chest", minor=true, percent=30},
+
+	{name="rat-lich", percent=5, level_range={2,20}, unique=true},
+	{name="old-battle-field", percent=5, level_range={8,40}},
+	{name="damp-cave", percent=5, level_range={2,20}},
+	{name="drake-cave", percent=5, level_range={10,nil}},
+	{name="fearscape-portal", percent=5, level_range={18,nil}},
+	{name="naga-portal", percent=5, level_range={15,nil}},
+
 }

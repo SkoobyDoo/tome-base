@@ -23,7 +23,7 @@ if not x then return false end
 
 local id = "fearscape-invasion-"..game.turn
 
-print("Placing event", id, "at", x, y)
+print("[EVENT] Placing event", id, "at", x, y)
 
 local changer = function(id)
 	local npcs = mod.class.NPC:loadList{"/data/general/npcs/minor-demon.lua", "/data/general/npcs/major-demon.lua"}

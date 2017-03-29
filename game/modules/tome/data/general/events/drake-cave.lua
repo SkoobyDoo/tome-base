@@ -25,7 +25,7 @@ local kind = rng.table{"fire", "fire", "cold", "cold", "storm", "storm", "multih
 
 local id = kind.."-dragon-cave-"..game.turn
 
-print("Placing event", id, "at", x, y)
+print("[EVENT] Placing event", id, "at", x, y)
 
 local changer = function(id, kind)
 	local npcs = mod.class.NPC:loadList{"/data/general/npcs/"..kind.."-drake.lua"}
