@@ -1,5 +1,3 @@
-
-
 -- ToME - Tales of Maj'Eyal
 -- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
@@ -211,6 +209,8 @@ return {
 		vgrid = vgrids[vgridN]
 		print("[Infinite Dungeon] using zone layout #", layoutN, layout.id_layout_name) table.print(layout, "\t")
 		print("[Infinite Dungeon] using variable grid set #", vgridN, vgrid.id_grids_name) table.print(vgrid, "\t")
+
+		if layout.rooms and game:isAddonActive("items-vault") then table.insert(layout.rooms, {"!items-vault",3}) end
 		
 		data.generator.map = layout
 		
@@ -245,6 +245,7 @@ return {
 		data.generator.map.down = data.alternate_exit[1].grids.down -- exit matches destination
 		data.generator.map.door = vgrid.door
 		data.generator.map["'"] = vgrid.door
+		data.generator.map.I = "ITEMS_VAULT"
 
 		data.width, data.height = vx, vy
 		data.generator.map.width, data.generator.map.height = vx, vy

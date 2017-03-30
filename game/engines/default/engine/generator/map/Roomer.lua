@@ -191,7 +191,6 @@ function _M:generate(lev, old_lev)
 				break
 			end
 		end
-
 		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
 		if r then nb_room = nb_room -1 end
 		tries = tries - 1
