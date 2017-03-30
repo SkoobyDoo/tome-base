@@ -2000,8 +2000,8 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 				if instant then b:check("birth_create_alchemist_golem") end
 			elseif k == "soul" then
 				b.soul = util.bound(1 + math.ceil(data.level / 10), 1, 10) -- Does this need to scale?
-			else
-				b[k] = resolver -- Copy any misc attributes that we don't need to play with
+			elseif k == "no_npc_weapon_equip" then
+				b[k] = resolver
 			end
 		end
 		for k, resolver in pairs(mclass.copy or {}) do apply_resolvers(k, resolver) end
