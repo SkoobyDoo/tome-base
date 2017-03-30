@@ -81,12 +81,13 @@ function _M:generate(lev, old_lev)
 			sx, sy = e.sx, e.sy
 			ex, ey = e.x, e.y
 			if not (sx and sy) then -- vault connection point: connect to a (nearest) non-vault grid
+				print("[VaultLevel] generating level start point from vault connection at", ex, ey)
+				-- start at center of room and pick a random direction
 				sx, sy = math.floor(rx+(room.w-1)/2), math.floor(ry+(room.h-1)/2)
 				local dir, xd, yd = util.getDir(ex, ey, sx+rng.normal(0, 1), sy+rng.normal(0, 1))
 				if dir == 5 then dir = rng.table(util.primaryDirs()) end
 				local rm
-					
-				local steps = (self.map.w + self.map.h)/4
+				local steps = math.max(room.w, room.h) + 2*(room.border or 0) + 1
 				repeat
 					steps = steps - 1
 					rm = self.map.room_map[sx][sy]
