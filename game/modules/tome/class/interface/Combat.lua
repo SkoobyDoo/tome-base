@@ -1281,6 +1281,12 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + self:callTalent(self.T_ARMOUR_OF_SHADOWS,"ArmourBonus")
 	end
+	local light_armor = self:hasLightArmor()
+	if light_armor then
+		if self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
+			add = add + self:callTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE, "getArmour")
+		end
+	end
 	if self:knowTalent(self.T_CORRUPTED_SHELL) then
 		add = add + self:getCon() / 3.5
 	end
@@ -1297,9 +1303,6 @@ end
 function _M:combatArmorHardiness()
 	local add = 0
 	local multi = 1
-	if self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
-		add = add + self:callTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE, "getHardiness")
-	end
 	if self:hasHeavyArmor() and self:knowTalent(self.T_ARMOUR_TRAINING) then
 		local at = Talents:getTalentFromId(Talents.T_ARMOUR_TRAINING)
 		add = add + at.getArmorHardiness(self, at)
@@ -1315,6 +1318,9 @@ function _M:combatArmorHardiness()
 		end
 		if self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
 			add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getArmorHardiness")
+		end
+		if self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
+			add = add + self:callTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE, "getArmorHardiness")
 		end
 	end
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
