@@ -57,7 +57,7 @@ function _M:generate(lev, old_lev)
 		local rm
 		for i = 0, self.map.w - 1 do for j = 0, self.map.h - 1 do
 			rm = self.map.room_map[i][j]
-			if not rm.room then
+			if not (rm.room or rm.special or rm.can_open) then
 				local g
 				if self.level.data.subvaults_surroundings then g = self:resolve(self.level.data.subvaults_surroundings, nil, true)
 				else g = self:resolve("subvault_wall") end
