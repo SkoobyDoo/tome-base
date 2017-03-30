@@ -293,25 +293,7 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 
 	-- Don't copy certain fields from the target
 	alt_nodes = alt_nodes or {}
-	if target:getInven("INVEN") then alt_nodes[target:getInven("INVEN")] = false end -- Skip main inventory; equipped items are still copied
-	alt_nodes.quests = false
-	alt_nodes.random_escort_levels = false
-	alt_nodes.achievements = false
-	alt_nodes.achievement_data = false
-	alt_nodes.last_learnt_talents = false
-	alt_nodes.died = false
-	alt_nodes.died_times = false
-	alt_nodes.killedBy = false
-	alt_nodes.all_kills = false
-	alt_nodes.all_kills_kind = false
-	alt_nodes.running_fov = false
-	alt_nodes.running_prev = false
-	alt_nodes._mo = false
-	alt_nodes._last_mo = false
-	alt_nodes.add_mos = false
-	alt_nodes.add_displays = false
-	alt_nodes.fov = {actors={}, actors_dist={}}
-	alt_nodes.distance_map = {}
+--	if target:getInven("INVEN") then alt_nodes[target:getInven("INVEN")] = false end -- Skip main inventory; equipped items are still copied
 
 	-- Don't copy some additional fields for short-lived clones
 	if duration == 0 then
@@ -321,74 +303,36 @@ makeParadoxClone = function(self, target, duration, alt_nodes)
 		alt_nodes.talents_confirm_use = {}
 	end
 
-	-- Clone the target
-	local m = target:cloneCustom(alt_nodes)
+	-- force some values in the clone
+	local clone_copy = {name=""..target.name.."'s temporal clone",
+		desc = [[A creature from another timeline.]],
+		faction=target.faction, exp_worth=0,
+		life=util.bound(target.life, target.die_at, target.max_life),
+		summoner=target, summoner_gain_exp=true, summon_time=duration,
+		max_level=target.level,
+		ai_target={actor=table.NIL_MERGE}, ai="summoned",
+		ai_real="tactical", ai_tactic={escape=0}, -- Clones never flee because they're awesome
+	}
 	
-	-- Basic setup
-	m.no_drops = true
-	m.keep_inven_on_death = false
-	m.faction = target.faction
-	m.summoner = target
-	m.summoner_gain_exp = true
-	m.summon_time = duration
-	m.ai_target = {actor = nil}
-	m.ai = "summoned"
-	m.ai_real = "tactical"
-	m.name = "" .. target.name .. "'s temporal clone"
-	m.desc = [[A creature from another timeline.]]
-	
-	-- Remove some values
-	--m:removeAllMOs()
-	m.make_escort = nil
-	m.escort_quest = nil
-	m.on_added_to_level = nil
-	m.on_added = nil
-	m.game_ender = nil
+	-- Clone the target (Note: inventory access is disabled by default)
+	local m = target:cloneActor(clone_copy, alt_nodes)
 
 	mod.class.NPC.castAs(m)
 	engine.interface.ActorFOV.init(m)
 	engine.interface.ActorAI.init(m, m)
 
-	-- Change some values
-	m.exp_worth = 0
-	m.energy.value = 0
-	m.player = nil
-	m.max_life = m.max_life
-	m.life = util.bound(m.life, 0, m.max_life)
-	m.forceLevelup = function() end
-	m.on_die = nil
-	m.die = nil
-	m.puuid = nil
-	m.on_acquire_target = nil
-	m.no_inventory_access = true
-	m.no_levelup_access = true
-	m.on_takehit = nil
-	m.seen_by = nil
-	m.can_talk = nil
-	m.clone_on_hit = nil
-	m.unused_talents = 0
-	m.unused_generics = 0
-	m.unused_talents_types = 0
-	m.unused_prodigies = 0
-	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
-	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
-	
-	-- Clones never flee because they're awesome
-	m.ai_tactic = m.ai_tactic or {}
-	m.ai_tactic.escape = 0
-
-	-- Remove some talents
+	-- Remove some unallowed talents
 	local tids = {}
 	for tid, _ in pairs(m.talents) do
 		local t = m:getTalentFromId(tid)
-		if (t.no_npc_use and not t.allow_temporal_clones) or t.remove_on_clone then tids[#tids+1] = t end
+		if (t.no_npc_use or t.unlearn_on_clone) and not t.allow_temporal_clones then tids[#tids+1] = t end
 	end
 	for i, t in ipairs(tids) do
 		if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
 		m:unlearnTalentFull(t.id)
 	end
 
-	-- Remove timed effects
+	-- Remove some timed effects
 	m:removeTimedEffectsOnClone()
 	
 	-- Reset folds for Temporal Warden clones

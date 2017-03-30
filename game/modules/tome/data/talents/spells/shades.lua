@@ -177,6 +177,7 @@ newTalent{
 	range = 10,
 	tactical = { ATTACK = 2, },
 	requires_target = true,
+	unlearn_on_clone = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 4, 8.1)) end, -- Limit <30
 	getHealth = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 20, 500), 1.0, 0.2, 0, 0.58, 384) end,  -- Limit health < 100%
 	getDam = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 500), 1.40, 0.4, 0, 0.76, 361) end,  -- Limit damage < 140%
@@ -187,40 +188,24 @@ newTalent{
 			game.logPlayer(self, "Not enough space to summon!")
 			return
 		end
-
-		local m = require("mod.class.NPC").new(self:cloneFull{
+		local hfct = t.getHealth(self, t)
+		local m = require("mod.class.NPC").new(self:cloneActor{
 			shader = "shadow_simulacrum",
-			no_drops = true,
-			faction = self.faction,
-			summoner = self, summoner_gain_exp=true,
-			summon_time = t.getDuration(self, t),
-			ai_target = {actor=nil},
+			faction = self.faction, exp_worth = 0,
+			max_life = self.max_life*hfct, die_at = self.die_at*hfct,
+			life = util.bound(self.life*hfct, self.die_at*hfct, self.max_life*hfct),
+			max_level = self.level,
+			summoner = self, summoner_gain_exp=true, summon_time = t.getDuration(self, t),
+			
+			ai_target = {actor=table.NIL_MERGE},
 			ai = "summoned", ai_real = "tactical",
 			name = "Forgery of Haze ("..self.name..")",
-			desc = [[A dark shadowy shape whose form resembles yours.]],
+			desc = ([[A dark shadowy shape whose form resembles %s.]]):format(self.name),
 		})
-		m:removeAllMOs()
-		m.make_escort = nil
-		m.on_added_to_level = nil
 
-		m.energy.value = 0
-		m.player = nil
-		m.max_life = m.max_life * t.getHealth(self, t)
-		m.life = util.bound(m.life, 0, m.max_life)
-		m.forceLevelup = function() end
-		m.die = nil
-		m.on_die = nil
-		m.on_acquire_target = nil
-		m.seen_by = nil
-		m.can_talk = nil
-		m.puuid = nil
-		m.on_takehit = nil
-		m.exp_worth = 0
-		m.no_inventory_access = true
-		m.clone_on_hit = nil
-		m:unlearnTalentFull(m.T_CREATE_MINIONS)
-		m:unlearnTalentFull(m.T_FORGERY_OF_HAZE)
-		m.remove_from_party_on_death = true
+		m:removeTimedEffectsOnClone()
+		m:unlearnTalentsOnClone()
+
 		m.inc_damage.all = ((100 + (m.inc_damage.all or 0)) * t.getDam(self, t)) - 100
 
 		game.zone:addEntity(game.level, m, "actor", x, y)
