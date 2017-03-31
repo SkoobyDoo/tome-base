@@ -7636,25 +7636,42 @@ newEntity{ base = "BASE_WIZARD_HAT",
 	unique = true,
 	name = "Cloud Caller",
 	unided_name = "broad brimmed hat",
-	desc = [[This hat's broad brim protects you from harsh sunlight and sudden storms.]],
+	desc = [[This hat's broad brim protects you from biting colds and sudden storms.]],
 	color = colors.BLUE, image = "object/artifact/cloud_caller.png",
 	moddable_tile = "special/cloud_caller",
 	level_range = {1, 10},
 	rarity = 300,
 	cost = 30,
 	material_level = 1,
+	special_desc = function(self) return "A small storm cloud follows you, making all nearby enemies take 15 lightning damage each turn." end,
 	wielder = {
 		resists = { 
-			[DamageType.LIGHT] 	= 10,
+			[DamageType.COLD]	= 10,
 			[DamageType.LIGHTNING]	= 10,
 		},
 		inc_damage={
-			[DamageType.LIGHT] 	= 10,
+			[DamageType.COLD]	= 10,
 			[DamageType.LIGHTNING]	= 10,
 		},
 	},
 	max_power = 30, power_regen = 1,
-	use_talent = { id = Talents.T_CALL_LIGHTNING, level=1, power = 20 },
+	use_talent = { id = Talents.T_CALL_LIGHTNING, level=1, power = 15 },
+	on_takeoff = function(self, who)
+		self.worn_by=nil
+	end,
+	on_wear = function(self, who)
+		self.worn_by=who
+	end,
+	act = function(self)
+		self:regenPower()
+		self:useEnergy()
+		if not self.worn_by then return end
+		if game.level and not game.level:hasEntity(self.worn_by) and not self.worn_by.player then self.worn_by=nil return end
+		if self.worn_by:attr("dead") then return end
+		local who = self.worn_by
+		local blast = {type="ball", range=0, radius=3, friendlyfire=false}
+		who:project(blast, who.x, who.y, engine.DamageType.LIGHTNING, 15)
+	end,
 }
 
 newEntity{ base = "BASE_TOOL_MISC",
