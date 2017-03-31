@@ -81,12 +81,12 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y or not target then return nil end
 		if core.fov.distance(self.x, self.y, x, y) > 5 then return nil end
-		target:setEffect(target.EFF_MARK_OF_LIGHT, 5, {src=self, power=t.getPower(self, t)})
+		target:setEffect(target.EFF_MARK_OF_LIGHT, 3, {src=self, power=t.getPower(self, t)})
 		
 		return true
 	end,
 	info = function(self, t)
-		return ([[You mark a target with light for 5 turns, causing all melee hits you deal to it to heal you for %d%% of the damage done.]]):
+		return ([[You mark a target with light for 3 turns, causing all melee hits you deal to it to heal you for %d%% of the damage done.]]):
 		format(t.getPower(self, t))
 	end,
 }
@@ -135,7 +135,7 @@ newTalent{
 	require = divi_req_high4,
 	random_ego = "attack",
 	points = 5,
-	cooldown = 9,
+	cooldown = 12,
 	positive = 15,
 	tactical = { ATTACKAREA = {LIGHT = 2} },
 	range = 0,

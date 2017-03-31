@@ -150,7 +150,7 @@ local reward_types = {
 				["psionic/feedback"] = 0.8,
 			},
 			talents = {
-				[Talents.T_BIOFEEDBACK] = 1,
+				[Talents.T_RESONANCE_FIELD] = 1,
 				[Talents.T_CONVERSION] = 1,
 			},
 			saves = { spell = 4, mental = 4 },
