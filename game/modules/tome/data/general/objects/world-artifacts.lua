@@ -4033,10 +4033,18 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 	rarity = 200,
 	cost = 100,
 	material_level = 4,
+	callbackOnTeleport = function(self, who, teleported, ox, oy, x, y) game.level.map:particleEmitter(who.x, who.y, 2, "generic_sploom", {rm=150, rM=180, gm=20, gM=60, bm=180, bM=200, am=80, aM=150, radius=2, basenb=120})
+	local damage =  who:combatStatScale("mag", 50, 250) -- Generous because scaling Arcane is hard and its not exactly easy to proc this .. I think
+	who:project({type="ball", range=0, radius=3, friendlyfire=false}, who.x, who.y, engine.DamageType.ARCANE, who:spellCrit(damage))
+	end,
+	special_desc = function(self, who) return ("Creates an arcane explosion dealing %d arcane damage based on magic in a radius of 3 around the user after any teleport."):format(who:combatStatScale("mag", 50, 250)) end,
 	wielder = {
 		combat_def = 6,
 		fatigue = 1,
 		combat_spellpower=5,
+		resist_all_on_teleport = 20,
+		defense_on_teleport = 20,
+		effect_reduction_on_teleport = 20,
 		inc_stats = { [Stats.STAT_MAG] = 8, [Stats.STAT_CUN] = 8,},
 		resists={
 			[DamageType.ARCANE] = 12,
@@ -5521,7 +5529,10 @@ newEntity{ base = "BASE_LONGSWORD",
 		apr = 10,
 		physcrit = 18,
 		dammod = {str=1},
-		convert_damage={[DamageType.FIRE] = 50,},
+		damtype = DamageType.FIRE,
+		talent_on_hit = {
+				[Talents.T_FIRE_BREATH] = {level=4, chance=20},
+		},
 	},
 	wielder = {
 		resists = {
@@ -5532,12 +5543,10 @@ newEntity{ base = "BASE_LONGSWORD",
 			[DamageType.FIRE] = 20,
 		},
 		resists_pen = {
-			[DamageType.FIRE] = 15,
+			[DamageType.FIRE] = 15,	
 		},
 		inc_stats = { [Stats.STAT_STR] = 7, [Stats.STAT_WIL] = 7 },
 	},
-	max_power = 25, power_regen = 1,
-	use_talent = { id = Talents.T_FIRE_BREATH, level = 2, power = 25 },
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -6058,16 +6067,16 @@ newEntity{ base = "BASE_LONGSWORD",
 		dam = 33,
 		apr = 4,
 		physcrit = 10,
+		damtype = DamageType.ACID,
 		dammod = {str=1},
 		burst_on_crit = {
 			[DamageType.ACID_CORRODE] = 40,
 		},
-		melee_project={[DamageType.ACID] = 12},
 	},
 	wielder = {
-		inc_damage={ [DamageType.ACID] = 15,},
+		inc_damage={ [DamageType.ACID] = 20,},
 		resists={[DamageType.ACID] = 15,},
-		resists_pen={[DamageType.PHYSICAL] = 10,}, --Burns right through your pathetic physical resists
+		resists_pen={[DamageType.ACID] = 20,}, --Burns right through your pathetic ACID resists
 		combat_physcrit = 10,
 		combat_spellcrit = 10,
 	},
