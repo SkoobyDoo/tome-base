@@ -80,7 +80,7 @@ function _M:loadup(level, zone)
 	-- Increment material level every 10 levels
 	if self.store.player_material_level then
 		zone.min_material_level = 1
-		zone.min_material_level = math.floor(game.player.level / 10)
+		zone.max_material_level = math.floor(game.player.level / 10)
 	end
 	if Store.loadup(self, level, zone, self.store.nb_fill) then
 		self.last_filled = game.state.stores_restock
