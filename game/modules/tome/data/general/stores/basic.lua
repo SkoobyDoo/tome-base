@@ -24,6 +24,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="armor", subtype="heavy", id=true, tome_drops="store"},
 			{type="armor", subtype="massive", id=true, tome_drops="store"},
@@ -40,6 +41,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="armor", subtype="light", id=true, tome_drops="store"},
 			{type="armor", subtype="hands", id=true, tome_drops="store"},
@@ -56,6 +58,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="armor", subtype="cloth", id=true, tome_drops="store"},
 			{type="armor", subtype="robe", id=true, tome_drops="store"},
@@ -72,6 +75,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="greatsword", id=true, tome_drops="store"},
 			{type="weapon", subtype="longsword", id=true, tome_drops="store"},
@@ -86,6 +90,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="waraxe", id=true, tome_drops="store"},
 			{type="weapon", subtype="battleaxe", id=true, tome_drops="store"},
@@ -100,6 +105,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="mindstar", id=true, tome_drops="store"},
 			{type="charm", subtype="torque", id=true, tome_drops="store"},
@@ -115,6 +121,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="greatmaul", id=true, tome_drops="store"},
 			{type="weapon", subtype="mace", id=true, tome_drops="store"},
@@ -129,6 +136,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{special=function(o) return o.type == "weapon" and o.twohanded end, id=true, tome_drops="store"},
 		},
@@ -155,6 +163,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="longbow", id=true, tome_drops="store"},
 			{type="weapon", subtype="sling", id=true, tome_drops="store"},
@@ -170,6 +179,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = function()
 			return {type="weapon", subtype="dagger", id=true, tome_drops="store"}
 		end,
@@ -182,6 +192,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = function()
 			return {type="weapon", subtype="staff", id=true, tome_drops="store"}
 		end,
@@ -195,6 +206,7 @@ newEntity{
 	store = {
 		purse = 10,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="scroll", subtype="infusion", id=true},
 		},
@@ -208,6 +220,7 @@ newEntity{
 	store = {
 		purse = 10,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="scroll", subtype="rune", id=true},
 		},
@@ -221,6 +234,7 @@ newEntity{
 	store = {
 		purse = 30,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="gem", id=true},
 		},
@@ -234,6 +248,7 @@ newEntity{
 	store = {
 		purse = 10,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="lite", id=true, tome_drops="store"},
 			{type="tool", subtype="digger", id=true, tome_drops="store"},
@@ -252,6 +267,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = function()
 			return rng.table{
 				{type="weapon", subtype="staff", id=true, tome_drops="store"},
@@ -270,6 +286,7 @@ newEntity{
 	store = {
 		purse = 20,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="jewelry", id=true},
 		},
@@ -312,6 +329,7 @@ newEntity{
 		nb_fill = 20,
 		purse = 35,
 		empty_before_restock = false,
+		player_material_tier = true,
 		sell_percent = 240,
 		filters = function()
 			return {id=true, ignore={type="money"}, add_levels=10, force_tome_drops=true, tome_drops="boss", tome_mod={money=0, basic=0}, special=function(o) return o.type ~= "scroll" end}
@@ -368,6 +386,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
                 filters = {
                         {type="armor", subtype="heavy", id=true, tome_drops="store"},
                         {type="armor", subtype="massive", id=true, tome_drops="store"},
@@ -387,6 +406,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
                 filters = {
                         {type="armor", subtype="light", id=true, tome_drops="store"},
                         {type="armor", subtype="hands", id=true, tome_drops="store"},
@@ -407,6 +427,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="greatsword", id=true, tome_drops="store"},
 			{type="weapon", subtype="longsword", id=true, tome_drops="store"},
@@ -425,6 +446,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="waraxe", id=true, tome_drops="store"},
 			{type="weapon", subtype="battleaxe", id=true, tome_drops="store"},
@@ -443,6 +465,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="greatmaul", id=true, tome_drops="store"},
 			{type="weapon", subtype="mace", id=true, tome_drops="store"},
@@ -461,6 +484,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = function()
 			return {type="weapon", subtype="dagger", id=true, tome_drops="store"}
 		end,
@@ -478,6 +502,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		player_material_tier = true,
 		filters = {
 			{type="weapon", subtype="sling", id=true, tome_drops="store"},
 			{type="weapon", subtype="longbow", id=true, tome_drops="store"},
@@ -519,6 +544,7 @@ newEntity{
 -------------------------------------------------------------
 -- Arena
 -------------------------------------------------------------
+-- Should this use player_material_tier?
 newEntity{
 	define_as = "ARENA_SHOP",
 	name = "gladiator's wares",

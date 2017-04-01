@@ -3343,6 +3343,10 @@ function _M:levelup()
 	engine.interface.ActorLevel.levelup(self)
 	self:resolveLevelTalents()
 
+	-- Update shops and material tiers every 10 levels 
+	if self == game.player and self.level % 10 == 0 then
+		game.state:storesRestock()
+	end
 	if not self.no_points_on_levelup then
 		self.unused_stats = self.unused_stats + (self.stats_per_level or 3) + self:getRankStatAdjust()
 		self.unused_talents = self.unused_talents + 1
