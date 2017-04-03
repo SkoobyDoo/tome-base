@@ -197,6 +197,7 @@ newEntity{ base = "BASE_RING",
 	cost = 500,
 	material_level = 4,
 	special_desc = function(self) return "Will bring you back from death, but only once!" end,
+	special = true,
 	wielder = {
 		inc_stats = { [Stats.STAT_LCK] = 10, },
 		die_at = -100,
