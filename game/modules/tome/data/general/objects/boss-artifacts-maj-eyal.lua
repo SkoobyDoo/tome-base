@@ -338,17 +338,29 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	unided_name = "ice-covered boots",
 	name = "Frost Treads", unique=true, image="object/artifact/frost_treads.png",
 	desc = [[A pair of leather boots. Cold to the touch, they radiate a cold blue light.]],
-	require = { stat = { dex=16 }, },
 	level_range = {10, 18},
 	material_level = 2,
 	rarity = 220,
 	cost = 40,
-
+	special_desc = function(self) return "Each step taken casts a ground frost effect in a radius of 1 around you for 5 turns, giving you a 20% cold damage bonus for 3 turns. Additionally, any enemy standing in the frost has a 20% chance of talent failure for 3 turns." end,
+	callbackOnMove = function(self, who, moved, force, ox, oy, x, y)
+			if not moved or force or (ox == who.x and oy == who.y) then return end
+			local Talents = require "engine.interface.ActorTalents"
+			game.level.map:addEffect(who,
+				who.x, who.y, 5,
+				engine.DamageType.ITEM_FROST_TREADS, {},
+				1,
+				5, nil,
+				engine.MapEffect.new{zdepth=3, color_br=245, color_bg=245, color_bb=245, effect_shader="shader_images/ice_effect.png"},
+				nil, true
+			)
+	end,
 	wielder = {
 		lite = 1,
 		combat_armor = 4,
 		combat_def = 1,
 		fatigue = 7,
+		movement_speed = 0.1,
 		inc_damage = {
 			[DamageType.COLD] = 15,
 		},
@@ -356,7 +368,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 			[DamageType.COLD] = 20,
 			[DamageType.NATURE] = 10,
 		},
-		inc_stats = { [Stats.STAT_STR] = 4, [Stats.STAT_DEX] = 4, [Stats.STAT_CUN] = 4, },
+		inc_stats = { [Stats.STAT_STR] = 4, [Stats.STAT_WIL] = 4, [Stats.STAT_CUN] = 4, },
 	},
 }
 
