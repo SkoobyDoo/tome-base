@@ -6421,18 +6421,12 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 	p.getName = e.getName
 	p.resolveSource = e.resolveSource
 
-game.log("__%s #PINK#OSTE new effect: %s[%s](%d)", self.name, p.getName(self), eff_id, p.dur) -- debugging
-	local old = self.tmp[eff_id]
-if old then -- debugging
-	game.log("__%s #YELLOW_GREEN#OSTE old effect: %s[%s](%d)", self.name, old.getName(self), eff_id, old.dur)
-end -- debugging
 	local olddur = old and not e.on_merge and old.dur or 0 -- let mergable effects handle their own duration
 	-- Adjust duration based on saves
 	if p.apply_power and (save_for_effects[e.type] or p.apply_save) then
 		p.maximum = p.dur
 		p.minimum = p.min_dur or 0 --Default minimum duration is 0. Can specify something else by putting min_dur=foo in p when calling setEffect()
 		local save = self[p.apply_save or save_for_effects[e.type]](self)
---		local saved, savechance = self:checkHit(save, p.apply_power, 0, 95)
 		local saved, savechance = self:checkHitOld(save, p.apply_power) -- get save and save chance
 		-- failed save tuning parameters: increase mean_fact to increase avg duration, std_dev for more randomness
 		local mean_fact, std_dev = 1.1, 50
@@ -6443,8 +6437,7 @@ end -- debugging
 		local fraction = desired % 1
 		desired = math.floor(desired) + (rng.percent(100*fraction) and 1 or 0)
 		local duration = math.min(p.maximum, desired)
-		print(("[on_set_temporary_effect] %s Save %d vs Power %d (%d%% save: %s) :: dur mult: %0.3f(%d) :: dur %s ==> %d"):format(self.name, save, p.apply_power, savechance, saved, percentage, mean_pct, p.dur, duration))
-game.log("__%s #GREY# Save %d vs Power %d (%d%%, %s) ==> percentage: %0.3f(%d) :: dur %s ==> %d", self.name, save, p.apply_power, savechance, saved, percentage, mean_pct, p.dur, duration)--debugging
+		print(("[on_set_temporary_effect] %s Save %d vs Power %d (%d%% save: %s) :: dur mult: %0.3f(%d%%) :: dur %s ==> %d"):format(self.name, save, p.apply_power, savechance, saved, percentage, mean_pct, p.dur, duration))
 		p.dur = util.bound(duration, p.minimum or 0, p.maximum)
 		p.amount_decreased = p.maximum - p.dur
 		local save_type = nil
@@ -6525,7 +6518,6 @@ game.log("__%s #GREY# Save %d vs Power %d (%d%%, %s) ==> percentage: %0.3f(%d) :
 		p.__set_time = core.game.getTime()
 	end
 	
-game.log("__%s #AQUAMARINE#OSTE Modified new effect: %s[%s](%d, old %d, merge: %s)", self.name, p.getName(self), eff_id, p.dur, olddur, e.on_merge) -- debugging
 	if p.dur <= 0 then return true end
 	p.dur = math.max(p.dur, olddur) -- don't shorten the existing duration because of a new application (on_merge may change it)
 end
