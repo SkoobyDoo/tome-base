@@ -341,7 +341,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	level_range = {10, 18},
 	material_level = 2,
 	rarity = 220,
-	cost = 250,
+	cost = 200,
 	special_desc = function(self) return "Each step taken casts a ground frost effect in a radius of 1 around you for 5 turns, giving you a 20% cold damage bonus for 3 turns. Additionally, any enemy standing in the frost has a 20% chance of talent failure for 3 turns." end,
 	callbackOnMove = function(self, who, moved, force, ox, oy, x, y)
 			if not moved or force or (ox == who.x and oy == who.y) then return end
