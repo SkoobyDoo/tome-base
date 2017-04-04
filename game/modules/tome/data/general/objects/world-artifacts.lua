@@ -5532,7 +5532,7 @@ newEntity{ base = "BASE_LONGSWORD",
 		dammod = {str=1},
 		damtype = DamageType.FIRE,
 		talent_on_hit = {
-				[Talents.T_FIRE_BREATH] = {level=4, chance=20},
+				[Talents.T_FIRE_BREATH] = {level=4, chance=15},
 		},
 	},
 	wielder = {
