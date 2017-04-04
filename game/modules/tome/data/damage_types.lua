@@ -4056,3 +4056,18 @@ newDamageType{
 		end
 	end,
 }
+
+newDamageType{
+	name = "frozen earth", type = "ITEM_FROST_TREADS",
+	projector = function(src, x, y, type, dam, state)
+		state = initState(state)
+		useImplicitCrit(src, state)
+		local target = game.level.map(x, y, Map.ACTOR)
+		if target and src:reactionToward(target) < 0  then
+			target:setEffect(target.EFF_SLIPPERY_GROUND, 2, { fail=20}, true)
+		end
+		if target and target == src then
+			target:setEffect(target.EFF_FROZEN_GROUND, 2, { }, true)
+		end
+	end,
+}
