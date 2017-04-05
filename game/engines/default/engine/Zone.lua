@@ -1076,18 +1076,6 @@ function _M:newLevel(level_data, lev, old_lev, game)
 		end
 	end
 
-	if not self.__frelltest then
-	forceprint("-------------------------------------------------")
-	forceprint("-------------------------------------------------")
-	forceprint("-------------------------------------------------")
-	forceprint("REGEN")
-	forceprint("-------------------------------------------------")
-	forceprint("-------------------------------------------------")
-	forceprint("-------------------------------------------------")
-	self.__frelltest = true
-	return self:newLevel(level_data, lev, old_lev, game)
-end
-
 	-- Check for connectivity from entrance to exit
 	local a = Astar.new(map, game:getPlayer())
 	if not level_data.no_level_connectivity then
