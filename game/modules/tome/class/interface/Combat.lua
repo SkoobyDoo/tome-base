@@ -790,7 +790,7 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if dam > 0 and self:attr("damage_backfire") then
 		local hurt = math.min(dam, old_target_life) * self.damage_backfire / 100
 		if hurt > 0 then
-			self:takeHit(hurt, self)
+			self:takeHit(hurt, self, {cant_die=true})
 		end
 	end
 
