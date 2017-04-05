@@ -5845,7 +5845,12 @@ function _M:startTalentCooldown(t, v)
 		self.talents_cd[t.id] = math.max(v, self.talents_cd[t.id] or 0)
 	else
 		if not t.cooldown then return end
-		self.talents_cd[t.id] = self:getTalentCooldown(t)
+		local cd = self:getTalentCooldown(t)
+
+		local hd = {"Actor:startTalentCooldown", t=t, cd=cd}
+		if self:triggerHook(hd) then cd = hd.cd end
+
+		self.talents_cd[t.id] = cd
 
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
