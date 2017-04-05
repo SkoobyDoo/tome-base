@@ -2837,7 +2837,6 @@ function _M:takeHit(value, src, death_note)
 		end
 	end
 
-
 	local dead, val = mod.class.interface.ActorLife.takeHit(self, value, src, death_note)
 
 	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
