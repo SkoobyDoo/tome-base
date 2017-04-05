@@ -358,8 +358,6 @@ return {
 			level.data.effects = {effid}
 		end
 
-		game.state:infiniteDungeonChallengeFinish(zone, level)
-		
 		if config.settings.cheat then -- gather statistics
 			local block_count = 0
 			for i = 0, level.map.w - 1 do for j = 0, level.map.h - 1 do
@@ -368,6 +366,11 @@ return {
 			local closed = 100*block_count/(level.map.w*level.map.h) local open = 100-closed
 			print(("[Infinite Dungeon] Open space calculation: (%s, %s, %dw x %dh) space -- (open:%2.1f%%, closed:%2.1f%%)"):format(level.data.id_layout_name, level.data.id_grids_name, level.map.w, level.map.h, open, closed))
 		end
+	end,
+	post_process_end = function(level, zone)
+		-- We delay it because at "post_process" the map can STILL decide to regenerate
+		-- and if it does, it's a new level and challenge is considered auto failed (or auto success heh)
+		game.state:infiniteDungeonChallengeFinish(zone, level)
 	end,
 }
 
