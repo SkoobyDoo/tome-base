@@ -80,11 +80,6 @@ end
 
 local RoomsLoader = require("engine.generator.map.RoomsLoader")
 
-local locations = {} -- store teleport locations
-local get_locations = function()
-	return locations
-end
-
 -- This uses the 'CHANGE_LEVEL' interface, but can be made to use another command
 -- NOT usable by npc's (would require some ai tweaks)
 local trigger = function(self, who)
@@ -108,14 +103,6 @@ local trigger = function(self, who)
 					who:move(tx, ty, true)					
 				end end, "Teleport", "Cancel")
 			end
-		-- else
-		-- 	if not tx then
-		-- 		game.logSeen(who, "#YELLOW#The Portal repels %s briefly as %s approaches it.", who.name:capitalize(), who:he_she())
-		-- 	else
-		-- 		who:logCombat(nil, "#YELLOW#The Portal #LIGHT_BLUE#VIOLENTLY DISTORTS#LAST# before #source# emerges from it.")
-		-- 		game:playSoundNear(who, "talents/distortion")
-		-- 		who:move(tx, ty, true)
-		-- 	end
 		end
 	else
 		game.logPlayer(who, "#YELLOW#Nothing happens when you use the Portal.")
@@ -141,7 +128,6 @@ end
 TeleportIn = mod.class.Grid.new{
 	define_as = "VAULT_TELEPORTER_IN",
 	__position_aware = true,
-	_no_upvalues_check = true,
 	type = "floor", subtype = "floor",
 	name = "Portal", image = "terrain/marble_floor.png", add_displays={mod.class.Grid.new{z=5, image = "terrain/demon_portal.png"}},
 	desc = "A strange portal to some place else.",
@@ -150,9 +136,7 @@ TeleportIn = mod.class.Grid.new{
 	on_move = move_trigger,
 	on_stand = stand_trigger,
 	change_level_check = trigger,
-	get_locations = get_locations,
 	block_move = function(self, x, y) -- makes Map:updateMap update coordinates
-		self._locations = self.get_locations()
 		table.merge(self._locations, {outx=x, outy=y})
 		if self._locations.inx and self._locations.iny and self._locations.outx and self._locations.outy then self.block_move = nil end
 		return false
@@ -162,7 +146,6 @@ TeleportIn = mod.class.Grid.new{
 TeleportOut = mod.class.Grid.new{
 	define_as = "VAULT_TELEPORTER_OUT",
 	__position_aware = true,
-	_no_upvalues_check = true,
 	type = "floor", subtype = "floor",
 	name = "Portal", image = "terrain/marble_floor.png", add_displays={mod.class.Grid.new{z=5, image = "terrain/demon_portal4.png"}},
 	desc = "A portal out of this place.",
@@ -171,14 +154,16 @@ TeleportOut = mod.class.Grid.new{
 	on_move = move_trigger,
 	on_stand = stand_trigger,
 	change_level_check = trigger,
-	get_locations = get_locations,
 	block_move = function(self, x, y) -- makes Map:updateMap update coordinates
-			self._locations = self.get_locations()
 			table.merge(self._locations, {inx=x, iny=y})
 		if self._locations.inx and self._locations.iny and self._locations.outx and self._locations.outy then self.block_move = nil end
 		return false
 	end,
 }
+
+local locations = {}
+TeleportIn._locations = locations
+TeleportOut._locations = locations
 
 -- linked portal room
 local portal_def = {name = "portal_room",
