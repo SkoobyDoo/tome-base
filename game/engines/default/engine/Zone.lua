@@ -1076,6 +1076,18 @@ function _M:newLevel(level_data, lev, old_lev, game)
 		end
 	end
 
+	if not self.__frelltest then
+	forceprint("-------------------------------------------------")
+	forceprint("-------------------------------------------------")
+	forceprint("-------------------------------------------------")
+	forceprint("REGEN")
+	forceprint("-------------------------------------------------")
+	forceprint("-------------------------------------------------")
+	forceprint("-------------------------------------------------")
+	self.__frelltest = true
+	return self:newLevel(level_data, lev, old_lev, game)
+end
+
 	-- Check for connectivity from entrance to exit
 	local a = Astar.new(map, game:getPlayer())
 	if not level_data.no_level_connectivity then
@@ -1106,6 +1118,9 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	end
 	-- Delete the room_map if it's no longer needed
 	if not self._retain_level_room_map then map.room_map = nil end
+
+	-- Call a "post" finisher
+	if level_data.post_process_end then level_data.post_process_end(level, self) end
 
 	return level
 end
