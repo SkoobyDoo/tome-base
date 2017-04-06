@@ -23,7 +23,7 @@ local UserChat = require "profile-thread.UserChat"
 
 module(..., package.seeall, class.make)
 
-local debug = true
+local debug = false
 
 local metaport = 2240
 local profilehost = "profiles.te4.org"
