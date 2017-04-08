@@ -197,16 +197,9 @@ newTalent{
 			if not self.turn_procs.infestation then
 				self.turn_procs.infestation = true
 				
-				local nb = 0
-
-				local grids = {}
-				self:project({type="ball", range=0, radius=2, talent=t}, self.x, self.y, function(px, py)
-					if not ((px == x and py == y) or game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move") or game.level.map(px, py, Map.TRAP)) then grids[#grids+1] = {x=px, y=py} end
-				end)
-		
-				local g = rng.tableRemove(grids)
-				if g then 
-					carrionworm(self, self, 5, g.x, g.y)
+				local gx, gy = util.findFreeGrid(self.x, self.y, 2, true, {[Map.ACTOR]=true})
+				if gx and gy then 
+					carrionworm(self, self, 5, gx, gy)
 				end
 			end
 			return cb.value
