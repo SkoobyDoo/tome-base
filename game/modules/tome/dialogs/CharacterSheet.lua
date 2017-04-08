@@ -913,7 +913,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 			end
 			h = h + self.font_h
 
--- Display old damage with previously unscaled stats
+-- DGDGDGDG Display old damage with previously unscaled stats
 if config.settings.cheat then
 
 	--- Previous combatDamage function with unscaled stat bonuses
@@ -969,7 +969,7 @@ if config.settings.cheat then
 	player.combatDamage = p_old_combatDamage
 	if actor_to_compare then actor_to_compare.combatDamage = atc_old_combatDamage end
 end
--- end old damage display
+-- DGDGDGDG end old damage display
 
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.apr or combat.apr end, "%3d", "%+.0f", 1, false, false, dam)
 			self:mouseTooltip(self.TOOLTIP_COMBAT_APR,    s:drawColorStringBlended(self.font, ("APR          : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
