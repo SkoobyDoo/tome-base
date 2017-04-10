@@ -1857,8 +1857,6 @@ do return end
 			print(f, err)
 			setfenv(f, setmetatable({level=self.level, zone=self.zone}, {__index=_G}))
 			print(pcall(f))
-do return end
-			self:registerDialog(require("mod.dialogs.DownloadCharball").new())
 		end end,
 		[{"_f","ctrl"}] = function() if config.settings.cheat then
 			self.player.quests["love-melinda"] = nil

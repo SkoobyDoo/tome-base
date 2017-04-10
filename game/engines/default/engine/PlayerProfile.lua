@@ -79,6 +79,7 @@ function _M:init()
 	self.generic = {}
 	self.modules = {}
 	self.evt_cbs = {}
+	self.data_log = {log={}}
 	self.stats_fields = {}
 	local checkstats = function(self, field) return self.stats_fields[field] end
 	self.config_settings =
@@ -236,6 +237,7 @@ function _M:loadModuleProfile(short_name, mod_def)
 	-- Delay when we are currently saving
 	if savefile_pipe and savefile_pipe.saving then savefile_pipe:pushGeneric("loadModuleProfile", function() self:loadModuleProfile(short_name) end) return end
 
+	local def = mod_def.profile_defs or {}
 	local function load(online)
 		local pop = self:mountProfile(online, short_name)
 		local d = "/current-profile/modules/"..short_name.."/"
@@ -251,6 +253,12 @@ function _M:loadModuleProfile(short_name, mod_def)
 					else
 						self.modules[short_name][field] = self.modules[short_name][field] or {}
 						self:loadData(f, self.modules[short_name][field])
+						if def[field].incr_only then
+							if not self.modules[short_name][field].incr_only then
+								print("[PROFILE] Old non incremental data for "..field..": discarding")
+								self.modules[short_name][field] = {}
+							end
+						end
 					end
 				end
 			end
@@ -319,6 +327,7 @@ function _M:saveModuleProfile(name, data, nosync, nowrite)
 	if module == "boot" then return end
 	core.game.resetLocale()
 	if not game or not game.__mod_info.profile_defs then return end
+	if game.__mod_info.profile_defs[name].incr_only then print("[PROFILE] data in incr only mode but called with saveModuleProfile", name) return end
 
 	-- Delay when we are currently saving
 	if savefile_pipe and savefile_pipe.saving then savefile_pipe:pushGeneric("saveModuleProfile", function() self:saveModuleProfile(name, data, nosync) end) return end
@@ -362,6 +371,49 @@ function _M:saveModuleProfile(name, data, nosync, nowrite)
 	end
 
 	if not nosync and not game.__mod_info.profile_defs[name].no_sync then self:setConfigs(module, name, data) end
+end
+
+--- Loads the incremental log data
+function _M:incrLoadProfile(mod_def)
+	if not mod_def or not mod_def.short_name then return end
+	local pop = self:mountProfile(true)
+	local file = "/current-profile/modules/"..mod_def.short_name.."/incr.log"
+	if fs.exists(file) then
+		local f, err = loadfile(file)
+		if not f and err then
+			print("Error loading incr log", file, err)
+		else
+			self:loadData(f, self.data_log)
+		end
+	end
+	self:umountProfile(true, pop)
+end
+
+--- Saves a incr profile data
+function _M:incrDataProfile(name, data)
+	if module == "boot" then return end
+	core.game.resetLocale()
+	if not game or not game.__mod_info.profile_defs then return end
+	if not game.__mod_info.profile_defs[name].incr_only then print("[PROFILE] data in non-incr only mode but called with incrDataProfile", name) return end
+
+	-- Delay when we are currently saving
+	if savefile_pipe and savefile_pipe.saving then savefile_pipe:pushGeneric("incrDataProfile", function() self:incrDataProfile(name, data) end) return end
+
+	local module = self.mod_name
+
+	-- Check for readability
+	local dataenv = self.data_log.log
+	dataenv[#dataenv+1] = {module=game.__mod_info.short_name, kind=name, data=data}
+
+	local pop = self:mountProfile(true, module)
+	local f = fs.open("/modules/"..module.."/incr.log", "w")
+	if f then
+		f:write(serialize(self.data_log))
+		f:close()
+	end
+	self:umountProfile(true, pop)
+
+	self:syncIncrData()
 end
 
 function _M:checkFirstRun()
@@ -503,6 +555,16 @@ function _M:eventGetNews(e)
 	end
 end
 
+function _M:eventIncrLogConsume(e)
+	local module = game.__mod_info.short_name
+	if not module then return end
+	print("[PROFILE] Server accepted our incr log, deleting")
+	local pop = self:mountProfile(true, module)
+	fs.delete("/modules/"..module.."/incr.log")
+	self:umountProfile(true, pop)
+	self.data_log.log = {}
+end
+
 function _M:eventGetConfigs(e)
 	local data = zlib.decompress(e.data):unserialize()
 	local module = e.module
@@ -607,14 +669,14 @@ function _M:getConfigs(module, cb, mod_def)
 	if not self.auth then return end
 	self.evt_cbs.GetConfigs = cb
 	if module == "generic" then
-		for k, _ in pairs(generic_profile_defs) do
-			if not _.no_sync then
+		for k, def in pairs(generic_profile_defs) do
+			if not def.no_sync then
 				core.profile.pushOrder(table.serialize{o="GetConfigs", module=module, kind=k})
 			end
 		end
 	else
-		for k, _ in pairs((mod_def or game.__mod_info).profile_defs or {}) do
-			if not _.no_sync then
+		for k, def in pairs((mod_def or game.__mod_info).profile_defs or {}) do
+			if not def.no_sync and not def.incr_only then
 				core.profile.pushOrder(table.serialize{o="GetConfigs", module=module, kind=k})
 			end
 		end
@@ -623,6 +685,15 @@ end
 
 function _M:setConfigsBatch(v)
 	core.profile.pushOrder(table.serialize{o="SetConfigsBatch", v=v and true or false})
+end
+
+function _M:syncIncrData()
+	self:waitFirstAuth()
+	if not self.auth then return end
+	local module = game and game.__mod_info.short_name
+	if not module then return end
+	
+	core.profile.pushOrder(table.serialize{o="SendIncrLog", data=zlib.compress(table.serialize(self.data_log.log))})
 end
 
 function _M:setConfigs(module, name, data)
@@ -660,7 +731,7 @@ function _M:syncOnline(module, mod_def)
 		end
 	else
 		for k, def in pairs((mod_def or game.__mod_info).profile_defs or {}) do
-			if not def.no_sync and def.export and sync[k] then
+			if not def.no_sync and not def.incr_only and def.export and sync[k] then
 				local f = def.export
 				local ret = {}
 				setfenv(f, setmetatable({add=function(d) ret[#ret+1] = d end}, {__index=_G}))
