@@ -1016,6 +1016,7 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	profile:addStatFields(unpack(mod.profile_stats_fields or {}))
 	profile:setConfigsBatch(true)
 	profile:loadModuleProfile(mod.short_name, mod)
+	profile:incrLoadProfile(mod)
 	profile:currentCharacter(mod.full_version_string, "game did not tell us")
 
 	UIBase:clearCache()
