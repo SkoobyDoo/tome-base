@@ -944,7 +944,7 @@ function _M:changeLevelReal(lev, zone, params)
 	end
 
 	-- clear chrono worlds and their various effects
-	if self._chronoworlds then self._chronoworlds = nil end
+	if self._chronoworlds and not params.keep_chronoworlds then self._chronoworlds = nil end
 
 	local left_zone = self.zone
 	local old_lev = (self.level and not zone) and self.level.level or -1000
