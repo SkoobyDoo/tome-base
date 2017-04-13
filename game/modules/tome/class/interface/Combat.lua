@@ -274,11 +274,10 @@ end
 
 --- Computes a logarithmic chance to hit, opposing chance to hit to chance to miss
 -- This will be used for melee attacks, physical and spell resistance
-
 function _M:checkHitOld(atk, def, min, max, factor)
 	if atk < 0 then atk = 0 end
 	if def < 0 then def = 0 end
-	print("checkHit", atk, def)
+	print("checkHitOld", atk, def)
 	if atk == 0 then atk = 1 end
 	local hit = nil
 	factor = factor or 5
@@ -293,7 +292,7 @@ function _M:checkHitOld(atk, def, min, max, factor)
 	return rng.percent(hit), hit
 end
 
---Tells the tier difference between two values
+--- Applies crossTierEffects according to the tier difference between power and save
 function _M:crossTierEffect(eff_id, apply_power, apply_save, use_given_e)
 	local q = game.player:hasQuest("tutorial-combat-stats")
 	if q and not q:isCompleted("final-lesson")then
@@ -328,7 +327,12 @@ function _M:getTierDiff(atk, def)
 	def = math.floor(def)
 	return math.max(0, math.max(math.ceil(atk/20), 1) - math.max(math.ceil(def/20), 1))
 end
-
+--[[
+--- Gets the duration for crossTier effects based on the tier difference between atk and def
+function _M:getTierDiff(atk, def)
+	return math.floor(math.max(0, self:combatScale(atk - def, 1, 20, 5, 100)))
+end
+--]]
 --New, simpler checkHit that relies on rescaleCombatStats() being used elsewhere
 function _M:checkHit(atk, def, min, max, factor, p)
 	if atk < 0 then atk = 0 end
