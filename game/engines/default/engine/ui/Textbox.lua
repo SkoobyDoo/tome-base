@@ -145,6 +145,10 @@ function _M:generate()
 				self:updateText()
 			end
 		end,
+		[{"_c", "ctrl"}] = function(c)
+			self:updateText()
+			core.key.setClipboard(self.text)
+		end,
 	}
 end
 
