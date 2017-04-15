@@ -115,7 +115,11 @@ function _M:generateList()
 		return a.name < b.name
 	end)
 
-	table.insert(list, 1, {name = " Test Dummy", action=function(item)
+	table.insert(list, 1, {name = "#YELLOW#Random Actor#LAST#", action=function(item)
+		game:registerDialog(require("mod.dialogs.debug.RandomActor").new())
+	end})
+
+	table.insert(list, 1, {name = "Test Dummy", action=function(item)
 		local m = mod.class.NPC.new{define_as="TRAINING_DUMMY",
 			type = "training", subtype = "dummy",
 			name = "Test Dummy", color=colors.GREY,
@@ -131,11 +135,6 @@ function _M:generateList()
 		m:resolve(nil, true)
 		self:placeCreature(m)
 	end})
-	
-	table.insert(list, 1, {name = " #YELLOW#Random Actor#LAST#", action=function(item)
-		game:registerDialog(require("mod.dialogs.debug.RandomActor").new())
-	end}
-	)
 	
 	local chars = {}
 	for i, v in ipairs(list) do
