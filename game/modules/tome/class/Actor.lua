@@ -4911,7 +4911,7 @@ function _M:preUseTalent(ab, silent, fake)
 				if cost ~= 0 then
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
 					if res_def.invert_values then
-						if rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
+						if not res_def.ignore_max_use and rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
 							if not silent then game.logPlayer(self, "You have too much %s to use %s.", res_def.name, ab.name) end
 							self.on_preuse_checking_resources = nil
 							return false
