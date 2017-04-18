@@ -1845,7 +1845,11 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(game.level.level + 1)
+			if self.zone.short_name ~= "test" then
+				self:changeLevel(1, "test")
+			else
+				self:changeLevel(game.level.level + 1)
+			end
 do return end
 			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)
 			local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[Map.ACTOR]=true})

@@ -24,8 +24,8 @@ return {
 	max_level = 4,
 	decay = {300, 800},
 	actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
-	width = 50, height = 50,
-	-- all_remembered = true,
+	width = 80, height = 50,
+	all_remembered = true,
 	all_lited = true,
 	no_level_connectivity = true,
 	
@@ -35,37 +35,13 @@ return {
 	generator =  {
 		map = {
 -- [[
-			class = "engine.generator.map.FromCustom",
+			class = "engine.generator.map.MapScript",
 			['<'] = "UP", ['>'] = "DOWN",
 			['.'] = "FLOOR", ['+'] = "DOOR", ['#'] = "WALL",
+			['_'] = "OLD_FLOOR", ['O'] = "OLD_WALL", 
 			[';'] = "GRASS", ['T'] = "TREE",
 			['='] = "DEEP_WATER",
-			custom = function(self, lev, old_lev)
-				local WaveFunctionCollapse = require "engine.WaveFunctionCollapse"
-				-- Water & trees layer
-				local wfcwater = WaveFunctionCollapse.new{
-					mode="overlapping", async=true,
-					sample=self:getFile("!wfctest2.tmx", "samples"),
-					size=self.mapsize,
-					n=3, symmetry=8, periodic_out=true, periodic_in=true, has_foundation=false
-				}
-
-				-- Base buildings
-				local wfc = WaveFunctionCollapse.new{
-					mode="overlapping", async=true,
-					sample=self:getFile("!wfctest4.tmx", "samples"),
-					size=self.mapsize,
-					n=3, symmetry=8, periodic_out=false, periodic_in=false, has_foundation=false
-				}
-				-- Wait for all generators to finish
-				if not WaveFunctionCollapse:waitAll(wfc, wfcwater) then return self:regenerate() end
-				-- Merge water in
-				wfc:merge(wfcwater, ' ', {'.', '+', '#', '=', ';', 'T'})
-				-- Elimitate the rest
-				if wfc:eliminateByFloodfill{'#', 'T'} < 800 then return self:regenerate() end
-				wfc:printResult()
-				return wfc:getResult(true)
-			end,
+			mapscript = "!inner_outer",
 --]]
 --[[
 			class = "engine.generator.map.Hexacle",

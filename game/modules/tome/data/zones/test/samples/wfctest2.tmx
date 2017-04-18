@@ -49,7 +49,7 @@
  </tileset>
  <layer name="Terrain" width="16" height="16">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFwwEUomFy9NZDMTb9+MxE1otPPzb3odtdj0dNPxQjy2PTj+4GZL3IZuByPyn6kf1Eqf5CBvz+JxSG+NIALnEAH5QrWQ==
+   eJxjYKAPKKSCfmRMjt5+KCbVDGS9yGYMJv34wgddDl0NjF8Pxdjchi/skfXi0o8LoNtdz0Ba/GDTT44byNWPHC6U6oeZQU76xBe/+AAAWvQrWQ==
   </data>
  </layer>
 </map>

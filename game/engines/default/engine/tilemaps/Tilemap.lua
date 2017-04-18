@@ -21,28 +21,41 @@ require "engine.class"
 local lom = require "lxp.lom"
 local mime = require "mime"
 
---- Generate map-like data from samples using the WaveFunctionCollapse algorithm (in C++)
--- @classmod engine.WaveFunctionCollapse
+--- Base class to generate map-like
+-- @classmod engine.tilemaps.Tilemap
 module(..., package.seeall, class.make)
 
---- Run the algorithm
--- It will produce internal results which this class can then manipulate
--- If async is true in the parameters the generator will run in an asynchronous thread and you must call :waitCompute()
--- before using the results, this allows you to run multiple WFCs for later merging wihtout taking more time (if the user have enoguh CPUs obviously)
-function _M:init(t)
-	assert(t.mode == "overlapping", "bad WaveFunctionCollapse mode")
-	assert(t.size, "WaveFunctionCollapse has no size")
-	self.data_w = t.size[1]
-	self.data_h = t.size[2]
-	if t.mode == "overlapping" then
-		if type(t.sample) == "string" then
-			t.sample = self:tmxLoad(t.sample)
+function _M:init(size, fill_with)
+	if size then
+		self.data_w = size[1]
+		self.data_h = size[2]
+		if self.data_w and self.data_h then
+			self.data = {}
+			for y = 1, self.data_h do
+				self.data[y] = {}
+				for x = 1, self.data_w do
+					self.data[y][x] = fill_with or ' '
+				end
+			end
 		end
-		self:run(t)
 	end
 end
 
---- Used internally to load a sample from a tmx file
+--- Find all empty spaces (defaults to ' ') and fill them with a give char
+function _M:fillAll(fill_with, empty_char)
+	if not self.data then return end
+	empty_char = empty_char or ' '
+	fill_with = fill_with or '#'
+	for y = 1, self.data_h do
+		for x = 1, self.data_w do
+			if self.data[y][x] == empty_char then
+				self.data[y][x] = fill_with
+			end
+		end
+	end
+end
+
+--- Used internally to load a tilemap from a tmx file
 function _M:tmxLoad(file)
 	local f = fs.open(file, "r") local data = f:read(10485760) f:close()
 	local map = lom.parse(data)
@@ -118,36 +131,14 @@ function _M:tmxLoad(file)
 			end
 		end
 	end
-	for y = 1, h do	data[y] = table.concat(data[y]) end
-	return data
+	return data, w, h
 end
 
---- Used internally to parse the results
-function _M:parseResult(data)
-	if not data then return end
-	self.data = {}
-	for y = 1, #data do
-		local x = 1
-		self.data[y] = {}
-		for c in data[y]:gmatch('.') do
-			self.data[y][x] = c
-			x = x + 1
-		end
-	end
-end
-
---- Called by the constructor to actaully start doing stuff
-function _M:run(t)
-	print("[WaveFunctionCollapse] running with parameter table:")
-	table.print(t)
-	if not t.async then
-		local data = core.generator.wfc.overlapping(t.sample, t.size[1], t.size[2], t.n, t.symmetry, t.periodic_out, t.periodic_in, t.has_foundation)
-		self:parseResult(data)
-		return false
-	else
-		self.async_data = core.generator.wfc.asyncOverlapping(t.sample, t.size[1], t.size[2], t.n, t.symmetry, t.periodic_out, t.periodic_in, t.has_foundation)
-		return true
-	end
+function _M:collapseToLineFormat(data)
+	if not data then return nil end
+	local ndata = {}
+	for y = 1, #data do ndata[y] = table.concat(data[y]) end
+	return ndata
 end
 
 --- Do we have results, or did we fail?
@@ -155,31 +146,9 @@ function _M:hasResult()
 	return self.data and true or false
 end
 
---- Wait for computation to finish if in async mode, if not it just returns immediately
-function _M:waitCompute()
-	if not self.async_data then return end
-	local data = self.async_data:wait()
-	self.async_data = nil
-
-	self:parseResult(data)
-	return self:hasResult()
-end
-
---- Wait for multiple WaveFunctionCollapse at once
--- Static
-function _M:waitAll(...)
-	local all_have_data = true
-	for _, wfcasync in ipairs{...} do
-		wfcasync:waitCompute()
-		if not wfcasync:hasResult() then all_have_data = false end -- We cant break, we need to wait all the threads to not leave them dangling in the wind
-	end
-	return all_have_data
-end
-
---- Return a list of groups of tiles representing each of the connected areas
-function _M:findFloodfillGroups(wall)
-	if type(wall) == "table" then local first = wall[1] wall = table.reverse(wall) wall.__first = first
-	else wall = {[wall] = true, __first=wall} end
+--- Return a list of groups of tiles that matches the given cond function
+function _M:findGroups(cond)
+	if not self.data then return {} end
 
 	local fills = {}
 	local opens = {}
@@ -187,7 +156,7 @@ function _M:findFloodfillGroups(wall)
 	for i = 1, self.data_w do
 		opens[i] = {}
 		for j = 1, self.data_h do
-			if not wall[self.data[j][i]] then
+			if cond(self.data[j][i]) then
 				opens[i][j] = #list+1
 				list[#list+1] = {x=i, y=j}
 			end
@@ -226,28 +195,40 @@ function _M:findFloodfillGroups(wall)
 		local i, l = next(list)
 		local closed = floodFill(l.x, l.y)
 		groups[#groups+1] = {id=id, list=closed}
-		print("[WaveFunctionCollapse] Floodfill group", i, #closed)
+		print("[Tilemap] Floodfill group", i, #closed)
 	end
 
-	return groups, wall
+	return groups
 end
 
---- Find groups by floodfill and apply a custom function over them
+--- Return a list of groups of tiles representing each of the connected areas
+function _M:findGroupsNotOf(wall)
+	wall = table.reverse(wall)
+	return self:findGroups(function(c) return not wall[c] end)
+end
+
+--- Return a list of groups of tiles representing each of the connected areas
+function _M:findGroupsOf(floor)
+	floor = table.reverse(floor)
+	return self:findGroups(function(c) return floor[c] end)
+end
+
+--- Apply a custom method over the given groups, sorting them from bigger to smaller
 -- It gives the groups in order of bigger to smaller
-function _M:applyOnFloodfillGroups(wall, fct)
+function _M:applyOnGroups(groups, fct)
 	if not self.data then return end
-	local groups = self:findFloodfillGroups(wall)
 	table.sort(groups, function(a,b) return #a.list > #b.list end)
-	for _, group in ipairs(groups) do
-		fct(self.data_w, self.data_h, self.data, group)
+	for id, group in ipairs(groups) do
+		fct(self.data_w, self.data_h, self.data, group, id)
 	end
 end
 
 --- Given a list of groups, eliminate them all
 function _M:eliminateGroups(wall, groups)
-	print("[WaveFunctionCollapse] Eleminating groups", #groups)
+	if not self.data then return end
+	print("[Tilemap] Eleminating groups", #groups)
 	for i = 1, #groups do
-		print("[WaveFunctionCollapse] Eleminating group "..i.." of", #groups[i].list)
+		print("[Tilemap] Eleminating group "..i.." of", #groups[i].list)
 		for j = 1, #groups[i].list do
 			local jn = groups[i].list[j]
 			self.data[jn.y][jn.x] = wall
@@ -256,12 +237,13 @@ function _M:eliminateGroups(wall, groups)
 end
 
 --- Simply destroy all connected groups except the biggest one
-function _M:eliminateByFloodfill(wall)
-	local groups, wall = self:findFloodfillGroups(wall)
+function _M:eliminateByFloodfill(walls)
+	if not self.data then return 0 end
+	local groups = self:findGroupsNotOf(walls)
 
 	-- If nothing exists, regen
 	if #groups == 0 then
-		print("[WaveFunctionCollapse] Floodfill found nothing")
+		print("[Tilemap] Floodfill found nothing")
 		return 0
 	end
 
@@ -269,20 +251,64 @@ function _M:eliminateByFloodfill(wall)
 	table.sort(groups, function(a,b) return #a.list < #b.list end)
 	local g = table.remove(groups)
 	if g and #g.list > 0 then
-		print("[WaveFunctionCollapse] Ok floodfill with main group size", #g.list)
-		self:eliminateGroups(wall.__first, groups)
+		print("[Tilemap] Ok floodfill with main group size", #g.list)
+		self:eliminateGroups(walls[1], groups)
 		return #g.list
 	else
-		print("[WaveFunctionCollapse] Floodfill left nothing")
+		print("[Tilemap] Floodfill left nothing")
 		return 0
 	end
+end
+
+function _M:isInGroup(group, x, y)
+	if not group.reverse then
+		group.reverse = {}
+		for j = 1, #group.list do
+			local jn = group.list[j]
+			group.reverse[jn.x] = group.reverse[jn.x] or {}
+			group.reverse[jn.x][jn.y] = true
+		end
+	end
+	return group.reverse[x] and group.reverse[x][y]
+end
+
+--- Find the biggest rectangle that can fit fully in the given group
+function _M:groupInnerRectangle(group)
+	
+end
+
+--- Find the smallest rectangle that can fit around in the given group
+function _M:groupOuterRectangle(group)
+	local n = group.list[1]
+	if not n then return end -- wtf?
+	local x1, x2 = n.x, n.x
+	local y1, y2 = n.y, n.y
+
+	for j = 1, #group.list do
+		local jn = group.list[j]
+		if jn.x < x1 then x1 = jn.x end
+		if jn.x > x2 then x2 = jn.x end
+		if jn.y < y1 then y1 = jn.y end
+		if jn.y > y2 then y2 = jn.y end
+	end
+
+	-- Debug
+	-- for i = x1, x2 do for j = y1, y2 do
+	-- 	if not self:isInGroup(group, i, j) then
+	-- 		if self.data[j][i] == '#' then
+	-- 			self.data[j][i] = 'T'
+	-- 		end
+	-- 	end
+	-- end end
+
+	return {x1=x1, y1=y1, x2=x2, y2=y2}
 end
 
 --- Get the results
 -- @param is_array if true returns a table[][] of characters, if false a table[] of string lines
 function _M:getResult(is_array)
-	if is_array then return self.data end
 	if not self.data then return nil end
+	if is_array then return self.data end
 	local data = {}
 	for y = 1, self.data_h do data[y] = table.concat(self.data[y]) end
 	return data
@@ -290,8 +316,13 @@ end
 
 --- Debug function to print the result to the log
 function _M:printResult()
+	if not self.data then
+		print("-------------")
+		print("------------- Tilemap result")		
+		return
+	end
 	print("-------------")
-	print("------------- WaveFunctionCollapse result")
+	print("------------- Tilemap result")
 	print("-----------[[")
 	for _, line in ipairs(self:getResult()) do
 		print(line)
@@ -301,22 +332,28 @@ function _M:printResult()
 	print("-------------")
 end
 
---- Merge and other WaveFunctionCollapse's data
-function _M:merge(wfc, empty_char, char_order)
+--- Merge and other Tilemap's data
+function _M:merge(x, y, tm, char_order, empty_char)
+	if not self.data or not tm.data then return end
+	x = math.floor(x)
+	y = math.floor(y)
 	char_order = table.reverse(char_order or {})
 	empty_char = empty_char or ' '
-	if not wfc.data then return end
+	if not tm.data then return end
 
-	for i = 1, math.min(self.data_w, wfc.data_w) do
-		for j = 1, math.min(self.data_h, wfc.data_h) do
-			local c = wfc.data[j][i]
-			if c ~= empty_char then
-				local sc = self.data[j][i]
-				local sc_o = char_order[sc] or 0
-				local c_o = char_order[c] or 0
+	for i = 1, tm.data_w do
+		for j = 1, tm.data_h do
+			local si, sj = i + x - 1, j + y - 1
+			if si >= 1 and si <= self.data_w and sj >= 1 and sj <= self.data_h then
+				local c = tm.data[j][i]
+				if c ~= empty_char then
+					local sc = self.data[sj][si]
+					local sc_o = char_order[sc] or 0
+					local c_o = char_order[c] or 0
 
-				if c_o >= sc_o then
-					self.data[j][i] = wfc.data[j][i]
+					if c_o >= sc_o then
+						self.data[sj][si] = tm.data[j][i]
+					end
 				end
 			end
 		end

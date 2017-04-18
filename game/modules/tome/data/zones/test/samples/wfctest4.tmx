@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="16" height="16" tilewidth="32" tileheight="32" nextobjectid="31">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="32" tileheight="32" nextobjectid="31">
  <properties>
   <property name="status_all" value="{no_teleport=true}"/>
  </properties>
@@ -22,7 +22,12 @@
   </tile>
   <tile id="54">
    <properties>
-    <property name="id" value="*"/>
+    <property name="id" value="_"/>
+   </properties>
+  </tile>
+  <tile id="58">
+   <properties>
+    <property name="id" value="r"/>
    </properties>
   </tile>
  </tileset>
@@ -32,9 +37,9 @@
  <tileset firstgid="235" name="numbers" tilewidth="32" tileheight="32" tilecount="36">
   <image source="../../../../../../../tiled-maps/gfx/numbers.png" width="192" height="192"/>
  </tileset>
- <layer name="Terrain" width="16" height="16">
+ <layer name="Terrain" width="20" height="20">
   <data encoding="base64" compression="zlib">
-   eJxjZGBgYMSBTfDIoatDxoTEidVPrFvw6UeXI0YNvfXj8yc5+onBtLafmHRDaboj1e/DXT85GABHnxWG
+   eJytkzEOwDAIAxOJJ3Xj///qVCmywLiEwVPQQbDZa62d6CFvTH4Ieac6PGR2ZmU8pdcNr8OseCoz2tME75MRnhHfWS6q+bAeGX+zptTaIC/7Wzfn2b4iXuU3Y3lRF3lyw3NgKfNZ0TfKmnoTyr1M87pZmMw+6gVVviXl
   </data>
  </layer>
 </map>

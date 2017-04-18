@@ -30,7 +30,7 @@ function _M:init(zone, map, level, data)
 	self.data = data
 	self.grid_list = zone.grid_list
 	self.spots = {}
-	self.mapsize = {self.map.w, self.map.h}
+	self.mapsize = {self.map.w, self.map.h, w=self.map.w, h=self.map.h}
 
 	RoomsLoader.init(self, data)
 end
@@ -55,7 +55,21 @@ function _M:regenerate()
 end
 
 function _M:custom(lev, old_lev)
-	if self.data.custom then return self.data.custom(self, lev, old_lev) end
+	if self.data.mapscript then
+		local file = self:getFile(self.data.mapscript..".lua", "mapscripts")
+		local f, err = loadfile(file)
+		if not f and err then error(err) end
+		setfenv(f, setmetatable(env or {
+			self = self,
+			lev = lev,
+			old_lev = old_lev,
+			Tilemap = require "engine.tilemaps.Tilemap",
+		}, {__index=_G}))
+		return f()
+	end
+	if self.data.custom then
+		return self.data.custom(self, lev, old_lev)
+	end
 	error("Generator FromCustom called without customization!")
 end
 
