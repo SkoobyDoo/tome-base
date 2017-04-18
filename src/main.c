@@ -36,6 +36,7 @@
 #include "physfs.h"
 #include "physfsrwops.h"
 #include "core_lua.h"
+#include "wfc/lua_wfc_external.h"
 #include "getself.h"
 #include "music.h"
 #include "serial.h"
@@ -1168,6 +1169,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_zlib(L);
 		luaopen_bit(L);
 		luaopen_wait(L);
+		luaopen_wfc(L);
 
 		physfs_reset_dir_allowed(L);
 

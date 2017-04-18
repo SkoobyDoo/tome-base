@@ -25,7 +25,7 @@ return {
 	decay = {300, 800},
 	actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
 	width = 50, height = 50,
-	all_remembered = true,
+	-- all_remembered = true,
 	all_lited = true,
 	no_level_connectivity = true,
 	
@@ -34,6 +34,39 @@ return {
 	
 	generator =  {
 		map = {
+-- [[
+			class = "engine.generator.map.FromCustom",
+			['<'] = "UP", ['>'] = "DOWN",
+			['.'] = "FLOOR", ['+'] = "DOOR", ['#'] = "WALL",
+			[';'] = "GRASS", ['T'] = "TREE",
+			['='] = "DEEP_WATER",
+			custom = function(self, lev, old_lev)
+				local WaveFunctionCollapse = require "engine.WaveFunctionCollapse"
+				-- Water & trees layer
+				local wfcwater = WaveFunctionCollapse.new{
+					mode="overlapping", async=true,
+					sample=self:getFile("!wfctest2.tmx", "samples"),
+					size=self.mapsize,
+					n=3, symmetry=8, periodic_out=true, periodic_in=true, has_foundation=false
+				}
+
+				-- Base buildings
+				local wfc = WaveFunctionCollapse.new{
+					mode="overlapping", async=true,
+					sample=self:getFile("!wfctest4.tmx", "samples"),
+					size=self.mapsize,
+					n=3, symmetry=8, periodic_out=false, periodic_in=false, has_foundation=false
+				}
+				-- Wait for all generators to finish
+				if not WaveFunctionCollapse:waitAll(wfc, wfcwater) then return self:regenerate() end
+				-- Merge water in
+				wfc:merge(wfcwater, ' ', {'.', '+', '#', '=', ';', 'T'})
+				-- Elimitate the rest
+				if wfc:eliminateByFloodfill{'#', 'T'} < 800 then return self:regenerate() end
+				wfc:printResult()
+				return wfc:getResult(true)
+			end,
+--]]
 --[[
 			class = "engine.generator.map.Hexacle",
 			up = "FLOOR",
@@ -75,7 +108,7 @@ return {
 			down = "JUNGLE_GRASS_DOWN6",
 			door = "JUNGLE_GRASS",
 --]]
--- [[
+--[[
 			class = "engine.generator.map.Roomer",
 			nb_rooms = 10,
 			edge_entrances = {4,6},
@@ -106,7 +139,7 @@ return {
 ]]
 	},
 	post_process = function(level) -- testing level generation failure
-		if level.level >=3 then level.force_recreate = true end
+		-- if level.level >=3 then level.force_recreate = true end
 	end,
 	
 --[[

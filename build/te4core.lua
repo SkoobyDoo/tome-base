@@ -37,7 +37,7 @@ project "TEngine"
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "te4-wfc" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
@@ -48,7 +48,7 @@ project "TEngine"
 	if _OPTIONS.relpath == "32" then defines{"TE4_RELPATH32"} end
 	if _OPTIONS.relpath == "64" then defines{"TE4_RELPATH64"} end
 
-	links { "m" }
+	links { "m", "stdc++" }
 
 	if _OPTIONS.no_rwops_size then defines{"NO_RWOPS_SIZE"} end
 
@@ -177,6 +177,7 @@ if _OPTIONS.lua == "default" then
 		kind "StaticLib"
 		language "C"
 		targetname "lua"
+		buildoptions{ "-O2" }
 
 		files { "../src/lua/*.c", }
 elseif _OPTIONS.lua == "jit2" then
@@ -358,6 +359,7 @@ elseif _OPTIONS.lua == "jit2" then
 		language "C"
 		targetname "lua"
 		links { "buildvm" }
+		buildoptions { "-O2", "-fomit-frame-pointer" }
 
 		files { "../src/luajit2/src/*.c", "../src/luajit2/src/*.s", "../src/luajit2/src/lj_vm.s", "../src/luajit2/src/lj_bcdef.h", "../src/luajit2/src/lj_ffdef.h", "../src/luajit2/src/lj_ffdef.h", "../src/luajit2/src/lj_libdef.h", "../src/luajit2/src/lj_recdef.h", "../src/luajit2/src/lj_folddef.h" }
 		excludes { "../src/luajit2/src/buildvm*.c", "../src/luajit2/src/luajit.c", "../src/luajit2/src/ljamalg.c" }
@@ -422,6 +424,7 @@ project "luasocket"
 	kind "StaticLib"
 	language "C"
 	targetname "luasocket"
+	buildoptions { "-O2" }
 
 	configuration "not windows"
 		files {
@@ -460,6 +463,7 @@ project "fov"
 	kind "StaticLib"
 	language "C"
 	targetname "fov"
+	buildoptions { "-O2" }
 
 	files { "../src/fov/*.c", }
 
@@ -467,6 +471,7 @@ project "lpeg"
 	kind "StaticLib"
 	language "C"
 	targetname "lpeg"
+	buildoptions { "-O2" }
 
 	files { "../src/lpeg/*.c", }
 
@@ -474,6 +479,7 @@ project "luaprofiler"
 	kind "StaticLib"
 	language "C"
 	targetname "luaprofiler"
+	buildoptions { "-O2" }
 
 	files { "../src/luaprofiler/*.c", }
 
@@ -481,6 +487,7 @@ project "tcodimport"
 	kind "StaticLib"
 	language "C"
 	targetname "tcodimport"
+	buildoptions { "-O2" }
 
 	files { "../src/libtcod_import/*.c", }
 
@@ -489,6 +496,7 @@ project "expatstatic"
 	language "C"
 	targetname "expatstatic"
 	defines{ "HAVE_MEMMOVE" }
+	buildoptions { "-O2" }
 
 	files { "../src/expat/*.c", }
 
@@ -496,6 +504,7 @@ project "lxp"
 	kind "StaticLib"
 	language "C"
 	targetname "lxp"
+	buildoptions { "-O2" }
 
 	files { "../src/lxp/*.c", }
 
@@ -503,6 +512,7 @@ project "luamd5"
 	kind "StaticLib"
 	language "C"
 	targetname "luamd5"
+	buildoptions { "-O2" }
 
 	files { "../src/luamd5/*.c", }
 
@@ -510,6 +520,7 @@ project "luazlib"
 	kind "StaticLib"
 	language "C"
 	targetname "luazlib"
+	buildoptions { "-O2" }
 
 	files { "../src/lzlib/*.c", }
 
@@ -517,6 +528,7 @@ project "luabitop"
 	kind "StaticLib"
 	language "C"
 	targetname "luabitop"
+	buildoptions { "-O2" }
 
 	files { "../src/luabitop/*.c", }
 
@@ -524,8 +536,17 @@ project "te4-bzip"
 	kind "StaticLib"
 	language "C"
 	targetname "te4-bzip"
+	buildoptions { "-O2" }
 
 	files { "../src/bzip2/*.c", }
+
+project "te4-wfc"
+	kind "StaticLib"
+	language "C++"
+	targetname "te4-wfc"
+	buildoptions { "-O3" }
+
+	files { "../src/wfc/*.cpp", }
 
 if _OPTIONS['web-awesomium'] and not _OPTIONS.wincross then
 project "te4-web"
