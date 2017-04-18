@@ -39,7 +39,7 @@
  </tileset>
  <layer name="Terrain" width="20" height="20">
   <data encoding="base64" compression="zlib">
-   eJytkzEOwDAIAxOJJ3Xj///qVCmywLiEwVPQQbDZa62d6CFvTH4Ieac6PGR2ZmU8pdcNr8OseCoz2tME75MRnhHfWS6q+bAeGX+zptTaIC/7Wzfn2b4iXuU3Y3lRF3lyw3NgKfNZ0TfKmnoTyr1M87pZmMw+6gVVviXl
+   eJzVkksKwDAIRA14pO56/3t1FRAhT5MOlC5mpTw/M8PMxkIX1Eh3UuRFveWd7kq8XKOZf+HRnxS8KQeeg++Ui2q/3J8Zu1nr9LqIt7rtNOddXneeijc9UPCinxXPi7ndrH39v91sqXmkB3pbKuE=
   </data>
  </layer>
 </map>

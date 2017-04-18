@@ -30,15 +30,20 @@ function _M:init(size, fill_with)
 		self.data_w = size[1]
 		self.data_h = size[2]
 		if self.data_w and self.data_h then
-			self.data = {}
-			for y = 1, self.data_h do
-				self.data[y] = {}
-				for x = 1, self.data_w do
-					self.data[y][x] = fill_with or ' '
-				end
-			end
+			self.data = self:makeData(self.data_w, self.data_h, fill_with or ' ')
 		end
 	end
+end
+
+function _M:makeData(w, h, fill_with)
+	local data = {}
+	for y = 1, h do
+		data[y] = {}
+		for x = 1, w do
+			data[y][x] = fill_with
+		end
+	end
+	return data
 end
 
 --- Find all empty spaces (defaults to ' ') and fill them with a give char
@@ -271,11 +276,96 @@ function _M:isInGroup(group, x, y)
 	end
 	return group.reverse[x] and group.reverse[x][y]
 end
-
+--[=[
 --- Find the biggest rectangle that can fit fully in the given group
 function _M:groupInnerRectangle(group)
-	
+	if #group.list == 0 then return nil end
+
+	-- Make a matrix to work on
+	local outrect = self:groupOuterRectangle(group)
+	local m = self:makeData(outrect.w, outrect.h, 0)
+	local matrix = self:makeData(outrect.w, outrect.h, false)
+	for j = 1, #group.list do
+		local jn = group.list[j]
+		matrix[jn.y - outrect.y1 + 1][jn.x - outrect.x1 + 1] = true
+	end
+
+        for i = 1, outrect.w do
+        	for j = 1, outrect.h do
+        		m[j][i] = matrix[j][i] and (1 + m[j+1][i]) or 0
+        	end
+        end
+                m[i][j]=matrix[i][j]=='1'?1+m[i][j+1]:0;
 end
+
+public int maximalRectangle(char[][] matrix) {
+	int m = matrix.length;
+	int n = m == 0 ? 0 : matrix[0].length;
+	int[][] height = new int[m][n + 1];
+ 
+	int maxArea = 0;
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (matrix[i][j] == '0') {
+				height[i][j] = 0;
+			} else {
+				height[i][j] = i == 0 ? 1 : height[i - 1][j] + 1;
+			}
+		}
+	}
+ 
+	for (int i = 0; i < m; i++) {
+		int area = maxAreaInHist(height[i]);
+		if (area > maxArea) {
+			maxArea = area;
+		}
+	}
+ 
+	return maxArea;
+}
+ 
+private int maxAreaInHist(int[] height) {
+	Stack<Integer> stack = new Stack<Integer>();
+ 
+	int i = 0;
+	int max = 0;
+ 
+	while (i < height.length) {
+		if (stack.isEmpty() || height[stack.peek()] <= height[i]) {
+			stack.push(i++);
+		} else {
+			int t = stack.pop();
+			max = Math.max(max, height[t]
+					* (stack.isEmpty() ? i : i - stack.peek() - 1));
+		}
+	}
+ 
+	return max;
+}
+
+-- int maximalRectangle(vector<vector<char> > &matrix) {
+--         if(matrix.size()==0 || matrix[0].size()==0)return 0;
+--         vector<vector<int>>m(matrix.size()+1,vector<int>(matrix[0].size()+1,0));
+--         for(int i=0;i<matrix.size();i++)
+--             for(int j=matrix[0].size()-1;j>=0;j--)
+--                 m[i][j]=matrix[i][j]=='1'?1+m[i][j+1]:0;
+--         int max=0;
+--         for(int i=0;i<matrix[0].size();i++){
+--             int p=0;
+--             vector<int>s;
+--             while(p!=m.size()){
+--                 if(s.empty() || m[p][i]>=m[s.back()][i])
+--                     s.push_back(p++);
+--                 else{
+--                     int t=s.back();
+--                     s.pop_back();
+--                     max=std::max(max,m[t][i]*(s.empty()?p:p-s.back()-1));
+--                 }
+--             }
+--         }
+--         return max;
+-- }
+--]=]
 
 --- Find the smallest rectangle that can fit around in the given group
 function _M:groupOuterRectangle(group)
@@ -301,7 +391,7 @@ function _M:groupOuterRectangle(group)
 	-- 	end
 	-- end end
 
-	return {x1=x1, y1=y1, x2=x2, y2=y2}
+	return {x1=x1, y1=y1, x2=x2, y2=y2, w=x2 - x1 + 1, h=y2 - y1 + 1}
 end
 
 --- Get the results
@@ -321,15 +411,11 @@ function _M:printResult()
 		print("------------- Tilemap result")		
 		return
 	end
-	print("-------------")
-	print("------------- Tilemap result")
-	print("-----------[[")
+	print("------------- Tilemap result --[[")
 	for _, line in ipairs(self:getResult()) do
 		print(line)
 	end
 	print("]]-----------")
-	print("-------------")
-	print("-------------")
 end
 
 --- Merge and other Tilemap's data
