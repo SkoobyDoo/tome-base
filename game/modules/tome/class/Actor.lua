@@ -3311,7 +3311,7 @@ function _M:resetToFull()
 				self.mana = self:getMaxMana()
 			end
 		else
-			if res_def.invert_values then
+			if res_def.invert_values or res_def.switch_direction then
 				self[res_def.short_name] = self:check(res_def.getMinFunction) or self[res_def.short_name] or res_def.min
 			else
 				self[res_def.short_name] = self:check(res_def.getMaxFunction) or self[res_def.short_name] or res_def.max
@@ -5380,6 +5380,7 @@ function _M:postUseTalent(ab, ret, silent)
 				cost = ab[res_def.sustain_prop]
 				if cost then
 					cost = (util.getval(cost, self, ab) or 0)
+					cost = self:alterTalentCost(ab, res_def.sustain_prop, cost)
 					if cost ~= 0 then
 						trigger = true
 						ret._applied_costs[res_def.short_name] = cost
@@ -5394,6 +5395,7 @@ function _M:postUseTalent(ab, ret, silent)
 				cost = ab[res_def.drain_prop]
 				if cost then
 					cost = util.getval(cost, self, ab) or 0
+					cost = self:alterTalentCost(ab, res_def.drain_prop, cost)
 					if cost ~= 0 then
 						trigger = true
 						ret._applied_drains[res_def.short_name] = cost
@@ -5726,7 +5728,7 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 				cost = self:alterTalentCost(t, res_def.short_name, cost)
 				if cost ~= 0 then
 					cost = cost * (util.getval(res_def.cost_factor, self, t) or 1)
-					d:add({"color",0x6f,0xff,0x83}, ("%s cost: "):format(res_def.name:capitalize()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
+					d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(res_def.name:capitalize(), cost >= 0 and "cost" or "gain"), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
 				end
 				-- list sustain cost
 				cost = t[res_def.sustain_prop] and util.getval(t[res_def.sustain_prop], self, t) or 0
