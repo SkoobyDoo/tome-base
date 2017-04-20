@@ -1012,7 +1012,7 @@ function _M:restCheck()
 		-- Check for resources
 		for res, res_def in ipairs(_M.resources_def) do
 			if res_def.wait_on_rest and res_def.regen_prop and self:attr(res_def.regen_prop) then
-				if not res_def.invert_values then
+				if not res_def.invert_values and not res_def.switch_direction then
 					if self[res_def.regen_prop] > 0.0001 and self:check(res_def.getFunction) < self:check(res_def.getMaxFunction) then return true end
 				else
 					if self[res_def.regen_prop] < -0.0001 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
