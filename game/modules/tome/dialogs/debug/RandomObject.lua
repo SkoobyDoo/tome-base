@@ -335,33 +335,11 @@ function _M.tooltip(obj)
 	end
 end
 
---- Generate a Textbox with some extra key bindings
+--- Generate a Textbox with some extra properties
 _M.newTextbox = function(t)
 	local self = Textbox.new(t)
 	self.help_display = t.help_display
 	self.on_focus_change = function(status)	_M.help_display = self.help_display	end
-	self.key:addCommands{
-		_BACKSPACE = function()
-			if self.cursor > 1 then
-				local st = core.key.modState("ctrl") and 1 or self.cursor - 1
-				for i = self.cursor - 1, st, -1 do
-					table.remove(self.tmp, i)
-					self.cursor = self.cursor - 1
-					self.scroll = util.scroll(self.cursor, self.scroll, self.max_display)
-				end
-				self:updateText()
-			end
-		end,
-		_DELETE = function()
-			if self.cursor <= #self.tmp then
-				local num = core.key.modState("ctrl") and #self.tmp - self.cursor + 1 or 1
-				for i = 1, num do
-					table.remove(self.tmp, self.cursor)
-				end
-				self:updateText()
-			end
-		end,
-	}
 	return self
 end
 
