@@ -119,7 +119,7 @@ function _M:generateList()
 		game:registerDialog(require("mod.dialogs.debug.RandomActor").new())
 	end})
 
-	table.insert(list, 1, {name = "Test Dummy", action=function(item)
+	table.insert(list, 1, {name = "#PINK#Test Dummy#LAST#", action=function(item)
 		local m = mod.class.NPC.new{define_as="TRAINING_DUMMY",
 			type = "training", subtype = "dummy",
 			name = "Test Dummy", color=colors.GREY,

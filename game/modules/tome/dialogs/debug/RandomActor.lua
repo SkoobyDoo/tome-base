@@ -64,7 +64,7 @@ within the _G environment (used by the Lua Console) using the current zone's #LI
 Mouse over controls for actor preview.  (Actors may be adjusted when placed on to the level.)
 (Press #GOLD#'L'#LAST# to lua inspect or #GOLD#'C'#LAST# to open the character sheet.)
 
-The #LIGHT_BLUE#Base Filter#LAST# is used to filter the actor randomly generated.]]):format()}
+The #LIGHT_BLUE#Base Filter#LAST# is used to filter the actor randomly generated.]]):format(), can_focus=false}
 	self.dialog_txt = dialog_txt
 	tops[#tops+1]=tops[#tops] + dialog_txt.h + 5
 	
@@ -101,7 +101,6 @@ The #LIGHT_BLUE#Base Filter#LAST# is used to filter the actor randomly generated
 	
 	local base_make = self.newButton{text="Place", _actor_field="_base_actor",
 		fct=function()
-			game.log("#LIGHT_BLUE# Generate base actor: %s", _M._base_actor and _M._base_actor.name or "none")
 			self:placeActor(_M._base_actor)
 		end,
 		help_display = "filter_help"
@@ -226,12 +225,13 @@ The #LIGHT_BLUE#Base Filter#LAST# is used to filter the actor randomly generated
 		{left=0, top=tops[3], ui=bf_box},
 		{left=0, top=tops[4], ui=boss_info},
 		{left=0, top=tops[5], ui=boss_refresh},
-		{left=boss_refresh.w+10, top=tops[5], ui=boss_reset_data},
-		{left=boss_refresh.w+boss_reset_data.w+15, top=tops[5], ui=boss_make},
+		{left=boss_refresh.w+10, top=tops[5], ui=boss_make},
+		{left=boss_refresh.w+boss_make.w+15, top=tops[5], ui=boss_reset_data},
 		{left=boss_refresh.w+boss_reset_data.w+boss_make.w+20, top=tops[5]+(boss_make.h-boss_txt.h)/2, ui=boss_txt},
 		{left=0, top=tops[6], ui=boss_data_box},
 	}
 
+	self:setFocus(base_make)
 	self:setupUI(true, true)
 	self.key:addBinds{ EXIT = function()
 			game:unregisterDialog(self) 
@@ -261,33 +261,11 @@ function _M.tooltip(act)
 	end
 end
 
---- Generate a Textbox with some extra key bindings
+--- Generate a Textbox with some extra properties
 _M.newTextbox = function(t)
 	local self = Textbox.new(t)
 	self.help_display = t.help_display
 	self.on_focus_change = function(status)	_M.help_display = self.help_display	end
-	self.key:addCommands{
-		_BACKSPACE = function()
-			if self.cursor > 1 then
-				local st = core.key.modState("ctrl") and 1 or self.cursor - 1
-				for i = self.cursor - 1, st, -1 do
-					table.remove(self.tmp, i)
-					self.cursor = self.cursor - 1
-					self.scroll = util.scroll(self.cursor, self.scroll, self.max_display)
-				end
-				self:updateText()
-			end
-		end,
-		_DELETE = function()
-			if self.cursor <= #self.tmp then
-				local num = core.key.modState("ctrl") and #self.tmp - self.cursor + 1 or 1
-				for i = 1, num do
-					table.remove(self.tmp, self.cursor)
-				end
-				self:updateText()
-			end
-		end,
-	}
 	return self
 end
 
@@ -411,7 +389,11 @@ end
 function _M:finishActor(actor, x, y)
 	if actor and not actor._debug_finished then
 		actor._debug_finished = true
+		local old_escort = actor.make_escort -- making escorts fails without a position
+		actor.make_escort = nil
+		-- Note: this triggers functions "addedToLevel", "on_added", "on_added_to_level" which includes spawning escorts, updating for game difficulty, etc.
 		game.zone:addEntity(game.level, actor, "actor", nil, nil, true)
+		actor.make_escort = old_escort
 		actor:resolve(); actor:resolve(nil, true) -- make sure all resolvers are complete
 	end
 	return actor
@@ -420,8 +402,8 @@ end
 --- Place the generated actor
 function _M:placeActor(actor)
 	if actor then
-		actor = actor:cloneActor()
-		require ("mod.dialogs.debug.SummonCreature").placeCreature(self, actor)
+		local place_actor = actor:cloneFull()
+		require ("mod.dialogs.debug.SummonCreature").placeCreature(self, place_actor)
 	end
 end
 
