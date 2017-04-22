@@ -110,7 +110,7 @@ function _M:okclick()
 	end
 
 	game:unregisterDialog(self)
-	game:createProfile({create=self.c_email and true or false, login=self.c_login.text, pass=self.c_pass.text, email=self.c_email and self.c_email.text, news=self.c_news.checked})
+	game:createProfile({create=self.c_email and true or false, login=self.c_login.text, pass=self.c_pass.text, email=self.c_email and self.c_email.text, news=self.c_news and self.c_news.checked})
 end
 
 function _M:cancelclick()
