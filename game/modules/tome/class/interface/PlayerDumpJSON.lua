@@ -108,7 +108,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	for i = 1, self.max_inscriptions do if self.inscriptions[i] then
 		local t = self:getTalentFromId("T_"..self.inscriptions[i])
 		local desc = tostring(self:getTalentFullDescription(t))
-		ins[#ins+1] = {name=t.name, kind=t.type[1], desc=desc}
+		ins[#ins+1] = {name=t.name, image=t.image, kind=t.type[1], desc=desc}
 	end end
 
 	-------------------------------------------------------------------
@@ -307,7 +307,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 					if not t.hide then
 						local skillname = t.name
 						local desc = self:getTalentFullDescription(t):toString()
-						td.list[#td.list+1] = { name=skillname, val=("%d/%d"):format(self:getTalentLevelRaw(t.id), t.points), desc=desc}
+						td.list[#td.list+1] = { name=skillname, image=t.image, val=("%d/%d"):format(self:getTalentLevelRaw(t.id), t.points), desc=desc}
 					end
 				end
 			end
@@ -367,7 +367,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 				local desc = tostring(o:getDesc())
 				equip[self.inven_def[inven_id].name] = equip[self.inven_def[inven_id].name] or {}
 				local ie = equip[self.inven_def[inven_id].name]
-				ie[#ie+1] = { name=o:getName{do_color=true, no_image=true}, desc=desc }
+				ie[#ie+1] = { name=o:getName{do_color=true, no_image=true}, image=o.image, desc=desc }
 			end
 		end
 	end
@@ -378,7 +378,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	local inven = js:newSection("inventory")
 	for item, o in ipairs(self.inven[self.INVEN_INVEN]) do
 		local desc = tostring(o:getDesc())
-		inven[#inven+1] = { name=o:getName{do_color=true, no_image=true}, desc=desc }
+		inven[#inven+1] = { name=o:getName{do_color=true, no_image=true}, image=o.image, desc=desc }
 	end
 
 	-------------------------------------------------------------------
@@ -424,6 +424,12 @@ function _M:dumpToJSON(js, bypass, nosub)
 	if self.has_custom_tile then
 		tags.tile = self.has_custom_tile
 		js:hiddenData("tile", self.has_custom_tile)
+	elseif self.moddable_tile then
+		local doll = { self.image }
+		for i, mo in ipairs(self.add_mos or {}) do
+			doll[#doll+1] = mo.image
+		end
+		js:hiddenData("doll", doll)
 	end
 
 	self:triggerHook{"ToME:PlayerDumpJSON", title=title, js=js, tags=tags}
