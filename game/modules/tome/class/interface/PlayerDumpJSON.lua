@@ -87,17 +87,13 @@ function _M:dumpToJSON(js, bypass, nosub)
 	-------------------------------------------------------------------
 	local r = js:newSection("resources")
 	r.life = string.format("%d/%d", self.life, self.max_life)
-	if self:knowTalent(self.T_STAMINA_POOL) then r.stamina=string.format("%d/%d", self.stamina, self.max_stamina) end
-	if self:knowTalent(self.T_MANA_POOL) then r.mana=string.format("%d/%d", self.mana, self.max_mana) end
-	if self:knowTalent(self.T_SOUL_POOL) then r.souls=string.format("%d/%d", self.soul, self.max_soul) end
-	if self:knowTalent(self.T_POSITIVE_POOL) then r.positive=string.format("%d/%d", self.positive, self.max_positive) end
-	if self:knowTalent(self.T_NEGATIVE_POOL) then r.negative=string.format("%d/%d", self.negative, self.max_negative) end
-	if self:knowTalent(self.T_VIM_POOL) then r.vim=string.format("%d/%d", self.vim, self.max_vim) end
-	if self:knowTalent(self.T_PSI_POOL) then r.psi=string.format("%d/%d", self.psi, self.max_psi) end
-	if self.psionic_feedback_max then r.psi_feedback=string.format("%d/%d", self:getFeedback(), self:getMaxFeedback()) end
-	if self:knowTalent(self.T_EQUILIBRIUM_POOL) then r.equilibrium=string.format("%d", self.equilibrium) end
-	if self:knowTalent(self.T_PARADOX_POOL) then r.paradox=string.format("%d", self.paradox) end
-	if self:knowTalent(self.T_HATE_POOL) then r.hate=string.format("%d/%d", self.hate, self.max_hate) end
+	for res, res_def in ipairs(self.resources_def) do if res_def.talent and self:knowTalent(res_def.talent) then
+		if res_def.invert_values then
+			r[res_def.short_name] = string.format("%d", self[res_def.getFunction](self))
+		else
+			r[res_def.short_name] = string.format("%d/%d", self[res_def.getFunction](self), self[res_def.getMaxFunction](self))
+		end
+	end end
 
 	-------------------------------------------------------------------
 	-- Inscriptions
