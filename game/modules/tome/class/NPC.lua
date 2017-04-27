@@ -77,7 +77,7 @@ function _M:act()
 		if self.emote_random and self.x and self.y and game.level.map.seens(self.x, self.y) and rng.range(0, 999) < self.emote_random.chance * 10 then
 			local e = util.getval(rng.table(self.emote_random))
 			if e then
-				local dur = util.bound(#e, 30, 90)
+				local dur = util.bound(#e, 45, 90)
 				self:doEmote(e, dur)
 			end
 		end
