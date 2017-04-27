@@ -237,7 +237,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	c.damage = {}
 
 	if self.inc_damage.all then c.damage.all = string.format("%d%%", self.inc_damage.all) end
-	for i, t in ipairs(DamageType.dam_def) do
+	for i, t in pairs(DamageType.dam_def) do
 		if self:combatHasDamageIncrease(DamageType[t.type]) then
 			c.damage[t.name] = string.format("%d%%", self:combatGetDamageIncrease(DamageType[t.type]))
 		end
@@ -246,7 +246,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	c.damage_pen = {}
 
 	if self.resists_pen.all then c.damage_pen.all = string.format("%d%%", self.resists_pen.all) end
-	for i, t in ipairs(DamageType.dam_def) do
+	for i, t in pairs(DamageType.dam_def) do
 		if self.resists_pen[DamageType[t.type]] and self.resists_pen[DamageType[t.type]] ~= 0 then
 			c.damage_pen[t.name] = string.format("%d%%", self.resists_pen[DamageType[t.type]] + (self.resists_pen.all or 0))
 		end
@@ -268,7 +268,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 
 	d.resistances = {}
 	if self.resists.all then d.resistances.all = string.format("%3d%%(%3d%%)", self.resists.all, self.resists_cap.all or 0) end
-	for i, t in ipairs(DamageType.dam_def) do
+	for i, t in pairs(DamageType.dam_def) do
 		if self.resists[DamageType[t.type]] and self.resists[DamageType[t.type]] ~= 0 then
 			d.resistances[t.name] =  string.format("%3d%%(%3d%%)", self:combatGetResist(DamageType[t.type]), (self.resists_cap[DamageType[t.type]] or 0) + (self.resists_cap.all or 0))
 		end
