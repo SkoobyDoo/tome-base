@@ -527,19 +527,6 @@ project "te4-bzip"
 
 	files { "../src/bzip2/*.c", }
 
-if _OPTIONS['web-awesomium'] and not _OPTIONS.wincross then
-project "te4-web"
-	kind "SharedLib"
-	language "C++"
-	targetname "te4-web"
-
-	libdirs {"/opt/awesomium/bin/"}
-	includedirs {"/opt/awesomium/include/"}
-	links { "awesomium-1-7" }
-	
-	files { "../src/web-awesomium/*.cpp", }
-end
-
 if _OPTIONS['web-cef3'] and not _OPTIONS.wincross then
 project "te4-web"
 	kind "SharedLib"
@@ -562,8 +549,8 @@ project "te4-web"
 
 	configuration "linux"
 		buildoptions{"-Wall -pthread -I/usr/include/gtk-2.0 -I/usr/lib64/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng15 -I/usr/include/libdrm"}
-		libdirs {"/opt/cef3/2526/libcef_dll/", "/opt/cef3/2526/Release/"}
-		includedirs {"/opt/cef3/2526/include/", "/opt/cef3/2526/"}
+		libdirs {"/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/build/libcef_dll_wrapper/", "/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/Release/"}
+		includedirs {"/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/include/", "/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/"}
 		links { "cef_dll_wrapper", "cef" }
 		defines { 'SELFEXE_LINUX' }
 
@@ -586,12 +573,17 @@ project "cef3spawn"
 
 	configuration "linux"
 		buildoptions{"-Wall -pthread -I/usr/include/gtk-2.0 -I/usr/lib64/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng15 -I/usr/include/libdrm"}
-		libdirs {"/opt/cef3/2526/out/libcef_dll/", "/opt/cef3/2526/Release/"}
-		includedirs {"/opt/cef3/2526/include/", "/opt/cef3/2526/"}
-		links { "cef", "cef_dll_wrapper" }
+		libdirs {"/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/build/libcef_dll_wrapper/", "/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/Release/"}
+		includedirs {"/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/include/", "/huge/Test/cef_binary_3.3029.1611.g44e39a8_linux64/"}
+		links { "cef_dll_wrapper", "cef" }
 		if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib "} end
 		if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib64 "} end
 		defines { 'SELFEXE_LINUX' }
+	configuration {"linux", "Debug"}
+		postbuildcommands { "cp ../bin/Debug/cef3spawn ../", }
+	configuration {"linux", "Release"}
+		postbuildcommands { "cp ../bin/Release/cef3spawn ../", }
+
 end
 
 if _OPTIONS.steam then

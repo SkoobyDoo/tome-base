@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
 	CefMainArgs args(argc, argv);
 #endif
 
+    // for (int i = 0; i < argc; i++) printf("cef3spawn arg[%d] = %s\n", i, argv[i]);
 	CefRefPtr<ClientApp> app(new ClientApp);
 	int ret = CefExecuteProcess(args, app.get(), NULL);
 	return ret;

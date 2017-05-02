@@ -115,6 +115,7 @@ static int all_browsers_nb = 0;
 class BrowserClient :
 	public CefClient,
 	public CefRequestHandler,
+	public CefRequestContextHandler,
 	public CefDisplayHandler,
 	public CefLifeSpanHandler,
 	public CefDownloadHandler,
@@ -182,16 +183,16 @@ public:
 		push_event(event);
 	}
 
-	virtual bool OnBeforeResourceLoad(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request) OVERRIDE {
-		return false;
-	}
+	// virtual CefRequestHandler::ReturnValue OnBeforeResourceLoad(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request, CefRefPtr<CefRequestCallback> callback) OVERRIDE {
+	// 	return RV_CANCEL;
+	// }
 
-	virtual bool OnBeforePluginLoad(CefRefPtr<CefBrowser> browser, const CefString& url, const CefString& policy_url, CefRefPtr<CefWebPluginInfo> info) OVERRIDE {
-		char *name = cstring_to_c(info->GetName());
-		char *path = cstring_to_c(info->GetPath());
-		fprintf(logfile, "[WEBCORE] Forbade plugin %s from %s\n", name, path);
-		free(name);
-		free(path);
+	virtual bool OnBeforePluginLoad(const CefString& mime_type, const CefString& plugin_url, bool is_main_frame, const CefString& top_origin_url, CefRefPtr<CefWebPluginInfo> plugin_info, PluginPolicy* plugin_policy) OVERRIDE {
+		char *mime = cstring_to_c(mime_type);
+		char *url = cstring_to_c(plugin_url);
+		fprintf(logfile, "[WEBCORE] Forbade plugin %s from %s\n", mime, url);
+		free(mime);
+		free(url);
 		return true;
 	}
 
@@ -206,14 +207,16 @@ public:
 	}
 
 	virtual bool OnBeforePopup(CefRefPtr<CefBrowser> browser,
-	                             CefRefPtr<CefFrame> frame,
-	                             const CefString& target_url,
-	                             const CefString& target_frame_name,
-	                             const CefPopupFeatures& popupFeatures,
-	                             CefWindowInfo& windowInfo,
-	                             CefRefPtr<CefClient>& client,
-	                             CefBrowserSettings& settings,
-	                             bool* no_javascript_access) OVERRIDE {
+			CefRefPtr<CefFrame> frame,
+			const CefString& target_url,
+			const CefString& target_frame_name,
+			CefLifeSpanHandler::WindowOpenDisposition target_disposition,
+			bool user_gesture,
+			const CefPopupFeatures& popupFeatures,
+			CefWindowInfo& windowInfo,
+			CefRefPtr<CefClient>& client,
+			CefBrowserSettings& settings,
+			bool* no_javascript_access) OVERRIDE {
 		char *url = cstring_to_c(target_url);
 
 		WebEvent *event = new WebEvent();
@@ -300,7 +303,7 @@ public:
 		}
 	}
 
-	virtual void OnLoadStart(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame) {
+	virtual void OnLoadStart(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, TransitionType transition_type) OVERRIDE {
 		const char *url = cstring_to_c(frame->GetURL());
 		WebEvent *event = new WebEvent();
 		event->kind = TE4_WEB_EVENT_LOADING;
@@ -310,7 +313,7 @@ public:
 		push_event(event);
 	}
 
-	virtual void OnLoadEnd(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, int httpStatusCode) {
+	virtual void OnLoadEnd(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, int httpStatusCode) OVERRIDE {
 		const char *url = cstring_to_c(frame->GetURL());
 		WebEvent *event = new WebEvent();
 		event->kind = TE4_WEB_EVENT_LOADING;
@@ -320,12 +323,12 @@ public:
 		push_event(event);
 	}
 
-	virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) {
+	virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) OVERRIDE {
 		fprintf(logfile, "[WEBCORE] Created browser for webview\n");
 		this->browser = browser;
 	}
 
-	virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser) {
+	virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser) OVERRIDE {
 		this->opaque->render = NULL;
 		this->opaque->view = NULL;
 		this->opaque->browser = NULL;
@@ -805,6 +808,9 @@ void te4_web_do_update(void (*cb)(WebEvent*)) {
 				break;
 			case TE4_WEB_EVENT_DELETE_TEXTURE:
 				web_del_texture(event->data.texture);
+			case TE4_WEB_EVENT_END_BROWSER:
+				break;
+			case TE4_WEB_EVENT_BROWSER_COUNT:
 				break;
 		}
 
@@ -899,7 +905,7 @@ void te4_web_shutdown() {
 
 	while (!all_browsers.empty()) {
 		CefDoMessageLoopWork();
-		fprintf(logfile, "Waiting browsers to close: %d left\n", all_browsers.size());
+		fprintf(logfile, "Waiting browsers to close: %ld left\n", all_browsers.size());
 	}
 	
 	fprintf(logfile, "[WEBCORE] all browsers dead, shutting down\n");

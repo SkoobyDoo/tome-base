@@ -17,9 +17,6 @@ solution "TEngine"
 		"src/zlib",
 		"src/bzip2",
 	}
-	if _OPTIONS['web-awesomium'] then
-		includedirs { "src/web-awesomium" }
-	end
 	if _OPTIONS['web-cef3'] then
 		includedirs { "src/web-cef3" }
 	end

@@ -66,11 +66,6 @@ newoption {
 }
 
 newoption {
-	trigger	    = "web-awesomium",
-	description = "Use awesomium embedded browser as the webcore"
-}
-
-newoption {
 	trigger	    = "web-cef3",
 	description = "Use CEF3 embedded browser as the webcore"
 }
