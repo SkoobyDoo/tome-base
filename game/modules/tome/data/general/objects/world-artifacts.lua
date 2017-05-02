@@ -3547,6 +3547,7 @@ newEntity{ base = "BASE_GAUNTLETS",
 	name = "Spellhunt Remnants", color = colors.GREY, image = "object/artifact/spellhunt_remnants.png",
 	unided_name = "heavily corroded voratun gauntlets",
 	desc = [[These once brilliant voratun gauntlets have fallen into a deep decay. Originally used in the spellhunt, they were often used to destroy arcane artifacts, curing the world of their influence.]],
+	special_desc = function(self) return "Drains arcane resources while worn." end,
 --	material_level = 1, --Special: this artifact can appear anywhere and adjusts its material level to the zone
 	level_range = {1, nil}, 
 	rarity = 550, -- Extra rare to make it not ALWAYS appear.
@@ -3558,10 +3559,25 @@ newEntity{ base = "BASE_GAUNTLETS",
 			self.power_up(self, nil, mat_level)
 		end
 	end,
+	on_wear = function(self, who)
+		if who:attr("has_arcane_knowledge") then
+			game.logPlayer(who, "#ORCHID#The %s begin draining your arcane resources as they are worn!", self:getName({do_color=true}))
+		end
+	end,
 	on_preaddobject = function(self, who, inven) -- generated in an actor's inventory
 		if not self.material_level then self.addedToLevel(self, game.level) end
 	end,
 	cost = 1000,
+	callbackOnAct = function(self, who) -- Burn the wearer's arcane resources while worn
+		if who:attr("has_arcane_knowledge") then
+			local burn = who:burnArcaneResources(self.material_level*2)
+			if burn > 0 then
+				game.logSeen(who, "#ORCHID#%s's %s drain %s magic!", who.name:capitalize(), self:getName({do_color=true}), who:his_her())
+				who:restStop("Antimagic Drain")
+				who:runStop("Antimagic Drain")
+			end
+		end
+	end,
 	wielder = {
 		combat_mindpower=4,
 		combat_mindcrit=1,

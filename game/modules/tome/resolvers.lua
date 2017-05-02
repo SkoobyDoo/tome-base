@@ -255,7 +255,7 @@ function resolvers.matlevel(base, base_level, spread, mn, mx)
 	return {__resolver="matlevel", base, base_level, spread, mn, mx}
 end
 function resolvers.calc.matlevel(t, e)
-	local mean = math.min(e.level/10+1,t[1] * (e.level/t[2])^.5) -- I5 material level scales up with sqrt of actor level or level/10
+	local mean = math.min(e.level/10+1,t[1] * (e.level/t[2])^.5) -- material level scales up with sqrt of actor level or level/10
 	local spread = math.max(t[3],mean/5) -- spread out probabilities at high level
 	local mn = t[4] or 1
 	local mx = t[5] or 5
@@ -711,9 +711,11 @@ end
 -- Extra recursive methods not handled yet
 function resolvers.calc.talented_ai_tactic(t, e)
 	local old_on_added_to_level = e.on_added_to_level
-	e.__ai_compute = t
+	e.__ai_compute = table.clone(t, false, {__resolver=true})
 	e.on_added_to_level = function(e, level, x, y)
 		local t = e.__ai_compute
+--game.log("#ORANGE# %s calling resolvers.calc.talented_ai_tactic on_added_to_level with %s", e.name, t)
+		if not t or not (e.x and e.y) then return e.ai_tactic end
 		if old_on_added_to_level then old_on_added_to_level(e, level, x, y) end
 		-- print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
 		local tactic_total = t[2] or t.tactic_total or 10 --want tactic weights to total 10
@@ -829,8 +831,8 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		tactic.count = count
 		tactic.level = e.level
 		tactic.type = "computed"
---- print("### talented_ai_tactic resolver ai_tactic table:")
---- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
+--	print("### talented_ai_tactic resolver ai_tactic table:")
+--	for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
 		e.__ai_compute = nil
 		return tactic

@@ -152,6 +152,7 @@ newTalent{
 	points = 5,
 	sustain_paradox = 48,
 	no_sustain_autoreset = true,
+	unlearn_on_clone = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 45, 15)) end, -- Limit >10
 	tactical = { BUFF = 2 },
 	callbackOnActBase = function(self, t)

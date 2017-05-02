@@ -230,8 +230,11 @@ function _M:init()
 		end,
 		_BACKSPACE = function()
 			if _M.line_pos > 0 then
-				_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
-				_M.line_pos = _M.line_pos - 1
+				local st = core.key.modState("ctrl") and 0 or _M.line_pos - 1
+				for i = _M.line_pos - 1, st, -1 do
+					_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
+					_M.line_pos = _M.line_pos - 1
+				end
 			end
 			self.changed_input = true
 		end,

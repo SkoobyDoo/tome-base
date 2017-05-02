@@ -268,7 +268,7 @@ newTalent{
 	require = chrono_req_high4,
 	mode = "passive",
 	points = 5,
-	remove_on_clone = true,
+	unlearn_on_clone = true,
 	getChance = function(self, t) return self:combatTalentLimit(t, 65, 30, 50) end,
 	--getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
 	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 95, 60, 80) end,

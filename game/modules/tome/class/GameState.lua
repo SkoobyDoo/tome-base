@@ -254,7 +254,7 @@ local unided_names = {"glowing","scintillating","rune-covered","unblemished","je
 _M.power_themes = {
 	'physical', 'mental', 'spell', 'defense', 'misc', 'fire',
 	'lightning', 'acid', 'mind', 'arcane', 'blight', 'nature',
-	'temporal', 'light', 'dark', 'antimagic'
+	'temporal', 'light', 'dark', 'antimagic', 'cold'
 }
 
 --- defined power sources, used for equipment generation, defined in class descriptors
@@ -1995,6 +1995,8 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 				if instant then b:check("birth_create_alchemist_golem") end
 			elseif k == "soul" then
 				b.soul = util.bound(1 + math.ceil(data.level / 10), 1, 10) -- Does this need to scale?
+			elseif k == "no_npc_weapon_equip" then
+				b[k] = resolver
 			end
 		end
 		for k, resolver in pairs(mclass.copy or {}) do apply_resolvers(k, resolver) end
@@ -2033,6 +2035,10 @@ print("   power types: not_power_source =", table.concat(table.keys(b.not_power_
 							print("Random boss forbade talent because of level", t.name, t.id, data.level)
 							ok = false
 						end
+					end
+					if t.type[1]:find("/other$") then
+						print("Random boss forbase talent because category /other", t.name, t.id, t.type[1])
+						ok = false
 					end
 					if ok then list[t.id] = true end
 				end

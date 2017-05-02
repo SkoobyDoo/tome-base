@@ -903,7 +903,7 @@ function _M:changeLevelReal(lev, zone, params)
 	end
 
 	-- clear chrono worlds and their various effects
-	if self._chronoworlds then self._chronoworlds = nil end
+	if self._chronoworlds and not params.keep_chronoworlds then self._chronoworlds = nil end
 
 	local left_zone = self.zone
 	local old_lev = (self.level and not zone) and self.level.level or -1000
@@ -1865,8 +1865,6 @@ do return end
 			print(f, err)
 			setfenv(f, setmetatable({level=self.level, zone=self.zone}, {__index=_G}))
 			print(pcall(f))
-do return end
-			self:registerDialog(require("mod.dialogs.DownloadCharball").new())
 		end end,
 		[{"_f","ctrl"}] = function() if config.settings.cheat then
 			self.player.quests["love-melinda"] = nil

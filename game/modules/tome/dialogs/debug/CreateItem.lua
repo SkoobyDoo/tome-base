@@ -164,7 +164,6 @@ function _M:init()
 			end
 		end,
 	}
-	-- game:onTickEnd(function() self:setFocus(self:getUIElement(3).ui, "mouse") end)
 end
 
 function _M:on_register()
@@ -217,7 +216,65 @@ function _M:list_select(item, sel)
 		end
 		game:tooltipDisplayAtMap(game.w, game.h, item.desc or "")
 	end
-	
+end
+
+--- add object to targeted creature's inventory
+function _M:objectToTarget(obj)
+	local p = game.player
+	game:unregisterDialog(self)
+	local tg = {type="hit", range=100, nolock=true, no_restrict=true, nowarning=true, no_start_scan=true, act_exclude={[p.uid]=true}}
+	local x, y, act
+	local co = coroutine.create(function()
+		x, y, act = p:getTarget(tg)
+		if x and y then
+			if act then
+				if act:getInven(act.INVEN_INVEN) then
+					if act:addObject(act.INVEN_INVEN, obj) then
+						game.log("#LIGHT_BLUE#Added %s to main inventory of [%s]%s at (%d, %d)", obj:getName({do_color=true}), act.uid, act.name, x, y)
+						game.zone:addEntity(game.level, obj, "object")
+					end
+				end
+			else
+				game.log("#LIGHT_BLUE#No creature to add object to at (%d, %d)", x, y)
+			end
+		end
+		game:registerDialog(self)
+	end)
+	coroutine.resume(co)
+end
+
+--- Create the object, either dropping it or adding it to the player or npc's inventory
+function _M:acceptObject(obj)
+	if not obj then game.log("#LIGHT_BLUE#No object to create")
+	else
+		obj = obj:cloneFull()
+		local plr = game.player
+
+		-- choose where to put object (default is player inventory)
+		local d = Dialog:multiButtonPopup("Place Object", "Place the object where?",
+			{{name=("Player Inventory"):format(), choice="player", fct=function(sel)
+				if not obj.quest and not obj.plot then obj.__transmo = true end
+				plr:addObject(plr.INVEN_INVEN, obj)
+				game.zone:addEntity(game.level, obj, "object")
+				game.log("#LIGHT_BLUE#Added %s to player inventory", obj:getName({do_color=true}))
+			end},
+			{name=("Drop @ Player"):format(), choice="drop", fct=function(sel)
+				game.zone:addEntity(game.level, obj, "object", plr.x, plr.y)
+				game.log("#LIGHT_BLUE#Dropped %s at (%d, %d)", obj:getName({do_color=true}), plr.x, plr.y)
+			end},
+			{name=("NPC Inventory"):format(), choice="npc", fct=function(sel)
+				local x, y, act = _M.objectToTarget(self, obj)
+			end},
+			{name=("Cancel"):format(), choice="cancel", fct=function(sel)
+			end}
+			},
+			nil, nil, -- autosize
+			function(sel)
+				if sel.fct then sel.fct(sel) end
+			end,
+			false, 4, 1 -- cancel on escape, default
+		)
+	end
 end
 
 -- debugging: check for bad objects
@@ -235,19 +292,17 @@ function _M:use(item)
 		item:action()
 	elseif item.unique then
 		local n = not item.error and item.obj or game.zone:finishEntity(game.level, "object", item.e)
-		n:identify(true)
-		game.zone:addEntity(game.level, n, "object", game.player.x, game.player.y)
-		game.log("#LIGHT_BLUE#Created %s", n:getName({do_color=true}))
-		item.obj = nil
+		if n then
+			n:identify(true)
+			self:acceptObject(n)
+		end
 	else
 		local example = item.obj and not item.error
 		game:registerDialog(GetQuantity.new("Number of items to make", "Enter 1-100"..(example and ", or 0 for the example item" or ""), 20, 100, function(qty)
-			game.log("#LIGHT_BLUE# Creating %d items:", qty)
 			if qty == 0 and item.obj and not item.error then
-				game.zone:addEntity(game.level, item.obj, "object", game.player.x, game.player.y)
-				game.log("#LIGHT_BLUE#Created %s", item.obj:getName({do_color=true}))
-				item.obj = nil
+				self:acceptObject(item.obj)
 			else
+				game.log("#LIGHT_BLUE# Creating %d items:", qty)
 				Dialog:yesnoPopup("Ego", "Add an ego enhancement if possible?", function(ret)
 					if not ret then
 						for i = 1, qty do
@@ -284,7 +339,7 @@ function _M:generateList(obj_list)
 	obj_list = obj_list or game.zone.object_list
 	self.raw_list = obj_list
 	for i, e in ipairs(obj_list) do
-		if e.name and e.rarity and not (e.unique and self.uniques[e.unique]) then
+		if e.name and not (e.unique and self.uniques[e.unique]) then
 			list[#list+1] = {name=e.name, unique=e.unique, e=e}
 			if e.unique then self.uniques[e.unique] = true end
 		end
@@ -315,6 +370,12 @@ function _M:generateList(obj_list)
 		end
 		game.log("#LIGHT_BLUE#%d artifacts created.", count)
 	end})
+	table.insert(list, 1, {name = " #YELLOW#Random Object#LAST#", action=function(item)
+		game:unregisterDialog(self)
+		local d = require("mod.dialogs.debug.RandomObject").new()
+		game:registerDialog(d)
+	end}
+	)
 
 	local chars = {}
 	for i, v in ipairs(list) do

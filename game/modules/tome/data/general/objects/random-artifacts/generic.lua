@@ -20,7 +20,7 @@
 local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
--- Themes list: physical, mental, spell, defense, misc, fire, lightning, acid, mind, arcane, blight, nature, temporal, light, dark, antimagic
+-- Themes list: physical, mental, spell, defense, misc, fire, lightning, acid, mind, arcane, blight, nature, temporal, light, dark, antimagic, cold
 
 ----------------------------------------------------------------
 -- Spell Themes

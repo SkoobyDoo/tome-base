@@ -243,8 +243,10 @@ end
 -- @param w, h = width and height of the dialog (in pixels, optional: dialog sized to its elements by default)
 -- @param no_leave set true to force a selection
 -- @param escape = the default choice (number) to select if escape is pressed
-function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape)
+-- @param default = the default choice (number) to select (highlight) when the dialog opens, default 1
+function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape, default)
 	escape = escape or 1
+	default = default or 1
 	-- compute display limits
 	local max_w, max_h = w or game.w*.75, h or game.h*.75
 
@@ -256,7 +258,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	
 	local d = new(title, w or 1, h or 1)
 --print(("[multiButtonPopup] initialized: (w:%s,h:%s), (maxw:%s,maxh:%s) "):format(w, h, max_w, max_h))
-	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) choice_fct(button_list[escape]) end) end
+	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d)
+			if choice_fct then choice_fct(button_list[escape]) end
+		end)
+	end
 
 	local num_buttons = math.min(#button_list, 50)
 	local buttons, buttons_width, button_height = {}, 0, 0
@@ -298,7 +303,7 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	local width = w or math.min(max_w, math.max(text_width + 20, max_buttons_width + 20))
 	local height = h or math.min(max_h, text_height + 10 + nrow*button_height)
 	local uis = {
-		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text}}
+		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text, can_focus=false}}
 	}
 	-- actually place the buttons in the dialog
 	top = math.max(text_height, text_height + (height - text_height - nrow*button_height - 5)/2)
@@ -312,7 +317,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 		end
 	end
 	d:loadUI(uis)
-	if uis[escape + 1] then d:setFocus(uis[escape + 1]) end
+	-- set default focus if possible
+	if uis[default + 1] then d:setFocus(uis[default + 1])
+	elseif uis[escape + 1] then d:setFocus(uis[escape + 1])
+	end
 	d:setupUI(not w, not h)
 	game:registerDialog(d)
 	return d
