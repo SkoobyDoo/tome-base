@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 uberTalent{
 	name = "Draconic Body",
 	mode = "passive",
-	cooldown = 20,
+	cooldown = 15,
 	require = { special={desc="Be close to the draconic world", fct=function(self) return game.state.birth.ignore_prodigies_special_reqs or (self:attr("drake_touched") and self:attr("drake_touched") >= 2) end} },
 	trigger = function(self, t, value)
 		if self.life - value < self.max_life * 0.3 and not self:isTalentCoolingDown(t) then
@@ -77,7 +77,7 @@ uberTalent{
 uberTalent{
 	name = "Never Stop Running",
 	mode = "sustained",
-	cooldown = 20,
+	cooldown = 8,
 	sustain_stamina = 10,
 	tactical = { CLOSEIN = 2, ESCAPE = 2 },
 	no_energy = true,
@@ -112,7 +112,7 @@ uberTalent{
 		self:attr("darkness_darkens", -1)
 	end,
 	info = function(self, t)
-		return ([[You know how to protect yourself with the deepest shadows. As long as you stand on an unlit tile you gain %d armour and 50%% armour hardiness.
+		return ([[You know how to protect yourself with the deepest shadows. As long as you stand on an unlit tile you gain %d armour, 50%% armour hardiness and 20%% evasion.
 		Any time you deal darkness damage, you will unlight both the target tile and yours.
 		The armor bonus scales with your Constitution.]])
 		:format(t.ArmourBonus(self,t))
@@ -134,13 +134,18 @@ uberTalent{
 
 uberTalent{
 	name = "Fungal Blood",
-	require = { special={desc="Be able to use infusions", fct=function(self) return not self.inscription_restrictions or self.inscription_restrictions['inscriptions/infusions'] end} },
+	require = { special={desc="Be able to use infusions", fct=function(self)
+		return 
+			(not self.inscription_restrictions or self.inscription_restrictions['inscriptions/infusions']) and
+			(not self.inscription_forbids or not self.inscription_forbids['inscriptions/infusions'])
+	end} },
 	tactical = { HEAL = function(self) return not self:hasEffect(self.EFF_FUNGAL_BLOOD) and 0 or math.ceil(self:hasEffect(self.EFF_FUNGAL_BLOOD).power / 150) end },
 	healmax = function(self, t) return self.max_life * self:combatStatLimit("con", 0.5, 0.1, 0.25) end, -- Limit < 50% max life
 	fungalPower = function(self, t) return self:getCon()*2 + self.max_life * self:combatStatLimit("con", 0.05, 0.005, 0.01) end,
 	on_pre_use = function(self, t) return self:hasEffect(self.EFF_FUNGAL_BLOOD) and self:hasEffect(self.EFF_FUNGAL_BLOOD).power > 0 and not self:attr("undead") end,
 	trigger = function(self, t)
 		if self.inscription_restrictions and not self.inscription_restrictions['inscriptions/infusions'] then return end
+		if self.inscription_forbids and self.inscription_forbids['inscriptions/infusions'] then return end
 		self:setEffect(self.EFF_FUNGAL_BLOOD, 6, {power=t.fungalPower(self, t)})
 	end,
 	no_energy = true,
@@ -182,10 +187,14 @@ uberTalent{
 		self.max_life = self.max_life + 250
 		self.combat_armor_hardiness = self.combat_armor_hardiness + 20
 	end,
+	on_unlearn = function(self, t)
+		self.max_life = self.max_life - 250
+		self.combat_armor_hardiness = self.combat_armor_hardiness - 20
+	end,
 	info = function(self, t)
 		return ([[Thanks to your newfound knowledge of corruption, you've learned some tricks for toughening your body... but only if you are healthy enough to withstand the strain from the changes.
-		Improves your life by 250, your Defense by %d, your Armour Hardiness by 20%% and your saves by %d as your natural toughness and reflexes are pushed beyond their normal limits.
-		Your saves and Defense will improve with your Constitution.]])
-		:format(self:getCon() / 3, self:getCon() / 3)
+		Improves your life by 250, your defense by %d, your armour by %d, your armour hardiness by 20%% and your saves by %d as your natural toughness and reflexes are pushed beyond their normal limits.
+		Your saves armour and defense will improve with your Constitution.]])
+		:format(self:getCon() / 3, self:getCon() / 3.5, self:getCon() / 3)
 	end,
 }

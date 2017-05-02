@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -205,7 +205,7 @@ This is the troll the notes spoke about, no doubt.]],
 
 	on_die = function(self, who)
 		game.player:resolveSource():setQuestStatus("trollmire-treasure", engine.Quest.COMPLETED)
-		if who and game:getPlayer(true).level == 1 then
+		if who and game:getPlayer(true).level == (game:getPlayer(true).start_level or 1) then
 			world:gainAchievement("KILL_BILL", game.player)
 		end
 	end,

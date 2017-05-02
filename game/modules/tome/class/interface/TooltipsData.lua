@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -37,6 +37,11 @@ Your total number of lives depends on the permadeath setting you choose.
 You may find other ways to save yourself but they are not considered extra lives.
 ]]
 
+TOOLTIP_BLOOD_LIFE = [[#GOLD#Blood of Life#LAST#
+The Blood of Life courses through your veins.
+This can save you from death and restore you to full health (once) if you would otherwise die.
+]]
+
 TOOLTIP_LIFE = [[#GOLD#Life#LAST#
 This is your life force, which is reduced each time you take damage.
 Normally, you will die if this drops below zero, though some effects will allow you survive with negative life.
@@ -46,7 +51,7 @@ It is increased by Constitution.
 
 TOOLTIP_DAMAGE_SHIELD = [[#GOLD#Damage shields#LAST#
 Various talents, items and powers can grant you a temporary damage shield.
-They all work in slightly different manners, but usually will absorb some damage before crumbling down.
+Each works in a distinct manner, but will usually intercept a certain amount of damage that would otherwise hit you before crumbling.
 ]]
 
 TOOLTIP_UNNATURAL_BODY = [[#GOLD#Unnatrual Body Regeneration#LAST#
@@ -62,6 +67,7 @@ This value can be improved with spells, talents, infusions, equipment.
 TOOLTIP_HEALING_MOD = [[#GOLD#Healing mod#LAST#
 This represents how effective healing is for you.
 All healing values are multiplied by this value (including life regeneration).
+It is increased by Constitution.
 ]]
 
 TOOLTIP_AIR = [[#GOLD#Air#LAST#
@@ -81,13 +87,13 @@ Mana represents your reserve of magical energies. Each spell cast consumes mana 
 It is increased by Willpower.
 ]]
 
-TOOLTIP_POSITIVE = [[#GOLD#Positive#LAST#
-Positive energy represents your reserve of positive "celestial" power.
+TOOLTIP_POSITIVE = [[#GOLD#Positive Energy#LAST#
+Positive energy represents your reserve of positive "celestial" power, most closely associated with the Sun.
 It slowly decreases and is replenished by using some talents.
 ]]
 
-TOOLTIP_NEGATIVE = [[#GOLD#Negative#LAST#
-Negative energy represents your reserve of negative "celestial" power.
+TOOLTIP_NEGATIVE = [[#GOLD#Negative Energy#LAST#
+Negative energy represents your reserve of negative "celestial" power, most closely associated with the Moon.
 It slowly decreases and is replenished by using some talents.
 ]]
 
@@ -99,8 +105,9 @@ Also if you used a Corruption spell that cost Vim to kill a creature, that cost 
 ]]
 
 TOOLTIP_EQUILIBRIUM = [[#GOLD#Equilibrium#LAST#
-Equilibrium represents your standing in the grand balance of nature.
-The closer it is to 0 the more in-balance you are. Being out of equilibrium will negatively affect your ability to use Wild Gifts.
+Equilibrium reflects your standing in the grand balance of nature and how easily you can access Wild Gifts.
+The closer it is to 0 the more in-balance you are.
+Being too far out of balance may cause your Wild Gifts to fail when called upon.
 ]]
 
 TOOLTIP_HATE = [[#GOLD#Hate#LAST#
@@ -149,10 +156,43 @@ Each object you carry has an encumbrance value. Your maximum carrying capacity i
 You cannot move while encumbered; drop some items.
 ]]
 
+-------------------------------------------------------------
+-- Talents
+-------------------------------------------------------------
 TOOLTIP_INSCRIPTIONS = [[#GOLD#Inscriptions#LAST#
-The people of Eyal have found a way to create herbal infusions and runes that can be inscribed on the skin of a creature.
-Those inscriptions give the bearer always-accessible powers. Usually most people have a simple regeneration infusion, but there are other kind of potion inscriptions.
+The people of Eyal have found a way to create herbal infusions and runes that can be inscribed on the skin of a creature.  More exotic types of inscriptions also exist.
+Those inscriptions give the bearer always-accessible powers that can be used an unlimited number of times.
+A simple regeneration infusion is the most common type of infusion, and the use of runes of various types is also common among arcane users.
 ]]
+
+TOOLTIP_PRODIGIES = [[#GOLD#Prodigies#LAST#
+Prodigies are special talents that only the most powerful of characters can acquire.
+All of them require at least 50 in a core stat and many also have other, very specific and/or demanding requirements to learn.
+Players can learn new prodigies at levels 30 and 42.]]
+
+TOOLTIP_ITEM_TALENTS = [[#GOLD#Item Talents#LAST#
+Some objects bestow additional talents on the wearer or holder.
+These talents work like normal, learned talents, but are lost if the object granting them is taken off or dropped, even for a moment.]]
+
+TOOLTIP_ACTIVATED = [[#GOLD#Activated Talents#LAST#
+Most talents require activation (i.e. time) to use, and create a specific effect when called upon.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_INSTANT = [[#GOLD#Instant Talents#LAST#
+Some activated talents take no time to use, being activated with but a thought.
+Unlike most talents, instant talents are never put on cooldown from being stunned, and may be usable when most other talents are not.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_PASSIVE = [[#GOLD#Passive Talents#LAST#
+When learned, passive talents permanently alter the user in some way.
+The effects are always present and are usually not dispellable or removable, though other effects may counteract or negate them.
+Specific information on each talent appears its tooltip.]]
+
+TOOLTIP_SUSTAINED = [[#GOLD#Sustained Talents#LAST#
+Sustained talents are turned on and left on.
+While active, a sustained talent produces some effects on the user that stay in effect until the talent is deactivated. Activating most sustained talents require the user to put aside some resources, which become unavailable until the talent is turned off.
+Deactivating a sustained talent causes it to go on cooldown.
+Specific information on each talent appears its tooltip.]]
 
 -------------------------------------------------------------
 -- Speeds
@@ -182,6 +222,9 @@ Higher is faster, so 200% means that you can use mind powers twice as fast as no
 -------------------------------------------------------------
 -- Stats
 -------------------------------------------------------------
+TOOLTIP_STATS = [[#GOLD#Stats#LAST#
+Your character's primary attributes.  Base: the value inherent to your character, which may be increased by applying stat points (limited by character level). Current: the base value plus any bonuses from equipment, effects, certain talents, etc. that is used to determine the overall effectiveness of the stat.
+]]
 TOOLTIP_STR = [[#GOLD#Strength#LAST#
 Strength defines your character's ability to apply physical force. It increases Physical Power, damage done with heavy weapons, Physical Save, and carrying capacity.
 ]]
@@ -189,7 +232,7 @@ TOOLTIP_DEX = [[#GOLD#Dexterity#LAST#
 Dexterity defines your character's ability to be agile and alert. It increases Accuracy, Defense, chance to shrug off critical hits and your damage with light weapons.
 ]]
 TOOLTIP_CON = [[#GOLD#Constitution#LAST#
-Constitution defines your character's ability to withstand and resist damage. It increases your maximum life and Physical Save.
+Constitution defines your character's ability to withstand and resist damage. It increases your maximum life, Physical Save and Healing mod.
 ]]
 TOOLTIP_MAG = [[#GOLD#Magic#LAST#
 Magic defines your character's ability to manipulate the magical energy of the world. It increases your Spellpower, Spell Save, and the effect of spells and other magic items.
@@ -219,6 +262,10 @@ This is the damage you inflict on your foes when you hit them.
 This damage can be reduced by the target's armour or by percentile damage resistances.
 It is improved by Strength or Dexterity, depending on your weapon. Some talents can change the stats that affect it.
 ]]
+TOOLTIP_COMBAT_BLOCK = [[#GOLD#Shield Block Value#LAST#
+The amount of damage a shield will block when actively used in defense.
+Usually this is only effective against Physical damage, but some special shields (and talents) allow the wearer to block other types.
+]]
 TOOLTIP_COMBAT_APR = [[#GOLD#Armour Penetration#LAST#
 Armour penetration allows you to ignore a part of the target's armour (this only works for armour, not damage resistance).
 This can never increase the damage you do beyond reducing armour, so it is only useful against armoured foes.
@@ -235,10 +282,14 @@ Higher is faster, representing more attacks performed in the same amount of time
 TOOLTIP_COMBAT_RANGE = [[#GOLD#Firing range#LAST#
 The maximum distance your weapon can reach.
 ]]
+TOOLTIP_ARCHERY_RANGE_SPEED = [[#GOLD#Archery range and speed#LAST#
+Archery attacks create projectiles with a maximum range, beyond which they will terminate.
+The projectiles travel at their own speed, measured as a percentage (higher, usually) of normal movement speed.
+]]
 TOOLTIP_COMBAT_AMMO = [[#GOLD#Ammo remaining#LAST#
-This is the amount of ammo you have left.
-Bows and slings must be reloaded when this reaches 0.
-Alchemists use gems as ammo to throw bombs.
+This is the amount of ammunition you have left.
+Bows and slings must be reloaded when this reaches 0, which you will do automatically each turn you rest or don't perform a non-movement action.
+Alchemists use specially prepared gems as ammunition to throw bombs, which must be reloaded manually.
 ]]
 
 -------------------------------------------------------------
@@ -250,8 +301,8 @@ It represents the fatigue created by wearing heavy equipment.
 Not all talents are affected; notably, Wild Gifts are not.
 ]]
 TOOLTIP_ARMOR = [[#GOLD#Armour#LAST#
-Armour value is a damage reduction from all incoming melee and ranged physical attacks.
-Absorbs (hardiness)% of incoming physical damage, up to a maximum of (armour) damage absorbed.
+Armour value is a damage reduction from all incoming melee and ranged weapon attacks.
+Absorbs (hardiness)% of incoming weapon damage, up to a maximum of (armour) damage absorbed.
 This is countered by armour penetration and is applied before all kinds of critical damage increase, talent multipliers and damage multiplier, thus making even small amounts have greater effects.
 ]]
 TOOLTIP_ARMOR_HARDINESS = [[#GOLD#Armour Hardiness#LAST#
@@ -270,6 +321,9 @@ Defense represents your chance to avoid physical melee attacks and reduces the c
 TOOLTIP_RDEFENSE = [[#GOLD#Ranged Defense#LAST#
 Defense represents your chance to avoid physical ranged attacks and reduces the chance you'll be knocked off-balance by an enemy's attack. It is measured against the attacker's Accuracy.
 ]]
+TOOLTIP_SAVES = [[#GOLD#Saves#LAST#
+Saving throws represent your ability to shrug off, partially or fully, detrimental effects applied to you.  Most detrimental effects will check their power (physical, spell, mental) vs your corresponding save type to determine if they take effect or not.  The chance is usually ~50% when power and save are equal.
+]]
 TOOLTIP_PHYS_SAVE = [[#GOLD#Physical saving throw#LAST#
 Increases chance to shrug off physically-induced effects.  Also reduces duration of detrimental physical effects by up to 5% per point, depending on the power of the opponent's effect.
 ]]
@@ -279,16 +333,27 @@ Increases chance to shrug off magically-induced effects.  Also reduces duration 
 TOOLTIP_MENTAL_SAVE = [[#GOLD#Mental saving throw#LAST#
 Increases chance to shrug off mentally-induced effects.  Also reduces duration of detrimental mental effects by up to 5% per point, depending on the power of the opponent's effect.
 ]]
-
+-------------------------------------------------------------
+-- Physical
+-------------------------------------------------------------
+TOOLTIP_PHYSICAL_POWER = [[#GOLD#Physical Power#LAST#
+Your physical power represents how overwhelming your physcial abilities are. It is usually improved by Strength, but may be modified by your weapon.  It is opposed by your opponent's physical save.
+In addition, when your physical attacks inflict temporary detrimental effects, every point your opponent's save exceeds your physical power will reduce the duration of the effect by 5%.
+]]
+TOOLTIP_PHYSICAL_CRIT = [[#GOLD#Physical critical chance#LAST#
+Each time you deal damage with a physical ability you may have a chance to perform a critical hit that deals extra damage.
+Some talents allow you to increase this percentage, and it may be modified by your weapon.
+It is improved by Cunning.
+]]
 -------------------------------------------------------------
 -- Spells
 -------------------------------------------------------------
 TOOLTIP_SPELL_POWER = [[#GOLD#Spellpower#LAST#
-Your spellpower represents how powerful your magical spells are.
-In addition, when your spells inflict temporary detrimental effects, every point your opponent's relevant saving throw exceeds your spellpower will reduce the duration of the effect by 5%.
+Your spellpower represents how powerful your magical spells are.  It is opposed by your opponent's spell save.
+In addition, when your spells inflict temporary detrimental effects, every point your opponent's save exceeds your spellpower will reduce the duration of the effect by 5%.
 ]]
 TOOLTIP_SPELL_CRIT = [[#GOLD#Spell critical chance#LAST#
-Each time you deal damage with a spell you may have a chance to make a critical hit that deals extra damage.
+Each time you deal damage with a spell you may have a chance to perform a critical hit that deals extra damage.
 Some talents allow you to increase this percentage.
 It is improved by Cunning.
 ]]
@@ -304,11 +369,11 @@ The lower it is, the more often you'll be able to use your spell talents and run
 -- Mental
 -------------------------------------------------------------
 TOOLTIP_MINDPOWER = [[#GOLD#Mindpower#LAST#
-Your mindpower represents how powerful your mental abilities are.
-In addition, when your mental abilities inflict temporary detrimental effects, every point your opponent's relevant saving throw exceeds your mindpower will reduce the duration of the effect by 5%.
+Your mindpower represents how powerful your mental abilities are.  It is opposed by your opponent's mental save.
+In addition, when your mental abilities inflict temporary detrimental effects, every point your opponent's save exceeds your mindpower will reduce the duration of the effect by 5%.
 ]]
 TOOLTIP_MIND_CRIT = [[#GOLD#Mental critical chance#LAST#
-Each time you deal damage with a mental attack you may have a chance to make a critical hit that deals extra damage.
+Each time you deal damage with a mental attack you may have a chance to perform a critical hit that deals extra damage.
 Some talents allow you to increase this percentage.
 It is improved by Cunning.
 ]]
@@ -326,15 +391,34 @@ This stacks with individual damage type increases.
 TOOLTIP_INC_DAMAGE = [[#GOLD#Damage increase: specific#LAST#
 All damage of this type that you deal, through any means, is increased by this percentage.
 ]]
+TOOLTIP_INC_DAMAGE_ACTOR = [[#GOLD#Damage increase: creature type#LAST#
+All damage you deal to creatures of this type, through any means, is increased by this percentage.  This is applied in addition to (stacks with) other damage modifiers.
+]]
 TOOLTIP_INC_CRIT_POWER = [[#GOLD#Critical multiplier#LAST#
-All critical hits (melee, spells, ...) do this much damage.
+All critical hits (melee, spells, ...) do this much damage compared to normal.
+]]
+TOOLTIP_RESIST_DAMAGE = [[#GOLD#Damage resistance#LAST#
+Whenever you take damage, the percent resistance you have to its type, if any, is checked.  The damage is reduced by this percentage (which may be partially negated by the attacker's Damage Penetration) before being applied.
+Your effective resistance can never be higher than your resistance cap and negative resistances increase the damage you recieve (up to +100%).
 ]]
 TOOLTIP_RESIST_ALL = [[#GOLD#Damage resistance: all#LAST#
 All damage you receive, through any means, is decreased by this percentage.
-This stacks with individual damage type resistances.
+This stacks (multiplicatively) with individual damage type resistances up to their respective caps.
+(So 20% resistance: All + 50% resistance: Fire = 60% total resistance to Fire.)
+]]
+TOOLTIP_RESIST_ABSOLUTE = [[#GOLD#Damage resistance: absolute#LAST#
+All damage you receive, through any means, is decreased by this percentage.
+This is applied after normal damage resistance and is not affected by resistance penetration.
 ]]
 TOOLTIP_RESIST = [[#GOLD#Damage resistance: specific#LAST#
 All damage of this type that you receive, through any means, is reduced by this percentage.
+]]
+TOOLTIP_RESIST_SPEED = [[#GOLD#Damage resistance: by speed#LAST#
+All damage you receive, through any means, is decreased by this percentage, which increases as your total movement speed (global times movement) decreases.
+This is applied after normal damage type resistances.
+]]
+TOOLTIP_RESIST_DAMAGE_ACTOR = [[#GOLD#Damage resistance: creature type#LAST#
+All damage you receive from creatures of this type, through any means, is decreased by this percentage.  This is applied separately to (stacks with) normal resistances.
 ]]
 TOOLTIP_AFFINITY_ALL = [[#GOLD#Damage affinity: all#LAST#
 All damage you receive, through any means, also heals you for this percentage of the damage.
@@ -342,14 +426,38 @@ This stacks with individual damage type affinities.
 Important: Affinity healing happens after damage has been taken, it can not prevent death.
 ]]
 TOOLTIP_AFFINITY = [[#GOLD#Damage affinity: specific#LAST#
-All damage of this type that you receive, through any means, also heals you for this percentage of the damage..
+All damage of this type that you receive, through any means, also heals you for this percentage of the damage.
 Important: Affinity healing happens after damage has been taken, it can not prevent death.
 ]]
+TOOLTIP_STATUS_IMMUNE = [[#GOLD#Status resistance#LAST#
+Most bad status effects can be avoided by having an appropriate immunity, represented by a percent chance to completely avoid the effect in question.  This chance is applied in addition to any saving throws or other checks that may apply.
+]]
 TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
-This represents your chance to completely avoid the effect in question.
+This represents your chance to completely avoid this specific effect.
+]]
+TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
+This represents your chance to completely avoid being stunned, dazed, or frozen.
+]]
+TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
+This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
+]]
+TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative effect immunity chance#LAST#
+This represents your chance to completely avoid ANY bad effects applied to you from others.
 ]]
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
-Each time a creature hits you in melee it will suffer damage.
+Each time a creature hits you with a melee attack, it will suffer damage or other effects.
+]]
+TOOLTIP_MELEE_PROJECT = [[#GOLD#Additional Melee Damage#LAST#
+Each time you strike a creature with a melee attack, you will deal additional damage or other effects.
+]]
+TOOLTIP_MELEE_PROJECT_INNATE = TOOLTIP_MELEE_PROJECT..[[
+This is separate from any special damage of your weapon.
+]]
+TOOLTIP_RANGED_PROJECT = [[#GOLD#Additional Ranged Damage#LAST#
+Each time you strike a creature with a ranged attack, you will deal additional damage or other effects.
+]]
+TOOLTIP_RANGED_PROJECT_INNATE = TOOLTIP_RANGED_PROJECT..[[
+This is separate from any special damage of your weapon or ammo.
 ]]
 TOOLTIP_RESISTS_PEN_ALL = [[#GOLD#Damage penetration: all#LAST#
 Reduces the amount of effective resistance of your foes to any damage you deal by this percent.
@@ -357,8 +465,12 @@ If you have 50% penetration against a creature with 50% resistance it will have 
 This stacks with individual damage type penetrations.
 ]]
 TOOLTIP_RESISTS_PEN = [[#GOLD#Damage penetration: specific#LAST#
-Reduces the amount of effective resistance of your foes to all damage you deal of this type by this percent.
+Reduces the effective resistance of your foes to all damage of this type you deal by this percent.
 If you have 50% penetration against a creature with 50% resistance it will have an effective resistance of 25%.
+]]
+TOOLTIP_FLAT_RESIST = [[#GOLD#Flat resistances#LAST#
+Reduces each hit of a certain damage type (or all) by this amount.
+This has disminishing returns, every tier of 40 it takes one more point to increase by 1. The value showed here is the one after computation of disminishing returns.
 ]]
 
 -------------------------------------------------------------
@@ -397,4 +509,12 @@ Invisible creatures are magically removed from the sight of all others. They can
 TOOLTIP_VISION_SEE_INVISIBLE = [[#GOLD#See invisible#LAST#
 Your power to see invisible creatures. The higher it is, the more likely you are to see them (based on their own invisibility score).
 If you do not have any see invisible score you will never be able to see invisible creatures.
+]]
+TOOLTIP_SEE_TRAPS = [[#GOLD#Detect Traps#LAST#
+Your power to find hidden traps. The higher it is, the more likely you are to notice a trap before setting it off  (based on its own detection score).
+If you do not have any detect traps score, you can not detect traps without triggering them.
+]]
+TOOLTIP_ANTIMAGIC_USER = [[#GOLD#Antimagic User#LAST#
+Dedicated to opposing and destroying magical and arcane influence in the world.
+The use of spells or arcane-powered equipment is impossible.
 ]]

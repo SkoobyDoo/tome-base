@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,15 +20,73 @@
 local Object = require "mod.class.Object"
 
 newTalent{
-	name = "Stone Skin",
-	type = {"spell/earth", 1},
-	mode = "sustained",
+	name = "Pulverizing Auger", short_name="DIG",
+	type = {"spell/earth",1},
 	require = spells_req1,
+	points = 5,
+	mana = 15,
+	cooldown = 6,
+	range = function(self, t) return math.min(10, math.floor(self:combatTalentScale(t, 3, 7))) end,
+	tactical = { ATTACK = {PHYSICAL = 2} },
+	direct_hit = true,
+	requires_target = true,
+	target = function(self, t)
+		local tg = {type="beam", range=self:getTalentRange(t), talent=t}
+		return tg
+	end,
+	allow_for_arcane_combat = true,
+	getDigs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return nil end
+
+		for i = 1, t.getDigs(self, t) do self:project(tg, x, y, DamageType.DIG, 1) end
+
+		self:project(tg, x, y, DamageType.PHYSICAL, self:spellCrit(t.getDamage(self, t)), nil)
+		local _ _, x, y = self:canProject(tg, x, y)
+		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "earth_beam", {tx=x-self.x, ty=y-self.y})
+		game:playSoundNear(self, "talents/earth")
+		return true
+	end,
+	info = function(self, t)
+		local damage = t.getDamage(self, t)
+		local nb = t.getDigs(self, t)
+		return ([[Fire a powerful beam of stone-shaterring force, digging out any walls in its path up to %d.
+		The beam also affect any creatures in its path, dealing %0.2f physical damage to all.
+		The damage will increase with your Spellpower.]]):
+		format(nb, damDesc(self, DamageType.PHYSICAL, damage))
+	end,
+}
+
+newTalent{
+	name = "Stone Skin",
+	type = {"spell/earth", 2},
+	mode = "sustained",
+	require = spells_req2,
 	points = 5,
 	sustain_mana = 30,
 	cooldown = 10,
 	tactical = { BUFF = 2 },
 	getArmor = function(self, t) return self:combatTalentSpellDamage(t, 10, 23) end,
+	getCDChance = function(self, t) return self:combatTalentLimit(t, 100, 30, 90) end,
+	callbackOnMeleeHit = function(self, t, src, dam)
+		if not rng.percent(t.getCDChance(self, t)) then return end
+		if self.turn_procs.stone_skin_cd or dam <= 0 then return end
+		self.turn_procs.stone_skin_cd = true
+		local tids = {}
+		for tid, lev in pairs(self.talents) do
+			local st = self:getTalentFromId(tid)
+			if st.type[1] and (st.type[1] == "spell/earth" or st.type[1] == "spell/stone") and self:isTalentCoolingDown(tid) then
+				tids[#tids+1] = tid
+			end
+		end
+		if #tids > 0 then
+			local tid = rng.table(tids)
+			self:alterTalentCoolingdown(tid, -2)
+		end
+	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/earth")
 		local ret = {
@@ -48,48 +106,9 @@ newTalent{
 	info = function(self, t)
 		local armor = t.getArmor(self, t)
 		return ([[The caster's skin grows as hard as stone, granting a %d bonus to Armour.
+		Each time you are hit in melee, you have a %d%% chance to reduce the cooldown of an Earth or Stone spell by 2 (this effect can only happen once per turn).
 		The bonus to Armour will increase with your Spellpower.]]):
-		format(armor)
-	end,
-}
-
-newTalent{
-	name = "Pulverizing Auger", short_name="DIG",
-	type = {"spell/earth",2},
-	require = spells_req2,
-	points = 5,
-	mana = 15,
-	cooldown = 6,
-	range = function(self, t) return math.min(10, math.floor(self:combatTalentScale(t, 3, 7))) end,
-	tactical = { ATTACK = {PHYSICAL = 2} },
-	direct_hit = true,
-	requires_target = true,
-	getDigs = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
-	target = function(self, t)
-		local tg = {type="beam", range=self:getTalentRange(t), talent=t}
-		return tg
-	end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-
-		for i = 1, t.getDigs(self, t) do self:project(tg, x, y, DamageType.DIG, 1) end
-
-		self:project(tg, x, y, DamageType.PHYSICAL, self:spellCrit(t.getDamage(self, t)), nil)
-		local _ _, x, y = self:canProject(tg, x, y)
-		game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "earth_beam", {tx=x-self.x, ty=y-self.y})
-		game:playSoundNear(self, "talents/earth")
-		return true
-	end,
-	info = function(self, t)
-		local damage = t.getDamage(self, t)
-		local nb = t.getDigs(self, t)
-		return ([[Fire a powerful beam of stone shaterring forces, digging out any walls in its path up to %d.
-		The beam also affect any creatures in its path, dealing %0.2f physical damage to all.
-		The damage will increase with your Spellpower.]]):
-		format(nb, damDesc(self, DamageType.PHYSICAL, damage))
+		format(armor, t.getCDChance(self, t))
 	end,
 }
 
@@ -133,20 +152,39 @@ newTalent{
 	points = 5,
 	cooldown = 40,
 	mana = 50,
-	range = 7,
-	tactical = { ATTACKAREA = {PHYSICAL = 2}, DISABLE = 4, DEFEND = 3, PROTECT = 3, ESCAPE = 1 },
-	target = function(self, t) return {type="ball", nowarning=true, selffire=false, friendlyfire=false, range=self:getTalentRange(t), radius=1, talent=t} end,
+	range = function(self, t) return self:getTalentLevel(t) >= 4 and 7 or 0 end,
+	radius = 1,
+	target = function(self, t) return {type="ball", nowarning=true, selffire=false, friendlyfire=false, range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t} end,
+	tactical = { ATTACKAREA = {PHYSICAL = 2},
+		DISABLE = function(self, t, aitarget)
+			return self:getTalentLevel(t) >=4 and self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist > 1 and 1 or nil
+		end,
+		DEFEND = function(self, t, aitarget) -- surrounded by foes
+			return self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist <= 1 and 3 or nil
+		end,
+		PROTECT = function(self, t, aitarget) -- summoner needs protection
+			return self.summoner and self:getTalentLevel(t) >=4 and core.fov.distance(self.summoner.x, self.summoner.y, aitarget.x, aitarget.y) > 1 and 3 or nil
+		end,
+		ESCAPE = function(self, t, aitarget) -- protect self or trap target
+			return self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist > 1 and (self:getTalentLevel(t) >=4 and 3 or 1) or nil
+		end
+	},
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 250) end,
-	requires_target = function(self, t) return self:getTalentLevel(t) >= 4 end,
+	requires_target = function(self, t) return self:getTalentLevel(t) >=4 end,
 	getDuration = function(self, t) return util.bound(2 + self:combatTalentSpellDamage(t, 5, 12), 2, 25) end,
 	action = function(self, t)
-		local x, y = self.x, self.y
+		local ok, x, y, tx, ty = true, self.x, self.y
 		local tg = self:getTalentTarget(t)
-		if self:getTalentLevel(t) >= 4 then
-			x, y = self:getTarget(tg)
-			if not x or not y then return nil end
-			local _ _, _, _, x, y = self:canProject(tg, x, y)
+		if self:getTalentLevel(t) >= 4 then --NPC's target based on current tactic
+			if self.summoner and self.ai_state.tactic == "protect" then
+				ok, tx, ty, x, y = self:canProject(tg, self.summoner.x, self.summoner.y)
+			elseif self.ai_state.tactic ~= "defend" then
+				x, y = self:getTarget(tg)
+				if not x or not y then return nil end
+				ok, tx, ty, x, y = self:canProject(tg, x, y)
+			end
 		end
+		if not ok or not x or not y then return nil end
 
 		self:project(tg, x, y, DamageType.PHYSICAL, self:spellCrit(t.getDamage(self, t)))
 

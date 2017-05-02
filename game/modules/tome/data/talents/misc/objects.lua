@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -110,8 +110,26 @@ newTalent{
 	type = {"spell/objects", 1},
 	cooldown = 5,
 	points = 5,
-	no_npc_use = true,
 	no_unlearn_last = true,
+	on_unlearn = function(self, t) self.ai_state._pref_staff_element = nil end,
+	message = function(self, t)
+		return ("@Source@ refocuses the energies of %s staff."):format(self:his_her())
+	end,
+	tactical = {BUFF = function(self, t, aitarget)
+			if self.ai_state._pref_staff_element == false then return end
+			local staff = self:hasStaffWeapon()
+			if staff and self.ai_state._pref_staff_element ~= (staff.combat.element or staff.combat.damtype) then return 3 end
+		end},
+	on_pre_use_ai = function(self, t)
+		if self.ai_state._pref_staff_element == false then return end
+		local staff = self:hasStaffWeapon()
+		if staff then
+			if not self.ai_state._pref_staff_element then
+				self.ai_state._pref_staff_element = staff:getStaffPreferredElement(self)
+			end
+			return self.ai_state._pref_staff_element ~= (staff.combat.element or staff.combat.damtype)
+		end
+	end,
 	action = function(self, t)
 		local staff = self:hasStaffWeapon()
 		if not staff or not staff.wielder or not staff.wielder.learn_talent or not staff.wielder.learn_talent[self.T_COMMAND_STAFF] then
@@ -123,12 +141,24 @@ newTalent{
 			staff.combat.element = staff.combat.damtype or engine.DamageType.PHYSICAL
 		end
 
-		local state = {}
-		local Chat = require("engine.Chat")
-		local chat = Chat.new("command-staff", {name="Command Staff"}, self, {version=staff, state=state, co=coroutine.running()})
-		local d = chat:invoke()
-		if not coroutine.yield() then return nil end
-		return true
+		if self.player then -- prompt the player to pick a new element
+			local state = {}
+			local Chat = require("engine.Chat")
+			local chat = Chat.new("command-staff", {name="Command Staff"}, self, {version=staff, state=state, co=coroutine.running()})
+			local d = chat:invoke()
+			if not coroutine.yield() then return nil end
+			return true
+		else -- NPC picks a new element
+			local element, aspect = staff:getStaffPreferredElement(self)
+			if not element or (staff.combat.element or staff.combat.damtype) == element then return end
+			local _, item, inven_id = self:findInAllInventoriesByObject(staff)
+			if inven_id then self:onTakeoff(staff, inven_id, true, true) end
+			staff:commandStaff(element, aspect) -- switch the element
+			if inven_id then self:onWear(staff, inven_id, true, true) end
+			self.ai_state._pref_staff_element = element
+			element = engine.DamageType:get(element)
+			return true
+		end
 	end,
 	info = function(self, t)
 		return ([[Alter the flow of energies through a staff.]])
@@ -195,35 +225,24 @@ newTalent{
 	tactical = { ATTACK = 3, DEFEND = 3 },
 	on_pre_use = function(self, t, silent) if not self:hasShield() then if not silent then game.logPlayer(self, "You require a shield to use this talent.") end return false end return true end,
 	getProperties = function(self, t)
-		local shield = self:hasShield()
+		local shield1, combat1, shield2, combat2 = self:hasShield()
 		--if not shield then return nil end
 		local p = {
-			sp = (shield and shield.special_combat and shield.special_combat.spellplated or false),
-			ref = (shield and shield.special_combat and shield.special_combat.reflective or false),
-			br = (shield and shield.special_combat and shield.special_combat.bloodruned or false),
+			sp = (combat1 and combat1.spellplated or false) or (combat2 and combat2.spellplated or false),
+			ref = (combat1 and combat1.reflective or false) or (combat2 and combat2.reflective or false),
+			br = (combat1 and combat1.bloodruned or false) or (combat2 and combat2.bloodruned or false),
 		}
 		return p
 	end,
-	getBlockValue = function(self, t)
-		local val = 0
-		local shield1 = self:hasShield()
-		if shield1 then val = val + (shield1.special_combat and shield1.special_combat.block or 0) end
-
-		if not self:getInven("MAINHAND") then return val end
-		local shield2 = self:getInven("MAINHAND")[1]
-		if shield2 then val = val + (shield2.special_combat and shield2.special_combat.block or 0) end
-		return val
-	end,
+	getBlockValue = function(self, t) return self:combatShieldBlock() or 0 end,
 	getBlockedTypes = function(self, t)
-		local shield = self:hasShield()
+		local shield1, combat1, shield2, combat2 = self:hasShield()
 		local bt = {[DamageType.PHYSICAL]=true}
-		if not shield then return bt, "error!" end
-		local shield2 = self:getInven("MAINHAND") and self:getInven("MAINHAND")[1]
-		shield2 = shield2 and shield2.special_combat and shield2 or nil
+		if not shield1 then return bt, "error!" end
 
 		if not self:attr("spectral_shield") then
-			if shield.wielder.resists then for res, v in pairs(shield.wielder.resists) do if v > 0 then bt[res] = true end end end
-			if shield.wielder.on_melee_hit then for res, v in pairs(shield.wielder.on_melee_hit) do if v > 0 then bt[res] = true end end end
+			if shield1.wielder.resists then for res, v in pairs(shield1.wielder.resists) do if v > 0 then bt[res] = true end end end
+			if shield1.wielder.on_melee_hit then for res, v in pairs(shield1.wielder.on_melee_hit) do if v > 0 then bt[res] = true end end end
 			if shield2 and shield2.wielder.resists then for res, v in pairs(shield2.wielder.resists) do if v > 0 then bt[res] = true end end end
 			if shield2 and shield2.wielder.on_melee_hit then for res, v in pairs(shield2.wielder.on_melee_hit) do if v > 0 then bt[res] = true end end end
 		else
@@ -242,17 +261,17 @@ newTalent{
 
 		bt.all = nil
 
-		local n = #bt
+		local list = table.keys(bt)
+		local n = #list
 		if n < 1 then return bt, "(error 2)" end
 		local e_string = ""
 		if n == 1 then
 			e_string = DamageType.dam_def[next(bt)].name
 		else
-			local list = table.keys(bt)
 			for i = 1, #list do if DamageType.dam_def[list[i]] then
 				list[i] = DamageType.dam_def[list[i]].name
 			end end
-			e_string = table.concat(list, ", ")
+			e_string = table.concatNice(list, ", ", " and ")
 		end
 		return bt, e_string
 	end,
@@ -306,9 +325,14 @@ newTalent{
 	type = {"wild-gift/objects", 1},
 	points = 5,
 	no_energy = true,
-	tactical = { ATTACK = { ARCANE = 3 } },
+	tactical = { DISABLE = function(self, t, aitarget)
+			return (aitarget:attr("has_arcane_knowledge") and 1 or 0) + (self:getTalentLevel(t)>=5 and (aitarget.undead or aitarget.construct) and 1 or 0)
+		end,
+		ATTACK = function(self, t, aitarget)
+			return self:getTalentLevel(t)>=5 and (aitarget.undead or aitarget.construct) and {arcane = 2} or 0
+		end,
+	},
 	cooldown = function(self, t) return 50 end,
-	tactical = { HEAL = 2 },
 	target = function(self, t)
 		return {type="hit", range=1, talent=t}
 	end,
@@ -318,7 +342,7 @@ newTalent{
 	self:getTalentLevel(t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
+		if not x or not y or not target then return nil end
 		local dispower = t.getpower(self,t)
 		local dismax = t.maxpower(self, t)
 		self:project(tg, x, y, function(px, py)
@@ -412,10 +436,11 @@ newTalent{
 	hard_cap = 1,
 	no_npc_use = true,
 	action = function(self, t)
-		local o = self:findInAllInventoriesBy("define_as", "MORRIGOR")
+		local o, slot, inven_id = self:findInAllInventoriesBy("define_as", "MORRIGOR")
 		o.use_talent=nil
         o.power_regen=nil
         o.max_power=nil
+		self:check("useObjectDisable", o, inven_id, slot)
 		return true
 	end,
 	info = function(self, t)
@@ -654,3 +679,11 @@ newTalent{
 		return ([[For the next 8 turns, powerful blasts of psionic energies will erupt from you, doing %d damage.]]):format(t.getDamage(self, t))
 	end,
 }
+
+-- Talents to allow NPC's to use activatable objects
+local ActorObjectUse = require "mod.class.interface.ActorObjectUse"
+for i = 1, (ActorObjectUse.max_object_use_talents or 0) do
+	ActorObjectUse:useObjectTalent(base_name, i)
+end
+print("[Talents] Defined", ActorObjectUse.max_object_use_talents or 0, "ActorObjectUse Talents base_name:", ActorObjectUse.base_object_talent_name )
+

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,8 +26,10 @@ module(..., package.seeall, class.inherit(Base))
 local function oktodie(self, value, src, death_note)
 	if self:knowTalent(self.T_CAUTERIZE) and self:triggerTalent(self.T_CAUTERIZE, nil, value) then
 		return false, 0
+	elseif self:fireTalentCheck("callbackOnDie", value, src, death_note) then
+		return false, 0
 	else
-		if src.on_kill and src:on_kill(self) then return false, value end
+		if src and src.on_kill and src:on_kill(self) then return false, value end
 		return self:die(src, death_note), value
 	end
 end
@@ -39,6 +41,11 @@ end
 function _M:takeHit(value, src, death_note)
 	if self.onTakeHit then value = self:onTakeHit(value, src, death_note) end
 	if value <= 0 then return false, 0 end
+
+	if death_note and death_note.cant_die then
+		if value >= self.life then value = self.life - 1 end
+	end
+
 	self.life = self.life - value
 	self.changed = true
 	if self.life <= self.die_at and not self.dead then

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -101,7 +101,7 @@ newTalent{
 		local drain = t.getDrain(self, t)
 		local share = t.getSharePct(self, t)*100
 		local damage = t.getDamage(self, t)*100
-		return ([[Make a melee attack for %d%% damage and then attempt to grapple a target up to one size category larger then yourself for %d turns. A grappled opponent will be unable to move, take %d damage each turn, and %d%% of the damage you receive from any source will be redirected to them.  Any movement from the target or you will break the grapple.  Maintaining a grapple drains %d stamina per turn.
+		return ([[Make a melee attack for %d%% damage and then attempt to grapple a target up to one size category larger than yourself for %d turns. A grappled opponent will be unable to move, take %d damage each turn, and %d%% of the damage you receive from any source will be redirected to them.  Any movement from the target or you will break the grapple.  Maintaining a grapple drains %d stamina per turn.
 		You may only grapple a single target at a time, and using any targeted unarmed talent on a target that you're not grappling will break the grapple.]])
 		:format(damage, duration, power, share, drain)
 	end,
@@ -283,6 +283,9 @@ newTalent{
 			end
 
 			if game.level.map:checkAllEntities(x, y, "block_move") then return end
+
+			-- local a = util.dirToAngle(util.getDir(grappled.x, self.y, self.x, grappled.y))
+			game.level.map:particleEmitter(grappled.x, grappled.y, 2, "circle", {appear_size=0, base_rot=0, a=250, appear=6, limit_life=4, speed=0, img="hurricane_throw", radius=-0.3})
 
 			local ox, oy = grappled.x, grappled.y
 			grappled:move(x, y, true)

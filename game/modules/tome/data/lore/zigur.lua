@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -75,9 +75,9 @@ One day however several people in the town fell ill from a mystery disease. Rumo
 
 I still remember how peaceful the evening had seemed when the townsfolk came for me. I was looking up at the brightness of the stars and the clear crescent summerglow moon, thinking of how I should restart my business, when I heard shouts from the distance. I saw the crowd appear from round the corner, advancing with their torches. I screamed for help, but they broke through my door, smashed through my windows and grabbed me. They dragged me outside and set their torches to my house. I was stripped to my skin and beaten heavily whilst they cursed and jeered, and even the man who had been my fiancé spat on my face and cursed me.
 
-They pulled me over grass and stone to the town square, and though half-blinded by the tears and my swollen flesh I could still make out the wooden stake they were erecting. I tried to cry out, I tried to beg for mercy, but their response was to hold me down by my throat and pull out my tongue with the blacksmith's tongs. As I coughed up blood they put me against the wooden pole and used barbed chords to tie my wrists to it above my head. The pain was unbearable and I passed out, and did not wake until I could feel the burning at my feet. The crowd were cheering as the smoke began to wrap around me, and they cheered louder with every pained scream I released from my lungs.
+They pulled me over grass and stone to the town square, and though half-blinded by the tears and my swollen flesh I could still make out the wooden stake they were erecting. I tried to cry out, I tried to beg for mercy, but their response was to hold me down by my throat and pull out my tongue with the blacksmith's tongs. As I coughed up blood they put me against the wooden pole and used barbed cords to tie my wrists to it above my head. The pain was unbearable and I passed out, and did not wake until I could feel the burning at my feet. The crowd were cheering as the smoke began to wrap around me, and they cheered louder with every pained scream I released from my lungs.
 
-I was choking from the smoke, barely able to breathe, and I could no longer feel my legs. Just when I felt my consciousness slipping away again I heard a commotion and a woman's voice shouted out, "She is no witch!" Then I saw some people coming towards me, and at the front was a halfling woman in dark armour. She rushed towards me, unheeding of the flames, and with a swift flick from her long sword she cut my bounds. She caught me as I fell and pulled me away from the fire, laying me down on the ground. I saw her soft face above mine as she whispered to me, "Tell me child, do you reject magic in all its forms?" I nodded my head - I could not say no to those bright eyes. She wiped the tears streaming down my face and kissed my forehead. "Then you will be safe - rest now." At once I passed out.
+I was choking from the smoke, barely able to breathe, and I could no longer feel my legs. Just when I felt my consciousness slipping away again I heard a commotion and a woman's voice shouted out, "She is no witch!" Then I saw some people coming towards me, and at the front was a halfling woman in dark armour. She rushed towards me, unheeding of the flames, and with a swift flick from her long sword she cut my bonds. She caught me as I fell and pulled me away from the fire, laying me down on the ground. I saw her soft face above mine as she whispered to me, "Tell me child, do you reject magic in all its forms?" I nodded my head - I could not say no to those bright eyes. She wiped the tears streaming down my face and kissed my forehead. "Then you will be safe - rest now." At once I passed out.
 
 When I awoke I was in another village in a soft bed. There were wrappings round my legs and bandages covering the cuts and bruises over the rest of my body. Healers tended to me, using natural remedies and herbal balms. The halfling woman would come and see me every day to check up on me. I longed for her every visit. She would speak to me sometimes. She explained how the townsfolk weren't to blame for their actions. It was all the mages' fault. They were corrupting the world, spreading chaos, and turning people against each other. I realised I was wrong for ever brewing potions - they were infested with arcane energies and could only bring harm to the world.
 
@@ -85,4 +85,21 @@ She explained how she and her friends were helping to save the world, to rid our
 
 I have no voice now to tell my story to others, and so I write it down instead, and I spread it to the winds. I have suffered from my contact with magic, and others will suffer too. Do not trust in the terrible powers of these devious arts. They will only betray you and bring you to harm. Turn your back on magic, and make others repent too. Find your own salvation in nature's joys before it is too late.
 ]],
+}
+
+newLore{
+	id = "zigur-purging-trap",
+	category = "zigur",
+	name = "Purging Trap",
+	lore = [[[As you begin to leave, Protector Myssil stops you.]
+
+Actually...  You fight in a more subtle way than most, do you not?  It is a point of pride for many of us that we stand tall in the face of arcane aggression and give warlocks one chance to repent before purging them, and much of our training reflects that, but I won't deny that less...  #{italic}#traditionally glorious#{normal}# methods can be extremely effective.  Decorum's no reason to let a necromancer get away alive when you could've planted a trap in their escape route.
+
+(She hands you a scroll.) Here - some of us have come up with a pre-prepared device which will sap magic from whoever or whatever sets it off.  All we ask is that you use discretion with these devices; no matter what our #{italic}#last#{normal}# assassin thought, planting them in some lesser rune-scribe's shop would be more likely to do us harm than good in the long run.]],
+	on_learn = function(who)
+		local p = game.party:findMember{main=true}
+		if p:knowTalentType("cunning/trapping") then
+			game.state:unlockTalent(p.T_PURGING_TRAP, p)
+		end
+	end,
 }

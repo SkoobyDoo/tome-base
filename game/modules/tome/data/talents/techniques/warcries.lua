@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,14 +67,14 @@ newTalent{
 	cooldown = 50,
 	no_energy = true,
 	tactical = { STAMINA = 2 },
-	getRestore = function(self, t) return self:combatTalentLimit(t, 100, 27, 55) end,
+	getStamina = function(self, t) return 10 + self:combatTalentLimit(t, 2, .5, 1.3)*(self:getStr() + self:getWil()) end,
 	action = function(self, t)
-		self:incStamina(t.getRestore(self, t)*self.max_stamina/ 100)
+		self:incStamina(t.getStamina(self, t))
 		return true
 	end,
 	info = function(self, t)
-		return ([[Take a deep breath to recover %d%% of your stamina.]]):
-		format(t.getRestore(self, t))
+		return ([[Take a deep breath to recover %d stamina.  The stamina recovery improves with your Strength and Willpower.]]):
+		format(t.getStamina(self, t))
 	end,
 }
 

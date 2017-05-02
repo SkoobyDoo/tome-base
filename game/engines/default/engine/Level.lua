@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 local Map = require "engine.Map"
 
 --- Define a level
+-- @classmod engine.Level
 module(..., package.seeall, class.make)
 
 -- Keep a list of currently existing maps
@@ -106,6 +107,9 @@ function _M:addEntity(e, after, no_error)
 		end
 		if pos then
 			table.insert(self.e_array, pos+1, e)
+			if self.last_iteration and self.last_iteration.i >= pos then
+				self.last_iteration.i = self.last_iteration.i + 1
+			end
 		else
 			table.insert(self.e_array, e)
 		end
@@ -125,11 +129,18 @@ function _M:removeEntity(e, force)
 
 	if not self.entities[e.uid] and not force then error("Entity "..e.uid.."("..(e.name or "???")..") not present on the level") end
 	self.entities[e.uid] = nil
+	local pos = nil
 	for i = 1, #self.e_array do
 		if self.e_array[i] == e then
-			table.remove(self.e_array, i)
+			pos = i
 			break
 		end
+	end
+	if pos then
+		if self.last_iteration and self.last_iteration.i >= pos then
+			self.last_iteration.i = self.last_iteration.i - 1
+		end
+		table.remove(self.e_array, pos)
 	end
 	game:removeEntity(e)
 
@@ -198,7 +209,8 @@ end
 -- Decaying means we look on the map for the given type of entities and if we are allowed to we delete them
 -- @param what what Map feature to decay (ACTOR, OBJECT, ...)
 -- @param check either a boolean or a function, if true the given entity will be decayed
--- @return the number of decayed entities and the total number of such entities remaining
+-- @return the number of decayed entities
+-- @return the total number of such entities remaining
 function _M:decay(what, check)
 	local total, nb = 0, 0
 	for i = 0, self.map.w - 1 do for j = 0, self.map.h - 1 do
@@ -253,5 +265,26 @@ function _M:pickSpotRemove(filter)
 	local s = rng.table(list)
 	if not s then return end
 	table.remove(self.spots, s.idx)
+	return s.spot
+end
+
+--- Pick a random spot matching the given filter
+function _M:pickSpotFrom(filter, spots)
+	local list = {}
+	for i, spot in ipairs(spots) do
+		if not filter or game.zone:checkFilter(spot, filter) then list[#list+1] = spot end
+	end
+	return rng.table(list), list
+end
+
+--- Pick a random spot matching the given filter and remove it
+function _M:pickSpotRemoveFrom(filter, spots)
+	local list = {}
+	for i, spot in ipairs(spots) do
+		if not filter or game.zone:checkFilter(spot, filter) then list[#list+1] = {spot=spot, idx=i} end
+	end
+	local s = rng.table(list)
+	if not s then return end
+	table.remove(spots, s.idx)
 	return s.spot
 end

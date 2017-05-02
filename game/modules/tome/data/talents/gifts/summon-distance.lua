@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -577,7 +577,7 @@ newTalent{
 
 				resists = { [DamageType.FIRE] = 100, },
 
-				summoner = self, summoner_gain_exp=true, wild_gift_summon=true,
+				summoner = self, summoner_gain_exp=true, wild_gift_summon=true, wild_gift_summon_ignore_cap=true,
 				summon_time = m.summon_time,
 				ai_target = {actor=m.ai_target.actor}
 			}

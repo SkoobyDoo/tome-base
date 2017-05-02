@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ return {
 	ambient_music = {"March.ogg", "weather/desert_base.ogg"},
 	min_material_level = 4,
 	max_material_level = 5,
+	effects = {"EFF_ZONE_AURA_RAKSHOR"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",
@@ -41,7 +42,15 @@ return {
 			up = "BONE_LADDER_UP",
 			down = "BONE_LADDER_DOWN",
 			door = "BONE_DOOR",
-			rooms = {{"forest_clearing",2}, "random_room", {"lesser_vault",5}},
+			static_replace_tiles = {
+				FLOOR = "BONEFLOOR",
+				DOOR = "BONE_DOOR",
+				WALL = "BONEWALL",
+				HARDWALL = "HARDBONEWALL",
+				DOOR_VAULT = "BONE_VAULT_DOOR",
+			},
+			required_rooms = {"greater_vault"},
+			rooms = {{"forest_clearing",2}, "random_room", {"lesser_vault",2}, {"greater_vault",4}},
 			lesser_vaults_list = {"orc-armoury", "double-t", "crypt", "hostel", "horror-chamber"},
 			lite_room_chance = 100,
 		},
@@ -90,8 +99,15 @@ return {
 					down = "BONEFLOOR",
 					door = "BONE_DOOR",
 
-					nb_rooms = {0,0,0,1},
-					rooms = {"lesser_vault"},
+					static_replace_tiles = {
+						FLOOR = "BONEFLOOR",
+						DOOR = "BONE_DOOR",
+						WALL = "BONEWALL",
+						HARDWALL = "HARDBONEWALL",
+						DOOR_VAULT = "BONE_VAULT_DOOR",
+					},
+					nb_rooms = {1,1,2,3},
+					rooms = {"lesser_vault", "greater_vault"},
 					lesser_vaults_list = {"orc-armoury", "double-t", "crypt", "hostel", "horror-chamber"},
 					lite_room_chance = 100,
 				},

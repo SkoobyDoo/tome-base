@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ newEffect{
 			add_mos = {{image = "npc/giant_treant_wrathroot.png", 
 			display_y = -1, 
 			display_h = 2}},
-        }
+		}
 		
 		self:removeAllMOs()
 		game.level.map:updateMap(self.x, self.y)
@@ -376,6 +376,7 @@ newEffect{
 	subtype = { miscellaneous=true },
 	status = "detrimental",
 	parameters = { power=10 },
+	no_stop_enter_worlmap = true,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the destabilizations
 		old_eff.dur = new_eff.dur
@@ -587,7 +588,7 @@ newEffect{
 newEffect{
 	name = "SEVER_LIFELINE", image = "talents/sever_lifeline.png",
 	desc = "Sever Lifeline",
-	long_desc = function(self, eff) return ("The target's lifeline is being cut. When the effect ends %0.2f temporal damage will hit the target."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target's lifeline is being cut. When the effect ends %d temporal damage will hit the target."):format(eff.power) end,
 	type = "other",
 	subtype = { time=true },
 	status = "detrimental",
@@ -770,9 +771,9 @@ newEffect{
 		-- level 4: Reprieve from Death
 	end,
 	deactivate = function(self, eff)
-		if eff.resistsUndeadId then self:removeTemporaryValue("resists_actor_type", eff.resistsUndeadId) end
-		if eff.incDamageUndeadId then self:removeTemporaryValue("inc_damage_actor_type", eff.incDamageUndeadId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.resistsUndeadId then self:removeTemporaryValue("resists_actor_type", eff.resistsUndeadId) eff.resistsUndeadId = nil end
+		if eff.incDamageUndeadId then self:removeTemporaryValue("inc_damage_actor_type", eff.incDamageUndeadId) eff.incDamageUndeadId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
 	end,
 	on_merge = function(self, old_eff, new_eff) return old_eff end,
 	doCorpselight = function(self, eff, target)
@@ -911,10 +912,10 @@ newEffect{
 		-- level 4: Mania
 	end,
 	deactivate = function(self, eff)
-		if eff.mindResistId then self:removeTemporaryValue("resists", eff.mindResistId) end
-		if eff.confusionImmuneId then self:removeTemporaryValue("confusion_immune", eff.confusionImmuneId) end
-		if eff.getCombatCriticalPowerChangeId then self:removeTemporaryValue("combat_critical_power", eff.getCombatCriticalPowerChangeId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.mindResistId then self:removeTemporaryValue("resists", eff.mindResistId) eff.mindResistId = nil end
+		if eff.confusionImmuneId then self:removeTemporaryValue("confusion_immune", eff.confusionImmuneId) eff.confusionImmuneId = nil end
+		if eff.getCombatCriticalPowerChangeId then self:removeTemporaryValue("combat_critical_power", eff.getCombatCriticalPowerChangeId) eff.getCombatCriticalPowerChangeId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
 	end,
 	on_timeout = function(self, eff)
 		-- mania
@@ -1014,10 +1015,10 @@ newEffect{
 		-- level 4: Shroud of Death
 	end,
 	deactivate = function(self, eff)
-		if eff.resistsDarknessId then self:removeTemporaryValue("resists", eff.resistsDarknessId) end
-		if eff.resistsCapDarknessId then self:removeTemporaryValue("resists_cap", eff.resistsCapDarknessId) end
-		if eff.seeInvisibleId then self:removeTemporaryValue("see_invisible", eff.seeInvisibleId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.resistsDarknessId then self:removeTemporaryValue("resists", eff.resistsDarknessId) eff.resistsDarknessId = nil end
+		if eff.resistsCapDarknessId then self:removeTemporaryValue("resists_cap", eff.resistsCapDarknessId) eff.resistsCapDarknessId = nil end
+		if eff.seeInvisibleId then self:removeTemporaryValue("see_invisible", eff.seeInvisibleId) eff.seeInvisibleId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
 
 		if self:hasEffect(self.EFF_SHROUD_OF_WEAKNESS) then self:removeEffect(self.EFF_SHROUD_OF_WEAKNESS) end
 		if self:hasEffect(self.EFF_SHROUD_OF_PASSING) then self:removeEffect(self.EFF_SHROUD_OF_PASSING) end
@@ -1126,7 +1127,7 @@ newEffect{
 	getWilChange = function(level) return -1 + level * 2 end,
 	getBaseSuffocateAirChange = function(level) return Combat:combatTalentLimit(level, 50, 4, 16) end, -- Limit < 50 to take >2 hits to kill most monsters
 	getSuffocateAirChange = function(level) return Combat:combatTalentLimit(level, 10, 0, 7) end, -- Limit < 10
-	getNightmareChance = function(level) return Combat:combatTalentLimit(math.max(0, level-4), 25, 3, 10) end, -- Limit < 25%
+	getNightmareChance = function(level) return Combat:combatTalentLimit(math.max(0, level-3), 25, 3, 10) end, -- Limit < 25%
 	getNightmareRadius = function(level) return 5 + (level - 4) * 2 end,
 	display_desc = function(self, eff)
 		if math.min(eff.unlockLevel, eff.level) >= 4 then
@@ -1171,9 +1172,9 @@ newEffect{
 		-- level 4: Nightmare
 	end,
 	deactivate = function(self, eff)
-		if eff.resistsPhysicalId then self:removeTemporaryValue("resists", eff.resistsPhysicalId); end
-		if eff.resistsCapPhysicalId then self:removeTemporaryValue("resists_cap", eff.resistsCapPhysicalId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
+		if eff.resistsPhysicalId then self:removeTemporaryValue("resists", eff.resistsPhysicalId); eff.resistsPhysicalId =  nil end
+		if eff.resistsCapPhysicalId then self:removeTemporaryValue("resists_cap", eff.resistsCapPhysicalId) eff.resistsCapPhysicalId =  nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId =  nil end
 	end,
 	on_merge = function(self, old_eff, new_eff) return old_eff end,
 	doSuffocate = function(self, eff, target)
@@ -1218,13 +1219,11 @@ newEffect{
 	on_timeout = function(self, eff) -- Chance for nightmare fades over time
 		if eff.nightmareChance then eff.nightmareChance = math.max(0, eff.nightmareChance-1) end
 	end,
-	-- called by _M:onTakeHit function in in mod.class.Actor.lua
-	doNightmare = function(self, eff)
+	callbackOnHit = function(self, eff, cb)	game:onTickEnd(function()
 		if math.min(eff.unlockLevel, eff.level) >= 4 then
 			-- build chance for a nightmare
 			local def = self.tempeffect_def[self.EFF_CURSE_OF_NIGHTMARES]
 			eff.nightmareChance = (eff.nightmareChance or 0) + def.getNightmareChance(eff.level)
-
 
 			-- invoke the nightmare
 			if rng.percent(eff.nightmareChance) then
@@ -1289,7 +1288,7 @@ newEffect{
 				game:playSoundNear(self, "talents/cloud")
 			end
 		end
-	end,
+	end) end,
 }
 
 
@@ -1357,11 +1356,11 @@ newEffect{
 		-- level 4: Unfortunate End
 	end,
 	deactivate = function(self, eff)
-		if eff.moneyValueMultiplierId then self:removeTemporaryValue("money_value_multiplier", eff.moneyValueMultiplierId) end
-		if eff.combatDefId then self:removeTemporaryValue("combat_def", eff.combatDefId) end
-		if eff.combatDefRangedId then self:removeTemporaryValue("combat_def_ranged", eff.combatDefRangedId) end
-		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) end
-		if eff.trapAvoidanceId then self:removeTemporaryValue("trap_avoidance", eff.trapAvoidanceId) end
+		if eff.moneyValueMultiplierId then self:removeTemporaryValue("money_value_multiplier", eff.moneyValueMultiplierId) eff.moneyValueMultiplierId = nil end
+		if eff.combatDefId then self:removeTemporaryValue("combat_def", eff.combatDefId) eff.combatDefId = nil end
+		if eff.combatDefRangedId then self:removeTemporaryValue("combat_def_ranged", eff.combatDefRangedId) eff.combatDefRangedId = nil end
+		if eff.incStatsId then self:removeTemporaryValue("inc_stats", eff.incStatsId) eff.incStatsId = nil end
+		if eff.trapAvoidanceId then self:removeTemporaryValue("trap_avoidance", eff.trapAvoidanceId) eff.trapAvoidanceId = nil end
 	end,
 	on_merge = function(self, old_eff, new_eff) return old_eff end,
 	
@@ -1657,52 +1656,28 @@ newEffect{
 		local spawn_time = 2
 		if eff.dur%spawn_time == 0 then
 		
-			-- Fine space
+			-- Find space
 			local x, y = util.findFreeGrid(eff.target.x, eff.target.y, 5, true, {[Map.ACTOR]=true})
 			if not x then
-				game.logPlayer(self, "Not enough space to summon!")
+				game.logPlayer(self, "You could not find enough space to form a dream projection...")
 				return
 			end
-			
-			-- Create a clone for later spawning
-			local m = require("mod.class.NPC").new(eff.target:cloneFull{
-				shader = "shadow_simulacrum",
-				shader_args = { color = {0.0, 1, 1}, base = 0.6 },
-				no_drops = true, keep_inven_on_death = false,
-				faction = eff.target.faction,
-				summoner = eff.target, summoner_gain_exp=true,
-				ai_target = {actor=nil},
+			local m = require("mod.class.NPC").new(eff.target:cloneActor{
+				shader = "shadow_simulacrum", shader_args = { color = {0.0, 1, 1}, base = 0.6 },
+				is_psychic_projection = true,
+				summoner = eff.target, summoner_gain_exp=true, exp_worth=0,
+				_rst_full=true, can_change_level=table.NIL_MERGE, can_change_zone=table.NIL_MERGE,
+				ai_target={actor=table.NIL_MERGE},
+				max_level = eff.target.level,
+				life = util.bound(eff.target.life, eff.target.die_at, eff.target.max_life),
 				ai = "summoned", ai_real = "tactical",
-				ai_state = eff.target.ai_state or { ai_move="move_complex", talent_in=1 },
+				ai_state={ ai_move="move_complex", talent_in=1, ally_compassion = 10},
 				name = eff.target.name.."'s dream projection",
 			})
-			
-			-- Change some values; most of this is typical clone protection stuff
-			m.ai_state.ally_compassion = 10
-			m:removeAllMOs()
-			m.make_escort = nil
-			m.on_added_to_level = nil
-			m._rst_full = true
-			m.forceLevelup = function() end
-			m.on_acquire_target = nil
-			m.seen_by = nil
-			m.can_talk = nil
-			m.puuid = nil
-			m.on_takehit = nil
-			m.exp_worth = 0
-			m.no_inventory_access = true
-			m.clone_on_hit = nil
-			m.player = nil
-			m.energy.value = 0
-			m.max_life = m.max_life
-			m.life = util.bound(m.life, 0, m.max_life)
-			m.remove_from_party_on_death = true
+
 			if not eff.target:attr("lucid_dreamer") then
 				m.inc_damage.all = (m.inc_damage.all or 0) - 50
 			end
-			
-			-- special stuff
- 			m.is_psychic_projection = true
 			m.lucid_dreamer = 1
 			
 			-- Remove some talents
@@ -1712,15 +1687,15 @@ newEffect{
 				if (t.no_npc_use and not t.allow_temporal_clones) or t.remove_on_clone then tids[#tids+1] = t end
 			end
 			for i, t in ipairs(tids) do
-				if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
 				m:unlearnTalentFull(t.id)
 			end
 			
 			-- remove imprisonment
-			m.invulnerable = m.invulnerable - 1
-			m.time_prison = m.time_prison - 1
-			m.no_timeflow = m.no_timeflow - 1
-			m.status_effect_immune = m.status_effect_immune - 1
+			m:attr("invulnerable", -1)
+			m:attr("time_prison", -1)
+			m:attr("no_timeflow", -1)
+			m:attr("status_effect_immune", -1)
+			
 			m:removeParticles(eff.particle)
 			m:removeTimedEffectsOnClone()
 
@@ -2260,16 +2235,17 @@ newEffect{
 	end,
 }
 
-
 newEffect{
 	name = "CLOAK_OF_DECEPTION", image = "shockbolt/object/artifact/black_cloak.png",
 	desc = "Cloak of Deception",
-	long_desc = function(self, eff) return "The target is under the effect of the cloak of deception, making it look alive." end,
+	long_desc = function(self, eff) return "The target is under the effect of the cloak of deception, making it look human." end,
 	decrease = 0, no_remove = true,
 	type = "other",
 	subtype = { undead=true },
 	status = "neutral",
 	parameters = {},
+	on_gain = function(self, err) return ("#LIGHT_BLUE#An illusion appears around #Target# making %s appear human."):format(self:him_her()), "+CLOAK OF DECEPTION" end,
+	on_lose = function(self, err) return "#LIGHT_BLUE#The illusion covering #Target# disappears.", "-CLOAK OF DECEPTION" end,
 	activate = function(self, eff)
 		self.old_faction_cloak = self.faction
 		self.faction = "allied-kingdoms"
@@ -2314,7 +2290,10 @@ newEffect{
 newEffect{
 	name = "ANTIMAGIC_DISRUPTION",
 	desc = "Antimagic Disruption",
-	long_desc = function(self, eff) return ("Your arcane powers are disrupted by your antimagic equipment."):format() end,
+	long_desc = function(self, eff)
+		local chance = self:attr("spell_failure") or 0
+		return ("Your arcane powers are disrupted by your antimagic equipment.  Arcane talents fail %d%% of the time and arcane sustains have a %0.1f%% chance to deactivate each turn."):format(chance, chance/10)
+	end,
 	type = "other",
 	subtype = { antimagic=true },
 	no_stop_enter_worlmap = true,
@@ -2359,20 +2338,22 @@ newEffect{
 newEffect{
 	name = "THROUGH_THE_CROWD", image = "talents/through_the_crowd.png",
 	desc = "Through The Crowd",
-	long_desc = function(self, eff) return ("Increases physical save, spell save, and mental save by %d."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Increases physical save, spell save, and mental save by %d. Global speed increased by %d%%."):format(eff.power * 10, util.bound(eff.power, 0, 5) * 3) end,
 	type = "other",
 	subtype = { miscellaneous=true },
 	status = "beneficial",
 	parameters = { power=10 },
 	activate = function(self, eff)
-		eff.presid = self:addTemporaryValue("combat_physresist", eff.power)
-		eff.sresid = self:addTemporaryValue("combat_spellresist", eff.power)
-		eff.mresid = self:addTemporaryValue("combat_mentalresist", eff.power)
+		eff.presid = self:addTemporaryValue("combat_physresist", eff.power * 10)
+		eff.sresid = self:addTemporaryValue("combat_spellresist", eff.power * 10)
+		eff.mresid = self:addTemporaryValue("combat_mentalresist", eff.power * 10)
+		eff.speedid = self:addTemporaryValue("global_speed_add", util.bound(eff.power, 0, 5) * 0.03)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_physresist", eff.presid)
 		self:removeTemporaryValue("combat_spellresist", eff.sresid)
 		self:removeTemporaryValue("combat_mentalresist", eff.mresid)
+		self:removeTemporaryValue("global_speed_add", eff.speedid)
 	end,
 }
 
@@ -2406,9 +2387,7 @@ newEffect{
 	parameters = { power=10},
 	on_gain = function(self, err) return "#Target# retunes the fabric of spacetime.", "+Spacetime Tuning" end,
 	on_timeout = function(self, eff)
-		local dox = self:getParadox() - self.preferred_paradox
-		local fix = math.min( math.abs(dox), eff.power )
-		self:incParadox(fix)
+		self:callTalent(self.T_SPACETIME_TUNING, "tuneParadox")
 	end,
 	activate = function(self, eff)
 		if core.shader.active(4) then
@@ -2547,7 +2526,7 @@ newEffect{
 	parameters = { power=10 },
 	decrease = 0,
 	callbackOnTakeDamage = function(self, eff, src, x, y, type, dam, state)
-		if src ~= self and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
+		if src ~= self and src.hasEffect and src:hasEffect(src.EFF_TEMPORAL_FUGUE) then
 			-- Find our clones
 			for i = 1, #eff.targets do
 				local target = eff.targets[i]
@@ -2639,8 +2618,8 @@ newEffect{
 	subtype = { time=true },
 	status = "detrimental",
 	parameters = { paradox=10 },
-	on_gain = function(self, err) return "#Target# converts damage into paradox.", "+Smearing" end,
-	on_lose = function(self, err) return "#Target# stops converting damage to paradox..", "-Smearing" end,
+	on_gain = function(self, err) return "Reality smears around #Target#.", "+Smearing" end,
+	on_lose = function(self, err) return "Reality around #Target# is coherent again.", "-Smearing" end,
 	on_merge = function(self, old_eff, new_eff)
 		-- Merge the flames!
 		local oldparadox = old_eff.paradox * old_eff.dur
@@ -2690,8 +2669,12 @@ newEffect{
 		local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[Map.ACTOR]=true})
 		if e and x then
 			game.zone:addEntity(game.level, e, "actor", x, y)
-			local g = game.zone.grid_list[self.to_vat]
-			if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+
+			local og = game.level.map(x, y, Map.TERRAIN)
+			if not og or (not og.special and not og.change_level) then
+				local g = game.zone.grid_list[self.to_vat]
+				if g then game.zone:addEntity(game.level, g, "terrain", x, y) end
+			end
 
 			game.level.map:particleEmitter(x, y, 1, "goosplosion")
 			game.level.map:particleEmitter(x, y, 1, "goosplosion")
@@ -2713,7 +2696,7 @@ newEffect{
 newEffect{
 	name = "UNSTOPPABLE", image = "talents/unstoppable.png",
 	desc = "Unstoppable",
-	long_desc = function(self, eff) return ("The target is unstoppable! It refuses to die, and at the end it will heal %d Life."):format(eff.kills * eff.hp_per_kill * self.max_life / 100) end,
+	long_desc = function(self, eff) return ("The target is unstoppable! It refuses to die and cannot heal.  When the effect ends, it will heal %d Life (%d%% of maximum life per foe slain during the frenzy)."):format(eff.kills * eff.hp_per_kill * self.max_life / 100, eff.hp_per_kill) end,
 	type = "other",
 	subtype = { frenzy=true },
 	status = "beneficial",
@@ -2722,10 +2705,12 @@ newEffect{
 		eff.kills = 0
 		eff.tmpid = self:addTemporaryValue("unstoppable", 1)
 		eff.healid = self:addTemporaryValue("no_life_regen", 1)
+		eff.nohealid = self:addTemporaryValue("no_healing", 1)
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("unstoppable", eff.tmpid)
 		self:removeTemporaryValue("no_life_regen", eff.healid)
+		self:removeTemporaryValue("no_healing", eff.nohealid)
 		self:heal(eff.kills * eff.hp_per_kill * self.max_life / 100, eff)
 	end,
 }
@@ -2770,7 +2755,11 @@ newEffect{
 		self:removeParticles(eff.particle2)
 		if not game.zone.wilderness and not self.dead then
 			if not eff.twisted then
-				self:forceUseTalent(eff.talent, {force_target=self})
+				self:forceUseTalent(eff.talent, {force_target=self, ignore_energy=true})
+				-- manually use energy
+				local anom = self:getTalentFromId(eff.talent)
+				self:useEnergy(self:getTalentSpeed(anom) * game.energy_to_act)
+				
 				game:playSoundNear(self, "talents/dispel")
 				self:incParadox(-eff.paradox)
 			end
@@ -2819,3 +2808,483 @@ newEffect{
 		game:delayedLogDamage(eff, self, val, ("%s%d %s#LAST#"):format(DamageType:get(DamageType.MIND).text_color or "#aaaaaa#", math.ceil(val), "dream"), false)
 	end,
 }
+
+newEffect{
+	name = "ZONE_AURA_GORBAT",
+	desc = "Natural Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +20 mindpower, +2 life regen, -1 equilibrium per turn, -20% resistance penetration.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_mindpower", 20)
+		self:effectTemporaryValue(eff, "life_regen", 2)
+		self:effectTemporaryValue(eff, "equilibrium_regen", -1)
+		self:effectTemporaryValue(eff, "resists_pen", {all=-20})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_VOR",
+	desc = "Sorcerous Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +20 magic, +2 mana regen, -20 accuracy, -20 stealth power.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_stats", {[Stats.STAT_MAG] = 20})
+		self:effectTemporaryValue(eff, "mana_regen", 2)
+		self:effectTemporaryValue(eff, "combat_atk", -20)
+		self:effectTemporaryValue(eff, "inc_stealth", -20)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_GRUSHNAK",
+	desc = "Disciplined Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +20 defense, +20 all saves, -20 spell power.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_def", 20)
+		self:effectTemporaryValue(eff, "combat_physresist", 20)
+		self:effectTemporaryValue(eff, "combat_spellresist", 20)
+		self:effectTemporaryValue(eff, "combat_mentalresist", 20)
+		self:effectTemporaryValue(eff, "combat_spellpower", -20)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_RAKSHOR",
+	desc = "Sinister Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: +10% critical chance, +20% critical damage, -20% nature and blight resistance.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_physcrit", 10)
+		self:effectTemporaryValue(eff, "combat_spellcrit", 10)
+		self:effectTemporaryValue(eff, "combat_mindcrit", 10)
+		self:effectTemporaryValue(eff, "combat_critical_power", 20)
+		self:effectTemporaryValue(eff, "resists", {[DamageType.NATURE]=-20, [DamageType.BLIGHT]=-20})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_UNDERWATER",
+	desc = "Underwater Zone",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: Air decreases over time. If you run out of air you will start losing life. Look for bubbles to recover air. The water also reduces stun resistance by 10% and fire damage is reduced by 10%, however cold damage is increased by 10%.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "stun_immune", -0.1)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.COLD]=10, [DamageType.FIRE]=-10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_FEARSCAPE",
+	desc = "Fearscape Zone",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: The flames of the Fearscape increase all fire and blight damage by 10%, but the weird gravity reduces knockback resistance by 20%.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "knockback_immune", -0.2)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.BLIGHT]=10, [DamageType.FIRE]=10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_OUT_OF_TIME",
+	desc = "Out of Time Zone",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: You seem to be outside the normal spacetime continuum. +10% physical resistance, -10% temporal resistance and -20% teleport resistance.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "teleport_immune", -0.2)
+		self:effectTemporaryValue(eff, "resists", {[DamageType.PHYSICAL]=10, [DamageType.TEMPORAL]=-10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_SPELLBLAZE",
+	desc = "Spellblaze Aura",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: The power of the Spellblaze still burns here. -10% resistance to fire, arcane and blight damage, but +10% cold resistance. WARNING: The powerful magic here reflects teleportation magic!") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "resists", {[DamageType.FIRE]=-10, [DamageType.ARCANE]=-10, [DamageType.BLIGHT]=-10, [DamageType.COLD]=10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_CALDERA",
+	desc = "Heady Scent",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: Strong scents fill the air and make you feel drowsy. If the timer reaches 0 you will fall into a dreaming sleep state. -10% mind resistance, -20% sleep resistance, +10% nature damage.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "sleep_immune", -0.2)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.NATURE]=10})
+		self:effectTemporaryValue(eff, "resists", {[DamageType.MIND]=-10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_THUNDERSTORM",
+	desc = "Thunderstorm",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: A huge thunderstorm rages above you. +10 lightning damage, -10% stun resistance.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "stun_immune", -0.1)
+		self:effectTemporaryValue(eff, "inc_damage", {[DamageType.LIGHTNING]=10})
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_ABASHED",
+	desc = "Abashed Expanse",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) return ("Zone-wide effect: Your Phase Door spell is super easy to use here, allowing you to target it regardless of level.") end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "detrimental",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "ZONE_AURA_CHALLENGE",
+	desc = "Challenge",
+	no_stop_enter_worlmap = true,
+	long_desc = function(self, eff) if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return "???" else return self:hasQuest(eff.id_challenge_quest).name end end,
+	decrease = 0, no_remove = true,
+	type = "other",
+	subtype = { aura=true },
+	status = "neutral",
+	zone_wide_effect = true,
+	parameters = {},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_exit_level", self)
+	end,
+	callbackOnKill = function(self, eff, who, death_note)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_kill_foe", self, who)
+	end,
+	callbackOnActBase = function(self, eff)
+		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
+		self:hasQuest(eff.id_challenge_quest):check("on_act_base", self)
+	end,
+}
+
+newEffect{
+	name = "THROWING_KNIVES", image = "talents/throwing_knives.png",
+	desc = "Throwing Knives",  decrease = 0,
+	display_desc = function(self, eff) return eff.stacks.." Knives" end,
+	long_desc = function(self, eff) return ("Has %d throwing knives prepared:\n\n%s"):format(eff.stacks, self:callTalent(self.T_THROWING_KNIVES, "knivesInfo")) end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "beneficial",
+	parameters = { stacks=1, max_stacks=6 },
+	charges = function(self, eff) return eff.stacks end,
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = new_eff.dur
+		old_eff.max_stacks = new_eff.max_stacks
+		old_eff.stacks = util.bound(old_eff.stacks + new_eff.stacks, 0, new_eff.max_stacks)
+		return old_eff
+	end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+--while strictly speaking these fit better as physical effects, the ability for a mob to layer 3 different physical debuffs on a player with one swing and block off clearing stuns via wild infusions is not good. bad enough that they can bleed/poison
+
+newEffect{
+	name = "SCOUNDREL", image = "talents/scoundrel.png",
+	desc = "Scoundrel's Strategies",
+	long_desc = function(self, eff) return ("The target is suffering from disabling wounds, reducing their critical strike chance by %d%%."):
+		format( eff.power ) end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	parameters = { power=1 },
+	activate = function(self, eff)
+		eff.cur_pcrit = -eff.power
+		eff.cur_scrit = -eff.power
+		eff.cur_mcrit = -eff.power
+
+		eff.pcritid = self:addTemporaryValue("combat_physcrit", eff.cur_pcrit)
+		eff.scritid = self:addTemporaryValue("combat_spellcrit", eff.cur_scrit)
+		eff.mcritid = self:addTemporaryValue("combat_mindcrit", eff.cur_mcrit)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("combat_physcrit", eff.pcritid)
+		self:removeTemporaryValue("combat_spellcrit", eff.scritid)
+		self:removeTemporaryValue("combat_mindcrit", eff.mcritid)
+	end,
+}
+
+newEffect{
+	name = "FUMBLE", image = "talents/fumble.png",
+	desc = "Fumble",
+	long_desc = function(self, eff) return ("The target is suffering from distracting wounds, and has a %d%% chance to fail to use a talent and injure itself for %d physical damage."):
+		format( eff.power*eff.stacks, eff.dam ) end,
+	charges = function(self, eff) return eff.stacks end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	charges = function(self, eff) return eff.stacks or 1 end,
+	parameters = { power=1, dam=10, stacks = 0, max_stacks=10 },
+	on_merge = function(self, old_eff, new_eff)
+		old_eff.dur = new_eff.dur
+		
+		local stackCount = old_eff.stacks + new_eff.stacks
+		if stackCount >= old_eff.max_stacks then 
+			stackCount = old_eff.max_stacks
+		end
+		
+		self:removeTemporaryValue("scoundrel_failure", old_eff.failid)
+		old_eff.failid = self:addTemporaryValue("scoundrel_failure", old_eff.cur_fail*stackCount)
+		
+		old_eff.stacks = stackCount
+		
+		return old_eff
+		
+	end,
+	activate = function(self, eff)
+		eff.cur_fail = eff.power
+		eff.failid = self:addTemporaryValue("scoundrel_failure", eff.cur_fail)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("scoundrel_failure", eff.failid)
+	end,
+	callbackOnTalentDisturbed = function(self, eff, t)
+		if self:attr("scoundrel_failure") then
+			DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam)
+			self:removeEffect(self.EFF_FUMBLE)
+		end
+	end,
+}
+
+
+newEffect{
+	name = "TOUCH_OF_DEATH", image = "talents/touch_of_death.png",
+	desc = "Touch of Death",
+	long_desc = function(self, eff) return ("The target is taking %0.2f physical damage each turn. If they die while under this effect, they will explode!"):format(eff.dam) end,
+	type = "other", --extending this would be very bad
+	subtype = {  },
+	status = "detrimental",
+	parameters = { dur=4, dam=10, power=20, radius=1, combo=1 },
+	on_gain = function(self, err) return "#Target# is mortally wounded!", "+Touch of Death!" end,
+	on_lose = function(self, err) return "#Target# overcomes the touch of death.", "-Touch of Death" end,
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+	on_timeout = function(self, eff)
+		DamageType:get(DamageType.PHYSICAL).projector(eff.src or self, self.x, self.y, DamageType.PHYSICAL, eff.dam)
+		eff.dam = eff.dam * (1 + eff.mult)
+	end,
+	on_die = function(self, eff)
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		eff.src:buildCombo()
+		local tg = {type="ball", radius=eff.radius, selffire=false, x=self.x, y=self.y}
+		local dam = self.max_life * eff.power / self.rank
+		eff.src:project(tg, self.x, self.y, DamageType.PHYSICAL, dam, {type="bones"})
+		game.logSeen(eff.src, "#LIGHT_RED#%s explodes into a shower of gore!", self.name:capitalize())
+		self:removeEffect(self.EFF_TOUCH_OF_DEATH)
+	end,
+}
+
+newEffect{
+	name = "MARKED", image = "talents/master_marksman.png",
+	desc = "Marked",
+	long_desc = function(self, eff) return ("Target is marked, leaving them vulnerable to marked shots."):format() end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	on_gain = function(self, err) return nil, "+Marked!" end,
+	on_lose = function(self, err) return nil, "-Marked" end,
+	activate = function(self, eff)
+		eff.particle = self:addParticles(Particles.new("circle", 1, {base_rot=1, oversize=1.0, a=200, appear=8, speed=0, img="marked", radius=0}))
+		self:effectTemporaryValue(eff, "marked", 1)
+	end,
+	deactivate = function(self, eff)
+		self:removeParticles(eff.particle)
+	end,
+--	on_die = function(self,eff)
+--		if eff.src and eff.src:knowTalent(eff.src.T_FIRST_BLOOD) then eff.src:incStamina(eff.src:callTalent(eff.src.T_FIRST_BLOOD, "getStamina")) end
+--	end,
+}
+
+newEffect{
+	name = "FLARE",
+	desc = "Flare", image = "talents/flare_raz.png",
+	long_desc = function(self, eff) return ("The target is lit up by a flare, reducing its stealth and invisibility power by %d, defense by %d and removing all evasion bonus from being unseen."):format(eff.power, eff.power) end,
+	type = "other",
+	subtype = { sun=true },
+	status = "detrimental",
+	parameters = { power=20 },
+	on_gain = function(self, err) return nil, "+Illumination" end,
+	on_lose = function(self, err) return nil, "-Illumination" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_stealth", -eff.power)
+		if self:attr("invisible") then self:effectTemporaryValue(eff, "invisible", -eff.power) end
+		self:effectTemporaryValue(eff, "combat_def", -eff.power)
+		self:effectTemporaryValue(eff, "blind_fighted", 1)
+	end,
+}
+
+newEffect{
+	name = "PIN_DOWN",
+	desc = "Pinned Down", image = "talents/pin_down.png",
+	long_desc = function(self, eff) return ("The next Steady Shot or Shoot has 100%% chance to be a critical hit and mark."):format() end,
+	type = "other",
+	subtype = { tactic=true },
+	status = "detrimental",
+	parameters = {power = 1},
+	activate = function(self, eff)
+	end,
+	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "DEMI_GODMODE",
+	desc = "Demigod Mode", --image = "",
+	long_desc = function(self, eff) return ("DEMI-GODMODE: Target has 10000 additional life and regenerates 2000 life per turn.  It deals +500%% damage, and has full ESP."):format() end,
+	type = "other",
+	subtype = { cheat=true },
+	status = "beneficial",
+	parameters = {power = 1},
+	decrease = 0, no_remove = true,
+	activate = function(self, eff)
+		eff.ignore_prodigies_special_reqs = game.state.birth.ignore_prodigies_special_reqs
+		self:effectTemporaryValue(eff, "invulnerable", 0)
+		self:effectTemporaryValue(eff, "negative_status_effect_immune", 0)
+		self:effectTemporaryValue(eff, "esp_all", 1)
+		self:effectTemporaryValue(eff, "esp_range", 500)
+--		self:effectTemporaryValue(eff, "no_breath", 1)
+		self:effectTemporaryValue(eff, "auto_id", 100)
+		self:effectTemporaryValue(eff, "max_life", 10000)
+		self:effectTemporaryValue(eff, "life_regen", 2000)
+		self:effectTemporaryValue(eff, "inc_damage", {all=500})
+		self:effectTemporaryValue(eff, "resists_pen", {all=0})
+--		self:resetToFull()
+		game.state.birth.ignore_prodigies_special_reqs = true
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+	deactivate = function(self, eff)
+		game.state.birth.ignore_prodigies_special_reqs = eff.ignore_prodigies_special_reqs
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+}
+
+newEffect{
+	name = "GODMODE",
+	desc = "God Mode", --image = "",
+	long_desc = function(self, eff) return ("GODMODE: Target is invulnerable to damage, immune to bad status effects, deals +10000%% damage (100%% penetration), does not need to breathe, and has full ESP."):format() end,
+	type = "other",
+	subtype = { cheat=true },
+	status = "beneficial",
+	parameters = {power = 1},
+	decrease = 0, no_remove = true,
+	activate = function(self, eff)
+		eff.ignore_prodigies_special_reqs = game.state.birth.ignore_prodigies_special_reqs
+		self:effectTemporaryValue(eff, "invulnerable", 1)
+		self:effectTemporaryValue(eff, "negative_status_effect_immune", 1)
+		self:effectTemporaryValue(eff, "esp_all", 1)
+		self:effectTemporaryValue(eff, "esp_range", 500)
+		self:effectTemporaryValue(eff, "no_breath", 1)
+		self:effectTemporaryValue(eff, "auto_id", 100)
+		self:effectTemporaryValue(eff, "inc_damage", {all=10000})
+		self:effectTemporaryValue(eff, "resists_pen", {all=100})
+		game.state.birth.ignore_prodigies_special_reqs = true
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+	deactivate = function(self, eff)
+		game.state.birth.ignore_prodigies_special_reqs = eff.ignore_prodigies_special_reqs
+		self:resetCanSeeCache() game.level.map:cleanFOV() self:doFOV()
+	end,
+}
+

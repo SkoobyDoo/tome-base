@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,6 +18,49 @@
 -- darkgod@te4.org
 
 -- Default archery attack
+
+local weaponCheck = function(self, weapon, ammo, silent, weapon_type)
+	if not weapon then
+		if not silent then
+			-- ammo contains error message
+			game.logPlayer(self, ({
+				["disarmed"] = "You are currently disarmed and cannot use this talent.",
+				["no shooter"] = ("You require a %s to use this talent."):format(weapon_type or "missile launcher"),
+				["no ammo"] = "You require ammo to use this talent.",
+				["bad ammo"] = "Your ammo cannot be used.",
+				["incompatible ammo"] = "Your ammo is incompatible with your missile launcher.",
+				["incompatible missile launcher"] = ("You require a %s to use this talent."):format(weapon_type or "bow"),
+			})[ammo] or "You require a missile launcher and ammo for this talent.")
+		end
+		return false
+	else
+		local infinite = ammo and ammo.infinite or self:attr("infinite_ammo")
+		if not ammo or (ammo.combat.shots_left <= 0 and not infinite) then
+			if not silent then game.logPlayer(self, "You do not have enough ammo left!") end
+			return false
+		end
+	end
+	return true
+end
+
+local archerPreUse = function(self, t, silent, weapon_type)
+	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(weapon_type)
+	weapon = weapon or pf_weapon
+	return weaponCheck(self, weapon, ammo, silent, weapon_type)
+end
+
+local wardenPreUse = function(self, t, silent, weapon_type)
+	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(weapon_type)
+	weapon = weapon or pf_weapon
+	if self:attr("warden_swap") and not weapon and weapon_type == nil or weapon_type == "bow" then
+		weapon, ammo = doWardenPreUse(self, "bow")
+	end
+	return weaponCheck(self, weapon, ammo, silent, weapon_type)
+end
+
+Talents.archerPreUse = archerPreUse
+Talents.wardenPreUse = wardenPreUse
+
 newTalent{
 	name = "Shoot",
 	type = {"technique/archery-base", 1},
@@ -26,9 +69,8 @@ newTalent{
 	hide = true,
 	innate = true,
 	points = 1,
-	cooldown = 0,
 	stamina = function(self, t)
-		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then return nil end
+		if not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") or not wardenPreUse(self, t, false, "sling") then return nil end
 
 		local b = self:getTalentFromId("T_SKIRMISHER_BOMBARDMENT")
 		return b.shot_stamina(self, b)
@@ -37,39 +79,69 @@ newTalent{
 	message = "@Source@ shoots!",
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 } },
-	on_pre_use = function(self, t, silent) if not (self:attr("warden_swap") and doWardenPreUse(self, "bow")) and not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling and ammo for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent) end,
 	no_unlearn_last = true,
-	use_psi_archery = function(self, t)
-		local inven = self:getInven("PSIONIC_FOCUS")
-		if not inven then return false end
-		local pf_weapon = inven[1]
-		if pf_weapon and pf_weapon.archery then
-			return true
-		else
-			return false
+	archery_onreach = function(self, t, x, y, tg, target)
+		if not target then return end
+		if self:knowTalent(self.T_FIRST_BLOOD) then
+			local perc = (target.life / target.max_life)
+			if perc >= 0.9 then
+				self.turn_procs.first_blood_shoot = target.life
+			end
 		end
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = true end
+	end,
+	archery_onmiss = function(self, talent, target, x, y)
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = nil end
+		if self.mark_steady then self.mark_steady = nil end
+	end,
+	archery_onhit = function(self, t, target, x, y)
+		if self:knowTalent(self.T_MASTER_MARKSMAN) then
+			local chance = 15 + (self.mark_steady or 0)
+			if self:isTalentActive(self.T_AIM) then	
+				chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
+			end
+			if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+			if target:hasEffect(target.EFF_PIN_DOWN) then 
+				local eff = target:hasEffect(target.EFF_PIN_DOWN)
+				chance = 100
+				self.turn_procs.auto_phys_crit = nil
+				target:removeEffect(target.EFF_PIN_DOWN)
+			end
+			if self.turn_procs.first_blood_shoot then chance = chance + 50 end
+			if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
+		end
+		if self.turn_procs.first_blood_shoot then
+			local life_diff = self.turn_procs.first_blood_shoot - target.life
+			local scale = self:callTalent(self.T_FIRST_BLOOD, "getBleed")
+			if life_diff > 0 and target:canBe('cut') and scale then
+				target:setEffect(target.EFF_CUT, 5, {power=life_diff * scale / 5, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
+			end
+		end
+		if self.mark_steady then self.mark_steady = nil end
+		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
 	end,
 	action = function(self, t)
 		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "bow"))
 	
 		-- Most of the time use the normal shoot.
-		if not self:hasArcheryWeapon("sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
+		if not wardenPreUse(self, t, true, "sling") or not self:isTalentActive("T_SKIRMISHER_BOMBARDMENT") then
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 			if not targets then if swap then doWardenWeaponSwap(self, t, "blade") end return end
-			self:archeryShoot(targets, t, nil, {use_psi_archery = t.use_psi_archery(self, t)})
+			if self:knowTalent(self.T_STEADY_SHOT) and not self:isTalentCoolingDown(self.T_STEADY_SHOT) then
+				self:archeryShoot(targets, t, nil, {mult=self:callTalent(self.T_STEADY_SHOT, "getDamage")} )
+				self.mark_steady = self:callTalent(self.T_STEADY_SHOT, "getBonusMark")
+				self:startTalentCooldown(self.T_STEADY_SHOT)
+			else
+				self:archeryShoot(targets, t, nil) -- use_psi_archery set by Archery:archeryShoot
+			end
 			return true
 		end
 		
-		local weapon, ammo, offweapon = self:hasArcheryWeapon()
-		if not weapon then return nil end
-		local infinite = ammo.infinite or self:attr("infinite_ammo")
-		if not ammo or (ammo.combat.shots_left <= 0 and not infinite) then
-			game.logPlayer(self, "You do not have enough ammo left!")
-			return nil
-		end
+		-- perform Bombardment if possible
+		local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon("sling")
+		if not weapon and not pf_weapon then return nil end
 
-		-- Bombardment.
-		local weapon = self:hasArcheryWeapon("sling")
 		local bombardment = self:getTalentFromId("T_SKIRMISHER_BOMBARDMENT")
 		local shots = bombardment.bullet_count(self, bombardment)
 		local mult = bombardment.damage_multiplier(self, bombardment)
@@ -81,20 +153,28 @@ newTalent{
 		if not x or not y then return end
 		game.target.forced = {x, y, target}
 
-		-- Fire all shots.
-		local i
+		-- Fire all shots, limited by stamina
+		local count = 0
+		local stam = t.stamina(self, t)*self.resources_def[self.RS_STAMINA].cost_factor(self, t)
 		for i = 1, shots do
-			local targets = self:archeryAcquireTargets(nil, {no_energy=true, one_shot=true})
+			local targets = self:archeryAcquireTargets(nil, {no_energy=true, one_shot=true, type="sling"})
 			if not targets then break end
-			self:archeryShoot(targets, t, nil, {mult=mult, use_psi_archery = t.use_psi_archery(self, t)})
+			
+			if count > 0 then 
+				if self:getStamina() < stam*2 then break end
+				
+				self:incStamina(-stam)
+			end
+			count = i
+			self:archeryShoot(targets, t, nil, {mult=mult, type="sling"})
 		end
-
-		local speed = self:combatSpeed(weapon)
-		self:useEnergy(game.energy_to_act * (speed or 1))
-
+		if count > 0 then
+			local speed = self:combatSpeed(weapon or pf_weapon)
+			self:useEnergy(game.energy_to_act * (speed or 1))
+		end
 		game.target.forced = old_target_forced
 
-		return i ~= 1
+		return count > 0
 	end,
 	info = function(self, t)
 		return ([[Shoot your bow, sling or other missile launcher!]])
@@ -108,128 +188,585 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	cooldown = 3,
-	stamina = 8,
 	require = techs_dex_req1,
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	getDamage = function(self, t)
+		local dam = self:combatTalentWeaponDamage(t, 1.0, 1.8)
+		return dam
+	end,
+	getBonusMark = function(self,t) return 5 + math.floor(self:combatTalentScale(t, 2, 10)) end,
+	getChance = function(self,t) 
+		local chance = 15 + t.getBonusMark(self,t)
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:isTalentActive(self.T_AIM) then	
+			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
+		end
+		return math.min(100, chance)
+	end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
+	archery_onreach = function(self, t, x, y, tg, target)
+		if not target then return end
+		
+		local dam = t.getDamage(self,t)
+
+		if self:knowTalent(self.T_FIRST_BLOOD) then
+			local perc = (target.life / target.max_life)
+			if perc >= 0.9 then
+				self.turn_procs.first_blood_ss = target.life
+			end
+		end
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = true end
+	end,
+	archery_onmiss = function(self, talent, target, x, y)
+		if target:hasEffect(target.EFF_PIN_DOWN) then self.turn_procs.auto_phys_crit = nil end
+	end,
+	archery_onhit = function(self, t, target, x, y)
+		local chance = t.getChance(self,t)
+		if target:hasEffect(target.EFF_PIN_DOWN) then 
+			local eff = target:hasEffect(target.EFF_PIN_DOWN)
+			chance = 100
+			self.turn_procs.auto_phys_crit = nil
+			target:removeEffect(target.EFF_PIN_DOWN)
+		end
+		if self.turn_procs.first_blood_ss then chance = chance + 50 end
+		if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
+		
+		if self.turn_procs.first_blood_ss then
+			local life_diff = self.turn_procs.first_blood_ss - target.life
+			local scale = self:callTalent(self.T_FIRST_BLOOD, "getBleed")
+			if life_diff > 0 and target:canBe('cut') and scale then
+				target:setEffect(target.EFF_CUT, 5, {power=life_diff * scale / 5, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
+			end
+		end
+		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
+	end,
 	action = function(self, t)
 		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 		if not targets then return end
-		self:archeryShoot(targets, t, nil, {mult=self:combatTalentWeaponDamage(t, 1.1, 2.2)})
+		
+		local dam = t.getDamage(self,t)
+		
+		self:archeryShoot(targets, t, nil, {mult=dam})
+		
 		return true
 	end,
 	info = function(self, t)
-		return ([[A steady shot, doing %d%% damage.]]):format(self:combatTalentWeaponDamage(t, 1.1, 2.2) * 100)
+		local dam = t.getDamage(self,t)*100
+		local chance = t.getChance(self,t)
+		return ([[Fire a steady shot, doing %d%% damage with a %d%% chance to mark the target.
+If Steady Shot is not on cooldown, this talent will automatically replace your normal attacks (and trigger the cooldown).]]):
+		format(dam, chance)
 	end,
 }
 
 newTalent{
-	name = "Aim",
+	name = "Pin Down",
 	type = {"technique/archery-training", 2},
-	mode = "sustained",
+	no_energy = "fake",
 	points = 5,
+	random_ego = "attack",
+	cooldown = 9,
+	stamina = 10,
 	require = techs_dex_req2,
-	cooldown = 8,
-	sustain_stamina = 20,
-	no_energy = true,
-	tactical = { BUFF = 2 },
-	no_npc_use = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
-	getCombatVals = function(self, t)
-		local vals = {speed = -self:combatTalentLimit(t, 0.5, 0.05, 0.25), -- Limit < 50% speed loss
-			crit =  self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 7, 0, 57, 50),
-			atk = self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 4, 0, 54, 50),
-			dam = self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 4, 0, 54, 50),
-			apr = self:combatScale(self:getTalentLevel(t) * self:getDex(10, true), 3, 0, 53, 50)}
-		return vals
-	end,
-	sustain_slots = 'archery_stance',
-	activate = function(self, t)
-		local weapon = self:hasArcheryWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Aim without a bow or sling!")
-			return nil
+	range = archery_range,
+	tactical = { ATTACK = { weapon = 1 }, DISABLE = { pin = 2 } },
+	requires_target = true,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.4) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 5)) end,
+	getMarkChance = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20)) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
+	getChance = function(self,t) 
+		local chance = 20
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:isTalentActive(self.T_AIM) then	
+			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
 		end
-
-		local vals = t.getCombatVals(self, t)
-		return {
-			speed = self:addTemporaryValue("combat_physspeed", vals.speed),
-			crit = self:addTemporaryValue("combat_physcrit", vals.crit),
-			atk = self:addTemporaryValue("combat_dam", vals.atk),
-			dam = self:addTemporaryValue("combat_atk", vals.dam),
-			apr = self:addTemporaryValue("combat_apr", vals.apr),
-		}
+		return chance
 	end,
-	deactivate = function(self, t, p)
-		self:removeTemporaryValue("combat_physspeed", p.speed)
-		self:removeTemporaryValue("combat_physcrit", p.crit)
-		self:removeTemporaryValue("combat_apr", p.apr)
-		self:removeTemporaryValue("combat_atk", p.atk)
-		self:removeTemporaryValue("combat_dam", p.dam)
+	archery_onhit = function(self, t, target, x, y)
+		if target:canBe("pin") then
+			target:setEffect(target.EFF_PINNED, t.getDuration(self, t), {apply_power=self:combatAttack()})
+		end
+		target:setEffect(target.EFF_PIN_DOWN, t.getDuration(self, t), {src=self})
+		local chance = t.getChance(self,t)
+		if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
+	end,
+	action = function(self, t)
+		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
+		if not targets then return end
+		
+		local dam = t.getDamage(self,t)
+		
+		self:archeryShoot(targets, t, nil, {mult=dam})
 		return true
 	end,
 	info = function(self, t)
-		local vals = t.getCombatVals(self, t)
-		return ([[You enter a calm, focused stance, increasing your Physical Power (+%d), Accuracy (+%d), Armour penetration (+%d), and critical chance (+%d%%), but reducing your firing speed by %d%%.
-		The effects will increase with your Dexterity.]]):
-		format(vals.dam, vals.atk, vals.apr, vals.crit, -vals.speed * 100)
+		local dam = t.getDamage(self,t)*100
+		local dur = t.getDuration(self,t)
+		local mark = t.getMarkChance(self,t)
+		local chance = t.getChance(self,t)
+		return ([[You fire a shot for %d%% damage that attempts to pin your target to the ground for %d turns, as well as giving your next Steady Shot or Shoot 100%% increased chance to critically hit and mark (regardless of whether the pin succeeds).
+		This shot has a 20%% chance to mark the target.
+		The chance to pin increases with your Accuracy.]]):
+		format(dam, dur, mark, chance)
 	end,
 }
 
 newTalent{
-	name = "Rapid Shot",
+	name = "Fragmentation Shot",
 	type = {"technique/archery-training", 3},
-	mode = "sustained",
+	no_energy = "fake",
 	points = 5,
+	random_ego = "attack",
+	cooldown = 10,
+	stamina = 12,
 	require = techs_dex_req3,
-	cooldown = 8,
-	sustain_stamina = 20,
-	no_energy = true,
-	tactical = { BUFF = 2 },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
-	getCombatVals = function(self, t)
-		local vals = {speed = self:combatTalentScale(t, 0.1, 0.5, 0.75),
-			crit = -self:combatTalentScale(t, 10.4, 20),
-			atk = -self:combatTalentScale(t, 10.4, 20, 0.75),
-			dam = -self:combatTalentScale(t, 10.4, 20, 0.75)
-			}
-		return vals
+	range = archery_range,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
+	tactical = { ATTACKAREA = { weapon = 2 }, DISABLE = { 3 } },
+	requires_target = true,
+	target = function(self, t)
+		local weapon, ammo = self:hasArcheryWeapon()
+		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), selffire=false, display=self:archeryDefaultProjectileVisual(weapon, ammo)}
 	end,
-	sustain_slots = 'archery_stance',
-	activate = function(self, t)
-		local weapon = self:hasArcheryWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Rapid Shot without a bow or sling!")
-			return nil
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.5) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
+	getSpeedPenalty = function(self, t) return math.floor(self:combatTalentLimit(t, 50, 10, 40))/100 end,
+	getChance = function(self,t) 
+		local chance = 20
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:isTalentActive(self.T_AIM) then	
+			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
 		end
-
-		local vals = t.getCombatVals(self, t)
-		return {
-			speed = self:addTemporaryValue("combat_physspeed", vals.speed),
-			atk = self:addTemporaryValue("combat_dam", vals.atk),
-			dam = self:addTemporaryValue("combat_atk", vals.dam),
-			crit = self:addTemporaryValue("combat_physcrit", vals.crit),
-		}
+		return chance
 	end,
-	deactivate = function(self, t, p)
-		self:removeTemporaryValue("combat_physspeed", p.speed)
-		self:removeTemporaryValue("combat_physcrit", p.crit)
-		self:removeTemporaryValue("combat_dam", p.dam)
-		self:removeTemporaryValue("combat_atk", p.atk)
+	archery_onhit = function(self, t, target, x, y)
+		target:setEffect(target.EFF_CRIPPLE, t.getDuration(self, t), {speed=t.getSpeedPenalty(self,t), apply_power=self:combatAttack()})
+		local chance = t.getChance(self,t)
+		if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local targets = self:archeryAcquireTargets(tg, {one_shot=true})
+		if not targets then return end
+		local dam = t.getDamage(self,t)
+		self:archeryShoot(targets, t, tg, {mult=dam})
 		return true
 	end,
 	info = function(self, t)
-		local vals = t.getCombatVals(self, t)
-		return ([[You switch to a fluid and fast battle stance, increasing your firing speed by %d%% at the cost of your Accuracy (%d), Physical Power (%d), and critical chance (%d%%).]]):
-		format(vals.speed*100, vals.atk, vals.dam, vals.crit)
+		local rad = self:getTalentRadius(t)
+		local dam = t.getDamage(self,t)*100
+		local dur = t.getDuration(self,t)
+		local speed = t.getSpeedPenalty(self,t)*100
+		local chance = t.getChance(self,t)
+		return ([[Fires a shot that explodes into a radius %d ball of razor sharp fragments on impact, dealing %d%% weapon damage and leaving targets crippled for %d turns, reducing their attack, spell and mind speed by %d%%.
+		Each target struck has a %d%% chance to be marked.
+		The status chance increases with your Accuracy.]])
+		:format(rad, dam, dur, speed, chance)
 	end,
 }
+
+newTalent{
+	name = "Scatter Shot",
+	type = {"technique/archery-training", 4},
+	no_energy = "fake",
+	points = 5,
+	random_ego = "attack",
+	cooldown = 12,
+	stamina = 15,
+	require = techs_dex_req4,
+	range = 0,
+	radius = function(self, t) return 2 + math.floor(self:combatTalentLimit(t, 8, 3.5, 5.5)) end,
+	tactical = { ATTACKAREA = { weapon = 2 }, ESCAPE = { knockback = 2 } },
+	requires_target = true,
+	target = function(self, t)
+		local weapon, ammo = self:hasArcheryWeapon()
+		return {type = "cone", range = self:getTalentRange(t), radius = self:getTalentRadius(t), selffire = false, talent = t }
+	end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.7, 1.5) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 5)) end,
+	getChance = function(self,t) 
+		local chance = 20
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:isTalentActive(self.T_AIM) then	
+			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
+		end
+		return chance
+	end,
+	archery_onhit = function(self, t, target, x, y)
+		if target:checkHit(self:combatAttack(), target:combatPhysicalResist(), 0, 95, 15) then
+			local dist = self:getTalentRadius(t) - core.fov.distance(self.x, self.y, target.x, target.y)
+			if target:canBe("knockback") and dist > 0 then target:knockback(self.x, self.y, dist) end
+			if target:canBe("stun") then target:setEffect(target.EFF_STUNNED, t.getDuration(self, t), {}) end
+		else	
+			game.logSeen(target, "%s resists the scattershot!", target.name:capitalize())
+		end
+		local chance = t.getChance(self,t)
+		if rng.percent(chance) then target:setEffect(target.EFF_MARKED, 5, {src=self}) end
+	end,
+	action = function(self, t)
+		-- Get list of possible targets, possibly doubled.
+		local tg = self:getTalentTarget(t)
+		local x, y = self:getTarget(tg)
+		if not x or not y then return end
+		local targets = {}
+		local add_target = function(x, y)
+			local target = game.level.map(x, y, game.level.map.ACTOR)
+			if target and self:reactionToward(target) < 0 and self:canSee(target) then
+				targets[#targets + 1] = target
+			end
+		end
+		self:project(tg, x, y, add_target)
+		if #targets == 0 then return end
+
+		table.shuffle(targets)
+
+		-- Fire each shot individually.
+		local old_target_forced = game.target.forced
+		local shot_params_base = {mult = t.getDamage(self, t), phasing = true}
+		local fired = nil -- If we've fired at least one shot.
+		for i = 1, #targets do
+			local target = targets[i]
+			game.target.forced = {target.x, target.y, target}
+			local targets = self:archeryAcquireTargets({type = "hit", speed = 200}, {one_shot=true, no_energy = fired})
+			if targets then
+				local params = table.clone(shot_params_base)
+				local target = targets.dual and targets.main[1] or targets[1]
+				params.phase_target = game.level.map(target.x, target.y, game.level.map.ACTOR)
+				self:archeryShoot(targets, t, {type = "hit", speed = 200}, params)
+				fired = true
+			else
+				-- If no target that means we're out of ammo.
+				break
+			end
+		end
+
+		game.target.forced = old_target_forced
+		return fired
+	end,
+	info = function(self, t)
+		local rad = self:getTalentRadius(t)
+		local dam = t.getDamage(self,t)*100
+		local dur = t.getDuration(self,t)
+		local chance = t.getChance(self,t)
+		return ([[Fires a wave of projectiles in a radius %d cone, dealing %d%% weapon damage. All targets struck by this will be knocked back to the maximum range of the cone and stunned for %d turns.
+		Each target struck has a %d%% chance to be marked.
+		The chance to knockback and stun increases with your Accuracy.]])
+		:format(rad, dam, dur, chance)
+	end,
+}
+
+newTalent{
+	name = "Headshot",
+	type = {"technique/archery-utility", 1},
+	no_energy = "fake",
+	points = 5,
+	random_ego = "attack",
+	cooldown = function(self, t) -- this makes it a bit less likely that a mob could lob chain headshots at you
+		if self.ai and self.ai == "party_member" then 
+			return 0
+		elseif self.ai then
+			return 6
+		else
+			return 6
+		end
+	end,	require = techs_dex_req1,
+	range = archery_range,
+	requires_target = true,
+	tactical = { ATTACK = { weapon = 2 } },
+	getDamage = function(self, t)
+		return self:combatTalentWeaponDamage(t, 1.1, 2.3)
+	end,
+	getApr = function(self, t) return self:getDex(40,true) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
+	archery_onreach = function(self, t, x, y, tg, target)
+		if not target then return end
+		
+		local dam = t.getDamage(self,t)
+
+		if self:knowTalent(self.T_FIRST_BLOOD) then
+			local perc = (target.life / target.max_life)
+			if perc >= 0.9 then
+				self.turn_procs.first_blood_hs = target.life
+			end
+		end
+	end,
+	archery_onhit = function(self, t, target, x, y)
+		
+		if self.turn_procs.first_blood_hs then
+			local life_diff = self.turn_procs.first_blood_hs - target.life
+			local scale = self:callTalent(self.T_FIRST_BLOOD, "getBleed")
+			if life_diff > 0 and target:canBe('cut') and scale then
+				target:setEffect(target.EFF_CUT, 5, {power=life_diff * scale / 5, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
+			end
+		end
+		if target:hasEffect(target.EFF_MARKED) then 
+			target:removeEffect(target.EFF_MARKED)
+			if self:knowTalent(self.T_BULLSEYE) then self:callTalent(self.T_BULLSEYE, "proc") end
+		end
+		if self:knowTalent(self.T_FIRST_BLOOD) then self:incStamina(self:callTalent(self.T_FIRST_BLOOD, "getStamina")) end
+	end,
+	target = function(self, t) return {type = "hit", range = self:getTalentRange(t), talent = t } end,
+	action = function(self, t)
+
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return end
+		
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		
+		if not target or not (target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT)) then return nil end 
+		local targets = self:archeryAcquireTargets(tg, {one_shot=true, x=target.x, y=target.y})
+
+		if not targets then return end
+		local dam = t.getDamage(self,t)
+		self:archeryShoot(targets, t, {type = "hit", speed = 200}, {mult=dam, apr=t.getApr(self,t), atk=100})
+		
+		return true
+	end,
+	info = function(self, t)
+		local dam = t.getDamage(self,t)*100
+		local apr = t.getApr(self,t)
+		return ([[Fire a precise shot dealing %d%% weapon damage, with %d increased armor penetration and 100 increased accuracy. This shot will bypass other enemies between you and your target.
+Only usable against marked targets, and consumes the mark on hit.
+The armor penetration increases with your Dexterity.]]):
+		format(dam, apr)
+	end,
+}
+
+newTalent{
+	name = "Volley",
+	type = {"technique/archery-utility", 2},
+	no_energy = "fake",
+	points = 5,
+	random_ego = "attack",
+	cooldown = 8,
+	stamina = 16,
+	require = techs_dex_req2,
+	range = archery_range,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	tactical = { ATTACKAREA = { weapon = 2 }, },
+	requires_target = true,
+	target = function(self, t)
+		local weapon, ammo = self:hasArcheryWeapon()
+		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), display=self:archeryDefaultProjectileVisual(weapon, ammo)}
+	end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
+	getDamage = function(self, t)
+		return self:combatTalentWeaponDamage(t, 0.6, 1.4)
+	end,
+	archery_onhit = function(self, t, target, x, y, tg)
+		if tg.primarytarget == target then
+			game.level.map:particleEmitter(x, y, tg.primaryeffect, "volley", {radius=tg.primaryeffect})
+		end
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, x, y = self:canProject(tg, x, y)
+		
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		
+		if not target then return end
+		local targets = self:archeryAcquireTargets(tg, {x=target.x, y=target.y})
+		
+		if not targets then return nil end
+		local dam = t.getDamage(self,t)
+		self:archeryShoot(targets, t, {type = "hit", speed = 200, primaryeffect=tg.radius, primarytarget=target}, {mult=dam})
+		
+		--acquire secondary targets
+		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 
+			local targets = {}
+			local add_target = function(x, y)
+				local t2 = game.level.map(x, y, game.level.map.ACTOR)
+				if t2 and self:reactionToward(t2) < 0 and self:canSee(t2) then
+					targets[#targets + 1] = t2
+				end
+			end
+			self:project(tg, x, y, add_target)
+			if #targets == 0 then return end
+	
+			table.shuffle(targets)
+	
+			-- Fire each shot individually.
+			local old_target_forced = game.target.forced
+			local shot_params_base = {mult = dam/2, phasing = true}
+			local fired = nil -- If we've fired at least one shot.
+			for i = 1, #targets do
+				local target = targets[i]
+				game.target.forced = {target.x, target.y, target}
+				local targets = self:archeryAcquireTargets({type = "hit", speed = 200}, {one_shot=true, infinite=true, no_energy = true})
+				if targets then
+					local params = table.clone(shot_params_base)
+					local target = targets.dual and targets.main[1] or targets[1]
+					if target then 
+						params.phase_target = game.level.map(target.x, target.y, game.level.map.ACTOR)
+						self:archeryShoot(targets, t, {type = "hit", speed = 200}, params)
+						fired = true
+					end
+				else
+					-- If no target that means we're out of ammo.
+					break
+				end
+			end	
+			if target:hasEffect(target.EFF_MARKED) then 
+				target:removeEffect(target.EFF_MARKED)
+				if self:knowTalent(self.T_BULLSEYE) then self:callTalent(self.T_BULLSEYE, "proc") end
+			end
+		end 
+		game.target.forced = old_target_forced
+		return true
+	end,
+	info = function(self, t)
+		local rad = self:getTalentRadius(t)
+		local dam = t.getDamage(self,t)*100
+		return ([[You fire countless shots into the sky to rain down around your target, inflicting %d%% weapon damage to all within radius %d.
+If the primary target is marked, you consume the mark to fire a second volley of arrows for %d%% damage at no ammo cost.]])
+		:format(dam, rad, dam*0.75)
+	end,
+}
+
+newTalent{
+	name = "Called Shots",
+	type = {"technique/archery-utility", 3},
+	no_energy = "fake",
+	points = 5,
+	random_ego = "attack",
+	stamina = 25,
+	cooldown = 15,
+	require = techs_dex_req3,
+	range = archery_range,
+	requires_target = true,
+	tactical = { ATTACK = { weapon = 2 } },
+	getDamage = function(self, t)
+		return self:combatTalentWeaponDamage(t, 0.7, 1.5)
+	end,
+	no_npc_use = true,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 5)) end,
+	archery_onhit = function(self, t, target, x, y)
+		if target:hasEffect(target.EFF_MARKED) then 
+			target:removeEffect(target.EFF_MARKED) 
+			if self:knowTalent(self.T_BULLSEYE) and not self.turn_procs.bullseye then
+				self.turn_procs.bullseye = true
+				self:callTalent(self.T_BULLSEYE, "proc") 
+			end --stop this proccing repeatedly
+		end
+		if not target.turn_procs.called_shot_silence then
+			target.turn_procs.called_shot_silence = true
+			if target:canBe("silence") then
+				target:setEffect(target.EFF_SILENCED, t.getDuration(self, t), {apply_power=self:combatAttack()})
+			else
+				game.logSeen(target, "%s resists the silence!", target.name:capitalize())
+			end
+		elseif not target.turn_procs.called_shot_disarm then
+			target.turn_procs.called_shot_disarm = true
+			if target:canBe("disarm") then
+				target:setEffect(target.EFF_DISARMED, t.getDuration(self, t), {apply_power=self:combatAttack(), no_ct_effect=true})
+			else
+				game.logSeen(target, "%s resists the disarm!", target.name:capitalize())
+			end
+		elseif not target.turn_procs.called_shot_slow then
+			target.turn_procs.called_shot_slow = true
+			if target:canBe("slow") then
+				target:setEffect(target.EFF_SLOW_MOVE, t.getDuration(self, t), {power=0.5, apply_power=self:combatAttack(), no_ct_effect=true})
+			else
+				game.logSeen(target, "%s resists the slow!", target.name:capitalize())
+			end
+		end
+	end,
+	target = function(self, t) return {type = "hit", range = self:getTalentRange(t), talent = t } end,
+	action = function(self, t)
+
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, x, y = self:canProject(tg, x, y)
+		
+		local target = game.level.map(x, y, game.level.map.ACTOR)
+		
+		if not target then return nil end 
+		local targets = self:archeryAcquireTargets(tg, {x=target.x, y=target.y})
+
+		if not targets then return nil end
+		local dam = t.getDamage(self,t)
+		self:archeryShoot(targets, t, nil, {mult=dam})
+		
+		if target:hasEffect(target.EFF_MARKED) or self:isTalentActive(self.T_CONCEALMENT) then 		
+			local targets2 = self:archeryAcquireTargets(tg, {multishots=2, x=target.x, y=target.y, no_energy = true})
+			if targets2 then self:archeryShoot(targets2, t, nil, {mult=dam*0.25}) end
+		end 
+
+		return true
+	end,
+	info = function(self, t)
+		local dam = t.getDamage(self,t)*100
+		local dur = t.getDuration(self,t)
+		return ([[You fire a disabling shot at a target's throat (or equivalent), dealing %d%% weapon damage and silencing them for %d turns.
+If the target is marked, you consume the mark to fire two secondary shots at their arms and legs (or other appendages) dealing %d%% damage, reducing their movement speed by 50%% and disarming them for the duration.
+The status chance increases with your Accuracy.]]):
+		format(dam, dur, dam*0.25)
+	end,
+}
+
+newTalent{
+	name = "Bullseye",
+	type = {"technique/archery-utility", 4},
+	points = 5,
+	mode = "passive",
+	require = techs_dex_req4,
+	getSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 5, 15))/100 end,
+	getTalentCount = function(self, t) return math.floor(self:combatTalentLimit(t, 4, 1, 2.5)) end,
+	getCooldown = function(self, t) return math.floor(self:combatTalentLimit(t, 5, 1, 3)) end,
+	proc = function(self, t)
+		if not self:isTalentCoolingDown(t) then 
+			self:setEffect(self.EFF_BULLSEYE, 2, {src=self, power=self:callTalent(self.T_BULLSEYE, "getSpeed")})
+			
+			local talentcount = 0
+			local tids = {}
+		
+			for tid, _ in pairs(self.talents_cd) do
+				local tt = self:getTalentFromId(tid)
+				if not tt.fixed_cooldown and tt.type[1]:find("^technique/") then
+					tids[#tids+1] = tid
+					talentcount = talentcount + 1
+				end
+			end
+		
+			talentcount = math.min(talentcount, t.getTalentCount(self,t))
+			
+			for i = 1, talentcount do
+					if #tids == 0 then break end
+					local tid = rng.tableRemove(tids)
+					self.talents_cd[tid] = self.talents_cd[tid] - t.getCooldown(self,t)
+					if self.talents_cd[tid] <= 0 then self.talents_cd[tid] = nil end
+			end
+				
+			self:startTalentCooldown(t)
+		end
+		return true
+	end,
+	info = function(self, t)
+		local speed = t.getSpeed(self,t)*100
+		local nb = t.getTalentCount(self,t)
+		local cd = t.getCooldown(self,t)
+		return ([[Each time you consume a mark, you gain %d%% increased attack speed for 2 turns and the cooldown of %d random techniques are reduced by %d turns.]]):
+		format(speed, nb, cd)
+	end,
+}
+
+-- Deprecated Archery Talents
+
 
 newTalent{
 	name = "Relaxed Shot",
-	type = {"technique/archery-training", 4},
+--	type = {"technique/archery-training", 4},
+	type = {"technique/other", 1},
 	no_energy = "fake",
 	points = 5,
 	random_ego = "attack",
@@ -238,7 +775,7 @@ newTalent{
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 1 }, STAMINA = 1 },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	action = function(self, t)
 		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 		if not targets then return end
@@ -252,67 +789,20 @@ newTalent{
 	end,
 }
 
--------------------------------- Utility -----------------------------------
-
-newTalent{
-	name = "Flare",
-	type = {"technique/archery-utility", 1},
-	no_energy = "fake",
-	points = 5,
-	cooldown = 15,
-	stamina = 15,
-	range = archery_range,
-	radius = function(self, t)
-		local rad = 1
-		if self:getTalentLevel(t) >= 3 then rad = rad + 1 end
-		if self:getTalentLevel(t) >= 5 then rad = rad + 1 end
-		return rad
-	end,
-	require = techs_dex_req1,
-	tactical = { ATTACKAREA = { FIRE = 2 }, DISABLE = { blind = 2 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
-	requires_target = true,
-	target = function(self, t)
-		return {type="ball", x=x, y=y, radius=self:getTalentRadius(t), range=self:getTalentRange(t)}
-	end,
-	archery_onreach = function(self, t, x, y)
-		local tg = self:getTalentTarget(t)
-		self:project(tg, x, y, DamageType.LITE, 1)
-		if self:getTalentLevel(t) >= 3 then
-			tg.selffire = false
-			self:project(tg, x, y, DamageType.BLINDPHYSICAL, 3)
-		end
-		game.level.map:particleEmitter(x, y, tg.radius, "ball_light", {radius=tg.radius})
-	end,
-	action = function(self, t)
-		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
-		if not targets then return end
-		self:archeryShoot(targets, t, nil, {mult=self:combatTalentWeaponDamage(t, 0.5, 1.2), damtype=DamageType.FIRE})
-		return true
-	end,
-	info = function(self, t)
-		local rad = 1
-		if self:getTalentLevel(t) >= 3 then rad = rad + 1 end
-		if self:getTalentLevel(t) >= 5 then rad = rad + 1 end
-		return ([[You fire a burning shot, doing %d%% fire damage to the target and lighting up the area around the target in a radius of %d.
-		At level 3, it also has a chance to blind for 3 turns.]]):
-		format(self:combatTalentWeaponDamage(t, 0.5, 1.2) * 100, rad)
-	end,
-}
-
 newTalent{
 	name = "Crippling Shot",
-	type = {"technique/archery-utility", 2},
+--	type = {"technique/archery-utility", 2},
+	type = {"technique/other", 1},
 	no_energy = "fake",
 	points = 5,
 	random_ego = "attack",
 	cooldown = 10,
 	stamina = 15,
-	require = techs_dex_req2,
+--	require = techs_dex_req2,
 	range = archery_range,
 	tactical = { ATTACK = { weapon = 1 }, DISABLE = 1 },
 	requires_target = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)
 		target:setEffect(target.EFF_SLOW, 7, {power=util.bound((self:combatAttack() * 0.15 * self:getTalentLevel(t)) / 100, 0.1, 0.4), apply_power=self:combatAttack()})
 	end,
@@ -330,18 +820,19 @@ newTalent{
 
 newTalent{
 	name = "Pinning Shot",
-	type = {"technique/archery-utility", 3},
+--	type = {"technique/archery-utility", 3},
+	type = {"technique/other", 1},
 	no_energy = "fake",
 	points = 5,
 	random_ego = "attack",
 	cooldown = 10,
 	stamina = 15,
-	require = techs_dex_req3,
+--	require = techs_dex_req3,
 	range = archery_range,
 	tactical = { ATTACK = { weapon = 1 }, DISABLE = { pin = 2 } },
 	requires_target = true,
 	getDur = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 5.5)) end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:canBe("pin") then
 			target:setEffect(target.EFF_PINNED, t.getDur(self, t), {apply_power=self:combatAttack()})
@@ -360,45 +851,5 @@ newTalent{
 		The pinning chance increases with your Dexterity.]])
 		:format(self:combatTalentWeaponDamage(t, 1, 1.4) * 100,
 		t.getDur(self, t))
-	end,
-}
-
-newTalent{
-	name = "Scatter Shot",
-	type = {"technique/archery-utility", 4},
-	no_energy = "fake",
-	points = 5,
-	random_ego = "attack",
-	cooldown = 14,
-	stamina = 15,
-	require = techs_dex_req4,
-	range = archery_range,
-	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.3, 2.7)) end,
-	tactical = { ATTACKAREA = { weapon = 2 }, DISABLE = { stun = 3 } },
-	requires_target = true,
-	target = function(self, t)
-		local weapon, ammo = self:hasArcheryWeapon()
-		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), display=self:archeryDefaultProjectileVisual(weapon, ammo)}
-	end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon() then if not silent then game.logPlayer(self, "You require a bow or sling for this talent.") end return false end return true end,
-	getStunDur = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	archery_onhit = function(self, t, target, x, y)
-		if target:canBe("stun") then
-			target:setEffect(target.EFF_STUNNED, t.getStunDur(self, t), {apply_power=self:combatAttack()})
-		else
-			game.logSeen(target, "%s resists the stunning shot!", target.name:capitalize())
-		end
-	end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local targets = self:archeryAcquireTargets(tg, {one_shot=true})
-		if not targets then return end
-		self:archeryShoot(targets, t, tg, {mult=self:combatTalentWeaponDamage(t, 0.5, 1.5)})
-		return true
-	end,
-	info = function(self, t)
-		return ([[You fire multiple shots in a circular pattern with radius %d, doing %d%% damage and stunning everyone hit for %d turns.
-		The stun chance increases with your Accuracy.]])
-		:format(self:getTalentRadius(t), self:combatTalentWeaponDamage(t, 0.5, 1.5) * 100, t.getStunDur(self,t))
 	end,
 }

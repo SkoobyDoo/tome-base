@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -314,6 +314,11 @@ newEntity{ base = "BASE_GEM",
 	cost = 200,
 	quest = 1,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'NATURE',
+		alt_damage_type = 'SPYDRIC_POISON',
+		particle = 'slime',
+	},
 	wielder = {
 		inc_stats = {[Stats.STAT_CON] = 15, },
 		healing_factor = 0.3,

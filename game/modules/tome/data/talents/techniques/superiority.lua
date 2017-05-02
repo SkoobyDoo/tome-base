@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@ newTalent{
 	radius = function(self, t)
 		return math.floor(self:combatTalentScale(t, 3, 7))
 	end,
+	requires_target = true,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t}
 	end,

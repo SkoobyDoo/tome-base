@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ return {
 	color_obscure = {0.5*0.6, 1*0.6, 0.8*0.6, 0.6},
 	min_material_level = 3,
 	max_material_level = 4,
+	effects = {"EFF_ZONE_AURA_UNDERWATER"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Cavern",

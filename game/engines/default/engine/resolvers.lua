@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,12 +17,14 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--- @script engine.resolvers
+
 resolvers = {}
 resolvers.calc = {}
 
 --- Resolves a rng range
 function resolvers.rngrange(x, y)
-	return {__resolver="rngrange", x, y}
+	return {__resolver="rngrange",  __resolve_instant=true, x, y}
 end
 function resolvers.calc.rngrange(t)
 	return rng.range(t[1], t[2])
@@ -30,7 +32,7 @@ end
 
 --- Average random
 function resolvers.rngavg(x, y)
-	return {__resolver="rngavg", x, y}
+	return {__resolver="rngavg",  __resolve_instant=true, x, y}
 end
 function resolvers.calc.rngavg(t)
 	return rng.avg(t[1], t[2])
@@ -38,7 +40,7 @@ end
 
 --- Dice roll
 function resolvers.dice(x, y)
-	return {__resolver="dice", x, y}
+	return {__resolver="dice",  __resolve_instant=true, x, y}
 end
 function resolvers.calc.dice(t)
 	return rng.dice(t[1], t[2])
@@ -46,7 +48,7 @@ end
 
 --- Random table element
 function resolvers.rngtable(t)
-	return {__resolver="rngtable", t}
+	return {__resolver="rngtable",  __resolve_instant=true, t}
 end
 function resolvers.calc.rngtable(t)
 	return rng.table(t[1])
@@ -54,7 +56,7 @@ end
 
 --- Random color
 function resolvers.rngcolor(t)
-	return {__resolver="rngcolor", t}
+	return {__resolver="rngcolor",  __resolve_instant=true, t}
 end
 function resolvers.calc.rngcolor(t, e)
 	local c = rng.table(t[1])
@@ -67,7 +69,7 @@ end
 resolvers.current_level = 1
 resolvers.mbonus_max_level = 50
 function resolvers.mbonus(max, add)
-	return {__resolver="mbonus", max, add}
+	return {__resolver="mbonus", __resolve_instant=true, max, add}
 end
 function resolvers.calc.mbonus(t)
 	return rng.mbonus(t[1], resolvers.current_level, resolvers.mbonus_max_level) + (t[2] or 0)
@@ -86,7 +88,7 @@ function resolvers.calc.talents(t, e)
 			level = level.base
 			lvls = true
 		end
---		print("Talent resolver for", e.name, ":", tid, "=>", level)
+		-- print("Talent resolver for", e.name, ":", tid, "=>", level)
 		e:learnTalent(tid, true, level)
 	end
 	if lvls then e._levelup_talents = levelup_talents end

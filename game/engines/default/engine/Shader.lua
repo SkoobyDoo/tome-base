@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Handles a particles system
 -- Used by engine.Map
+-- @classmod engine.Shader
 module(..., package.seeall, class.make)
 
 _M.verts = {}
@@ -122,6 +123,11 @@ function _M:getFragment(name)
 		code[#code+1] = l
 	end
 	f:close()
+	-- if config.settings.cheat then
+	-- 	print("====== FRAG")
+	-- 	local nb = 1 for line in table.concat(code):gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- 	print("======")
+	-- end
 	self.frags[name] = core.shader.newShader(table.concat(code))
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
@@ -138,6 +144,11 @@ function _M:getVertex(name)
 		code[#code+1] = l
 	end
 	f:close()
+	-- if config.settings.cheat then
+	-- 	print("====== VERT")
+	-- 	local nb = 1 for line in table.concat(code):gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- 	print("======")
+	-- end
 	self.verts[name] = core.shader.newShader(table.concat(code), true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]

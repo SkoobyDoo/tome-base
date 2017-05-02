@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -283,12 +283,8 @@ newTalent{
 		return game.level and game.level.map and isOnMucus(game.level.map, self.x, self.y)
 	end,
 	action = function(self, t)
-		local tg = {type="hit", nolock=true, pass_terrain=true, nowarning=true, range=self:getTalentRange(t), requires_knowledge=false}
-		local x, y = self:getTarget(tg)
-		if not x then return nil end
-		-- Target code does not restrict the target coordinates to the range, it lets the project function do it
-		-- but we cant ...
-		local _ _, x, y = self:canProject(tg, x, y)
+		local tg = {type="hit", nolock=true, nowarning=true, range=self:getTalentRange(t), requires_knowledge=false}
+		local x, y = self:getTargetLimitedWallStop(tg)
 		if not x then return nil end
 		if not isOnMucus(game.level.map, x, y) then return nil end
 		if not self:canMove(x, y) then return nil end
@@ -296,7 +292,7 @@ newTalent{
 		local energy = 1 - t.getEnergy(self, t)
 		self.energy.value = self.energy.value + game.energy_to_act * self.energy.mod * energy
 
-		self:removeEffectsFilter(function(t) return t.type == "physical" or t.type == "magical" end, t.getNb(self, t))
+		self:removeEffectsFilter(function(t) return (t.type == "physical" or t.type == "magical") and t.status == "detrimental" end, t.getNb(self, t))
 
 		game.level.map:particleEmitter(self.x, self.y, 1, "slime")
 		self:move(x, y, true)
@@ -307,7 +303,7 @@ newTalent{
 	info = function(self, t)
 		local nb = t.getNb(self, t)
 		local energy = t.getEnergy(self, t)
-		return ([[You temporarily merge with your mucus, cleansing yourself of %d physical or magical effects.
+		return ([[You temporarily merge with your mucus, cleansing yourself of %d physical or magical detrimental effects.
 		You can then reemerge on any tile within sight and range that is also covered by mucus.
 		This is quick, requiring only %d%% of a turn to perform, but you must be in contact with your mucus.]]):
 		format(nb, (energy) * 100)

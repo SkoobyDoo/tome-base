@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ newEntity{
 	material_level_min_only = true,
 
 	power_source = {nature=true},
-	use_simple = { name="inscribe your skin with the infusion.", use = function(self, who, inven, item)
+	use_simple = { name="inscribe your skin with the infusion", use = function(self, who, inven, item)
 		if who:setInscription(nil, self.inscription_talent, self.inscription_data, true, true, {obj=self, inven=inven, item=item}) then
 			return {used=true, id=true, destroy=true}
 		end
@@ -69,7 +69,7 @@ newEntity{
 	material_level_min_only = true,
 
 	power_source = {arcane=true},
-	use_simple = { name="inscribe your skin with the rune.", use = function(self, who, inven, item)
+	use_simple = { name="inscribe your skin with the rune", use = function(self, who, inven, item)
 		if who:setInscription(nil, self.inscription_talent, self.inscription_data, true, true, {obj=self, inven=inven, item=item}) then
 			return {used=true, id=true, destroy=true}
 		end
@@ -90,7 +90,7 @@ newEntity{
 	egos = "/data/general/objects/egos/infusions.lua", egos_chance = resolvers.mbonus(30, 5),
 
 	power_source = {arcane=true},
-	use_simple = { name="inscribe your skin with the taint.", use = function(self, who, inven, item)
+	use_simple = { name="inscribe your skin with the taint", use = function(self, who, inven, item)
 		if who:setInscription(nil, self.inscription_talent, self.inscription_data, true, true, {obj=self, inven=inven, item=item}) then
 			return {used=true, id=true, destroy=true}
 		end
@@ -105,6 +105,10 @@ newEntity{
 	encumber = 0,
 	checkFilter = function(self) if self.lore and game.party.lore_known and game.party.lore_known[self.lore] then print('[LORE] refusing', self.lore) return false else return true end end,
 	desc = [[This parchment contains some lore.]],
+	use_simple = { name="read it", use = function(self, who, inven, item)
+		game.party:learnLore(self.lore)
+		return {used=true, id=true, destroy=true}
+	end}
 }
 
 newEntity{
@@ -115,6 +119,10 @@ newEntity{
 	encumber = 0,
 	checkFilter = function(self) if self.lore and game.party.lore_known and game.party.lore_known[self.lore] then print('[LORE] refusing', self.lore) return false else return true end end,
 	desc = [[This parchment contains some lore.]],
+	use_simple = { name="read it", use = function(self, who, inven, item)
+		game.party:learnLore(self.lore)
+		return {used=true, id=true, destroy=true}
+	end}
 }
 
 -----------------------------------------------------------
@@ -189,7 +197,7 @@ newEntity{ base = "BASE_INFUSION",
 	level_range = {10, 50},
 	rarity = 15,
 	cost = 30,
-	material_level = 3,
+	material_level = 2,
 
 	inscription_kind = "movement",
 	inscription_data = {
@@ -317,7 +325,7 @@ newEntity{ base = "BASE_RUNE",
 
 	inscription_kind = "protect",
 	inscription_data = {
-		cooldown = resolvers.rngrange(14, 24),
+		cooldown = resolvers.rngrange(14, 20),
 		dur = resolvers.mbonus_level(5, 3),
 		power = resolvers.mbonus_level(500, 50, function(e, v) return v * 0.06 end),
 		use_stat_mod = 3,

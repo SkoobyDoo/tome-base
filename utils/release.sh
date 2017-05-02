@@ -59,6 +59,10 @@ rm -rf game/modules/rogue
 rm -rf game/modules/gruesome
 find . -name '*~' -or -name '.svn' -or -name '.keep' | xargs rm -rf
 
+# stamp the releases
+echo "version_desc = '$ver'" >> game/engines/default/modules/boot/init.lua
+echo "version_desc = '$ver'" >> game/modules/tome/init.lua
+
 # create teae/teams
 cd game/engines
 te4_pack_engine.sh default/ te4-"$ever"
@@ -108,7 +112,8 @@ cd t-engine4-osx-"$ver"
 mkdir T-Engine.app/
 cp -a ../../mac/base_app/* T-Engine.app/
 cp -a ../../bootstrap/ T-Engine.app/Contents/MacOS/
-cp -a ../t-engine4-src-"$ver"/game/ .
+cp ../../utils/boot-osx-standalone-apple-sucks.lua T-Engine.app/Contents/MacOS/bootstrap/boot.lua
+cp -a ../t-engine4-src-"$ver"/game/ T-Engine.app/Contents/Resources/
 cp -a ../../C* .
 find . -name '*~' -or -name '.svn' | xargs rm -rf
 zip -r -9 ../t-engine4-osx-"$ver".zip *
@@ -189,7 +194,10 @@ echo "Computing MD5s..."
 cd t-engine4-linux64-"$ver"
 rm lib64/libopenal.so.1
 rm -f all.md5
-DISPLAY=:1 ./t-engine -Mtome -n -E'compute_md5_only="all.md5" sleep_on_auth=2' > /dev/null 2>&1
+while true; do
+	DISPLAY=:1 ./t-engine -Mtome -n -E'compute_md5_only="all.md5" sleep_on_auth=2' > /dev/null 2>&1
+	if test $? -eq 0; then break; fi
+done
 cd ..
 echo "..done"
 echo

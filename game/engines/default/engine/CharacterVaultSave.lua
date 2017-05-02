@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,8 +21,12 @@ require "engine.class"
 local Savefile = require "engine.Savefile"
 
 --- Handles a local characters vault saves
+-- @classmod engine.CharacterVaultSave
 module(..., package.seeall, class.inherit(Savefile))
 
+--- Init
+-- @string savefile name of savefile
+-- @thread coroutine
 function _M:init(savefile, coroutine)
 	Savefile.init(self, savefile, coroutine)
 
@@ -34,16 +38,23 @@ function _M:init(savefile, coroutine)
 end
 
 --- Get a savename for an entity
+-- @param[type=Entity] e
+-- @return "character.teac"
 function _M:nameSaveEntity(e)
 	e.__version = game.__mod_info.version
 	return "character.teac"
 end
 --- Get a savename for an entity
+-- @string name not used
+-- @return "character.teac"
 function _M:nameLoadEntity(name)
 	return "character.teac"
 end
 
 --- Save an entity
+-- @see engine.Savefile.saveEntity
+-- @param[type=Entity] e
+-- @param[type=boolean] no_dialog Show a popup dialog that we're currently saving?
 function _M:saveEntity(e, no_dialog)
 	Savefile.saveEntity(self, e, no_dialog)
 

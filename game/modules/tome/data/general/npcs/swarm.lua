@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,13 +34,14 @@ newEntity{
 	sound_random = {"creatures/swarm/mswarm_%d", 1, 4},
 	combat = {sound={"creatures/swarm/mswarm_%d", 1, 4}, sound_miss={"creatures/swarm/mswarm_%d", 1, 4}},
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=1, },
-	stats = { str=1, dex=20, mag=3, con=1 },
+	stats = { str=1, dex=20, mag=3 },
 	global_speed_base = 2,
 	infravision = 10,
 	combat_armor = 1, combat_def = 10,
 	rank = 1,
 	size_category = 1,
 	cut_immune = 1,
+	levitation = 1,
 	not_power_source = {arcane=true, technique_ranged=true},
 }
 

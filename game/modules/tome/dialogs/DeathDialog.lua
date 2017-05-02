@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ function _M:cleanActor(actor)
 		local eff = rng.tableRemove(effs)
 
 		if eff[1] == "effect" then
-			actor:removeEffect(eff[2])
+			actor:removeEffect(eff[2], false, true)
 		else
 			actor:forceUseTalent(eff[2], {ignore_energy=true, no_equilibrium_fail=true, no_paradox_fail=true, save_cleanup=true})
 		end
@@ -172,50 +172,16 @@ function _M:eidolonPlane()
 		local is_exploration = game.permadeath == game.PERMADEATH_INFINITE
 		self:cleanActor(self.actor)
 		self:resurrectBasic(self.actor)
+		for e, _ in pairs(game.party.members) do
+			self:cleanActor(e)
+		end
 		for uid, e in pairs(game.level.entities) do
 			if not is_exploration or game.party:hasMember(e) then
 				self:restoreResources(e)
 			end
 		end
 
-		local oldzone = game.zone
-		local oldlevel = game.level
-		local zone = mod.class.Zone.new("eidolon-plane")
-		local level = zone:getLevel(game, 1, 0)
-
-		level.data.eidolon_exit_x = self.actor.x
-		level.data.eidolon_exit_y = self.actor.y
-
-		local acts = {}
-		for act, _ in pairs(game.party.members) do
-			if not act.dead then
-				acts[#acts+1] = act
-				if oldlevel:hasEntity(act) then oldlevel:removeEntity(act) end
-			end
-		end
-
-		level.source_zone = oldzone
-		level.source_level = oldlevel
-		game.zone = zone
-		game.level = level
-		game.zone_name_s = nil
-
-		for _, act in ipairs(acts) do
-			local x, y = util.findFreeGrid(23, 25, 20, true, {[Map.ACTOR]=true})
-			if x then
-				level:addEntity(act)
-				act:move(x, y, true)
-				act.changed = true
-				game.level.map:particleEmitter(x, y, 1, "teleport")
-			end
-		end
-
-		for uid, act in pairs(game.level.entities) do
-			if act.setEffect then
-				if game.level.data.zero_gravity then act:setEffect(act.EFF_ZERO_GRAVITY, 1, {})
-				else act:removeEffect(act.EFF_ZERO_GRAVITY, nil, true) end
-			end
-		end
+		game.party:goToEidolon(self.actor)
 
 		game.log("#LIGHT_RED#From the brink of death you seem to be yanked to another plane.")
 		game.player:updateMainShader()
@@ -228,7 +194,9 @@ function _M:use(item)
 	if not item then return end
 	local act = item.action
 
-	if act == "exit" then
+	if type(act) == "function" then
+		act()
+	elseif act == "exit" then
 		if item.subaction == "none" then
 			util.showMainMenu()
 		elseif item.subaction == "restart" then
@@ -348,6 +316,8 @@ function _M:generateList()
 				self.possible_items.consume = true
 			end
 		end)
+
+		self.actor:fireTalentCheck("callbackOnDeathbox", self, list)
 	end
 
 	list[#list+1] = {name=(not profile.auth and "Message Log" or "Message/Chat log (allows to talk)"), action="log"}
@@ -373,7 +343,7 @@ function _M:innerDisplayBack(x, y, nb_keyframes, tx, ty)
 		d.t:toScreenFull(x, y, d.w, d.h, d.tw, d.th, 1, 1, 1, 1)
 	end
 	if self.possible_items.skeleton then
-		local d = self.graphical_options.skeleton[self.cur_item and self.cur_item.action == "skeleton" and "available" or "unavailable"]
+		local d = self.graphical_options.skeleton[self.cur_item and (self.cur_item.action == "skeleton" or self.cur_item.action == "lichform") and "available" or "unavailable"]
 		d.t:toScreenFull(x, y + self.frame.h - d.h, d.w, d.h, d.tw, d.th, 1, 1, 1, 1)
 	end
 end

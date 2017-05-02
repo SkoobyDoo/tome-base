@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,11 +25,13 @@ newEntity{ define_as = "TRAP_ANNOY",
 
 newEntity{ base = "TRAP_ANNOY",
 	name = "lethargy trap", auto_id = true, image = "trap/trap_lethargy_rune_01.png",
-	detect_power = resolvers.clscale(20,50,8),
-	disarm_power = resolvers.clscale(36,50,8),
-	rarity = 3, level_range = {1, 50},
+	detect_power = resolvers.clscale(20,25,10,0.5),
+	disarm_power = resolvers.clscale(36,25,10,0.5),
+	rarity = 3, level_range = {5, nil},
 	color=colors.BLUE,
 	message = "@Target@ seems less active.",
+	unided_name = "pattern of glyphs",
+	desc = function(self) return "Disrupts activated talents." end,
 	triggered = function(self, x, y, who)
 		local tids = {}
 		for tid, lev in pairs(who.talents) do
@@ -48,11 +50,13 @@ newEntity{ base = "TRAP_ANNOY",
 
 newEntity{ base = "TRAP_ANNOY",
 	name = "burning curse trap", auto_id = true, image = "trap/trap_burning_curse_01.png",
-	detect_power = resolvers.clscale(50,50,8),
-	disarm_power = resolvers.clscale(58,50,8),
-	rarity = 3, level_range = {30, 50},
+	detect_power = resolvers.clscale(35,30,15,0.5),
+	disarm_power = resolvers.clscale(40,30,15,0.5),
+	rarity = 3, level_range = {30, nil},
 	color=colors.ORCHID,
 	message = "@Target@ triggers a burning curse!",
+	unided_name = "dark pentagram",
+	desc = function(self) return ("Afflicts the target with a curse: talents inflict %d fire damage and have increased cooldowns."):format(self.dam) end,
 	dam = resolvers.clscale(60, 50, 15, 0.75, 25),
 	pressure_trap = true,
 	triggered = function(self, x, y, who)

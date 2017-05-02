@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Handles a 3D "quadratic" object
 -- It's mostly undeed, it simply allows quadratic to be serialized
+-- @classmod engine.Quadratic
 module(..., package.seeall, class.make)
 
 --- Make a particle emitter

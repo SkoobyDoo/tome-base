@@ -109,7 +109,7 @@ project "TEngine"
 		links { "mingw32", "SDL2main", "SDL2", "SDL2_ttf", "SDL2_image", "OpenAL32", "vorbisfile", "opengl32", "glu32", "wsock32", "png" }
 		defines { [[TENGINE_HOME_PATH='"T-Engine"']], 'SELFEXE_WINDOWS'  }
 		if _OPTIONS.wincross then
-			prebuildcommands { "/usr/bin/i686-pc-mingw32-windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
+			prebuildcommands { "i686-pc-mingw32-windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
 		else
 			prebuildcommands { "windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
 		end

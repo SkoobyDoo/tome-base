@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -162,6 +162,8 @@ function _M:login()
 		if self.steam_token_email then
 			self:command("STM_ EMAIL", self.steam_token_email)
 			self:read("200")
+			self:command("STM_ NEWS", self.steam_token_news and 'yes' or 'no')
+			self:read("200")
 		end
 		self:command("STM_ AUTH", self.steam_token)
 		if not self:read("200") then
@@ -303,7 +305,10 @@ end
 function _M:orderSteamLogin(o)
 	self.steam_token = o.token
 	self.steam_token_name = o.name
-	if o.email and #o.email > 1 then self.steam_token_email = o.email end
+	if o.email and #o.email > 1 then
+		self.steam_token_email = o.email
+		self.steam_token_news = o.news
+	end
 
 	if not self.sock then cprofile.pushEvent("e='Disconnected'") return end
 
@@ -385,6 +390,12 @@ function _M:orderSetConfigs(o)
 		self:command("CSET", o.data:len(), o.module, o.kind)
 		if self:read("200") then self.sock:send(o.data) end
 	end
+end
+
+function _M:orderSendIncrLog(o)
+	if not self.auth then cprofile.pushEvent("e='IncrLogConsume' ok=false") return end
+	self:command("CINC", o.data:len())
+	if self:read("200") then self.sock:send(o.data) cprofile.pushEvent("e='IncrLogConsume' ok=true") end
 end
 
 function _M:orderSendError(o)
@@ -606,9 +617,9 @@ end
 
 function _M:orderEntityPoke(o)
 	self:command("EVLT", "POKE", o.desc:len(), o.data:len(), o.module, o.kind, o.name)
-	if not self:read("200") then return cprofile.pushEvent("e='EntityPoke' ok=false") end
+	if not self:read("200") then return cprofile.pushEvent(("e='EntityPoke' ok=false err=%q"):format(self.last_error)) end
 	self.sock:send(o.desc)
-	if not self:read("200") then return cprofile.pushEvent("e='EntityPoke' ok=false") end
+	if not self:read("200") then return cprofile.pushEvent("e='EntityPoke' ok=false err='unknown reason'") end
 	self.sock:send(o.data)
 	cprofile.pushEvent("e='EntityPoke' ok=true")
 end

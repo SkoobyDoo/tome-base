@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,6 +17,31 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+-- find a spot to escape to via teleport (for NPCs)
+-- cx, cy = center of teleport radius
+-- ax, ay = anchor point
+-- want_range = desired range from anchor point
+local function escapeGrid(self, cx, cy, radius, ax, ay, want_range)
+	ax, ay = ax or cx, ay or cy
+	want_range = want_range or radius
+	local grid = {x = cx, y=cy, dist = math.huge}
+	local dist
+	core.fov.calc_circle(cx, cy, game.level.map.w, game.level.map.h, radius,
+		function(d, lx, ly) -- block
+		end,
+		function(d, lx, ly) -- apply
+			if self:canMove(lx, ly) then
+				dist = math.abs(core.fov.distance(ax, ay, lx, ly) - want_range) + rng.float(0, .1)
+				if math.abs(dist) < grid.dist then
+					grid.dist = dist
+					grid.x = lx; grid.y = ly
+				end
+			end
+		end,
+	nil)
+	if dist then return grid.x, grid.y, grid.dist end
+end
+
 newTalent{
 	name = "Phase Door",
 	type = {"spell/conveyance",1},
@@ -25,61 +50,88 @@ newTalent{
 	random_ego = "utility",
 	mana = function(self, t) return game.zone and game.zone.force_controlled_teleport and 1 or 10 end,
 	cooldown = function(self, t) return game.zone and game.zone.force_controlled_teleport and 3 or 8 end,
-	tactical = { ESCAPE = 2 },
-	requires_target = function(self, t) return self:getTalentLevel(t) >= 4 end,
+	tactical = { ESCAPE = 2,
+		CLOSEIN = function(self, t, aitarget)
+			if aitarget and self:getTalentLevel(t) >= 5 then
+				local dist = core.fov.distance(self.x, self.y, aitarget.x, aitarget.y)
+				return dist/math.max(1, t.getRadius(self, t), dist-t.getRange(self, t))/2
+			end
+		end},
 	getRange = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 15), 40, 4, 0, 13.4, 9.4) end, -- Limit to range 40
-	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 0, 6, 2)) end, -- Limit to radius 0	
+	range = function(self, t) return self:getTalentLevel(t) >= 4 and 10 or 0 end, -- for targeting enemies
+	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 0, 6, 2)) end, -- Limit to radius >=0	
 	is_teleport = true,
 	action = function(self, t)
 		local target = self
+		local aitarget = self.ai_target.actor
+		local _, tx, ty
 		if self:getTalentLevel(t) >= 4 then
 			game.logPlayer(self, "Select a target to teleport...")
-			local tg = {default_target=self, type="hit", nowarning=true, range=10, first_target="friend"}
-			local tx, ty = self:getTarget(tg)
+			local tg = {default_target=self, type="hit", friendlyblock = false, nowarning=true, range=self:getTalentRange(t)}
+			if rng.percent(50 + (aitarget and aitarget:attr("teleport_immune") or 0) + (aitarget and aitarget:attr("continuum_destabilization") or 0)/2) then tg.first_target = "friend" end -- npc's select self or aitarget based on target's resistance to teleportation
+			tx, ty = self:getTarget(tg)
 			if tx then
-				local _ _, tx, ty = self:canProject(tg, tx, ty)
+				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
 				if tx then
-					target = game.level.map(tx, ty, Map.ACTOR) or self
+					target = game.level.map(tx, ty, Map.ACTOR)
+					if ai_target and target ~= aitarget then target = self end
 				end
 			end
 		end
-		if target ~= self and target:canBe("teleport") then
+		target = target or self
+		if target ~= self then
 			local hit = self:checkHit(self:combatSpellpower(), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
-			if not hit then
+			if not target:canBe("teleport") or not hit then
 				game.logSeen(target, "The spell fizzles!")
 				return true
 			end
 		end
 
-		-- Annoy them!
-		if target ~= self and target:reactionToward(self) < 0 then target:setTarget(self) end
-
+		-- get target location, if needed
 		local x, y = self.x, self.y
-		local rad = t.getRange(self, t)
+		local range = t.getRange(self, t)
 		local radius = t.getRadius(self, t)
 		if self:getTalentLevel(t) >= 5 or game.zone.force_controlled_teleport then
 			game.logPlayer(self, "Select a teleport location...")
-			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=rad, radius=radius, requires_knowledge=false}
-			x, y = self:getTarget(tg)
+			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=range, radius=radius, requires_knowledge=false}
+			if self.aiSeeTargetPos then -- ai code for NPCs
+				tx, ty = self:aiSeeTargetPos(aitarget)
+				if self.ai_state.tactic == "closein" then -- NPC trying to close in
+					local dx, dy = self.x - tx, self.y - ty
+					if target == self then -- teleport ourselves to target
+						x, y = tx, ty
+					else -- teleport target to ourselves
+						x, y = self.x, self.y
+					end
+				else --NPC trying to open up distance
+					-- range 18 based on cooldown + 10 tiles
+					if target == self then -- teleport ourselves
+						x, y = escapeGrid(self, self.x, self.y, t.getRange(self, t), tx, ty, self:getTalentCooldown(t)+10)
+					else -- teleport target
+						x, y = escapeGrid(target, tx, ty, t.getRange(self, t), self.x, self.y,  self:getTalentCooldown(t)+10)
+					end
+				end
+			else -- get player target
+				x, y = self:getTarget(tg)
+			end
 			if not x then return nil end
-			-- Target code does not restrict the target coordinates to the range, it lets the project function do it
-			-- but we cant ...
-			local _ _, x, y = self:canProject(tg, x, y)
-			rad = radius
-
+			_, _, _, x, y = self:canProject(tg, x, y)
+			range = radius
 			-- Check LOS
 			if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
 				game.logPlayer(self, "The targetted phase door fizzles and works randomly!")
 				x, y = self.x, self.y
-				rad = t.getRange(self, t)
+				range = t.getRange(self, t)
 			end
 		end
 
 		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
-		target:teleportRandom(x, y, rad)
+		target:teleportRandom(x, y, range)
 		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
-
+		print("[phase door] final location of ", target.name, target.x, target.y)
+		
 		if target ~= self then
+			if target:reactionToward(self) < 0 then target:setTarget(self) end -- Annoy them!
 			target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self:combatSpellpower(0.3)})
 		end
 
@@ -91,7 +143,8 @@ newTalent{
 		local range = t.getRange(self, t)
 		return ([[Teleports you randomly within a small range of up to %d grids.
 		At level 4, it allows you to specify which creature to teleport.
-		At level 5, it allows you to choose the target area (radius %d). If the target area is not in line of sight, there is a chance the spell will fizzle.
+		At level 5, it allows you to choose the target area (radius %d).
+		If the target area is not in line of sight, there is a chance the spell will partially fail and teleport the target randomly.
 		The range will increase with your Spellpower.]]):format(range, radius)
 	end,
 }
@@ -104,73 +157,111 @@ newTalent{
 	random_ego = "utility",
 	mana = 20,
 	cooldown = 30,
-	tactical = { ESCAPE = 3 },
-	requires_target = function(self, t) return self:getTalentLevel(t) >= 4 end,
+	tactical = { ESCAPE = 3,
+		CLOSEIN = function(self, t, aitarget)
+			if aitarget and self:getTalentLevel(t) >= 5 then
+				local dist = core.fov.distance(self.x, self.y, aitarget.x, aitarget.y)
+				return dist/math.max(t.getRadius(self, t), dist-t.getRange(self, t))/2
+			end
+		end},
 	getRange = function(self, t) return 100 + self:combatSpellpower(1) end,
+	range = function(self, t) return self:getTalentLevel(t) >= 4 and 10 or 0 end, -- for targeting enemies
 	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 19, 15)) end, -- Limit > 0
+	minRange = 15,
+	
 	is_teleport = true,
 	action = function(self, t)
 		local target = self
-
+		local aitarget = self.ai_target.actor
+		local _, tx, ty
 		if self:getTalentLevel(t) >= 4 then
 			game.logPlayer(self, "Select a target to teleport...")
-			local tg = {default_target=self, type="hit", nowarning=true, range=10, first_target="friend"}
-			local tx, ty = self:getTarget(tg)
+			local tg = {default_target=self, type="hit", friendlyblock = false, nowarning=true, range=self:getTalentRange(t)}
+			if rng.percent(50 + (aitarget and aitarget:attr("teleport_immune") or 0) + (aitarget and aitarget:attr("continuum_destabilization") or 0)/2) then tg.first_target = "friend" end -- npc's select self or aitarget based on target's resistance to teleportation
+			tx, ty = self:getTarget(tg)
 			if tx then
-				local _ _, tx, ty = self:canProject(tg, tx, ty)
+				 _, _, _, tx, ty = self:canProject(tg, tx, ty)
 				if tx then
-					target = game.level.map(tx, ty, Map.ACTOR) or self
+					target = game.level.map(tx, ty, Map.ACTOR)
+					if ai_target and target ~= aitarget then target = self end
 				end
 			end
 		end
-
-		if target ~= self and target:canBe("teleport") then
+		target = target or self
+		if target ~= self then
 			local hit = self:checkHit(self:combatSpellpower(), target:combatSpellResist() + (target:attr("continuum_destabilization") or 0))
-			if not hit then
+			if not target:canBe("teleport") or not hit then
 				game.logSeen(target, "The spell fizzles!")
 				return true
 			end
 		end
 
-		-- Annoy them!
-		if target ~= self and target:reactionToward(self) < 0 then target:setTarget(self) end
-
+		-- get target location, if needed
 		local x, y = self.x, self.y
+		local range = t.getRange(self, t)
+		local radius = t.getRadius(self, t)
 		local newpos
-		if self:getTalentLevel(t) >= 5 then
+		if self:getTalentLevel(t) >= 5 or game.zone.force_controlled_teleport then
 			game.logPlayer(self, "Select a teleport location...")
-			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=t.getRange(self, t), radius=t.getRadius(self, t), requires_knowledge=false}
-			x, y = self:getTarget(tg)
+			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=range, radius=radius, requires_knowledge=false}
+			if self.aiSeeTargetPos then -- ai code for NPCs
+				tx, ty = self:aiSeeTargetPos(aitarget)
+				if self.ai_state.tactic == "closein" then -- NPC trying to close in
+					local dx, dy = self.x - tx, self.y - ty
+					if target == self then -- teleport ourselves to target
+						x, y = tx, ty
+					else -- teleport target to ourselves
+						x, y = self.x, self.y
+					end
+				else --NPC trying to open up distance
+					if target == self then -- teleport ourselves
+						x, y = escapeGrid(self, self.x, self.y, t.getRange(self, t), tx, ty,  self:getTalentCooldown(t)+10)
+					else -- teleport target
+						x, y = escapeGrid(target, tx, ty, t.getRange(self, t), self.x, self.y,  self:getTalentCooldown(t)+10)
+					end
+				end
+			else -- get player target
+				x, y = self:getTarget(tg)
+			end
 			if not x then return nil end
-			-- Target code does not restrict the target coordinates to the range, it lets the project function do it
-			-- but we cant ...
+			_, _, _, x, y = self:canProject(tg, x, y)
+			range = radius
+			-- Check LOS
+			if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
+				game.logPlayer(self, "The targetted teleport fizzles and works randomly!")
+				x, y = self.x, self.y
+				range = t.getRange(self, t)
+			end
 			local _ _, x, y = self:canProject(tg, x, y)
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
-			newpos = target:teleportRandom(x, y, t.getRadius(self, t))
+			newpos = target:teleportRandom(x, y, range)
+			-- teleport randomly if there was no suitable destination in the target area
+			if not newpos then
+				newpos = target:teleportRandom(x, y, t.getRange(self, t), t.minRange)
+			end
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 		else
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
-			newpos = target:teleportRandom(x, y, t.getRange(self, t), 15)
+			newpos = target:teleportRandom(x, y, t.getRange(self, t), t.minRange)
 			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 		end
-
+		print("[teleport] final location of ", target.name, target.x, target.y)
 		if target ~= self then
+			if target:reactionToward(self) < 0 then target:setTarget(self) end -- Annoy them!
 			target:setEffect(target.EFF_CONTINUUM_DESTABILIZATION, 100, {power=self:combatSpellpower(0.3)})
 		end
 
-		if not newpos then
-			game.logSeen(game.player,"The spell fails: no suitable places to teleport to.")
-		end
 		game:playSoundNear(self, "talents/teleport")
 		return true
 	end,
 	info = function(self, t)
 		local range = t.getRange(self, t)
 		local radius = t.getRadius(self, t)
-		return ([[Teleports you randomly within a large range (%d), with a minimum range of 15.
+		return ([[Teleports you randomly within a large range (%d).
 		At level 4, it allows you to specify which creature to teleport.
 		At level 5, it allows you to choose the target area (radius %d).
-		The range will increase with your Spellpower.]]):format(range, radius)
+		Random teleports have a minimum range of %d.
+		The range will increase with your Spellpower.]]):format(range, radius, t.minRange)
 	end,
 }
 

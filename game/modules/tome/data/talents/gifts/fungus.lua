@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ newTalent{
 	points = 5,
 	equilibrium = 22,
 	cooldown = 25,
-	tactical = { HEAL = function(self, t, target) return self.life_regen * 10 end },
+	tactical = { HEAL = function(self, t, target) return self.life_regen > 0 and math.log(self.life_regen + 1)/2 or nil end },
 	getMult = function(self, t) return util.bound(5 + self:getTalentLevel(t), 3, 12) end,
 	action = function(self, t)
 		local amt = self.life_regen * t.getMult(self, t)

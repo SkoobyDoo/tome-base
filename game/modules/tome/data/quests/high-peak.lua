@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
+
+use_ui = "quest-main"
 
 name = "Falling Toward Apotheosis"
 desc = function(self, who)
@@ -47,6 +49,7 @@ end
 on_status_change = function(self, who, status, sub)
 	if sub then
 		if self:isCompleted("elandar-dead") and self:isCompleted("argoniel-dead") and not who:isQuestStatus("high-peak", engine.Quest.DONE) then
+			self.use_ui = "quest-win"
 			who:setQuestStatus(self.id, engine.Quest.DONE)
 
 			-- Remove all remaining hostiles

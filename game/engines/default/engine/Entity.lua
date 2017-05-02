@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,31 +17,39 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
---- A game entity
--- An entity is anything that goes on a map, terrain features, objects, monsters, player, ...
--- Usually there is no need to use it directly, and it is better to use specific engine.Grid, engine.Actor or engine.Object
--- classes. Most modules will want to subclass those anyway to add new comportments
 local Shader = require "engine.Shader"
 local Particles = require "engine.Particles"
 
+--- An entity is anything that goes on a map, terrain features, objects, monsters, player, ...  
+-- Usually there is no need to use it directly, and it is better to use specific engine.Grid, engine.Actor or engine.Object
+-- classes. Most modules will want to subclass those anyway to add new comportments
+-- @classmod engine.Entity
 module(..., package.seeall, class.make)
 
 local next_uid = 1
 local entities_load_functions = {}
 
-_M.__mo_final_repo = {}
-_M._no_save_fields = { _shader = true }
-_M.__position_aware = false -- Subclasses can change it to know where they are on the map
 
--- Setup the uids & MO repository as a weak value table, when the entities are no more used anywhere else they disappear from there too
+_M.__mo_final_repo = {}
+--- Fields we shouldn't save
+_M._no_save_fields = { _shader = true }
+ --- Subclasses can change it to know where they are on the map
+_M.__position_aware = false
+
+-- Setup the uids & Map object repository as a weak value table, when the entities are no more used anywhere else they disappear from there too
 setmetatable(__uids, {__mode="v"})
 setmetatable(_M.__mo_final_repo, {__mode="k"})
 
---- Invalidates the whole MO repository
+--- Invalidates the whole Map Object repository
+-- @static
 function _M:invalidateAllMO()
 	setmetatable(_M.__mo_final_repo, {__mode="k"})
 end
 
+--- recursive copy
+-- @param[type=table] dst the destination table
+-- @param[type=table] src the source table
+-- @param[type=boolean] deep copy ALL the things
 local function copy_recurs(dst, src, deep)
 	for k, e in pairs(src) do
 		if type(e) == "table" and (e.__ATOMIC or e.__CLASSNAME) then
@@ -59,6 +67,9 @@ local function copy_recurs(dst, src, deep)
 	end
 end
 
+--- Import base into entity
+-- @param[type=table] t
+-- @param[type=table] base
 local function importBase(t, base)
 	local temp = table.clone(base, true, {uid=true, define_as = true})
 	if base.onEntityMerge then base:onEntityMerge(temp) end
@@ -69,7 +80,10 @@ local function importBase(t, base)
 end
 
 --- Create a new entity with a base
--- STATIC
+-- calls `importBase`
+-- @static
+-- @param[type=table] t
+-- @param[type=table] base
 function _M:fromBase(t, base)
 	if not base then base = t.base end
 	assert(base, "no base given to Entity.fromBase")
@@ -79,7 +93,8 @@ end
 
 --- Initialize an entity
 -- Any subclass MUST call this constructor
--- @param t a table defining the basic properties of the entity
+-- @param[type=table] t a table defining the basic properties of the entity
+-- @param[type=boolean] no_default alternate settings that override the defaults
 -- @usage Entity.new{display='#', color_r=255, color_g=255, color_b=255}
 function _M:init(t, no_default)
 	t = t or {}
@@ -110,7 +125,6 @@ function _M:init(t, no_default)
 			error("Entity definition has a closure: "..err)
 		end
 	end
-
 	if self.color then
 		self.color_r = self.color.r
 		self.color_g = self.color.g
@@ -159,6 +173,8 @@ function _M:init(t, no_default)
 end
 
 --- If we are cloned we need a new uid
+-- flags entity as changed
+-- @param src source of event, not used by default
 function _M:cloned(src)
 	self.uid = next_uid
 	__uids[self.uid] = self
@@ -168,6 +184,9 @@ function _M:cloned(src)
 end
 
 --- If we are replaced we need a new uid
+-- flags entity as changed
+-- @param[type=boolean] isdone
+-- @param new
 function _M:replacedWith(isdone, new)
 	if not isdone then __uids[self.uid] = nil
 	else
@@ -179,8 +198,10 @@ function _M:replacedWith(isdone, new)
 end
 
 _M.__autoload = {}
+--- Do we delay the load for this entity or not
 _M.loadNoDelay = true
 --- If we are loaded we need a new uid
+-- flags entity as changed
 function _M:loaded()
 	local ouid = self.uid
 	if __uids[self.uid] and __uids[self.uid] == self.uid then __uids[self.uid] = nil end
@@ -198,6 +219,7 @@ end
 
 --- Change the entity's uid
 -- <strong>*WARNING*</strong>: ONLY DO THIS IF YOU KNOW WHAT YOU ARE DOING!. YOU DO NOT !
+-- @param newuid the new uid
 function _M:changeUid(newuid)
 	if __uids[self.uid] and __uids[self.uid] == self.uid then __uids[self.uid] = nil end
 	self.uid = newuid
@@ -211,10 +233,13 @@ end
 
 --- Setup minimap color for this entity
 -- You may overload this method to customize your minimap
+-- @param mo
+-- @param[type=Map] map
 function _M:setupMinimapInfo(mo, map)
 end
 
 --- Adds a particles emitter following the entity
+-- @param[type=Particles] ps
 function _M:addParticles(ps)
 	self.__particles[ps] = true
 	if self.x and self.y and game.level and game.level.map then
@@ -226,6 +251,12 @@ function _M:addParticles(ps)
 end
 
 --- Adds a particles emitter following the entity and duplicate it for the back
+-- calls `addParticles`() twice internally
+-- @param[type=table] def
+-- @param[type=?table] args
+-- @string[opt] shader
+-- @return back `Particles`
+-- @return front `Particles`
 function _M:addParticles3D(def, args, shader)
 	local args1, args2 = table.clone(args or {}), table.clone(args or {})
 	args1.noup = 2
@@ -247,6 +278,7 @@ function _M:addParticles3D(def, args, shader)
 end
 
 --- Removes a particles emitter following the entity
+-- @param[type=Particles] ps
 function _M:removeParticles(ps)
 	if not ps then return end
 	self.__particles[ps] = nil
@@ -259,6 +291,7 @@ function _M:removeParticles(ps)
 end
 
 --- Get the particle emitters of this entity
+-- @param[type=string|bool] back "all" is a valid value
 function _M:getParticlesList(back)
 	local ps = {}
 	for e, _ in pairs(self.__particles) do
@@ -317,6 +350,12 @@ end
 -- Do not touch unless you *KNOW* what you are doing.<br/>
 -- You do *NOT* need this, this is used by the engine.Map class automatically.<br/>
 -- *DO NOT TOUCH!!!*
+-- @param[type=Tiles] tiles
+-- @int idx
+-- @return[1] nil
+-- @return[2] self._mo
+-- @return[2] self.z
+-- @return[2] last_mo
 function _M:makeMapObject(tiles, idx)
 	if idx > 1 and not tiles.use_images then return nil end
 	if idx > 1 then
@@ -328,7 +367,6 @@ function _M:makeMapObject(tiles, idx)
 
 	-- Texture
 	local ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
-
 	local dy, dh = 0, 0
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
 
@@ -452,16 +490,26 @@ function _M:makeMapObject(tiles, idx)
 	return self._mo, self.z, last_mo
 end
 
---- Allows to alter the generated map objects
+--- Allows to alter the generated map objects  
 -- Does nothing by default
+-- @param[type=Tiles] tiles
+-- @param mo Map Object
+-- @param z
+-- @param last_mo last Map Object
+-- @return mo
+-- @return z
+-- @return last_mo
 function _M:alterMakeMapObject(tiles, mo, z, last_mo)
 	return mo, z, last_mo
 end
 
---- Get all "map objects" representing this entity
--- Do not touch unless you *KNOW* what you are doing.<br/>
--- You do *NOT* need this, this is used by the engine.Map class automatically.<br/>
+--- Get all "map objects" representing this entity  
+-- Do not touch unless you *KNOW* what you are doing.  
+-- You do *NOT* need this, this is used by the engine.Map class automatically.  
 -- *DO NOT TOUCH!!!*
+-- @param[type=Tiles] tiles
+-- @param mos map objects
+-- @int z recursive index
 function _M:getMapObjects(tiles, mos, z)
 	local tgt = self
 	if self.replace_display then tgt = self.replace_display end
@@ -484,6 +532,8 @@ function _M:getMapObjects(tiles, mos, z)
 	self:defineDisplayCallback()
 end
 
+--- Remove all Map objects for this entity
+-- @param[type=boolean] no_invalidate don't invalidate the map object
 function _M:removeAllMOs(no_invalidate)
 	if self._mo and not no_invalidate then self._mo:invalidate() end
 	self._mo = nil
@@ -499,13 +549,13 @@ function _M:removeAllMOs(no_invalidate)
 end
 
 --- Setup movement animation for the entity
--- The entity is supposed to posses a correctly set x and y pair of fields - set to the current (new) position
+-- The entity is supposed to possess a correctly set x and y pair of fields - set to the current (new) position
 -- @param oldx the coords from where the animation will seem to come from
 -- @param oldy the coords from where the animation will seem to come from
 -- @param speed the number of frames the animation lasts (frames are normalized to 30/sec no matter the actual FPS)
 -- @param blur apply a motion blur effect of this number of frames
 -- @param twitch_dir defaults to 8, the direction to do movement twitch
--- @param twitch_dir defaults to 0, the amplitude of movement twitch
+-- @param twitch defaults to 0, the amplitude of movement twitch
 function _M:setMoveAnim(oldx, oldy, speed, blur, twitch_dir, twitch)
 	if not self._mo then return end
 	self._mo:setMoveAnim(oldx, oldy, self.x, self.y, speed, blur, twitch_dir, twitch)
@@ -537,9 +587,11 @@ function _M:resetMoveAnim()
 end
 
 --- Sets the flip state of MO and associated MOs
+-- @param v passed to the map object's flipX()
 function _M:MOflipX(v)
 	if not self._mo then return end
 	self._mo:flipX(v)
+	self._flipx = v
 
 	if not self.add_displays then return end
 
@@ -551,9 +603,11 @@ function _M:MOflipX(v)
 end
 
 --- Sets the flip state of MO and associated MOs
+-- @param v passed to the map object's flipY()
 function _M:MOflipY(v)
 	if not self._mo then return end
 	self._mo:flipY(v)
+	self._flipy = v
 
 	if not self.add_displays then return end
 
@@ -565,10 +619,12 @@ function _M:MOflipY(v)
 end
 
 --- Get the entity image as an sdl surface and texture for the given tiles and size
--- @param tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
+-- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
 -- @param w the width
 -- @param h the height
--- @return the sdl surface and the texture
+-- @return[1] nil if no texture
+-- @return[2] the sdl surface
+-- @return[2] the texture
 function _M:getEntityFinalSurface(tiles, w, h)
 	local id = w.."x"..h
 	if _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].surface, _M.__mo_final_repo[self][id].tex end
@@ -590,10 +646,11 @@ function _M:getEntityFinalSurface(tiles, w, h)
 end
 
 --- Get the entity image as an sdl texture for the given tiles and size
--- @param tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
+-- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles)
 -- @param w the width
 -- @param h the height
--- @return the sdl texture
+-- @return[1] nil if no texture
+-- @return[2] the texture
 function _M:getEntityFinalTexture(tiles, w, h)
 	local id = w.."x"..h
 	if _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].tex end
@@ -616,6 +673,7 @@ function _M:getEntityFinalTexture(tiles, w, h)
 end
 
 --- Get a string that will display in text the texture of this entity
+-- @string[opt] tstr
 function _M:getDisplayString(tstr)
 	if tstr then
 		if core.display.FBOActive() or true then
@@ -633,12 +691,14 @@ function _M:getDisplayString(tstr)
 end
 
 --- Displays an entity somewhere on screen, outside the map
--- @param tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles, it will if this is null)
--- @param x where to display
--- @param y where to display
--- @param w the width
--- @param h the height
--- @param a the alpha setting, defaults to 1
+-- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles, it will if this is null)
+-- @int x where to display
+-- @int y where to display
+-- @int w the width
+-- @int h the height
+-- @param[type=?number] a the alpha setting
+-- @param allow_cb
+-- @param allow_shader
 function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_shader)
 	local Map = require "engine.Map"
 	tiles = tiles or Map.tiles
@@ -652,10 +712,14 @@ function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_shader)
 	core.map.mapObjectsToScreen(x, y, w, h, a, allow_cb, allow_shader, unpack(list))
 end
 
---- Resolves an entity
--- This is called when generating the final clones of an entity for use in a level.
--- This can be used to make random enchants on objects, random properties on actors, ...
+--- Resolves an entity  
+-- This is called when generating the final clones of an entity for use in a level.  
+-- This can be used to make random enchants on objects, random properties on actors, ...  
 -- by default this only looks for properties with a table value containing a __resolver field
+-- @param[type=?table] t table defaults to self
+-- @param[type=?boolean] last resolve last
+-- @param[type=?boolean] on_entity
+-- @param[type=?table] key_chain stores keys, defaults to {}
 function _M:resolve(t, last, on_entity, key_chain)
 	t = t or self
 	key_chain = key_chain or {}
@@ -671,10 +735,17 @@ function _M:resolve(t, last, on_entity, key_chain)
 	end
 
 	-- Then we handle it, this is because resolvers can modify the list with their returns, or handlers, so we must make sure to not modify the list we are iterating over
+	local r
 	for k, e in pairs(list) do
+		if type(e) == "table" and e.__resolver then
+		end
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
-			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(".", key_chain)) end
-			t[k] = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
+			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(key_chain, ".")) end
+			r = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
+			t[k] = r
+			if type(r) == "table" and r.__resolver and r.__resolve_instant and (not r.__resolve_last or last) then --handle a nested instant resolver immediately
+				t[k] = resolvers.calc[r.__resolver](r, on_entity or self, self, t, k, key_chain)
+			end
 		elseif type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 			local key_chain = table.clone(key_chain)
 			key_chain[#key_chain+1] = k
@@ -699,6 +770,7 @@ function _M:resolve(t, last, on_entity, key_chain)
 end
 
 --- Print all resolvers registered
+-- @param[type=?table] t defaults to self
 function _M:printResolvers(t)
 	for k, e in pairs(t or self) do
 		if type(e) == "table" and e.__resolver then
@@ -708,16 +780,17 @@ function _M:printResolvers(t)
 end
 
 --- Call when the entity is actually added to a level/whatever
--- This helps ensuring uniqueness of uniques
+-- This helps ensure uniqueness of uniques
 function _M:added()
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) + 1
-		print("Added unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tostring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) + 1
+		print("Added unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 
 --- Call when the entity is actually removed from existence
--- This helps ensuring uniqueness of uniques.
+-- This helps ensure uniqueness of uniques.
 -- This recursively removes inventories too, if you need anything special, overload this
 function _M:removed()
 	if self.inven then
@@ -731,32 +804,35 @@ function _M:removed()
 	if game and game.hasEntity and game:hasEntity(self) then game:removeEntity(self) end
 
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) - 1
-		if game.uniques[self.__CLASSNAME.."/"..self.unique] <= 0 then game.uniques[self.__CLASSNAME.."/"..self.unique] = nil end
-		print("Removed unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tostring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) - 1
+		if game.uniques[self.__CLASSNAME.."/"..ustr] <= 0 then game.uniques[self.__CLASSNAME.."/"..ustr] = nil end
+		print("Removed unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 
---- Check for an entity's property
+--- Check for an entity's property  
 -- If not a function it returns it directly, otherwise it calls the function
 -- with the extra parameters
 -- @param prop the property name to check
+-- @param[opt] ... the functions arguments
 function _M:check(prop, ...)
 	if type(self[prop]) == "function" then return self[prop](self, ...)
 	else return self[prop]
 	end
 end
 
+--- temporary values storage
 _M.temporary_values_conf = {}
 
 --- Computes a "temporary" value into a property
--- Example: You want to give an actor a boost to life_regen, but you do not want it to be permanent<br/>
+-- Example: You want to give an actor a boost to life_regen, but you do not want it to be permanent  
 -- You cannot simply increase life_regen, so you use this method which will increase it AND
 -- store the increase. it will return an "increase id" that can be passed to removeTemporaryValue()
 -- to remove the effect.
--- @param prop the property to affect.  This can be either a string or a table of strings, the latter allowing nested properties to be modified.
--- @param v the value to add.  This should either be a number or a table of properties and numbers.
--- @param noupdate if true the actual property is not changed and needs to be changed by the caller
+-- @param[opt=tab|string] prop the property to affect.  This can be either a string or a table of strings, the latter allowing nested properties to be modified.
+-- @param[opt=number|tab] v the value to add.  This should either be a number or a table of properties and numbers.
+-- @param[type=boolean] noupdate if true the actual property is not changed and needs to be changed by the caller
 -- @return an id that can be passed to removeTemporaryValue() to delete this value
 function _M:addTemporaryValue(prop, v, noupdate)
 	if not self.compute_vals then self.compute_vals = {n=0} end
@@ -819,6 +895,11 @@ function _M:addTemporaryValue(prop, v, noupdate)
 				table.sort(b, function(a, b) return a[1] > b[1] end)
 				base[prop] = b[1] and b[1][2]
 			else
+if type(base[prop] or 0) ~= "number" or type(v) ~= "number" then
+	print("ERROR: Attempting to add value", v, "property", prop, "to", base[prop]) table.print(base[prop]) table.print(v)
+	print("Entity:", self) -- table.print(self)
+	game.debug._debug_entity = self
+end
 				base[prop] = (base[prop] or 0) + v
 			end
 			self:onTemporaryValueChange(prop, v, base)
@@ -856,15 +937,15 @@ function _M:addTemporaryValue(prop, v, noupdate)
 end
 
 --- Removes a temporary value, see addTemporaryValue()
--- @param prop the property to affect
--- @param id the id of the increase to delete
--- @param noupdate if true the actual property is not changed and needs to be changed by the caller
+-- @param[opt=tab|string] prop the property to affect
+-- @int id the id of the increase to delete
+-- @param[type=boolean] noupdate if true the actual property is not changed and needs to be changed by the caller
 function _M:removeTemporaryValue(prop, id, noupdate)
+	if not self.compute_vals then util.send_error_backtrace("removeTemporaryValue: attempting to remove prop "..tostring(prop).." with no temporary values initialized") return end
+	if not id then util.send_error_backtrace("removeTemporaryValue: error removing prop "..tostring(prop).." with id "..tostring(id)) return end
 	local oldval = self.compute_vals[id]
 --	print("removeTempVal", prop, oldval, " :=: ", id)
-	if not id then util.send_error_backtrace("error removing prop "..tostring(prop).." with id nil") return end
 	self.compute_vals[id] = nil
-
 	-- Find the base, one removed from the last prop
 	local initial_base, initial_prop
 	if type(prop) == "table" then
@@ -946,9 +1027,9 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 		else
 			if config.settings.cheat then
 				if type(v) == "nil" then
-					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				else
-					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				end
 			end
 		end
@@ -960,10 +1041,21 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 	end
 end
 
---- Helper function to add temporary values and not have to remove them manualy
+--- Returns a previously set temporary value, see addTemporaryValue()
+-- @int id the index of the previously set property
+function _M:getTemporaryValue(id)
+	return self.compute_vals and self.compute_vals[id]
+end
+
+--- Helper function to add temporary values
+-- @param[type=table] t
+-- @param k
+-- @param v
 function _M:tableTemporaryValue(t, k, v)
 	t[#t+1] = {k, self:addTemporaryValue(k, v)}
 end
+--- Helper function to remove temporary values
+-- @param[type=table] t
 function _M:tableTemporaryValuesRemove(t)
 	for i = 1, #t do
 		self:removeTemporaryValue(t[i][1], t[i][2])
@@ -985,7 +1077,9 @@ end
 -- @param to the temp value added to changed_attr which we are ending on
 -- @param result_attr the result we are measuring the difference in
 -- @param ... arguments to pass to result_attr if it is a function
--- @return the difference, the from result, the to result
+-- @return the difference
+-- @return the from result
+-- @return the to result
 function _M:getAttrChange(changed_attr, from, to, result_attr, ...)
 	local temp = self:addTemporaryValue(changed_attr, from)
 	local from_result = util.getval(self[result_attr], self, ...)
@@ -1002,9 +1096,11 @@ end
 -- The attributes are just actor properties, but this ensures they are numbers and not booleans
 -- thus making them compatible with temporary values system
 -- @param prop the property to use
--- @param v the value to add, if nil this the function return
--- @param fix forces the value to v, do not add
--- @return nil if v was specified. If not then it returns the current value if it exists and is not 0 otherwise returns nil
+-- @param[opt] v the value to add, if nil the function returns
+-- @param[opt] fix forces the value to v, does not add
+-- @return nil if v was specified
+-- @return nil if property doesn't exist
+-- @return If v isn't specified then it returns the current value if it exists and isn't 0
 function _M:attr(prop, v, fix)
 	if v then
 		if fix then self[prop] = v
@@ -1020,11 +1116,11 @@ function _M:attr(prop, v, fix)
 end
 
 --- Loads a list of entities from a definition file
--- @param file the file to load from
--- @param no_default if true then no default values will be assigned
--- @param res the table to load into, defaults to a new one
--- @param mod an optional function to which will be passed each entity as they are created. Can be used to adjust some values on the fly
--- @param loaded an optional table of already loaded files
+-- @string file the file to load from
+-- @param[type=?boolean] no_default if true then no default values will be assigned
+-- @param[type=?table] res the table to load into, defaults to a new one
+-- @func[opt] mod a function to which will be passed each entity as they are created. Can be used to adjust some values on the fly
+-- @param[type=?table] loaded a table of already loaded files
 -- @usage MyEntityClass:loadList("/data/my_entities_def.lua")
 function _M:loadList(file, no_default, res, mod, loaded)
 	local Zone = require "engine.Zone"
@@ -1032,7 +1128,7 @@ function _M:loadList(file, no_default, res, mod, loaded)
 	if type(file) == "table" then
 		res = res or {}
 		for i, f in ipairs(file) do
-			self:loadList(f, no_default, res, mod)
+			self:loadList(f, no_default, res, mod, loaded)
 		end
 		return res
 	end
@@ -1106,15 +1202,20 @@ function _M:loadList(file, no_default, res, mod, loaded)
 
 	self:triggerHook{"Entity:loadList", file=file, no_default=no_default, res=res, mod=mod, loaded=loaded}
 
+	res.__loaded_files = loaded
+
 	return res
 end
 
 --- Return the kind of the entity
+-- @return "entity"
 function _M:getEntityKind()
 	return "entity"
 end
 
 --- Putting this here to avoid errors, not sure if appropriate
+-- @string type_str
+-- @return false
 function _M:checkClassification(type_str)
 	return false
 end

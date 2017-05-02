@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -178,7 +178,6 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	ingredient_on_death = "FAERLHING_FANG",
 }
 
--- the brethren of Ungoliant :D  tough and deadly, probably too tough, but meh <evil laughter>
 newEntity{ base = "BASE_NPC_SPIDER",
 	name = "ungolmor", color={0,0,0},  -- spider night, don't change the color
 	desc = [[Largest of all the spiderkin, its folds of skin seem nearly impenetrable.]],
@@ -252,7 +251,6 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	size_category = 1,
 
 	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 70), 1, 0.9), atk=16, apr=9, damtype=DamageType.WASTING, dammod={dex=1.2} },
-
 	combat_armor = 5, combat_def = 10,
 	resists = { [DamageType.PHYSICAL] = 20, [DamageType.TEMPORAL] = 20, },
 	
@@ -335,7 +333,7 @@ newEntity{ base = "BASE_NPC_SPIDER",
 	rank = 3.5,
 	size_category = 4,
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, CLOAK=1 },
 	resolvers.drops{chance=100, nb=1, {defined="THREADS_FATE", random_art_replace={chance=65}}},
 	resolvers.drops{chance=100, nb=5, {ego_chance=100} },
 

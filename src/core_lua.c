@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -329,8 +329,8 @@ static int lua_get_mouse(lua_State *L)
 	int x = 0, y = 0;
 	int buttons = SDL_GetMouseState(&x, &y);
 
-	lua_pushnumber(L, x);
-	lua_pushnumber(L, y);
+	lua_pushnumber(L, x / screen_zoom);
+	lua_pushnumber(L, y / screen_zoom);
 	lua_pushnumber(L, SDL_BUTTON(buttons));
 
 	return 3;
@@ -339,7 +339,7 @@ static int lua_set_mouse(lua_State *L)
 {
 	int x = luaL_checknumber(L, 1);
 	int y = luaL_checknumber(L, 2);
-	SDL_WarpMouseInWindow(window, x, y);
+	SDL_WarpMouseInWindow(window, x * screen_zoom, y * screen_zoom);
 	return 0;
 }
 extern int current_mousehandler;
@@ -590,6 +590,35 @@ static int lua_reset_locale(lua_State *L)
 	return 0;
 }
 
+extern bool tickPaused;
+static int lua_force_next_tick(lua_State *L)
+{
+	tickPaused = FALSE;
+	return 0;
+}
+
+static int lua_open_browser(lua_State *L)
+{
+#if defined(SELFEXE_LINUX) || defined(SELFEXE_BSD)
+	const char *command = "xdg-open \"%s\"";
+#elif defined(SELFEXE_WINDOWS)
+	const char *command = "rundll32 url.dll,FileProtocolHandler \"%s\"";
+#elif defined(SELFEXE_MACOSX)
+	const char *command = "open  \"%s\"";
+#else
+	{ return 0; }
+#endif
+	char buf[2048];
+	size_t len;
+	char *path = strdup(luaL_checklstring(L, 1, &len));
+	size_t i;
+	for (i = 0; i < len; i++) if (path[i] == '"') path[i] = '_'; // Just dont put " in there
+	snprintf(buf, 2047, command, path);
+	lua_pushboolean(L, system(buf) == 0);
+	
+	return 1;
+}
+
 static const struct luaL_Reg gamelib[] =
 {
 	{"setRebootMessage", lua_set_reboot_message},
@@ -602,8 +631,10 @@ static const struct luaL_Reg gamelib[] =
 	{"sleep", lua_sleep},
 	{"setRealtime", lua_set_realtime},
 	{"setFPS", lua_set_fps},
+	{"requestNextTick", lua_force_next_tick},
 	{"checkError", lua_check_error},
 	{"resetLocale", lua_reset_locale},
+	{"openBrowser", lua_open_browser},
 	{NULL, NULL},
 };
 
@@ -618,11 +649,13 @@ extern bool is_fullscreen;
 extern bool is_borderless;
 static int sdl_screen_size(lua_State *L)
 {
-	lua_pushnumber(L, screen->w);
-	lua_pushnumber(L, screen->h);
+	lua_pushnumber(L, screen->w / screen_zoom);
+	lua_pushnumber(L, screen->h / screen_zoom);
 	lua_pushboolean(L, is_fullscreen);
 	lua_pushboolean(L, is_borderless);
-	return 4;
+	lua_pushnumber(L, screen->w);
+	lua_pushnumber(L, screen->h);
+	return 6;
 }
 
 static int sdl_window_pos(lua_State *L)
@@ -827,8 +860,13 @@ static void font_make_texture_line(lua_State *L, SDL_Surface *s, int id, bool is
 		lua_pushvalue(L, -4);
 		lua_rawset(L, -3);
 
-		// Replace dduids by a new one
-		lua_newtable(L);
+		lua_newtable(L); // Replace dduids by a new one
+		lua_newtable(L); // Metatable to make it weak
+		lua_pushstring(L, "__mode");
+		lua_pushstring(L, "k");
+		lua_rawset(L, -3);
+		lua_setmetatable(L, -2);
+
 		lua_replace(L, -4);
 	}
 
@@ -909,10 +947,14 @@ static int sdl_font_draw(lua_State *L)
 	SDL_Surface *s = SDL_CreateRGBSurface(SDL_SWSURFACE, max_width, h, 32, rmask, gmask, bmask, amask);
 	SDL_FillRect(s, NULL, SDL_MapRGBA(s->format, 0, 0, 0, 0));
 
-	int id_dduid = 1;
 	if (direct_uid_draw)
 	{
-		lua_newtable(L);
+		lua_newtable(L); // DDUIDS
+		lua_newtable(L); // Metatable to make it weak
+		lua_pushstring(L, "__mode");
+		lua_pushstring(L, "k");
+		lua_rawset(L, -3);
+		lua_setmetatable(L, -2);
 	}
 
 	lua_newtable(L);
@@ -953,7 +995,6 @@ static int sdl_font_draw(lua_State *L)
 			{
 				// Push it & reset the surface
 				font_make_texture_line(L, s, nb_lines, is_separator, id_real_line, line_data, line_data_size, direct_uid_draw, size);
-				id_dduid = 1;
 				is_separator = FALSE;
 				SDL_FillRect(s, NULL, SDL_MapRGBA(s->format, 0, 0, 0, 0));
 //				printf("Ending previous line at size %d\n", size);
@@ -1026,12 +1067,9 @@ static int sdl_font_draw(lua_State *L)
 						lua_call(L, 1, 1);
 						if (lua_istable(L, -1))
 						{
-//							printf("DirectDrawUID in font:draw %d : %d\n", size, h);
-							lua_createtable(L, 0, 4);
-
-							lua_pushliteral(L, "e");
-							lua_pushvalue(L, -3);
-							lua_rawset(L, -3);
+							// printf("DirectDrawUID in font:draw %d : %d\n", size, h);
+							lua_pushvalue(L, -1);
+							lua_createtable(L, 0, 2);
 
 							lua_pushliteral(L, "x");
 							lua_pushnumber(L, size);
@@ -1040,8 +1078,7 @@ static int sdl_font_draw(lua_State *L)
 							lua_pushliteral(L, "w");
 							lua_pushnumber(L, h);
 							lua_rawset(L, -3);
-
-							lua_rawseti(L, -4, id_dduid++); // __dduids
+							lua_settable(L, -5); // __dduids
 
 							size += h;
 						}
@@ -1132,7 +1169,6 @@ static int sdl_font_draw(lua_State *L)
 	}
 
 	font_make_texture_line(L, s, nb_lines, is_separator, id_real_line, line_data, line_data_size, direct_uid_draw, size);
-	id_dduid = 1;
 	if (size > max_size) max_size = size;
 
 	if (txt) SDL_FreeSurface(txt);
@@ -2203,7 +2239,12 @@ static int gl_scissor(lua_State *L)
 {
 	if (lua_toboolean(L, 1)) {
 		glEnable(GL_SCISSOR_TEST);
-		glScissor(luaL_checknumber(L, 2), screen->h - luaL_checknumber(L, 3) - luaL_checknumber(L, 5), luaL_checknumber(L, 4), luaL_checknumber(L, 5));
+		float x = luaL_checknumber(L, 2);
+		float y = luaL_checknumber(L, 3);
+		float w = luaL_checknumber(L, 4);
+		float h = luaL_checknumber(L, 5);
+		y = screen->h / screen_zoom - y - h;
+		glScissor(x, y, w, h);
 	} else glDisable(GL_SCISSOR_TEST);
 	return 0;
 }
@@ -2380,9 +2421,10 @@ static int sdl_set_window_size(lua_State *L)
 	int h = luaL_checknumber(L, 2);
 	bool fullscreen = lua_toboolean(L, 3);
 	bool borderless = lua_toboolean(L, 4);
+	float zoom = luaL_checknumber(L, 5);
 
 	printf("Setting resolution to %dx%d (%s, %s)\n", w, h, fullscreen ? "fullscreen" : "windowed", borderless ? "borderless" : "with borders");
-	do_resize(w, h, fullscreen, borderless);
+	do_resize(w, h, fullscreen, borderless, zoom);
 
 	lua_pushboolean(L, TRUE);
 	return 1;
@@ -2545,23 +2587,33 @@ static int gl_new_fbo(lua_State *L)
 
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
+	int nbt = 1;
+	if (lua_isnumber(L, 3)) nbt = luaL_checknumber(L, 3);
 
 	lua_fbo *fbo = (lua_fbo*)lua_newuserdata(L, sizeof(lua_fbo));
 	auxiliar_setclass(L, "gl{fbo}", -1);
 	fbo->w = w;
 	fbo->h = h;
+	fbo->nbt = nbt;
+
+	fbo->textures = calloc(nbt, sizeof(GLuint));
+	fbo->buffers = calloc(nbt, sizeof(GLenum));
 
 	glGenFramebuffersEXT(1, &(fbo->fbo));
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
 
 	// Now setup a texture to render to
-	glGenTextures(1, &(fbo->texture));
-	tfglBindTexture(GL_TEXTURE_2D, fbo->texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, fbo->texture, 0);
+	int i;
+	glGenTextures(nbt, fbo->textures);
+	for (i = 0; i < nbt; i++) {
+		tfglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, fbo->textures[i], 0);
+		fbo->buffers[i] = GL_COLOR_ATTACHMENT0 + i;
+	}
 
 	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) return 0;
@@ -2576,11 +2628,15 @@ static int gl_free_fbo(lua_State *L)
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, 0, 0);
+	int i;
+	for (i = 0; i < fbo->nbt; i++) glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
-	glDeleteTextures(1, &(fbo->texture));
+	glDeleteTextures(fbo->nbt, fbo->textures);
 	glDeleteFramebuffersEXT(1, &(fbo->fbo));
+
+	free(fbo->textures);
+	free(fbo->buffers);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -2603,6 +2659,7 @@ static int gl_fbo_use(lua_State *L)
 	if (active)
 	{
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fbo);
+		if (fbo->nbt > 1) glDrawBuffers(fbo->nbt, fbo->buffers);
 
 		// Set the viewport and save the old one
 		glPushAttrib(GL_VIEWPORT_BIT);
@@ -2642,6 +2699,7 @@ static int gl_fbo_use(lua_State *L)
 	return 0;
 }
 
+extern GLuint mapseentex;
 static int gl_fbo_toscreen(lua_State *L)
 {
 	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
@@ -2665,7 +2723,16 @@ static int gl_fbo_toscreen(lua_State *L)
 	}
 
 	if (!allowblend) glDisable(GL_BLEND);
-	tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+
+	if (fbo->nbt > 1) {
+		int i;
+		for (i = fbo->nbt - 1; i >= 1; i--) {
+			tglActiveTexture(GL_TEXTURE0 + i);
+			tglBindTexture(GL_TEXTURE_2D, fbo->textures[i]);
+		}
+		tglActiveTexture(GL_TEXTURE0);
+	}
+	tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 
 	GLfloat colors[4*4] = {
 		r, g, b, a,
@@ -2755,7 +2822,7 @@ static int gl_fbo_posteffects(lua_State *L)
 
 		tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, dstfbo->fbo);
 		glClear(GL_COLOR_BUFFER_BIT);
-		tglBindTexture(GL_TEXTURE_2D, srcfbo->texture);
+		tglBindTexture(GL_TEXTURE_2D, srcfbo->textures[0]);
 		glDrawArrays(GL_QUADS, 0, 4);
 
 		shad_idx++;
@@ -2773,7 +2840,7 @@ static int gl_fbo_posteffects(lua_State *L)
 	glPopAttrib();
 	tglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_final->fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
-	tglBindTexture(GL_TEXTURE_2D, srcfbo->texture);
+	tglBindTexture(GL_TEXTURE_2D, srcfbo->textures[0]);
 	vertices[0] = x; vertices[1] = y;
 	vertices[2] = x; vertices[3] = y + h;
 	vertices[4] = x + w; vertices[5] = y + h;
@@ -3052,7 +3119,7 @@ static int gl_fbo_to_png(lua_State *L)
 		return 0;
 	}
 
-	tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+	tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)image);
 
@@ -3088,13 +3155,13 @@ static int fbo_texture_bind(lua_State *L)
 		if (multitexture_active && shaders_active)
 		{
 			tglActiveTexture(GL_TEXTURE0+i);
-			tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+			tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 			tglActiveTexture(GL_TEXTURE0);
 		}
 	}
 	else
 	{
-		tglBindTexture(GL_TEXTURE_2D, fbo->texture);
+		tglBindTexture(GL_TEXTURE_2D, fbo->textures[0]);
 	}
 
 	return 0;

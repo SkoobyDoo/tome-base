@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -80,6 +80,17 @@ You may select a chronomancy spell to Matrix, reducing the cooldown of that spel
 	self:setFocus(self.c_list)
 	self:setupUI()
 
+	self.key:addCommands{
+		__TEXTINPUT = function(c)
+			if c == '~' then
+				self:use(self.cur_item)
+			end
+			if self.list and self.list.chars[c] then
+				self:use(self.list.chars[c])
+			end
+		end,
+	}
+	engine.interface.PlayerHotkeys:bindAllHotkeys(self.key, function(i) self:defineHotkey(i) end)
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
 	}
@@ -119,7 +130,7 @@ function _M:generateList()
 
 	-- Generate lists of all talents by category
 	for j, t in pairs(self.actor.talents_def) do
-		if self.actor:knowTalent(t.id) and t.type[1]:find("^chronomancy/") and not t.type[1]:find("^chronomancy/spellbinding") and not t.hide and t.cooldown and t.mode ~= "passive" and not t.fixed_cooldownand and not spellbound(self.actor, t.id) then
+		if self.actor:knowTalent(t.id) and t.type[1]:find("^chronomancy/") and not t.type[1]:find("^chronomancy/spellbinding") and not t.hide and t.cooldown and not t.fixed_cooldown and t.mode ~= "passive" and not spellbound(self.actor, t.id) then
 			local nodes = talents
 			local status = tstring{{"color", "LIGHT_GREEN"}, "Talents"}
 			

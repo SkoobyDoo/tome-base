@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ newBirthDescriptor
 		life_rating = 9,
 		resolvers.inscription("RUNE:_SHIELDING", {cooldown=14, dur=5, power=100}),
 		resolvers.inscription("RUNE:_PHASE_DOOR", {cooldown=7, range=10, dur=5, power=15}),
+		resolvers.inventory({id=true, transmo=false, alter=function(o) o.inscription_data.cooldown=18 o.inscription_data.range=8 o.inscription_data.power=40 end, {type="scroll", subtype="rune", name="heat beam rune", ego_chance=-1000, ego_chance=-1000}}),
 	},
 	experience = 1.25,
 	random_escort_possibilities = { {"tier1.1", 1, 2}, {"tier1.2", 1, 2}, {"daikara", 1, 2}, {"old-forest", 1, 4}, {"dreadfell", 1, 8}, {"reknor", 1, 2}, },
@@ -119,7 +120,7 @@ newBirthDescriptor
 		"Thaloren elves have spent most of the ages hidden within their forests, seldom leaving them.",
 		"The ages of the world passed by and yet they remained unchanged.",
 		"Their affinity for nature and their reclusion have made them great protectors of the natural order, often opposing their Shaloren cousins.",
-		"They possess the #GOLD#Wrath of the Eternals#WHITE# talent, which allows them a boost to the damage both inflicted and resisted once in a while.",
+		"They possess the #GOLD#Wrath of the Woods#WHITE# talent, which allows them a boost to the damage both inflicted and resisted once in a while.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +2 Strength, +3 Dexterity, +1 Constitution",
 		"#LIGHT_BLUE# * -2 Magic, +1 Willpower, +0 Cunning",
@@ -142,6 +143,7 @@ newBirthDescriptor
 		life_rating = 11,
 		resolvers.inscription("INFUSION:_REGENERATION", {cooldown=10, dur=5, heal=60}),
 		resolvers.inscription("INFUSION:_WILD", {cooldown=12, what={physical=true}, dur=4, power=14}),
+		resolvers.inventory({id=true, transmo=false, alter=function(o) o.inscription_data.cooldown=12 o.inscription_data.heal=50 end, {type="scroll", subtype="infusion", name="healing infusion", ego_chance=-1000, ego_chance=-1000}}),
 	},
 	experience = 1.35,
 	random_escort_possibilities = { {"tier1.1", 1, 2}, {"tier1.2", 1, 2}, {"daikara", 1, 2}, {"old-forest", 1, 4}, {"dreadfell", 1, 8}, {"reknor", 1, 2}, },

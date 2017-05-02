@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ return {
 	is_demon_plane = true,
 	no_planechange = true,
 	ambient_music = "Straight Into Ambush.ogg",
+	effects = {"EFF_ZONE_AURA_FEARSCAPE"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Forest",

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -161,7 +161,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You call upon the earth to create a blinding, corrosive cloud in an area of radius %d for %d turns.
-		Each turn, this cloud deals %0.1f Acid damage to each foe while (%d%% chance) burning away one beneficial magical effect.
+		Each turn, this cloud deals %0.1f acid damage to each foe with a 25%% chance to blind and a (%d%% chance) of burning away one beneficial magical effect.
 		The damage increases with your Mindpower.]]):
 		format(self:getTalentRadius(t), t.getDuration(self, t), damDesc(self, DamageType.ACID, t.getDamage(self, t)), t.getChance(self, t))
 	end,
@@ -175,7 +175,7 @@ newTalent{
 	equilibrium = 20,
 	cooldown = 20,
 	radius = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 6)) end, --Limit < 10
-	tactical = { ATTACKAREA = { Nature = 2 },  EQUILIBRIUM = 1 },
+	tactical = { ATTACKAREA = { NATURE = 2 },  EQUILIBRIUM = 1 },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 100) end,
 	getDrain = function(self, t) return self:combatTalentMindDamage(t, 10, 30) end,

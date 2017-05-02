@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,10 +25,10 @@ defineTile(";", "FLOOR", nil, nil, nil, {no_teleport=true})
 defineTile("~", "DEEP_WATER")
 defineTile("#", "HARDWALL")
 defineTile('&', "DOOR_VAULT")
-defineTile("$", "FLOOR", {random_filter={add_levels=5, ego_chance=30}})
+defineTile("$", "FLOOR", {random_filter={add_levels=5, ego_chance=30, tome_mod="vault"}})
 defineTile("%", "LAVA_FLOOR")
-defineTile("*", "FLOOR", {random_filter={add_levels=20}}, {random_filter={name="overpowered greater multi-hued wyrm", special_rarity="wyrm_rarity", add_levels=50}}, nil, {no_teleport=true})
-defineTile("=", "FLOOR", {random_filter={unique=true, not_properties={"lore"}}}, {random_filter={name="overpowered greater multi-hued wyrm", special_rarity="wyrm_rarity", add_levels=50}}, nil, {no_teleport=true})
+defineTile("*", "FLOOR", {random_filter={add_levels=20, tome_mod="uvault"}}, {random_filter={name="overpowered greater multi-hued wyrm", special_rarity="wyrm_rarity", add_levels=50}}, nil, {no_teleport=true})
+defineTile("=", "FLOOR", {random_filter={unique=true, not_properties={"lore"}, tome_mod="uvault"}}, {random_filter={name="overpowered greater multi-hued wyrm", special_rarity="wyrm_rarity", add_levels=50}}, nil, {no_teleport=true})
 --defineTile("^", "LAVA_FLOOR", "ZEMEKKYS_HAT", {random_filter={name="overpowered greater multi-hued wyrm", add_levels=50}})
 defineTile("^", "FLOOR", nil, {random_filter={name="overpowered greater multi-hued wyrm", special_rarity="wyrm_rarity", add_levels=50}}, nil, {no_teleport=true})
 defineTile("+", "DOOR")

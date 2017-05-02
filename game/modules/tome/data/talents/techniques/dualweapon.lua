@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+------------------------------------------------------
+-- General Dual Weapon Techniques
+------------------------------------------------------
 newTalent{
 	name = "Dual Weapon Training",
 	type = {"technique/dualweapon-training", 1},
@@ -41,125 +44,180 @@ newTalent{ -- Note: classes: Temporal Warden, Rogue, Shadowblade, Marauder
 	require = techs_dex_req2,
 	-- called by _M:combatDefenseBase in mod.class.interface.Combat.lua
 	getDefense = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 45.7, 500) end,
-	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon, kicks in for TL > 5
-		return self:combatTalentLimit(math.max(0, self:getTalentLevel(t)-5), 100, 16.7, 50)
+	callbackOnLevelup = function(self, t, level) -- make sure NPC's start with the parry buff active
+		if not self.player then
+			game:onTickEnd(function()
+				if not self:hasEffect(self.EFF_PARRY) then
+					t.callbackOnActBase(self, t)
+				end
+			end, self.uid.."PARRY")
+		end
 	end,
-	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
-		return math.max(0, self:combatTalentLimit(self:getTalentLevel(t)-5, 100, 10, 40))
+	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
+		return self:combatLimit(self:getTalentLevel(t)*self:getDex(), 90, 15, 20, 60, 250) -- limit < 90%, ~67% at TL 6.5, 55 dex
 	end,
-	getDamageChange = function(self, t, fake)
+	getDamageChange = function(self, t)
 		local dam,_,weapon = 0,self:hasDualWeapon()
 		if not weapon or weapon.subtype=="mindstar" and not fake then return 0 end
 		if weapon then
 			dam = self:combatDamage(weapon.combat) * self:getOffHandMult(weapon.combat)
 		end
-		return t.getDeflectPercent(self, t) * dam/100
+		return self:combatScale(dam, 5, 10, 50, 250)
 	end,
-	-- deflect count handled in physical effect "DUAL_WEAPON_DEFENSE" in mod.data.timed_effects.physical.lua
-	-- buff refreshed each turn in mod.class.Actor.lua _M:actBase
+	-- deflect count handled in physical effect "PARRY" in mod.data.timed_effects.physical.lua
 	getDeflects = function(self, t, fake)
-		if not self:hasDualWeapon() and not fake then return 0 end
-		return self:combatStatScale("cun", 0, 2.25)
-	end,
-	-- Called by _M:attackTargetWith in mod.class.interface.Combat.lua
-	doDeflect = function(self, t)
-		local eff = self:hasEffect(self.EFF_DUAL_WEAPON_DEFENSE)
-		if not eff then return 0 end
-		local deflected = 0
-		if rng.percent(self.tempeffect_def.EFF_DUAL_WEAPON_DEFENSE.deflectchance(self, eff)) then
-			deflected = eff.dam
+		if fake or self:hasDualWeapon() then
+			return self:combatStatScale("cun", 1, 2.25)
+		else return 0
 		end
-		eff.deflects = eff.deflects -1
-		if eff.deflects <=0 then self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE) end
-		return deflected
+	end,
+	callbackOnActBase = function(self, t) -- refresh the buff each turn in mod.class.Actor.lua _M:actBase
+		local mh, oh = self:hasDualWeapon()
+		if (mh and oh) and oh.subtype ~= "mindstar" then
+			self:setEffect(self.EFF_PARRY,1,{chance=t.getDeflectChance(self, t), dam=t.getDamageChange(self, t), deflects=t.getDeflects(self, t)})
+		end
 	end,
 	on_unlearn = function(self, t)
-		self:removeEffect(self.EFF_DUAL_WEAPON_DEFENSE)
+		self:removeEffect(self.EFF_PARRY)
 	end,
 	info = function(self, t)
-		local xs = ([[  At talent levels higher than 5, you may parry melee attacks with your offhand weapon (except mindstars).
-		(You currently have a %d%% chance to deflect up to %d damage (%d%% of your offhand weapon damage) from approximately %0.1f melee attacks (based on your Cunning) each turn.)]]):
-		format(t.getDeflectChance(self,t),t.getDamageChange(self, t, true), t.getDeflectPercent(self,t), t.getDeflects(self, t, true))
-		return ([[You have learned to block incoming blows with your weapons.  When dual wielding, your defense is increased by %d.
-		The Defense bonus scales with your Dexterity.%s]]):format(t.getDefense(self, t),xs)
+		return ([[You have learned to block incoming blows with your offhand weapon.
+		When dual wielding, your defense is increased by %d.
+		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (based on your your offhand weapon damage) from a melee attack.
+		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  Partial parries have a proportionally reduced chance to succeed.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.
+		The defense and chance to parry improve with Dexterity.  The number of parries increases with Cunning.]]):format(t.getDefense(self, t), t.getDeflects(self, t, true), t.getDeflectChance(self,t), t.getDamageChange(self, t, true))
 	end,
 }
 
+-- flat armor vs only on_hit damage, sustain may be toggled to possibly reflect damage back to defender
 newTalent{
-	name = "Precision",
+	name = "Close Combat Management",
 	type = {"technique/dualweapon-training", 3},
+	image = "talents/counter_attack.png",
 	mode = "sustained",
 	points = 5,
 	require = techs_dex_req3,
 	no_energy = true,
-	cooldown = 10,
-	sustain_stamina = 20,
-	tactical = { BUFF = 2 },
-	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
-	getApr = function(self, t) return self:combatScale(self:getTalentLevel(t) * self:getDex(), 4, 0, 25, 500, 0.75) end,
+	sustain_stamina = 10,
+	tactical = { BUFF = 1 },
+	passives = function(self, t)
+		self.turn_procs.reflectArmour = nil
+	end,
+	on_pre_use = function(self, t, silent)
+		if not self:hasDualWeapon() then
+			if not silent then game.logPlayer(self, "You must dual wield to use this talent.") end
+			return false
+		end
+		return true
+	end,
+	getReflectArmour = function(self, t)
+		return self:combatScale(self:getTalentLevel(t) * self:getDex(25, true), 0, 0, 35, 125, 0.5, 0, 1)
+	end,
+	getPercent = function(self, t) return math.max(0, self:combatTalentLimit(t, 50, 10, 30)) end,
+	reflectArmour = function(self, t, combat) -- called in Combat.attackTargetHitProcs
+		local tp_ra = self.turn_procs.reflectArmour
+		if not tp_ra then
+			local mh, oh = self:hasDualWeapon()
+			tp_ra = {fa=t.getReflectArmour(self, t), pct=self:isTalentActive(t.id) and t.getPercent(self, t) or 0}
+			if mh then
+				if mh.subtype ~= "mindstar" then tp_ra.mh = mh end
+				if oh.subtype ~= "mindstar" then tp_ra.oh = oh end
+			end
+			self.turn_procs.reflectArmour = tp_ra
+		end
+		if combat == (tp_ra.mh and tp_ra.mh.combat) or combat == (tp_ra.oh and tp_ra.oh.combat) then 
+			return tp_ra.fa, tp_ra.pct
+		else return 0, 0
+		end
+	end,
 	activate = function(self, t)
+		self.turn_procs.reflectArmour = nil
 		local weapon, offweapon = self:hasDualWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Precision without dual wielding!")
+		if not (weapon and offweapon) then
+			game.logPlayer(self, "You must dual wield to manage contact with your target!")
 			return nil
 		end
-
-		return {
-			apr = self:addTemporaryValue("combat_apr",t.getApr(self, t)),
-		}
+		return {}
 	end,
 	deactivate = function(self, t, p)
-		self:removeTemporaryValue("combat_apr", p.apr)
+		self.turn_procs.reflectArmour = nil
 		return true
 	end,
 	info = function(self, t)
-		return ([[You have learned to hit the right spot, increasing your armor penetration by %d when dual wielding.
-		The Armour penetration bonus will increase with your Dexterity.]]):format(t.getApr(self, t))
+		return ([[You have learned how to carefully manage contact between you and your opponent.
+		When striking in melee with your dual wielded weapons, you automatically avoid up to %d damage dealt to you from each of your target's on hit effects.  This improves with your Dexterity, but is not possible with mindstars.
+		In addition, while this talent is active, you redirect %d%% of the damage you avoid this way back to your target.]]):
+		format(t.getReflectArmour(self, t), t.getPercent(self, t))
 	end,
 }
 
+--- Attack mainhand plus unarmed, with chance to confuse
 newTalent{
-	name = "Momentum",
-	type = {"technique/dualweapon-training", 4},
-	mode = "sustained",
+	name = "Offhand Jab",
+	type = {"technique/dualweapon-training", 3},
+	image = "talents/golem_crush.png",
 	points = 5,
-	cooldown = 30,
-	sustain_stamina = 50,
-	require = techs_dex_req4,
-	tactical = { BUFF = 2 },
-	on_pre_use = function(self, t, silent) if self:hasArcheryWeapon() or not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two melee weapons to use this talent.") end return false end return true end,
-	getSpeed = function(self, t) return self:combatTalentScale(t, 0.11, 0.40, 0.75) end,
-	activate = function(self, t)
+	random_ego = "attack",
+	cooldown = 6,
+	stamina = 5,
+	require = techs_dex_req3,
+	requires_target = true,
+	tactical = { ATTACK = { weapon = 2 }, DISABLE = { confusion = 1.5 } },
+	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
+	getConfusePower = function(self, t) return self:combatTalentLimit(t, 50, 25, 40) end,
+	getConfuseDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	on_learn = function(self, t)
+		self:attr("show_gloves_combat", 1)
+	end,
+	on_unlearn = function(self, t)
+		self:attr("show_gloves_combat", -1)
+	end,
+	action = function(self, t)
 		local weapon, offweapon = self:hasDualWeapon()
 		if not weapon then
-			game.logPlayer(self, "You cannot use Momentum without dual wielding melee weapons!")
+			game.logPlayer(self, "You must dual wield to perform an Offhand Jab!")
 			return nil
 		end
+		local tg = {type="hit", range=self:getTalentRange(t)}
+		local x, y, target = self:getTarget(tg)
+		if not x or not y or not target then return nil end
+		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		
+		local dam_mult = t.getDamage(self, t)
 
-		return {
-			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
-			stamina_regen = self:addTemporaryValue("stamina_regen", -6),
-		}
-	end,
-	deactivate = function(self, t, p)
-		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)
-		self:removeTemporaryValue("stamina_regen", p.stamina_regen)
+		-- First attack with mainhand
+		local speed, hit = self:attackTargetWith(target, weapon.combat, nil, dam_mult)
+
+		-- Then attack unarmed
+		speed, hit = self:attackTargetWith(target, self:getObjectCombat(nil, "barehand"), nil, dam_mult+1.25)
+		if hit then
+			if target:canBe("confusion") then
+				target:setEffect(target.EFF_CONFUSED, t.getConfuseDuration(self, t), {apply_power=self:combatAttack(), power=t.getConfusePower(self, t)})
+			else
+				game.logSeen(target, "%s resists the surprise strike!", target.name:capitalize())
+			end
+		end
 		return true
 	end,
 	info = function(self, t)
-		return ([[When dual wielding, increases attack speed by %d%%, but drains stamina quickly (-6 stamina/turn).]]):format(t.getSpeed(self, t)*100)
+		local dam = 100 * t.getDamage(self, t)
+		return ([[With a quick shift of your momentum, you execute a surprise unarmed strike in place of your normal offhand attack.
+		This allows you to attack with your mainhand weapon for %d%% damage and unarmed for %d%% damage.  If the unarmed attack hits, the target is confused (%d%% power) for %d turns.
+		The chance to confuse increases with your Accuracy.]])
+		:format(dam, dam*1.25, t.getConfusePower(self, t), t.getConfuseDuration(self, t))
 	end,
 }
 
 ------------------------------------------------------
--- Attacks
+-- Primary Attacks
 ------------------------------------------------------
 newTalent{
 	name = "Dual Strike",
 	type = {"technique/dualweapon-attack", 1},
 	points = 5,
 	random_ego = "attack",
-	cooldown = 12,
+	cooldown = 6,
 	stamina = 15,
 	require = techs_dex_req1,
 	requires_target = true,
@@ -235,72 +293,70 @@ newTalent{
 	end,
 }
 
--- This is a good candidate for replacement if someone has a clever idea
--- A.  Its boring
--- B.  Its pretty bad
--- D.  I think we should solidify 2H as generally the best at multitarget hits, so having 1 less AoE than 2H Assault would be good
 newTalent{
-	name = "Sweep",
+	name = "Heartseeker",
 	type = {"technique/dualweapon-attack", 3},
 	points = 5,
 	random_ego = "attack",
 	cooldown = 8,
-	stamina = 30,
+	stamina = 18,
 	require = techs_dex_req3,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.0, 1.7) end,
+	getCrit = function(self, t) return self:combatTalentLimit(t, 50, 10, 30) end,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t)} end,
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 5.5)) end,
 	requires_target = true,
-	tactical = { ATTACKAREA = { weapon = 1, cut = 1 } },
-	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
-	cutdur = function(self,t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
-	cutPower = function(self, t)
-		local main, off = self:hasDualWeapon()
-		if main then
-			-- Damage based on mainhand weapon and dex with an assumed 8 turn cut duration
-			return self:combatTalentScale(t, 1, 1.7) * self:combatDamage(main.combat)/8 + self:getDex()/2
-		else 
-			return 0
+	tactical = { ATTACK = { weapon = 2 }, CLOSEIN = 2 },
+	on_pre_use = function(self, t, silent) 
+		if not self:hasDualWeapon() then 
+			if not silent then 
+			game.logPlayer(self, "You require two weapons to use this talent.") 
+		end 
+			return false 
 		end
+		if self:attr("never_move") then return false end
+		return true 
 	end,
 	action = function(self, t)
-		local weapon, offweapon = self:hasDualWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Sweep without dual wielding!")
-			return nil
-		end
-
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y or not target then return nil end
-		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+		if not target or not self:canProject(tg, x, y) then return nil end
 
-		local dir = util.getDir(x, y, self.x, self.y)
-		if dir == 5 then return nil end
-		local lx, ly = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).left)
-		local rx, ry = util.coordAddDir(self.x, self.y, util.dirSides(dir, self.x, self.y).right)
-		local lt, rt = game.level.map(lx, ly, Map.ACTOR), game.level.map(rx, ry, Map.ACTOR)
-
-		local hit
-		hit = self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
-		if hit and target:canBe("cut") then target:setEffect(target.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
-
-		if lt then
-			hit = self:attackTarget(lt, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
-			if hit and lt:canBe("cut") then lt:setEffect(lt.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
+		if core.fov.distance(self.x, self.y, x, y) > 1 then
+			local block_actor = function(_, bx, by) return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self) end
+			local linestep = self:lineFOV(x, y, block_actor)
+	
+			local tx, ty, lx, ly, is_corner_blocked
+			repeat  -- make sure each tile is passable
+				tx, ty = lx, ly
+				lx, ly, is_corner_blocked = linestep:step()
+			until is_corner_blocked or not lx or not ly or game.level.map:checkAllEntities(lx, ly, "block_move", self)
+	
+			if not tx or not ty or core.fov.distance(x, y, tx, ty) > 1 then return nil end
+	
+			local ox, oy = self.x, self.y
+			self:move(tx, ty, true)
+			if config.settings.tome.smooth_move > 0 then
+				self:resetMoveAnim()
+				self:setMoveAnim(ox, oy, 8, 5)
+			end
 		end
-
-		if rt then
-			hit = self:attackTarget(rt, nil, self:combatTalentWeaponDamage(t, 1, 1.7), true)
-			if hit and rt:canBe("cut") then rt:setEffect(rt.EFF_CUT, t.cutdur(self, t), {power=t.cutPower(self, t), src=self}) end
-		end
-		print(x,y,target)
-		print(lx,ly,lt)
-		print(rx,ry,rt)
-
+		
+		-- Attack
+		if not core.fov.distance(self.x, self.y, x, y) == 1 then return nil end
+		
+		local cpow = t.getCrit(self,t)
+		self:attr("combat_critical_power", cpow)			
+		self:attackTarget(target, nil, t.getDamage(self,t), true)
+		self:attr("combat_critical_power", -cpow)			
+		
 		return true
 	end,
 	info = function(self, t)
-		return ([[Attack your foes in a frontal arc, doing %d%% weapon damage and making your targets bleed for %d each turn for %d turns.
-		The bleed damage increases with your main hand weapon damage and Dexterity.]]):
-		format(100 * self:combatTalentWeaponDamage(t, 1, 1.7), damDesc(self, DamageType.PHYSICAL, t.cutPower(self, t)), t.cutdur(self, t))
+		dam = t.getDamage(self,t)*100
+		crit = t.getCrit(self,t)
+		return ([[Swiftly leap to your target and strike at their vital points with both weapons, dealing %d%% weapon damage. This attack deals %d%% increased critical strike damage.]]):
+		format(dam, crit)
 	end,
 }
 
@@ -309,37 +365,96 @@ newTalent{
 	type = {"technique/dualweapon-attack", 4},
 	points = 5,
 	random_ego = "attack",
-	cooldown = 8,
+	cooldown = 10,
 	stamina = 30,
 	require = techs_dex_req4,
-	tactical = { ATTACKAREA = { weapon = 2 } },
-	range = 0,
+	tactical = { ATTACKAREA = { weapon = 2 }, CLOSEIN = 1.5 },
+	range = function(self, t) return math.floor(self:combatTalentLimit(t, 6, 2, 4)) end,
 	radius = 1,
+	requires_target = true,
 	target = function(self, t)
-		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t)}
+		return  {type="beam", range=self:getTalentRange(t), talent=t }
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
+	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 0.6, 1.1) end,
+	proj_speed = 20, --not really a projectile, so make this super fast
+	on_pre_use = function(self, t, silent) 
+		if not self:hasDualWeapon() then 
+			if not silent then 
+			game.logPlayer(self, "You require two weapons to use this talent.") 
+		end 
+			return false 
+		end
+		if self:attr("never_move") then return false end
+		return true 
+	end,
 	action = function(self, t)
-		local weapon, offweapon = self:hasDualWeapon()
-		if not weapon then
-			game.logPlayer(self, "You cannot use Whirlwind without dual wielding!")
-			return nil
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
+		if not (x and y) then return nil end
+		if core.fov.distance(self.x, self.y, x, y) > tg.range or not self:hasLOS(x, y) then
+			game.logPlayer(self, "The target location must be within range and within view.")
+			return nil 
+		end
+		local _ _, x, y = self:canProject(tg, x, y)
+		if not (x and y) or not self:hasLOS(x, y) then return nil end
+		-- make sure the grid location is valid
+		local mx, my, grids = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
+		if mx and my then
+			if core.fov.distance(self.x, self.y, mx, my) > tg.range or not self:hasLOS(mx, my) then -- not valid,  check other free grids
+				mx, my = nil, nil
+				for i, grid in ipairs(grids) do
+					if core.fov.distance(self.x, self.y, grid[1], grid[2]) <= tg.range and self:hasLOS(grid[1], grid[2]) then
+						mx, my = grid[1], grid[2]
+						break
+					end
+				end
+			end
+		end
+		if not (mx and my) then 
+			game.logPlayer(self, "There is no open space in which to land near there.")
+			return nil 
 		end
 
-		local tg = self:getTalentTarget(t)
-		self:project(tg, self.x, self.y, function(px, py, tg, self)
-			local target = game.level.map(px, py, Map.ACTOR)
-			if target and target ~= self then
-				self:attackTarget(target, nil, self:combatTalentWeaponDamage(t, 1.2, 1.9), true)
-			end
-		end)
-
-		self:addParticles(Particles.new("meleestorm2", 1, {}))
+		game.logSeen(self, "%s becomes a whirlwind of weapons!", self.name:capitalize())
+		-- Create a high-speed projectile tracing a path to the destination that does the actual damage
+		local wwproj = self:projectile(tg, mx, my, function(px, py, tg, self, tmp_proj)
+			local aoe = {type="ball", radius=1, friendlyfire=false, selffire=false, talent=t, display={ } }
+			self.__project_source = nil
+			game.level.map:particleEmitter(px, py, 1, "meleestorm", {img="spinningwinds_red"})
+			self:project(aoe, px, py, function(tx, ty)
+				local target = game.level.map(tx, ty, engine.Map.ACTOR)
+				if not target or tmp_proj[target] or self.dead then return end
+				local mh, oh = self:hasDualWeapon()
+				if not (mh and oh) then return end
+				local dam = 0
+				tmp_proj.targets = (tmp_proj.targets or 0) + 1
+				tmp_proj[target] = true
+				local s, h, d = self:attackTargetWith(target, mh.combat, nil, tmp_proj.weapon_mult)
+				if h and d > 0 then dam = dam + d end
+				--print("\t WW mainhand damage", d)
+				s, h, d = self:attackTargetWith(target, oh.combat, nil, tmp_proj.weapon_mult)
+				if h and d > 0 then dam = dam + d end
+				--print("\t WW offhand damage", d)
+				if dam > 0 and target:canBe('cut') then
+					target:setEffect(target.EFF_CUT, 5, {power=dam*0.1, src=self, apply_power=self:combatPhysicalpower(), no_ct_effect=true})
+				end
+			end)
+			
+		end
+		)
+		wwproj.tmp_proj.weapon_mult = t.getDamage(self, t)
+		wwproj.energy.value = game.energy_to_act -- make sure projectile begins moving immediately
+		
+		-- move the talent user
+		self:move(mx, my, true)
 
 		return true
 	end,
 	info = function(self, t)
-		return ([[Spin around, damaging all targets around you with both weapons for %d%% weapon damage.]]):format(100 * self:combatTalentWeaponDamage(t, 1.2, 1.9))
+		local damage = t.getDamage(self, t)
+		local range = self:getTalentRange(t)
+		return ([[You quickly move up to %d tiles to arrive adjacent to a target location you can see, leaping around or over anyone in your way.  During your movement, you attack all foes within one grid of your path with both weapons for %d%% weapon damage, causing those struck to bleed for 50%% of the damage dealt over 5 turns.]]):
+		format(range, damage*100)
 	end,
 }
 

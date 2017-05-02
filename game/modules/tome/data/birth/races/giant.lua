@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -83,6 +83,7 @@ to start, look where halflings once tinkered with portals...]],
 		size_category = 4,
 		resolvers.inscription("RUNE:_SHIELDING", {cooldown=14, dur=5, power=100}),
 		resolvers.inscription("RUNE:_PHASE_DOOR", {cooldown=7, range=10, dur=5, power=15}),
+		resolvers.inventory({id=true, transmo=false, alter=function(o) o.inscription_data.cooldown=18 o.inscription_data.apply=15 o.inscription_data.power=25 end, {type="scroll", subtype="rune", name="biting gale rune", ego_chance=-1000, ego_chance=-1000}}),
 		resolvers.inventory{ id=true, {defined="ORB_SCRYING"} },
 	},
 	experience = 1.3,

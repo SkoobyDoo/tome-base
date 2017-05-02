@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 require "engine.class"
 local Map = require "engine.Map"
 require "engine.Generator"
+
+--- @classmod engine.generator.map.Maze
 module(..., package.seeall, class.inherit(engine.Generator))
 
 function _M:init(zone, map, grid_list, data)
@@ -33,11 +35,17 @@ function _M:init(zone, map, grid_list, data)
 end
 
 function _M:generate(lev, old_lev)
+	local lastx, lasty = 0, 0
+
 	local do_tile = function(i, j, wall)
 		for ii = 0, self.data.widen_w-1 do for jj = 0, self.data.widen_h-1 do
 			self.map(i*self.data.widen_w+ii, j*self.data.widen_h+jj, Map.TERRAIN, self:resolve(wall and "wall" or "floor"))
 		end end
 		self.map.room_map[i][j].maze_wall = wall
+		if not wall then
+			lastx = math.max(lastx, i)
+			lasty = math.max(lasty, j)
+		end
 	end
 
 	for i = 0, self.data.w - 1 do for j = 0, self.data.h - 1 do
@@ -92,7 +100,8 @@ function _M:generate(lev, old_lev)
 	end
 	-- Always starts at 1, 1
 	local ux, uy = 1 * self.data.widen_w, 1 * self.data.widen_h
-	local dx, dy = math.floor(self.map.w/2)*2-1-2*(1-math.mod(self.map.w,2)), math.floor(self.map.h/2)*2-1-2*(1-math.mod(self.map.h,2))
+	local dx, dy = lastx * self.data.widen_w, lasty * self.data.widen_h
+	-- local dx, dy = math.floor(self.map.w/2)*2-1-2*(1-math.mod(self.map.w,2)), math.floor(self.map.h/2)*2-1-2*(1-math.mod(self.map.h,2))
 	self.map(ux, uy, Map.TERRAIN, self:resolve("up"))
 	self.map.room_map[ux][uy].special = "exit"
 	if lev < self.zone.max_level or self.data.force_last_stair then

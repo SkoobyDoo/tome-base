@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -526,7 +526,7 @@ function _M:setArenaTriggers(e, entry)
 		self.on_die = nil
 		if self.arenaLastHit >= self.max_life then
 			if self.arenaLastHit >= self.max_life * 2 then
-				local x, y = game.level.map:getTileToScreen(self.x, self.y)
+				local x, y = game.level.map:getTileToScreen(self.x, self.y, true)
 				game.flyers:add(x, y, 90, 0, -0.5, "OVERKILL", { 231, 0, 0 }, false)
 				game.log("#LIGHT_GREEN#Your powerful attack completely obliterates #WHITE#"..self.name.."#LIGHT_GREEN#!")
 				local val = (self.level * 0.015)

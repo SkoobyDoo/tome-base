@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,6 +19,17 @@
 
 load("/data/general/objects/objects-maj-eyal.lua")
 load("/data/general/objects/objects-far-east.lua")
+
+for id, i in ipairs{1, 10, 20, 30, 40} do
+newEntity{ base = "BASE_LORE",
+	define_as = "ID_HISTORY"..i,
+	name = "The Hunter and the Hunted", lore="infinite-dungeon-history-"..id,
+	desc = [[The infinite hunt.]],
+	image = "terrain/signpost.png",
+	rarity = false,
+	encumberance = 0,
+}
+end
 
 newEntity{
 	power_source = {technique=true},

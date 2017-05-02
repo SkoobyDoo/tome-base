@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,10 +51,9 @@ function resolvers.calc.equip(t, e)
 					filter.random_art_replace.chance = 100
 				end
 			end
-			if o and o.power_source and (o.power_source.antimagic and e:attr("has_arcane_knowledge") or o.power_source.arcane and e:attr("forbid_arcane")) then -- check antimagic restrictions
---			if o and not filter.no_power_restrictions and not game.state:checkPowers(e, o) then -- Check power restrictions
+			if not game.state:checkPowers(e, o, nil, "antimagic_only") then
 				ok = false
-				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source, ",")), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
+				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
 			end
 		until ok or tries > 4
 		if o then
@@ -75,7 +74,6 @@ function resolvers.calc.equip(t, e)
 					end
 				end
 			end
-
 			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
 				if filter.force_inven and e:getInven(filter.force_inven) then  -- we just really want it
 					e:addObject(filter.force_inven, o, true, filter.force_item)
@@ -83,7 +81,6 @@ function resolvers.calc.equip(t, e)
 					e:addObject(e.INVEN_INVEN, o)
 				end
 			end
-
 			-- Do not drop it unless it is an ego or better
 			if not o.unique then o.no_drop = true --[[print(" * "..o.name.." => no drop")]] end
 			if filter.force_drop then o.no_drop = nil end
@@ -192,6 +189,7 @@ function resolvers.calc.inventory(t, e)
 
 			if t[1].id then o:identify(t[1].id) end
 			if t[1].transmo then o.__transmo = true end
+			if t[1].alter then t[1].alter(o) end
 		end
 	end
 	e:sortInven()
@@ -257,7 +255,7 @@ function resolvers.matlevel(base, base_level, spread, mn, mx)
 	return {__resolver="matlevel", base, base_level, spread, mn, mx}
 end
 function resolvers.calc.matlevel(t, e)
-	local mean = math.min(e.level/10+1,t[1] * (e.level/t[2])^.5) -- I5 material level scales up with sqrt of actor level or level/10
+	local mean = math.min(e.level/10+1,t[1] * (e.level/t[2])^.5) -- material level scales up with sqrt of actor level or level/10
 	local spread = math.max(t[3],mean/5) -- spread out probabilities at high level
 	local mn = t[4] or 1
 	local mx = t[5] or 5
@@ -382,7 +380,7 @@ resolvers.mbonus_max_level = 90
 --- Random bonus based on level and material quality
 resolvers.current_level = 1
 function resolvers.mbonus_material(max, add, pricefct)
-	return {__resolver="mbonus_material", max, add, pricefct}
+	return {__resolver="mbonus_material",  __resolve_instant=true, max, add, pricefct}
 end
 function resolvers.calc.mbonus_material(t, e)
 	local ml = e.material_level or 1
@@ -408,7 +406,7 @@ end
 --- Random bonus based on level, more strict
 resolvers.current_level = 1
 function resolvers.mbonus_level(max, add, pricefct, step)
-	return {__resolver="mbonus_level", max, add, step or 10, pricefct}
+	return {__resolver="mbonus_level",  __resolve_instant=true, max, add, step or 10, pricefct}
 end
 function resolvers.calc.mbonus_level(t, e)
 	local max = resolvers.mbonus_max_level
@@ -433,7 +431,7 @@ end
 --- Random bonus based on level
 resolvers.current_level = 1
 function resolvers.mbonus(max, add, pricefct)
-	return {__resolver="mbonus", max, add, pricefct}
+	return {__resolver="mbonus",  __resolve_instant=true, max, add, pricefct}
 end
 function resolvers.calc.mbonus(t, e)
 	local v = rng.mbonus(t[1], resolvers.current_level, resolvers.mbonus_max_level) + (t[2] or 0)
@@ -453,7 +451,7 @@ end
 -- result is (base +/- spread)*(current_level/base_level)^power
 -- min = optional minimum value
 function resolvers.clscale(base, base_level, spread, power, min)
-	return {__resolver="clscale", base, base_level, spread, power or 0.75, min}
+	return {__resolver="clscale",  __resolve_instant=true, base, base_level, spread, power or 0.75, min}
 end
 function resolvers.calc.clscale(t, e)
 	return math.max(math.ceil((t[1] + (t[3] and rng.range(-t[3],t[3]) or 0))*(resolvers.current_level/t[2])^t[4]),t[5] or t[1])
@@ -499,15 +497,20 @@ function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
 	e.max_power = cd
 	e.power = e.max_power
-	e.use_power = {name=tt[1], power=cd, use=tt[3], __no_merge_add=true}
+	e.use_power = table.merge(e.use_power or {}, {name=tt[1], power=cd, use=tt[3], __no_merge_add=true})
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
 	if tt[5] then table.merge(e.use_power, tt[5], true) end
 	return
 end
 
 --- Charms talent resolver
-function resolvers.charmt(tid, tlvl, cd, tcd)
-	return {__resolver="charmt", tid, tlvl, cd, tcd}
+-- @param tid = talent id
+-- @param tlvl = (raw) talent level (mastery is based on user)
+-- @param cd = cooldown
+-- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
+-- @param use_params = parameters to merge into self.use_talent table
+function resolvers.charmt(tid, tlvl, cd, tcd, use_params)
+	return {__resolver="charmt", tid, tlvl, cd, tcd, use_params}
 end
 function resolvers.calc.charmt(tt, e)
 	local cd = tt[3]
@@ -516,6 +519,7 @@ function resolvers.calc.charmt(tt, e)
 	local lvl = util.getval(tt[2], e)
 	e.use_talent = {id=tt[1], power=cd, level=lvl, __no_merge_add=true}
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
+	if tt[5] then table.merge(e.use_talent, tt[5], true) end
 	return
 end
 
@@ -541,39 +545,42 @@ end
 function resolvers.calc.moddable_tile(t, e)
 	local slot = t[1]
 	local r, r2
-	if slot == "cloak" then r = {"cloak_%s_01","cloak_%s_02","cloak_%s_03","cloak_%s_04","cloak_%s_05"}
+	if slot == "cloak" then r = {"cloak_%s_07","cloak_%s_08","cloak_%s_08","cloak_%s_09","cloak_%s_09"}
 	elseif slot == "massive" then
 		r = {"upper_body_20","upper_body_21","upper_body_22","upper_body_24","upper_body_23",}
 		r2 = {"lower_body_09","lower_body_10","lower_body_11","lower_body_13","lower_body_12",}
 	elseif slot == "heavy" then
 		r = {"upper_body_25","upper_body_11","upper_body_26","upper_body_28","upper_body_27",}
-		r2 = {"lower_body_08","lower_body_08","lower_body_08","lower_body_08","lower_body_08",}
+		r2 = {"lower_body_16","lower_body_08","lower_body_17","lower_body_18","lower_body_19",}
 	elseif slot == "light" then
-		r = {"upper_body_05","upper_body_06","upper_body_07","upper_body_08","upper_body_19",}
-		r2 = {"lower_body_03","lower_body_04","lower_body_05","lower_body_06","lower_body_06",}
-	elseif slot == "robe" then r = {"upper_body_18","upper_body_16","upper_body_13","upper_body_15","upper_body_17",}
-	elseif slot == "shield" then r = {"%s_hand_10","%s_hand_11","%s_hand_11","%s_hand_12","%s_hand_12",}
-	elseif slot == "staff" then r = {{"%s_hand_08",true}}
-	elseif slot == "leather_boots" then r = {"feet_03","feet_04","feet_04","feet_05","feet_05",}
+		r = {"upper_body_29","upper_body_30","upper_body_31","upper_body_32","upper_body_33",}
+		r2 = {"lower_body_03","lower_body_04","lower_body_05","lower_body_14","lower_body_15",}
+	elseif slot == "robe" then r = {"upper_body_34","upper_body_35","upper_body_36","upper_body_37","upper_body_38",}
+	elseif slot == "shield" then r = {"%s_hand_10_01","%s_hand_11_01","%s_hand_11_02","%s_hand_12_01","%s_hand_12_02",}
+	elseif slot == "staff" then r = {"%s_hand_08_01", "%s_hand_08_03", "%s_hand_08_02", "%s_hand_08_04", "%s_hand_08_05"} -- 03 & 02 are reversed due to an error in gfx, don't change it!
+	elseif slot == "leather_boots" then r = {"feet_04","feet_10","feet_10","feet_11","feet_11",}
 	elseif slot == "heavy_boots" then r = {"feet_06","feet_06","feet_07","feet_09","feet_08",}
 	elseif slot == "gauntlets" then r = {"hands_03","hands_04","hands_05","hands_07","hands_06",}
-	elseif slot == "gloves" then r = {"hands_02",}
-	elseif slot == "sword" then r = {"%s_hand_04",}
-	elseif slot == "2hsword" then r = {"%s_2hsword",}
-	elseif slot == "wizard_hat" then r = {{"head_11",true},{"head_13",true},{"head_17",true},{"head_12",true},{"head_15",true},}
-	elseif slot == "trident" then r = {{"%s_hand_13",true}}
+	elseif slot == "gloves" then r = {"hands_02","hands_02","hands_08","hands_08","hands_09"}
+	elseif slot == "sword" then r = {"%s_hand_04_01", "%s_hand_04_02", "%s_hand_04_03", "%s_hand_04_04", "%s_hand_04_05"}
+	elseif slot == "2hsword" then r = {"%s_2hsword_01", "%s_2hsword_02", "%s_2hsword_03", "%s_2hsword_04", "%s_2hsword_05"}
+	elseif slot == "wizard_hat" then r = {"head_21","head_21","head_22","head_22","head_23"}
+	elseif slot == "trident" then r = {"%s_hand_13_01", "%s_hand_13_02", "%s_hand_13_03", "%s_hand_13_04", "%s_hand_13_05"}
 	elseif slot == "whip" then r = {"%s_hand_09"}
-	elseif slot == "mace" then r = {"%s_hand_05"}
-	elseif slot == "2hmace" then r = {"%s_2hmace"}
-	elseif slot == "axe" then r = {"%s_hand_06"}
-	elseif slot == "2haxe" then r = {"%s_2haxe"}
-	elseif slot == "bow" then r = {"%s_hand_01"}
-	elseif slot == "sling" then r = {"%s_hand_02"}
-	elseif slot == "dagger" then r = {"%s_hand_03"}
+	elseif slot == "mace" then r = {"%s_hand_05_01", "%s_hand_05_02", "%s_hand_05_03", "%s_hand_05_04", "%s_hand_05_05"}
+	elseif slot == "2hmace" then r = {"%s_2hmace_01", "%s_2hmace_02", "%s_2hmace_03", "%s_2hmace_04", "%s_2hmace_05"}
+	elseif slot == "axe" then r = {"%s_hand_06_01", "%s_hand_06_02", "%s_hand_06_03", "%s_hand_06_04", "%s_hand_06_05"}
+	elseif slot == "2haxe" then r = {"%s_2haxe_01", "%s_2haxe_02", "%s_2haxe_03", "%s_2haxe_04", "%s_2haxe_05"}
+	elseif slot == "bow" then r = {"%s_hand_01_01", "%s_hand_01_02", "%s_hand_01_03", "%s_hand_01_04", "%s_hand_01_05"}
+	elseif slot == "sling" then r = {"%s_hand_02_01", "%s_hand_02_02", "%s_hand_02_03", "%s_hand_02_04", "%s_hand_02_05"}
+	elseif slot == "dagger" then r = {"%s_hand_03_01", "%s_hand_03_02", "%s_hand_03_03", "%s_hand_03_04", "%s_hand_03_05"}
 	elseif slot == "mindstar" then r = {{"mindstar_mossy_%s_01",true},{"mindstar_vines_%s_01",true},{"mindstar_thorn_%s_01",true},{"mindstar_pulsing_%s_01",true},{"mindstar_living_%s_01",true},}
 	elseif slot == "helm" then r = {"head_05","head_06","head_08","head_10","head_09",}
-	elseif slot == "leather_cap" then r = {"head_03"}
+	elseif slot == "leather_cap" then r = {"head_03","head_03","head_19","head_19","head_20"}
 	elseif slot == "mummy_wrapping" then r = {{"special/mummy_wrappings",true}}
+	elseif slot == "quiver" then r = {"quiver_01","quiver_02","quiver_03","quiver_04","quiver_05"}
+	elseif slot == "shotbag" then r = {"shotbag_01","shotbag_02","shotbag_03","shotbag_04","shotbag_05"}
+	elseif slot == "gembag" then r = {"gembag_01","gembag_02","gembag_03","gembag_04","gembag_05"}
 	end
 	local ml = e.material_level or 1
 	r = r[util.bound(ml, 1, #r)]
@@ -594,8 +601,7 @@ function resolvers.calc.sustains_at_birth(_, e)
 			local t = self:getTalentFromId(tid)
 			if t and t.mode == "sustained" then
 				self.energy.value = game.energy_to_act
---				print("===== activating sustain", self.name, tid)
-				self:useTalent(tid)
+				self:useTalent(tid, nil, nil, nil, nil, true)
 			end
 		end
 	end
@@ -610,11 +616,11 @@ function resolvers.calc.randartmax(t, e)
 end
 
 --- Inscription resolver
-function resolvers.inscription(name, data)
-	return {__resolver="inscription", name, data}
+function resolvers.inscription(name, data, force_id)
+	return {__resolver="inscription", name, data, force_id}
 end
 function resolvers.calc.inscription(t, e)
-	e:setInscription(nil, t[1], t[2], false, false, nil, true, true)
+	e:setInscription(t[3] or nil, t[1], t[2], false, false, nil, true, true)
 	return nil
 end
 
@@ -705,9 +711,11 @@ end
 -- Extra recursive methods not handled yet
 function resolvers.calc.talented_ai_tactic(t, e)
 	local old_on_added_to_level = e.on_added_to_level
-	e.__ai_compute = t
+	e.__ai_compute = table.clone(t, false, {__resolver=true})
 	e.on_added_to_level = function(e, level, x, y)
 		local t = e.__ai_compute
+--game.log("#ORANGE# %s calling resolvers.calc.talented_ai_tactic on_added_to_level with %s", e.name, t)
+		if not t or not (e.x and e.y) then return e.ai_tactic end
 		if old_on_added_to_level then old_on_added_to_level(e, level, x, y) end
 		-- print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
 		local tactic_total = t[2] or t.tactic_total or 10 --want tactic weights to total 10
@@ -747,11 +755,13 @@ function resolvers.calc.talented_ai_tactic(t, e)
 			local range, radius = e:getTalentRange(tal), e:getTalentRadius(tal)
 --			if range > 0 then range = range + radius*2/3 end
 			count_talent = false, false
-			if tal and tal.tactical then
+			local tactics = tal.tactical
+			if type(tactics) == "function" then tactics = tactics(e, tal) end
+			if tactics then
 	-- print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
 --	table.print(tal.tactical)
 				do_count = false
-				for tt, wt in pairs(tal.tactical) do
+				for tt, wt in pairs(tactics) do
 					val = get_weight(wt, e)
 	-- print("   --- ", tt, "wt=", val)
 					tactical[tt] = (tactical[tt] or 0) + val -- sum up all the input weights
@@ -821,8 +831,8 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		tactic.count = count
 		tactic.level = e.level
 		tactic.type = "computed"
--- print("  ### ai_tactic table:")
--- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
+--	print("### talented_ai_tactic resolver ai_tactic table:")
+--	for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
 		e.__ai_compute = nil
 		return tactic
@@ -945,26 +955,43 @@ function resolvers.calc.shooter_capacity(t, e)
 	return nil
 end
 
---- Give staves a flavor, appropriate damage type, spellpower, spellcrit, and the ability to teach the command staff talent
-function resolvers.staff_wielder(name)
-	return {__resolver="staff_wielder", name}
+--- Give staves a flavor, appropriate damage type, and the ability to teach the command staff talent
+function resolvers.staff_element(name)
+	return {__resolver="staff_element", name}
 end
-function resolvers.calc.staff_wielder(t, e)
-	local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
-	e.flavor_name = e["flavor_names"][staff_type]
-	if staff_type == 2 then
-		e.combat.element = rng.table{engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE }
-		e.modes = {"fire", "cold", "lightning", "arcane"}
-		e.name = e.name:gsub(" staff", " magestaff")
-	elseif staff_type == 3 then
-		e.combat.element = rng.table{engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL,  engine.DamageType.PHYSICAL }
-		e.modes = {"light", "darkness", "temporal", "physical"}
-		e.name = e.name:gsub(" staff", " starstaff")
-	elseif staff_type == 4 then
-		e.combat.element = rng.table{engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE,}
-		e.modes = {"darkness", "blight", "acid", "fire"}
-		e.name = e.name:gsub(" staff", " vilestaff")
+function resolvers.calc.staff_element(t, e)
+	local command_flavor, command_lement = nil, nil
+	if not e.flavor_name then
+		if not e.flavors then -- standard
+			local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
+			command_flavor = e["flavor_names"][staff_type]
+		else
+			command_flavor = rng.tableIndex(e.flavors)
+		end
 	end
-	e.combat.damtype = engine.DamageType.PHYSICAL
-	return 	{ inc_damage = {[e.combat.element] = e.combat.dam}, combat_spellpower = e.material_level * 3, combat_spellcrit = e.material_level, learn_talent = {[Talents.T_COMMAND_STAFF] = 1}, }
+	if not e.combat.element then
+		command_element = rng.table(e:getStaffFlavor(e.flavor_name or command_flavor))
+	end
+
+	e.combat.damtype = e.combat.damtype or engine.DamageType.PHYSICAL
+	if not e.no_command then 
+		e.wielder = e.wielder or {}
+		e.wielder.learn_talent = e.wielder.learn_talent or {}
+		e.wielder.learn_talent[Talents.T_COMMAND_STAFF] = 1
+	end
+
+	if command_flavor or command_element then e:commandStaff(command_element, command_flavor) end
+
+	-- hee hee
+	if not e.unique and rng.percent(0.1 * (e.material_level or 1) - 0.3) then
+		e.combat.sentient = rng.table{"default", "agressive", "fawning"}
+	end
 end
+
+function resolvers.command_staff()
+	return {__resolver = "command_staff", __resolve_last = true}
+end
+function resolvers.calc.command_staff(t, e)
+	e:commandStaff()
+end
+

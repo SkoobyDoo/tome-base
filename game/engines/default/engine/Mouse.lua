@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Basic mousepress handler
 -- The engine calls receiveMouse when a mouse is clicked
+-- @classmod engine.Mouse
 module(..., package.seeall, class.make)
 
 function _M:init()
@@ -40,6 +41,7 @@ end
 -- @param y coordinate of the click
 -- @param isup true if the key was released, false if pressed
 -- @param force_name if not nil only the zone with this name may trigger
+-- @param extra
 function _M:receiveMouse(button, x, y, isup, force_name, extra)
 	self.last_pos = { x = x, y = y }
 	self.status[button] = not isup
@@ -53,8 +55,8 @@ function _M:receiveMouse(button, x, y, isup, force_name, extra)
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
 		if (not m.mode or m.mode.button) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, isup and "button" or "button-down", extra)
-			break
+			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, isup and "button" or "button-down", extra)
+			if r ~= false then break end
 		end
 	end
 end
@@ -73,9 +75,11 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
 		if (not m.mode or m.mode.move) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			m.fct(button, x, y, xrel, yrel, (x-m.x1) / m.scale, (y-m.y1) / m.scale, "motion", extra)
-			cur_m = m
-			break
+			local r = m.fct(button, x, y, xrel, yrel, (x-m.x1) / m.scale, (y-m.y1) / m.scale, "motion", extra)
+			if r ~= false then
+				cur_m = m
+				break
+			end
 		end
 	end
 	if self.last_m and self.last_m.allow_out_events and self.last_m ~= cur_m then
@@ -203,29 +207,29 @@ end
 -- @param y coordinate of the click (normalized to 0->1)
 -- @param dx delta coordinate of the click (normalized to 0->1)
 -- @param dy delta coordinate of the click (normalized to 0->1)
+-- @param pressure
 -- @param isup true if the key was released, false if pressed
 function _M:receiveTouch(fingerId, x, y, dx, dy, pressure, isup)
 	-- print("=touch", fingerId, x, y, dx, dy, pressure, isup)
 end
 
---- Called when a touch event is received
+--- Called when a touch motion event is received
 -- @param fingerId id of the finger info
 -- @param x coordinate of the click (normalized to 0->1)
 -- @param y coordinate of the click (normalized to 0->1)
 -- @param dx delta coordinate of the click (normalized to 0->1)
 -- @param dy delta coordinate of the click (normalized to 0->1)
--- @param isup true if the key was released, false if pressed
+-- @param pressure
 function _M:receiveTouchMotion(fingerId, x, y, dx, dy, pressure)
 	-- print("=touch motion", fingerId, x, y, dx, dy, pressure)
 end
 
---- Called when a touch event is received
--- @param fingerId id of the finger info
+--- Called when a touch gesture event is received
+-- @param nb_fingers number of fingers
 -- @param x coordinate of the click (normalized to 0->1)
 -- @param y coordinate of the click (normalized to 0->1)
--- @param dx delta coordinate of the click (normalized to 0->1)
--- @param dy delta coordinate of the click (normalized to 0->1)
--- @param isup true if the key was released, false if pressed
+-- @param d_rot delta rotation
+-- @param d_pinch delta pinch
 function _M:receiveTouchGesture(nb_fingers, x, y, d_rot, d_pinch)
 	-- print("=touch gesture", nb_fingers, x, y, d_rot, d_pinch)
 end

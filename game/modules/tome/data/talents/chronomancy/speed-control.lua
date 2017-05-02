@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ newTalent{
 	type = {"chronomancy/speed-control", 4},
 	require = chrono_req4,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 48) end,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 45, 25)) end, -- Limit >10
 	tactical = { BUFF = 2, CLOSEIN = 2, ESCAPE = 2 },
 	no_energy = true,
@@ -101,11 +101,13 @@ newTalent{
 	getReduction = function(self, t) return 100 end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentLimit(t, 4, 1, 3))) end,
 	action = function(self, t)
-		self.energy.value = self.energy.value + (t.getDuration(self, t) * 1000)
-		self:setEffect(self.EFF_TIME_STOP, 1, {power=100})
-		
-		game.logSeen(self, "#STEEL_BLUE#%s has stopped time!#LAST#", self.name:capitalize())
-		game:playSoundNear(self, "talents/heal")
+		game:onTickEnd(function()
+			self.energy.value = self.energy.value + (t.getDuration(self, t) * 1000)
+			self:setEffect(self.EFF_TIME_STOP, 1, {power=100})
+			
+			game.logSeen(self, "#STEEL_BLUE#%s has stopped time!#LAST#", self.name:capitalize())
+			game:playSoundNear(self, "talents/heal")
+		end)
 		return true
 	end,
 	info = function(self, t)

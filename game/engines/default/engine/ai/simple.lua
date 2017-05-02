@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,8 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Defines a simple AI building blocks
+--- Defines a simple AI building blocks
 -- Target nearest and move/attack it
+-- @classmod engine.ai.simple
 local Astar = require "engine.Astar"
 
 newAI("move_simple", function(self)

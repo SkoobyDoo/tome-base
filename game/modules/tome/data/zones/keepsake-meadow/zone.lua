@@ -13,7 +13,7 @@ return {
 	min_material_level = 2,
 	max_material_level = 3,
 
-	ambient_music = "Woods of Eremae.ogg",
+	ambient_music = "Suspicion.ogg",
 
 	generator =  {
 		map = {

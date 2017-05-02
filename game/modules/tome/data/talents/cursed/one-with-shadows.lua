@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ newTalent{
 	end,
 	getDur = function(self, t) return math.floor(self:combatTalentScale(t, 3, 10)) end,
 	getPower = function(self, t) return 5 + self:combatTalentMindDamage(t, 0, 300) / 8 end,
+	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		self:setEffect(self.EFF_SHADOW_EMPATHY, t.getDur(self, t), {power=t.getPower(self, t)})
 		return true
@@ -83,6 +84,7 @@ newTalent{
 	no_npc_use = true,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 15, 1)) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3, 1)) end,
+	on_pre_use = function(self, t) return self:callTalent(self.T_CALL_SHADOWS, "nbShadowsUp") > 0 end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRadius(t)}
 		local x, y, target = self:getTarget(tg)
@@ -142,9 +144,9 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your shadows guard you with their lifes.
+		return ([[Your shadows guard you with their lives.
 		When you would receive a fatal blow, you instantly transpose with a random shadow that takes the blow instead, putting this talent on cooldown.
-		For the next 4 turns you only die if you reach -%d life. However, when below 0 you cannot see how much life you have left.
+		For the next 4 turns you only die if you reach -%d life.
 		Effect increases with Mindpower.]]):
 		format(t.getPower(self, t))
 	end,

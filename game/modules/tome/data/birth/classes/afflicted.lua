@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ newBirthDescriptor{
 		},
 	},
 	copy = {
+		chooseCursedAuraTree = true,
 	},
 }
 
@@ -93,7 +94,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="battleaxe", name="iron battleaxe", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="heavy", name="iron mail armour", autoreq=true, ego_chance=-1000, ego_chance=-1000}
 		},
-		chooseCursedAuraTree = true
 	},
 	copy_add = {
 		life_rating = 2,
@@ -117,6 +117,12 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +4 Willpower, +5 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +0",
 	},
+	birth_example_particles = {
+		function(actor) if core.shader.active() then
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1, img="call_shadows"}, {type="rotatingshield", noup=2.0, cylinderRotationSpeed=1.7, appearTime=0.2}))
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1, img="call_shadows"}, {type="rotatingshield", noup=1.0, cylinderRotationSpeed=1.7, appearTime=0.2}))
+		end end,
+	},
 	power_source = {psionic=true},
 	random_rarity = 2,
 	stats = { wil=4, cun=5, },
@@ -129,8 +135,9 @@ newBirthDescriptor{
 		["cursed/darkness"]={true, 0.3},
 		["cursed/cursed-form"]={true, 0.0},
 		["cunning/survival"]={false, 0.0},
-		["cursed/fears"]={false, 0.0},
+		["cursed/fears"]={false, 0.3},
 		["cursed/one-with-shadows"]={false, 0.3},
+		["cursed/advanced-shadowmancy"]={false, 0.3},
 	},
 	talents = {
 		[ActorTalents.T_UNNATURAL_BODY] = 1,
@@ -146,7 +153,6 @@ newBirthDescriptor{
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 		},
-		chooseCursedAuraTree = true
 	},
 	copy_add = {
 	},

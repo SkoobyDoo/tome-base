@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local archerPreUse = Talents.archerPreUse
 
 newTalent{
 	name = "Guided Shot",
@@ -30,7 +31,7 @@ newTalent{
 	tactical = { ATTACK = { PHYSICAL = 2 } },
 	range = archery_range,
 	requires_target = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("bow") then if not silent then game.logPlayer(self, "You require a bow for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	shot_boost = function(self, t) return self:combatTalentScale(t, 40, 80, 0.75) end,
 	use_psi_archery = function(self, t)
 		local pf_weapon = self:getInven("PSIONIC_FOCUS")[1]
@@ -64,7 +65,7 @@ newTalent{
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("bow") then if not silent then game.logPlayer(self, "You require a bow for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	apr_boost = function(self, t) return math.floor(self:combatTalentScale(t, 20, 60)) end,
 	dam_mult = function(self, t)
 		return self:combatTalentWeaponDamage(t, 1.5, 2.5)
@@ -102,7 +103,7 @@ newTalent{
 	tactical = { ATTACK = { PHYSICAL = 2 } },
 	range = archery_range,
 	requires_target = true,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("bow") then if not silent then game.logPlayer(self, "You require a bow for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	use_psi_archery = function(self, t)
 		local pf_weapon = self:getInven("PSIONIC_FOCUS")[1]
 		if pf_weapon and pf_weapon.archery then

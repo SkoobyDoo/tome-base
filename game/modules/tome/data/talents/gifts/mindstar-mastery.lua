@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ newTalent{
 	points = 5,
 	mode = "sustained",
 	sustain_equilibrium = 18,
-	cooldown = 6,
+	cooldown = 10,
 	tactical = { BUFF = 4 },
 	getPowermult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end, --I5
 	getStatmult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end, --I5
@@ -64,7 +64,7 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local inc = t.getPercentInc(self, t)
-		return ([[Channel your mental power through your wielded mindstars, generating psionic blades sprouting from the mindstars.
+		return ([[Channel your mental power through your wielded mindstars, generating psionic blades.
 		Mindstar psiblades have their damage modifiers (how much damage they gain from stats) multiplied by %0.2f, their armour penetration by %0.2f and mindpower, willpower and cunning by %0.2f.
 		Also increases Physical Power by %d and increases weapon damage by %d%% when using mindstars.]]):
 		format(t.getStatmult(self, t), t.getAPRmult(self, t), t.getPowermult(self, t), damage, 100 * inc) --I5
@@ -170,7 +170,7 @@ newTalent{
 		while hit do -- breakable if
 			local tg = util.getval(t.second_target, self, t)
 			local x, y, target = self:getTarget(tg)
-			if not target or not self:canProject(tg, x, y) then return nil end
+			if not target then target = self end
 
 			target:attr("allow_on_heal", 1)
 			target:heal(dam, t)

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,18 +20,21 @@
 require "engine.class"
 local Map = require "engine.Map"
 require "engine.generator.map.Roomer"
+
+--- @classmod engine.generator.map.Octopus
 module(..., package.seeall, class.inherit(engine.generator.map.Roomer))
 
+-- Creates a space (Pod room) at center of map, with a number of 'arms' (Pod rooms) around it connected by tunnels
 function _M:init(zone, map, level, data)
 	engine.generator.map.Roomer.init(self, zone, map, level, data)
 
 	self.spots = {}
 
-	self.nb_rooms = data.nb_rooms or {5, 10}
+	self.nb_rooms = data.nb_rooms or {5, 10} -- number of Pod rooms around center
 	self.base_breakpoint = data.base_breakpoint or 0.4
-	self.arms_range = data.arms_range or {0.5, 0.7}
-	self.arms_radius = data.arms_radius or {0.2, 0.3}
-	self.main_radius = data.main_radius or {0.3, 0.5}
+	self.arms_range = data.arms_range or {0.5, 0.7} -- fraction dist from map center to map edge for each Pod room
+	self.arms_radius = data.arms_radius or {0.2, 0.3} -- *(map.w + map.h)/4 ==> radius of each Pod room
+	self.main_radius = data.main_radius or {0.3, 0.5} -- *(map.w + map.h)/4 ==> radius of Pod at map center
 
 	self.noise = data.noise or "fbm_perlin"
 	self.zoom = data.zoom or 5
@@ -46,15 +49,16 @@ function _M:generate(lev, old_lev)
 	end end
 
 	local spots = self.spots
-
+	local rooms = {}
+	self.map.room_map.rooms = rooms
 	-- Main center room
 	local cx, cy = math.floor(self.map.w / 2), math.floor(self.map.h / 2)
-	self:makePod(cx, cy, rng.float(self.main_radius[1], self.main_radius[2]) * ((self.map.w / 2) + (self.map.h / 2)) / 2, 1, self)
+	rooms[#rooms+1] = self:makePod(cx, cy, rng.float(self.main_radius[1], self.main_radius[2]) * ((self.map.w / 2) + (self.map.h / 2)) / 2, 1, self)
+
 	spots[#spots+1] = {x=cx, y=cy, type="room", subtype="main"}
 
 	-- Rooms around it
 	local nb_rooms = rng.range(self.nb_rooms[1], self.nb_rooms[2])
-	local rooms = {}
 	for i = 0, nb_rooms - 1 do
 		local angle = math.rad(i * 360 / nb_rooms)
 

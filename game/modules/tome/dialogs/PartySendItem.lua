@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,7 +50,14 @@ function _M:on_register()
 end
 
 function _M:use(item)
-	if not item or not item.actor:canAddToInven(item.actor.INVEN_INVEN) then return end
+	if not item or not item.actor:canAddToInven(item.actor.INVEN_INVEN) or (item.actor:attr("sleep") and not item.actor:attr("lucid_dreamer")) then
+		game.log("%s cannot receive items while asleep!", item.actor.name:capitalize())
+		return
+	end
+	if self.source:attr("sleep") and not self.source:attr("lucid_dreamer") then
+		game.log("%s cannot transfer items while asleep!", self.source.name:capitalize())
+		return 
+	end
 	game:unregisterDialog(self)
 	self.source:removeObject(self.inven, self.item, true)
 	self.source:sortInven(self.inven)
@@ -65,8 +72,10 @@ function _M:generateList()
 	local list = {}
 
 	for i, act in ipairs(game.party.m_list) do
-		if not act.no_inventory_access and act ~= game.player then
-			list[#list+1] = {name=act.name..(act:canAddToInven(act.INVEN_INVEN) and "" or " #YELLOW#[NO ROOM]#LAST#"), actor=act}
+		if not act.no_inventory_access and act ~= game.player and act:getInven(act.INVEN_INVEN) then
+			local warn = act:attr("sleep") and not act:attr("lucid_dreamer") and " #YELLOW#[SLEEPING]#LAST#" or ""
+			if not act:canAddToInven(act.INVEN_INVEN) then warn = " #YELLOW#[NO ROOM]#LAST#" end
+			list[#list+1] = {name=act.name..warn, actor=act}
 		end
 	end
 

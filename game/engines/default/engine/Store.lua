@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ local Inventory = require "engine.interface.ActorInventory"
 local ShowStore = require_first("mod.dialogs.ShowStore", "engine.dialogs.ShowStore")
 local GetQuantity = require "engine.dialogs.GetQuantity"
 
+--- Store
+-- @classmod engine.Store
 module(..., package.seeall, class.inherit(Entity, Inventory))
 
 function _M:init(t, no_default)
@@ -56,6 +58,7 @@ end
 --- Fill the store with goods
 -- @param level the level to generate for (instance of type engine.Level)
 -- @param zone the zone to generate for
+-- @param force_nb[opt] make it generate a specific number of items
 function _M:loadup(level, zone, force_nb)
 	local s = self.store
 	if not s then error("Store without a store field") end
@@ -115,6 +118,7 @@ end
 
 --- Actor interacts with the store
 -- @param who the actor who interacts
+-- @param[opt] name display name of the store
 function _M:interact(who, name)
 	local store, inven = self:getInven("INVEN"), who:getInven("INVEN")
 	local d; d = ShowStore.new("Store: "..(name or self.name), store, inven, self.store.store_filter, self.store.actor_filter, function(what, o, item)

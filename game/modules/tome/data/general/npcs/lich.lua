@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(16,27), atk=16, apr=9, damtype=DamageType.DARKSTUN, dammod={mag=0.9} },
 
-	body = { INVEN = 10, MAINHAND = 1, OFFHAND = 1, FINGER = 2, NECK = 1, LITE = 1, BODY = 1, HEAD = 1, CLOAK = 1, HANDS = 1, BELT = 1, FEET = 1},
+	body = { INVEN = 10, MAINHAND = 1, OFFHAND = 1, FINGER = 2, NECK = 1, LITE = 1, BODY = 1, HEAD = 1, CLOAK = 1, HANDS = 1, BELT = 1, FEET = 1, TOOL=1},
 	equipment = resolvers.equip{
 		{type="armor", subtype="cloth", ego_chance=75, forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="head", ego_chance=75, forbid_power_source={antimagic=true}, autoreq=true},
@@ -37,6 +37,7 @@ newEntity{
 		{type="jewelry", subtype="amulet", ego_chance=100, forbid_power_source={antimagic=true}, autoreq=true},
 		{type="jewelry", subtype="ring", ego_chance=100, forbid_power_source={antimagic=true}, autoreq=true},
 		{type="jewelry", subtype="ring", ego_chance=100, forbid_power_source={antimagic=true}, autoreq=true},
+		{type="charm", subtype="wand", ego_chance=75, forbid_power_source={antimagic=true}, autoreq=true}
 	},
 
 	autolevel = "caster",
@@ -62,11 +63,13 @@ newEntity{
 	mana_regen = 0.3,
 	hate_regen = 2,
 	open_door = 1,
+	ignore_direct_crits = 50,
 	combat_spellpower = resolvers.mbonus(20, 10),
 	combat_spellcrit = resolvers.mbonus(5, 5),
 
 	resolvers.sustains_at_birth(),
-	not_power_source = {nature=true},
+	power_source = {arcane=true},
+	not_power_source = {nature=true, antimagic=true},
 }
 
 newEntity{ base = "BASE_NPC_LICH",
@@ -147,6 +150,7 @@ newEntity{ base = "BASE_NPC_LICH",
 	combat_armor = 15, combat_def = 25,
 
 	self_resurrect = 1,
+	ignore_direct_crits = 100,
 
 	resolvers.talents{
 		[Talents.T_HYMN_OF_SHADOWS]=6,
@@ -182,7 +186,8 @@ newEntity{ base = "BASE_NPC_LICH",
 	combat_armor = 0, combat_def = 45,
 	on_melee_hit = {[DamageType.BLIGHT]=resolvers.mbonus(25, 30)},
 
-	mana_regen = 100,
+	vim_regen = 1,
+	ignore_direct_crits = 100,
 
 	resolvers.talents{
 		[Talents.T_FREEZE]={base=5, every=10, max=10},

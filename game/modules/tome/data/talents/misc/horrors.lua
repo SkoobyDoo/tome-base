@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -235,12 +235,13 @@ newTalent{
 	cooldown = 10,
 	range = 10,
 	requires_target = true,
-	tactical = { ATTACK = { MIND = 4 } },
+	tactical = { ATTACK = { MIND = 3 }, DISABLE = 1.5 },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	direct_hit = true,
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 10, 100) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -351,67 +352,9 @@ newTalent{
 		format(number, damDesc(self, DamageType.TEMPORAL, (damage)), damDesc(self, DamageType.TEMPORAL, (explosion/2)), damDesc(self, DamageType.PHYSICAL, (explosion/2)))
 	end,
 }
-
--- Worm that Walks Powers
-newTalent{
-	name = "Worm Rot",
-	type = {"corruption/horror", 1},
-	points = 5,
-	cooldown = 8,
-	vim = 10,
-	range = 6,
-	requires_target = true,
-	tactical = { ATTACK = { ACID = 1, BLIGHT = 1 }, DISABLE = 4 },
-	getBurstDamage = function(self, t) return self:combatTalentSpellDamage(t, 30, 300) end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 5, 50) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
-	proj_speed = 6,
-	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}} end,
-	spawn_carrion_worm = function (self, target, t)
-		local x, y = util.findFreeGrid(target.x, target.y, 10, true, {[Map.ACTOR]=true})
-		if not x then return nil end
-
-		local worm = {type="vermin", subtype="worms", name="carrion worm mass"}
-		local list = mod.class.NPC:loadList("/data/general/npcs/vermin.lua")
-		local m = list.CARRION_WORM_MASS:clone()
-		if not m then return nil end
-
-		m:resolve() m:resolve(nil, true)
-		m.faction = self.faction
-		game.zone:addEntity(game.level, m, "actor", x, y)
-	end,
-	action = function(self, t)
-		local tg = self:getTalentTarget(t)
-		local x, y = self:getTarget(tg)
-		if not x or not y then return nil end
-
-		self:project(tg, x, y, function(px, py)
-			local target = game.level.map(px, py, engine.Map.ACTOR)
-			if not target then return end
-			if target:canBe("disease") then
-				target:setEffect(target.EFF_WORM_ROT, t.getDuration(self, t), {src=self, dam=t.getDamage(self, t), burst=t.getBurstDamage(self, t), rot_timer = 5, apply_power=self:combatSpellpower()})
-			else
-				game.logSeen(target, "%s resists the worm rot!", target.name:capitalize())
-			end
-			game.level.map:particleEmitter(px, py, 1, "slime")
-		end)
-		game:playSoundNear(self, "talents/slime")
-
-		return true
-	end,
-	info = function(self, t)
-		local duration = t.getDuration(self, t)
-		local damage = t.getDamage(self, t)
-		local burst = t.getBurstDamage(self, t)
-		return ([[Infects the target with parasitic carrion worm larvae for %d turns.  Each turn the disease will remove a beneficial physical effect and deal %0.2f acid and %0.2f blight damage.
-		If not cleared after five turns it will inflict %0.2f acid damage as the larvae hatch, removing the effect but spawning a full grown carrion worm mass near the target's location.]]):
-		format(duration, damDesc(self, DamageType.ACID, (damage/2)), damDesc(self, DamageType.BLIGHT, (damage/2)), damDesc(self, DamageType.ACID, (burst)))
-	end,
-}
 -------------------------------------------
 -- THE PUREQUESTION HORRORS AND ALL THAT --
 -------------------------------------------
-
 --Bladed Horror Talents
 newTalent{
 	name = "Knife Storm",
@@ -463,7 +406,8 @@ newTalent{
 	points = 5,
 	cooldown = 6,
 	psi = 35,
-	tactical = { DISABLE = 2 },
+	tactical = { ATTACKAREA = {PHYSICAL = 2}, CLOSEIN = 2},
+	requires_target = true,
 	range = 0,
 	radius = function(self, t)
 		return 5
@@ -529,7 +473,7 @@ newTalent{
 	random_ego = "attack",
 	equilibrium = 25,
 	cooldown = 10,
-	tactical = {ATTACKAREA = { NATURE=2 } },
+	tactical = {ATTACKAREA = { NATURE=1 }, DISABLE = 2 },
 	direct_hit = true,
 	range = 0,
 	requires_target = true,
@@ -537,7 +481,7 @@ newTalent{
 		return 1 + 0.5 * t.getDuration(self, t)
 	end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false}
 	end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 5, 90) end,
 	getDuration = function(self, t) return 9 + self:combatTalentMindDamage(t, 6, 7) end,
@@ -625,7 +569,7 @@ newTalent{
 	random_ego = "attack",
 	equilibrium = 4,
 	cooldown = 30,
-	tactical = { ATTACK = { NATURE = 2} },
+	tactical = { ATTACK = { NATURE = 2}, DISABLE = 1 },
 	range = 10,
 	direct_hit = true,
 	proj_speed = 8,
@@ -681,7 +625,6 @@ newTalent{
 	end,
 }
 
-
 --Ak'Gishil
 newTalent{
 	name = "Animate Blade",
@@ -729,11 +672,77 @@ newTalent{
 				m.summon_time=20
 			end
 			game.zone:addEntity(game.level, m, "actor", x, y)
+			if not self.player and self.ai_target.actor then m:setTarget(self.ai_target.actor) end
 		end
 
 		return true
 	end,
 	info = function(self, t)
-		return ([[Open a hole in space, summoning an animate blade for 10 turns.]])
+		return ([[Open a hole in space, summoning an animated blade for 10 turns.]])
+	end,
+}
+
+newTalent{
+	name = "Drench",
+	type = {"wild-gift/horror",1},
+	points = 5,
+	random_ego = "attack",
+	equilibrium = 25,
+	cooldown = 10,
+	tactical = { DISABLE = 4 },
+	direct_hit = true,
+	range = 0,
+	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	target = function(self, t)
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
+	end,
+	action = function(self, t)
+		local tg = self:getTalentTarget(t)
+		local grids = self:project(tg, self.x, self.y, function(tx, ty)
+			local target = game.level.map(tx, ty, Map.ACTOR)
+			if target then
+				target:setEffect(target.EFF_WET, 10, {})
+			end
+		end)
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "circle", {oversize=1.1, a=255, limit_life=16, grow=true, speed=0, img="healparadox", radius=tg.radius})
+		game:playSoundNear(self, "talents/tidalwave")
+		return true
+	end,
+	info = function(self, t)
+		local radius = self:getTalentRadius(t)
+		return ([[Blast a wave of water all around you with a radius of %d, making all creatures Wet for 10 turns.
+		The damage will increase with your Spellpower.]]):format(radius)
+	end,
+}
+
+newTalent{
+	name = "Blood Suckers",
+	type = {"wild-gift/other", 1},
+	message = "@Source@ tries to latch on and suck blood!",
+	points = 5,
+	cooldown = 2,
+	tactical = { ATTACK = { weapon = 2 } },
+	requires_target = true,
+	on_pre_use_ai = function(self, t, silent, fake) return self.ai_target.actor and (self.ai_target.actor:checkClassification("living") or rng.chance(2)) end,  -- AI less likely to use against undead/constructs
+	action = function(self, t)
+		local tg = {type="hit", range=self:getTalentRange(t)}
+		local x, y, target = self:getTarget(tg)
+		if not x or not y or not target then return nil end
+		if core.fov.distance(self.x, self.y, x, y) > 1 then return nil end
+
+		if self:attackTarget(target, nil, 1.0, true) and target:checkClassification("living") then
+			local nb = (target:hasEffect(target.EFF_PARASITIC_LEECHES) and target:hasEffect(target.EFF_PARASITIC_LEECHES).nb or 0)
+			target:setEffect(target.EFF_PARASITIC_LEECHES, 5, {src=self, apply_power=self:combatAttack(), dam=self.level, nb=1, gestation=5})
+			if (target:hasEffect(target.EFF_PARASITIC_LEECHES) and target:hasEffect(target.EFF_PARASITIC_LEECHES).nb or 0) > nb then self:die(self) end
+		end
+
+		return true
+	end,
+	info = function(self, t)
+		local Pdam, Fdam = self:damDesc(DamageType.PHYSICAL, self.level/2), self:damDesc(DamageType.ACID, self.level/2)
+		return ([[Latch on to the target and suck their blood, doing %0.2f physical and %0.2f acid damage per turn.
+		After 5 turns of drinking, drop off and gain the ability to Multiply.
+		Damage scales with your level.
+		]]):format(Pdam, Fdam)
 	end,
 }

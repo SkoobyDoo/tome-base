@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -194,6 +194,7 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 	define_as = "BLACK_ROBE",
 	name = "Black Robe", unique=true,
 	unided_name = "black robe", color=colors.DARK_GREY, image = "object/artifact/robe_black_robe.png",
+	moddable_tile = "special/robe_black_robe",
 	desc = [[A silk robe, darker than the darkest night sky, it radiates power.]],
 	level_range = {40, 50},
 	rarity = 280,
@@ -276,6 +277,7 @@ newEntity{ base = "BASE_GREATSWORD",
 	wielder = {
 		inc_stats = { [Stats.STAT_CON] = 15, [Stats.STAT_STR] = 15, [Stats.STAT_DEX] = 5, },
 		talents_types_mastery = {
+			["technique/strength-of-the-berserker"] = 0.3,
 			["technique/2hweapon-cripple"] = 0.2,
 			["technique/2hweapon-offense"] = 0.2,
 			["technique/2hweapon-assault"] = 0.2,
@@ -324,7 +326,7 @@ newEntity{ base = "BASE_LONGBOW",
 	power_source = {arcane=true},
 	define_as = "STORM_FURY",
 	name = "Storm Fury", unique=true,
-	unided_name = "crackling longbow", color=colors.BLUE,
+	unided_name = "crackling longbow", color=colors.BLUE, image = "object/artifact/storm_fury.png",
 	desc = [[This dragonbone longbow is enhanced with bands of steel, which arc with intense lightning. Bolts travel up and down the string, ignorant of you.]],
 	require = { stat = { dex=30, mag=30 }, },
 	level_range = {40, 50},
@@ -418,18 +420,23 @@ newEntity{ base = "BASE_CLOAK", define_as="GLACIAL_CLOAK",
 	use_power = {
 		name = function(self, who)
 			local dam = who:damDesc(engine.DamageType.COLD, self.use_power.damage(self, who))
-			return ("release a radius %d blast of frozen vapors that deal %0.2f cold damage (based on Magic) each turn for %d turns"):format(self.use_power.radius, dam, self.use_power.duration)
+			return ("release a radius %d chilling blast, instantly dealing %0.2f cold damage and condensing the air into freezing vapors that deal %0.2f cold damage (based on Magic) each turn for %d turns"):format(self.use_power.radius, dam*3, dam, self.use_power.duration)
 		end,
 		power = 30,
 		damage = function(self, who) return 25 + who:getMag() end,
 		radius = 4,
+		tactical = {ATTACKAREA = {COLD = 2},
+			DISABLE = {STUN = 1.5}},
+		target = function(self, who) return {type="ball", range=0, radius=self.use_power.radius, selffire=false, display={particle="bolt_ice", trail="icetrail"}} end,
+		requires_target = true,
+		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end,
 		duration = 10,
 		use = function(self, who)
 			local duration = self.use_power.duration
 			local radius = self.use_power.radius
 			local dam = self.use_power.damage(self, who)
-			local blast = {type="ball", range=0, radius=radius, selffire=false, display={particle="bolt_ice", trail="icetrail"}}
-			game.logSeen(who, "%s releases a blast of freezing vapors from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
+			local blast = self.use_power.target(self, who)
+			game.logSeen(who, "%s releases an icy blast from %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:project(blast, who.x, who.y, engine.DamageType.COLD, dam*3)
 			who:project(blast, who.x, who.y, engine.DamageType.FREEZE, {dur=6, hp=80+dam})
 			game.level.map:particleEmitter(who.x, who.y, blast.radius, "iceflash", {radius=blast.radius})
@@ -503,13 +510,16 @@ newEntity{ base = "BASE_GREATMAUL", define_as="ROTTING_MAUL",
 			return ("knock away other craatures within radius %d), dealing %0.2f to %0.2f physical damage (based on Strength) to each"):format(self.use_power.radius, dam, dam*2)
 		end,
 		power = 50,
-		damage = function(self, who) return 125+ 3*who:getStr() end,
+		damage = function(self, who) return 125 + 3*who:getStr() end,
 		radius = 4,
+		range = 0,
+		tactical = {ATTACKAREA = {PHYSICAL = 2},
+			ESCAPE = 1.5},
 		use = function(self, who)
 			local dam = rng.float(1,2) * self.use_power.damage(self, who)
-			local tg = {type="ball", range=0, selffire=false, radius=self.use_power.radius, no_restrict=true}
+			local tg = {type="ball", range=self.use_power.range, selffire=false, radius=self.use_power.radius, no_restrict=true}
+			game.logSeen(who, "%s slams %s %s into the ground, sending out a shockwave!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:project(tg, who.x, who.y, engine.DamageType.PHYSKNOCKBACK, {dam=dam, dist=self.use_power.radius})
-			game.logSeen(who, "%s slams %s %s into the ground, sending out a shockwave!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			return {id=true, used=true}
 		end
 	},

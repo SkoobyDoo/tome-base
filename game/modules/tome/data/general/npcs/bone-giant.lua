@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,10 +34,11 @@ newEntity{
 	max_stamina = 90,
 	rank = 2,
 	size_category = 4,
+	movement_speed = 1.5,
 
 	autolevel = "warrior",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=2, },
-	stats = { str=20, dex=52, mag=16, con=16 },
+	stats = { str=20, dex=12, mag=16, con=16 },
 
 	resists = { [DamageType.PHYSICAL] = 20, [DamageType.BLIGHT] = 20, [DamageType.COLD] = 50, },
 
@@ -72,7 +73,7 @@ newEntity{ base = "BASE_NPC_BONE_GIANT",
 	name = "eternal bone giant", color=colors.GREY,
 	desc = [[A towering creature, made from the bones of hundreds of dead bodies. It is covered by an unholy aura.]],
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/undead_giant_eternal_bone_giant.png", display_h=2, display_y=-1}}},
-	level_range = {33, nil}, exp_worth = 1,
+	level_range = {30, nil}, exp_worth = 1,
 	rarity = 3,
 	max_life = resolvers.rngavg(100,120),
 	combat_armor = 40, combat_def = 20,

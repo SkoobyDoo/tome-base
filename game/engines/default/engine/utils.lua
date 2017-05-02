@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--- Utility functionality used by a lot of the base classes
+-- @script engine.utils
+
 local lpeg = require "lpeg"
 
 function math.decimals(v, nb)
@@ -26,12 +29,24 @@ end
 
 -- Rounds to nearest multiple
 -- (round away from zero): math.round(4.65, 0.1)=4.7, math.round(-4.475, 0.01) = -4.48
--- num = rouding multiplier to compensate for numerical rounding (default 1000000 for 6 digits accuracy)
+-- num = rounding multiplier to compensate for numerical rounding (default 1000000 for 6 digits accuracy)
 function math.round(v, mult, num)
 	mult = mult or 1
 	num = num or 1000000
 	v, mult = v*num, mult*num
 	return v >= 0 and math.floor((v + mult/2)/mult) * mult/num or math.ceil((v - mult/2)/mult) * mult/num
+end
+
+-- convert a number to a string with a limited number of significant figures (after the decimal)
+-- @param[type=number] num -- number to format
+-- @param[type=number] sig_figs -- significant figures to display, default 3 (truncates only the fractional portion)
+-- @param[type=string] pre_format -- first component of the format field (use "+" to force display of the sign)
+-- @return[1][type=string] a string representation of the number with a limited fractional component
+-- @return[2][type=string] the format used to display the number
+function string.limit_decimals(num, sig_figs, pre_format)
+	sig_figs = (sig_figs or 3) - 1
+	local fmt = ("%%%s.%df"):format(pre_format or "", util.bound(sig_figs-math.floor(math.log10(math.abs(num))), 0, sig_figs))
+	return (fmt):format(num), fmt
 end
 
 function math.scale(i, imin, imax, dmin, dmax)
@@ -48,6 +63,16 @@ end
 function table.concatNice(t, sep, endsep)
 	if not endsep or #t == 1 then return table.concat(t, sep) end
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
+end
+
+function ripairs(t)
+	local i = #t
+	return function()
+		if i == 0 then return nil end
+		local oi = i
+		i = i - 1
+		return oi, t[oi]
+	end
 end
 
 function table.count(t)
@@ -156,27 +181,27 @@ end
 table.NIL_MERGE = {}
 
 --- Merges two tables in-place.
--- The table.NIL_MERGE is a special value that will nil out the corresponding dst key.
 -- @param dst The destination table, which will have all merged values.
 -- @param src The source table, supplying values to be merged.
 -- @param deep Boolean that determines if tables will be recursively merged.
 -- @param k_skip A table containing key values set to true if you want to skip them.
 -- @param k_skip_deep Like k_skip, except this table is passed on to the deep recursions.
 -- @param addnumbers Boolean that determines if two numbers will be added rather than replaced.
+-- assign the special value table.NIL_MERGE in src to set the corresponding dst field to nil.
+-- subtables containing .__ATOMIC or .__CLASSNAME will be copied by reference.
 function table.merge(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 	k_skip = k_skip or {}
 	k_skip_deep = k_skip_deep or {}
 	for k, e in pairs(src) do
 		if not k_skip[k] and not k_skip_deep[k] then
 			-- Recursively merge tables
-			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
+			if e == table.NIL_MERGE then -- remove corresponding field
+				dst[k] = nil
+			elseif deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				table.merge(dst[k], e, deep, nil, k_skip_deep, addnumbers)
 			-- Clone tables if into the destination
 			elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				dst[k] = table.clone(e, deep, nil, k_skip_deep)
-			-- Nil out any NIL_MERGE entries
-			elseif e == table.NIL_MERGE then
-				dst[k] = nil
 			-- Add number entries if "add" is set
 			elseif addnumbers and not dst.__no_merge_add and dst[k] and type(dst[k]) == "number" and type(e) == "number" then
 				dst[k] = dst[k] + e
@@ -259,6 +284,13 @@ function table.values(t)
 	return tt
 end
 
+function table.extract_field(t, field, iterator)
+	iterator = iterator or pairs
+	local tt = {}
+	for k, e in iterator(t) do tt[k] = e[field] end
+	return tt
+end
+
 function table.same_values(t1, t2)
 	for _, e1 in ipairs(t1) do
 		local ok = false
@@ -281,6 +313,11 @@ function table.from_list(t, k, v)
 	local tt = {}
 	for i, e in ipairs(t) do tt[e[k or 1]] = e[v or 2] end
 	return tt
+end
+
+function table.hasInList(t, v)
+	for i = #t, 1, -1 do if t[i] == v then return true end end
+	return false
 end
 
 function table.removeFromList(t, ...)
@@ -617,7 +654,6 @@ function table.ruleMergeAppendAdd(dst, src, rules, state)
 	table.applyRules(dst, src, rules, state)
 end
 
-
 function string.ordinal(number)
 	local suffix = "th"
 	number = tonumber(number)
@@ -651,7 +687,7 @@ end
 
 function string.his_her(actor)
 	if actor.female then return "her"
-	elseif actor.neuter then return "it"
+	elseif actor.neuter then return "its"
 	else return "his"
 	end
 end
@@ -704,6 +740,16 @@ function string.lpegSub(s, patt, repl)
 	patt = lpeg.P(patt)
 	patt = lpeg.Cs((patt / repl + 1)^0)
 	return lpeg.match(patt, s)
+end
+
+function string.prefix(s, p)
+	if s:sub(1, #p) == p then return true end
+	return false
+end
+
+function string.suffix(s, p)
+	if s:sub(#s - #p + 1) == p then return true end
+	return false
 end
 
 -- Those matching patterns are used both by splitLine and drawColorString*
@@ -2075,7 +2121,7 @@ function core.fov.set_permissiveness(val)
 end
 
 --- Sets the FoV vision size of the source actor (if applicable to the chosen FoV algorithm).
--- @param should be any number between 0.0 and 1.0 (smallest to largest).  Default is 1.
+-- @param val should be any number between 0.0 and 1.0 (smallest to largest).  Default is 1.
 -- val = 1.0 will result in symmetric vision and targeting (i.e., I can see you if and only if you can see me)
 --           for applicable fov algorithms ("large_ass").
 function core.fov.set_actor_vision_size(val)
@@ -2105,7 +2151,7 @@ function core.fov.set_algorithm(val)
 end
 
 --- Sets the vision shape or distance metric for field of vision, talent ranges, AoEs, etc.
--- @param should be a string: circle, circle_round (same as circle), circle_floor, circle_ceil, circle_plus1, octagon, diamond, square.
+-- @param val should be a string: circle, circle_round (same as circle), circle_floor, circle_ceil, circle_plus1, octagon, diamond, square.
 -- See "src/fov/fov.h" to see how each shape calculates distance and height.
 -- "circle_round" is aesthetically pleasing, "octagon" is a traditional roguelike FoV shape, and "circle_plus1" is similar to both "circle_round" and "octagon"
 -- Default is "circle_round"
@@ -2223,6 +2269,37 @@ function rng.poissonProcess(k, turn_scale, rate)
 	return math.exp(-rate*turn_scale) * ((rate*turn_scale) ^ k)/ util.factorial(k)
 end
 
+--- Randomly select a table from a list of tables based on rarity
+-- @param t <table> indexed table containing the tables to choose from
+-- @param rarity_field <string, default "rarity">, field in each table containing its rarity value
+--		rarity values are numbers > 0, such that higher values reduce the chance to be selected
+-- @raturn the table selected, index
+function rng.rarityTable(t, rarity_field)
+	if #t == 0 then return end
+	local rt = {}
+	rarity_field = rarity_field or "rarity"
+	local total, val = 0
+	for i, e in ipairs(t) do
+		val = e[rarity_field]; val = val and 1/val or 0
+		total = total + val
+		rt[i] = total
+	end
+	val = rng.float(0, total)
+	for i, total in ipairs(rt) do
+		if total >= val then
+			return t[i], i
+		end
+	end
+end
+
+function util.show_function_calls()
+	debug.sethook(function(event, line)
+		local t = debug.getinfo(2)
+		local tp = debug.getinfo(3) or {}
+		print(tostring(t.short_src) .. ":" .. tostring(t.name).."@"..tostring(t.linedefined), "<from>", tostring(tp.short_src) .. ":" .. tostring(tp.name).."@"..tostring(tp.linedefined))
+	end, "c")
+end
+
 function util.show_backtrace()
 	local level = 2
 
@@ -2267,25 +2344,10 @@ function util.browserOpenUrl(url, forbid_methods)
 
 	if core.webview and not forbid_methods.webview then local d = require("engine.ui.Dialog"):webPopup(url) if d then return "webview", d end end
 	if core.steam and not forbid_methods.steam and core.steam.openOverlayUrl(url) then return "steam", true end
+	
 	if forbid_methods.native then return false end
+	if core.game.openBrowser(url) then return "native", true end
 
-	local tries = {
-		"rundll32 url.dll,FileProtocolHandler %s",	-- Windows
-		"open %s",	-- OSX
-		"xdg-open %s",	-- Linux - portable way
-		"gnome-open %s",  -- Linux - Gnome
-		"kde-open %s",	-- Linux - Kde
-		"firefox %s",  -- Linux - try to find something
-		"mozilla-firefox %s",  -- Linux - try to find something
-		"google-chrome-stable %s",  -- Linux - try to find something
-		"google-chrome %s",  -- Linux - try to find something
-	}
-	while #tries > 0 do
-		local urlbase = table.remove(tries, 1)
-		urlbase = urlbase:format(url)
-		print("Trying to run URL with command: ", urlbase)
-		if os.execute(urlbase) == 0 then return "native", true end
-	end
 	return false
 end
 
@@ -2307,16 +2369,16 @@ function util.removeForceSafeBoot()
 	if restore then fs.setWritePath(restore) end
 end
 
--- Alias os.exit to our own exit method for cleanliness
+--- Alias os.exit to our own exit method for cleanliness
 os.crash = os.exit
 os.exit = core.game.exit_engine
 
--- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
+--- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
 function __dump_fct(f)
 	return string.format("%q", string.dump(f))
 end
 
--- Tries to load a lua module from a list, returns the first available
+--- Tries to load a lua module from a list, returns the first available
 function require_first(...)
 	local list = {...}
 	for i = 1, #list do
@@ -2329,6 +2391,7 @@ function require_first(...)
 	return nil
 end
 
+--- Is steamcloud available?
 function util.steamCanCloud()
 	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then return true end
 end

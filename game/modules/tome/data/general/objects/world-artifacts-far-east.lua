@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,24 +19,6 @@
 
 local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
-
--- This one starts a quest it has a level and rarity so it can drop randomly, but there are places where it is more likely to appear
-newEntity{ base = "BASE_SCROLL", define_as = "JEWELER_TOME", subtype="tome", no_unique_lore=true,
-	unique = true, quest=true,
-	unided_name = "ancient tome",
-	name = "Ancient Tome titled 'Gems and their uses'", image = "object/artifact/ancient_tome_gems_and_their_uses.png",
-	level_range = {30, 40}, rarity = 120,
-	color = colors.VIOLET,
-	fire_proof = true,
-	not_in_stores = true,
-
-	on_pickup = function(self, who)
-		if who == game.player then
-			self:identify(true)
-			who:grantQuest("master-jeweler")
-		end
-	end,
-}
 
 --[=[
 newEntity{ base = "BASE_GEM", define_as = "ANCIENT_STORM_SAPHIR",
@@ -530,7 +512,7 @@ newEntity{ base = "BASE_KNIFE", define_as = "KINETIC_SPIKE",
 	},
 	max_power = 10, power_regen = 1,
 	use_power = {
-		name = function(self, who) return ("fires a bolt of kinetic force (range %d), dealing 150%% (physical) weapon damage"):format(self.use_power.range) end,
+		name = function(self, who) return ("fire a bolt of kinetic force (range %d), dealing 150%% (physical) weapon damage"):format(self.use_power.range) end,
 		power = 10,
 		range = 8,
 		use = function(self, who)
@@ -569,7 +551,7 @@ newEntity{ base = "BASE_STAFF",
 		dam = 30,
 		apr = 4,
 		dammod = {mag=1.5},
-		damtype = DamageType.TEMPORAL,
+		element = DamageType.TEMPORAL,
 	},
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = 7, [Stats.STAT_MAG] = 8 },

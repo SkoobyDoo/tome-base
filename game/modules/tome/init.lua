@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@ name = "T.o.M.E"
 long_name = "Tales of Maj'Eyal: Age of Ascendancy"
 short_name = "tome"
 author = { "DarkGod", "darkgod@te4.org" }
-homepage = "http://te4.org/"
-version = {1,3,0}
-engine = {1,3,0,"te4"}
+homepage = "https://te4.org/"
+version = {1,6,0}
+engine = {1,6,0,"te4"}
 description = [[
 Welcome to Maj'Eyal.
 
@@ -45,6 +45,9 @@ Still, this is a golden age. Civilisations are healing the wounds of thousands o
 You are an adventurer, set out to discover wonders, explore old places, and venture into the unknown for wealth and glory.
 ]]
 starter = "mod.load"
+
+-- Forbid some now useless addons
+forbid_addons = {"stone-wardens"}
 
 -- List of additional team files required
 teams = {
@@ -145,15 +148,15 @@ load_tips = {
 profile_defs = {
 	allow_build = { {name="index:string:50"}, receive=function(data, save) save[data.name] = true end, export=function(env) for k, _ in pairs(env) do add{name=k} end end },
 	lore = { {name="index:string:30"}, receive=function(data, save) save.lore = save.lore or {} save.lore[data.name] = true end, export=function(env) for k, v in pairs(env.lore or {}) do add{name=k} end end },
-	escorts = { {fate="index:enum(lost,betrayed,zigur,saved)"}, {nb="number"}, receive=function(data, save) inc_set(save, data.fate, data, "nb") end, export=function(env) for k, v in pairs(env) do add{fate=k, nb=v} end end },
-	artifacts = { {cid="index:string:50"}, {name="index:string:40"}, {nb="number"}, receive=function(data, save) save.artifacts = save.artifacts or {} save.artifacts[data.cid] = save.artifacts[data.cid] or {} inc_set(save.artifacts[data.cid], data.name, data, "nb") end, export=function(env) for cid, d in pairs(env.artifacts or {}) do for name, v in pairs(d) do add{cid=cid, name=name, nb=v} end end end },
-	characters = { {cid="index:string:50"}, {nb="number"}, receive=function(data, save) save.characters = save.characters or {} inc_set(save.characters, data.cid, data, "nb") end, export=function(env) for k, v in pairs(env.characters or {}) do add{cid=k, nb=v} end end },
-	uniques = { {cid="index:string:50"}, {victim="index:string:50"}, {nb="number"}, receive=function(data, save) save.uniques = save.uniques or {} save.uniques[data.cid] = save.uniques[data.cid] or {} inc_set(save.uniques[data.cid], data.victim, data, "nb") end, export=function(env) for cid, d in pairs(env.uniques or {}) do for name, v in pairs(d) do add{cid=cid, victim=name, nb=v} end end end },
-	deaths = { {cid="index:string:50"}, {source="index:string:50"}, {nb="number"}, receive=function(data, save) save.sources = save.sources or {} save.sources[data.cid] = save.sources[data.cid] or {} inc_set(save.sources[data.cid], data.source, data, "nb") end, export=function(env) for cid, d in pairs(env.sources or {}) do for name, v in pairs(d) do add{cid=cid, source=name, nb=v} end end end },
+	escorts = { incr_only=true, {fate="index:enum(lost,betrayed,zigur,saved)"}, {nb="number"}, receive=function(data, save) inc_set(save, data.fate, data, "nb") end, export=function(env) for k, v in pairs(env) do add{fate=k, nb=v} end end },
+	artifacts = { incr_only=true, {cid="index:string:50"}, {name="index:string:40"}, {nb="number"}, receive=function(data, save) save.artifacts = save.artifacts or {} save.artifacts[data.cid] = save.artifacts[data.cid] or {} inc_set(save.artifacts[data.cid], data.name, data, "nb") end, export=function(env) for cid, d in pairs(env.artifacts or {}) do for name, v in pairs(d) do add{cid=cid, name=name, nb=v} end end end },
+	characters = { incr_only=true, {cid="index:string:50"}, {nb="number"}, receive=function(data, save) save.characters = save.characters or {} inc_set(save.characters, data.cid, data, "nb") end, export=function(env) for k, v in pairs(env.characters or {}) do add{cid=k, nb=v} end end },
+	uniques = { incr_only=true, {cid="index:string:50"}, {victim="index:string:50"}, {nb="number"}, receive=function(data, save) save.uniques = save.uniques or {} save.uniques[data.cid] = save.uniques[data.cid] or {} inc_set(save.uniques[data.cid], data.victim, data, "nb") end, export=function(env) for cid, d in pairs(env.uniques or {}) do for name, v in pairs(d) do add{cid=cid, victim=name, nb=v} end end end },
+	deaths = { incr_only=true, {cid="index:string:50"}, {source="index:string:50"}, {nb="number"}, receive=function(data, save) save.sources = save.sources or {} save.sources[data.cid] = save.sources[data.cid] or {} inc_set(save.sources[data.cid], data.source, data, "nb") end, export=function(env) for cid, d in pairs(env.sources or {}) do for name, v in pairs(d) do add{cid=cid, source=name, nb=v} end end end },
 	achievements = { {id="index:string:40"}, {gained_on="timestamp"}, {who="string:50"}, {turn="number"}, receive=function(data, save) save[data.id] = {who=data.who, when=data.gained_on, turn=data.turn} end, export=function(env) for id, v in pairs(env) do add{id=id, who=v.who, gained_on=v.when, turn=v.turn} end end },
 	donations = { no_sync=true, {last_ask="timestamp"}, receive=function(data, save) save.last_ask = data.last_ask end, export=function(env) add{last_ask=env.last_ask} end },
 	scores = {
-		nosync=true,
+		no_sync=true,
 		receive=function(data,save)
 			save.sc = save.sc or {}
 			save.sc[data.world] = save.sc[data.world] or {}

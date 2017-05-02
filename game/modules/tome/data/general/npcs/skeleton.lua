@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -57,6 +57,7 @@ newEntity{
 
 newEntity{ base = "BASE_NPC_SKELETON",
 	name = "degenerated skeleton warrior", color=colors.WHITE, image="npc/degenerated_skeleton_warrior.png",
+	desc=[[A haphazard collection of crumbling bones, with jerky movements that remind you of a child playing with a marionette.  It only has one arm, but that's all it needs to hold a sword.]],
 	level_range = {1, 18}, exp_worth = 1,
 	rarity = 1,
 	resolvers.equip{ {type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, autoreq=true} },
@@ -65,25 +66,31 @@ newEntity{ base = "BASE_NPC_SKELETON",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
-	name = "skeleton warrior", color=colors.SLATE, image="npc/skeleton_warrior.png",
-	level_range = {3, nil}, exp_worth = 1,
-	rarity = 1,
-	max_life = resolvers.rngavg(90,100),
+	name = "degenerated skeleton archer", color=colors.UMBER,
+	desc=[[A frail skeleton; just about the only bones that aren't cracked are its arms.  It's missing a hand, but a notch has been carved into its wrist to let it pull back a bowstring regardless.]],
+	level_range = {3, 20}, exp_worth = 1,
+	rarity = 3,
+	max_life = resolvers.rngavg(70,80),
 	combat_armor = 5, combat_def = 1,
-	resolvers.equip{ {type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, autoreq=true} },
-	resolvers.talents{ [Talents.T_STUNNING_BLOW]={base=1, every=7, max=5}, [Talents.T_WEAPON_COMBAT]={base=1, every=10, max=5}, [Talents.T_WEAPONS_MASTERY]={base=1, every=10, max=5}, },
+	resolvers.talents{ [Talents.T_SHOOT]=1, },
 	ai_state = { talent_in=1, },
+
+	autolevel = "archer",
+	resolvers.equip{ {type="weapon", subtype="longbow", forbid_power_source={antimagic=true}, autoreq=true, ego_chance=-1000}, {type="ammo", subtype="arrow", forbid_power_source={antimagic=true}, autoreq=true, ego_chance=-1000} },
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
 	name = "skeleton mage", color=colors.LIGHT_RED, image="npc/skeleton_mage.png",
-	level_range = {4, nil}, exp_worth = 1,
+	desc=[[Given its condition, you're less inclined to think this skeleton knows proper spells, rather than simply disgorging its magical energy as it breaks down.  This doesn't make it much less dangerous to be around, mind you.]],
+	level_range = {5, 25}, exp_worth = 1,
 	rarity = 3,
 	max_life = resolvers.rngavg(50,60),
 	max_mana = resolvers.rngavg(70,80),
 	combat_armor = 3, combat_def = 1,
 	stats = { str=10, dex=12, cun=14, mag=14, con=10 },
-	resolvers.talents{ [Talents.T_FLAME]={base=1, every=7, max=5}, [Talents.T_MANATHRUST]={base=2, every=7, max=5} },
+	resolvers.talents{ [Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},
+		[Talents.T_FLAME]={base=1, every=7, max=5},
+		[Talents.T_MANATHRUST]={base=1, every=7, max=5} },
 
 	resolvers.equip{ {type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true} },
 
@@ -93,8 +100,21 @@ newEntity{ base = "BASE_NPC_SKELETON",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
+	name = "skeleton warrior", color=colors.SLATE, image="npc/skeleton_warrior.png",
+	desc=[[The forces binding this skeleton together are resilient enough to let it hold a shield and swing a weapon as well as it could have in life.  It's still wearing its old armor, in rusty but servicable condition.]],
+	level_range = {7, nil}, exp_worth = 1,
+	rarity = 1,
+	max_life = resolvers.rngavg(90,100),
+	combat_armor = 5, combat_def = 1,
+	resolvers.equip{ {type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, autoreq=true} },
+	resolvers.talents{ [Talents.T_STUNNING_BLOW]={base=1, every=7, max=5}, [Talents.T_WEAPON_COMBAT]={base=1, every=10, max=5}, [Talents.T_WEAPONS_MASTERY]={base=1, every=10, max=5}, },
+	ai_state = { talent_in=2, },
+}
+
+newEntity{ base = "BASE_NPC_SKELETON",
 	name = "skeleton archer", color=colors.UMBER, image="npc/skeleton_archer.png",
-	level_range = {5, nil}, exp_worth = 1,
+	desc=[[Nobody scavenged the high-quality bow from this archer before it was raised from the dead.  You're about to wish the world had more grave-robbers.]],
+	level_range = {9, nil}, exp_worth = 1,
 	rarity = 3,
 	max_life = resolvers.rngavg(70,80),
 	combat_armor = 5, combat_def = 1,
@@ -106,25 +126,30 @@ newEntity{ base = "BASE_NPC_SKELETON",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
-	name = "skeleton master archer", color=colors.LIGHT_UMBER, image="npc/master_skeleton_archer.png",
-	level_range = {15, nil}, exp_worth = 1,
-	rarity = 5,
-	max_life = resolvers.rngavg(70,80),
-	combat_armor = 5, combat_def = 1,
-	resolvers.talents{ [Talents.T_BOW_MASTERY]={base=1, every=10, max=5}, [Talents.T_WEAPON_COMBAT]={base=1, every=10, max=5}, [Talents.T_SHOOT]=1, [Talents.T_PINNING_SHOT]=3, [Talents.T_CRIPPLING_SHOT]=3, },
-	ai_state = { talent_in=1, },
-	rank = 3,
+	name = "skeleton magus", color=colors.LIGHT_RED,
+	desc=[[This skeleton has been imbued with far more magical energy than normal, and serves as a conduit of its master's spellcasting prowess.]],
+	level_range = {11, nil}, exp_worth = 1,
+	rarity = 3,
+	max_life = resolvers.rngavg(50,60),
+	max_mana = resolvers.rngavg(70,80),
+	combat_armor = 3, combat_def = 1,
+	stats = { str=10, dex=12, cun=16, mag=18, con=10 },
+	resolvers.talents{ [Talents.T_STAFF_MASTERY]={base=2, every=10, max=5},
+		[Talents.T_FLAME]={base=2, every=7, max=5},
+		[Talents.T_MANATHRUST]={base=2, every=7, max=5},
+		[Talents.T_ARCANE_POWER]={base=2, every=7, max=5} },
 
-	ai = "tactical",
-	ai_tactic = resolvers.tactic"ranged",
+	resolvers.equip{ {type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true} },
 
-	autolevel = "archer",
-	resolvers.equip{ {type="weapon", subtype="longbow", forbid_power_source={antimagic=true}, autoreq=true}, {type="ammo", subtype="arrow", forbid_power_source={antimagic=true}, autoreq=true} },
+	autolevel = "caster",
+	ai = "dumb_talented_simple", ai_state = { talent_in=2, },
+	ingredient_on_death = "SKELETON_MAGE_SKULL",
 }
 
 newEntity{ base = "BASE_NPC_SKELETON",
 	name = "armoured skeleton warrior", color=colors.STEEL_BLUE, image="npc/armored_skeleton_warrior.png",
-	level_range = {10, nil}, exp_worth = 1,
+	desc=[[It feels no pain.  It moves with fluidity and strength that would tear natural muscles apart.  It must be from a fresh corpse, since its bones, armor, and weapon are all in pristine condition.  And it's furious.]],
+	level_range = {13, nil}, exp_worth = 1,
 	rarity = 5,
 	max_life = resolvers.rngavg(90,100),
 	combat_armor = 5, combat_def = 1,
@@ -144,5 +169,57 @@ newEntity{ base = "BASE_NPC_SKELETON",
 		[Talents.T_DISARM]={base=3, every=7, max=7},
 	},
 	resolvers.equip{ {type="weapon", subtype="longsword", forbid_power_source={antimagic=true}, autoreq=true}, {type="armor", subtype="shield", forbid_power_source={antimagic=true}, autoreq=true}, {type="armor", subtype="heavy", forbid_power_source={antimagic=true}, autoreq=true} },
+	ai_state = { talent_in=2, },
+}
+
+newEntity{ base = "BASE_NPC_SKELETON",
+	name = "skeleton master archer", color=colors.LIGHT_UMBER, image="npc/master_skeleton_archer.png",
+	desc=[[This skeleton can fire arrows and nock new ones with blinding speed.  Arcane forces pull its bones with unnatural precision - its arms will never tremble or get tired.]],
+	level_range = {15, nil}, exp_worth = 1,
+	rarity = 5,
+	max_life = resolvers.rngavg(70,80),
+	combat_armor = 5, combat_def = 1,
+	resolvers.talents{ [Talents.T_BOW_MASTERY]={base=1, every=10, max=5}, [Talents.T_WEAPON_COMBAT]={base=1, every=10, max=5}, [Talents.T_SHOOT]=1, [Talents.T_PINNING_SHOT]={base=1, every=10, max=5}, [Talents.T_CRIPPLING_SHOT]={base=1, every=10, max=5}, },
 	ai_state = { talent_in=1, },
+	rank = 3,
+
+	ai = "tactical",
+	ai_tactic = resolvers.tactic"ranged",
+
+	autolevel = "archer",
+	resolvers.equip{ {type="weapon", subtype="longbow", forbid_power_source={antimagic=true}, autoreq=true}, {type="ammo", subtype="arrow", forbid_power_source={antimagic=true}, autoreq=true} },
+}
+
+newEntity{ base = "BASE_NPC_SKELETON",
+	name = "skeleton assassin", color=colors.DARK_BLUE,
+	desc=[[Most skeletons announce their presence with a chorus of rattling bones; this one's been charred black and has enough cartilage between its joints to muffle its approach.  The first you'll see of it will be the flash of its blade.]],
+	level_range = {20, nil}, exp_worth = 1,
+	rarity = 15,
+	max_life = resolvers.rngavg(90,100),
+	combat_armor = 5, combat_def = 1,
+	rank = 3,
+
+	ai = "tactical",
+	ai_tactic = resolvers.tactic"melee",
+	ai_state = { talent_in=2, },
+	
+	resolvers.inscriptions(1, "rune"),
+	resolvers.talents{
+		[Talents.T_DUAL_WEAPON_MASTERY]={base=1, every=10, max=7},
+		[Talents.T_TEMPO]={base=1, every=10, max=7},
+		[Talents.T_FLURRY]={base=1, every=10, max=7},
+		[Talents.T_EXPOSE_WEAKNESS]={base=1, every=10, max=7},
+		[Talents.T_LETHALITY]={base=1, every=10, max=7},
+		[Talents.T_WEAPON_COMBAT]={base=1, every=10, max=7},
+		[Talents.T_KNIFE_MASTERY]={base=1, every=10, max=7},
+		[Talents.T_SHADOW_COMBAT]={base=1, every=10, max=7},
+		[Talents.T_SHADOWSTEP]={base=1, every=10, max=7},
+		[Talents.T_STEALTH]={base=2, every=10, max=7},
+	},
+	
+	resolvers.equip{
+		{type="weapon", subtype="dagger", autoreq=true, forbid_power_source={antimagic=true}},
+		{type="weapon", subtype="dagger", autoreq=true, forbid_power_source={antimagic=true}},
+		{type="armor", subtype="light", autoreq=true, forbid_power_source={antimagic=true}},
+	},
 }

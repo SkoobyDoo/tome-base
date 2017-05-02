@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ public:
 	}
 
 	~RenderHandler() {
-		fprintf(logfile, "[WEBCORE] Destroyed renreder\n");
+		fprintf(logfile, "[WEBCORE] Destroyed renderer\n");
 
 		WebEvent *event = new WebEvent();
 		event->kind = TE4_WEB_EVENT_DELETE_TEXTURE;

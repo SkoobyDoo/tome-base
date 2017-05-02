@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
+
+local archerPreUse = Talents.archerPreUse
 
 newTalent{
 	name = "Sling Mastery",
@@ -52,7 +54,7 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { blind = 2 } },
 	getBlindDur = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("sling") then if not silent then game.logPlayer(self, "You require a sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:canBe("blind") then
 			target:setEffect(target.EFF_BLINDED, t.getBlindDur(self, t), {apply_power=self:combatAttack()})
@@ -86,7 +88,7 @@ newTalent{
 	range = archery_range,
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = { knockback = 2 }, ESCAPE = { knockback = 1 } },
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("sling") then if not silent then game.logPlayer(self, "You require a sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	archery_onhit = function(self, t, target, x, y)
 		if target:checkHit(self:combatAttack(), target:combatPhysicalResist(), 0, 95, 15) and target:canBe("knockback") then
 			target:knockback(self.x, self.y, 4)
@@ -126,7 +128,7 @@ newTalent{
 		if fake then return count end
 		return math.floor(count) + (rng.percent(100*(count - math.floor(count))) and 1 or 0)
 	end,
-	on_pre_use = function(self, t, silent) if not self:hasArcheryWeapon("sling") then if not silent then game.logPlayer(self, "You require a sling for this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	action = function(self, t)
 		if not self:hasArcheryWeapon("sling") then game.logPlayer(self, "You must wield a sling!") return nil end
 		local targets = self:archeryAcquireTargets(nil, {multishots=t.getShots(self, t)})

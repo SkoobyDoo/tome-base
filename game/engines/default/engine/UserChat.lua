@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ local Slider = require "engine.ui.Slider"
 local Base = require "engine.ui.Base"
 
 --- Module that handles multiplayer chats
+-- @classmod engine.UserChat
 module(..., package.seeall, class.inherit(Base))
 
 local channel_colors = {
@@ -165,7 +166,7 @@ end
 function _M:event(e)
 	if not profile.auth then return end
 	if e.se == "Talk" then
-		e.msg = e.msg:removeColorCodes()
+		e.msg = e.msg:removeColorCodes():gsub("#", "##")
 		local color = colors.WHITE
 		if e.status == 'dev' then color = colors.CRIMSON
 		elseif e.status == 'mod' then color = colors.GOLD
@@ -252,7 +253,7 @@ function _M:event(e)
 			local text = ([[#{bold}#Thank you#{normal}# for you donation, your support means a lot for the continued survival of this game.
 
 Your current donation total is #LIGHT_GREEN#%0.2f euro#WHITE# which equals to #ROYAL_BLUE#%d voratun coins#WHITE# to use on te4.org.
-Your Item's Vault has #TEAL#%d slots#WHITE#.
+Your Item Vault has #TEAL#%d slots#WHITE#.
 
 Again, thank you, and enjoy Eyal!
 
@@ -718,7 +719,7 @@ function _M:display()
 		for i = #gen, 1, -1 do
 			gen[i].login = log[z].login
 			gen[i].extra_data = log[z].extra_data
-			self.dlist[#self.dlist+1] = {item=gen[i], date=math.max(log.reset_fade or log[z].timestamp, log[z].timestamp), src=log[z]}
+			self.dlist[#self.dlist+1] = {item=gen[i], date=log[z].reset_fade or log[z].timestamp, src=log[z]}
 			h = h + self.fh
 			if h > self.h - self.fh - (self.do_display_chans and self.fh or 0) then stop=true break end
 		end
@@ -805,5 +806,7 @@ function _M:resetFade()
 	if self.channels[self.cur_channel] then log = self.channels[self.cur_channel].log end
 
 	-- Reset fade
-	log.reset_fade = core.game.getTime()
+	for i = 1,#log do
+		log[i].reset_fade = core.game.getTime()
+	end
 end

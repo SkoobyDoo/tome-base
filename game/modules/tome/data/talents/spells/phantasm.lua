@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ newTalent{
 	cooldown = 14,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
-	tactical = { DISABLE = function(self, t)
-			if self:getTalentLevel(t) >= 3 then
+	tactical = { DISABLE = function(self, t, aitarget)
+			if self:getTalentLevel(t) >= 3 and not aitarget:attr("blind") then
 				return 2
 			end
 			return 0
@@ -43,18 +43,18 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 28, 180) end,
 	getBlindPower = function(self, t) if self:getTalentLevel(t) >= 5 then return 4 else return 3 end end,
 	requires_target = true,
+	target = function(self, t) return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t} end,
 	action = function(self, t)
-		local tg = {type="ball", range=self:getTalentRange(t), selffire=true, radius=self:getTalentRadius(t), talent=t}
-		self:project(tg, self.x, self.y, DamageType.LITE, 1)
+		local tg = self:getTalentTarget(t)
 		game.level.map:particleEmitter(self.x, self.y, tg.radius, "sunburst", {radius=tg.radius, grids=grids, tx=self.x, ty=self.y, max_alpha=80})
 		if self:getTalentLevel(t) >= 3 then
-			tg.selffire= false
 			self:project(tg, self.x, self.y, DamageType.BLIND, t.getBlindPower(self, t))
 		end
 		if self:getTalentLevel(t) >= 4 then
-			tg.selffire= false
 			self:project(tg, self.x, self.y, DamageType.LIGHT, self:spellCrit(t.getDamage(self, t)))
 		end
+		tg.selffire = true
+		self:project(tg, self.x, self.y, DamageType.LITE, 1)
 		game:playSoundNear(self, "talents/heal")
 		return true
 	end,

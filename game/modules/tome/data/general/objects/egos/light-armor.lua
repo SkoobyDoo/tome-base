@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,11 +29,12 @@ newEntity{
 	keywords = {troll=true},
 	level_range = {10, 50},
 	greater_ego = 1,
-	rarity = 12,
+	rarity = 20,
 	cost = 14,
 	wielder = {
 		healing_factor = resolvers.mbonus_material(20, 10, function(e, v) v=v/100 return 0, v end), -- copied from robe.lua
 		life_regen = resolvers.mbonus_material(120, 30, function(e, v) v=v/10 return 0, v end),
+		max_life=resolvers.mbonus_material(40, 30),
 	},
 }
 
@@ -57,7 +58,7 @@ newEntity{
 	power_source = {technique=true},
 	name = "marauder's ", prefix=true, instant_resolve=true,
 	keywords = {marauder=true},
-	level_range = {30, 50},
+	level_range = {20, 50},
 	greater_ego = 1,
 	rarity = 20,
 	cost = 40,
@@ -71,29 +72,22 @@ newEntity{
 	},
 }
 
--- From Doctornull
 newEntity{
-   power_source = {nature=true},
-   name = "tempestuous ", prefix=true, instant_resolve=true,
-   keywords = {tempestuous=true},
-   level_range = {20, 50},
-   greater_ego = 1,
-   rarity = 20,
-   cost = 35,
-   wielder = {
-	  combat_def = resolvers.mbonus_material(16, 4),
-	  combat_def_ranged = resolvers.mbonus_material(16, 4),
-	  resists={
-	 [DamageType.LIGHTNING] = resolvers.mbonus_material(20, 10),
-	 [DamageType.COLD] = resolvers.mbonus_material(20, 10),
-	  },
-	  melee_project={
-	 [DamageType.LIGHTNING] = resolvers.mbonus_material(5, 5),
-	  },
-	  ranged_project={
-	 [DamageType.LIGHTNING] = resolvers.mbonus_material(5, 5),
-	  },
-   },
+	power_source = {technique=true},
+	name = "duelist's ", prefix=true, instant_resolve=true,
+	keywords = {duelist=true},
+	level_range = {20, 50},
+	greater_ego = 1,
+	rarity = 20,
+	cost = 40,
+	wielder = {
+		inc_stats = {
+			[Stats.STAT_CUN] = resolvers.mbonus_material(7, 3),
+			[Stats.STAT_DEX] = resolvers.mbonus_material(7, 3),
+		},
+		combat_def = resolvers.mbonus_material(8, 2),
+		combat_armor = resolvers.mbonus_material(8, 2),
+	},
 }
 
 -- From Doctornull
@@ -120,52 +114,6 @@ newEntity{
    },
 }
 
--- from Doctornull
-newEntity{
-   power_source = {nature=true},
-   name = "miasmic ", prefix=true, instant_resolve=true,
-   keywords = {miasmic=true},
-   level_range = {20, 50},
-   greater_ego = 1,
-   rarity = 20,
-   cost = 35,
-   wielder = {
-	  --combat_physspeed = 0.15,
-	  combat_apr = resolvers.mbonus_material(15, 5),
-	  resists={
-	 [DamageType.ACID] = resolvers.mbonus_material(20, 10),
-	 [DamageType.NATURE] = resolvers.mbonus_material(20, 10),
-	  },
-	  melee_project={
-	 [DamageType.ACID] = resolvers.mbonus_material(5, 5),
-	  },
-	  ranged_project={
-	 [DamageType.ACID] = resolvers.mbonus_material(5, 5),
-	  },
-   },
-}
-
-newEntity{
-   power_source = {arcane=true},
-   name = "aetheric ", prefix=true, instant_resolve=true,
-   keywords = {aetheric=true},
-   level_range = {30, 50},
-   greater_ego = 1,
-   rarity = 30,
-   cost = 55,
-   wielder = {
-	  combat_spellpower = resolvers.mbonus_material(20, 5),
-	  mana_regen = resolvers.mbonus_material(30, 10, function(e, v) v=v/100 return 0, v end),
-
-	  melee_project={
-	 [DamageType.ARCANE] = resolvers.mbonus_material(5, 5),
-	  },
-	  ranged_project={
-	 [DamageType.ARCANE] = resolvers.mbonus_material(5, 5),
-	  },
-   },
-}
-
 -- Doctornull
 newEntity{
    power_source = {arcane=true},
@@ -176,7 +124,7 @@ newEntity{
    rarity = 30,
    cost = 65,
    wielder = {
-	  resist_all_on_teleport = resolvers.mbonus_material(10, 10),
+	  resist_all_on_teleport = resolvers.mbonus_material(20, 10),
 	  defense_on_teleport = resolvers.mbonus_material(20, 10),
 	  effect_reduction_on_teleport = resolvers.mbonus_material(20, 10),
 
@@ -196,12 +144,14 @@ newEntity{
    charm_power = resolvers.mbonus_material(80, 20),
    charm_power_def = {add=5, max=10, floor=true},
    resolvers.charm("blink to a nearby random location (rad %d)", 25, function(self, who)
-			  game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
-			  who:teleportRandom(who.x, who.y, self:getCharmPower(who))
-			  game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
-			  game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
-			  return {id=true, used=true}
-   end),
+		game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true, do_color=true})
+		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
+		who:teleportRandom(who.x, who.y, self:getCharmPower(who))
+		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
+		return {id=true, used=true}
+   end,
+   "T_GLOBAL_CD",
+   {tactical = {ESCAPE = 2}}),
 }
 
 newEntity{
@@ -229,7 +179,7 @@ newEntity{
 	cost = 80,
 	resolvers.charmt(Talents.T_SECOND_WIND, {3,4,5}, 35),
 	wielder = {
-		cancel_damage_chance = resolvers.mbonus_material(8, 4),
+		combat_def = resolvers.mbonus_material(8, 2),
 		combat_physcrit = resolvers.mbonus_material(7, 3),
 		combat_apr = resolvers.mbonus_material(15, 5),
 		combat_def = resolvers.mbonus_material(10, 5),
@@ -241,42 +191,20 @@ newEntity{
 	power_source = {nature=true},
 	name = "multi-hued ", prefix=true, instant_resolve=true,
 	keywords = {multihued=true},
-	level_range = {40, 50},
+	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 29,
 	cost = 47,
 	wielder = {
 		resists={
-			[DamageType.ACID] = resolvers.mbonus_material(8, 5),
-			[DamageType.LIGHTNING] = resolvers.mbonus_material(8, 5),
-			[DamageType.FIRE] = resolvers.mbonus_material(8, 5),
-			[DamageType.COLD] = resolvers.mbonus_material(8, 5),
+			[DamageType.ACID] = resolvers.mbonus_material(15, 5),
+			[DamageType.LIGHTNING] = resolvers.mbonus_material(15, 5),
+			[DamageType.FIRE] = resolvers.mbonus_material(15, 5),
+			[DamageType.COLD] = resolvers.mbonus_material(15, 5),
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(15, 5),
 		},
-		on_melee_hit={
-			[DamageType.ACID] = resolvers.mbonus_material(8, 5),
-			[DamageType.LIGHTNING] = resolvers.mbonus_material(8, 5),
-			[DamageType.FIRE] = resolvers.mbonus_material(8, 5),
-			[DamageType.COLD] = resolvers.mbonus_material(8, 5),
-		},
-	},
-}
+		combat_mindpower = resolvers.mbonus_material(10, 5),
 
-newEntity{
-	power_source = {nature=true},
-	name = "caller's ", prefix=true, instant_resolve=true,
-	keywords = {callers=true},
-	level_range = {40, 50},
-	greater_ego = 1,
-	rarity = 29,
-	cost = 47,
-	wielder = {
-		resists={
-			[DamageType.FIRE] = resolvers.mbonus_material(8, 5),
-			[DamageType.COLD] = resolvers.mbonus_material(8, 5),
-			[DamageType.NATURE] = resolvers.mbonus_material(8, 5),
-			[DamageType.PHYSICAL] = resolvers.mbonus_material(8, 5),
-		},
-		comnbat_mindpower = resolvers.mbonus_material(10, 5),
 	},
 }
 
@@ -311,5 +239,6 @@ newEntity{
 			[Stats.STAT_CUN] = resolvers.mbonus_material(6, 3),
 			[Stats.STAT_MAG] = resolvers.mbonus_material(6, 3),
 		},
+		max_life=resolvers.mbonus_material(40, 30),
 	},
 }

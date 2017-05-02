@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,6 +19,12 @@
 
 setStatusAll{no_teleport=true, vault_only_door_open=true}
 
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 30 and zone.grid_list.__loaded_files["/data/general/grids/mountain.lua"] and zone.grid_list.__loaded_files["/data/general/grids/sand.lua"]
+end)
+specialList("actor", {
+	"/data/general/npcs/multihued-drake.lua",
+}, true)
 startx = 25
 starty = 6
 

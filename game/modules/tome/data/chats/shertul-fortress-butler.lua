@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ Welcome, master.]],
 		{"You asked me to come, about the rod of recall?", jump="recall", cond=function() return q:isCompleted("recall") and not q:isCompleted("recall-done") end},
 		{"Would it be possible for my Transmogrification Chest to automatically extract gems?", jump="transmo-gems", cond=function(npc, player) return not q:isCompleted("transmo-chest-extract-gems") and q:isCompleted("transmo-chest") and player:knowTalent(player.T_EXTRACT_GEMS) end},
 		{"Are there any training facilities?", jump="training", cond=function() return not q:isCompleted("training") end},
+		{"Can you use your magic to alter the appearance of my gear?", jump="shimmer", cond=function() return not q:isCompleted("shimmer") end},
 		{"I find your appearance unsettling. Any way you can change it?", jump="changetile", cond=function() return q:isCompleted("recall-done") end},
 		{"I have come upon a strange thing indeed. #LIGHT_GREEN#[tell him about Melinda]", jump="cure-melinda", cond=function() return ql and ql:isStatus(engine.Quest.COMPLETED, "saved-beach") and not ql:isStatus(engine.Quest.FAILED) and not ql:isStatus(engine.Quest.COMPLETED, "can_come_fortress") end},
 		{"[leave]"},
@@ -124,7 +125,7 @@ Done.]],
 
 newChat{ id="farportal",
 	text = [[Long ago the Sher'tuls used farportals not only for transportation to known locations, but also to explore new parts of the world, or even other worlds.
-This Fortress is equipped with an exploratory farportal, and now has enough energy to allow one teleportation. Each teleportation will take you to a random part of the universe and use 30 energy.
+This Fortress is equipped with an exploratory farportal, and now has enough energy to allow one teleportation. Each teleportation will take you to a random part of the universe and use 45 energy.
 Beware that the return portal may not be nearby your arrival point; you will need to find it. You can use the rod of recall to try to force an emergency recall, but it has high chances of breaking the exploratory farportal forever.
 You may use the farportal; however, beware - I sense a strange presence in the farportal room.]],
 	answers = {
@@ -147,6 +148,15 @@ I will need to use 50 energy to do this.]],
 	answers = {
 		{"Maybe later."},
 		{"That could be quite useful. Yes, please do it.", cond=function() return q.shertul_energy >= 50 end, action=function() q:open_training() end},
+	}
+}
+
+newChat{ id="shimmer",
+	text = [[Yes master, the Mirror of Reflections is what you need. It is currently dormant but could be re-activated.
+I will need to use 10 energy to do this.]]..(profile:isDonator(1) and "" or "\n#{italic}##CRIMSON#This feature is purely cosmetic is available only to donators/buyers. You can unlock the room and use the preview but you will not be able to validate your choices.#{normal}#"),
+	answers = {
+		{"Maybe later."},
+		{"That could be quite nice. Yes, please do it.", cond=function() return q.shertul_energy >= 10 end, action=function() q:open_shimmer() end},
 	}
 }
 

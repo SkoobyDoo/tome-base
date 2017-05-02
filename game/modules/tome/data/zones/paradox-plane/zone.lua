@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ return {
 	color_shown = {0.7, 0.6, 0.8, 1},
 	color_obscure = {0.7*0.6, 0.6*0.6, 0.8*0.6, 0.6},
 	ambient_music = "Through the Dark Portal.ogg",
+	effects = {"EFF_ZONE_AURA_OUT_OF_TIME"},
 	levels =
 	{
 		[1] = { generator = {

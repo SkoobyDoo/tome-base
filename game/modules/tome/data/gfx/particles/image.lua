@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,14 +19,17 @@
 
 base_size = 64
 
-local r = 1
-local g = 1
-local b = 1
-local a = 1
+local r = r or 1
+local g = g or 1
+local b = b or 1
+local a = a or 1
+local av = av or 0
+local once = once and true or false
 
+local nb = 0
 return { generator = function()
 	return {
-		life = core.particles.ETERNAL,
+		life = life or core.particles.ETERNAL,
 		size = size, sizev = 0, sizea = 0,
 
 		x = x, xv = 0, xa = 0,
@@ -37,11 +40,14 @@ return { generator = function()
 		r = r, rv = 0, ra = 0,
 		g = g, gv = 0, ga = 0,
 		b = b, bv = 0, ba = 0,
-		a = a, av = 0, aa = 0,
+		a = a, av = av, aa = 0,
 	}
 end, },
 function(self)
-	self.ps:emit(1)
+	nb = nb + 1
+	if not once or nb <= 1 then
+		self.ps:emit(1)
+	end
 end,
 1,
 image

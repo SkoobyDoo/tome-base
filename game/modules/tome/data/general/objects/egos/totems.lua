@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,7 +33,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d equilibrium"):format(self:getCharmPower(who, true) / 5) end, function(self, who)
 			who:incEquilibrium(-self:getCharmPower(who, true) / 5)
 		end},
-	}
+	},
+	use_power = {tactical = {EQUILIBRIUM = 0.5}}
 }
 
 newEntity{
@@ -47,7 +48,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d stamina"):format(self:getCharmPower(who, true) / 6) end, function(self, who)
 			who:incStamina(self:getCharmPower(who, true) / 6)
 		end},
-	}
+	},
+	use_power = {tactical = {STAMINA = 0.5}}
 }
 
 newEntity{
@@ -77,6 +79,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
+		talent_cd_reduction={[Talents.T_RUSHING_CLAWS]=1},
 		learn_talent = {[Talents.T_RUSHING_CLAWS] = resolvers.mbonus_material(4, 1)},
 	},
 }
@@ -90,6 +93,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
+		talent_cd_reduction={[Talents.T_LAY_WEB]=1},
 		learn_talent = {[Talents.T_LAY_WEB] = resolvers.mbonus_material(4, 1)},
 	},
 }

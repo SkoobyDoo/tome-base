@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ require "engine.class"
 require "engine.KeyCommand"
 
 --- Handles key binds to "virtual" actions
+-- @classmod engine.KeyBind
 module(..., package.seeall, class.inherit(engine.KeyCommand))
 
 _M.binds_def = {}
@@ -41,7 +42,7 @@ end
 
 --- Loads a list of keybind definitions
 -- Keybind definitions are in /data/keybinds/. Modules can define new ones.
--- @param a string representing the keybind, separated by commas. I.e: "move,hotkeys,actions,inventory"
+-- @param str a string representing the keybind, separated by commas. I.e: "move,hotkeys,actions,inventory"
 function _M:load(str)
 	local defs = str:split(",")
 	for i, def in ipairs(defs) do
@@ -264,17 +265,15 @@ function _M:triggerVirtual(virtual)
 end
 
 --- Adds a key/command combination
--- @param sym the key to handle
--- @param mods a table with the mod keys needed, i.e: {"ctrl", "alt"}
+-- @param virtual the key to handle
 -- @param fct the function to call when the key is pressed
 function _M:addBind(virtual, fct)
 	self.virtuals[virtual] = fct
 end
 
 --- Adds a key/command combination
--- @param sym the key to handle
--- @param mods a table with the mod keys needed, i.e: {"ctrl", "alt"}
--- @param fct the function to call when the key is pressed
+-- @param t {virtual: fct}
+-- @see KeyBind.addBind
 function _M:addBinds(t)
 	local later = {}
 	for virtual, fct in pairs(t) do

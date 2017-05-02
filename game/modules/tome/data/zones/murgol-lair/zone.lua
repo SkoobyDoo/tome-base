@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,10 +33,11 @@ return {
 --	all_lited = true,
 	ambient_music = "Enemy at the gates.ogg",
 	persistent = "zone",
-	max_material_level = 2,
+	max_material_level = 1,
 	no_random_lore = true,
 	is_invaded = is_invaded,
 	underwater = true,
+	effects = {"EFF_ZONE_AURA_UNDERWATER"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",

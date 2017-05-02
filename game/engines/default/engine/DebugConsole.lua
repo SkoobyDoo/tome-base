@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,10 +20,15 @@
 require "engine.class"
 require "engine.Dialog"
 
+--- Debug Console
+-- @classmod engine.DebugConsole
+-- @inherit engine.Dialog
 module(..., package.seeall, class.inherit(engine.Dialog))
 
 -- Globals to all instances of the console
+--- Current scroll offset
 offset = 0
+--- History of debug console defaults to help text for easy usage
 history = {
 	[[<<<<<------------------------------------------------------------------------------------->>>>>]],
 	[[<                          Welcome to the T-Engine Lua Console                                >]],
@@ -46,12 +51,27 @@ history = {
 	[[<     Page Down          :=: Scrolls down 75% of the history                                  >]],
 	[[<<<<<------------------------------------------------------------------------------------->>>>>]],
 }
+--- String representation of current line
 line = ""
+--- Integer Position in current line
 line_pos = 0
+--- Integer command selection
 com_sel = 0
+--- Registered commands
 commands = {}
 
 local find_base
+--- Parses a string for autocompletion
+-- @local
+-- @string remaining the string to parse, also used for recursion
+-- @return[1] nil
+-- @return[1] error object
+-- @return[2] nil
+-- @return[2] "%s does not exist."
+-- @return[3] nil
+-- @return[3] "%s is not a valid path"
+-- @return[4] head
+-- @return[4] tail
 find_base = function(remaining)
 	-- Check if we are in a string by counting quotation marks
 	local _, nsinglequote = remaining:gsub("\'", "")
@@ -105,6 +125,7 @@ find_base = function(remaining)
 	end
 end
 
+--- Init the debug console
 function _M:init()
 	self.cursor = "|"
 	self.blink_period = 20
@@ -194,12 +215,20 @@ function _M:init()
 			game:unregisterDialog(self)
 		end,
 		_BACKSPACE = function()
-			_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
-			_M.line_pos = util.bound(_M.line_pos - 1, 0, #_M.line)
+			if _M.line_pos > 0 then
+				local st = core.key.modState("ctrl") and 0 or _M.line_pos - 1
+				for i = _M.line_pos - 1, st, -1 do
+					_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
+					_M.line_pos = _M.line_pos - 1
+				end
+			end
 			self.changed = true
 		end,
 		_DELETE = function()
-			_M.line = _M.line:sub(1, _M.line_pos) .. _M.line:sub(_M.line_pos + 2)
+			local st = core.key.modState("ctrl") and #_M.line or _M.line_pos
+			for i = _M.line_pos, st do
+				_M.line = _M.line:sub(1, _M.line_pos) .. _M.line:sub(_M.line_pos + 2)
+			end
 			self.changed = true
 		end,
 		[{"_END", "ctrl"}] = function()
@@ -230,6 +259,7 @@ function _M:init()
 			self:autoComplete()
 		end,
 		[{"_SPACE", "ctrl"}] = function(c)
+			core.key.flush() -- flush input buffer
 			local base, remaining = find_base(_M.line:sub(1,_M.line_pos))
 			local func = base[remaining]
 			if not func or type(func) ~= "function" then
@@ -246,23 +276,24 @@ function _M:init()
 				table.insert(_M.history, "    " .. line:gsub("\t", "    "))
 			end
 		end,
-                [{"_SPACE", "ctrl", "shift"}] = function(c)
-                        local base, remaining = find_base(_M.line:sub(1,_M.line_pos))
-                        local func = base[remaining]
-                        if not func or type(func) ~= "function" then
-                                table.insert(_M.history, "<<<<< No function found >>>>>")
-                                return
-                        end
-                        local lines, fname, lnum = self:functionHelp(func, true)
-                        if not lines then
-                                table.insert(_M.history, ([[<<<<< %s >>>>>]]):format(fname))
-                                return
-                        end
-                        table.insert(_M.history, ([[<<<<< Definition found in %s at line %d. >>>>>]]):format(fname, lnum))
-                        for _, line in ipairs(lines) do
-                                table.insert(_M.history, "    " .. line:gsub("\t", "    "))
-                        end
-                end,
+		[{"_SPACE", "ctrl", "shift"}] = function(c)
+			core.key.flush() -- flush input buffer
+			local base, remaining = find_base(_M.line:sub(1,_M.line_pos))
+			local func = base[remaining]
+			if not func or type(func) ~= "function" then
+					table.insert(_M.history, "<<<<< No function found >>>>>")
+					return
+			end
+			local lines, fname, lnum = self:functionHelp(func, true)
+			if not lines then
+					table.insert(_M.history, ([[<<<<< %s >>>>>]]):format(fname))
+					return
+			end
+			table.insert(_M.history, ([[<<<<< Definition found in %s at line %d. >>>>>]]):format(fname, lnum))
+			for _, line in ipairs(lines) do
+					table.insert(_M.history, "    " .. line:gsub("\t", "    "))
+			end
+		end,
 		_PAGEUP = function()
 			local num_lines = math.floor(self.h / self.font_h * 0.75)
 			self:scrollUp(num_lines)
@@ -282,6 +313,7 @@ function _M:init()
 	}
 end
 
+--- Display function
 function _M:display()
 	-- Blinking cursor
 	self.blink = self.blink - 1
@@ -293,6 +325,9 @@ function _M:display()
 	engine.Dialog.display(self)
 end
 
+--- @param s screen
+-- @param w width
+-- @param h height
 function _M:drawDialog(s, w, h)
 	local buffer = (self.ih % self.font_h) / 2
 	local i, dh = #_M.history - _M.offset, self.ih - buffer - self.font:lineSkip()
@@ -311,7 +346,7 @@ function _M:drawDialog(s, w, h)
 end
 
 --- Scroll the zone
--- @param i number representing how many lines to scroll
+-- @int i number representing how many lines to scroll
 function _M:scrollUp(i)
 	_M.offset = _M.offset + i
 	if _M.offset > #_M.history - 1 then _M.offset = #_M.history - 1 end
@@ -319,7 +354,7 @@ function _M:scrollUp(i)
 	self.changed = true
 end
 
---- Autocomplete the current line
+--- Autocomplete the current line  
 -- Will handle either tables (eg. mod.cla -> mod.class) or paths (eg. "/mod/cla" -> "/mod/class/")
 function _M:autoComplete()
 	local base, to_complete = find_base(_M.line:sub(1, _M.line_pos))
@@ -419,7 +454,8 @@ function _M:autoComplete()
 end
 
 --- Prints comments for a function
--- @param function
+-- @func func only works on a function obviously
+-- @param[type=boolean] verbose give extra junk
 function _M:functionHelp(func, verbose)
 	if type(func) ~= "function" then return nil, "Can only give help on functions." end
 	local info = debug.getinfo(func)
@@ -457,8 +493,8 @@ function _M:functionHelp(func, verbose)
 end
 
 --- Add a list of strings to the history with multiple columns
--- @param strings Array of strings to add to the history
--- @param offset Number of spaces to add on the left-hand side
+-- @param[type=table] strings Array of strings to add to the history
+-- @int offset Number of spaces to add on the left-hand side
 function _M:historyColumns(strings, offset)
 	local offset_str = string.rep(" ", offset and offset or 0)
 	local ox, oy = self.font:size(offset_str)
@@ -466,12 +502,6 @@ function _M:historyColumns(strings, offset)
 	local width = 0  --
 	local max_width = 80 -- Maximum field width to print
 	
---	for i, k in ipairs(strings) do
---		if #k > #longest_key then
---			longest_key = k
---		end
---	end
-
 	for i, k in ipairs(strings) do
 		if #k > width then
 			longest_key = k
@@ -483,12 +513,10 @@ function _M:historyColumns(strings, offset)
 		end
 	end
 	
---	local tx, ty = self.font:size(longest_key .. "  ")
-	local tx, ty = self.font:size(string.sub(longest_key,1,width) .. "...  ") --
+	local tx, ty = self.font:size(string.sub(longest_key,1,width) .. "...  ")
 	local num_columns = math.floor((self.w - ox) / tx)
 	local num_rows = math.ceil(#strings / num_columns)
 
---	local line_format = offset_str..string.rep("%-"..tostring(#longest_key).."s ", num_columns)
 	local line_format = offset_str..string.rep("%-"..tostring(math.min(max_width+5,width+5)).."s ", num_columns) --
 	
 	for i=1,num_rows do
@@ -496,9 +524,9 @@ function _M:historyColumns(strings, offset)
 		for j=1,num_columns do
 			vals[j] = strings[i + (j - 1) * num_rows] or ""
 			--Truncate and annotate if too long
-			if #vals[j] > width then --
-				vals[j] = string.sub(vals[j],1,width) .. "..." --
-			end --
+			if #vals[j] > width then
+				vals[j] = string.sub(vals[j],1,width) .. "..."
+			end
 		end
 		table.insert(_M.history, line_format:format(unpack(vals)))
 	end

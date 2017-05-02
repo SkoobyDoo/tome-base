@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -87,9 +87,11 @@ newEntity{
 		{type="armor", subtype="head", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="feet", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 	},
+	resolvers.drops{chance=100, nb=1, {defined="ELANDAR_JOURNAL2"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=5, every=8},
 		[Talents.T_STONE_SKIN]={base=7, every=6},
 		[Talents.T_QUICKEN_SPELLS]={base=7, every=6},
 		[Talents.T_SPELLCRAFT]={base=7, every=6},
@@ -158,13 +160,14 @@ newEntity{
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, FEET=1, HEAD=1, HANDS=1 },
 	resolvers.equip{
-		{type="weapon", subtype="sword", force_drop=true,  forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
+		{type="weapon", subtype="longsword", force_drop=true,  forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="weapon", subtype="waraxe", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="massive", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="feet", name="pair of voratun boots", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="head", name="voratun helm", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="hands", name="voratun gauntlets", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 	},
+	resolvers.drops{chance=100, nb=1, {defined="ARGONIEL_ATHAME"} },
 	resolvers.drops{chance=100, nb=1, {defined="PEARL_LIFE_DEATH"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 

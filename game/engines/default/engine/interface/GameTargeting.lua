@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ local Map = require "engine.Map"
 local Target = require "engine.Target"
 
 --- Handles default targeting interface & display
+-- @classmod engine.generator.interface.GameTargeting
 module(..., package.seeall, class.make)
 
 --- Initializes targeting
@@ -68,7 +69,9 @@ function _M:targetDisplayTooltip(dx, dy, force, nb_keyframes)
 
 		-- Move target around
 		if self.old_tmx ~= tmx or self.old_tmy ~= tmy then
-			self.target.target.x, self.target.target.y = tmx, tmy
+			if not (self.target_mode and self.target_no_move_tooltip) then
+				self.target.target.x, self.target.target.y = tmx, tmy
+			end
 		end
 		self.old_tmx, self.old_tmy = tmx, tmy
 	end
@@ -131,6 +134,10 @@ function _M:targetMode(v, msg, co, typ)
 		self.target:setActive(true, typ)
 		self.target_style = "lock"
 		self.target_warning = true
+		self.target_no_move_tooltip = true
+		if type(typ) == "table" and typ.no_move_tooltip then
+			self.target_no_move_tooltip = true
+		end
 		if type(typ) == "table" and typ.talent then
 			self.target_warning = typ.talent.name
 		elseif type(typ) == "table" and typ.__name then
@@ -145,16 +152,20 @@ function _M:targetMode(v, msg, co, typ)
 			self.key:setCurrent()
 
 			local do_scan = true
-			if self.target_no_star_scan
-			   or (
-			       self.target.target.entity and
-			       self.level.map.seens(self.target.target.entity.x, self.target.target.entity.y) and
-			       self.player ~= self.target.target.entity
-			      ) then
+			if type(typ) == "table" and typ.no_start_scan then
+				do_scan = false
+			else
+				if self.target_no_start_scan
+				   or (
+				       self.target.target.entity and
+				       self.level.map.seens(self.target.target.entity.x, self.target.target.entity.y) and
+				       self.player ~= self.target.target.entity
+				      ) then
 
-				if type(typ) == "table" and typ.first_target ~= "friend" and self.player:reactionToward(self.target.target.entity) >= 0 then
-				else
-					do_scan = false
+					if type(typ) == "table" and typ.first_target ~= "friend" and self.target.target and self.target.target.entity and self.player:reactionToward(self.target.target.entity) >= 0 then
+					else
+						do_scan = false
+					end
 				end
 			end
 			if do_scan then
@@ -185,8 +196,8 @@ function _M:targetSetupKey()
 	local accept = function() self:targetMode(false, false) self.tooltip_x, self.tooltip_y = nil, nil end
 
 	self.targetmode_key = engine.KeyBind.new()
-	self.targetmode_key:addCommands{ _SPACE=accept, }
-
+	self.targetmode_key:addCommands{ _SPACE=accept, [{"_SPACE","ctrl"}]=accept, [{"_RETURN","ctrl"}]=accept, [{"_KP_ENTER","ctrl"}]=accept }
+	
 	if engine.interface and engine.interface.PlayerHotkeys then
 		engine.interface.PlayerHotkeys:bindAllHotkeys(self.targetmode_key, function(i)
 			if self.targetmode_trigger_hotkey == i then accept() end
@@ -271,12 +282,12 @@ function _M:targetGetForPlayer(typ)
 	if self.target.forced then return unpack(self.target.forced) end
 	if coroutine.running() and typ then
 		local msg
-		self.target_no_star_scan = nil
+		self.target_no_start_scan = nil
 		if type(typ) == "string" then msg, typ = typ, nil
 		elseif type(typ) == "table" then
 			if typ.default_target then
 				self.target.target.entity = typ.default_target
-				self.target_no_star_scan = true
+				self.target_no_start_scan = true
 			end
 			msg = typ.msg
 		end

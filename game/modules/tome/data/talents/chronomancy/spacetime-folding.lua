@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -284,7 +284,7 @@ newTalent{
 		-- Make our tether
 		local tether = mod.class.Object.new{
 			old_feat = oe, type = "temporal", subtype = "tether",
-			name = "spatial tether", add_mos = {{image="object/temporal_instability.png"}},
+			name = self.name:capitalize() .. "'s spatial tether", add_mos = {{image="object/temporal_instability.png"}},
 			display = '&', color=colors.LIGHT_BLUE,
 			temporary = t.getDuration(self, t), 
 			power = power, dest_power = dest_power, chance = chance,

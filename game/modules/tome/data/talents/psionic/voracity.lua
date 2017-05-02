@@ -50,7 +50,7 @@ newTalent{
 	action = function(self, t)
 		local en = t.getLeech(self, t)
 		local dam = t.getDam(self, t)
-		local slow = t.getSlow(self, t)
+		local slow = t.getSlow(self, t) * 100
 		local psi = en
 		local tg = self:getTalentTarget(t)
 		local trans = self:hasEffect(self.EFF_TRANSCENDENT_TELEKINESIS)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ newEntity{ base = "BASE_NPC_ZIGURANTH",
 		{type="armor", subtype="heavy", forbid_power_source={arcane=true}, autoreq=true},
 	},
 	combat_armor = 10, combat_def = 6, life_rating = 11,
-	equilibrium_regen = -20,
+	equilibrium_regen = -10,
 
 	autolevel = "wildcaster",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=1, },
@@ -119,7 +119,7 @@ newEntity{ base = "BASE_NPC_ZIGURANTH",
 		{type="armor", subtype="heavy", forbid_power_source={arcane=true}, autoreq=true},
 	},
 	combat_armor = 10, combat_def = 6, life_rating = 14,
-	equilibrium_regen = -20,
+	equilibrium_regen = -10,
 
 	autolevel = "warriorwill",
 	ai_state = { ai_move="move_complex", talent_in=2, },

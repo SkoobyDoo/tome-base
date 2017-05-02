@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
+
+use_ui = "quest-main"
 
 -- Main quest: the Staff of Absorption
 name = "A mysterious staff"
@@ -58,7 +60,7 @@ start_ambush = function(self, who)
 		self.life = self.max_life
 		for _, e in pairs(game.level.entities) do
 			if not game.party:hasMember(e) then
-				game.level:removeEntity(e)
+				game.level:removeEntity(e, true)
 				e.dead = true
 			end
 		end

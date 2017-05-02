@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -305,17 +305,20 @@ You feel good!]],
 			for pmem, def in pairs(game.party.members) do
 				if pmem.caldera_x and pmem.caldera_y then
 					pmem:move(pmem.caldera_x, pmem.caldera_y, true)
+					if not game.level:hasEntity(pmem) then game.level:addEntity(pmem) end
 				end
 			end
 			game.party:setPlayer(game:getPlayer(true))
+			if self.success then
+				world:gainAchievement("ALL_DREAMS", self.summoner, dream)
+			end
 			if self.success and danger then
 				require("engine.ui.Dialog"):simpleLongPopup("Deep slumber...", msg, 600)
 				game.logPlayer(game.player, msg:gsub("\n", " "))
 				game.player:setEffect(game.player.EFF_VICTORY_RUSH_ZIGUR, 4, {})
-				world:gainAchievement("ALL_DREAMS", self.summoner, dream)
 			elseif danger then
 				local msg = [[As you die in a dream you suddenly wake up.
-Posionous fumes take their toll on your body!]]
+Poisonous fumes take their toll on your body!]]
 				game.logPlayer(game.player)
 				require("engine.ui.Dialog"):simpleLongPopup("Deep slumber...", msg, 600)
 				local hit = math.max(0, game.player.life * 2 / 3)

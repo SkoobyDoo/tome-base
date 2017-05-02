@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,8 +17,25 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+if game.zone.from_farportal then
+
 newChat{ id="welcome",
-	text = [[#LIGHT_GREEN#*Before you stands an humanoid shape filled with 'nothing'. It seems to stare at you.*#WHITE#
+	text = [[#LIGHT_GREEN#*Before you stands a humanoid shape filled with 'nothing'. It seems to stare at you.*#WHITE#
+I am the Eidolon and you are not welcome here!
+No matter how you came to this plane, #{bold}#DO NOT COME BACK!
+NOW BEGONE!
+#{normal}#
+.]],
+	answers = {
+		{"...", action=function() game.level.data.eidolon_exit(false) end},
+	}
+}
+
+
+else
+
+newChat{ id="welcome",
+	text = [[#LIGHT_GREEN#*Before you stands a humanoid shape filled with 'nothing'. It seems to stare at you.*#WHITE#
 I have brought you here on the instant of your death. I am the Eidolon.
 I have deemed you worthy of my 'interest'. I will watch your future steps with interest.
 You may rest here, and when you are ready I will send you back to the material plane.
@@ -69,5 +86,7 @@ Are you sure?]],
 		{"No actually, perhaps life is still worth it!"},
 	}
 }
+
+end
 
 return "welcome"

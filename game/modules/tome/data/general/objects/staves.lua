@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ newEntity{
 		damrange = 1.2,
 		sound = {"actions/melee", pitch=0.6, vol=1.2}, sound_miss = {"actions/melee", pitch=0.6, vol=1.2},
 	},
+	command_staff = {inc_damage = 1,},
 	desc = [[Staves designed for wielders of magic, by the greats of the art.]],
 	egos = "/data/general/objects/egos/staves.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },
 }
@@ -54,7 +55,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 2.5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 3,
+		combat_spellcrit = 1,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -69,7 +74,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 3,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 6,
+		combat_spellcrit = 2,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -84,7 +93,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 3.5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 9,
+		combat_spellcrit = 3,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -99,7 +112,11 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 4.5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 12,
+		combat_spellcrit = 4,
+	},
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -114,5 +131,9 @@ newEntity{ base = "BASE_STAFF",
 		physcrit = 5,
 		dammod = {mag=0.8},
 	},
-	wielder = resolvers.staff_wielder(),
+	wielder = {
+		combat_spellpower = 15,
+		combat_spellcrit = 5,
+	},
+	resolvers.staff_element(),
 }

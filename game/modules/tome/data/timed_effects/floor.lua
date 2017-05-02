@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@ local function floorEffect(t)
 	t.type = "other"
 	t.subtype = { floor=true }
 	t.status = "neutral"
-	t.parameters = {}
 	t.on_gain = function(self, err) return nil, "+"..t.desc end
 	t.on_lose = function(self, err) return nil, "-"..t.desc end
 
@@ -51,14 +50,18 @@ floorEffect{
 
 floorEffect{
 	desc = "Font of Life", image = "talents/grand_arrival.png",
-	long_desc = function(self, eff) return ("The target is near a font of life, granting +%0.2f life regeneration, -%0.2f equilibrium regeneration, +%0.2f stamina regeneration and +%0.2f psi regeneration. Undeads are not affected."):format(eff.power, eff.power, eff.power, eff.power) end,
+	long_desc = function(self, eff) return ("The target is near a font of life, granting %+0.2f life regeneration, %+0.2f equilibrium regeneration, %+0.2f stamina regeneration and %+0.2f psi regeneration.  (Only living creatures benefit.)"):format(eff.power, eff.equilibrium, eff.stamina, eff.psi) end,
+	parameters = {power=1, equilibrium=0, stamina=0, psi=0},
 	activate = function(self, eff)
-		if self:attr("undead") then eff.power = 0 return end
+		if not self:checkClassification("living") then eff.power = 0 return end
 		eff.power = 3 + game.zone:level_adjust_level(game.level, game.zone, "object") / 2
+		eff.psi = (eff.power/5)^.75
+		eff.stamina = eff.psi
+		eff.equilibrium = -eff.psi
 		self:effectTemporaryValue(eff, "life_regen", eff.power)
-		self:effectTemporaryValue(eff, "stamina_regen", eff.power)
-		self:effectTemporaryValue(eff, "psi_regen", eff.power)
-		self:effectTemporaryValue(eff, "equilibrium_regen", -eff.power)
+		self:effectTemporaryValue(eff, "stamina_regen", eff.stamina)
+		self:effectTemporaryValue(eff, "psi_regen", eff.psi)
+		self:effectTemporaryValue(eff, "equilibrium_regen", eff.equilibrium)
 	end,
 }
 
@@ -94,11 +97,14 @@ floorEffect{
 
 floorEffect{
 	desc = "Protective Aura", image = "talents/barrier.png",
-	long_desc = function(self, eff) return ("The target is near a protective aura, granting +%d armour and +%d physical save."):format(eff.power, eff.power * 3) end,
+	long_desc = function(self, eff) return ("The target is near a protective aura, granting +%d armour and +%d physical save."):format(eff.armor, eff.power) end,
+	parameters = {power=1, armor=1},
 	activate = function(self, eff)
-		eff.power = 3 + game.zone:level_adjust_level(game.level, game.zone, "object") / 5
+		local power = 3 + game.zone:level_adjust_level(game.level, game.zone, "object") / 2
+		eff.power = power
+		eff.armor = power^.75
 		self:effectTemporaryValue(eff, "combat_armor", eff.power)
-		self:effectTemporaryValue(eff, "combat_physresist", eff.power * 3)
+		self:effectTemporaryValue(eff, "combat_physresist", eff.armor)
 	end,
 }
 

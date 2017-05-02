@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 require "engine.class"
 
 --- Handle quests
+-- @classmod engine.Quest
 module(..., package.seeall, class.make)
 
 PENDING = 0
@@ -41,11 +42,13 @@ function _M:init(q, who)
 	self.status = PENDING
 	self.objectives = {}
 	if self:check("on_grant", who) then self.do_not_gain = true end
+	self:triggerHook{"Quest:init"}
 end
 
 --- Checks if the quest (or sub-objective) is complete
 -- @param sub a subobjective id or nil for the whole quest
--- @return true or false
+-- @return[1] false if objective still incomplete
+-- @return[2] true if objective completed
 function _M:isCompleted(sub)
 	if sub then
 		if self.objectives[sub] and self.objectives[sub] == COMPLETED then return true else return false end
@@ -53,8 +56,20 @@ function _M:isCompleted(sub)
 	if self.status == COMPLETED then return true else return false end
 end
 
+--- Checks if the quest (or sub-objective) is failed
+-- @param sub a subobjective id or nil for the whole quest
+-- @return[1] false if objective is not failed
+-- @return[2] true if objective failed
+function _M:isFailed(sub)
+	if sub then
+		if self.objectives[sub] and self.objectives[sub] == FAILED then return true else return false end
+	end
+	if self.status == FAILED then return true else return false end
+end
+
 --- Checks if the quest is ended (DONE or FAILED)
--- @return true or false
+-- @return[1] false if quest didn't end
+-- @return[2] true if quest ended
 function _M:isEnded()
 	if self.status == DONE or self.status == FAILED then return true else return false end
 end
@@ -71,7 +86,13 @@ end
 
 --- Sets the quests status or sub-objective status
 -- @param status one of the possible quest status (PENDING, COMPLETED, DONE, FAILED)
+-- @param[opt] sub sub-objective
+-- @param who who did this??
 function _M:setStatus(status, sub, who)
+	local hk = {"Quest:setStatus", status=status, sub=sub, who=who, ret=false}
+	if self:triggerHook(hk) then
+		return hk.ret
+	end
 	if sub then
 		if self.objectives[sub] and self.objectives[sub] == status then return false end
 		self.objectives[sub] = status
@@ -87,6 +108,7 @@ end
 
 --- Checks the quests status or sub-objective status
 -- @param status one of the possible quest status (PENDING, COMPLETED, DONE, FAILED)
+-- @param[opt] sub sub-objective
 function _M:isStatus(status, sub)
 	if sub then
 		if self.objectives[sub] and self.objectives[sub] == status then return true end

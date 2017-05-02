@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ local Textzone = require "engine.ui.Textzone"
 local TextzoneList = require "engine.ui.TextzoneList"
 local Separator = require "engine.ui.Separator"
 
+--- Show Store
+-- @classmod engine.dialogs.ShowStore
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, action, desc, descprice, allow_sell, allow_buy, on_select)

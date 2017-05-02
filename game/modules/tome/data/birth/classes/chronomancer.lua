@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -211,6 +211,9 @@ newBirthDescriptor{
 		resolvers.inventorybirth{ id=true, inven="QS_OFFHAND",
 			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},	
 		},
+		resolvers.generic(function(e)
+			e.auto_shoot_talent = e.T_SHOOT
+		end),
 	},
 	copy_add = {
 		life_rating = 2,

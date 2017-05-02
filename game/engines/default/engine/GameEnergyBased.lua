@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,15 +20,16 @@
 require "engine.class"
 require "engine.Game"
 
---- A game type that gives each entities energy
+--- A game type that gives each entities energy  
 -- When an entity reaches an energy level it is allowed to act (it calls the entity"s "act" method)
 -- @inherit engine.Game
+-- @classmod engine.GameEnergyBased
 module(..., package.seeall, class.inherit(engine.Game))
 
 --- Setup the game
--- @param keyhandler the default keyhandler for this game
--- @energy_to_act how much energy does an entity need to act
--- @energy_per_tick how much energy does an entity receives per game tick. This is multiplied by the entity energy.mod property
+-- @param[type=Key] keyhandler the default keyhandler for this game
+-- @number energy_to_act how much energy does an entity need to act
+-- @number energy_per_tick how much energy does an entity receives per game tick. This is multiplied by the entity energy.mod property
 function _M:init(keyhandler, energy_to_act, energy_per_tick)
 	self.energy_to_act, self.energy_per_tick = energy_to_act or 1000, energy_per_tick or 100
 	engine.Game.init(self, keyhandler)
@@ -38,6 +39,7 @@ function _M:init(keyhandler, energy_to_act, energy_per_tick)
 	self:loaded()
 end
 
+--- The function called after the game has loaded
 function _M:loaded()
 	engine.Game.loaded(self)
 
@@ -53,7 +55,7 @@ function _M:loaded()
 	setmetatable(self.entities, {__mode="v"})
 end
 
---- Gives energy and act if needed
+--- Give energy and act if needed
 function _M:tick()
 	engine.Game.tick(self)
 
@@ -70,9 +72,9 @@ function _M:tick()
 		self.level = mainlev
 	end
 
-	local arr = self.entities
+	local arr = table.clone(self.entities)
 	for i, e in pairs(arr) do
-		e = arr[i]
+		e = self.entities[i]
 		if e and e.act and e.energy then
 			if e.energy.value < self.energy_to_act then
 				e.energy.value = (e.energy.value or 0) + self.energy_per_tick * (e.energy.mod or 1) * (e.global_speed or 1)
@@ -89,24 +91,25 @@ function _M:tick()
 end
 
 --- Run tick on a level
+-- @param[type=Level] level
 function _M:tickLevel(level)
 	local i, e = 1, nil
 	local arr = level.e_array
 
 	if level.last_iteration then
-		i = nil
-
-		for ii = 1, #arr do if arr[ii] == level.last_iteration.e then i = ii + 1 break end end
-
-		if not i then i = level.last_iteration.i + 1 end
+		i = level.last_iteration.i + 1
 
 		if i > #arr then i = 1 end
 		level.last_iteration = nil
 --		print("=====LEVEL", level.level, level.sublevel_id, "resuming tick loop at ", i, arr[i].name)
 	end
 
-	for i = i, #arr do
+	level.last_iteration = {}  -- mark as iterating
+	local iter = level.last_iteration
+	local finished = true
+	while i <= #arr do
 		e = arr[i]
+		iter.e, iter.i = e, i
 		if e and e.act and e.energy then
 			if e.actBase and e.energyBase then
 				if e.energyBase < self.energy_to_act then
@@ -128,12 +131,14 @@ function _M:tickLevel(level)
 --			print(">ENERGY", e.name, e.uid, "::", e.energy.value, self.paused, "::", e.player)
 
 			if self.can_pause and self.paused then
-				level.last_iteration = {i=i, e=e}
+				finished = false
 --				print("====LEVEL", level.level, level.sublevel_id, "pausing tick loop at ", i, e.name)
 				break
 			end
 		end
+		i = iter.i + 1
 	end
+	if finished then level.last_iteration = nil end
 end
 
 --- Called every game turns
@@ -145,6 +150,7 @@ end
 -- This differs from Level:addEntity in that it's not specific to actors and the entities are not bound to
 -- the current level. Also they are stored in a *WEAK* table, so this wont hold them from garbage
 -- collecting if they are not
+-- @param[type=Entity] e
 function _M:addEntity(e)
 	if not e.canAct or not e:canAct() then return end
 	if self.entities[e.uid] and self.entities[e.uid] ~= e then error("Entity "..e.uid.." already present in the game and not the same") end
@@ -152,6 +158,7 @@ function _M:addEntity(e)
 end
 
 --- Removes an entity from the game
+-- @param[type=Entity] e
 function _M:removeEntity(e)
 	if not e.canAct or not e:canAct() then return end
 	if not self.entities[e.uid] then error("Entity "..e.uid.." not present in the game") end
@@ -159,6 +166,7 @@ function _M:removeEntity(e)
 end
 
 --- Does the game have this entity ?
+-- @param[type=Entity] e
 function _M:hasEntity(e)
 	return self.entities[e.uid]
 end

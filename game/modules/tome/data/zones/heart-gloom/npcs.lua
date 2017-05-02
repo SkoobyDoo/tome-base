@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -73,8 +73,8 @@ newEntity{ base="BASE_NPC_CANINE", define_as = "WITHERING_THING",
 
 	combat = { dam=resolvers.levelup(8, 1, 0.9), atk=15, apr=3 },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
-	resolvers.drops{chance=100, nb=1, {defined="WITHERING_ORBS", random_art_replace={chance=75}} },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, NECK=1, BODY=1 },
+	resolvers.equip{{type="jewelry", subype="amulet", defined="WITHERING_ORBS", random_art_replace={chance=75}}},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.talents{
@@ -115,8 +115,8 @@ newEntity{ define_as = "DREAMING_ONE",
 
 	combat = { dammod={wil=0.6, cun=0.4}, damtype=DamageType.MIND, dam=resolvers.levelup(8, 1, 0.9), atk=15, apr=3 },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
-	resolvers.drops{chance=100, nb=1, {defined="EYE_OF_THE_DREAMING_ONE", random_art_replace={chance=75}} },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, TOOL=1 },
+	resolvers.equip{{type="tool", defined="EYE_OF_THE_DREAMING_ONE", random_art_replace={chance=75}}},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.talents{

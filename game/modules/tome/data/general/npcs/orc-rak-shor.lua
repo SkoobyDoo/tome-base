@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(5,12), atk=2, apr=6, physspeed=2 },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1, TOOL=1 },
 	resolvers.drops{chance=20, nb=1, {} },
 	resolvers.drops{chance=10, nb=1, {type="money"} },
 	infravision = 10,
@@ -69,6 +69,7 @@ newEntity{ base = "BASE_NPC_ORC_RAK_SHOR",
 		[Talents.T_RIGOR_MORTIS]={base=3, every=5, max=7},
 		[Talents.T_INVOKE_DARKNESS]={base=5, every=5, max=9},
 		[Talents.T_VAMPIRIC_GIFT]={base=2, every=7, max=7},
+		[Talents.T_STAFF_MASTERY]={base=2, every=8, max=5},
 	},
 	resolvers.rngtalent{
 		[Talents.T_CIRCLE_OF_DEATH]={base=3, every=5, max=7},
@@ -98,6 +99,7 @@ newEntity{ base = "BASE_NPC_ORC_RAK_SHOR",
 	resolvers.talents{
 		[Talents.T_SOUL_ROT]={base=5, every=10, max=8},
 		[Talents.T_BLOOD_GRASP]={base=5, every=10, max=8},
+		[Talents.T_STAFF_MASTERY]={base=3, every=8, max=5},
 		[Talents.T_CURSE_OF_VULNERABILITY]={base=5, every=10, max=8},
 	},
 	resolvers.sustains_at_birth(),
@@ -113,6 +115,7 @@ newEntity{ base = "BASE_NPC_ORC_RAK_SHOR",
 	resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="charm", forbid_power_source={antimagic=true, nature=true}, autoreq=true}
 	},
 	combat_armor = 0, combat_def = 5,
 
@@ -124,6 +127,7 @@ newEntity{ base = "BASE_NPC_ORC_RAK_SHOR",
 	resolvers.talents{
 		[Talents.T_SOUL_ROT]={base=5, every=10, max=8},
 		[Talents.T_BLOOD_GRASP]={base=5, every=10, max=8},
+		[Talents.T_STAFF_MASTERY]={base=3, every=8, max=5},
 		[Talents.T_CURSE_OF_VULNERABILITY]={base=5, every=10, max=8},
 		[Talents.T_BLIGHTZONE]={base=3, every=10, max=6},
 		[Talents.T_BONE_SHIELD]={base=5, every=150, max=8},

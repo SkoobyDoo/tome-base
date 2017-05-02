@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,15 +17,15 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
---- This file implements a simple auto-explore whereby a single command can explore unseen tiles and objects.
--- To see how a module can make auto-explore more robust, see "game/modules/tome/class/interface/PlayerExplore.lua"
---
--- Note that the floodfill algorithm in this file assumes that the movement costs for all grids are equal
-
 require "engine.class"
 local Map = require "engine.Map"
 local Dialog = require "engine.ui.Dialog"
 
+--- This file implements a simple auto-explore whereby a single command can explore unseen tiles and objects.
+-- To see how a module can make auto-explore more robust, see "game/modules/tome/class/interface/PlayerExplore.lua"
+--
+-- Note that the floodfill algorithm in this file assumes that the movement costs for all grids are equal
+-- @classmod engine.generator.interface.PlayerExplore
 module(..., package.seeall, class.make)
 
 local function toSingle(x, y)

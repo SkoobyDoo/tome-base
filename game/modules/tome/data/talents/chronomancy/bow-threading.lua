@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
 
 -- EDGE TODO: Particles, Timed Effect Particles
 
+
+local wardenPreUse = Talents.wardenPreUse
+
 newTalent{
 	name = "Arrow Stitching",
 	type = {"chronomancy/bow-threading", 1},
@@ -32,10 +35,32 @@ newTalent{
 	speed = 'archery',
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
 	getDamagePenalty = function(self, t) return 50 end,
+	cleanupClones = function(self, t, clones)
+		if not self or not clones then return false end
+		for clone, _ in pairs(clones) do
+			if not clone.dead then clone:die() end
+		end
+		for _, ent in pairs(game.level.entities) do
+			-- Replace clone references in timed effects so they don't prevent GC
+			if ent.tmp then
+				for _, eff in pairs(ent.tmp) do
+					if eff.src then
+						for clone, _ in pairs(clones) do
+							if eff.src == clone then
+								eff.src = self
+								break
+							end
+						end
+					end
+				end
+			end
+		end
+		return true
+	end,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent, "bow") end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p,"archery_pass_friendly", 1)
 	end,
@@ -54,8 +79,10 @@ newTalent{
 		
 		-- Summon our clones
 		if not self.arrow_stitching_done then
+			local clones = {}
 			for i = 1, 2 do
 				local m = makeParadoxClone(self, self, 0)
+				clones[m] = true
 				m.arrow_stitched_target = target
 				m.generic_damage_penalty = m.generic_damage_penalty or 0 + t.getDamagePenalty(self, t)
 				m:attr("archery_pass_friendly", 1)
@@ -85,6 +112,7 @@ newTalent{
 				x, y = pos[1], pos[2]
 				game.zone:addEntity(game.level, m, "actor", x, y)
 			end
+			t.cleanupClones(self, t, clones)
 		end
 
 		return true
@@ -115,9 +143,9 @@ newTalent{
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getDamageAoE = function(self, t) return self:combatTalentSpellDamage(t, 25, 230, getParadoxSpellpower(self, t)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, stop_block=true, selffire=false, friendlyblock=false}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, stop_block=true, friendlyfire=false, friendlyblock=false}
 	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent, "bow") end,
 	archery_onreach = function(self, t, x, y)
 		game:onTickEnd(function() -- Let the arrow hit first
 			local tg = self:getTalentTarget(t)
@@ -212,7 +240,7 @@ newTalent{
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, friendlyfire=false, friendlyblock=false}
 	end,
-	on_pre_use = function(self, t, silent) if not doWardenPreUse(self, "bow") then if not silent then game.logPlayer(self, "You require a bow to use this talent.") end return false end return true end,
+	on_pre_use = function(self, t, silent) return wardenPreUse(self, t, silent, "bow") end,
 	getDuration = function(self, t) return getExtensionModifier(self, t, 4) end,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.5, 1.3) end,
 	doEcho = function(self, t, eff)

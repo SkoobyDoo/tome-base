@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@ return {
 --	all_lited = true,
 	persistent = "zone",
 	ambient_music = "To the Depths.ogg",
-	min_material_level = function() return game.state:isAdvanced() and 4 or 3 end,
-	max_material_level = function() return game.state:isAdvanced() and 5 or 4 end,
+	min_material_level = function() return game.state:isAdvanced() and 3 or 3 end,
+	max_material_level = function() return game.state:isAdvanced() and 5 or 3 end,
 	generator =  {
 		map = {
 			class = "engine.generator.map.TileSet",

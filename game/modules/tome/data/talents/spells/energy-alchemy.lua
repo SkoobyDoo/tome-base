@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,7 +41,8 @@ newTalent{
 	info = function(self, t)
 		local daminc = t.getIncrease(self, t)
 		return ([[When you throw your alchemist bombs, you infuse them with lightning damage that can daze your foes.
-		In addition all lightning damage you do is increased by %d%%.]]):
+		In addition all lightning damage you do is increased by %d%%.
+		You cannot have more than one alchemist infusion sustain active at once.]]):
 		format(daminc)
 	end,
 }

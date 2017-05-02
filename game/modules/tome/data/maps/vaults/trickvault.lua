@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,9 +22,16 @@ starty = 12
 
 setStatusAll{no_teleport=true}
 
+roomCheck(function(room, zone, level, map)
+	return resolvers.current_level >= 35
+end)
+
 specialList("terrain", {
 	"/data/general/grids/basic.lua",
 	"/data/general/grids/lava.lua",
+})
+specialList("actor", {
+	"/data/general/npcs/all.lua",
 })
 
 defineTile('#', "HARDWALL")
@@ -84,7 +91,7 @@ nil, nil, nil, {lever_action_value=0, lever_action_only_once=true, lever_action_
 		game.logPlayer(who, "#YELLOW#The air comes alive with terrible magics!")
 		local g = game.level.map(i, j, game.level.map.TERRAIN)
 		g.activated = true
-		local m = game.zone:makeEntity(game.level, "actor", {type = "demon", subtype = "major", random_boss={nb_classes=2, rank=3.5, loot_quantity = 3}})
+		local m = game.zone:makeEntity(game.level, "actor", {base_list = "mod.class.Actor:/data/general/npcs/major-demon.lua", type = "demon", subtype = "major", random_boss={nb_classes=2, rank=3.5, loot_quantity = 3}})
 		if m then
 			game.zone:addEntity(game.level, m, "actor", i, j)
 		end

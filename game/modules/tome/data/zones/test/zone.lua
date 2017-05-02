@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,16 +24,22 @@ return {
 	max_level = 4,
 	decay = {300, 800},
 	actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
-	width = 5, height = 5,
---	all_remembered = true,
+	width = 50, height = 50,
+	all_remembered = true,
 	all_lited = true,
 	no_level_connectivity = true,
+	
+--	events_by_level = true,
+--	_max_level_generation_count = 2,
+	
 	generator =  {
 		map = {
--- [[
-			class = "engine.generator.map.Empty",
+--[[
+			class = "engine.generator.map.Hexacle",
 			up = "FLOOR",
-			floor = "FLOOR",
+			down = "FLOOR",
+			['.'] = "FLOOR",
+			['#'] = "WALL",
 --]]
 --[[
 			class = "engine.generator.map.Building",
@@ -69,6 +75,20 @@ return {
 			down = "JUNGLE_GRASS_DOWN6",
 			door = "JUNGLE_GRASS",
 --]]
+-- [[
+			class = "engine.generator.map.Roomer",
+			nb_rooms = 10,
+			edge_entrances = {4,6},
+			rooms = {"forest_clearing"},
+			required_rooms = {"greater_vault", "greater_vault", "greater_vault"}, -- triggers level generation failure
+--			greater_vaults_list = {"portal-vault"},
+			greater_vaults_list = {"test2", "test"},
+			['.'] = {"GRASS"},
+			['#'] = "TREE",
+			up = "GRASS_UP4",
+			down = "GRASS_DOWN6",
+			door = "GRASS",
+--]]
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",
@@ -85,6 +105,10 @@ return {
 		},
 ]]
 	},
+	post_process = function(level) -- testing level generation failure
+		if level.level >=3 then level.force_recreate = true end
+	end,
+	
 --[[
 	post_process = function(level)
 		local Map = require "engine.Map"

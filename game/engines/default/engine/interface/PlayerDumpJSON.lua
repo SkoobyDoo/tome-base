@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ require "Json2"
 
 --- Handles player json "char dump"
 -- This is used for auto uploads to te4.org, could be for other stuff too
+-- @classmod engine.generator.interface.PlayerDumpJSON
 module(..., package.seeall, class.make)
 
 allow_late_uuid = false

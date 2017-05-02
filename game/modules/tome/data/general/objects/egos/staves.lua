@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -65,14 +65,7 @@ newEntity{
 	wielder = {
 		combat_spellpower = resolvers.mbonus_material(3, 2),
 	},
-	resolvers.genericlast(function(e)
-		e.wielder.inc_damage[e.combat.element or e.combat.damtype] = e.combat.dam
-		if e.combat.of_breaching then
-			for d, v in pairs(e.wielder.inc_damage) do
-				e.wielder.resists_pen[d] = math.ceil(e.combat.dam/2)
-			end
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -147,17 +140,7 @@ newEntity{
 	wielder = {
 		combat_spellpower = resolvers.mbonus_material(4, 3),
 	},
-	resolvers.generic(function(e)
-		local dam_tables = {
-			magestaff = { engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE },
-			starstaff = { engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL, engine.DamageType.PHYSICAL },
-			vilestaff = { engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE },
-		}
-		local d_table = dam_tables[e.flavor_name]
-		for i = 1, #d_table do
-			e.wielder.inc_damage[d_table[i]] = e.combat.dam
-		end
-	end),
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -209,7 +192,9 @@ newEntity{
 			[DamageType.ITEM_LIGHT_BLIND] = resolvers.mbonus_material(15, 5),
 	},
 	},
-	resolvers.charmt(Talents.T_ILLUMINATE, {1,2}, 6),
+	resolvers.charmt(Talents.T_ILLUMINATE, {1,2}, 6, "T_GLOBAL_CD",
+		{no_npc_use = function(self, who) return self:restrictAIUseObject(who) end} -- don't let dumb ai do stupid things with this
+	),
 }
 
 newEntity{
@@ -253,11 +238,11 @@ newEntity{
 			local range = self.use_power.range(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("project a bolt from the staff (to range %d) dealing %0.2f - %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
+			return ("project a bolt elemental energy from the staff (to range %d) dealing %0.2f to %0.2f %s damage"):format(range, dam, dam*damrange, damtype.name)
 		end,
 		5,
 		function(self, who)
-			local tg = {type="bolt", range=self.use_power.range(self), speed=20, display = {particle=particle, trail=trail},}
+			local tg = self.use_power.target(self, who)
 			local weapon = who:hasStaffWeapon()
 			if not weapon then
 				game.logPlayer(who, "You have no appropriate weapon.")
@@ -267,7 +252,7 @@ newEntity{
 			local explosion, particle, trail
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			if     damtype == DamageType.FIRE then      explosion = "flame"               particle = "bolt_fire"      trail = "firetrail"
 			elseif damtype == DamageType.COLD then      explosion = "freeze"              particle = "ice_shards"     trail = "icetrail"
 			elseif damtype == DamageType.ACID then      explosion = "acid"                particle = "bolt_acid"      trail = "acidtrail"
@@ -278,7 +263,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"               particle = "bolt_slime"     trail = "slimetrail"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"                particle = "stone_shards"   trail = "earthtrail"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"				  particle = "temporal_bolt"  trail = "lighttrail"
-			else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" --damtype = DamageType.ARCANE
 			end
 
 			local x, y = who:getTarget(tg)
@@ -287,17 +272,26 @@ newEntity{
 			-- Compute damage
 			local dam = self.use_power.damage(self, who)
 			local damrange = self.use_power.damrange(self, who)
+			local damTyp = DamageType:get(damtype or "ARCANE")
+			tg.name = damTyp.name .. " bolt"
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
 
+			game.logSeen(who, "%s fires a bolt of %s%s#LAST# energy from %s %s!", who.name:capitalize(), damTyp.text_color, damTyp.name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:projectile(tg, x, y, damtype, dam, {type=explosion, particle=particle, trail=trail})
 
-			game.logSeen(who, "%s fires a bolt from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game:playSoundNear(who, "talents/arcane")
 			return {id=true, used=true}
 		end,
 		"T_GLOBAL_CD",
 		{range = function(self, who) return 5 + self.material_level end,
+		target = function(self, who) return {type="bolt", range=self.use_power.range(self), speed=20, display = {particle=particle, trail=trail},} end,
+		requires_target = true,
+		tactical = { ATTACK = function(who, t, aitarget)
+			local weapon = who:hasStaffWeapon()
+			if not weapon or not weapon.combat then return 1 end
+			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/2.5} -- tactical AI adds staff skill to effective talent level of this ability
+		end },
 		damage = function(self, who) return who:combatDamage(self.combat) end,
 		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
 	),
@@ -319,11 +313,8 @@ newEntity{
 		wards = {},
 	},
 	combat = {of_warding = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.wards[d] = 2
-		end
-	end),
+	command_staff = {of_warding = {add=2, mult=0, "wards"}},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -338,11 +329,8 @@ newEntity{
 		resists_pen = {},
 	},
 	combat = {of_breaching = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.resists_pen[d] = v/2
-		end
-	end),
+	command_staff = {resists_pen=0.5,},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -363,18 +351,18 @@ newEntity{
 			local radius = self.use_power.radius(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("unleash an elemental blastwave, dealing %0.2f - %0.2f %s damage in a radius %d around the user"):format(dam, dam*damrange, damtype.name, radius)
+			return ("unleash an elemental blastwave, dealing %0.2f to %0.2f %s damage in a radius %d around the user"):format(dam, dam*damrange, damtype.name, radius)
 		end,
 		10,
 		function(self, who)
-			local tg = {type="ball", range=0, radius=self.use_power.radius(self, who), selffire=false}
+			local tg = self.use_power.target(self, who)
 			local weapon = who:hasStaffWeapon()
 			if not weapon then return end
 			local combat = weapon.combat
 			if not combat then return end
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			local explosion
 
 			if     damtype == DamageType.FIRE then      explosion = "flame"
@@ -387,23 +375,33 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"
-			else                                        explosion = "manathrust"         damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"         -- damtype = DamageType.ARCANE
 			end
 
 			-- Compute damage
 			local dam = self.use_power.damage(self, who)
 			local damrange = self.use_power.damrange(self, who)
+			local damTyp = DamageType:get(damtype or "ARCANE")
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
 
+			game.logSeen(who, "%s unleashes a blastwave of %s%s#LAST# energy from %s %s!", who.name:capitalize(), damTyp.text_color, damTyp.name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, who.x, who.y, damtype, dam, {type=explosion})
 
-			game.logSeen(who, "%s unleashes an elemental blastwave from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game:playSoundNear(who, "talents/arcane")
 			return {id=true, used=true}
 		end,
 		"T_GLOBAL_CD",
-		{radius = function(self, who) return 1 + self.material_level end,
+		{range = 0,
+		radius = function(self, who) return 1 + self.material_level end,
+		target = function(self, who) return {type="ball", range=self.use_power.range, radius=self.use_power.radius(self, who), selffire=false} end,
+		requires_target = true,
+		no_npc_use = function(self, who) return self:restrictAIUseObject(who) end, -- don't let dumb ai blow up friends
+		tactical = { ATTACKAREA = function(who, t, aitarget)
+			local weapon = who:hasStaffWeapon()
+			if not weapon or not weapon.combat then return 1 end
+			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/2.5} -- tactical AI adds staff skill to effective talent level of this ability
+		end },
 		damage = function(self, who) return who:combatDamage(self.combat) end,
 		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
 	),
@@ -424,6 +422,7 @@ newEntity{
 	resolvers.charm("channel mana (increasing mana regeneration by 500%% for ten turns)", 30,
 		function(self, who)
 			if who.mana_regen > 0 and not who:hasEffect(who.EFF_MANASURGE) then
+				game.logSeen(who, "%s channels mana through %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 				who:setEffect(who.EFF_MANASURGE, 10, {power=who.mana_regen * 5})
 			else
 				if who.mana_regen < 0 then
@@ -434,9 +433,10 @@ newEntity{
 					game.logPlayer(who, "Your nonexistant mana regeneration rate is unaffected by the staff.")
 				end
 			end
-			game.logSeen(who, "%s is channeling mana!", who.name:capitalize())
 			return {id=true, used=true}
-		end
+		end,
+		"T_GLOBAL_CD",
+		{tactical = {MANA = 1}}
 	),
 }
 
@@ -457,11 +457,8 @@ newEntity{
 		wards = {},
 	},
 	combat = {of_greater_warding = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.wards[d] = 3
-		end
-	end),
+	command_staff = {of_greater_warding = {add=3, mult=0, "wards"}},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -482,17 +479,17 @@ newEntity{
 			local radius = self.use_power.radius(self)
 			local dam = who:damDesc(damtype, self.use_power.damage(self, who))
 			local damrange = self.use_power.damrange(self, who)
-			return ("conjure elemental energy in a radius %d cone, dealing %0.2f - %0.2f %s damage"):format( radius, dam, dam*damrange, damtype.name)
+			return ("conjure elemental energy in a radius %d cone, dealing %0.2f to %0.2f %s damage"):format( radius, dam, dam*damrange, damtype.name)
 		end,
 		8,
 		function(self, who)
-			local tg = {type="cone", range=0, radius=self.use_power.radius(self, who), selffire=false}
+			local tg = self.use_power.target(self, who)
 			local weapon = who:hasStaffWeapon()
 			if not weapon then return end
 			local combat = weapon.combat
 
 			local DamageType = require "engine.DamageType"
-			local damtype = combat.element
+			local damtype = combat.element or DamageType.ARCANE
 			local explosion
 			
 			if     damtype == DamageType.FIRE then      explosion = "flame"
@@ -505,7 +502,7 @@ newEntity{
 			elseif damtype == DamageType.BLIGHT then    explosion = "slime"
 			elseif damtype == DamageType.PHYSICAL then  explosion = "dark"
 			elseif damtype == DamageType.TEMPORAL then  explosion = "light"
-			else                                        explosion = "manathrust"          damtype = DamageType.ARCANE
+			else                                        explosion = "manathrust"          -- damtype = DamageType.ARCANE
 			end
 
 			local x, y = who:getTarget(tg)
@@ -514,17 +511,25 @@ newEntity{
 			-- Compute damage
 			local dam = self.use_power.damage(self, who)
 			local damrange = self.use_power.damrange(self, who)
+			local damTyp = DamageType:get(damtype or "ARCANE")
 			dam = rng.range(dam, dam * damrange)
 			dam = who:spellCrit(dam)
-
+			game.logSeen(who, "%s channels a cone of %s%s#LAST# energy through %s %s!", who.name:capitalize(), damTyp.text_color, damTyp.name, who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, x, y, damtype, dam, {type=explosion})
 
-			game.logSeen(who, "%s conjures a cone of elemental energy from %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true}))
 			game:playSoundNear(who, "talents/arcane")
 			return {id=true, used=true}
 		end,
 		"T_GLOBAL_CD",
-		{radius = function(self, who) return 2*self.material_level end,
+		{range = 0,
+		radius = function(self, who) return 2*self.material_level end,
+		requires_target = true,
+		target = function(self, who) return {type="cone", range=self.use_power.range, radius=self.use_power.radius(self, who), selffire=false} end,
+		tactical = { ATTACKAREA = function(who, t, aitarget)
+			local weapon = who:hasStaffWeapon()
+			if not weapon or not weapon.combat then return 1 end
+			return {[weapon.combat.element or "ARCANE"] = 1 + (who.talents["T_STAFF_MASTERY"] or 0)/2.5} -- tactical AI adds staff skill to effective talent level of this ability
+		end},
 		damage = function(self, who) return who:combatDamage(self.combat) end,
 		damrange = function(self, who) return who:combatDamageRange(self.combat) end}
 	),
@@ -542,11 +547,8 @@ newEntity{
 		resists = {},
 	},
 	combat = {of_protection = true},
-	resolvers.genericlast(function(e)
-		for d, v in pairs(e.wielder.inc_damage) do
-			e.wielder.resists[d] = v/2
-		end
-	end),
+	command_staff = {resists = 0.5,},
+	resolvers.command_staff(),
 }
 
 newEntity{
@@ -638,14 +640,6 @@ newEntity{
 			[DamageType.ARCANE] = resolvers.mbonus_material(30, 15),
 		},
 	},
-	resolvers.genericlast(function(e)
-		e.wielder.inc_damage[e.combat.element or e.combat.damtype] = e.combat.dam
-		if e.combat.of_breaching then
-			for d, v in pairs(e.wielder.inc_damage) do
-				e.wielder.resists_pen[d] = math.ceil(e.combat.dam/2)
-			end
-		end
-	end),
 }
 
 newEntity{
@@ -657,8 +651,16 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 25,
+	combat = {
+		accuracy_effect_scale = 0.5,
+	},
 	wielder = {
 	},
+	resolvers.genericlast(function(e)
+		if e.moddable_tile:find("_hand_08_0[1-5]") then
+			e.moddable_tile = e.moddable_tile:gsub("_hand_08_0([1-5])", "_hand_08_0%1_1h")
+		end
+	end),
 }
 
 newEntity{
@@ -671,6 +673,9 @@ newEntity{
 	greater_ego = 1,
 	rarity = 35,
 	cost = 60,
+	combat = {
+		accuracy_effect_scale = 0.5,
+	},
 	wielder = {
 		combat_atk = resolvers.mbonus_material(10, 5),
 		combat_dam = resolvers.mbonus_material(10, 5),
@@ -679,6 +684,11 @@ newEntity{
 		combat_spellcrit = resolvers.mbonus_material(2, 2),
 		combat_critical_power = resolvers.mbonus_material(7, 7),
 	},
+	resolvers.genericlast(function(e)
+		if e.moddable_tile:find("_hand_08_0[1-5]") then
+			e.moddable_tile = e.moddable_tile:gsub("_hand_08_0([1-5])", "_hand_08_0%1_1h")
+		end
+	end)
 }
 
 

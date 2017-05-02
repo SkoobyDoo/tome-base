@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -318,9 +318,61 @@ static int lua_fs_get_real_path(lua_State *L)
 	return 1;
 }
 
+#define MAX_WRITE_DIRS 30
+static bool can_set_allowed_dirs = FALSE;
+static char* allowed_dirs[MAX_WRITE_DIRS];
+static int nb_allowed_dirs = 0;
+void physfs_reset_dir_allowed(lua_State *L)
+{
+	int i;
+	for (i = 0; i < nb_allowed_dirs; i++) {
+		free(allowed_dirs[i]);
+		allowed_dirs[i] = NULL;
+	}
+	nb_allowed_dirs = 0;
+	can_set_allowed_dirs = TRUE;
+}
+
+static int lua_fs_done_dir_allowed(lua_State *L) {
+	can_set_allowed_dirs = FALSE;
+
+	int i;
+	for (i = 0; i < nb_allowed_dirs; i++) {
+		printf("%d==WRITEPATH==allowed== %s\n", i, allowed_dirs[i]);
+	}
+	return 0;
+}
+
+static int lua_fs_set_dir_allowed(lua_State *L) {
+	if (!can_set_allowed_dirs) return 0;
+	if (nb_allowed_dirs >= MAX_WRITE_DIRS) return 0;
+
+	const char *dir = luaL_checkstring(L, 1);
+	allowed_dirs[nb_allowed_dirs] = strdup(dir);
+	nb_allowed_dirs++;
+	return 0;
+}
+
+bool physfs_check_allow_path(lua_State *L, const char *path) {
+	if (can_set_allowed_dirs) return TRUE; // As long as we're stillsetting stuff up we can do any path
+	int i;
+	for (i = 0; i < nb_allowed_dirs; i++) {
+		if (strstr(path, allowed_dirs[i]) == path) {
+			return TRUE;
+		}
+	}
+	printf("ERROR TRYING TO ACCESS FORBIDDEN PATH: %s\n", path);
+	if (L) {
+		lua_pushstring(L, "FORBIDDEN PATH");
+		lua_error(L);
+	}
+	return FALSE;
+}
+
 static int lua_fs_set_write_dir(lua_State *L)
 {
 	const char *src = luaL_checkstring(L, 1);
+	if (!physfs_check_allow_path(L, src)) return 0;
 	const int error = PHYSFS_setWriteDir(src);
 	if (error == 0)
 	{
@@ -442,7 +494,7 @@ static int lua_patch_file(lua_State *L)
 
 static const struct luaL_Reg fslib[] =
 {
-	{"patchFile", lua_patch_file},
+	// {"patchFile", lua_patch_file}, // unused
 	{"open", lua_fs_open},
 	{"zipOpen", lua_fs_zipopen},
 	{"exists", lua_fs_exists},
@@ -451,6 +503,8 @@ static const struct luaL_Reg fslib[] =
 	{"isdir", lua_fs_isdir},
 	{"delete", lua_fs_delete},
 	{"list", lua_fs_list},
+	{"setPathAllowed", lua_fs_set_dir_allowed},
+	{"doneSettingPathAllowed", lua_fs_done_dir_allowed},
 	{"setWritePath", lua_fs_set_write_dir},
 	{"getWritePath", lua_fs_get_write_dir},
 	{"getPathSeparator", lua_fs_get_path_separator},

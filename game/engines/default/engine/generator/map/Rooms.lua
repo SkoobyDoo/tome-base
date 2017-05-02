@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,10 +22,12 @@ local Map = require "engine.Map"
 require "engine.Generator"
 
 --- Generator that makes a map
+-- @classmod engine.generator.map.Rooms
 module(..., package.seeall, class.inherit(engine.Generator))
 
 function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
+	self.data = data
 	self.grid_list = zone.grid_list
 	self.floor = self:resolve("floor")
 	self.wall = self:resolve("wall")

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -62,21 +62,21 @@ newEntity{
 newEntity{ base = "BASE_NPC_VAMPIRE",
 	name = "lesser vampire", color=colors.SLATE, image = "npc/lesser_vampire.png",
 	desc=[[This vampire has only just begun its new life. It has not yet fathomed its newfound power, yet it still has a thirst for blood.]],
-	level_range = {15, nil}, exp_worth = 1,
+	level_range = {10, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(40,50),
 	combat_armor = 7, combat_def = 6,
 
 	resolvers.talents{
 		[Talents.T_STUN]={base=1, every=7, max=5},
-		[Talents.T_INVOKE_DARKNESS]={base=3, every=7, max=5},
+		[Talents.T_INVOKE_DARKNESS]={base=2, every=7, max=5},
 	},
 }
 
 newEntity{ base = "BASE_NPC_VAMPIRE",
 	name = "vampire", color=colors.SLATE, image = "npc/vampire.png",
 	desc=[[It is a humanoid with an aura of power. You notice a sharp set of front teeth.]],
-	level_range = {20, nil}, exp_worth = 1,
+	level_range = {15, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(70,80),
 	combat_armor = 9, combat_def = 6,
@@ -93,7 +93,7 @@ newEntity{ base = "BASE_NPC_VAMPIRE",
 	name = "master vampire", color=colors.GREEN, image = "npc/master_vampire.png",
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/master_vampire.png", display_h=2, display_y=-1}}},
 	desc=[[It is a humanoid form dressed in robes. Power emanates from its chilling frame.]],
-	level_range = {23, nil}, exp_worth = 1,
+	level_range = {20, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(80,90),
 	combat_armor = 10, combat_def = 8,
@@ -111,7 +111,7 @@ newEntity{ base = "BASE_NPC_VAMPIRE",
 	name = "elder vampire", color=colors.RED, image = "npc/elder_vampire.png",
 	desc=[[A terrible robed undead figure, this creature has existed in its unlife for many centuries by stealing the life of others.
 It can summon the very shades of its victims from beyond the grave to come enslaved to its aid.]],
-	level_range = {26, nil}, exp_worth = 1,
+	level_range = {25, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(90,100),
 	combat_armor = 12, combat_def = 10,

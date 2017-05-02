@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
 		if not self:hasLOS(x, y) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then -- To prevent teleporting through walls
-			game.logSeen(self, "You do not have line of sight.")
+			game.logPlayer(self, "You do not have line of sight.")
 			return nil
 		end
 		local _ _, x, y = self:canProject(tg, x, y)
@@ -59,22 +59,23 @@ newTalent{
 				if self:teleportRandom(x, y, 0) then
 					-- Move the target to our old location
 					target:move(ox, oy, true)
-					
+					self:logCombat(target, "#Source# folds space with with #target#!")
 					game.level.map:particleEmitter(target.x, target.y, 1, "temporal_teleport")
 					game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 				else
 					-- If we can't teleport, return the target
 					game.level.map(target.x, target.y, Map.ACTOR, target)
-					game.logSeen(self, "The spell fizzles!")
+					self:logCombat(target, "#Source#'s space-time folding with #target# fizzles!")
 				end
 			else
-				game.logSeen(target, "%s resists the swap!", target.name:capitalize())
+				target:logCombat(self, "#Source# resists #target#'s space-time folding!")
 			end
 		else
 			game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			if not self:teleportRandom(x, y, 0) then
-				game.logSeen(self, "The spell fizzles!")
+				game.logSeen(self, "%s's space-time folding fizzles!", self.name:capitalize())
 			else
+				game.logSeen(self, "%s emerges from a space-time rift!", self.name:capitalize())
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			end
 		end
@@ -96,19 +97,16 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	getReduction = function(self, t) return math.ceil(self:getTalentLevel(t)) end,
-	getCount = function(self, t)
-		return 1 + math.floor(self:combatTalentLimit(t, 3, 0, 2))
-	end,
 	callbackOnTeleport = function(self, t, teleported)
 		if not teleported then return end
 		
 		-- Grab a random sample of timed effects
-		local eff_ids = self:effectsFilter({status="detrimental", ignore_crosstier=true}, t.getCount(self, t))
-		for _, eff_id in ipairs(eff_ids) do
-			local eff = self:hasEffect(eff_id)
+		local eff_id = self:effectsFilter({status="detrimental", ignore_crosstier=true}, 1)
+		if eff_id[1] then
+			local eff = self:hasEffect(eff_id[1])
 			eff.dur = eff.dur - t.getReduction(self, t)
 			if eff.dur <= 0 then
-				self:removeEffect(eff_id)
+				self:removeEffect(eff_id[1])
 			end
 		end
 
@@ -122,10 +120,9 @@ newTalent{
 
 	end,
 	info = function(self, t)
-		local count = t.getCount(self, t)
 		local reduction = t.getReduction(self, t)
-		return ([[When you teleport you reduce the duration of up to %d detrimental effects by %d turns.]]):
-		format(count, reduction)
+		return ([[When you teleport you reduce the duration of a single detrimental effect by %d turns.]]):
+		format(reduction)
 	end,
 }
 

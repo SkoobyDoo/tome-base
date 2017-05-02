@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -62,9 +62,31 @@ local ans = {
 	{"I want to change your talents.", action=change_talents},
 	{"I want to change your tactics.", action=change_tactics},
 	{"I want to take direct control.", action=change_control},
-	{"I want to change your name.", action=change_name},
+	{"I want to change your name.", cond = function() return golem.sentient_telos == 1 end, jump="name", action=function(npc, player) npc.name = "Telos the Great and Powerful (reluctant follower of "..npc.summoner.name..")" game.log("#ROYAL_BLUE#The golem decides to change it's name to #{bold}#%s#{normal}#.", npc.name) end},
+	{"I want to change your name.", cond = function() return not golem.sentient_telos end, action=change_name},
+	{"How is it that you speak?", cond = function() return golem.sentient_telos == 1 end, jump="how_speak"},
 	{"Nothing, let's go."},
 }
+
+newChat{ id="how_speak",
+	text = [[What's the good of immortality if you can't even speak? No archmage worth his salt is going to concoct some immoral life-after-death scheme without including some sort of capacity for making his opinions known. And, by the way, your energy manipulation techniques are on the same level as those of my average pair of shoes. Though I guess you are making up for it with your golem crafting skills.]],
+	answers = ans
+}
+
+newChat{ id="name",
+	text = [[Change my name? I'm quite happy being 'Telos' thankyou. Though I wouldn't mind being 'Telos the Great and Powerful'. Do that actually. Yes!]],
+	answers = ans
+}
+
+if golem.sentient_telos == 1 then
+
+newChat{ id="welcome",
+	text = [[I'm a golem. How droll!
+Oh, did you want something?]],
+	answers = ans
+}
+
+else
 
 newChat{ id="welcome",
 	text = [[#LIGHT_GREEN#*The golem talks in a monotonous voice*#WHITE#
@@ -72,4 +94,5 @@ Yes master.]],
 	answers = ans
 }
 
+end
 return "welcome"

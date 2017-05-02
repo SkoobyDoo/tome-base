@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,11 +22,14 @@ local Entity = require "engine.Entity"
 local Particles = require "engine.Particles"
 local Map = require "engine.Map"
 
+--- Projectile
+-- @classmod engine.Projectile
 module(..., package.seeall, class.inherit(Entity))
 
 _M.display_on_seen = true
 _M.display_on_remember = false
 _M.display_on_unknown = false
+_M.__is_projectile = true
 
 function _M:init(t, no_default)
 	t = t or {}
@@ -72,7 +75,6 @@ end
 
 --- Moves a projectile on the map
 -- *WARNING*: changing x and y properties manually is *WRONG* and will blow up in your face. Use this method. Always.
--- @param map the map to move onto
 -- @param x coord of the destination
 -- @param y coord of the destination
 -- @param force if true do not check for the presence of an other entity. *Use wisely*
@@ -87,7 +89,7 @@ function _M:move(x, y, force)
 	if y >= map.h then y = map.h - 1 end
 
 	if self.x and self.y then
-		map:remove(self.x, self.y, Map.PROJECTILE)
+		map:remove(self.x, self.y, Map.PROJECTILE, self)
 	else
 --		print("[MOVE] projectile moved without a starting position", self.name, x, y)
 	end

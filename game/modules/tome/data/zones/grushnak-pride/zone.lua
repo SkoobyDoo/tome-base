@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -39,13 +39,15 @@ return {
 	ambient_music = "Thrall's Theme.ogg",
 	min_material_level = 4,
 	max_material_level = 5,
+	effects = {"EFF_ZONE_AURA_GRUSHNAK"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",
 			pride = "grushnak",
 			nb_rooms = 10,
 			lite_room_chance = 20,
-			rooms = {"forest_clearing", {"money_vault",5}, {"pit",7}, {"greater_vault",8}},
+			required_rooms = {"greater_vault"},
+			rooms = {"forest_clearing", {"pit",4}, {"greater_vault",2}},
 			rooms_config = {pit={filters={{subtype="orc"},{subtype="troll"}}}},
 			['.'] = "UNDERGROUND_FLOOR",
 			['#'] = "UNDERGROUND_TREE",
@@ -79,10 +81,28 @@ return {
 			actor = { nb_npc = {0, 0} },
 			object = { nb_object = {0, 0} },
 		}},
+		[2] = { generator = {
+			map = { static_replace_tiles = {
+					FLOOR = "UNDERGROUND_FLOOR",
+					DOOR = "UNDERGROUND_FLOOR",
+					WALL = "UNDERGROUND_TREE",
+					HARDWALL = "UNDERGROUND_HARDTREE",
+					DOOR_VAULT = "UNDERGROUND_VAULT",
+			}, },
+		}},
 		[3] = { generator = {
 			map = { class = "engine.generator.map.Static", map = "zones/prides-middle" },
 			actor = { nb_npc = {0, 0} },
 			object = { nb_object = {0, 0} },
+		}},
+		[4] = { generator = {
+			map = { static_replace_tiles = {
+					FLOOR = "UNDERGROUND_FLOOR",
+					DOOR = "UNDERGROUND_FLOOR",
+					WALL = "UNDERGROUND_TREE",
+					HARDWALL = "UNDERGROUND_HARDTREE",
+					DOOR_VAULT = "UNDERGROUND_VAULT",
+			}, },
 		}},
 		[5] = { generator = {
 			map = { class = "engine.generator.map.Static", map = "zones/prides-middle" },
@@ -91,6 +111,23 @@ return {
 		}},
 		[6] = {
 			generator = { map = {
+				static_replace_tiles = {
+					FLOOR = "UNDERGROUND_FLOOR",
+					DOOR = "UNDERGROUND_FLOOR",
+					WALL = "UNDERGROUND_TREE",
+					HARDWALL = "UNDERGROUND_HARDTREE",
+					DOOR_VAULT = "UNDERGROUND_VAULT",
+				},
+				['.'] = {
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_FLOOR",
+					"UNDERGROUND_CREEP",
+				},
 				down = "SLIME_TUNNELS",
 				force_last_stair = true,
 			}, },

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,13 +45,13 @@ newTalent{
 	fixed_cooldown = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	getResistancePenetration = function(self, t) return self:combatLimit(self:getCun()*self:getTalentLevel(t), 100, 5, 0, 55, 500) end, -- Limit to <100%
-	getCooldownReduction = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
+	getCooldownReduction = function(self, t) return math.floor(self:combatTalentScale(t, 3, 6, "log")) end,
 	action = function(self, t)
 		self:setEffect(self.EFF_TOTALITY, t.getDuration(self, t), {power=t.getResistancePenetration(self, t)})
 		for tid, cd in pairs(self.talents_cd) do
 			local tt = self:getTalentFromId(tid)
 			if tt.type[1]:find("^celestial/") then
-				self.talents_cd[tid] = cd - t.getCooldownReduction(self, t)
+				self:alterTalentCoolingdown(tid, -t.getCooldownReduction(self, t))
 			end
 		end
 		return true
@@ -141,6 +141,7 @@ newTalent{
 	points = 5,
 	cooldown = 30,
 	sustain_negative = 10,
+	no_npc_use = true,
 	tactical = { DEFEND = 2, ESCAPE = 2 },
 	getInvisibilityPower = function(self, t) return self:combatScale(self:getCun() * self:getTalentLevel(t), 5, 0, 38.33, 500) end,
 	getEnergyConvert = function(self, t) return math.max(0, 6 - self:getTalentLevelRaw(t)) end,

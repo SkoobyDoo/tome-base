@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ newTalentType{ allow_random=true, type="cunning/stealth-base", name = "stealth",
 newTalentType{ allow_random=true, type="cunning/stealth", name = "stealth", description = "Allows the user to enter stealth." }
 newTalentType{ allow_random=true, type="cunning/trapping", name = "trapping", description = "The knowledge of trap laying and assorted trickeries." }
 newTalentType{ allow_random=true, type="cunning/traps", name = "traps", description = "Collection of known traps." }
-newTalentType{ allow_random=true, type="cunning/poisons", name = "poisons", min_lev = 10, description = "The knowledge of poisons and how to apply them to 'good' effects." }
+newTalentType{ allow_random=true, type="cunning/poisons", name = "poisons", description = "The knowledge of poisons and how to apply them to 'good' effects." }
 newTalentType{ allow_random=true, type="cunning/poisons-effects", name = "poisons", description = "Collection of known poisons." }
 newTalentType{ allow_random=true, type="cunning/dirty", name = "dirty fighting", description = "Teaches various talents to cripple your foes." }
 newTalentType{ allow_random=true, type="cunning/lethality", name = "lethality", description = "How to make your foes feel the pain." }
@@ -31,6 +31,8 @@ newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="cunning/
 newTalentType{ allow_random=true, type="cunning/survival", name = "survival", generic = true, description = "The knowledge of the dangers of the world, and how to best avoid them." }
 newTalentType{ allow_random=true, type="cunning/tactical", name = "tactical", description = "Tactical combat abilities." }
 newTalentType{ allow_random=true, type="cunning/scoundrel", name = "scoundrel", generic = true, description = "The use of ungentlemanly techniques." }
+newTalentType{ allow_random=true, type="cunning/artifice", name = "artifice", min_lev = 10, description = "Create and use cunning tools." }
+newTalentType{ allow_random=true, type="cunning/tools", name = "tools", description = "Artificer's tools." }
 
 -- Skirmisher
 newTalentType {
@@ -82,12 +84,12 @@ cuns_req_high5 = {
 	level = function(level) return 26 + (level-1)  end,
 }
 
--- Archery range talents
-archery_range = function(self, t)
-	local weapon, ammo, offweapon = self:hasArcheryWeapon()
-	if not weapon or not weapon.combat then return 1 end
-	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
-end
+-- talents that require unlocking (specific poisons, traps)
+cuns_req_unlock = {
+	special = {desc="Talent not unlocked", fct=function(self, t, offset)
+		return game.state:unlockTalentCheck(t.id, self)
+	end}
+}
 
 load("/data/talents/cunning/stealth.lua")
 load("/data/talents/cunning/traps.lua")
@@ -100,3 +102,4 @@ load("/data/talents/cunning/shadow-magic.lua")
 load("/data/talents/cunning/ambush.lua")
 load("/data/talents/cunning/scoundrel.lua")
 load("/data/talents/cunning/called-shots.lua")
+load("/data/talents/cunning/artifice.lua")

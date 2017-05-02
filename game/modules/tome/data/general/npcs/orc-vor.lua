@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(5,12), atk=2, apr=6, physspeed=2 },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1, TOOL=1 },
 	resolvers.drops{chance=20, nb=1, {} },
 	resolvers.drops{chance=10, nb=1, {type="money"} },
 	infravision = 10,
@@ -67,8 +67,10 @@ newEntity{ base = "BASE_NPC_ORC_VOR",
 		[Talents.T_FLAMESHOCK]={base=3, every=10, max=7},
 		[Talents.T_FIREFLASH]={base=3, every=10, max=7},
 		[Talents.T_SPELLCRAFT]={base=3, every=10, max=7},
-		[Talents.T_PHASE_DOOR]=2,
+		[Talents.T_PHASE_DOOR]={base=2, every=8, max=5},
+		[Talents.T_STAFF_MASTERY]={base=2, every=8, max=5},
 	},
+	resolvers.sustains_at_birth(),
 }
 
 newEntity{ base = "BASE_NPC_ORC_VOR",
@@ -80,6 +82,7 @@ newEntity{ base = "BASE_NPC_ORC_VOR",
 	resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="charm", subtype="wand"}
 	},
 	combat_armor = 0, combat_def = 5,
 	ai = "tactical",
@@ -94,9 +97,11 @@ newEntity{ base = "BASE_NPC_ORC_VOR",
 		[Talents.T_BLASTWAVE]={base=5, every=10, max=9},
 		[Talents.T_BURNING_WAKE]={base=5, every=10, max=9},
 		[Talents.T_SPELLCRAFT]={base=5, every=10, max=9},
-		[Talents.T_PHASE_DOOR]=2,
+		[Talents.T_PHASE_DOOR]={base=3, every=5, max=6},
+		[Talents.T_STAFF_MASTERY]={base=3, every=8, max=5},
 		[Talents.T_ESSENCE_OF_SPEED]={base=1, every=10, max=5},
 	},
+	resolvers.sustains_at_birth(),
 }
 
 newEntity{ base = "BASE_NPC_ORC_VOR",
@@ -116,8 +121,10 @@ newEntity{ base = "BASE_NPC_ORC_VOR",
 		[Talents.T_ICE_STORM]={base=5, every=10, max=9},
 		[Talents.T_TIDAL_WAVE]={base=3, every=10, max=7},
 		[Talents.T_SPELLCRAFT]={base=3, every=10, max=7},
-		[Talents.T_PHASE_DOOR]=2,
+		[Talents.T_PHASE_DOOR]={base=2, every=8, max=5},
+		[Talents.T_STAFF_MASTERY]={base=2, every=8, max=5},
 	},
+	resolvers.sustains_at_birth(),
 }
 
 newEntity{ base = "BASE_NPC_ORC_VOR",
@@ -129,6 +136,7 @@ newEntity{ base = "BASE_NPC_ORC_VOR",
 	resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="charm", subtype="wand"}
 	},
 	combat_armor = 0, combat_def = 5,
 	rank = 3,
@@ -143,7 +151,9 @@ newEntity{ base = "BASE_NPC_ORC_VOR",
 		[Talents.T_ICE_SHARDS]={base=5, every=10, max=9},
 		[Talents.T_FROZEN_GROUND]={base=5, every=10, max=9},
 		[Talents.T_SPELLCRAFT]={base=5, every=10, max=9},
-		[Talents.T_PHASE_DOOR]=2,
+		[Talents.T_PHASE_DOOR]={base=3, every=5, max=6},
+		[Talents.T_STAFF_MASTERY]={base=3, every=8, max=5},
 		[Talents.T_ESSENCE_OF_SPEED]={base=1, every=10, max=5},
 	},
+	resolvers.sustains_at_birth(),
 }

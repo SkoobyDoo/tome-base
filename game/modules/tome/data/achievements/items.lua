@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,12 +19,15 @@
 
 newAchievement{
 	name = "Deus Ex Machina",
-	desc = [[Found the ever-refilling potion and the blood of life.]],
+	desc = [[Found the Blood of Life and the four unique inscriptions: Primal Infusion, Infusion of Wild Growth, Rune of Reflection and Rune of the Rift.]],
 	mode = "player",
 	can_gain = function(self, who, obj)
 		if obj:getName{force_id=true} == "Blood of Life" then self.blood = true end
-		if obj:getName{force_id=true} == "Ever-Refilling Potion of Healing" then self.life = true end
-		return self.blood and self.life
+		if obj:getName{force_id=true}:toString():prefix("Primal Infusion") then self.primal = true end
+		if obj:getName{force_id=true}:toString():prefix("Infusion of Wild Growth") then self.wild = true end
+		if obj:getName{force_id=true}:toString():prefix("Rune of Reflection") then self.reflection = true end
+		if obj:getName{force_id=true}:toString():prefix("Rune of the Rift") then self.rift = true end
+		return self.blood and self.primal and self.wild and self.reflection and self.rift
 	end
 }
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ return {
 	persistent = "zone",
 	ambient_music = "Driving the Top Down.ogg",
 	min_material_level = 2,
-	max_material_level = 3,
+	max_material_level = 2,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Roomer",

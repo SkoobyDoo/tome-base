@@ -13,6 +13,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+local archerPreUse = Talents.archerPreUse
+
+local preUse = function(self, t, silent)
+	if not self:hasShield() or not archerPreUse(self, t, true) then
+		if not silent then game.logPlayer("You require a ranged weapon and a shield to use this talent.") end
+		return false
+	end
+	return true
+end
 
 newTalent {
 	short_name = "SKIRMISHER_BUCKLER_EXPERTISE",
@@ -26,8 +35,11 @@ newTalent {
 		return self:combatLimit(self:getTalentLevel(t)*10+self:getCun()*0.5, 50, 5, 15, 25, 100)
 	end,
 	-- called by _M:combatArmorHardiness
-	getHardiness = function(self, t)
-		return 0 --self:getTalentLevel(t) * 4;
+	getArmorHardiness = function(self, t)
+		return self:combatTalentLimit(t, 30, 10, 25)
+	end,
+	getArmour = function(self, t)
+		return self:combatTalentLimit(t, 20, 3, 15)
 	end,
 	-- called by Combat.attackTargetWith
 	shouldEvade = function(self, t)
@@ -47,11 +59,13 @@ newTalent {
 	end,
 	info = function(self, t)
 		local block = t.chance(self, t)
-		local armor = t.getHardiness(self, t)
+		local armour = t.getArmour(self,t)
+		local hardiness = t.getArmorHardiness(self, t)
 		return ([[Allows shields to be equipped, using Cunning instead of strength as a requirement.
 			When you are attacked in melee, you have a %d%% chance to deflect the attack with your shield, completely evading it.
+			In addition, as long as you are wearing armour no heavier than leather, you gain %d Armour and %d%% Armour hardiness.
 			The chance to deflect increases with your Cunning.]])
-			:format(block, armor)
+			:format(block, armour, hardiness)
 	end,
 }
 
@@ -70,11 +84,7 @@ newTalent {
 	range = 1,
 	is_special_melee = true,
 	on_pre_use = function(self, t, silent)
-		if not self:hasShield() or not self:hasArcheryWeapon() then
-			if not silent then game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.") end
-			return false
-		end
-		return true
+		return preUse(self, t, silent)
 	end,
 	getDist = function(self, t)
 		if self:getTalentLevelRaw(t) >= 3 then
@@ -90,7 +100,7 @@ newTalent {
 		return self:combatTalentWeaponDamage(t, 1.5, 3)
 	end,
 	action = function(self, t)
-		local shield = self:hasShield()
+		local shield, shield_combat = self:hasShield()
 		local sling = self:hasArcheryWeapon()
 		if not shield or not sling then
 			game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.")
@@ -114,7 +124,7 @@ newTalent {
 		end
 
 		-- Modify shield combat to use dex.
-		local combat = table.clone(shield.special_combat, true)
+		local combat = table.clone(shield_combat, true)
 		if combat.dammod.str and combat.dammod.str > 0 then
 			combat.dammod.dex = (combat.dammod.dex or 0) + combat.dammod.str
 			combat.dammod.str = nil
@@ -203,11 +213,7 @@ newTalent {
 	require = techs_dex_req4,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent)
-		if not self:hasShield() or not self:hasArcheryWeapon() then
-			if not silent then game.logPlayer(self, "You require a ranged weapon and a shield to use this talent.") end
-			return false
-		end
-		return true
+		return preUse(self, t, silent)
 	end,
 	activate = function(self, t)
 		return {}

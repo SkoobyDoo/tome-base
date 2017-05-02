@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,14 +22,22 @@ local Entity = require "engine.Entity"
 local Map = require "engine.Map"
 local Faction = require "engine.Faction"
 
+--- Base Actor class used by NPCs, Players, Enemies, etc
+-- @classmod engine.Actor
 module(..., package.seeall, class.inherit(Entity))
 
+--- Display actor when seen
 _M.display_on_seen = true
+--- Remember actor after seeing it
 _M.display_on_remember = false
+--- Display actor when it hasn't yet been seen
 _M.display_on_unknown = false
 -- Allow actors to act as object carriers, if the interface is loaded
 _M.__allow_carrier = true
 
+--- Instantiates an actor
+-- @param[type=table] t default values for actor
+-- @param[type=table] no_default override the default values for entities
 function _M:init(t, no_default)
 	t = t or {}
 
@@ -46,22 +54,51 @@ function _M:init(t, no_default)
 end
 
 --- Called when it is time to act
+-- @return true if alive
 function _M:act()
 	if self.dead then return false end
 	return true
 end
 
 --- Gets the actor target
--- Does nothing, AI redefines it so should a "Player" class
+-- Does nothing, AI redefines it, so should a "Player" class
 function _M:getTarget()
 end
 --- Sets the actor target
--- Does nothing, AI redefines it so should a "Player" class
+-- Does nothing, AI redefines it, so should a "Player" class
 function _M:setTarget(target)
+end
+
+--- cloneActor default alt_node fields (controls fields copied by cloneCustom)
+-- modules should update this as needed
+_M.clone_nodes = {player=false, x=false, y=false,
+	fov_computed=false,	fov={v={actors={}, actors_dist={}}}, distance_map={v={}},
+	_mo=false, _last_mo=false, add_mos=false, add_displays=false,
+	shader=false, shader_args=false,
+}
+--- cloneActor default fields (merged by _M.cloneActor with cloneCustom)
+-- modules may define this as a table to automatically merge into cloned actors
+_M.clone_copy = nil
+
+--- Special version of cloneFull that clones an Actor, automatically managing duplication of some fields
+--	uses class.CloneCustom
+-- @param[optional, type=?table] post_copy a table merged into the cloned actor
+--		updated with self.clone_copy if it is defined
+-- @param[default=self.clone_nodes, type=?table] alt_nodes a table containing parameters for cloneCustom
+--		to be merged with self.clone_nodes
+-- @return the cloned actor
+function _M:cloneActor(post_copy, alt_nodes)
+	alt_nodes = table.merge(alt_nodes or {}, self.clone_nodes, true)
+	if post_copy or self.clone_copy then post_copy = post_copy or {} table.update(post_copy, self.clone_copy or {}, true) end
+	local a = self:cloneCustom(alt_nodes, post_copy)
+	a:removeAllMOs()
+	return a, post_copy
 end
 
 --- Setup minimap color for this entity
 -- You may overload this method to customize your minimap
+-- @param mo
+-- @param[type=Map] map
 function _M:setupMinimapInfo(mo, map)
 	if map.actor_player and not map.actor_player:canSee(self) then return end
 	local r = map.actor_player and map.actor_player:reactionToward(self) or -100
@@ -72,6 +109,7 @@ function _M:setupMinimapInfo(mo, map)
 end
 
 --- Set the current emote
+-- @param[type=Emote] e
 function _M:setEmote(e)
 	-- Remove previous
 	if self.__emote then
@@ -176,10 +214,9 @@ end
 
 --- Moves an actor on the map
 -- *WARNING*: changing x and y properties manually is *WRONG* and will blow up in your face. Use this method. Always.
--- @param map the map to move onto
--- @param x coord of the destination
--- @param y coord of the destination
--- @param force if true do not check for the presence of an other entity. *Use wisely*
+-- @int x coord of the destination
+-- @int y coord of the destination
+-- @param[type=boolean] force if true do not check for the presence of an other entity. *Use wisely*
 -- @return true if a move was *ATTEMPTED*. This means the actor will probably want to use energy
 function _M:move(x, y, force)
 	if not x or not y then return end
@@ -221,7 +258,10 @@ function _M:move(x, y, force)
 	return true
 end
 
---- Moves into the given direction (calls actor:move() internally)
+--- Moves into the given direction (calls `Actor:move`() internally)
+-- @number dir direction to move
+-- @number force amount to move
+-- @return true if we attempted to move
 function _M:moveDir(dir, force)
 	local dx, dy = util.dirToCoord(dir, self.x, self.y)
 	if dir ~= 5 then self.doPlayerSlide = config.settings.player_slide end
@@ -247,17 +287,21 @@ function _M:moveDir(dir, force)
 end
 
 --- Can the actor go there
--- @param terrain_only if true checks only the terrain, otherwise checks all entities
+-- @int x x coordinate
+-- @int y y coordinate
+-- @param[type=?boolean] terrain_only if true checks only the terrain, otherwise checks all entities
+-- @return true if it can
 function _M:canMove(x, y, terrain_only)
 	if not game.level.map:isBound(x, y) then return false end
 	if terrain_only then
-		return not game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move")
+		return not game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self)
 	else
 		return not game.level.map:checkAllEntities(x, y, "block_move", self)
 	end
 end
 
 --- Remove the actor from the level, marking it as dead but not using the death functions
+-- @param src not used by default, but should be the event source
 function _M:disappear(src)
 	if game.level and game.level:hasEntity(self) then game.level:removeEntity(self) end
 	self.dead = true
@@ -265,16 +309,16 @@ function _M:disappear(src)
 end
 
 --- Get the "path string" for this actor
--- See Map:addPathString() for more info
+-- See `Map:addPathString`() for more info
 function _M:getPathString()
 	return ""
 end
 
 --- Teleports randomly to a passable grid
--- @param x the coord of the teleportation
--- @param y the coord of the teleportation
--- @param dist the radius of the random effect, if set to 0 it is a precise teleport
--- @param min_dist the minimum radius of of the effect, will never teleport closer. Defaults to 0 if not set
+-- @int x the coord of the teleportation
+-- @int y the coord of the teleportation
+-- @number dist the radius of the random effect, if set to 0 it is a precise teleport
+-- @number min_dist the minimum radius of of the effect, will never teleport closer. Defaults to 0 if not set
 -- @return true if the teleport worked
 function _M:teleportRandom(x, y, dist, min_dist)
 	local poss = {}
@@ -299,6 +343,11 @@ function _M:teleportRandom(x, y, dist, min_dist)
 end
 
 --- Knock back the actor
+-- @int srcx source x
+-- @int srcy source y
+-- @number dist distance to push
+-- @param[type=?boolean] recursive is it recursive?
+-- @param[type=?boolean] on_terrain
 function _M:knockback(srcx, srcy, dist, recursive, on_terrain)
 	print("[KNOCKBACK] from", srcx, srcx, "over", dist)
 
@@ -353,6 +402,10 @@ function _M:knockback(srcx, srcy, dist, recursive, on_terrain)
 end
 
 --- Pull the actor
+-- @int srcx source x
+-- @int srcy source y
+-- @number dist distance to pull
+-- @param[type=boolean] recursive is it recursive?
 function _M:pull(srcx, srcy, dist, recursive)
 	print("[PULL] from", self.x, self.x, "towards", srcx, srcy, "over", dist)
 
@@ -395,6 +448,8 @@ function _M:pull(srcx, srcy, dist, recursive)
 	end
 end
 
+--- Remove this actor from specified map
+-- @param[type=Map] map
 function _M:deleteFromMap(map)
 	if self.x and self.y and map then
 		map:remove(self.x, self.y, engine.Map.ACTOR, self)
@@ -403,13 +458,16 @@ function _M:deleteFromMap(map)
 	end
 end
 
---- Do we have enough energy
+--- Do we have enough energy?
+-- @number val
+-- @return true if we have enough
 function _M:enoughEnergy(val)
 	val = val or game.energy_to_act
 	return self.energy.value >= val
 end
 
 --- Use some energy
+-- @number val how much energy to use
 function _M:useEnergy(val)
 	val = val or game.energy_to_act
 	self.energy.value = self.energy.value - val
@@ -419,7 +477,8 @@ function _M:useEnergy(val)
 end
 
 --- What is our reaction toward the target
--- See Faction:factionReaction()
+-- @see Faction.factionReaction
+-- @param[type=Actor] target the target to check against
 function _M:reactionToward(target)
 	return Faction:factionReaction(self.faction, target.faction)
 end
@@ -427,15 +486,25 @@ end
 --- Can the actor see the target actor
 -- This does not check LOS or such, only the actual ability to see it.<br/>
 -- By default this returns true, but a module can override it to check for telepathy, invisibility, stealth, ...
--- @param actor the target actor to check
--- @param def the default
--- @param def_pct the default percent chance
--- @return true or false and a number from 0 to 100 representing the "chance" to be seen
+-- @param[type=Actor] actor the target actor to check
+-- @number def the default
+-- @number def_pct the default percent chance
+-- @return[1] true
+-- @return[1] a number from 0 to 100 representing the "chance" to be seen
+-- @return[2] false
+-- @return[2] a number from 0 to 100 representing the "chance" to be seen
 function _M:canSee(actor, def, def_pct)
 	return true, 100
 end
 
 --- Create a line to target based on field of vision
+-- @int tx terrain x
+-- @int ty terrain y
+-- @param[type=?boolean|func|string] extra_block function that returns a boolean, or string that checks all entities to see if line of sight is blocked
+-- @param[type=?boolean] block boolean of whether or not it's blocked by default
+-- @int[opt=self.x] sx actor's x
+-- @int[opt=self.y] sy actor's y
+-- @return fov line from `core.fov.line`
 function _M:lineFOV(tx, ty, extra_block, block, sx, sy)
 	sx = sx or self.x
 	sy = sy or self.y
@@ -466,13 +535,18 @@ function _M:lineFOV(tx, ty, extra_block, block, sx, sy)
 end
 
 --- Does the actor have LOS to the target
--- @param x the spot we test for LOS
--- @param y the spot we test for LOS
--- @param what the property to check for, defaults to block_sight
--- @param range the maximum range to see, defaults to self.sight
--- @param source_x the spot to test from (defaults to self.x)
--- @param source_y the spot to test from (defaults to self.y)
--- @return has_los, last_x, last_y
+-- @int x the spot we test for LOS
+-- @int y the spot we test for LOS
+-- @param[opt=block_sight] what the property to check for
+-- @int[opt=self.sight] range the maximum range to see
+-- @int[opt=self.x] source_x the spot to test from
+-- @int[opt=self.y] source_y the spot to test from
+-- @return[1] true
+-- @return[1] last_x
+-- @return[1] last_y
+-- @return[2] false
+-- @return[2] last_x
+-- @return[2] last_y
 function _M:hasLOS(x, y, what, range, source_x, source_y)
 	source_x = source_x or self.x
 	source_y = source_y or self.y
@@ -502,9 +576,10 @@ function _M:hasLOS(x, y, what, range, source_x, source_y)
 end
 
 --- Are we within a certain distance of the target
--- @param x the spot we test for nearness
--- @param y the spot we test for nearness
--- @param radius how close we should be (defaults to 1)
+-- @int x the spot we test for nearness
+-- @int y the spot we test for nearness
+-- @number radius how close we should be (defaults to 1)
+-- @return true if near
 function _M:isNear(x, y, radius)
 	radius = radius or 1
 	if core.fov.distance(self.x, self.y, x, y) > radius then return false end
@@ -513,11 +588,20 @@ end
 
 
 --- Return the kind of the entity
+-- @return "actor"
 function _M:getEntityKind()
 	return "actor"
 end
 
+--- he/she formatting
+-- @return string.he_she(self)
 function _M:he_she() return string.he_she(self) end
+--- his/her formatting
+-- @return string.his_her(self)
 function _M:his_her() return string.his_her(self) end
+--- him/her formatting
+-- @return string.him_her(self)
 function _M:him_her() return string.him_her(self) end
+--- he/she/self formatting
+-- @return string.his_her_self(self)
 function _M:his_her_self() return string.his_her_self(self) end

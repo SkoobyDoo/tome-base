@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@ local default_eyal_descriptors = function(add)
 		__ALL__ = "disallow",
 		Psionic = "allow",
 		Warrior = "allow",
-		Archer = "allow",
 		Rogue = "allow",
 		Mage = "allow",
 		Celestial = "allow",
@@ -61,12 +60,14 @@ local default_eyal_descriptors = function(add)
 	if add then table.merge(base, add) end
 	return base
 end
+Birther.default_eyal_descriptors = default_eyal_descriptors
 
 -- Player worlds/campaigns
 newBirthDescriptor{
 	type = "world",
 	name = "Maj'Eyal",
 	display_name = "Maj'Eyal: The Age of Ascendancy",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.campaign == "Maj'Eyal",
 	desc =
 	{
 		"The people of Maj'Eyal: Humans, Halflings, Elves and Dwarves.",
@@ -96,6 +97,7 @@ newBirthDescriptor{
 	display_name = "Infinite Dungeon: The Neverending Descent",
 	locked = function() return profile.mod.allow_build.campaign_infinite_dungeon end,
 	locked_desc = "Ever deeper, never ending, no reprieve, keep descending. In ruins old, through barred gate, once riddle solved, find thy fate.",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.campaign == "Infinite",
 	desc =
 	{
 		"Play as your favorite race and class and venture into the infinite dungeon.",
@@ -115,6 +117,10 @@ newBirthDescriptor{
 				self.unused_generics = self.unused_generics + 1
 				if self.level % 5 == 0 then self.unused_talents = self.unused_talents + 1 end
 				if self.level % 5 == 0 then self.unused_generics = self.unused_generics - 1 end
+
+				if self.extra_talent_point_every and self.level % self.extra_talent_point_every == 0 then self.unused_talents = self.unused_talents + 1 end
+				if self.extra_generic_point_every and self.level % self.extra_generic_point_every == 0 then self.unused_generics = self.unused_generics + 1 end
+
 				if self.level == 10 or self.level == 20 or self.level == 36 or self.level == 46 then
 					self.unused_talents_types = self.unused_talents_types + 1
 				end
@@ -166,6 +172,7 @@ newBirthDescriptor{
 	display_name = "The Arena: Challenge of the Master",
 	locked = function() return profile.mod.allow_build.campaign_arena end,
 	locked_desc = "Blood spilled on sand, only the strong survive. Prove yourself worthy to enter.",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.campaign == "Arena",
 	desc =
 	{
 		"Play as a lone warrior facing the Arena's challenge!",

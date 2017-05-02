@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -61,6 +61,13 @@ function rng.mbonus(max, level, max_level)
 	if val > max then val = max end
 
 	return val
+end
+
+local rngavg = rng.avg
+function rng.avg(min, max, nb)
+	if max > min then return rngavg(min, max, nb)
+	else return rngavg(max, min, nb)
+	end
 end
 
 function rng.table(t)
@@ -185,3 +192,11 @@ function string.unserialize(str)
 	local ok, err = pcall(f)
 	if ok then return setmetatable(t, nil) else print("[UNSERIALIZE] error", err) return nil end
 end
+
+--------------------------------------------------------------
+-- Remove invalidate some dangerous functions
+--------------------------------------------------------------
+os.execute = nil
+os.getenv = nil
+os.remove = nil
+os.rename = nil

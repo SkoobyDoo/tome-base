@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ newEntity{
 	body = { INVEN = 10 },
 	autolevel = "warrior",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=3, },
+	faction = "horrors",
 
 	stats = { str=20, dex=20, wil=20, mag=20, con=20, cun=20 },
 	combat_armor = 5, combat_def = 10,
@@ -223,30 +224,32 @@ newEntity{ base = "BASE_NPC_HORROR",
 
 	-- Add eyes
 	on_added_to_level = function(self)
-		local eyes = {}
-		for i = 1, 3 do
-			local x, y = util.findFreeGrid(self.x, self.y, 15, true, {[engine.Map.ACTOR]=true})
-			if x and y then
-				local m = game.zone:makeEntity(game.level, "actor", {properties={"is_eldritch_eye"}, special_rarity="_eldritch_eye_rarity"}, nil, true)
-				if m then
-					m.summoner = self
-					game.zone:addEntity(game.level, m, "actor", x, y)
-					eyes[m] = true
+		game:onTickEnd(function() --spawn escorts after all other actors are placed
+			local eyes = {}
+			for i = 1, 3 do
+				local x, y = util.findFreeGrid(self.x, self.y, 15, true, {[engine.Map.ACTOR]=true})
+				if x and y then
+					local m = game.zone:makeEntity(game.level, "actor", {properties={"is_eldritch_eye"}, special_rarity="_eldritch_eye_rarity"}, nil, true)
+					if m then
+						m.summoner = self
+						game.zone:addEntity(game.level, m, "actor", x, y)
+						eyes[m] = true
 
-					-- Grant resist
-					local damtype = next(m.resists)
-					self.resists[damtype] = 100
-					self.resists.all = (self.resists.all or 0) + 30
+						-- Grant resist
+						local damtype = next(m.resists)
+						self.resists[damtype] = 100
+						self.resists.all = (self.resists.all or 0) + 30
+					end
 				end
 			end
-		end
-		self.eyes = eyes
+			self.eyes = eyes
+		end)
 	end,
 
 	-- Needs an on death affect that kills off any remaining eyes.
 	on_die = function(self, src)
 		local nb = 0
-		for eye, _ in pairs(self.eyes) do
+		for eye, _ in pairs(self.eyes or {}) do
 			if not eye.dead then eye:die(src) nb = nb + 1 end
 		end
 		if nb > 0 then
@@ -282,7 +285,7 @@ newEntity{ base = "BASE_NPC_HORROR", define_as = "BASE_NPC_ELDRICTH_EYE",
 			if not eye.dead then nb = nb + 1 end
 		end
 		if nb == 0 and self.summoner and self.summoner.is_headless_horror then
-			local sx, sy = game.level.map:getTileToScreen(self.summoner.x, self.summoner.y)
+			local sx, sy = game.level.map:getTileToScreen(self.summoner.x, self.summoner.y, true)
 			game.flyers:add(sx, sy, 20, (rng.range(0,2)-1) * 0.5, -3, "+Blind", {255,100,80})
 			self.summoner.blind = 1
 			game.logSeen(self.summoner, "%s is blinded by the loss of all its eyes.", self.summoner.name:capitalize())
@@ -809,6 +812,142 @@ newEntity{ base = "BASE_NPC_HORROR", define_as = "DREAM_SEED",
 		end
 	end,
 }
+
+newEntity{ base = "BASE_NPC_HORROR",
+	name = "maelstrom", color=colors.CADET_BLUE,
+	resolvers.nice_tile{tall=1},
+	desc = [[This powerful vortex of ice and lightning somehow gives you the impression of claws, teeth and intense hunger...]],
+	level_range = {30, nil}, exp_worth = 1,
+	rarity = 20,
+	rank = 3,
+	max_life = resolvers.rngavg(70,80),
+	autolevel = "caster",
+	mana_rating = 10,
+	mana_regen = 10,
+	equilibrium_regen = -1,
+	combat_armor = 0, combat_def = 20,
+	combat = { dam=resolvers.levelup(resolvers.mbonus(40, 15), 1, 1.2), atk=15, apr=15, dammod={mag=0.8}, damtype=DamageType.LIGHTNING },
+	on_melee_hit = { [DamageType.COLD] = resolvers.mbonus(20, 10), [DamageType.LIGHTNING] = resolvers.mbonus(20, 10), },
+
+	ai = "tactical",
+	
+	resists = { [DamageType.PHYSICAL] = 10, [DamageType.COLD] = 100, [DamageType.LIGHTNING] = 100, [DamageType.LIGHT] = -30, },
+	damage_affinity = { [DamageType.COLD] = 50, [DamageType.LIGHTNING] = 50 },
+
+	no_breath = 1,
+	poison_immune = 1,
+	cut_immune = 1,
+	disease_immune = 1,
+	stun_immune = 1,
+	blind_immune = 1,
+	knockback_immune = 1,
+	confusion_immune = 1,
+	levitation = 1,
+	iceblock_pierce = 1,
+
+	resolvers.talents{
+		[Talents.T_DRENCH]={base=3, every=7},
+		[Talents.T_SHATTER]={base=3, every=7},
+		[Talents.T_ICE_CLAW]={base=3, every=7},
+		[Talents.T_HURRICANE]={base=3, every=7},
+		[Talents.T_THUNDERSTORM]={base=3, every=7},
+		[Talents.T_FROZEN_GROUND]={base=3, every=7},
+		[Talents.T_ICE_STORM]={base=3, every=7},
+		[Talents.T_LIVING_LIGHTNING]={base=3, every=7},
+	},
+	resolvers.sustains_at_birth(),
+	resolvers.genericlast(function(e)
+		e:addShaderAura("body_of_ice", "crystalineaura", {}, "particles_images/spikes.png")
+		e.snowparticle = e:addParticles(engine.Particles.new("snowfall", 1))
+	end),
+}
+
+newEntity{ base = "BASE_NPC_HORROR",
+	name = "parasitic horror", color=colors.DARK_GREEN,
+	resolvers.nice_tile{tall=1},
+	desc ="You don't want to think about what sort of creature this lamprey-like horror was feeding on to grow so large.  Its skin pulsates and writhes, like things are moving underneath...",
+	level_range = {35, nil}, exp_worth = 1,
+	rarity = 20,
+	rank = 3,
+	autolevel = "warrior",
+	max_life = resolvers.rngavg(220,250),
+	life_rating = 16,
+	combat_armor = 1, combat_def = 10,
+	combat = { dam=20, atk=30, apr=40, dammod={str=1}, lifesteal = 100, damtype=DamageType.ACID},
+	ai = "tactical", ai_state = { ai_move="move_complex", talent_in=2, },
+
+	resists = { [DamageType.LIGHTNING] = -50, [DamageType.ACID] = 100, [DamageType.NATURE] = 50, [DamageType.BLIGHT] = 50},
+	damage_affinity = { [DamageType.ACID] = 50 },
+
+	blind_immune = 1,
+	see_invisible = 20,
+	movement_speed = 2,
+
+	resolvers.talents{
+		[Talents.T_CRAWL_ACID]={base=5, every=10},
+		[Talents.T_SWALLOW]={base=5, every=10},
+		[Talents.T_ACIDIC_SKIN]={base=5, every=10},
+		[Talents.T_BLOOD_SPLASH]={base=5, every=10},
+	},
+
+	on_takehit = function(self, value, src, death_note)
+		if value >= self.max_life / 10 then
+			for n=1, math.ceil(5*value/self.max_life) do
+				-- Find space
+				local x, y = util.findFreeGrid(self.x, self.y, 3, true, {[engine.Map.ACTOR]=true})
+				if not x then
+					--game.logPlayer(self, "Not enough space to invoke!")
+					return value
+				end
+				local m = game.zone:makeEntityByName(game.level, "actor", "HORROR_PARASITIC_LEECHES")
+				if m then
+					m.exp_worth = 0
+					game.zone:addEntity(game.level, m, "actor", x, y)
+				end
+			end
+			game.logSeen(self, "%s's severed flesh starts crawling!", self.name:capitalize())
+		end
+		return value
+	end,
+	
+	resolvers.sustains_at_birth(),
+}
+
+newEntity{ base="BASE_NPC_HORROR", define_as = "HORROR_PARASITIC_LEECHES",
+	name = "mass of parasitic leeches",
+	color = colors.LIGHT_GREEN,
+	desc = "Dozens - hundreds maybe? - of blood-gorged worms, of varying shapes and sizes, making a writhing, ichor-soaked sea of tooth-lined maws and sickly green skin, ready to latch onto you and drink until they burst or your veins run dry.",
+	level_range = {25, nil}, exp_worth = 1,
+	rarity = 10,
+	rank = 2,
+	autolevel = "warrior",
+	size_category = 2,
+	max_life = resolvers.rngavg(120,150),
+	life_rating = 10,
+	combat_armor = 1, combat_def = 10,
+	combat = { dam=10, atk=20, apr=30, dammod={str=1}, lifesteal = 100, damtype=DamageType.ACID},
+	ai = "tactical", ai_state = { ai_move="move_complex", talent_in=2, },
+
+	resists = { [DamageType.LIGHTNING] = -50, [DamageType.ACID] = 100, [DamageType.NATURE] = 50, [DamageType.BLIGHT] = 50},
+	damage_affinity = { [DamageType.ACID] = 50 },
+
+	blind_immune = 1,
+	see_invisible = 20,
+
+	resolvers.talents{
+		[Talents.T_CRAWL_ACID]={base=5, every=10},
+		[Talents.T_ACIDIC_SKIN]={base=5, every=10},
+		[Talents.T_BLOOD_SUCKERS]={base=5, every=10},
+	},
+
+	resolvers.sustains_at_birth(),
+	
+	make_escort = {
+		{type="horror", subtype="eldritch", name="parasitic leech", number=2, no_subescort=true},
+	},
+}
+
+
 ------------------------------------------------------------------------
 -- Uniques
 ------------------------------------------------------------------------
@@ -829,6 +968,7 @@ You can discern a huge round mouth covered in razor-sharp teeth.]],
 	size_category = 4,
 	movement_speed = 0.8,
 	is_grgglck = true,
+	immune_possession = 1,
 
 	stun_immune = 1,
 	knockback_immune = 1,
@@ -927,7 +1067,10 @@ newEntity{ base = "BASE_NPC_HORROR",
 	can_spawn = 1,
 	psionic_shield_override = 1,
 	
-	resolvers.drops{chance=100, nb=1, {defined="BLADE_RIFT"} },
+	body = { TOOL=1 },
+	resolvers.equip{
+		{type="tool", ego_chance = 100, defined="BLADE_RIFT", random_art_replace={chance=25, filter = {type = "charm", subtype = "torque", no_tome_drops=true, unique=true, not_properties={"lore"}, special = function(o) return not table.get(o, "power_source", "antimagic") end}}, autoreq=true},
+	},
 	
 	ai = "tactical", ai_state = { ai_move="move_complex", talent_in=2, ally_compassion=0 },
 		
@@ -944,7 +1087,7 @@ newEntity{ base = "BASE_NPC_HORROR",
 
 	on_act = function(self)
 		if not self:attr("can_spawn") then return end
-		if self.blades > 4 or not rng.percent(28/(self.blades+1)) then return end
+		if self.blades > 3 or not rng.percent(28/(self.blades+1)) then return end
 		self.can_spawn = nil
 		self.blades = self.blades + 1
 		self:forceUseTalent(self.T_ANIMATE_BLADE, {ignore_cd=true, ignore_energy=true, force_level=1})
@@ -1006,8 +1149,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "ANIMATED_BLADE",
 	},
 	
 	on_added_to_level = function(self)
-		self:teleportRandom(self.x, self.y, 7)
-		game.logSeen(self, "A rift opens, spawning a free floating blade!")
+		self:teleportRandom(self.x, self.y, 3)
+		game.logSeen(self, "#AQUAMARINE#A rift opens and a free floating blade emerges!")
 		game.level.map:addEffect(self,
 			self.x, self.y, 3,
 			engine.DamageType.TEMPORAL, 25,
@@ -1028,8 +1171,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "ANIMATED_BLADE",
 
 	on_act = function(self)
 		if self.summoner and self.summoner:attr("dead") then
+			game.logSeen(self, "#AQUAMARINE#The %s no longer seems to be controlled and clatters to the ground before vanishing into a rift.", self.name:capitalize())
 			self:die()
-			game.logSeen(self, "#AQUAMARINE#With the horror's death the blade clatters to the ground!")
 		end
 	end,
 }
@@ -1050,10 +1193,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "DISTORTED_BLADE",
 	body = { INVEN = 10, MAINHAND=1 },
 	
 	resolvers.equip{
-		{type="weapon", subtype="longsword", define_as="RIFT_SWORD", autoreq=true},
+		{type="weapon", subtype="longsword", defined="RIFT_SWORD", random_art_replace={chance=100, filter = {subtype = "longsword", no_tome_drops=true, unique=true, not_properties={"lore"}, special = function(o) return not table.get(o, "power_source", "antimagic") end}}, autoreq=true},
 	},
-	
-	resolvers.drops{chance=100, nb=1, {defined="RIFT_SWORD"} },
 	
 	resists = {[DamageType.MIND] = 75, [DamageType.TEMPORAL] = 40, all=15,},
 
@@ -1070,8 +1211,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "DISTORTED_BLADE",
 	},
 	
 	on_added_to_level = function(self)
-		self:teleportRandom(self.x, self.y, 10)
-		game.logSeen(self, "A rift opens, a blade emerging. It does not look like the others.")
+		self:teleportRandom(self.x, self.y, 5)
+		game.logSeen(self, "#AQUAMARINE#A rift opens and a free floating blade emerges! It looks unstable...")
 		game.level.map:addEffect(self,
 			self.x, self.y, 5,
 			DamageType.TEMPORAL, 50,
@@ -1093,8 +1234,8 @@ newEntity{ base="BASE_NPC_HORROR", define_as = "DISTORTED_BLADE",
 	on_act = function(self)
 		self.paradox = self.paradox + 20
 		if self.summoner and self.summoner:attr("dead") then
+			game.logSeen(self, "#AQUAMARINE#The %s no longer seems to be controlled and clatters to the ground before vanishing into a rift.", self.name:capitalize())
 			self:die()
-			game.logSeen(self, "#AQUAMARINE#With the horror's death the chaotic blade clatters to the ground!")
 		end
 	end,
 }

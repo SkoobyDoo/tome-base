@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ newTalent{
 	points = 5,
 	random_ego = "defensive",
 	equilibrium = 10,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 30, 10)) end,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 30, 15)) end,
 	range = 10,
 	tactical = { DISABLE = 2 },
 	requires_target = true,
@@ -126,7 +126,7 @@ newTalent{
 	end,
 	on_learn = function(self, t) self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) + 1 end,
 	on_unlearn = function(self, t) self.resists[DamageType.COLD] = (self.resists[DamageType.COLD] or 0) - 1 end,
-	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	getLength = function(self, t) return 1 + math.floor(self:combatTalentScale(t, 3, 7)/2)*2 end,
 	getIceDamage = function(self, t) return self:combatTalentMindDamage(t, 3, 15) end,
 	getIceRadius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2)) end,
@@ -176,7 +176,7 @@ newTalent{
 					end
 				end,
 				dig = function(src, x, y, old)
-					game.level:removeEntity(old)
+					game.level:removeEntity(old, true)
 					return nil, old.old_feat
 				end,
 				summoner_gain_exp = true,

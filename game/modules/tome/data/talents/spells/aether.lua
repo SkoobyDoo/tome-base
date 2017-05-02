@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -137,7 +137,7 @@ newTalent{
 	mana = 50,
 	cooldown = 8,
 	use_only_arcane = 1,
-	tactical = { ATTACK = { ARCANE = 2 } },
+	tactical = { ATTACKAREA = { ARCANE = 2 } },
 	range = 7,
 	radius = 2,
 	direct_hit = function(self, t) if self:getTalentLevel(t) >= 3 then return true else return false end end,
@@ -211,7 +211,7 @@ newTalent{
 	cooldown = 30,
 	use_only_arcane = 1,
 	tactical = { BUFF = 2 },
-	getDamageIncrease = function(self, t) return self:getTalentLevelRaw(t) * 2 end,
+	getDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
 	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 17, 50, true) end, -- Limit < 100%	
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/arcane")
@@ -238,7 +238,7 @@ newTalent{
 	info = function(self, t)
 		local damageinc = t.getDamageIncrease(self, t)
 		local ressistpen = t.getResistPenalty(self, t)
-		return ([[Surround yourself with Pure Aether, increasing all your arcane damage by %d%% and ignoring %d%% arcane resistance of your targets.
+		return ([[Surround yourself with Pure Aether, increasing all your arcane damage by %0.1f%% and ignoring %d%% arcane resistance of your targets.
 		At level 5 it allows Aegis spells to be used while in Aether Avatar form.]])
 		:format(damageinc, ressistpen)
 	end,

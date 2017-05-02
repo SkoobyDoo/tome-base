@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -192,7 +192,7 @@ newBirthDescriptor{
 		["spell/storm"]={false, 0.3, "mage_tempest"},
 	},
 	talents = {
-		[ActorTalents.T_ARCANE_POWER] = 1,
+		[ActorTalents.T_MANATHRUST] = 1,
 		[ActorTalents.T_FLAME] = 1,
 		[ActorTalents.T_LIGHTNING] = 1,
 		[ActorTalents.T_PHASE_DOOR] = 1,

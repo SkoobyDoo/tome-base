@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ local List = require "engine.ui.List"
 local Dialog = require "engine.ui.Dialog"
 
 --- A generic UI list dropdown box
+-- @classmod engine.ui.Dropdown
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

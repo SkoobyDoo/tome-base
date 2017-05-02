@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ return {
 	ambient_music = {"Breaking the siege.ogg", "weather/desert_base.ogg"},
 	min_material_level = 4,
 	max_material_level = 5,
+	effects = {"EFF_ZONE_AURA_GORBAT"},
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",
@@ -51,9 +52,10 @@ return {
 				up = "SAND",
 				down = "SAND",
 				door = "DOOR",
+				generic_leveler = "GENERIC_LEVER_SAND",
 
-				nb_rooms = {0,0,0,1},
-				rooms = {"lesser_vault"},
+				nb_rooms = {1,1,2,3},
+				rooms = {"lesser_vault", "greater_vault"},
 				lesser_vaults_list = {"orc-armoury", "double-t", "dragon_lair", "hostel", "horror-chamber"},
 				lite_room_chance = 100,
 			},

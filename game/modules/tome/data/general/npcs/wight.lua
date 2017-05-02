@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ newEntity{
 
 	open_door = true,
 
-	resolvers.tmasteries{ ["technique/other"]=0.3, ["spell/air"]=0.3, ["spell/fire"]=0.3 },
+	resolvers.tmasteries{ ["technique/other"]=0.3, ["spell/air"]=0.3, ["spell/fire"]=0.3, ["spell/water"]=0.3 },
 	resolvers.sustains_at_birth(),
 
 	resists = { [DamageType.COLD] = 80, [DamageType.FIRE] = 20, [DamageType.LIGHTNING] = 40, [DamageType.PHYSICAL] = 35, [DamageType.LIGHT] = -50, },
@@ -71,7 +71,7 @@ newEntity{ base = "BASE_NPC_WIGHT",
 	combat_armor = 7, combat_def = 6,
 
 	resolvers.talents{
-		[Talents.T_FLAMESHOCK]={base=1, every=5, max=5}, [Talents.T_LIGHTNING]={base=1, every=5, max=5}, [Talents.T_GLACIAL_VAPOUR]={base=1, every=5, max=5},
+		[Talents.T_FLAME]={base=1, every=5, max=5}, [Talents.T_LIGHTNING]={base=1, every=5, max=5}, [Talents.T_GLACIAL_VAPOUR]={base=1, every=5, max=5},
 		[Talents.T_MIND_DISRUPTION]={base=1, every=5, max=5},
 	},
 }
@@ -93,12 +93,12 @@ newEntity{ base = "BASE_NPC_WIGHT",
 	name = "barrow wight", color=colors.LIGHT_RED, image="npc/barrow_wight.png",
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/barrow_wight.png", display_h=2, display_y=-1}}},
 	desc=[[It is a ghostly nightmare of an entity.]],
-	level_range = {25, nil}, exp_worth = 1,
+	level_range = {28, nil}, exp_worth = 1,
 	rarity = 2,
 	max_life = resolvers.rngavg(80,90),
 	combat_armor = 10, combat_def = 8,
 
-	resolvers.talents{ [Talents.T_FLAMESHOCK]={base=3, every=5, max=7}, [Talents.T_LIGHTNING]={base=3, every=5, max=7}, [Talents.T_GLACIAL_VAPOUR]={base=3, every=5, max=7},
+	resolvers.talents{ [Talents.T_FLAMESHOCK]={base=3, every=5, max=7}, [Talents.T_CHAIN_LIGHTNING]={base=3, every=5, max=7}, [Talents.T_GLACIAL_VAPOUR]={base=3, every=5, max=7},
 		[Talents.T_MIND_DISRUPTION]={base=3, every=5, max=7},
 	},
 }
@@ -107,7 +107,7 @@ newEntity{ base = "BASE_NPC_WIGHT",
 	name = "emperor wight", color=colors.RED, image="npc/emperor_wight.png",
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/emperor_wight.png", display_h=2, display_y=-1}}},
 	desc=[[Your life force is torn from your body as this powerful unearthly being approaches.]],
-	level_range = {30, nil}, exp_worth = 1,
+	level_range = {36, nil}, exp_worth = 1,
 	rarity = 5,
 	rank = 3,
 	max_life = resolvers.rngavg(100,150),
@@ -119,7 +119,7 @@ newEntity{ base = "BASE_NPC_WIGHT",
 	make_escort = {
 		{type="undead", subtype="wight", number=resolvers.mbonus(2, 2)},
 	},
-	resolvers.talents{ [Talents.T_FLAMESHOCK]={base=3, every=5, max=7}, [Talents.T_LIGHTNING]={base=4, every=5, max=8}, [Talents.T_GLACIAL_VAPOUR]={base=3, every=5, max=7}, [Talents.T_THUNDERSTORM]={base=2, every=5, max=7},
+	resolvers.talents{ [Talents.T_FLAMESHOCK]={base=3, every=5, max=7}, [Talents.T_CHAIN_LIGHTNING]={base=4, every=5, max=8}, [Talents.T_FREEZE]={base=3, every=5, max=7}, [Talents.T_THUNDERSTORM]={base=2, every=5, max=7},
 		[Talents.T_MIND_DISRUPTION]={base=4, every=5, max=8},
 	},
 }

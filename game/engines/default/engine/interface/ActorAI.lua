@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ require "engine.Actor"
 local Map = require "engine.Map"
 
 --- Handles actors artificial intelligence (or dumbness ... ;)
+-- @classmod engine.generator.interface.ActorAI
 module(..., package.seeall, class.make)
 
 _M.ai_def = {}
@@ -158,7 +159,8 @@ _M.AI_LOCATION_GUESS_ERROR = 3  -- Start position guess errors at ~3 grids
 -- This will usually return the exact coords, but if the target is only partially visible (or not at all)
 -- it will return estimates, to throw the AI a bit off (up to 10 tiles error)
 -- @param target the target we are tracking
--- @return x, y coords to move/cast to
+-- @return x coord to move/cast to
+-- @return y coord to move/cast to
 function _M:aiSeeTargetPos(target)
 	if not target then return self.x, self.y end
 	local tx, ty = target.x, target.y
@@ -188,8 +190,8 @@ function _M:aiSeeTargetPos(target)
 			if LSeen.GCache_x then -- update guess with new random position. Could use util.findFreeGrid here at cost of speed
 				tx = math.floor(LSeen.GCache_x + (tx-LSeen.GCache_x)/2)
 				ty = math.floor(LSeen.GCache_y + (ty-LSeen.GCache_y)/2)
-				if not target:canMove(tx, ty, true) then -- find a reasonable spot if target can't be at that position
-					local nx, ny = util.findFreeGrid(tx, ty, spread, false)
+				if (target.canMove and not target:canMove(tx, ty, true)) or (tx == self.x and ty == self.y) then -- find a reasonable spot if target can't be at that position
+					local nx, ny = util.findFreeGrid(tx, ty, math.max(1, spread), false)
 					if nx then tx, ty = nx, ny end
 				end
 			end

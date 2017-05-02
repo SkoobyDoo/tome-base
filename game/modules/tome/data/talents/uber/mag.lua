@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,17 +41,20 @@ uberTalent{
 	require = { special={desc="Have at least 25% arcane damage reduction and have been exposed to the void of space", fct=function(self)
 		return (game.state.birth.ignore_prodigies_special_reqs or self:attr("planetary_orbit")) and self:combatGetResist(DamageType.ARCANE) >= 25
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local ret = {}
 		self:talentTemporaryValue(ret, "force_use_resist", DamageType.ARCANE)
 		self:talentTemporaryValue(ret, "force_use_resist_percent", 66)
+		self:talentTemporaryValue(ret, "resists", {[DamageType.ARCANE] = 20})
+		self:talentTemporaryValue(ret, "resists_cap", {[DamageType.ARCANE] = 10})
 		return ret
 	end,
 	on_unlearn = function(self, t)
 	end,
 	info = function(self, t)
 		return ([[You manifest a thin layer of aether all around you. Any attack passing through it will check arcane resistance instead of the incoming damage resistance.
-		In effect, all of your resistances are equal to 66%% of your arcane resistance.]])
+		In effect, all of your resistances are equal to 66%% of your arcane resistance, which is increased by 20%% (and cap increased by 10%%).]])
 		:format()
 	end,
 }
@@ -59,24 +62,29 @@ uberTalent{
 uberTalent{
 	name = "Mystical Cunning", image = "talents/vulnerability_poison.png",
 	mode = "passive",
-	require = { special={desc="Know either traps or poisons", fct=function(self)
-		return self:knowTalent(self.T_VILE_POISONS) or self:knowTalent(self.T_TRAP_MASTERY)
+	require = { special={desc="Know how to either prepare traps or apply poisons", fct=function(self)
+		return self:knowTalent(self.T_APPLY_POISON) or self:knowTalent(self.T_TRAP_MASTERY)
 	end} },
+	autolearn_talent = {Talents.T_VULNERABILITY_POISON, Talents.T_GRAVITIC_TRAP}, -- requires uber.lua loaded last
 	on_learn = function(self, t)
 		self:attr("combat_spellresist", 20)
-		if self:knowTalent(self.T_VILE_POISONS) then self:learnTalent(self.T_VULNERABILITY_POISON, true, nil, {no_unlearn=true}) end
-		if self:knowTalent(self.T_TRAP_MASTERY) then self:learnTalent(self.T_GRAVITIC_TRAP, true, nil, {no_unlearn=true}) end
 	end,
 	on_unlearn = function(self, t)
 		self:attr("combat_spellresist", -20)
 	end,
 	info = function(self, t)
-		return ([[Your study of arcane forces has let you develop new traps and poisons (depending on which you know when learning this prodigy).
-		You can learn:
-		- Vulnerability Poison: reduces all resistances and deals arcane damage.
-		- Gravitic Trap: each turn, all foes in a radius 5 around it are pulled in and take temporal damage.
+		local descs = ""
+		for i, tid in pairs(t.autolearn_talent) do
+			local bonus_t = self:getTalentFromId(tid)
+			if bonus_t then
+				descs = ("%s\n#YELLOW#%s#LAST#\n%s\n"):format(descs, bonus_t.name, self:callTalent(bonus_t.id, "info"))
+			end
+		end
+		return ([[Your study of arcane forces has let you develop a new way of applying your aptitude for  trapping and poisons.
+		You learn the following talents:
+%s
 		You also permanently gain 20 Spell Save.]])
-		:format()
+		:format(descs)
 	end,
 }
 
@@ -85,7 +93,10 @@ uberTalent{
 	mode = "passive",
 	info = function(self, t)
 		return ([[You have learned to harness your latent arcane powers, channeling them through your weapon.
-		Equipped weapons are treated as having an additional 50%% Magic modifier.]])
+		This has the following effects:
+		Equipped weapons are treated as having an additional 50%% Magic modifier;
+		Your raw Physical Power is increased by 100%% of your raw Spellpower;
+		Your physical critical chance is increased by 25%% of your bonus spell critical chance.]])
 		:format()
 	end,
 }
@@ -108,7 +119,7 @@ uberTalent{
 	info = function(self, t)
 		return ([[You can wrap temporal threads around you, assuming the form of a telugoroth for 10 turns.
 		While in this form you gain pinning, bleeding, blindness and stun immunity, 30%% temporal resistance, your temporal damage bonus is set to your current highest damage bonus + 30%%, 50%% of the damage you deal becomes temporal, and you gain 20%% temporal resistance penetration.
-		You also are able to cast two anomalies: Anomaly Rearrange and Anomaly Temporal Storm.]])
+		You also are able to cast anomalies: Anomaly Rearrange, Anomaly Temporal Storm, Anomaly Flawed Design, Anomaly Gravity Pull and Anomaly Wormhole.]])
 		:format()
 	end,
 }
@@ -119,6 +130,7 @@ uberTalent{
 	require = { special={desc="Have summoned at least 100 creatures affected by this talent. The alchemist golem counts as 100.", fct=function(self)
 		return self:attr("summoned_times") and self:attr("summoned_times") >= 100
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local golem = self.alchemy_golem
 		if not golem then return end
@@ -172,7 +184,7 @@ uberTalent{
 		elseif who.subtype == "shadow" then
 			local tl = who:getTalentLevelRaw(who.T_EMPATHIC_HEX)
 			tl = tlevel-tl
-			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end		
+			if tl > 0 then who:learnTalent(who.T_EMPATHIC_HEX, true, tl) end
 		elseif who.type == "thought-form" then
 			who:learnTalent(who.T_FLAME_OF_URH_ROK,true,tlevel)
 		elseif who.subtype == "yeek" then
@@ -187,6 +199,7 @@ uberTalent{
 --			print("Error: attempting to apply talent Blighted Summoning to incorrect creature type")
 			return false
 		end
+		who:incVim(who:getMaxVim())
 		return true
 	end,
 	info = function(self, t)

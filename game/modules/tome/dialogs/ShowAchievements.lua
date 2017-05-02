@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,13 +47,13 @@ function _M:generateList(kind)
 		end
 		if not data.notdone or a.show then
 			if a.show == "full" or not data.notdone then
-				list[#list+1] = { name=a.name, color=color, desc=a.desc, when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
 			elseif a.show == "none" then
-				list[#list+1] = { name="???", color=color, desc="-- Unknown --", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name="???", color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
 			elseif a.show == "name" then
-				list[#list+1] = { name=a.name, color=color, desc="-- Unknown --", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
 			else
-				list[#list+1] = { name=a.name, color=color, desc=a.desc, when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
 			end
 			i = i + 1
 		end

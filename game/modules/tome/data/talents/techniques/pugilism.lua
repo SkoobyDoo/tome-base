@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -39,7 +39,13 @@ newTalent{
 	no_unlearn_last = true,
 	getAttack = function(self, t) return self:getDex(25, true) end,
 	getDamage = function(self, t) return self:combatStatScale("dex", 5, 35) end,
-	getFlatReduction = function(self, t) return math.min(35, self:combatStatScale("str", 1, 30, 0.75)) end,
+	getFlatReduction = function(self, t) 
+		if self:knowTalent(self.T_REFLEX_DEFENSE) then
+			return math.min(35, self:combatStatScale("str", 1, 30, 0.75)) * (1 + (self:callTalent(self.T_REFLEX_DEFENSE, "getFlatReduction")/100) )
+		else
+			return math.min(35, self:combatStatScale("str", 1, 30, 0.75)) 
+		end	
+	end,
 	-- 13 Strength = 2, 20 = 5, 30 = 9, 40 = 12, 50 = 16, 55 = 17, 70 = 22, 80 = 25
 	activate = function(self, t)
 		cancelStances(self)
@@ -227,6 +233,11 @@ newTalent{
 			combo = true
 		end
 
+		if hit1 or hit2 or hit3 then
+			local a = util.dirToAngle(util.getDir(x, self.y, self.x, y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, y=0.33, base_rot=90 + a, a=250, appear=6, limit_life=6, speed=0, img="spinning_backhand_on_hit", radius=0})
+		end
+
 		if combo then
 			if hit1 then
 				self:buildCombo()
@@ -294,6 +305,9 @@ newTalent{
 		if hit1 then
 			self:buildCombo()
 			self:buildCombo()
+
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=45 + a, a=250, appear=6, limit_life=4, speed=0, img="axe_kick_on_hit", radius=-0.3})
 		end
 		return true
 

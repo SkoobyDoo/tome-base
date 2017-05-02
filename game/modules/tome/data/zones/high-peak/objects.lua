@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,12 +23,49 @@ load("/data/general/objects/lore/sunwall.lua")
 local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
+newEntity{ base = "BASE_LORE",
+	define_as = "ARGONIEL_DIAMOND", image = "object/artifact/bloodsoaked_resonating_diamond.png",
+	name = "bloodsoaked diamond", lore="argoniel-1",
+	desc = [[A strangely wet diamond.]],
+	rarity = false,
+	encumberance = 0,
+}
+	
+newEntity{ base = "BASE_LORE",
+	define_as = "ARGONIEL_ATHAME", image = "object/artifact/bloodsoaked_runed_athame.png",
+	name = "bloodsoaked athame", lore="argoniel-2",
+	desc = [[A strangely wet athame.]],
+	rarity = false,
+	encumberance = 0,
+}
+
+newEntity{ base = "BASE_LORE",
+	define_as = "ELANDAR_JOURNAL1",
+	name = "journal", lore="elandar-1", image = "object/artifact/elandars_journal.png",
+	desc = [[A magically-preserved journal.]],
+	rarity = false,
+	encumberance = 0,
+}
+
+newEntity{ base = "BASE_LORE",
+	define_as = "ELANDAR_JOURNAL2",
+	name = "journal", lore="elandar-2", image = "object/artifact/elandars_journal.png",
+	desc = [[A magically-preserved journal.]],
+	rarity = false,
+	encumberance = 0,
+}
+
 -- The staff of absorption, the reason the game exists!
 newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	power_source = {unknown=true},
 	unique = true, godslayer=true, flavor_name = "magestaff",
-	name = "Awakened Staff of Absorption", identified=true, force_lore_artifact=true,
+	flavors = {magestaff=true},
+	name = "Awakened Staff of Absorption",
+--	identified=true,
+	unided_name = "ominous, dark runed staff",
+	force_lore_artifact=true,
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
+	moddable_tile = "special/%s_awaken_staff_of_absorbtion",
 	encumber = 7,
 	plot=true,
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.
@@ -36,7 +73,6 @@ Light around it seems to dim and you can feel its tremendous power simply by tou
 The Sorcerers seem to have awakened its power.
 #{italic}#"And lo they came to Amakthel himself, and thousands were killed in the assault on his throne, and three of the Godslayers were broken beneath his feet. But Falion with his dying breath pierced the great god on his knee with the icy sword Arkil, and seeing his opportunity Caldizar, leader of the Godslayers, advanced with the Staff of Absorption and struck a terrifying blow against Amakthel. So fell the greatest of the gods by the hands of his own children, and his face was forced into the dust."#{normal}#]],
 
-	modes = {"fire", "cold", "lightning", "arcane"},
 	require = { stat = { mag=40 }, },
 	combat = {
 		dam = 60,
@@ -83,22 +119,36 @@ The Sorcerers seem to have awakened its power.
 
 	max_power = 200, power_regen = 1,
 	use_power = {
-		name = function(self, who) return ("absorb the essence of a target in range %d, draining 30%% of its life and increasing your own damage by 30%% for %d turns"):format(self.use_power.range, self.use_power.duration) end,
+		name = function(self, who) return ("absorb the essence (ignoring resistance and bypassing most defenses) of a target in range %d, draining 30%% of its life and increasing your own damage by 30%% for %d turns"):format(self.use_power.range, self.use_power.duration) end,
 		power = 200,
 		range = 8,
 		duration =7,
+		target = function(self, who) return {type="hit", range=self.use_power.range} end,
+		tactical = {ATTACK = 3,
+			BUFF = function(who, t, aitarget)
+				return not who:hasEffect(who.EFF_POWER_OVERLOAD) and 3
+			end},
+		requires_target = true,
+		talent_level = 7,
 		use = function(self, who)
-			local tg = {type="hit", range=self.use_power.range}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
 			local _ _, x, y = who:canProject(tg, x, y)
 			local target = game.level.map(x, y, engine.Map.ACTOR)
 			if not target then return nil end
-			if target.staff_drained then
-				game.logPlayer(who, "This foe has already been drained.")
-			end
+
+			-- bypass normal defenses
+			local bone_shield = target:isTalentActive(target.T_BONE_SHIELD)
+			local nb = bone_shield and bone_shield.nb
+			if bone_shield then bone_shield.nb = 0 end
+			who:attr("iceblock_pierce", 100)
+			who:attr("damage_shield_penetrate", 100)
 			_, x = target:takeHit(target.max_life * 0.3, who, {special_death_msg = "was absorbed by the ".. self.name.." held by "..who.name:capitalize()})
-			game.logPlayer(who, "%s brandishes %s %s, absorbing the essence of %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name=true}), target.name:capitalize())
+			who:attr("damage_shield_penetrate", -100)
+			who:attr("iceblock_pierce", -100)
+			if bone_shield then bone_shield.nb = nb end
+			who:logCombat(target, "#Source# brandishes %s %s, absorbing the essence of #target#!", who:his_her(), self:getName({do_color=true, no_add_name=true}), target.name:capitalize())
 			game:delayedLogDamage(who, target, x, ("#ORCHID# %d essence drain#LAST#"):format(x), false)
 			who:setEffect(who.EFF_POWER_OVERLOAD, self.use_power.duration, {power=30})
 			return {id=true, used=true}

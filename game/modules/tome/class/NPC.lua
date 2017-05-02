@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ local ActorAI = require "engine.interface.ActorAI"
 local Faction = require "engine.Faction"
 local Emote = require("engine.Emote")
 local Chat = require "engine.Chat"
+local Particles = require "engine.Particles"
 require "mod.class.Actor"
 
 module(..., package.seeall, class.inherit(mod.class.Actor, engine.interface.ActorAI))
@@ -33,6 +34,8 @@ function _M:init(t, no_default)
 	-- Grab default image name if none is set
 	if not self.image and self.name ~= "unknown actor" then self.image = "npc/"..tostring(self.type or "unknown").."_"..tostring(self.subtype or "unknown"):lower():gsub("[^a-z0-9]", "_").."_"..(self.name or "unknown"):lower():gsub("[^a-z0-9]", "_")..".png" end
 end
+
+_M._silent_talent_failure = true
 
 function _M:actBase()
 	-- Reduce shoving pressure every turn
@@ -74,7 +77,7 @@ function _M:act()
 		if self.emote_random and self.x and self.y and game.level.map.seens(self.x, self.y) and rng.range(0, 999) < self.emote_random.chance * 10 then
 			local e = util.getval(rng.table(self.emote_random))
 			if e then
-				local dur = util.bound(#e, 30, 90)
+				local dur = util.bound(#e, 45, 90)
 				self:doEmote(e, dur)
 			end
 		end
@@ -109,6 +112,7 @@ local function spotHostiles(self)
 end
 
 function _M:onTalentLuaError(ab, err)
+	engine.interface.ActorTalents.onTalentLuaError(self, ab, err)
 	self:useEnergy()  -- prevent infinitely long erroring out turns
 end
 
@@ -322,32 +326,34 @@ function _M:timedEffects(filter)
 end
 
 --- Called by ActorLife interface
--- We use it to pass aggression values to the AIs
+-- We use it to pass aggression values between NPCs
 function _M:onTakeHit(value, src, death_note)
 	value = mod.class.Actor.onTakeHit(self, value, src, death_note)
-
-	if not self.ai_target.actor and src and src.targetable and value > 0 then
-		self.ai_target.actor = src
-	end
-
+	
 	-- Switch to astar pathing temporarily
 	if src and src == self.ai_target.actor and not self._in_timed_effects then
 		self.ai_state.damaged_turns = 10
 	end
 
-	-- Get angry if attacked by a friend
-	if src and src ~= self and src.resolveSource and src.faction and self:reactionToward(src) >= 0 and value > 0 then
-		self:checkAngered(src, false, -50)
+	if value > 0 and src and src ~= self and src.resolveSource then
+		if not src.targetable then src = util.getval(src.resolveSource, src) end
+		if src then
+			if src.targetable and not self.ai_target.actor then self:setTarget(src) end
+			-- Get angry if hurt by a friend
+			if src.faction and self:reactionToward(src) >= 0 and self.fov then
+				self:checkAngered(src, false, -50)
 
-		-- Call for help if we become hostile
-		for i = 1, #self.fov.actors_dist do
-			local act = self.fov.actors_dist[i]
-			if act and act ~= self and self:reactionToward(act) > 0 and not act.dead and act.checkAngered then
-				act:checkAngered(src, false, -50)
+				-- Share reaction with allies
+				for i = 1, #self.fov.actors_dist do
+					local act = self.fov.actors_dist[i]
+					if act and act ~= self and not act.dead and act.checkAngered and self:reactionToward(act) > 0 then
+						act:checkAngered(src, false, -50)
+					end
+				end
 			end
 		end
 	end
-
+	
 	return value
 end
 
@@ -453,16 +459,17 @@ function _M:doEmote(text, dur, color)
 end
 
 --- Call when added to a level
--- Used to make escorts and such
+-- Used to make escorts, adjust to game difficulty settings, and such
 function _M:addedToLevel(level, x, y)
-	if not self:attr("difficulty_boosted") then
-		if game.difficulty == game.DIFFICULTY_NIGHTMARE and not game.party:hasMember(self) then
+	if not self:attr("difficulty_boosted") and not game.party:hasMember(self) then
+		-- make adjustments for game difficulty and equip some items
+		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.floor(lev / 3))
 			end
 			self:attr("difficulty_boosted", 1)
-		elseif game.difficulty == game.DIFFICULTY_INSANE and not game.party:hasMember(self) then
+		elseif game.difficulty == game.DIFFICULTY_INSANE then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.floor(lev / 2))
@@ -480,13 +487,14 @@ function _M:addedToLevel(level, x, y)
 				game.state:applyRandomClass(self, data, true)
 			end
 			-- Increase life
+			self.max_life_no_difficulty_boost = self.max_life
 			local lifeadd = self.max_life * 0.2
 			self.max_life = self.max_life + lifeadd
 			self.life = self.life + lifeadd
 			-- print("Insane increasing " .. self.name .. " life by " .. lifeadd)
 
 			self:attr("difficulty_boosted", 1)
-		elseif game.difficulty == game.DIFFICULTY_MADNESS and not game.party:hasMember(self) then
+		elseif game.difficulty == game.DIFFICULTY_MADNESS then
 			-- Increase talent level
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.ceil(lev * 1.7))
@@ -503,11 +511,48 @@ function _M:addedToLevel(level, x, y)
 				game.state:applyRandomClass(self, data, true)
 			end
 			-- Increase life
+			self.max_life_no_difficulty_boost = self.max_life
 			local lifeadd = self.max_life * self:getRankLifeAdjust(1) * self.level / 65 / 1.5
 			self.max_life = self.max_life + lifeadd
 			self.life = self.life + lifeadd
 			
 			self:attr("difficulty_boosted", 1)
+		end
+		
+		-- try to equip inventory items
+		local MainInven, o = self:getInven(self.INVEN_INVEN)
+
+--if config.settings.cheat then self:inventoryApplyAll(function(inv, item, o) o:identify(true) end) end-- temp
+		
+		if MainInven then --try to equip items from inventory
+			for i = #MainInven, 1, -1 do
+				o = MainInven[i]
+				local inven, worn = self:getInven(o:wornInven())
+					--print("[NPC:addedToLevel]", self.name, self.uid, "checking", o.name, "type", o.type)
+				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") and not (o.type and o.type == "weapon" and self.no_npc_weapon_equip) then -- check restrictions
+					--print("[NPC:addedToLevel]", self.name, self.uid, "passed restriction check", o.name)
+					local ro, replace = inven and inven[1], false
+					o = self:removeObject(self.INVEN_INVEN, i)
+					if o then
+
+					-- could put more sophisticated criteria here to pick the best gear
+						if ro and o.type == ro.type and o.subtype == ro.subtype and (o.rare or o.randart or o.unique) and not (ro.rare or ro.randart or ro.unique) then replace = true end
+						worn = self:wearObject(o, replace, false)
+						if worn then
+							print("[NPC:addedToLevel]", self.name, self.uid, "wearing", o.name)
+							if type(worn) == "table" then
+								print("--- replacing", worn.name)
+								self:addObject(self.INVEN_INVEN, worn)
+							end
+						else
+							self:addObject(self.INVEN_INVEN, o) -- put object back in main inventory
+						end
+					end
+				end
+			end
+		end
+		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
+			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})
 		end
 	end
 

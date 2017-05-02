@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ newTalent{
 	end,
 	getHealFactorChange = function(self, t)
 		local level = math.max(3 * self:getTalentTypeMastery(t.type[1]), self:getTalentLevel(t))
-		return -self:combatLimit(math.max(0,(level-2)^0.5), 1, 0, 0, 0.26, 1.73)  -- Limit < -100%
+		return -self:combatLimit(math.max(0,(level-2)^0.5), 1.5, 0, 0, 0.39, 1.73)  -- Limit < -150%
 	end,
 	getWoundDuration = function(self, t)
 		return 15
@@ -149,7 +149,7 @@ newTalent{
 		--return self:combatTalentIntervalDamage(t, "str", 0.8, 1.7, 0.4) * getHateMultiplier(self, 0.5, 1, false, hate)
 	end,
 	getMaxAttackCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6, "log")) end,
-	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), nolock=true} end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), nolock=true} end,
 	action = function(self, t)
 		local targeting = self:getTalentTarget(t)
 		local targetX, targetY, actualTarget = self:getTarget(targeting)

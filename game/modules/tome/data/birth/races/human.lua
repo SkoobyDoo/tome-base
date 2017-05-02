@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ newBirthDescriptor{
 		type = "humanoid", subtype="human",
 		resolvers.inscription("INFUSION:_REGENERATION", {cooldown=10, dur=5, heal=60}),
 		resolvers.inscription("INFUSION:_WILD", {cooldown=12, what={physical=true}, dur=4, power=14}),
+		resolvers.inventory({id=true, transmo=false, alter=function(o) o.inscription_data.cooldown=12 o.inscription_data.heal=50 end, {type="scroll", subtype="infusion", name="healing infusion", ego_chance=-1000, ego_chance=-1000}}),
 		resolvers.inventory{ id=true, {defined="ORB_SCRYING"} },
 	},
 	random_escort_possibilities = { {"tier1.1", 1, 2}, {"tier1.2", 1, 2}, {"daikara", 1, 2}, {"old-forest", 1, 4}, {"dreadfell", 1, 8}, {"reknor", 1, 2}, },
@@ -85,7 +86,7 @@ newBirthDescriptor
 	desc = {
 		"Highers are a special branch of Humans that have been imbued with latent magic since the Age of Allure.",
 		"They usually do not breed with other Humans, trying to keep their blood 'pure'.",
-		"They possess the #GOLD#Gift of the Pureborn#WHITE# which allows them to regenerate their wounds once in a while.",
+		"They possess the #GOLD#Gift of the Highborn#WHITE# which allows them to regenerate their wounds once in a while.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +1 Strength, +1 Dexterity, +0 Constitution",
 		"#LIGHT_BLUE# * +1 Magic, +1 Willpower, +0 Cunning",
@@ -116,7 +117,7 @@ newBirthDescriptor
 	name = "Cornac",
 	desc = {
 		"Cornacs are Humans from the northern parts of the Allied Kingdoms.",
-		"Humans are an inherently very adaptable race and as such they gain a #GOLD#talent category point#WHITE# at birth (others only gain one at levels 10, 20 and 36).",
+		"Humans are an inherently very adaptable race and as such they gain a #GOLD#talent category point#WHITE# (others only gain one at levels 10, 20 and 36) and both #GOLD#a class and a generic talent point#WHITE# at birth and every 10 levels.",
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +0 Strength, +0 Dexterity, +0 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
@@ -124,15 +125,21 @@ newBirthDescriptor
 		"#GOLD#Experience penalty:#LIGHT_BLUE# 0%",
 	},
 	experience = 1.0,
+	copy_add = {
+		unused_talents_types = 1,
+		unused_talents = 1,
+		unused_generics = 1,
+	},
 	copy = {
 		moddable_tile = "human_#sex#",
 		moddable_tile_base = "base_cornac_01.png",
 		random_name_def = "cornac_#sex#",
-		unused_talents_types = 1,
 		life_rating = 10,
 		default_wilderness = {"playerpop", "allied"},
 		starting_zone = "trollmire",
 		starting_quest = "start-allied",
 		starting_intro = "cornac",
+		extra_talent_point_every = 10,
+		extra_generic_point_every = 10,
 	},
 }

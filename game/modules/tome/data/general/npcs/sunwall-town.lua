@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -115,6 +115,7 @@ newEntity{ base = "BASE_NPC_SUNWALL_TOWN",
 		{type="armor", subtype="robe", forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},
 		[Talents.T_CHANT_OF_LIGHT]={base = 2, every = 7, max = 7},
 		[Talents.T_SEARING_LIGHT]={base = 3, every = 8, max = 7},
 		[Talents.T_FIREBEAM]={base = 2, every = 7, max = 7},

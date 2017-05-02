@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,15 +53,15 @@ newTalent{
 	require = spells_req2,
 	random_ego = "defensive",
 	points = 5,
-	cooldown = 15,
+	cooldown = 20,
 	positive = -20,
-	tactical = { HEAL = 3 },
+	tactical = { HEAL = 2.5 },
 	range = 0,
 	radius = 2,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
 	end,
-	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 4, 80) end,
+	getHeal = function(self, t) return self:combatTalentSpellDamage(t, 4, 80) * 0.75 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -81,13 +81,14 @@ newTalent{
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
 		local heal = t.getHeal(self, t)
+		local heal_fact = heal/(heal+50)
 		local duration = t.getDuration(self, t)
 		return ([[A magical zone of Sunlight appears around you, healing and shielding all within a radius of %d for %0.2f per turn and increasing healing effects on everyone within by %d%%. The effect lasts for %d turns.
 		Existing damage shields will be added to instead of overwritten and have their duration set to 2 if it isn't higher.
 		If the same shield is refreshed 20 times it will become unstable and explode, removing it.
-		It also lights up the affected zone.
+		It also lights up the affected area.
 		The amount healed will increase with the Magic stat]]):
-		format(radius, heal, heal / 2, duration)
+		format(radius, heal, heal_fact*100, duration)
 	end,
 }
 
@@ -122,20 +123,17 @@ newTalent{
 	random_ego = "defensive",
 	positive = -20,
 	cooldown = 30,
-	tactical = { HEAL = 1, CURE = 2 },
-	getRegeneration = function(self, t) return self:combatTalentSpellDamage(t, 10, 50) end,
+	tactical = { HEAL = 1, CURE = 3 },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)
-		self:setEffect(self.EFF_PROVIDENCE, t.getDuration(self, t), {power=t.getRegeneration(self, t)})
+		self:setEffect(self.EFF_PROVIDENCE, t.getDuration(self, t), {})
 		game:playSoundNear(self, "talents/heal")
 		return true
 	end,
 	info = function(self, t)
-		local regen = t.getRegeneration(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[Places you under the protection of Light itself. For %d turns, the light heals %d life and removes a single negative effect from you.
-		The amount healed will increase with your Spellpower.]]):
-		format(duration, regen)
+		return ([[Places you under the protection of a ray of sunlight. For %d turns, the light removes a single negative effect from you every turn.]]):
+		format(duration)
 	end,
 }
 
