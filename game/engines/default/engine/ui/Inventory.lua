@@ -84,7 +84,7 @@ function _M:generate()
 			for _, lt in ipairs(_M._last_tabs) do if lt.kind then last_kinds[lt.kind] = true end end
 			for j, row in ipairs(self.c_tabs.dlist) do for i, item in ipairs(row) do
 				if sel_all or last_kinds[item.data.kind] then
-					item.selected = true
+					self.c_tabs:setSelected(item, true)
 					found_tab = true
 					self.c_tabs.sel_i, self.c_tabs.sel_j = i, j
 					if sel_all and item.data.filter=="all" then _M._last_tabs_i = i end
@@ -93,7 +93,7 @@ function _M:generate()
 		end
 		if not found_tab then
 			self.c_tabs.sel_i, self.c_tabs.sel_j = 1, 1
-			self.c_tabs.dlist[1][1].selected = true
+			self.c_tabs:setSelected(self.c_tabs.dlist[1][1], true)
 		end
 
 		self.uis[#self.uis+1] = {x=0, y=0, ui=self.c_tabs}
@@ -214,6 +214,7 @@ function _M:updateTabFilterList(list)
 		if item.data.filter == "all" then
 			is_all = true
 			for i, row in ipairs(self.c_tabs.dlist) do for j, item in ipairs(row) do item.selected = item.data.filter ~= "all" end end
+			self.c_tabs:updateSelection()
 			list = self.c_tabs:getAllSelected()
 		end
 	end

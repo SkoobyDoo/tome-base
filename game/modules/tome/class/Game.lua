@@ -1613,17 +1613,17 @@ function _M:createFBOs()
 		end
 	end
 
-	local bloom_shader = Shader.new("bloom/bloom")
-	local hblur_shader = Shader.new("bloom/hblur") hblur_shader:setUniform("texSize", {w, h})
-	local vblur_shader = Shader.new("bloom/vblur") vblur_shader:setUniform("texSize", {w, h})
-	local combine_shader = Shader.new("bloom/combine")
+	-- local bloom_shader = Shader.new("bloom/bloom")
+	-- local hblur_shader = Shader.new("bloom/hblur") hblur_shader:setUniform("texSize", {w, h})
+	-- local vblur_shader = Shader.new("bloom/vblur") vblur_shader:setUniform("texSize", {w, h})
+	-- local combine_shader = Shader.new("bloom/combine")
 
 	self.full_fbo_shader = Shader.new("full_fbo")
 
-	self.fbobloom = core.renderer.target()
-	self.fbobloom:bloomMode(20, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
-	self.fbobloomrenderer = core.renderer.renderer("static"):add(self.fbobloom)
-	core.particles.defineBloomFBO(self.fbobloom)
+	-- self.fbobloom = core.renderer.target()
+	-- self.fbobloom:bloomMode(20, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
+	-- self.fbobloomrenderer = core.renderer.renderer("static"):add(self.fbobloom)
+	-- core.particles.defineBloomFBO(self.fbobloom)
 
 	self.fbo2 = core.renderer.target()
 	self.fbo_posteffects = self.fbo2:postEffectsMode(unpack(seffs))
@@ -1665,9 +1665,9 @@ function _M:displayMap(nb_keyframes)
 		self.fbo:use(true)
 			if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
 			map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov)
-			if core.particles.hasBlooms() then
-				self.fbobloom:use(true) core.particles.drawBlooms() self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
-			end
+			-- if core.particles.hasBlooms() then
+			-- 	self.fbobloom:use(true) core.particles.drawBlooms() self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+			-- end
 			if self.level.data.foreground then self.level.data.foreground(self.level, 0, 0, nb_keyframes) end
 			if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 			if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
@@ -1698,9 +1698,9 @@ function _M:displayMap(nb_keyframes)
 
 		-- Mouse gestures
 		if self.gestures:update() then
-			self.fbobloom:use(true)
+			-- self.fbobloom:use(true)
 			self.gestures:display(map.display_x, map.display_y, nb_keyframes)
-			self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+			-- self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
 		end
 
 		-- Inform the player that map is in scroll mode
@@ -1846,13 +1846,6 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			package.loaded["mod.dialogs.UberTalent"] = nil
-			package.loaded["mod.dialogs.elements.TalentGrid"] = nil
-			package.loaded["mod.dialogs.elements.blocks.Talent"] = nil
-			self.on_finish_prodigies = self.on_finish_prodigies or {}
-			local d = require("mod.dialogs.UberTalent").new(self.player, self.on_finish_prodigies)
-			game:registerDialog(d)
-do return end
 			self:changeLevel(game.level.level + 1)
 do return end
 			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)

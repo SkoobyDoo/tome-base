@@ -26,6 +26,7 @@ local NameGenerator = require "engine.NameGenerator"
 local NameGenerator2 = require "engine.NameGenerator2"
 local Donation = require "mod.dialogs.Donation"
 local Dialog = require "engine.ui.Dialog"
+local forceprint, print = print, function() end
 
 module(..., package.seeall, class.inherit(engine.Entity))
 

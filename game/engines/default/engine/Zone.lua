@@ -989,7 +989,7 @@ function _M:onMapBuilding(level, map)
 	config.frag = config.frag or "map_default"
 	config.vert = config.vert or "default/gl-extended"
 
-	map:setDefaultShader({"map_default", config}, nil, true)
+	-- map:setDefaultShader({"map_default", config}, nil, true)
 end
 
 function _M:newLevel(level_data, lev, old_lev, game)

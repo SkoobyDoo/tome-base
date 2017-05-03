@@ -4810,7 +4810,7 @@ end
 --  object definitions may contain the field callbackPriorities{event_name1 = priority1, event_name2 = priority2, ...) containing specific priority values to override the default
 local function upgradeStore(store, storename)
 	if store.__priorities then return end
-	print("[CALLBACK] upgrading to prioritized", storename)
+	-- print("[CALLBACK] upgrading to prioritized", storename)
 	local priorities = {}
 	for k,_ in pairs(store) do priorities[k] = 0 end
 	store.__priorities = priorities

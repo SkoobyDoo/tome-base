@@ -177,6 +177,7 @@ function _M:init()
 			_M.line_pos = 0
 			_M.offset = 0
 			self.changed = true
+			self.changed_input = true
 		end,
 		_UP = function()
 			_M.com_sel = util.bound(_M.com_sel - 1, 0, #_M.commands)

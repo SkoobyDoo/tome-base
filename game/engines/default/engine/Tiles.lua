@@ -133,7 +133,7 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 					return ts, fx, fy, tw, th, tsx, tsy
 				end
 			end
-			print("Loading tile", image)
+			print("Loading tile", image, " even though tileset was", allow_tileset)
 			s = core.display.loadImage(concatPrefix(self.prefix, image))
 			if not s then s = core.display.loadImage(baseImageFile(image)) end
 			if s then is_image = true end

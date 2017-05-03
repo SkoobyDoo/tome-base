@@ -43,31 +43,40 @@ function _M:init(t)
 	self.nb_w = math.floor(self.w / (self.tile_w + self.padding))
 	self.nb_h = math.floor(self.h / (self.tile_h + self.padding))
 
-	self.tiles = {}
-
 	Base.init(self, t)
 end
 
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
+	local frame_container = core.renderer.container()
+	local sel_container = core.renderer.container()
+	local image_container = core.renderer.container():translate(0, 0, 1)
+	self.do_container:add(frame_container):add(sel_container):add(image_container)
+	self.frame_container = frame_container
+	self.sel_container = sel_container
+
+	local frame_selected = nil
+	local frame_sel = self:makeFrameDO("ui/selector-sel", self.tile_w, self.tile_h)
+	local frame_usel = self:makeFrameDO("ui/selector", self.tile_w, self.tile_h)
+	if self.selection then
+		frame_selected = self:makeFrameDO("ui/selector-green", self.tile_w, self.tile_h)
+	end
 
 	self.scroll = 1
 	self.dlist = {}
+	self.items = {}
 	local row = {}
 	for i, data in ipairs(self.list) do
 		local f = data
 		if type(data) == "table" then f = f.image end
 		local s = Tiles:loadImage(f)
 		if s then
-			local w, h = s:getSize()
-			local item = {s:glTexture()}
-			item.w = w
-			item.h = h
-			item.f = f
-			item.data = data
-			self.tiles[f] = {f=f, w=w, h=h, pos_i = #row+1, pos_j = #self.dlist}
+			local d, w, h = core.renderer.fromSurface(s, 0, 0, self.force_size and self.tile_w or nil, self.force_size and self.tile_h or nil)
+			local item = {d=d, w=w, h=h, data=data}
 			row[#row+1] = item
+			self.items[item] = true
 			if #row + 1 > self.nb_w then
 				self.dlist[#self.dlist+1] = row
 				row = {}
@@ -81,12 +90,49 @@ function _M:generate()
 		self.scrollbar = Slider.new{size=self.h, max=#self.dlist - self.nb_h}
 	end
 
-	self.frame = self:makeFrame(nil, self.tile_w, self.tile_h)
-	self.frame_sel = self:makeFrame("ui/selector-sel", self.tile_w, self.tile_h)
-	self.frame_usel = self:makeFrame("ui/selector", self.tile_w, self.tile_h)
-	if self.selection then
-		self.frame_selected = self:makeFrame("ui/selector-green", self.tile_w, self.tile_h)
+	local by = 0
+	for j = 1, #self.dlist do
+		local row = self.dlist[j]
+		for i = 1, #row do
+			local item = row[i]
+
+			local x = (i-1) * (self.tile_w + self.padding)
+			local y = by
+
+			item.f_focus = self:cloneFrameDO(frame_sel)
+			frame_container:add(item.f_focus.container:translate(x, y):color(1, 1, 1, 0))
+
+			if self.selection then
+				item.f_selected = self:cloneFrameDO(frame_selected)
+				sel_container:add(item.f_selected.container:translate(x, y):color(1, 1, 1, 0))
+			end
+
+			if not self.force_size then
+				x = (i-1) * (self.tile_w + self.padding) + self.tile_w - item.w
+				y = by + self.tile_h - item.h
+			end
+			image_container:add(item.d:translate(x, y))
+
+			-- if item.selected then self:drawFrame(self.frame_selected, x + (i-1) * (self.tile_w + self.padding), y) end
+
+			-- if self.sel_i == i and self.sel_j == j then
+			-- 	if self.focused then self:drawFrame(self.frame_sel, x + (i-1) * (self.tile_w + self.padding), y)
+			-- 	else self:drawFrame(self.frame_usel, x + (i-1) * (self.tile_w + self.padding), y) end
+			-- else
+			-- 	self:drawFrame(self.frame, x + (i-1) * (self.tile_w + self.padding), y)
+			-- end
+
+			-- if self.force_size then
+			-- 	item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding), y, self.tile_w, self.tile_h, item[2] * self.tile_w / item.w, item[3] * self.tile_h / item.h)
+			-- else
+			-- 	item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding) + self.tile_w - item.w, y + self.tile_h - item.h, item.w, item.h, item[2], item[3])
+			-- end
+			-- item.last_display_x = screen_x + (x - bx)
+			-- item.last_display_y = screen_y + (y - by)
+		end
+		by = by + self.tile_h + self.padding
 	end
+
 
 	self.sel_i = 1
 	self.sel_j = 1
@@ -146,6 +192,7 @@ function _M:generate()
 			self:onSelect()
 		end,
 	}
+	self:updateSelection()
 end
 
 function _M:getAllSelected()
@@ -160,8 +207,26 @@ function _M:getAllSelectedKeys()
 	return list
 end
 
+function _M:setSelected(item, v)
+	if not self.items[item] then return end
+	if v == nil then item.selected = not item.selected
+	else item.selected = v end
+	self:updateSelection()
+end
+
+function _M:updateSelection()
+	for i, row in ipairs(self.dlist) do for j, item in ipairs(row) do if item.f_selected then
+		if item.selected then
+			item.f_selected.container:tween(6, "a", nil, 1)
+		else
+			item.f_selected.container:tween(6, "a", nil, 0)
+		end
+	end end end
+end
+
 function _M:clearSelection()
 	for i, row in ipairs(self.dlist) do for j, item in ipairs(row) do item.selected = false end end
+	self:updateSelection()
 end
 
 function _M:onUse(button, forcectrl)
@@ -177,6 +242,7 @@ function _M:onUse(button, forcectrl)
 			if not (forcectrl == true or (forcectrl == nil and core.key.modState("ctrl"))) then self:clearSelection() end
 			item.selected = not item.selected
 		end
+		self:updateSelection()
 		self.fct(item, button)
 	end
 end
@@ -186,38 +252,12 @@ function _M:onSelect(how, force)
 	if self.prev_item == item and not force then return end
 	if self.on_select and item then self.on_select(item, how) end
 	self.prev_item = item
+
+	for iitem, _ in pairs(self.items) do
+		iitem.f_focus.container:tween(6, "a", nil, iitem == item and 1 or 0)
+	end
 end
 
-function _M:display(x, y, nb_keyframes, screen_x, screen_y)
-	-- local bx, by = x, y
-
-	-- for j = self.scroll, math.min(self.scroll + self.nb_h, #self.dlist) do
-	-- 	local row = self.dlist[j]
-	-- 	if row then for i = 1, #row do
-	-- 		local item = row[i]
-
-	-- 		if item.selected then self:drawFrame(self.frame_selected, x + (i-1) * (self.tile_w + self.padding), y) end
-
-	-- 		if self.sel_i == i and self.sel_j == j then
-	-- 			if self.focused then self:drawFrame(self.frame_sel, x + (i-1) * (self.tile_w + self.padding), y)
-	-- 			else self:drawFrame(self.frame_usel, x + (i-1) * (self.tile_w + self.padding), y) end
-	-- 		else
-	-- 			self:drawFrame(self.frame, x + (i-1) * (self.tile_w + self.padding), y)
-	-- 		end
-
-	-- 		if self.force_size then
-	-- 			item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding), y, self.tile_w, self.tile_h, item[2] * self.tile_w / item.w, item[3] * self.tile_h / item.h)
-	-- 		else
-	-- 			item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding) + self.tile_w - item.w, y + self.tile_h - item.h, item.w, item.h, item[2], item[3])
-	-- 		end
-	-- 		item.last_display_x = screen_x + (x - bx)
-	-- 		item.last_display_y = screen_y + (y - by)
-	-- 	end end
-	-- 	y = y + self.tile_h + self.padding
-	-- end
-
-	-- if self.focused and self.scrollbar then
-	-- 	self.scrollbar.pos = self.scroll
-	-- 	self.scrollbar:display(bx + self.w - self.scrollbar.w, by)
-	-- end
+function _M:on_focus(status)
+	self.frame_container:tween(7, "a", nil, status and 1 or 0.2)
 end

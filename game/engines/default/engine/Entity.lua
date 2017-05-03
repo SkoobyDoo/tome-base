@@ -366,6 +366,8 @@ function _M:makeMapObject(tiles, idx)
 	end
 
 	-- Texture
+	-- DGDGDGDG: handle "invis.png" as a special "texture" that tells the engine to fully ignore it, no texture at all
+	-- This way this wont break sorting
 	local ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
 	local dy, dh = 0, 0
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
@@ -1133,11 +1135,11 @@ function _M:loadList(file, no_default, res, mod, loaded)
 
 	local f, err = nil, nil
 	if entities_load_functions[file] and entities_load_functions[file][no_default] then
-		print("Loading entities file from memory", file)
+		-- print("Loading entities file from memory", file)
 		f = entities_load_functions[file][no_default]
 	elseif fs.exists(file) then
 		f, err = loadfile(file)
-		print("Loading entities file from file", file)
+		-- print("Loading entities file from file", file)
 		entities_load_functions[file] = entities_load_functions[file] or {}
 		entities_load_functions[file][no_default] = f
 	else

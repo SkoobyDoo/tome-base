@@ -1669,9 +1669,13 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 	map->used_mx = mx;
 	map->used_my = my;
 
+	// DGDGDGDG: make a different map caching system, split each layer into 16x16 blocks:
+	// do not have them fixd on scrolling but on map coords so constant scrolling will not invalidate stuff
+
 	// int mini = mx, maxi = mx + 2, minj =  my, maxj = my + 2;
 	int mini = mx - 1, maxi = mx + map->mwidth + 2, minj =  my - 1, maxj = my + map->mheight + 2;
 	// int mini = mx - 50, maxi = mx + map->mwidth + 50, minj =  my - 50, maxj = my + map->mheight + 50;
+	// int mini = mx - 10, maxi = mx + map->mwidth + 10, minj =  my - 10, maxj = my + map->mheight + 10;
 	if(mini < 0)
 		mini = 0;
 	if(minj < 0)
