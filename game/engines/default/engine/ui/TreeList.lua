@@ -280,7 +280,7 @@ function _M:drawItem(item)
 
 	local x = 0
 	for i, col in ipairs(self.columns) do
-		if not col.direct_draw then
+		if not col.direct_draw or is_header then
 			local fw = col.width
 			local level = item.level
 			local color = item.color or {255,255,255}
@@ -289,6 +289,7 @@ function _M:drawItem(item)
 
 			if is_header then
 				text = tostring(item[i].name)
+				if not text or text == "" then text = " " end
 			elseif type(col.display_prop) == "function" then
 				text = tostring(col.display_prop(item))
 			else
@@ -312,7 +313,7 @@ function _M:drawItem(item)
 				if is_header then
 					opts = {frame="ui/heading-sel", frame_sel="ui/heading"}
 				end
-				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset, 1, true)
+				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset, 1, not is_header)
 				item.cols[i]._entry:translate(x + offset, 0, 0)
 				item.cols[i]._entry:select(is_header)
 				local ec = item.cols[i]._entry:get()

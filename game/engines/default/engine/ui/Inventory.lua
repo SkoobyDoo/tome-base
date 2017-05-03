@@ -106,7 +106,7 @@ function _M:generate()
 	end
 
 
-	self.c_inven = ListColumns.new{width=self.w, height=self.h - (self.c_tabs and self.c_tabs.h or 0), sortable=true, scrollbar=true, columns=self.columns or {
+	self.c_inven = ListColumns.new{width=self.w, height=self.h - (self.c_tabs and self.c_tabs.h or 0), floating_headers=true, sortable=true, scrollbar=true, columns=self.columns or {
 		{name="", width={33,"fixed"}, display_prop="char", sort="id"},
 		{name="", width={24,"fixed"}, display_prop="object", sort="sortname", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
 		{name="Inventory", width=72, display_prop="name", sort="sortname"},
