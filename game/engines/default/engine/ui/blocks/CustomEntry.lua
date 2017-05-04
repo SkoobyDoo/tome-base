@@ -30,9 +30,9 @@ function _M:init(t, w, h, inside_do)
 
 	self.w, self.h = w, h
 	self.frame = self.parent:makeFrameDO(t.frame or "ui/selector", w, h)
-	self.frame.container:color(1, 1, 1, 0)
+	self.frame.container:shown(false)
 	self.frame_sel = self.parent:makeFrameDO(t.frame_sel or "ui/selector-sel", w, h)
-	self.frame_sel.container:color(1, 1, 1, 0)
+	self.frame_sel.container:shown(false)
 	self.cur_frame = self.frame
 	self.do_container:add(self.frame.container)
 	self.do_container:add(self.frame_sel.container)
@@ -49,8 +49,10 @@ function _M:select(v)
 	if not self.frame then return end
 	if v then
 		self.cur_frame.container:color(1, 1, 1, 1)
+		self.cur_frame.container:shown(v)
 	else
-		self.cur_frame.container:tween(8, "a", nil, 0, "linear")
+		-- self.cur_frame.container:shown(false)
+		self.cur_frame.container:tween(8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
 	end
 end
 
@@ -59,9 +61,10 @@ function _M:onFocusChange(v)
 
 	if not self.frame then return end
 
-	self.cur_frame.container:color(1, 1, 1, 0)
+	self.cur_frame.container:shown(false)
 	self.cur_frame = v and self.frame_sel or self.frame
 	if self.selected then
 		self.cur_frame.container:color(1, 1, 1, 1)
+		self.cur_frame.container:shown(true)
 	end
 end
