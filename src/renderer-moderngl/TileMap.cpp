@@ -155,10 +155,11 @@ void DORTileObject::regenData() {
 		 	v->setTexture(tex, LUA_NOREF);
 		 	v->setShader(use_shader);
 		 	v->addQuad(
-				dx, dy, dz,  		dm->tex_x[0], dm->tex_y[0],
-				dx+dw, dy, dz,  	dm->tex_x[0] + dm->tex_factorx[0], dm->tex_y[0],
-				dx+dw, dy+dh, dz,  	dm->tex_x[0] + dm->tex_factorx[0], dm->tex_y[0] + dm->tex_factory[0],
-				dx, dy+dh, dz,  	dm->tex_x[0], dm->tex_y[0] + dm->tex_factory[0],
+				dx, dy,   		dm->tex_x[0], dm->tex_y[0],
+				dx+dw, dy,   	dm->tex_x[0] + dm->tex_factorx[0], dm->tex_y[0],
+				dx+dw, dy+dh,   	dm->tex_x[0] + dm->tex_factorx[0], dm->tex_y[0] + dm->tex_factory[0],
+				dx, dy+dh,   	dm->tex_x[0], dm->tex_y[0] + dm->tex_factory[0],
+				dz,
 				1, 1, 1, a
 			);
 			add(v);

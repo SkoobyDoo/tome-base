@@ -31,7 +31,7 @@ struct sortable_vertex {
 	vertex v;
 	array<GLuint, DO_MAX_TEX> tex;
 	shader_type *shader;
-	SubRenderer *sub;
+	ISubRenderer *sub;
 	DisplayObject *tick;
 	
 	bool operator<(const sortable_vertex &i) const;
@@ -49,7 +49,7 @@ public:
 	shader_type *shader = NULL;
 	// DGDGDGDG: make two kind of vertex, the extended & non expanded one and thus two vectors. RendererGL should be able to detect abd pul lthe correct one
 	vector<vertex> list;
-	SubRenderer *sub = NULL;
+	ISubRenderer *sub = NULL;
 	DisplayObject *tick = NULL;
 
 	DisplayList();
@@ -70,7 +70,7 @@ enum class SortMode { NO_SORT, FAST, FULL, GL };
 
 enum class RenderKind { QUADS, TRIANGLES }; 
 
-class RendererGL : public SubRenderer {
+class RendererGL : public ISubRenderer {
 	friend class DORVertexes;
 protected:
 	VBOMode mode = VBOMode::DYNAMIC;
@@ -136,10 +136,9 @@ public:
 
 	void activateCutting(mat4 cur_model, bool v);
 
-	// This should be in DORTarget
-	// void enablePostProcessing(bool v);
-	// void clearPostProcessShaders();
-	// void addPostProcessShader(shader_type *s);
+	virtual void add(DisplayObject *dob);
+	virtual void remove(DisplayObject *dob);
+	virtual void clear();
 };
 
 #endif

@@ -67,6 +67,7 @@ void DisplayObject::removeFromParent() {
 	if (!parent) return;
 	DORContainer *p = dynamic_cast<DORContainer*>(parent);
 	if (p) p->remove(this);
+	parent = renderer = NULL;
 }
 
 void DisplayObject::setParent(DisplayObject *parent) {
@@ -78,6 +79,15 @@ void DisplayObject::setParent(DisplayObject *parent) {
 	}
 #endif
 	this->parent = parent;
+	if (!parent) renderer = NULL;
+
+	DisplayObject *p = parent;
+	while (p) {
+		RendererGL *r = dynamic_cast<RendererGL*>(p);
+		if (r) { renderer = r; break; }
+		p = p->parent;
+	}
+	
 };
 
 void DisplayObject::setChanged(bool force) {
@@ -103,14 +113,8 @@ void DisplayObject::setChanged(bool force) {
 }
 
 void DisplayObject::setSortingChanged() {
-	DisplayObject *p = parent;
-	while (p) {
-		if (p->stop_parent_recursing){
-			p->setSortingChanged();
-			break;
-		}
-		p = p->parent;
-	}
+	if (!renderer) return;
+	renderer->setSortingChanged();
 }
 
 	// printf("%f, %f, %f, %f\n", model[0][0], model[0][1], model[0][2], model[0][3]);
@@ -182,6 +186,14 @@ void DisplayObject::resetModelMatrix() {
 	scale_x = scale_y = scale_z = 1;
 	recomputeModelMatrix();
 }
+
+void DisplayObject::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	// recomputeModelMatrix(); // DGDGDGDG Make matric recompiting happen only here
+	computed_model = cur_model * model;
+	computed_color = cur_color * color;
+	computed_visible = cur_visible && visible;
+}
+
 
 DORTweener::DORTweener(DisplayObject *d) {
 	who = d;
@@ -462,14 +474,14 @@ void DORVertexes::setTexture(GLuint tex, int lua_ref, int id) {
 }
 
 void DORVertexes::clear() {
-	vertices.clear();
+	faces.clear();
 	setChanged();
 }
 
 void DORVertexes::cloneInto(DisplayObject *_into) {
 	DisplayObject::cloneInto(_into);
 	DORVertexes *into = dynamic_cast<DORVertexes*>(_into);
-	into->vertices.insert(into->vertices.begin(), vertices.begin(), vertices.end());
+	into->faces.insert(into->faces.begin(), faces.begin(), faces.end());
 	into->tex_max = tex_max;
 	into->tex = tex;
 	into->shader = shader;
@@ -487,58 +499,57 @@ int DORVertexes::addQuad(
 		float x2, float y2, float u2, float v2, 
 		float x3, float y3, float u3, float v3, 
 		float x4, float y4, float u4, float v4, 
+		float z,
 		float r, float g, float b, float a
 	) {
-	return addQuad(
-		x1, y1, 0, u1, v1,
-		x2, y2, 0, u2, v2,
-		x3, y3, 0, u3, v3,
-		x4, y4, 0, u4, v4,
-		r, g, b, a
-	);
-}
-
-int DORVertexes::addQuad(
-		float x1, float y1, float z1, float u1, float v1, 
-		float x2, float y2, float z2, float u2, float v2, 
-		float x3, float y3, float z3, float u3, float v3, 
-		float x4, float y4, float z4, float u4, float v4, 
-		float r, float g, float b, float a
-	) {
-	int size = vertices.size();
-	if (size + 4 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
+	int size = faces.size();
+	if (size >= faces.capacity()) {faces.reserve(faces.capacity() * 2); computed_vertices.reserve(computed_vertices.capacity() * 2);}
 
 	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
-	if ((z1 != z2) || (z1 != z3) || (z1 != z4) || (z3 != z4) || (size && (z1 != zflat))) {
+	if ((size && (z != zflat))) {
 		printf("Warning making non flat DORVertexes::addQuad!\n");
 		is_zflat = false;
 	}
-	if (!size) zflat = z1;
+	if (!size) zflat = z;
 
-	vertices.push_back({{x1, y1, z1, 1}, {u1, v1}, {r, g, b, a}});
-	vertices.push_back({{x2, y2, z2, 1}, {u2, v2}, {r, g, b, a}});
-	vertices.push_back({{x3, y3, z3, 1}, {u3, v3}, {r, g, b, a}});
-	vertices.push_back({{x4, y4, z4, 1}, {u4, v4}, {r, g, b, a}});
+	faces.push_back({
+		{r, g, b, a},		
+		{ {x1, y1}, {x2, y2}, {x3, y3}, {x4, y4} },
+		z,
+	});
+	computed_vertices.push_back({{0,0,0,0}, {u1, v1}});
+	computed_vertices.push_back({{0,0,0,0}, {u2, v2}});
+	computed_vertices.push_back({{0,0,0,0}, {u3, v3}});
+	computed_vertices.push_back({{0,0,0,0}, {u4, v4}});
 
 	setChanged();
 	return 0;
 }
 
 int DORVertexes::addQuad(vertex v1, vertex v2, vertex v3, vertex v4) {
-	int size = vertices.size();
-	if (size + 4 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
+	int size = faces.size();
+	if (size >= faces.capacity()) {faces.reserve(faces.capacity() * 2); computed_vertices.reserve(computed_vertices.capacity() * 2);}
 
+	if ((v1.pos.z != v2.pos.z) || (v1.pos.z != v3.pos.z) || (v1.pos.z != v4.pos.z) || (v3.pos.z != v4.pos.z)) {
+		printf("ERROR: DORVertexes:addQuad(vertex list): tried to add vertexes of different z.\n");
+		exit(2);
+	}
 	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
-	if ((v1.pos.z != v2.pos.z) || (v1.pos.z != v3.pos.z) || (v1.pos.z != v4.pos.z) || (v3.pos.z != v4.pos.z) || (size && (v1.pos.z != zflat))) {
+	if ((size && (v1.pos.z != zflat))) {
 		printf("Warning making non flat DORVertexes::addQuad!\n");
 		is_zflat = false;
 	}
 	if (!size) zflat = v1.pos.z;
 
-	vertices.push_back(v1);
-	vertices.push_back(v2);
-	vertices.push_back(v3);
-	vertices.push_back(v4);
+	faces.push_back({
+		v1.color,
+		{ {v1.pos.x, v1.pos.y}, {v2.pos.x, v2.pos.y}, {v3.pos.x, v3.pos.y}, {v4.pos.x, v4.pos.y} },
+		v1.pos.z,
+	});
+	computed_vertices.push_back(v1);
+	computed_vertices.push_back(v2);
+	computed_vertices.push_back(v3);
+	computed_vertices.push_back(v4);
 
 	setChanged();
 	return 0;
@@ -550,354 +561,178 @@ int DORVertexes::addQuadPie(
 		float angle,
 		float r, float g, float b, float a
 	) {
-	if (angle < 0) angle = 0;
-	else if (angle > 360) angle = 360;
-	if (angle == 360) return 0;
+	// DGDGDGDG reimplement me
+	// if (angle < 0) angle = 0;
+	// else if (angle > 360) angle = 360;
+	// if (angle == 360) return 0;
 
-	int size = vertices.size();
-	if (size + 10 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
+	// int size = vertices.size();
+	// if (size + 10 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
 
-	if ((size && (0 != zflat))) {
-		printf("Warning making non flat DORVertexes::addQuadPie!\n");
-		is_zflat = false;
-	}
-	if (!size) zflat = 0;
+	// if ((size && (0 != zflat))) {
+	// 	printf("Warning making non flat DORVertexes::addQuadPie!\n");
+	// 	is_zflat = false;
+	// }
+	// if (!size) zflat = 0;
 
 
-	float w = x2 - x1;
-	float h = y2 - y1;
-	float mw = w / 2, mh = h / 2;
-	float xmid = x1 + mw, ymid = y1 + mh;
+	// float w = x2 - x1;
+	// float h = y2 - y1;
+	// float mw = w / 2, mh = h / 2;
+	// float xmid = x1 + mw, ymid = y1 + mh;
 
-	float uw = u2 - u1;
-	float vh = v2 - v1;
-	float mu = uw / 2, mv = vh / 2;
-	float umid = u1 + mu, vmid = v1 + mv;
+	// float uw = u2 - u1;
+	// float vh = v2 - v1;
+	// float mu = uw / 2, mv = vh / 2;
+	// float umid = u1 + mu, vmid = v1 + mv;
 
-	float scale = cos(M_PI / 4);
+	// float scale = cos(M_PI / 4);
 
-	int quadrant = angle / 45;
-	float baseangle = (angle + 90) * M_PI / 180;
-	// Now we project the circle coordinates on a bounding square thanks to scale
-	float c = -cos(baseangle) / scale * mw;
-	float s = -sin(baseangle) / scale * mh;
-	float cu = -cos(baseangle) / scale * mu;
-	float sv = -sin(baseangle) / scale * mv;
+	// int quadrant = angle / 45;
+	// float baseangle = (angle + 90) * M_PI / 180;
+	// // Now we project the circle coordinates on a bounding square thanks to scale
+	// float c = -cos(baseangle) / scale * mw;
+	// float s = -sin(baseangle) / scale * mh;
+	// float cu = -cos(baseangle) / scale * mu;
+	// float sv = -sin(baseangle) / scale * mv;
 
-	if (quadrant >= 0 && quadrant < 2) {
-		// Cover all the left
-		vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
-		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
-		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
-		vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
-		// Cover bottom right
-		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-		vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
-		vertices.push_back({{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}});
-		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
-		// Cover top right
-		if (quadrant == 0) {
-			vertices.push_back({{xmid + c, y1, 0, 1}, {umid +cu, v1}, {r, g, b, a}});
-			vertices.push_back({{x2, y1, 0, 1}, {u2, v1}, {r, g, b, a}});
-			vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-		} else {
-			vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
-			vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
-			vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-		}
-	}
-	else if (quadrant >= 2 && quadrant < 4) {
-		// Cover all the left
-		vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
-		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
-		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
-		vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
-		// Cover bottom right
-		if (quadrant == 2) {
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-			vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
-			vertices.push_back({{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}});
-			vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
-		} else {
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-			vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
-			vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
-			vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
-
-		}
-	}
-	else if (quadrant >= 4 && quadrant < 6) {
-		// Cover top left
-		vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
-		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
-		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-		vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
-		// Cover bottom right
-		if (quadrant == 4) {
-			vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-			vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
-			vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
-		} else {
-			vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-			vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
-			vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
-		}
-	}
-	else if (quadrant >= 6 && quadrant < 8) {
-		// Cover top left
-		if (quadrant == 6) {
-			vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
-			vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-			vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
-		} else {
-			vertices.push_back({{xmid + c, y1, 0, 1}, {umid + cu, v1}, {r, g, b, a}});
-			vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
-			vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
-			vertices.push_back({{xmid + c, y1, 0, 1}, {umid + cu, v1}, {r, g, b, a}});
-		}
-	}
-
-	setChanged();
-	return 0;
-}
-
-void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
-	float v10[3];
-	v10[0] = v1[0] - v0[0];
-	v10[1] = v1[1] - v0[1];
-	v10[2] = v1[2] - v0[2];
-
-	float v20[3];
-	v20[0] = v2[0] - v0[0];
-	v20[1] = v2[1] - v0[1];
-	v20[2] = v2[2] - v0[2];
-
-	N[0] = v20[1] * v10[2] - v20[2] * v10[1];
-	N[1] = v20[2] * v10[0] - v20[0] * v10[2];
-	N[2] = v20[0] * v10[1] - v20[1] * v10[0];
-
-	float len2 = N[0] * N[0] + N[1] * N[1] + N[2] * N[2];
-	if (len2 > 0.0f) {
-		float len = sqrtf(len2);
-
-		N[0] /= len;
-		N[1] /= len;
-	}
-}
-
-extern "C" GLuint load_image_texture(const char *file);
-void DORVertexes::loadObj(const string &filename) {
-	if (!PHYSFS_exists(filename.c_str())) {
-		printf("[DORVertexes] loadObj: file unknown %s\n", filename.c_str());
-		return;
-	}
-	tinyobj::attrib_t attrib;
-	vector<tinyobj::shape_t> shapes;
-	vector<tinyobj::material_t> materials;
-	string err;
-
-	string prefix = filename.substr(0, filename.find_last_of('/') + 1);
-	tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str(), prefix.c_str(), true);
-
-	printf("[DORVertexes] loadObj: %s\n", err.c_str());
-	printf("# of vertices  = %d\n", (int)(attrib.vertices.size()) / 3);
-	printf("# of normals   = %d\n", (int)(attrib.normals.size()) / 3);
-	printf("# of texcoords = %d\n", (int)(attrib.texcoords.size()) / 2);
-	printf("# of materials = %d\n", (int)materials.size());
-	printf("# of shapes    = %d\n", (int)shapes.size());
-
-	vector<GLuint> materials_diffuses; materials_diffuses.resize(materials.size());
-	int i = 0;
-	for (auto &mat : materials) {
-		if (mat.diffuse_texname != "") {
-			mat.diffuse_texname = prefix + mat.diffuse_texname;
-			string extless = mat.diffuse_texname.substr(0, mat.diffuse_texname.find_last_of('.') + 1);
-			string file = extless + "png";
-			GLuint tex = load_image_texture(file.c_str());
-			materials_diffuses[i] = tex;
-			printf("mat.diffuse_texname '%s' : %d\n", mat.diffuse_texname.c_str(), tex);
-			// DGDGDGDG obviously this is all very wrong, it wont ever be GC'ed and all such kind of nasty
-			// THIS IS A TETS ONLY
-		}
-		i++;
-	}
-
-	for (size_t s = 0; s < shapes.size(); s++) {
-		size_t index_offset = 0;
-		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-			size_t fnum = shapes[s].mesh.num_face_vertices[f];
-			int mat_id = shapes[s].mesh.material_ids[f];
-			auto &mat = materials[mat_id];
-			for (size_t v = 0; v < fnum; v++) {
-				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-				vec4 pos(attrib.vertices[3 * idx.vertex_index + 0], attrib.vertices[3 * idx.vertex_index + 1], attrib.vertices[3 * idx.vertex_index + 2], 1);
-				vec2 texcoords(0, 1);
-				vec4 color(1, 1, 1, 1);
-
-				if (idx.texcoord_index >= 0) {
-					texcoords.x = attrib.texcoords[2 * idx.texcoord_index + 0];
-					texcoords.y = attrib.texcoords[2 * idx.texcoord_index + 1];
-					tex[0] = materials_diffuses[mat_id];
-					// printf("SHAPE %d tex : %d\n", s, materials_diffuses[mat_id]);
-				}
-
-				if (mat_id >= 0) {
-					color.r = mat.diffuse[0];
-					color.g = mat.diffuse[1];
-					color.b = mat.diffuse[2];
-				}
-
-				// printf("POS %f x %f x %f\n", pos.x, pos.y, pos.z);
-				vertices.push_back({pos, texcoords, color});
-			}
-			index_offset += fnum;
-		}
-		break;
-	}
-	
-				// tinyobj::material_t &shapes[s].mesh.material_ids[3 * f + 0];
-				// tinyobj::index_t idx0 = shapes[s].mesh.indices[3 * f + 0];
-				// tinyobj::index_t idx1 = shapes[s].mesh.indices[3 * f + 1];
-				// tinyobj::index_t idx2 = shapes[s].mesh.indices[3 * f + 2];
-
-				// float v[3][3];
-				// for (int k = 0; k < 3; k++) {
-				// 	int f0 = idx0.vertex_index;
-				// 	int f1 = idx1.vertex_index;
-				// 	int f2 = idx2.vertex_index;
-				// 	assert(f0 >= 0);
-				// 	assert(f1 >= 0);
-				// 	assert(f2 >= 0);
-
-				// 	v[0][k] = attrib.vertices[3 * f0 + k];
-				// 	v[1][k] = attrib.vertices[3 * f1 + k];
-				// 	v[2][k] = attrib.vertices[3 * f2 + k];
-				// }
-
-				// float uv[3][3];
-				// if (attrib.texcoords.size() > 0) {
-				// 	int f0 = idx0.texcoord_index;
-				// 	int f1 = idx1.texcoord_index;
-				// 	int f2 = idx2.texcoord_index;
-				// 	assert(f0 >= 0);
-				// 	assert(f1 >= 0);
-				// 	assert(f2 >= 0);
-				// 	for (int k = 0; k < 2; k++) {
-				// 		uv[0][k] = attrib.texcoords[2 * f0 + k];
-				// 		uv[1][k] = attrib.texcoords[2 * f1 + k];
-				// 		uv[2][k] = attrib.texcoords[2 * f2 + k];
-				// 	}
-				// }
-
-				// float d[3][3];
-				// if (attrib.diffuse.size() > 0) {
-				// 	int f0 = idx0.texcoord_index;
-				// 	int f1 = idx1.texcoord_index;
-				// 	int f2 = idx2.texcoord_index;
-				// 	assert(f0 >= 0);
-				// 	assert(f1 >= 0);
-				// 	assert(f2 >= 0);
-				// 	for (int k = 0; k < 2; k++) {
-				// 		d[0][k] = attrib.texcoords[2 * f0 + k];
-				// 		d[1][k] = attrib.texcoords[2 * f1 + k];
-				// 		d[2][k] = attrib.texcoords[2 * f2 + k];
-				// 	}
-				// }
-
-				// float n[3][2];
-				// if (attrib.normals.size() > 0) {
-				// 	int f0 = idx0.normal_index;
-				// 	int f1 = idx1.normal_index;
-				// 	int f2 = idx2.normal_index;
-				// 	assert(f0 >= 0);
-				// 	assert(f1 >= 0);
-				// 	assert(f2 >= 0);
-				// 	for (int k = 0; k < 3; k++) {
-				// 		n[0][k] = attrib.normals[3 * f0 + k];
-				// 		n[1][k] = attrib.normals[3 * f1 + k];
-				// 		n[2][k] = attrib.normals[3 * f2 + k];
-				// 	}
-				// } else {
-				// 	// compute geometric normal
-				// 	CalcNormal(n[0], v[0], v[1], v[2]);
-				// 	n[1][0] = n[0][0];
-				// 	n[1][1] = n[0][1];
-				// 	n[1][2] = n[0][2];
-				// 	n[2][0] = n[0][0];
-				// 	n[2][1] = n[0][1];
-				// 	n[2][2] = n[0][2];
-				// }
-
-				// for (int k = 0; k < 3; k++) {
-				// 	// Use normal as color.
-				// 	float c[3] = {n[k][0], n[k][1], n[k][2]};
-				// 	float len2 = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
-				// 	if (len2 > 0.0f) {
-				// 		float len = sqrtf(len2);
-
-				// 		c[0] /= len;
-				// 		c[1] /= len;
-				// 		c[2] /= len;
-				// 	}
-
-				// 	vertices.push_back({{v[k][0], v[k][1], v[k][2], 1}, {uv[k][0], uv[k][1]}, {c[0] * 0.5 + 0.5, c[1] * 0.5 + 0.5, c[2] * 0.5 + 0.5, 1}});
-				// }
-	// 		}
+	// if (quadrant >= 0 && quadrant < 2) {
+	// 	// Cover all the left
+	// 	vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+	// 	vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+	// 	vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
+	// 	vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
+	// 	// Cover bottom right
+	// 	vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 	vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
+	// 	vertices.push_back({{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}});
+	// 	vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
+	// 	// Cover top right
+	// 	if (quadrant == 0) {
+	// 		vertices.push_back({{xmid + c, y1, 0, 1}, {umid +cu, v1}, {r, g, b, a}});
+	// 		vertices.push_back({{x2, y1, 0, 1}, {u2, v1}, {r, g, b, a}});
+	// 		vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 	} else {
+	// 		vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
+	// 		vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
+	// 		vertices.push_back({{x2, ymid, 0, 1}, {u2, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
 	// 	}
 	// }
+	// else if (quadrant >= 2 && quadrant < 4) {
+	// 	// Cover all the left
+	// 	vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+	// 	vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+	// 	vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
+	// 	vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
+	// 	// Cover bottom right
+	// 	if (quadrant == 2) {
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{x2, ymid + s, 0, 1}, {u2, vmid + sv}, {r, g, b, a}});
+	// 		vertices.push_back({{x2, y2, 0, 1}, {u2, v2}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
+	// 	} else {
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, y2, 0, 1}, {umid, v2}, {r, g, b, a}});
+
+	// 	}
+	// }
+	// else if (quadrant >= 4 && quadrant < 6) {
+	// 	// Cover top left
+	// 	vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+	// 	vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+	// 	vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 	vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
+	// 	// Cover bottom right
+	// 	if (quadrant == 4) {
+	// 		vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid + c, y2, 0, 1}, {umid + cu, v2}, {r, g, b, a}});
+	// 		vertices.push_back({{x1, y2, 0, 1}, {u1, v2}, {r, g, b, a}});
+	// 	} else {
+	// 		vertices.push_back({{x1, ymid, 0, 1}, {u1, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
+	// 		vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
+	// 	}
+	// }
+	// else if (quadrant >= 6 && quadrant < 8) {
+	// 	// Cover top left
+	// 	if (quadrant == 6) {
+	// 		vertices.push_back({{x1, y1, 0, 1}, {u1, v1}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{x1, ymid + s, 0, 1}, {u1, vmid + sv}, {r, g, b, a}});
+	// 	} else {
+	// 		vertices.push_back({{xmid + c, y1, 0, 1}, {umid + cu, v1}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, y1, 0, 1}, {umid, v1}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid, ymid, 0, 1}, {umid, vmid}, {r, g, b, a}});
+	// 		vertices.push_back({{xmid + c, y1, 0, 1}, {umid + cu, v1}, {r, g, b, a}});
+	// 	}
+	// }
+
+	// setChanged();
+	// return 0;
+}
+
+void DORVertexes::computeFaces() {
+	int_fast32_t idx = 0;
+	for (auto &f : faces) {
+		for (int_fast8_t fi = 0; fi < 4; fi++) {
+			vec4 p{ f.points[fi].x, f.points[fi].y, f.z, 1 };
+			computed_vertices[idx].pos = computed_model * p;
+			computed_vertices[idx++].color = computed_color * f.color;
+		}
+	}
+	printf("recomputed faces on %lx : %d\n", this, idx);
+}
+
+void DORVertexes::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	DisplayObject::updateFull(cur_model, color, cur_visible);
+	computeFaces();
 }
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
-	if (!visible || !cur_visible) return;
-	cur_model *= model;
-	cur_color *= color;
+	if (!computed_visible) return;
 	auto dl = getDisplayList(container, tex, shader);
 
 	// Make sure we do not have to reallocate each step
-	int nb = vertices.size();
+	int nb = computed_vertices.size();
 	int startat = dl->list.size();
 	dl->list.reserve(startat + nb);
 
-	// Copy & apply the model matrix
-	// DGDGDGDG: is it better to first copy it all and then alter it ? most likely not, change me
-	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
-	vertex *dest = dl->list.data();
-	for (int di = startat; di < startat + nb; di++) {
-		dest[di].pos = cur_model * dest[di].pos;
-		dest[di].color = cur_color * dest[di].color;
-	}
+	// Copy
+	dl->list.insert(std::end(dl->list), std::begin(this->computed_vertices), std::end(this->computed_vertices));
 
 	resetChanged();
 }
 
 void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
-	cur_model *= model;
-	cur_color *= color;
+	// cur_model *= model;
+	// cur_color *= color;
 
-	// Make sure we do not have to reallocate each step
-	int nb = vertices.size();
-	int startat = container->zvertices.size();
-	container->zvertices.resize(startat + nb);
+	// // Make sure we do not have to reallocate each step
+	// int nb = vertices.size();
+	// int startat = container->zvertices.size();
+	// container->zvertices.resize(startat + nb);
 
-	// Copy & apply the model matrix
-	vertex *src = vertices.data();
-	sortable_vertex *dest = container->zvertices.data();
-	for (int di = startat, si = 0; di < startat + nb; di++, si++) {
-		dest[di].sub = NULL;
-		dest[di].tex = tex;
-		dest[di].shader = shader;
-		dest[di].v.tex = src[si].tex;
-		dest[di].v.color = cur_color * src[si].color;
-		dest[di].v.pos = cur_model * src[si].pos;
-	}
+	// // Copy & apply the model matrix
+	// vertex *src = vertices.data();
+	// sortable_vertex *dest = container->zvertices.data();
+	// for (int di = startat, si = 0; di < startat + nb; di++, si++) {
+	// 	dest[di].sub = NULL;
+	// 	dest[di].tex = tex;
+	// 	dest[di].shader = shader;
+	// 	dest[di].v.tex = src[si].tex;
+	// 	dest[di].v.color = cur_color * src[si].color;
+	// 	dest[di].v.pos = cur_model * src[si].pos;
+	// }
 
-	resetChanged();
+	// resetChanged();
 }
 
 void DORVertexes::sortZ(RendererGL *container, mat4 cur_model) {
@@ -906,71 +741,14 @@ void DORVertexes::sortZ(RendererGL *container, mat4 cur_model) {
 		return;
 	}
 
-	cur_model *= model;
+	// cur_model *= model;
 
-	// We take a "virtual" point at zflat coordinates
-	vec4 virtualz = cur_model * vec4(0, 0, zflat, 1);
-	sort_z = virtualz.z;
-	sort_shader = shader;
-	sort_tex = tex;
-	container->sorted_dos.push_back(this);
-}
-
-/*************************************************************************
- ** IContainer
- *************************************************************************/
-void IContainer::containerAdd(DisplayObject *self, DisplayObject *dob) {
-	dos.push_back(dob);
-	dob->setParent(self);
-};
-
-bool IContainer::containerRemove(DisplayObject *dob) {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		if (*it == dob) {
-			dos.erase(it);
-
-			dob->setParent(NULL);
-			if (L) {
-				int ref = dob->unsetLuaRef();
-				if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
-			}
-			return true;
-		}
-	}
-	return false;
-};
-
-void IContainer::containerClear() {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		// printf("IContainer clearing : %lx\n", (long int)*it);
-		(*it)->setParent(NULL);
-		if (L) {
-			int ref = (*it)->unsetLuaRef();
-			if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
-		}
-	}
-	dos.clear();
-}
-
-void IContainer::containerRender(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->render(container, cur_model, cur_color, cur_visible);
-	}
-}
-
-void IContainer::containerRenderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->renderZ(container, cur_model, cur_color, cur_visible);
-	}
-}
-
-void IContainer::containerSortZ(RendererGL *container, mat4 cur_model) {
-	for (auto it = dos.begin() ; it != dos.end(); ++it) {
-		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-		if (i) i->sortZ(container, cur_model);
-	}
+	// // We take a "virtual" point at zflat coordinates
+	// vec4 virtualz = cur_model * vec4(0, 0, zflat, 1);
+	// sort_z = virtualz.z;
+	// sort_shader = shader;
+	// sort_tex = tex;
+	// container->sorted_dos.push_back(this);
 }
 
 /*************************************************************************
@@ -984,20 +762,39 @@ void DORContainer::cloneInto(DisplayObject* _into) {
 	}	
 }
 void DORContainer::add(DisplayObject *dob) {
-	containerAdd(this, dob);
+	dos.push_back(dob);
+	dob->setParent(this);
 	setChanged();
 	setSortingChanged();
 };
 
 void DORContainer::remove(DisplayObject *dob) {
-	if (containerRemove(dob)) {
-		setChanged();
-		setSortingChanged();
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		if (*it == dob) {
+			dos.erase(it);
+
+			dob->setParent(NULL);
+			if (L) {
+				int ref = dob->unsetLuaRef();
+				if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+			}
+			setChanged();
+			setSortingChanged();
+			return;
+		}
 	}
 };
 
 void DORContainer::clear() {
-	containerClear();
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		// printf("IContainer clearing : %lx\n", (long int)*it);
+		(*it)->setParent(NULL);
+		if (L) {
+			int ref = (*it)->unsetLuaRef();
+			if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+		}
+	}
+	dos.clear();
 	setChanged(true);
 	setSortingChanged();
 }
@@ -1006,11 +803,29 @@ DORContainer::~DORContainer() {
 	clear();
 }
 
+void DORContainer::traverse(function<void(DisplayObject*)> &traverser) {
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->traverse(traverser);
+	}
+}
+
+void DORContainer::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible) {
+	DisplayObject::updateFull(cur_model, color, cur_visible);
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->updateFull(computed_model, computed_color, computed_visible);
+	}
+}
+
 void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	cur_model *= model;
 	cur_color *= color;
-	containerRender(container, cur_model, cur_color, true);
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->render(container, cur_model, cur_color, cur_visible);
+	}
 	resetChanged();
 }
 
@@ -1018,43 +833,46 @@ void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color
 	if (!visible || !cur_visible) return;
 	cur_model *= model;
 	cur_color *= color;
-	containerRenderZ(container, cur_model, cur_color, true);
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->renderZ(container, cur_model, cur_color, cur_visible);
+	}
 	resetChanged();
 }
 
 void DORContainer::sortZ(RendererGL *container, mat4 cur_model) {
 	// if (!visible) return; // DGDGDGDG: If you want :shown() to not trigger a Z rebuild we need to remove that. But to do that visible needs to be able to propagate like model & color; it does not currently
 	cur_model *= model;
-	containerSortZ(container, cur_model);
+	for (auto it = dos.begin() ; it != dos.end(); ++it) {
+		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+		if (i) i->sortZ(container, cur_model);
+	}
 }
-
-// void DORContainer::sortZ(RendererGL *container, mat4 cur_model) {
-// }
 
 
 /***************************************************************************
- ** SubRenderer
+ ** ISubRenderer
  ***************************************************************************/
 
-void SubRenderer::cloneInto(DisplayObject* _into) {
+void ISubRenderer::cloneInto(DisplayObject* _into) {
 	DORContainer::cloneInto(_into);
-	SubRenderer *into = dynamic_cast<SubRenderer*>(_into);
+	ISubRenderer *into = dynamic_cast<ISubRenderer*>(_into);
 	into->use_model = use_model;
 	into->use_color = use_color;
 	if (into->renderer_name) free((void*)into->renderer_name);
 	into->renderer_name = strdup(renderer_name);
 }
 
-void SubRenderer::setRendererName(char *name, bool copy) {
+void ISubRenderer::setRendererName(char *name, bool copy) {
 	if (renderer_name) free((void*)renderer_name);
 	if (copy) renderer_name = strdup(name);
 	else renderer_name = name;
 }
-void SubRenderer::setRendererName(const char *name) {
+void ISubRenderer::setRendererName(const char *name) {
 	setRendererName((char*)name, true);
 }
 
-void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void ISubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	this->use_model = cur_model;
 	this->use_color = cur_color;
@@ -1065,7 +883,7 @@ void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, 
 	// resetChanged(); // DGDGDGDG: investigate why things break if this is on
 }
 
-void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void ISubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	this->use_model = cur_model;
 	this->use_color = cur_color;
@@ -1076,7 +894,7 @@ void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color,
 	// resetChanged(); // DGDGDGDG: investigate why things break if this is on
 }
 
-void SubRenderer::sortZ(RendererGL *container, mat4 cur_model) {
+void ISubRenderer::sortZ(RendererGL *container, mat4 cur_model) {
 	cur_model *= model;
 
 	// We take a "virtual" point at zflat coordinates
@@ -1087,7 +905,7 @@ void SubRenderer::sortZ(RendererGL *container, mat4 cur_model) {
 	container->sorted_dos.push_back(this);
 }
 
-void SubRenderer::toScreenSimple() {
+void ISubRenderer::toScreenSimple() {
 	toScreen(mat4(), {1.0, 1.0, 1.0, 1.0});
 }
 
@@ -1095,7 +913,7 @@ void SubRenderer::toScreenSimple() {
  ** StaticSubRenderer class
  ***************************************************************************/
 void StaticSubRenderer::cloneInto(DisplayObject* _into) {
-	SubRenderer::cloneInto(_into);
+	ISubRenderer::cloneInto(_into);
 	StaticSubRenderer *into = dynamic_cast<StaticSubRenderer*>(_into);
 	into->cb = cb;
 }
@@ -1108,7 +926,7 @@ void StaticSubRenderer::toScreen(mat4 cur_model, vec4 color) {
  ** DORCallback class
  ***************************************************************************/
 void DORCallback::cloneInto(DisplayObject* _into) {
-	SubRenderer::cloneInto(_into);
+	ISubRenderer::cloneInto(_into);
 	DORCallback *into = dynamic_cast<DORCallback*>(_into);
 	if (L && cb_ref) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);

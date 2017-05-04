@@ -30,7 +30,7 @@ enum class TileMapMode { MAP, MINIMAP, GRID_LINES, FOV };
 
 // This one is a little strange, it is not the master of map_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around map code
-class DORTileMap : public SubRenderer{
+class DORTileMap : public ISubRenderer{
 private:
 	map_type *map = NULL;
 	TileMapMode mode = TileMapMode::MAP;

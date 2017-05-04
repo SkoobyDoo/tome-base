@@ -845,7 +845,7 @@ static int gl_target_set_auto_render(lua_State *L)
 	if (lua_isnil(L, 2)) {
 		c->setAutoRender(NULL, LUA_NOREF);
 	} else {
-		SubRenderer *o = userdata_to_DO<SubRenderer>(__FUNCTION__, L, 2);
+		ISubRenderer *o = userdata_to_DO<ISubRenderer>(__FUNCTION__, L, 2);
 		if (o) {
 			lua_pushvalue(L, 2);
 			c->setAutoRender(o, luaL_ref(L, LUA_REGISTRYINDEX));
@@ -887,7 +887,7 @@ static int gl_vertexes_clear(lua_State *L)
 static int gl_vertexes_reserve(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
-	v->reserveQuads(lua_tonumber(L, 2));
+	v->reserveFaces(lua_tonumber(L, 2));
 	return 0;
 }
 
@@ -905,6 +905,7 @@ static int gl_vertexes_quad(lua_State *L)
 			x2, y2, u2, v2, 
 			x3, y3, u3, v3, 
 			x4, y4, u4, v4, 
+			0,
 			r, g, b, a
 		);
 	} else {
@@ -958,14 +959,14 @@ static int gl_vertexes_quad_pie(lua_State *L)
 	return 1;
 }
 
-static int gl_vertexes_load_obj(lua_State *L)
-{
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
-	string filename(luaL_checkstring(L, 2));
-	v->loadObj(filename);
-	lua_pushvalue(L, 1);
-	return 1;
-}
+// static int gl_vertexes_load_obj(lua_State *L)
+// {
+// 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+// 	string filename(luaL_checkstring(L, 2));
+// 	v->loadObj(filename);
+// 	lua_pushvalue(L, 1);
+// 	return 1;
+// }
 
 static int gl_vertexes_texture(lua_State *L)
 {
@@ -1845,7 +1846,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"reserve", gl_vertexes_reserve},
 	{"quad", gl_vertexes_quad},
 	{"quadPie", gl_vertexes_quad_pie},
-	{"loadObj", gl_vertexes_load_obj},
+	// {"loadObj", gl_vertexes_load_obj},
 	{"texture", gl_vertexes_texture},
 	{"textureTarget", gl_vertexes_target_texture},
 	{"textureFontAtlas", gl_vertexes_font_atlas_texture},

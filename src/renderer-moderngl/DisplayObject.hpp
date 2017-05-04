@@ -46,7 +46,7 @@ class DORPhysic;
 
 const int DO_MAX_TEX = 3;
 
-typedef struct {
+struct vertex {
 	vec4 pos;
 	vec2 tex;
 	vec4 color;
@@ -57,7 +57,7 @@ typedef struct {
 	vec4 texcoords;
 	vec4 mapcoords;
  	float kind;
-} vertex;
+};
 
 struct recomputematrix {
 	mat4 model;
@@ -102,6 +102,7 @@ extern int donb;
  ** Generic display object
  ****************************************************************************/
 class DisplayObject {
+	friend class RendererGL;
 	friend class DORPhysic;
 	friend class DORTweener;
 	friend class View;
@@ -112,9 +113,9 @@ protected:
 	int weak_self_ref = LUA_NOREF;
 	int lua_ref = LUA_NOREF;
 	// lua_State *L = NULL;
-	mat4 model;
-	vec4 color;
-	bool visible = true;
+	mat4 model, computed_model;
+	vec4 color, computed_color;
+	bool visible = true, computed_visible;
 	float x = 0, y = 0, z = 0;
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
@@ -127,13 +128,13 @@ protected:
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
+	RendererGL *renderer = NULL;
 	DisplayObject *parent = NULL;
 	DisplayObject();
 	virtual ~DisplayObject();
 	virtual const char* getKind() = 0;
 	virtual DisplayObject* clone() = 0;
 
-	// void setLuaState(lua_State *L) { this->L = L; };
 	void setWeakSelfRef(int ref) {weak_self_ref = ref; };
 	int getWeakSelfRef() { return weak_self_ref; };
 	void setLuaRef(int ref) {lua_ref = ref; };
@@ -172,6 +173,9 @@ public:
 
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 
+	virtual void traverse(function<void(DisplayObject*)> &traverser) {};
+	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible);
+
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
 	virtual void sortZ(RendererGL *container, mat4 cur_model) = 0;
@@ -187,12 +191,19 @@ public:
 	float sort_z;
 };
 
+struct Face {
+	vec4 color;
+	vec2 points[4];
+	float z;
+};
+
 /****************************************************************************
  ** DO that has a vertex list
  ****************************************************************************/
 class DORVertexes : public DORFlatSortable{
 protected:
-	vector<vertex> vertices;
+	vector<Face> faces;
+	vector<vertex> computed_vertices;
 	array<int, DO_MAX_TEX> tex_lua_ref{{ LUA_NOREF, LUA_NOREF, LUA_NOREF}};
 	array<GLuint, DO_MAX_TEX> tex{{0, 0, 0}};
 	int tex_max = 1;
@@ -203,9 +214,12 @@ protected:
 
 	virtual void cloneInto(DisplayObject *into);
 
+	void computeFaces();
+
 public:
 	DORVertexes() {
-		vertices.reserve(4);
+		faces.reserve(1);
+		computed_vertices.reserve(4);
 		shader = default_shader;
 	};
 	virtual ~DORVertexes();
@@ -214,7 +228,10 @@ public:
 
 	void clear();
 
-	void reserveQuads(int nb) { vertices.reserve(4 * nb); };
+	void reserveFaces(int nb) {
+		faces.reserve(nb);
+		computed_vertices.reserve(nb * 4);
+	};
 
 	int addQuadPie(
 		float x1, float y1, float x2, float y2,
@@ -227,21 +244,17 @@ public:
 		float x2, float y2, float u2, float v2, 
 		float x3, float y3, float u3, float v3, 
 		float x4, float y4, float u4, float v4, 
-		float r, float g, float b, float a
-	);
-	int addQuad(
-		float x1, float y1, float z1, float u1, float v1, 
-		float x2, float y2, float z2, float u2, float v2, 
-		float x3, float y3, float z3, float u3, float v3, 
-		float x4, float y4, float z4, float u4, float v4, 
+		float z,
 		float r, float g, float b, float a
 	);
 	int addQuad(vertex v1, vertex v2, vertex v3, vertex v4);
-	void loadObj(const string &filename);
+	// void loadObj(const string &filename);
 	GLuint getTexture(int id) { return tex[id]; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
+
+	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
@@ -251,23 +264,9 @@ public:
 /****************************************************************************
  ** DO that can contain others
  ****************************************************************************/
-class IContainer{
+class DORContainer : public DORFlatSortable{
 protected:
 	vector<DisplayObject*> dos;
-public:
-	IContainer() {};
-	virtual ~IContainer() {};
-
-	virtual void containerAdd(DisplayObject *self, DisplayObject *dob);
-	virtual bool containerRemove(DisplayObject *dob);
-	virtual void containerClear();
-
-	virtual void containerRender(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void containerRenderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void containerSortZ(RendererGL *container, mat4 cur_model);
-};
-class DORContainer : public DORFlatSortable, public IContainer{
-protected:
 	virtual void cloneInto(DisplayObject *into);
 public:
 	DORContainer() {};
@@ -279,6 +278,9 @@ public:
 	virtual void remove(DisplayObject *dob);
 	virtual void clear();
 
+	virtual void traverse(function<void(DisplayObject*)> &traverser);
+	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible);
+
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4 cur_model);
@@ -289,7 +291,7 @@ public:
  ** Interface to make a DisplayObject be a sub-renderer: breaking chaining
  ** and using it's own render method
  ****************************************************************************/
-class SubRenderer : public DORContainer {
+class ISubRenderer : public DORContainer {
 	friend class RendererGL;
 protected:
 	vec4 use_color;
@@ -298,8 +300,8 @@ protected:
 
 	virtual void cloneInto(DisplayObject *into);
 public:
-	SubRenderer() { renderer_name = strdup(getKind()); stop_parent_recursing = true; };
-	~SubRenderer() { free((void*)renderer_name); };
+	ISubRenderer() { renderer_name = strdup(getKind()); stop_parent_recursing = true; };
+	~ISubRenderer() { free((void*)renderer_name); };
 	const char* getRendererName() { return renderer_name ? renderer_name : "---unknown---"; };
 	void setRendererName(const char *name);
 	void setRendererName(char *name, bool copy);
@@ -318,7 +320,7 @@ public:
  ** and using it's own render method
  ****************************************************************************/
 typedef void (*static_sub_cb)(mat4 cur_model, vec4 color);
-class StaticSubRenderer : public  SubRenderer {
+class StaticSubRenderer : public  ISubRenderer {
 protected:
 	static_sub_cb cb;
 	virtual void cloneInto(DisplayObject *into);
@@ -331,7 +333,7 @@ public:
 /****************************************************************************
  ** A Dummy DO taht displays nothing and instead calls a lua callback
  ****************************************************************************/
-class DORCallback : public SubRenderer, public IRealtime {
+class DORCallback : public ISubRenderer, public IRealtime {
 protected:
 	int cb_ref = LUA_NOREF;
 	bool enabled = true;

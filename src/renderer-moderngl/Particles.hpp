@@ -27,7 +27,7 @@
 
 // This one is a little strange, it is not the master of particles_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around particle code
-class DORParticles : public SubRenderer{
+class DORParticles : public ISubRenderer{
 private:
 	particles_type *ps = NULL;
 	int ps_lua_ref = LUA_NOREF;

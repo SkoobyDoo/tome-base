@@ -187,10 +187,10 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 		p4.pos = qm * p4.pos;
 
 		// And we're done!
-		dl->list.push_back(p1);
-		dl->list.push_back(p2);
-		dl->list.push_back(p3);
-		dl->list.push_back(p4);
+		// dl->list.push_back(p1);
+		// dl->list.push_back(p2);
+		// dl->list.push_back(p3);
+		// dl->list.push_back(p4);
 	} else {
 		// Make the matrix corresponding to the shape
 		mat4 qm = mat4();

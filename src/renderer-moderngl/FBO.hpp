@@ -191,7 +191,7 @@ protected:
 	Fbo fbo;
 	int nbt = 0;
 	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
-	SubRenderer *subrender = NULL;
+	ISubRenderer *subrender = NULL;
 	int subrender_lua_ref = LUA_NOREF;
 	int view_lua_ref = LUA_NOREF;
 	View *view;
@@ -214,7 +214,7 @@ public:
 	void displaySize(int w, int h, bool center);
 	void getDisplaySize(int *w, int *h) { *w = this->w; *h = this->h; };
 	void use(bool activate);
-	void setAutoRender(SubRenderer *subrender, int ref);
+	void setAutoRender(ISubRenderer *subrender, int ref);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);

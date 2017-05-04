@@ -62,6 +62,7 @@ DORTarget::DORTarget(int w, int h, int nbt, bool hdr, bool depth) {
 		0, h, 0, 0,
 		w, h, 1, 0,
 		w, 0, 1, 1,
+		0,
 		1, 1, 1, 1
 	);
 }
@@ -162,6 +163,7 @@ void DORTarget::displaySize(int w, int h, bool center) {
 		x1, y2, 0, 0,
 		x2, y2, 1, 0,
 		x2, y1, 1, 1,
+		0,
 		1, 1, 1, 1
 	);
 }
@@ -208,7 +210,7 @@ void DORTarget::use(bool activate) {
 	}
 }
 
-void DORTarget::setAutoRender(SubRenderer *o, int ref) {
+void DORTarget::setAutoRender(ISubRenderer *o, int ref) {
 	if (subrender_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, subrender_lua_ref);
 	subrender_lua_ref = ref;
 	subrender = o;
