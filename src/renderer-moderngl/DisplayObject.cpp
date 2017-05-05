@@ -177,7 +177,7 @@ void DisplayObject::resetModelMatrix() {
 }
 
 void DisplayObject::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup) {
-	recomputeModelMatrix(); // DGDGDGDG Make matric recompiting happen only here
+	// recomputeModelMatrix(); // DGDGDGDG Make matric recompiting happen only here
 	computed_model = cur_model * model;
 	computed_color = cur_color * color;
 	computed_visible = cur_visible && visible;
@@ -696,7 +696,7 @@ void DORVertexes::computeFaces() {
 
 void DORVertexes::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup) {
 	if (cleanup) dl_dest = NULL;
-	DisplayObject::updateFull(cur_model, color, cur_visible, cleanup);
+	DisplayObject::updateFull(cur_model, cur_color, cur_visible, cleanup);
 	computeFaces();
 }
 

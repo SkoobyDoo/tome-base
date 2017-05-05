@@ -105,8 +105,8 @@ static int gl_generic_translate_get(lua_State *L)
 
 		// Absolute position mode
 		glm::vec4 point = glm::vec4(0, 0, 0, 1);
-		recomputematrix orim = c->computeParentCompositeMatrix(stop_at, {glm::mat4(), glm::vec4(1, 1, 1, 1), true});
-		point = orim.model * point;
+		// recomputematrix orim = c->computeParentCompositeMatrix(stop_at, {glm::mat4(), glm::vec4(1, 1, 1, 1), true});
+		point = c->getComputedModel() * point;
 		x = point.x; y = point.y; z = point.z; 
 	} else {
 		// Normal (relative) position mode

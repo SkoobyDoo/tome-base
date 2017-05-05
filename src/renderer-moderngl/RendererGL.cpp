@@ -226,8 +226,8 @@ void RendererGL::update() {
 		// Build up the new display lists
 		mat4 cur_model = mat4();
 		if (zsort == SortMode::NO_SORT || zsort == SortMode::GL) {
-			for (auto &it : dos) it->updateFull(cur_model, color, true, true);
 			for (auto &it : dos) {
+				it->updateFull(cur_model, color, true, true);
 				it->render(this, cur_model, color, true);
 			}
 		} else if (zsort == SortMode::FAST) {

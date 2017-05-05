@@ -161,6 +161,7 @@ public:
 
 	void recomputeModelMatrix();
 	recomputematrix computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur);
+	mat4 getComputedModel() { return computed_model; };
 
 	vec4 getColor() { return color; };
 	void getRotate(float *dx, float *dy, float *dz) { *dx = rot_x; *dy = rot_y; *dz = rot_z; };
