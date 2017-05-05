@@ -299,6 +299,9 @@ end
 function _M:display(x, y, nb_keyframes, ox, oy)
 	self._last_x, _last_y, self._last_ox, self._last_oy = x, y, ox, oy
 
+	self.last_display_x = ox
+	self.last_display_y = oy
+
 	-- UI elements
 	for i = 1, #self.uis do
 		local ui = self.uis[i]

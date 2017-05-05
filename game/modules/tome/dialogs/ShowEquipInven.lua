@@ -90,7 +90,11 @@ function _M:init(title, equip_actor, filter, action, on_select, inven_actor)
 	self.c_inven = Inventory.new{actor=inven_actor, inven=inven_actor:getInven("INVEN") or {}, width=self.iw - vsep.w - self.c_doll.w, height=self.ih - 10, filter=filter,
 		default_last_tabs = "all",
 		fct=function(item, sel, button, event) self:use(item, button, event) end,
-		select=function(item, sel) self:select(item) end,
+		select=function(item, sel) if self.c_inven and item._pos_y then
+			item.last_display_x = self.c_inven.c_inven.last_display_x + self.c_inven.w
+			item.last_display_y = self.c_inven.c_inven.last_display_y + item._pos_y
+			self:select(item)
+		end end,
 		select_tab=function(item) self:select(item) end,
 		on_drag=function(item) self:onDrag(item) end,
 		on_drag_end=function() self:onDragTakeoff() end,
@@ -280,6 +284,10 @@ function _M:onDrag(item)
 			end
 		end)
 	end
+end
+
+function _M:updateData()
+	self.c_inven:generateList()
 end
 
 function _M:onDragTakeoff()

@@ -38,6 +38,7 @@ function _M:init(t)
 	assert(self.h or self.nb_items, "no tree height/nb_items")
 	self.fct = t.fct
 	self.on_drag = t.on_drag
+	self.on_drag_end = t.on_drag_end
 	self.on_expand = t.on_expand
 	self.on_drawitem = t.on_drawitem
 	self.select = t.select
@@ -133,6 +134,7 @@ function _M:generate()
 			if (self.all_clicks or button == "left") and button ~= "wheelup" and button ~= "wheeldown" and event == "button" then self:onUse(button) end
 		end
 		if event == "motion" and button == "left" and self.on_drag then self.on_drag(self.list[self.sel], self.sel) end
+		if button == "drag-end" and self.on_drag_end then self.on_drag_end(self.list[self.sel], self.sel) end
 	end)
 	self.key:addBinds{
 		ACCEPT = function() self:onUse("left") end,
@@ -440,6 +442,7 @@ function _M:onSelect(sel)
 		local item = self.list[i]
 		if item then
 			if i >= self.scroll and i <= max then
+				item._pos_y = pos
 				item._container:translate(0, pos, 0)
 				for c = 1, #item.cols do item.cols[c]._entry:shown(true) end
 				pos = pos + self.fh
@@ -482,4 +485,10 @@ function _M:onUse(...)
 	self:sound("button")
 	if item.fct then item.fct(item, self.sel, ...)
 	else self.fct(item, self.sel, ...) end
+end
+
+
+function _M:display(x, y, nb_keyframes, ox, oy)
+	self.last_display_x = ox
+	self.last_display_y = oy
 end

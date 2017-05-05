@@ -99,6 +99,7 @@ function _M:generate()
 			local x = (i-1) * (self.tile_w + self.padding)
 			local y = by
 
+			item.p_x, item.p_y = x, y
 			item.f_focus = self:cloneFrameDO(frame_sel)
 			frame_container:add(item.f_focus.container:translate(x, y):color(1, 1, 1, 0))
 
@@ -127,8 +128,6 @@ function _M:generate()
 			-- else
 			-- 	item[1]:toScreenFull(x + (i-1) * (self.tile_w + self.padding) + self.tile_w - item.w, y + self.tile_h - item.h, item.w, item.h, item[2], item[3])
 			-- end
-			-- item.last_display_x = screen_x + (x - bx)
-			-- item.last_display_y = screen_y + (y - by)
 		end
 		by = by + self.tile_h + self.padding
 	end
@@ -260,4 +259,11 @@ end
 
 function _M:on_focus(status)
 	self.frame_container:tween(7, "a", nil, status and 1 or 0.2)
+end
+
+function _M:display(x, y, nb_keyframes, ox, oy)
+	for item, _ in pairs(self.items) do
+		item.last_display_x = ox + item.p_x
+		item.last_display_y = oy + item.p_y
+	end
 end

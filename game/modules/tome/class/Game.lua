@@ -781,8 +781,7 @@ function _M:changeLevel(lev, zone, params)
 		d = self.player:showEquipInven(titleupdator(), nil, function(o, inven, item, button, event)
 			if not o then return end
 			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", self.player, o, item, inven, function(_, _, _, stop)
-				d:generate()
-				d:generateList()
+				d:updateData()
 				d:updateTitle(titleupdator())
 				if stop then self:unregisterDialog(d) end
 			end, true)
@@ -2033,8 +2032,7 @@ do return end
 			d = self.player:showEquipInven(titleupdator(), nil, function(o, inven, item, button, event)
 				if not o then return end
 				local ud = require("mod.dialogs.UseItemDialog").new(event == "button", self.player, o, item, inven, function(_, _, _, stop)
-					d:generate()
-					d:generateList()
+					d:updateData()
 					d:updateTitle(titleupdator())
 					if stop then self:unregisterDialog(d) end
 				end)

@@ -81,12 +81,14 @@ function _M:generate()
 
 	self.key:addBind("ACCEPT", function() self:onChange() if self.fct then self.fct() end end)
 	self.key:addCommands{
-		_LEFT = function(sym, ctrl, shift, alt, meta, unicode, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, false, key) end,
-		_RIGHT = function(sym, ctrl, shift, alt, meta, unicode, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, false, key) end,
+		-- _LEFT = function(sym, ctrl, shift, alt, meta, unicode, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, false, key) end,
+		-- _RIGHT = function(sym, ctrl, shift, alt, meta, unicode, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, false, key) end,
+		_RIGHT = function() self.nbox:updateText(self.step) self:onChange() end,
+		_LEFT = function() self.nbox:updateText(-self.step) self:onChange() end,
 		_UP = function() self.nbox:updateText(self.step) self:onChange() end,
 		_DOWN = function() self.nbox:updateText(-self.step) self:onChange() end,
-		_PAGEUP = function() self.nbox:updateText(self.step) self:onChange() end,
-		_PAGEDOWN = function() self.nbox:updateText(-self.step) self:onChange() end,
+		_PAGEUP = function() self.nbox:updateText(self.step * 5) self:onChange() end,
+		_PAGEDOWN = function() self.nbox:updateText(-self.step * 5) self:onChange() end,
 	}
 	self.key.atLast = function(sym, ctrl, shift, alt, meta, unicode, isup, key) self.nbox.key:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key) end
 
