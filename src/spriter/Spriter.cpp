@@ -317,7 +317,7 @@ void DORSpriter::onKeyframe(float nb_keyframe) {
 	if (!instance) return;
 	currently_processing = this;
 	instance->setTimeElapsed(1000.0 * nb_keyframe / KEYFRAMES_PER_SEC);
-	setChanged();
+	setChanged(ChangedSet::CHILDS);
 
 	if (instance->animationJustFinished(true)) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
@@ -355,10 +355,8 @@ void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, 
 }
 
 void DORSpriter::sortZ(RendererGL *container, mat4 cur_model) {
-	cur_model *= model;
-
 	// We take a "virtual" point at 0 coordinates
-	vec4 virtualz = cur_model * vec4(0, 0, 0, 1);
+	vec4 virtualz = computed_model * vec4(0, 0, 0, 1);
 	sort_z = virtualz.z;
 	sort_shader = shader;
 	sort_tex = {99999,0,0}; // DGDGDGDG UGH we need a wayto find the actual texture

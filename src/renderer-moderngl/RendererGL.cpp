@@ -61,6 +61,7 @@ DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex
 	dl->shader = shader;
 	// printf("Getting DL! %x with %d, %d, %x\n", dl, dl->vbo, tex, shader);
 	dl->used++;
+	dl->mode = container->mode;
 	current_used_dl = dl;
 	current_used_dl_container = container;
 	container->addDisplayList(dl);
@@ -97,11 +98,25 @@ DisplayList::~DisplayList() {
 	vbo = 0;
 }
 
+void DisplayList::update() {
+	if (!changed) return;
+	// Upload display list vertices data to the corresponding VBO on the GPU memory
+	if (!sub && !tick) {
+		printf("REBUILDING THE VBO %d...\n", vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * list.size(), NULL, (GLuint)mode);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * list.size(), list.data());
+	}
+	changed = false;
+}
+
 /***************************************************************************
  ** RendererGL class
  ***************************************************************************/
 
 RendererGL::RendererGL(VBOMode mode) {
+	setChanged(ChangedSet::REBUILD);
+	setChanged(ChangedSet::RESORT);
 	this->mode = mode;
 	glGenBuffers(1, &vbo_elements);
 }
@@ -198,30 +213,29 @@ void RendererGL::resetDisplayLists() {
 
 // DGDGDGDG: make that (optionally?) process in a second thread; making it nearly costless
 void RendererGL::update() {
-	// printf("Renderer %s needs updating\n", getRendererName());
+	printf("Renderer %s needs updating: %d %d %d\n", getRendererName(), update_dos.size(), changed[ChangedSet::REBUILD] ? 1 : 0, changed[ChangedSet::RESORT] ? 1 : 0);
 
-	if (!manual_dl_management) {
+	if (!manual_dl_management && changed[ChangedSet::REBUILD]) {
 		resetDisplayLists();
 
 		// Build up the new display lists
 		mat4 cur_model = mat4();
 		if (zsort == SortMode::NO_SORT || zsort == SortMode::GL) {
-			updateFull(cur_model, color, true);
-			for (auto it = dos.begin() ; it != dos.end(); ++it) {
-				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-				if (i) i->render(this, cur_model, color, true);
+			updateFull(cur_model, color, true, true);
+			for (auto &it : dos) {
+				it->render(this, cur_model, color, true);
 			}
 		} else if (zsort == SortMode::FAST) {
+			updateFull(cur_model, color, true, true);
+
 			// If nothing that can alter sort order changed, we can just quickly recompute the DisplayLists just like in the no sort method
-			if (recompute_fast_sort) {
-				recompute_fast_sort = false;
+			if (changed[ChangedSet::RESORT]) {
 				// printf("FST SORT\n");
 				sorted_dos.clear();
 
 				// First we iterate over the DOs tree to "flatten" in
-				for (auto it = dos.begin() ; it != dos.end(); ++it) {
-					DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-					if (i) i->sortZ(this, cur_model);
+				for (auto &it : dos) {
+					it->sortZ(this, cur_model);
 				}
 
 				// Now we sort the flattened tree. This is awy faster than the full sort mode because here we sort DOs instead of vertices
@@ -231,14 +245,11 @@ void RendererGL::update() {
 
 			// And now we can iterate the sorted flattened tree and render as a normal no sort render
 			// printf("FST redraw\n");
-			for (auto it = sorted_dos.begin() ; it != sorted_dos.end(); ++it) {
-				DORFlatSortable *i = dynamic_cast<DORFlatSortable*>(*it);
-				if (i && i->parent) {
-					recomputematrix cur = i->parent->computeParentCompositeMatrix(this, {cur_model, color, true});
-					i->render(this, cur.model, cur.color, cur.visible);
-				}
+			for (auto &it : sorted_dos) {
+				it->render(this, cur_model, color, true);
 			}
 		} else if (zsort == SortMode::FULL) {
+			updateFull(cur_model, color, true, true);
 			zvertices.clear();
 			for (auto it = dos.begin() ; it != dos.end(); ++it) {
 				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
@@ -249,26 +260,26 @@ void RendererGL::update() {
 			sortedToDL();
 		}
 
-		// Notify we dont need to be rebuilt again unless more stuff changes
+		update_dos.clear(); // No need to redo them
 	}
 	resetChanged();
-	changed_children = false;
 
-	// Upload each display list vertices data to the corresponding VBO on the GPU memory
-	int nb_quads = 0;
-	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
-		if (!(*dl)->sub && !(*dl)->tick) {
-			if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
-
-			// printf("REBUILDING THE VBO %d...\n", (*dl)->vbo);
-			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, (GLuint)mode);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());
+	if (update_dos.size()) {
+		for (auto &d : update_dos) {
+			if (d->parent) d->updateFull(d->parent->computed_model, d->parent->computed_color, d->parent->computed_visible, false);
 		}
+		update_dos.clear();
 	}
 
 	// Update the indices
 	if (usesElementsVBO()) {
+		int nb_quads = 0;
+		for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
+			if (!(*dl)->sub && !(*dl)->tick) {
+				if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
+			}
+		}
+
 		nb_quads /= 4;
 		if (nb_quads > vbo_elements_nb) {
 			vbo_elements_data = (GLuint*)realloc((void*)vbo_elements_data, nb_quads * 6 * sizeof(GLuint));
@@ -291,23 +302,6 @@ void RendererGL::update() {
 	}
 }
 
-// Next 3 methods ensure renderer in the DOs is correctly maintained, in conjuction with DisplayObject::setParent()
-void RendererGL::add(DisplayObject *dob) {
-	function<void(DisplayObject*)> fct = [this](DisplayObject *o) { o->renderer = this; };
-	dob->traverse(fct);
-	DORContainer::add(dob);
-}
-void RendererGL::remove(DisplayObject *dob) {
-	function<void(DisplayObject*)> fct = [this](DisplayObject *o) { o->renderer = NULL; };
-	dob->traverse(fct);
-	DORContainer::remove(dob);
-}
-void RendererGL::clear() {
-	function<void(DisplayObject*)> fct = [this](DisplayObject *o) { o->renderer = NULL; };
-	traverse(fct);
-	DORContainer::clear();
-}
-
 void RendererGL::activateCutting(mat4 cur_model, bool v) {
 	if (v) {
 		glEnable(GL_SCISSOR_TEST);
@@ -323,7 +317,7 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 bool ok =true;
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
-	if (changed_children) update();
+	if (changed[ChangedSet::REBUILD] || changed[ChangedSet::RESORT] || update_dos.size()) update();
 	if (displays.empty()) return;
 	// printf("Displaying renderer %s\n", getRendererName());
 
@@ -359,6 +353,8 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 			if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 			if (cutting) activateCutting(cur_model, true);
 		} else {
+			(*dl)->update();
+
 			// Bind the vertices
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
 	 		tglActiveTexture(GL_TEXTURE0);

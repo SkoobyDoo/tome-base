@@ -1364,6 +1364,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 		dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
+		dl->changed = true;
 	}
 
 	if (L && dm->cb)
@@ -1379,6 +1380,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		dm->cb->tldx = tldx - map->scroll_x;
 		dm->cb->tldy = tldy - map->scroll_y;
 		dl->sub = dm->cb;
+		dl->changed = true;
 	}
 	// DGDGDGDG: this needs to be done smartly, no actual CB here, but creation of a callback put into the DisplayList
 	/*
@@ -1692,7 +1694,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 		if (map->z_changed[z]) {
 			// printf("map layer %d is invalid\n", z);
 			render->resetDisplayLists();
-			render->setChanged(true);
+			render->setChanged(ChangedSet::PARENTS);
 			map->z_changed[z] = false;
 
 			for (j = minj; j < maxj; j++)

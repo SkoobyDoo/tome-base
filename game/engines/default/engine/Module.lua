@@ -712,6 +712,7 @@ end
 function _M:loadScreen(mod)
 	core.display.forceRedraw()
 	core.wait.enable(10000, function()
+		if mod.no_load_screen then return function() end end
 		local renderer = core.renderer.renderer("static")
 		local has_max = mod.loading_wait_ticks
 		if has_max then core.wait.addMaxTicks(has_max) end

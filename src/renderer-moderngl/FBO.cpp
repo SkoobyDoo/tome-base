@@ -214,7 +214,7 @@ void DORTarget::setAutoRender(ISubRenderer *o, int ref) {
 	if (subrender_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, subrender_lua_ref);
 	subrender_lua_ref = ref;
 	subrender = o;
-	setChanged();
+	setChanged(ChangedSet::CHILDS);
 }
 
 void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {

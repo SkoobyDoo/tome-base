@@ -28,6 +28,7 @@ extern lua_State *L;
 }
 
 #include <vector>
+#include <bitset>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -39,12 +40,20 @@ using namespace std;
 
 class View;
 class RendererGL;
+class DisplayList;
 class DisplayObject;
 class DORPhysic;
 
 #define DO_STANDARD_CLONE_METHOD(class_name) virtual DisplayObject* clone() { DisplayObject *into = new class_name(); this->cloneInto(into); return into; }
 
 const int DO_MAX_TEX = 3;
+
+enum ChangedSet : uint8_t {
+	CHILDS = 0,
+	PARENTS = 1,
+	REBUILD = 2,
+	RESORT = 3,
+};
 
 struct vertex {
 	vec4 pos;
@@ -119,8 +128,7 @@ protected:
 	float x = 0, y = 0, z = 0;
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
-	bool changed = true;
-	bool changed_children = true;
+	bitset<4> changed;
 	bool stop_parent_recursing = false;
 
 	DORTweener *tweener = NULL;
@@ -139,12 +147,12 @@ public:
 	int getWeakSelfRef() { return weak_self_ref; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
-	void setParent(DisplayObject *parent);
-	void removeFromParent();
-	void setChanged(bool force=false);
-	virtual void setSortingChanged();
-	bool isChanged() { return changed; };
-	void resetChanged() { changed = false; changed_children = false; };
+	virtual void setParent(DisplayObject *parent);
+	virtual void removeFromParent();
+	virtual void setChanged(ChangedSet what);
+	void setSortingChanged();
+	bool isChanged() { return changed.any(); };
+	void resetChanged() { changed.reset(); };
 	bool independantRenderer() { return stop_parent_recursing; };
 
 	int enablePhysic();
@@ -174,7 +182,7 @@ public:
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 
 	virtual void traverse(function<void(DisplayObject*)> &traverser) {};
-	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible);
+	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
@@ -209,8 +217,10 @@ protected:
 	int tex_max = 1;
 	bool is_zflat = true;
 	float zflat = 0;
-
 	shader_type *shader;
+
+	DisplayList *dl_dest = NULL;
+	uint32_t dl_dest_start;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -254,7 +264,7 @@ public:
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
-	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible);
+	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
@@ -277,9 +287,13 @@ public:
 	virtual void add(DisplayObject *dob);
 	virtual void remove(DisplayObject *dob);
 	virtual void clear();
+	virtual void setParent(DisplayObject *parent);
+	virtual void removeFromParent();
+
+	virtual void setChanged(ChangedSet what);
 
 	virtual void traverse(function<void(DisplayObject*)> &traverser);
-	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible);
+	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
@@ -351,7 +365,7 @@ public:
 		if (cb_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, cb_ref);
 		cb_ref = ref;
 	};
-	void enable(bool v) { enabled = v; setChanged(); };
+	void enable(bool v) { enabled = v; setChanged(ChangedSet::PARENTS); };
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
 	virtual void onKeyframe(float nb_keyframes);

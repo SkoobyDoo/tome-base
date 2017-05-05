@@ -22,6 +22,8 @@
 #ifndef RENDERER_GL_H
 #define RENDERER_GL_H
 
+#include <unordered_set>
+
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/VBO.hpp"
 
@@ -52,8 +54,12 @@ public:
 	ISubRenderer *sub = NULL;
 	DisplayObject *tick = NULL;
 
+	VBOMode mode = VBOMode::DYNAMIC;
+	bool changed = false;
+
 	DisplayList();
 	~DisplayList();
+	void update();
 };
 
 extern void stopDisplayList();
@@ -73,7 +79,6 @@ enum class RenderKind { QUADS, TRIANGLES };
 class RendererGL : public ISubRenderer {
 	friend class DORVertexes;
 protected:
-	VBOMode mode = VBOMode::DYNAMIC;
 	RenderKind kind = RenderKind::QUADS;
 
 	GLuint *vbo_elements_data = NULL;
@@ -81,6 +86,7 @@ protected:
 	int vbo_elements_nb = 0;
 	SortMode zsort = SortMode::NO_SORT;
 	vector<DisplayList*> displays;
+
 	bool recompute_fast_sort = true;
 	bool manual_dl_management = false;
 
@@ -103,6 +109,8 @@ protected:
 	bool usesElementsVBO();
 
 public:
+	unordered_set<DisplayObject*> update_dos;
+	VBOMode mode = VBOMode::DYNAMIC;
 	vector<DORFlatSortable*> sorted_dos;
 	vector<sortable_vertex> zvertices;
 
@@ -114,8 +122,6 @@ public:
 	virtual void addDisplayList(DisplayList* dl) {
 		displays.push_back(dl);
 	}
-
-	virtual void setSortingChanged() { recompute_fast_sort = true; }
 
 	void setShader(shader_type *s, int lua_ref);
 	void renderKind(RenderKind k) { kind = k; };
@@ -135,10 +141,6 @@ public:
 	void resetDisplayLists();
 
 	void activateCutting(mat4 cur_model, bool v);
-
-	virtual void add(DisplayObject *dob);
-	virtual void remove(DisplayObject *dob);
-	virtual void clear();
 };
 
 #endif

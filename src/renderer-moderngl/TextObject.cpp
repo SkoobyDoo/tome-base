@@ -86,10 +86,12 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			positions.push_back({x0, y});
 
 			if (shadow_x || shadow_y) {
-				// vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				// vertices.push_back({{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				// vertices.push_back({{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				// vertices.push_back({{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+				addQuad(
+					{{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+					{{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+					{{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+					{{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}}
+				);
 			}
 
 			if (outline) {
@@ -103,17 +105,21 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 					float y0 = by + (font->font->ascender - doutline->offset_y) * scale;
 					float y1 = y0 + (doutline->height) * scale;
 
-					// vertices.push_back({{1+x0+italicx, 1+y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					// vertices.push_back({{1+x1+italicx, 1+y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					// vertices.push_back({{1+x1, 1+y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					// vertices.push_back({{1+x0, 1+y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					addQuad(
+						{{1+x0+italicx, 1+y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}},
+						{{1+x1+italicx, 1+y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}},
+						{{1+x1, 1+y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}},
+						{{1+x0, 1+y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}}
+					);
 				}
 			}
 
-			// vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-			// vertices.push_back({{x1+italicx, y0, 0, 1},	{d->s1, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-			// vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-			// vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			addQuad(
+				{{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+				{{x1+italicx, y0, 0, 1},	{d->s1, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+				{{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+				{{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}}
+			);
 
 			x += d->advance_x * scale * (style == FONT_STYLE_BOLD ? 1.1 : 1);
 		}
@@ -148,7 +154,7 @@ void DORText::parseText() {
 	entities_container.clear();
 	positions.clear();
 	centered = false;
-	setChanged(true);
+	setChanged(ChangedSet::PARENTS);
 
 	font_type *f = font;
 	if (!f) return;
@@ -163,7 +169,7 @@ void DORText::parseText() {
 	setTexture(f->atlas->id, LUA_NOREF);
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
-	// vertices.reserve(len * 4);
+	faces.reserve(len); computed_vertices.reserve(len * 4);
 
 	int font_h = f->lineskip * f->scale;
 	int nb_lines = 1;
@@ -388,7 +394,7 @@ void DORText::parseTextSimple() {
 	entities_container.clear();
 	positions.clear();
 	centered = false;
-	setChanged(true);
+	setChanged(ChangedSet::PARENTS);
 
 	font_type *f = font;
 	if (!f) return;
@@ -400,7 +406,7 @@ void DORText::parseTextSimple() {
 	setTexture(f->atlas->id, LUA_NOREF);
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
-	// vertices.reserve(len * 4);
+	faces.reserve(len); computed_vertices.reserve(len * 4);
 
 	int font_h = f->lineskip * f->scale;
 	this->w = DORText::addCharQuad(str, len, default_style, 0, 0, r, g, b, a);
@@ -426,11 +432,13 @@ void DORText::center() {
 	
 	// We dont use translate() to now make other translate fail, we move the actual center
 	float hw = w / 2, hh = h / 2;
-	// for (auto it = vertices.begin() ; it != vertices.end(); ++it) {
-	// 	it->pos.x -= hw;
-	// 	it->pos.y -= hh;
-	// }
-	setChanged();
+	for (auto &it : faces) {
+		for (auto &p : it.points) {
+			p.x -= hw;
+			p.y -= hh;
+		}
+	}
+	setChanged(ChangedSet::CHILDS);
 }
 
 vec2 DORText::getLetterPosition(int idx) {

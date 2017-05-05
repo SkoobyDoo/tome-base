@@ -85,13 +85,13 @@ void DORTileObject::resetMapObjects() {
 		if (it->ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, it->ref);
 	}
 	mos.clear();
-	setChanged();
+	setChanged(ChangedSet::PARENTS);
 	mos_changed = true;
 }
 
 void DORTileObject::addMapObject(map_object *mo, int ref) {
 	mos.push_back({mo, ref});
-	setChanged();
+	setChanged(ChangedSet::PARENTS);
 	mos_changed = true;
 }
 
@@ -117,10 +117,8 @@ void DORTileObject::renderZ(RendererGL *container, mat4 cur_model, vec4 color, b
 }
 
 void DORTileObject::sortZ(RendererGL *container, mat4 cur_model) {
-	cur_model *= model;
-
 	// We take a "virtual" point at zflat coordinates
-	vec4 virtualz = cur_model * vec4(0, 0, 0, 1);
+	vec4 virtualz = computed_model * vec4(0, 0, 0, 1);
 	sort_z = virtualz.z;
 	sort_shader = NULL;
 	sort_tex = {0,0,0};
