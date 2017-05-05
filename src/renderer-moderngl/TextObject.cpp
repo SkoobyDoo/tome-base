@@ -445,16 +445,20 @@ void DORText::clear() {
 	entities_container.clear();
 }
 
-void DORText::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORText::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	DORVertexes::render(container, cur_model, cur_color, true);
-	entities_container.render(container, cur_model * model, cur_color * color, true);
+	mat4 emodel = cur_model * model;
+	vec4 ecolor = cur_color * color;
+	entities_container.render(container, emodel, ecolor, true);
 }
 
-void DORText::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORText::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	DORVertexes::renderZ(container, cur_model, cur_color, true);
-	entities_container.renderZ(container, cur_model * model, cur_color * color, true);
+	mat4 emodel = cur_model * model;
+	vec4 ecolor = cur_color * color;
+	entities_container.renderZ(container, emodel, ecolor, true);
 }
 
 DORText::~DORText() {

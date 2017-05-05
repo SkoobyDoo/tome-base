@@ -852,10 +852,10 @@ void DORVertexes::loadObj(const string &filename) {
 	// }
 }
 
-void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORVertexes::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
-	cur_model *= model;
-	cur_color *= color;
+	mat4 vmodel = cur_model * model;
+	vec4 vcolor = cur_color * color;
 	auto dl = getDisplayList(container, tex, shader);
 
 	// Make sure we do not have to reallocate each step
@@ -868,17 +868,17 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, 
 	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
 	vertex *dest = dl->list.data();
 	for (int di = startat; di < startat + nb; di++) {
-		dest[di].pos = cur_model * dest[di].pos;
-		dest[di].color = cur_color * dest[di].color;
+		dest[di].pos = vmodel * dest[di].pos;
+		dest[di].color = vcolor * dest[di].color;
 	}
 
 	resetChanged();
 }
 
-void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORVertexes::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
-	cur_model *= model;
-	cur_color *= color;
+	mat4 vmodel = cur_model * model;
+	vec4 vcolor = cur_color * color;
 
 	// Make sure we do not have to reallocate each step
 	int nb = vertices.size();
@@ -893,23 +893,23 @@ void DORVertexes::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color,
 		dest[di].tex = tex;
 		dest[di].shader = shader;
 		dest[di].v.tex = src[si].tex;
-		dest[di].v.color = cur_color * src[si].color;
-		dest[di].v.pos = cur_model * src[si].pos;
+		dest[di].v.color = vcolor * src[si].color;
+		dest[di].v.pos = vmodel * src[si].pos;
 	}
 
 	resetChanged();
 }
 
-void DORVertexes::sortZ(RendererGL *container, mat4 cur_model) {
+void DORVertexes::sortZ(RendererGL *container, mat4& cur_model) {
 	if (!is_zflat) {
 		printf("[DORVertexes::sortZ] ERROR! trying to sort a non zflat vertices list!\n");
 		return;
 	}
 
-	cur_model *= model;
+	mat4 vmodel = cur_model * model;
 
 	// We take a "virtual" point at zflat coordinates
-	vec4 virtualz = cur_model * vec4(0, 0, zflat, 1);
+	vec4 virtualz = vmodel * vec4(0, 0, zflat, 1);
 	sort_z = virtualz.z;
 	sort_shader = shader;
 	sort_tex = tex;
@@ -952,21 +952,21 @@ void IContainer::containerClear() {
 	dos.clear();
 }
 
-void IContainer::containerRender(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void IContainer::containerRender(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 		if (i) i->render(container, cur_model, cur_color, cur_visible);
 	}
 }
 
-void IContainer::containerRenderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void IContainer::containerRenderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 		if (i) i->renderZ(container, cur_model, cur_color, cur_visible);
 	}
 }
 
-void IContainer::containerSortZ(RendererGL *container, mat4 cur_model) {
+void IContainer::containerSortZ(RendererGL *container, mat4& cur_model) {
 	for (auto it = dos.begin() ; it != dos.end(); ++it) {
 		DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
 		if (i) i->sortZ(container, cur_model);
@@ -1006,29 +1006,29 @@ DORContainer::~DORContainer() {
 	clear();
 }
 
-void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORContainer::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
-	cur_model *= model;
-	cur_color *= color;
-	containerRender(container, cur_model, cur_color, true);
+	mat4 cmodel = cur_model * model;
+	vec4 ccolor = cur_color * color;
+	containerRender(container, cmodel, ccolor, true);
 	resetChanged();
 }
 
-void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORContainer::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
-	cur_model *= model;
-	cur_color *= color;
-	containerRenderZ(container, cur_model, cur_color, true);
+	mat4 cmodel = cur_model * model;
+	vec4 ccolor = cur_color * color;
+	containerRenderZ(container, cmodel, ccolor, true);
 	resetChanged();
 }
 
-void DORContainer::sortZ(RendererGL *container, mat4 cur_model) {
+void DORContainer::sortZ(RendererGL *container, mat4& cur_model) {
 	// if (!visible) return; // DGDGDGDG: If you want :shown() to not trigger a Z rebuild we need to remove that. But to do that visible needs to be able to propagate like model & color; it does not currently
-	cur_model *= model;
-	containerSortZ(container, cur_model);
+	mat4 cmodel = cur_model * model;
+	containerSortZ(container, cmodel);
 }
 
-// void DORContainer::sortZ(RendererGL *container, mat4 cur_model) {
+// void DORContainer::sortZ(RendererGL *container, mat4& cur_model) {
 // }
 
 
@@ -1054,7 +1054,7 @@ void SubRenderer::setRendererName(const char *name) {
 	setRendererName((char*)name, true);
 }
 
-void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void SubRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	this->use_model = cur_model;
 	this->use_color = cur_color;
@@ -1065,7 +1065,7 @@ void SubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, 
 	// resetChanged(); // DGDGDGDG: investigate why things break if this is on
 }
 
-void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void SubRenderer::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	this->use_model = cur_model;
 	this->use_color = cur_color;
@@ -1076,11 +1076,11 @@ void SubRenderer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color,
 	// resetChanged(); // DGDGDGDG: investigate why things break if this is on
 }
 
-void SubRenderer::sortZ(RendererGL *container, mat4 cur_model) {
-	cur_model *= model;
+void SubRenderer::sortZ(RendererGL *container, mat4& cur_model) {
+	mat4 vmodel = cur_model * model;
 
 	// We take a "virtual" point at zflat coordinates
-	vec4 virtualz = cur_model * vec4(0, 0, 0, 1);
+	vec4 virtualz = vmodel * vec4(0, 0, 0, 1);
 	sort_z = virtualz.z;
 	sort_shader = NULL;
 	sort_tex = {0, 0, 0};

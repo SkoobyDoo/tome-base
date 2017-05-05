@@ -172,9 +172,9 @@ public:
 
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
-	virtual void sortZ(RendererGL *container, mat4 cur_model) = 0;
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) = 0;
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) = 0;
+	virtual void sortZ(RendererGL *container, mat4& cur_model) = 0;
 };
 
 /****************************************************************************
@@ -243,9 +243,9 @@ public:
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void sortZ(RendererGL *container, mat4 cur_model);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
 /****************************************************************************
@@ -262,9 +262,9 @@ public:
 	virtual bool containerRemove(DisplayObject *dob);
 	virtual void containerClear();
 
-	virtual void containerRender(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void containerRenderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void containerSortZ(RendererGL *container, mat4 cur_model);
+	virtual void containerRender(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void containerRenderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void containerSortZ(RendererGL *container, mat4& cur_model);
 };
 class DORContainer : public DORFlatSortable, public IContainer{
 protected:
@@ -279,9 +279,9 @@ public:
 	virtual void remove(DisplayObject *dob);
 	virtual void clear();
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void sortZ(RendererGL *container, mat4 cur_model);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
 
@@ -304,9 +304,9 @@ public:
 	void setRendererName(const char *name);
 	void setRendererName(char *name, bool copy);
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void sortZ(RendererGL *container, mat4 cur_model);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 
 	virtual void toScreenSimple();
 	virtual void toScreen(mat4 cur_model, vec4 color) = 0;

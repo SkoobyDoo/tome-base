@@ -179,9 +179,9 @@ public:
 	vec2 getObjectPosition(const char *name);
 
 	void setShader(shader_type *s) { shader = s; };
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
-	virtual void sortZ(RendererGL *container, mat4 cur_model);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 
 	virtual void onKeyframe(float nb_keyframes);
 };
