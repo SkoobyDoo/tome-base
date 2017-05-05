@@ -321,6 +321,20 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 	}
 }
 
+void RendererGL::setChanged(ChangedSet what) {
+	switch (what) {
+		case ChangedSet::PARENTS:
+			break;
+		case ChangedSet::CHILDS:
+			break;
+		case ChangedSet::RESORT:
+			changed.set(ChangedSet::RESORT);
+		case ChangedSet::REBUILD:
+			changed.set(ChangedSet::REBUILD);
+			break;
+	}
+}
+
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	if (changed[ChangedSet::REBUILD] || changed[ChangedSet::RESORT] || update_dos.size()) update();

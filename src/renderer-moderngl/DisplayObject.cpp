@@ -679,11 +679,12 @@ void DORVertexes::computeFaces() {
 		for (int_fast8_t fi = 0; fi < 4; fi++) {
 			vec4 p{ f.points[fi].x, f.points[fi].y, f.z, 1 };
 			computed_vertices[idx].pos = computed_model * p;
-			if (!computed_visible) {
-				computed_vertices[idx++].color.a = 0;
-			} else {
-				computed_vertices[idx++].color = computed_color * f.color;
-			}
+			// if (!computed_visible) {
+			// 	computed_vertices[idx].color.a = 0;
+			// } else {
+				computed_vertices[idx].color = computed_color * f.color;
+			// }
+			idx++;
 		}
 	}
 	// printf("recomputed faces on %lx : %d\n", this, idx);

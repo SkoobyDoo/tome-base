@@ -123,6 +123,7 @@ public:
 		displays.push_back(dl);
 	}
 
+	virtual void setChanged(ChangedSet what);
 	void setShader(shader_type *s, int lua_ref);
 	void renderKind(RenderKind k) { kind = k; };
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
