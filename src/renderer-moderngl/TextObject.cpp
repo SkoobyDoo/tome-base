@@ -87,10 +87,10 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 
 			if (shadow_x || shadow_y) {
 				addQuad(
-					{{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
-					{{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
-					{{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
-					{{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}}
+					{{shadow_x+x0+italicx, shadow_y+y0, 0, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+					{{shadow_x+x1+italicx, shadow_y+y0, 0, 1},	{d->s1, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+					{{shadow_x+x1, shadow_y+y1, 0, 1},	{d->s1, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}},
+					{{shadow_x+x0, shadow_y+y1, 0, 1},	{d->s0, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}}
 				);
 			}
 

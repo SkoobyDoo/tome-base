@@ -102,7 +102,7 @@ void DisplayList::update() {
 	if (!changed) return;
 	// Upload display list vertices data to the corresponding VBO on the GPU memory
 	if (!sub && !tick) {
-		printf("REBUILDING THE VBO %d...\n", vbo);
+		// printf("REBUILDING THE VBO %d...\n", vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * list.size(), NULL, (GLuint)mode);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * list.size(), list.data());
@@ -118,6 +118,7 @@ RendererGL::RendererGL(VBOMode mode) {
 	setChanged(ChangedSet::REBUILD);
 	setChanged(ChangedSet::RESORT);
 	this->mode = mode;
+	renderer = this;
 	glGenBuffers(1, &vbo_elements);
 }
 RendererGL::~RendererGL() {
@@ -213,20 +214,24 @@ void RendererGL::resetDisplayLists() {
 
 // DGDGDGDG: make that (optionally?) process in a second thread; making it nearly costless
 void RendererGL::update() {
-	printf("Renderer %s needs updating: %d %d %d\n", getRendererName(), update_dos.size(), changed[ChangedSet::REBUILD] ? 1 : 0, changed[ChangedSet::RESORT] ? 1 : 0);
+	// printf("Renderer %s needs updating: %d %d %d\n", getRendererName(), update_dos.size(), changed[ChangedSet::REBUILD] ? 1 : 0, changed[ChangedSet::RESORT] ? 1 : 0);
 
 	if (!manual_dl_management && changed[ChangedSet::REBUILD]) {
 		resetDisplayLists();
 
+		printf("===REBUILD== %s\n", getRendererName());
+		function<void(DisplayObject*)> fct = [this](DisplayObject *o) { o->renderer = this; };
+		for (auto &it : dos) { it->traverse(fct); }
+
 		// Build up the new display lists
 		mat4 cur_model = mat4();
 		if (zsort == SortMode::NO_SORT || zsort == SortMode::GL) {
-			updateFull(cur_model, color, true, true);
+			for (auto &it : dos) it->updateFull(cur_model, color, true, true);
 			for (auto &it : dos) {
 				it->render(this, cur_model, color, true);
 			}
 		} else if (zsort == SortMode::FAST) {
-			updateFull(cur_model, color, true, true);
+			for (auto &it : dos) it->updateFull(cur_model, color, true, true);
 
 			// If nothing that can alter sort order changed, we can just quickly recompute the DisplayLists just like in the no sort method
 			if (changed[ChangedSet::RESORT]) {
@@ -249,6 +254,7 @@ void RendererGL::update() {
 				it->render(this, cur_model, color, true);
 			}
 		} else if (zsort == SortMode::FULL) {
+			printf("BOOH NOT DONE\n"); exit(1); // DGDGDGDG
 			updateFull(cur_model, color, true, true);
 			zvertices.clear();
 			for (auto it = dos.begin() ; it != dos.end(); ++it) {
@@ -266,6 +272,7 @@ void RendererGL::update() {
 
 	if (update_dos.size()) {
 		for (auto &d : update_dos) {
+			// printf("__update__: %lx : %s\n", d, d->getKind());
 			if (d->parent) d->updateFull(d->parent->computed_model, d->parent->computed_color, d->parent->computed_visible, false);
 		}
 		update_dos.clear();
@@ -314,7 +321,6 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 	}
 }
 
-bool ok =true;
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	if (changed[ChangedSet::REBUILD] || changed[ChangedSet::RESORT] || update_dos.size()) update();

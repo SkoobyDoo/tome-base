@@ -86,17 +86,20 @@ void DisplayObject::setParent(DisplayObject *parent) {
 void DisplayObject::setChanged(ChangedSet what) {
 	switch (what) {
 		case ChangedSet::PARENTS:
-			changed.set(ChangedSet::PARENTS);
-			if (renderer) { renderer->setChanged(ChangedSet::REBUILD); }
+			if (!changed[ChangedSet::PARENTS] && renderer) {
+				renderer->setChanged(ChangedSet::REBUILD);
+				changed.set(ChangedSet::PARENTS);
+			}
 			break;
 		case ChangedSet::CHILDS:
-			changed.set(ChangedSet::CHILDS);
-			if (renderer) renderer->update_dos.insert(this);
+				// printf("!!!! %s : %d\n", getKind(), renderer?1:0);
+			if (renderer) {
+				renderer->update_dos.insert(this);
+			}
+				// changed.set(ChangedSet::CHILDS);
 			break;
 		case ChangedSet::RESORT:
 			changed.set(ChangedSet::RESORT);
-			setChanged(ChangedSet::REBUILD);
-			break;
 		case ChangedSet::REBUILD:
 			changed.set(ChangedSet::REBUILD);
 			break;
@@ -105,7 +108,7 @@ void DisplayObject::setChanged(ChangedSet what) {
 
 void DisplayObject::setSortingChanged() {
 	if (!renderer) return;
-	printf("=!!!!!!!!!!SORTING CHANGED\n");
+	// printf("=!!!!!!!!!!SORTING CHANGED\n");
 	renderer->setChanged(ChangedSet::RESORT);
 	renderer->setChanged(ChangedSet::REBUILD);
 }
@@ -174,7 +177,7 @@ void DisplayObject::resetModelMatrix() {
 }
 
 void DisplayObject::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup) {
-	// recomputeModelMatrix(); // DGDGDGDG Make matric recompiting happen only here
+	recomputeModelMatrix(); // DGDGDGDG Make matric recompiting happen only here
 	computed_model = cur_model * model;
 	computed_color = cur_color * color;
 	computed_visible = cur_visible && visible;
@@ -528,7 +531,7 @@ int DORVertexes::addQuad(vertex v1, vertex v2, vertex v3, vertex v4) {
 	}
 	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
 	if ((size && (v1.pos.z != zflat))) {
-		printf("Warning making non flat DORVertexes::addQuad!\n");
+		printf("Warning making non flat DORVertexes::addQuad(vertex list)!\n");
 		is_zflat = false;
 	}
 	if (!size) zflat = v1.pos.z;
@@ -676,12 +679,16 @@ void DORVertexes::computeFaces() {
 		for (int_fast8_t fi = 0; fi < 4; fi++) {
 			vec4 p{ f.points[fi].x, f.points[fi].y, f.z, 1 };
 			computed_vertices[idx].pos = computed_model * p;
-			computed_vertices[idx++].color = computed_color * f.color;
+			if (!computed_visible) {
+				computed_vertices[idx++].color.a = 0;
+			} else {
+				computed_vertices[idx++].color = computed_color * f.color;
+			}
 		}
 	}
-	printf("recomputed faces on %lx : %d\n", this, idx);
+	// printf("recomputed faces on %lx : %d\n", this, idx);
 	if (dl_dest) {
-		printf("Reuse of DL %d at %ld in computeFaces\n", dl_dest->vbo, dl_dest_start);
+		// printf("Reuse of DL %d at %ld in computeFaces\n", dl_dest->vbo, dl_dest_start);
 		std::copy(computed_vertices.begin(), computed_vertices.end(), dl_dest->list.begin() + dl_dest_start);
 		dl_dest->changed = true;
 	}
@@ -694,8 +701,7 @@ void DORVertexes::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, b
 }
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
-	if (!computed_visible) return;
-	renderer = container;
+	// if (!computed_visible) return;
 	auto dl = getDisplayList(container, tex, shader);
 
 	// Make sure we do not have to reallocate each step
@@ -708,7 +714,7 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, 
 	dl->changed = true;
 	dl_dest = dl;
 	dl_dest_start = startat;
-	printf("Full rebuild of DL %d with tex %d\n", dl_dest->vbo, tex[0]);
+	// printf("Full rebuild of DL %d with tex %d\n", dl_dest->vbo, tex[0]);
 
 	resetChanged();
 }
@@ -833,6 +839,7 @@ DORContainer::~DORContainer() {
 }
 
 void DORContainer::traverse(function<void(DisplayObject*)> &traverser) {
+	traverser(this);
 	for (auto it : dos) {
 		it->traverse(traverser);
 	}
@@ -846,8 +853,6 @@ void DORContainer::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, 
 }
 
 void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
-	if (!computed_visible) return;
-	renderer = container;
 	for (auto it : dos) {
 		it->render(container, cur_model, cur_color, cur_visible);
 	}
@@ -855,7 +860,6 @@ void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color,
 }
 
 void DORContainer::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
-	if (!computed_visible) return;
 	cur_model *= model;
 	cur_color *= color;
 	for (auto it : dos) {
@@ -896,7 +900,6 @@ void ISubRenderer::setRendererName(const char *name) {
 
 void ISubRenderer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
 	if (!computed_visible) return;
-	renderer = container;
 	stopDisplayList(); // Needed to make sure we break texture chaining
 	auto dl = getDisplayList(container);
 	stopDisplayList(); // Needed to make sure we break texture chaining
