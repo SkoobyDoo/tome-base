@@ -134,26 +134,14 @@ function _M:updateUI()
 ----------------------------
 ----------------------------DGDGDGDG remove this
 ----------------------------
---[[
-	local test = require("engine.ui.VariableList").new{scrollbar=true, width=self.iw, height=self.ih / 2, list={
-		-- {name='this is a long text 1\nthis is a long text 1\nthis is a long text 1\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo'},
-		{name='this is a long text 1\nplpo\nplpo2'},
-		{name='this is a long text 2'},
-		{name='this is a long text 3'},
-		{name='this is a long text 4'},
-		{name='this is a long text 5'},
-		{name='this is a long text 6'},
-		{name='this is a long text 7'},
-		{name='this is a long text 8'},
-		{name='this is a long text 9'},
-		{name='this is a long text 10'},
-		{name='this is a long text 11'},
-		{name='this is a long text 12'},
-		{name='this is a long text 13'},
-		{name='this is a long text 14'},
-		{name='this is a long text 15'},
-		{name='this is a long text 16'},
-	}, fct=function(t) end}
+-- [[
+	local tree = {}
+	for i = 1, 1000 do tree[#tree+1] = {name='this is azlkdj a long text '..i, plop="kjhekjghekg", plop3="kjhekjghekg"} end
+	local test = require("engine.ui.TreeList").new{scrollbar=true, width=self.iw * 2, height=self.ih * 3, columns={
+		{name="Inventory", width=50, display_prop="name", sort="name"},
+		{name="2", width=25, display_prop="plop", sort="plop"},
+		{name="3", width=25, display_prop="plop3", sort="plop3"},
+	}, tree=tree, fct=function(t) end}
 	
 	uis = { {left=0, top=0, ui=test},  }
 --]]

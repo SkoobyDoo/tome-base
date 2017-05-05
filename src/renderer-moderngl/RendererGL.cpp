@@ -259,7 +259,7 @@ void RendererGL::update() {
 		if (!(*dl)->sub && !(*dl)->tick) {
 			if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
 
-			// printf("REBUILDING THE VBO %d...\n", (*dl)->vbo);
+			// printf("REBUILDING THE VBO %d with %d elements...\n", (*dl)->vbo, (*dl)->list.size());
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, (GLuint)mode);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());
