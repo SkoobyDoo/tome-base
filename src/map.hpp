@@ -114,9 +114,8 @@ typedef struct {
 	int minimap_gridsize, old_minimap_gridsize;
 
 	int nb_grid_lines_vertices;
-	GLfloat *grid_lines_vertices;
-	GLfloat *grid_lines_colors;
-	GLfloat *grid_lines_textures;
+	DORVertexes *grid_lines;
+	RendererGL *grid_lines_renderer;
 
 	GLfloat *vertices;
 	GLfloat *colors;
