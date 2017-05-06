@@ -580,10 +580,6 @@ static int map_new(lua_State *L)
 	lua_pushnumber(L, map->is_hex);
 	lua_settable(L, LUA_REGISTRYINDEX);
 
-	map->vertices = (GLfloat*)calloc(2*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 2 coords, 4 vertices per particles
-	map->colors = (GLfloat*)calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
-	map->texcoords = (GLfloat*)calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat));
-
 	map->scroll_x = map->scroll_y = 0;
 	map->w = w;
 	map->h = h;
@@ -708,10 +704,6 @@ static int map_free(lua_State *L)
 	free(map->z_renderers);
 
 	delete map->shader_to_shaderkind;
-
-	free(map->colors);
-	free(map->texcoords);
-	free(map->vertices);
 
 	if (map->grid_lines_renderer) delete map->grid_lines_renderer;
 	if (map->grid_lines) delete map->grid_lines;
@@ -1395,9 +1387,6 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 {
 	map_object *dm;
 	float r, g, b;
-	GLfloat *vertices = map->vertices;
-	GLfloat *colors = map->colors;
-	GLfloat *texcoords = map->texcoords;
 	bool up_important = false;
 	float anim;
 	int zc;

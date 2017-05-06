@@ -57,7 +57,7 @@ public:
 
 enum display_last_kind {DL_NONE, DL_TRUE_LAST, DL_TRUE};
 
-struct s_map_object {
+struct map_object {
 	int nb_textures;
 	int *textures_ref;
 	GLuint *textures;
@@ -94,12 +94,11 @@ struct s_map_object {
 
 	DORCallbackMap *cb;
 
-	struct s_map_object *next;
+	map_object *next;
 	int next_ref;
 };
-typedef struct s_map_object map_object;
 
-typedef struct {
+struct map_type {
 	map_object* ***grids;
 	int ***grids_ref;
 	float *grids_seens;
@@ -117,9 +116,6 @@ typedef struct {
 	DORVertexes *grid_lines;
 	RendererGL *grid_lines_renderer;
 
-	GLfloat *vertices;
-	GLfloat *colors;
-	GLfloat *texcoords;
 	GLubyte *seens_map;
 	int seens_map_w, seens_map_h;
 
@@ -131,7 +127,6 @@ typedef struct {
 	GLuint seens_texture;
 
 	int mo_list_ref;
-
 
 	int is_hex;
 
@@ -165,7 +160,7 @@ typedef struct {
 	unordered_map<string, float> *shader_to_shaderkind;
 	VBO *seens_vbo;
 	VBO *mm_vbo;
-} map_type;
+};
 
 extern void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color);
 extern void minimap_toscreen(map_type *map, mat4 model, int gridsize, int mdx, int mdy, int mdw, int mdh, float transp);
