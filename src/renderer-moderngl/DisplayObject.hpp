@@ -183,7 +183,7 @@ public:
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 
 	virtual void traverse(function<void(DisplayObject*)> &traverser) { traverser(this); };
-	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup);
+	virtual bool updateFull(mat4 &cur_model, vec4 &cur_color, bool cur_visible, bool cleanup);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible) = 0;
@@ -265,7 +265,7 @@ public:
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
-	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup);
+	virtual bool updateFull(mat4 &cur_model, vec4 &cur_color, bool cur_visible, bool cleanup);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
@@ -294,7 +294,7 @@ public:
 	virtual void setChanged(ChangedSet what);
 
 	virtual void traverse(function<void(DisplayObject*)> &traverser);
-	virtual void updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup);
+	virtual bool updateFull(mat4 &cur_model, vec4 &cur_color, bool cur_visible, bool cleanup);
 
 	virtual void render(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);
 	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color, bool cur_visible);

@@ -175,12 +175,20 @@ void DisplayObject::resetModelMatrix() {
 	scale_x = scale_y = scale_z = 1;
 	recomputeModelMatrix();
 }
+// int nbcompute = 0;
+// std::map<DisplayObject*, int> computemap;
+bool DisplayObject::updateFull(mat4 &cur_model, vec4 &cur_color, bool cur_visible, bool cleanup) {
+	if (renderer->update_dos_done.count(this)) return false;
+	renderer->update_dos_done.insert(this);
 
-void DisplayObject::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup) {
 	// recomputeModelMatrix(); // DGDGDGDG Make matric recompiting happen only here
+	// nbcompute++;
+	// if (!computemap[this]) computemap[this] = 0;
+	// computemap[this]++;
 	computed_model = cur_model * model;
 	computed_color = cur_color * color;
 	computed_visible = cur_visible && visible;
+	return true;
 }
 
 
@@ -691,14 +699,16 @@ void DORVertexes::computeFaces() {
 	if (dl_dest) {
 		// printf("Reuse of DL %d at %ld in computeFaces\n", dl_dest->vbo, dl_dest_start);
 		std::copy(computed_vertices.begin(), computed_vertices.end(), dl_dest->list.begin() + dl_dest_start);
+		// std::memcpy(dl_dest->list.data() + dl_dest_start, computed_vertices.data(), computed_vertices.size() * sizeof(vertex));
 		dl_dest->changed = true;
 	}
 }
 
-void DORVertexes::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup) {
+bool DORVertexes::updateFull(mat4 &cur_model, vec4 &cur_color, bool cur_visible, bool cleanup) {
+	if (!DisplayObject::updateFull(cur_model, cur_color, cur_visible, cleanup)) return false;
 	if (cleanup) dl_dest = NULL;
-	DisplayObject::updateFull(cur_model, cur_color, cur_visible, cleanup);
 	computeFaces();
+	return true;
 }
 
 void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
@@ -708,14 +718,14 @@ void DORVertexes::render(RendererGL *container, mat4 cur_model, vec4 cur_color, 
 	// Make sure we do not have to reallocate each step
 	int nb = computed_vertices.size();
 	int startat = dl->list.size();
-	dl->list.reserve(startat + nb);
+	dl->list.reserve(startat + nb * 2000);
 
 	// Copy
 	dl->list.insert(dl->list.end(), computed_vertices.begin(), computed_vertices.end());
 	dl->changed = true;
 	dl_dest = dl;
 	dl_dest_start = startat;
-	// printf("Full rebuild of DL %d with tex %d\n", dl_dest->vbo, tex[0]);
+	printf("Full rebuild of DL %d with tex %d and %d vertices\n", dl_dest->vbo, tex[0], nb);
 
 	resetChanged();
 }
@@ -846,11 +856,12 @@ void DORContainer::traverse(function<void(DisplayObject*)> &traverser) {
 	}
 }
 
-void DORContainer::updateFull(mat4 cur_model, vec4 cur_color, bool cur_visible, bool cleanup) {
-	DisplayObject::updateFull(cur_model, color, cur_visible, cleanup);
+bool DORContainer::updateFull(mat4 &cur_model, vec4 &cur_color, bool cur_visible, bool cleanup) {
+	if (!DisplayObject::updateFull(cur_model, color, cur_visible, cleanup)) return false;
 	for (auto it : dos) {
 		it->updateFull(computed_model, computed_color, computed_visible, cleanup);
 	}
+	return true;
 }
 
 void DORContainer::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {

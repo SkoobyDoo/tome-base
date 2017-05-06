@@ -109,6 +109,7 @@ protected:
 	bool usesElementsVBO();
 
 public:
+	unordered_set<DisplayObject*> update_dos_done;
 	unordered_set<DisplayObject*> update_dos;
 	VBOMode mode = VBOMode::DYNAMIC;
 	vector<DORFlatSortable*> sorted_dos;

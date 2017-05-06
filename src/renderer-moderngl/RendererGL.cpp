@@ -211,7 +211,7 @@ void RendererGL::resetDisplayLists() {
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) { releaseDisplayList(*dl); }
 	displays.clear();
 }
-
+#include <map>
 // DGDGDGDG: make that (optionally?) process in a second thread; making it nearly costless
 void RendererGL::update() {
 	// printf("Renderer %s needs updating: %d %d %d\n", getRendererName(), update_dos.size(), changed[ChangedSet::REBUILD] ? 1 : 0, changed[ChangedSet::RESORT] ? 1 : 0);
@@ -219,7 +219,6 @@ void RendererGL::update() {
 	if (!manual_dl_management && changed[ChangedSet::REBUILD]) {
 		resetDisplayLists();
 
-		printf("===REBUILD== %s\n", getRendererName());
 		function<void(DisplayObject*)> fct = [this](DisplayObject *o) { o->renderer = this; };
 		for (auto &it : dos) { it->traverse(fct); }
 
@@ -248,11 +247,14 @@ void RendererGL::update() {
 				stable_sort(sorted_dos.begin(), sorted_dos.end(), sort_dos);
 			}
 
+		long int start_time = SDL_GetTicks();
+		printf("===REBUILD== %s\n", getRendererName());
 			// And now we can iterate the sorted flattened tree and render as a normal no sort render
 			// printf("FST redraw\n");
 			for (auto &it : sorted_dos) {
 				it->render(this, cur_model, color, true);
 			}
+		printf("===REBUILD-DONE== %s : %ld\n", getRendererName(), SDL_GetTicks() - start_time);
 		} else if (zsort == SortMode::FULL) {
 			printf("BOOH NOT DONE\n"); exit(1); // DGDGDGDG
 			updateFull(cur_model, color, true, true);
@@ -271,11 +273,21 @@ void RendererGL::update() {
 	resetChanged();
 
 	if (update_dos.size()) {
+		// extern int nbcompute;
+		// extern std::map<DisplayObject*, int> computemap;
+		// long int start_time = SDL_GetTicks();
+		// nbcompute = 0;
+		// printf("===UPDATE== %s : %d\n", getRendererName(), update_dos.size());
+		update_dos_done.clear();
 		for (auto &d : update_dos) {
 			// printf("__update__: %lx : %s\n", d, d->getKind());
 			if (d->parent) d->updateFull(d->parent->computed_model, d->parent->computed_color, d->parent->computed_visible, false);
 		}
 		update_dos.clear();
+		// for (auto &it : computemap) {
+			// printf("   -- %lx : %d\n", it.first, it.second);
+		// }
+		// printf("===UPDATE-DONE== %s : %ld --- %d\n", getRendererName(), SDL_GetTicks() - start_time, nbcompute);
 	}
 
 	// Update the indices
