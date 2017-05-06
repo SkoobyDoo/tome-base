@@ -651,6 +651,7 @@ static int map_new(lua_State *L)
 	map->z_callbacks = (int*)calloc(zdepth, sizeof(int));
 	for (i = 0; i < zdepth; i++) map->z_callbacks[i] = LUA_NOREF;
 
+	map->z_offs = (vec2*)calloc(zdepth, sizeof(vec2));
 	map->z_changed = (bool*)calloc(zdepth, sizeof(bool));
 	for (i = 0; i < zdepth; i++) map->z_changed[i] = true;
 
@@ -703,6 +704,7 @@ static int map_free(lua_State *L)
 		delete map->z_renderers[i];
 	}
 	free(map->z_callbacks);
+	free(map->z_offs);
 	free(map->z_changed);
 	free(map->z_renderers);
 
@@ -1689,11 +1691,12 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 	for (z = 0; z < map->zdepth; z++)
 	{
 		auto render = map->z_renderers[z];
-		if (map->z_changed[z]) {
-			// printf("map layer %d is invalid\n", z);
+		if (map->z_changed[z] || map->z_offs[z].x != mini || map->z_offs[z].y != minj) {
+			// printf("map layer %d is invalid, start %dx%d from %dx%d\n", z, mini, minj, (int)map->z_offs[z].x, (int)map->z_offs[z].y);
 			render->resetDisplayLists();
 			render->setChanged(true);
 			map->z_changed[z] = false;
+			map->z_offs[z] = {mini, minj};
 
 			for (j = minj; j < maxj; j++)
 			{

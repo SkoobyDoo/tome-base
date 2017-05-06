@@ -161,6 +161,7 @@ typedef struct {
 
 	// Render processing
 	bool *z_changed;
+	vec2 *z_offs;
 	RendererGL **z_renderers;
 	unordered_map<string, float> *shader_to_shaderkind;
 	VBO *seens_vbo;
