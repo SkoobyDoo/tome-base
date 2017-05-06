@@ -273,11 +273,11 @@ void RendererGL::update() {
 	resetChanged();
 
 	if (update_dos.size()) {
-		// extern int nbcompute;
-		// extern std::map<DisplayObject*, int> computemap;
-		// long int start_time = SDL_GetTicks();
-		// nbcompute = 0;
-		// printf("===UPDATE== %s : %d\n", getRendererName(), update_dos.size());
+		extern int nbcompute;
+		extern std::map<DisplayObject*, int> computemap;
+		long int start_time = SDL_GetTicks();
+		nbcompute = 0;
+		printf("===UPDATE== %s : %d\n", getRendererName(), update_dos.size());
 		update_dos_done.clear();
 		for (auto &d : update_dos) {
 			// printf("__update__: %lx : %s\n", d, d->getKind());
@@ -287,7 +287,7 @@ void RendererGL::update() {
 		// for (auto &it : computemap) {
 			// printf("   -- %lx : %d\n", it.first, it.second);
 		// }
-		// printf("===UPDATE-DONE== %s : %ld --- %d\n", getRendererName(), SDL_GetTicks() - start_time, nbcompute);
+		printf("===UPDATE-DONE== %s : %ld --- %d\n", getRendererName(), SDL_GetTicks() - start_time, nbcompute);
 	}
 
 	// Update the indices

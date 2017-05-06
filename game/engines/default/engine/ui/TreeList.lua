@@ -29,7 +29,7 @@ local Scrollbar = require "engine.ui.blocks.Scrollbar"
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
-	t.require_renderer = true
+	t.require_renderer = false
 	self.tree = assert(t.tree, "no tree tree")
 	self.columns = assert(t.columns, "no list columns")
 	self.w = assert(t.width, "no tree width")
@@ -83,7 +83,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-	self.do_container:clear():zSort(true):countDraws(false)
+	self.do_container:clear()--:zSort(true):countDraws(false)
 
 	-- Draw the scrollbar
 	if self.scrollbar then

@@ -175,16 +175,16 @@ void DisplayObject::resetModelMatrix() {
 	scale_x = scale_y = scale_z = 1;
 	recomputeModelMatrix();
 }
-// int nbcompute = 0;
-// std::map<DisplayObject*, int> computemap;
+int nbcompute = 0;
+std::map<DisplayObject*, int> computemap;
 bool DisplayObject::updateFull(mat4 &cur_model, vec4 &cur_color, bool cur_visible, bool cleanup) {
-	if (renderer->update_dos_done.count(this)) return false;
+	if (!renderer || renderer->update_dos_done.count(this)) return false;
 	renderer->update_dos_done.insert(this);
 
 	// recomputeModelMatrix(); // DGDGDGDG Make matric recompiting happen only here
-	// nbcompute++;
-	// if (!computemap[this]) computemap[this] = 0;
-	// computemap[this]++;
+	nbcompute++;
+	if (!computemap[this]) computemap[this] = 0;
+	computemap[this]++;
 	computed_model = cur_model * model;
 	computed_color = cur_color * color;
 	computed_visible = cur_visible && visible;
@@ -687,11 +687,11 @@ void DORVertexes::computeFaces() {
 		for (int_fast8_t fi = 0; fi < 4; fi++) {
 			vec4 p{ f.points[fi].x, f.points[fi].y, f.z, 1 };
 			computed_vertices[idx].pos = computed_model * p;
-			// if (!computed_visible) {
-			// 	computed_vertices[idx].color.a = 0;
-			// } else {
+			if (!computed_visible) {
+				computed_vertices[idx].color.a = 0;
+			} else {
 				computed_vertices[idx].color = computed_color * f.color;
-			// }
+			}
 			idx++;
 		}
 	}

@@ -230,27 +230,46 @@ local fromTextureTable = core.renderer.fromTextureTable
 local function resizeFrame(f, w, h, iw, ih)
 	if not w then w = iw + f.b4.w + f.b6.w end
 	if not h then h = ih + f.b8.h + f.b2.h end
-
 	local cx, cy = f.cx, f.cy
-	f.container:clear()
-	f.container:add(fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
 
-	f.container:add(fromTextureTable(f.b7, cx + 0, cy + 0))
-	f.container:add(fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
+	if f.b1.t == f.b2.t and f.b1.t == f.b3.t and f.b1.t == f.b4.t and f.b1.t == f.b5.t and f.b1.t == f.b6.t and f.b1.t == f.b7.t and f.b1.t == f.b8.t and f.b1.t == f.b9.t then
+		if not f.container then f.container = core.renderer.vertexes() end
+		print("====MAKING MONO VERTEX FRAME")
+		f.container:clear()
+		fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true, 1, 1, 1, 1, f.container)
 
-	f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h))
-	f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h))
+		fromTextureTable(f.b7, cx + 0, cy + 0, nil, nil, false, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0, nil, nil, false, 1, 1, 1, 1, f.container)
 
-	f.container:add(fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
-	f.container:add(fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+		fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h, nil, nil, false, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h, nil, nil, false, 1, 1, 1, 1, f.container)
 
-	f.container:add(fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true))
-	f.container:add(fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
+		fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true, 1, 1, 1, 1, f.container)
+
+		fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true, 1, 1, 1, 1, f.container)
+	else
+		if not f.container then f.container = core.renderer.container() end
+		f.container:clear()
+		f.container:add(fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
+
+		f.container:add(fromTextureTable(f.b7, cx + 0, cy + 0))
+		f.container:add(fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
+
+		f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h))
+		f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h))
+
+		f.container:add(fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
+		f.container:add(fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+
+		f.container:add(fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true))
+		f.container:add(fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
+	end
 end
 
 function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 	local f = {}
-	f.container = core.renderer.container()
 	if base then
 		if type(base) == "string" then
 			f.b7 = self:getAtlasTexture(base.."7.png")
@@ -281,6 +300,8 @@ function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 		f.cx, f.cy = cx, cy
 
 		resizeFrame(f, w, h)
+	else
+		f.container = core.renderer.container() -- dummy
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)
@@ -293,7 +314,6 @@ function _M:cloneFrameDO(of, resizable)
 	f.w, f.h = of.w, of.h
 	f.cx, f.cy = of.cx, of.cy
 	f.b7 = of.b7 f.b9 = of.b9 f.b1 = of.b1 f.b3 = of.b3 f.b8 = of.b8 f.b5 = of.b5 f.b4 = of.b4 f.b2 = of.b2 f.b6 = of.b6
-	f.container = core.renderer.container()
 	resizeFrame(f, f.w, f.h)
 	if resizable then f.resize = resizeFrame end
 	return f
