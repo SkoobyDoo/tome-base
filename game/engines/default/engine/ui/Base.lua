@@ -234,7 +234,7 @@ local function resizeFrame(f, w, h, iw, ih)
 
 	if f.b1.t == f.b2.t and f.b1.t == f.b3.t and f.b1.t == f.b4.t and f.b1.t == f.b5.t and f.b1.t == f.b6.t and f.b1.t == f.b7.t and f.b1.t == f.b8.t and f.b1.t == f.b9.t then
 		if not f.container then f.container = core.renderer.vertexes() end
-		print("====MAKING MONO VERTEX FRAME")
+		-- print("====MAKING MONO VERTEX FRAME")
 		f.container:clear()
 		fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true, 1, 1, 1, 1, f.container)
 

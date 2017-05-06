@@ -62,6 +62,14 @@ function _M:setupRebootKeys()
 		if not config.settings.cheat then return end
 		require("engine.Game").fps_shown = not require("engine.Game").fps_shown
 	end)
+	local toggle_infinite = false
+	self:addCommand(self._u, {"ctrl","alt","shift"}, function()
+		if not config.settings.cheat then return end
+		require("engine.Game").fps_shown = true
+		if toggle_infinite then core.game.setFPS(config.settings.display_fps)
+		else core.game.setFPS(0) end
+		toggle_infinite = not toggle_infinite
+	end)
 end
 
 function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
