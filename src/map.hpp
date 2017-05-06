@@ -98,7 +98,19 @@ struct map_object {
 	int next_ref;
 };
 
+struct map_object_sort {
+	map_object *m, *dm;
+	int z;
+	float anim;
+	float dx, dy, dy_sort;
+	float tldx, tldy;
+	float r, g, b, a;
+	int i, j;
+};
+
 struct map_type {
+	map_object_sort *sort_mos;
+	int sort_mos_max;
 	map_object* ***grids;
 	int ***grids_ref;
 	float *grids_seens;

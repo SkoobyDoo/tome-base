@@ -298,7 +298,7 @@ function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
 			display_on_seen = true,
 			display_on_remember = true,
 			image = basedir..treeid.."_"..getname(parts[#parts])..".png",
-			shader = "tree", shader_args = parts.shader_args,
+			-- shader = "tree", shader_args = parts.shader_args, -- DGDGDGDG
 		}
 		return add[#add]
 	end

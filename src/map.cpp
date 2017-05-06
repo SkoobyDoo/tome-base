@@ -36,6 +36,7 @@ extern "C" {
 
 #include "map.hpp"
 #include "renderer-moderngl/TileMap.hpp"
+#include <algorithm>
 
 static const char IS_HEX_KEY = 'k';
 
@@ -615,6 +616,8 @@ static int map_new(lua_State *L)
 	map->my = my;
 	map->mwidth = mwidth;
 	map->mheight = mheight;
+	map->sort_mos = new map_object_sort[w * h * zdepth];
+	map->sort_mos_max = 0;
 	map->grids = (map_object****)calloc(w, sizeof(map_object***));
 	map->grids_ref = (int***)calloc(w, sizeof(int**));
 	map->grids_seens = (float*)calloc(w * h, sizeof(float));
@@ -687,6 +690,7 @@ static int map_free(lua_State *L)
 		free(map->grids_lites[i]);
 		free(map->grids_important[i]);
 	}
+	delete[] map->sort_mos;
 	free(map->grids);
 	free(map->grids_ref);
 	free(map->grids_seens);
@@ -1308,7 +1312,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		vec4 color = {r, g, b, a};
 		mat4 model = mat4();
 		model = glm::translate(model, glm::vec3(x1, y1, 0));
-		dm->displayobject->render(map->z_renderers[z], model, color, true);
+		dm->displayobject->render(map->z_renderers[1], model, color, true);
 		if (!dm->displayobject->independantRenderer()) {
 			map->z_changed[z] = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
 		}
@@ -1332,7 +1336,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		}
 
 		// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
-		auto dl = getDisplayList(map->z_renderers[z], {dm->textures[0], 0, 0}, shader);
+		auto dl = getDisplayList(map->z_renderers[1], {dm->textures[0], 0, 0}, shader);
 	
 		// Make sure we do not have to reallocate each step
 		// DGDGDGDG: actually do it
@@ -1347,7 +1351,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 	if (L && dm->cb)
 	{
 		stopDisplayList(); // Needed to make sure we break texture chaining
-		auto dl = getDisplayList(map->z_renderers[z]);
+		auto dl = getDisplayList(map->z_renderers[1]);
 		stopDisplayList(); // Needed to make sure we break texture chaining
 		dm->cb->dx = dx - map->scroll_x;
 		dm->cb->dy = dy - map->scroll_y;
@@ -1537,8 +1541,9 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	/********************************************************
 	 ** Display the entity
 	 ********************************************************/
+	float dmpeel = 0;
 	dm = m;
-	tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
+	// tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
 	while (dm)
 	{
 		if (!dm->anim_max) anim = 0;
@@ -1570,19 +1575,36 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 	// }
 
-		do_quad(L, m, dm, map, dz,
-			anim,
-			dx + (dm->dx + animdx) * map->tile_w,
-			dy + (dm->dy + animdy) * map->tile_h,
-			dx + (dm->dx + tlanimdx) * map->tile_w,
-			dy + (dm->dy + tlanimdy) * map->tile_h,
-			dm->dw,
-			dm->dh,
-			r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
-			i, j);
+		map_object_sort &so = map->sort_mos[map->sort_mos_max++];
+		so.m = m;
+		so.dm = dm;
+		so.z = dz;
+		so.anim = anim;
+		so.dx = dx + (dm->dx + animdx) * map->tile_w;
+		so.dy = dy + (dm->dy + animdy) * map->tile_h;
+		so.dy_sort = j + dm->dy + animdy + ((float)dz / (map->zdepth)) + dm->dh + dmpeel;
+		so.tldx = dx + (dm->dx + tlanimdx) * map->tile_w;
+		so.tldy = dy + (dm->dy + tlanimdy) * map->tile_h;
+		so.r = r;
+		so.g = b;
+		so.b = b;
+		so.a = ((dm->dy < 0) && up_important) ? a / 3 : a;
+		so.i = i;
+		so.j = j;
+		// do_quad(L, m, dm, map, dz,
+		// 	anim,
+		// 	dx + (dm->dx + animdx) * map->tile_w,
+		// 	dy + (dm->dy + animdy) * map->tile_h,
+		// 	dx + (dm->dx + tlanimdx) * map->tile_w,
+		// 	dy + (dm->dy + tlanimdy) * map->tile_h,
+		// 	dm->dw,
+		// 	dm->dh,
+		// 	r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
+		// 	i, j);
 		dm->animdx = animdx;
 		dm->animdy = animdy;
 		dm = dm->next;
+		dmpeel += 0.001;
 	}
 
 	/********************************************************
@@ -1592,6 +1614,11 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 }
 
 #define MIN(a,b) ((a < b) ? a : b)
+
+static bool sort_mos(map_object_sort &i, map_object_sort &j) {
+	if (i.dy_sort == j.dy_sort) return i.dx < j.dx;
+	else return i.dy_sort < j.dy_sort;
+}
 
 void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color)
 {
@@ -1660,6 +1687,54 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 	if(maxj > map->h)
 		maxj = map->h;
 
+	int start_sort = 0;
+	map->sort_mos_max = 0;
+	for (z = 0; z < map->zdepth; z++) {
+		if (z == 6) start_sort = map->sort_mos_max;
+		for (j = minj; j < maxj; j++) {
+			for (i = mini; i < maxi; i++) {
+				map_object *mo = map->grids[i][j][z];
+				if (!mo) continue;
+				int dx = i * map->tile_w;
+				int dy = j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
+
+				if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && (always_show || map->grids_remembers[i][j])) || mo->on_unknown)
+				{
+					if (map->grids_seens[j*map->w+i])
+					{
+						display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
+					}
+					else
+					{
+						display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+					}
+				}
+			}
+		}
+	}
+	sort(map->sort_mos + start_sort, map->sort_mos + map->sort_mos_max, sort_mos);
+	// printf("sorted %d mos\n", map->sort_mos_max - start_sort);
+
+	RendererGL *render = map->z_renderers[1];
+	render->resetDisplayLists();
+	render->setChanged(true);
+	for (int spos = 0; spos < map->sort_mos_max; spos++) {
+		map_object_sort &so = map->sort_mos[spos];
+		do_quad(L, so.m, so.dm, map, so.z,
+			so.anim,
+			so.dx,
+			so.dy,
+			so.tldx,
+			so.tldy,
+			so.dm->dw,
+			so.dm->dh,
+			so.r, so.g, so.b, so.a,
+			so.i, so.j);
+
+	}
+	render->toScreen(model, color);
+
+	/*
 	// Always display some more of the map to make sure we always see it all
 	for (z = 0; z < map->zdepth; z++)
 	{
@@ -1712,6 +1787,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 			lua_pop(L, 1);
 		}
 	}
+	*/
 
 	// "Decay" displayed status for all mos
 	if (L) {
