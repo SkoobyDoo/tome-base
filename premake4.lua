@@ -4,7 +4,10 @@ solution "TEngine"
 	configurations { "Debug", "Release" }
 	objdir "obj"
 	defines {"GLEW_STATIC"}
-	if _OPTIONS.force32bits then buildoptions{"-m32"} linkoptions{"-m32"} libdirs{"/usr/lib32"} end
+	if _OPTIONS.force32bits then
+		buildoptions{"-m32"} linkoptions{"-m32"}
+		if not _OPTIONS.wincross then libdirs{"/usr/lib32"} end
+	end
 
 	includedirs {
 		"src",
