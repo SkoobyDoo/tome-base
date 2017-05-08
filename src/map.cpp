@@ -312,9 +312,9 @@ static int map_object_flip_x(lua_State *L)
 		while (lua_next(L, 4) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	return 0;
 }
@@ -331,9 +331,9 @@ static int map_object_flip_y(lua_State *L)
 		while (lua_next(L, 4) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	return 0;
 }
@@ -377,9 +377,9 @@ static int map_object_reset_move_anim(lua_State *L)
 		while (lua_next(L, 3) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	return 0;
 }
@@ -422,9 +422,9 @@ static int map_object_set_move_anim(lua_State *L)
 		while (lua_next(L, 11) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	
 	return 0;
@@ -616,7 +616,8 @@ static int map_new(lua_State *L)
 	map->my = my;
 	map->mwidth = mwidth;
 	map->mheight = mheight;
-	map->sort_mos = new map_object_sort[w * h * zdepth];
+	map->sort_mos = new map_object_sort*[w * h * zdepth];
+	for (int i = 0; i < w * h * zdepth; i++) map->sort_mos[i] = new map_object_sort;
 	map->sort_mos_max = 0;
 	map->grids = (map_object****)calloc(w, sizeof(map_object***));
 	map->grids_ref = (int***)calloc(w, sizeof(int**));
@@ -649,19 +650,13 @@ static int map_new(lua_State *L)
 	map->z_callbacks = (int*)calloc(zdepth, sizeof(int));
 	for (i = 0; i < zdepth; i++) map->z_callbacks[i] = LUA_NOREF;
 
-	map->z_offs = (vec2*)calloc(zdepth, sizeof(vec2));
-	map->z_changed = (bool*)calloc(zdepth, sizeof(bool));
-	for (i = 0; i < zdepth; i++) map->z_changed[i] = true;
+	map->changed = true;
 
-	map->z_renderers = (RendererGL**)calloc(zdepth, sizeof(RendererGL*));
-	for (i = 0; i < zdepth; i++) {
-		map->z_renderers[i] = new RendererGL(VBOMode::STREAM);
-		char *name = (char*)calloc(20, sizeof(char));
-		sprintf(name, "map-layer-%d", i);
-		map->z_renderers[i]->setRendererName(name, false);
-		map->z_renderers[i]->setManualManagement(true);
-		// map->z_renderers[i]->countDraws(true);
-	}
+	map->renderer = new RendererGL(VBOMode::STREAM);
+	char *name = strdup("map-layer");
+	map->renderer->setRendererName(name, false);
+	map->renderer->setManualManagement(true);
+	// map->renderer->countDraws(true);
 
 	map->shader_to_shaderkind = new unordered_map<string, float>;
 
@@ -690,6 +685,7 @@ static int map_free(lua_State *L)
 		free(map->grids_lites[i]);
 		free(map->grids_important[i]);
 	}
+	for (int i = 0; i < map->w * map->h * map->zdepth; i++) delete map->sort_mos[i];
 	delete[] map->sort_mos;
 	free(map->grids);
 	free(map->grids_ref);
@@ -698,14 +694,8 @@ static int map_free(lua_State *L)
 	free(map->grids_lites);
 	free(map->grids_important);
 
-	for (i = 0; i < map->zdepth; i++) {
-		if (map->z_callbacks[i] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map->z_callbacks[i]);
-		delete map->z_renderers[i];
-	}
+	delete map->renderer;
 	free(map->z_callbacks);
-	free(map->z_offs);
-	free(map->z_changed);
-	free(map->z_renderers);
 
 	delete map->shader_to_shaderkind;
 
@@ -940,7 +930,7 @@ static int map_set_grid(lua_State *L)
 		// Note that the layer changed so that we rebuild DisplayLists for this layer
 		if (map->grids[x][y][i] != old) {
 			// printf("Invalidagin layer %d at %dx%d because %lx != %lx\n", i,x,y, old, map->grids[x][y][i]);
-			map->z_changed[i] = true;
+			map->changed = true;
 		}
 
 		// Set the object in the mo list
@@ -1250,7 +1240,7 @@ static int map_set_scroll(lua_State *L)
 	int smooth = luaL_checknumber(L, 4);
 
 	if (map->mx != x || map->my != y) {
-		for (int z = 0; z < map->zdepth; z++) map->z_changed[z] = true;
+		map->changed = true;
 	}
 
 	if (smooth)
@@ -1290,7 +1280,7 @@ static int map_get_scroll(lua_State *L)
 	return 2;
 }
 
-static inline void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_type *map, int z,
+static inline void do_quad(lua_State *L, const map_object *m, const map_object *dm, map_type *map, int z,
 		float anim, float dx, float dy, float tldx, float tldy, float
 		dw, float dh, float r, float g, float b, float a, int i, int j)
 {
@@ -1312,9 +1302,9 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		vec4 color = {r, g, b, a};
 		mat4 model = mat4();
 		model = glm::translate(model, glm::vec3(x1, y1, 0));
-		dm->displayobject->render(map->z_renderers[1], model, color, true);
+		dm->displayobject->render(map->renderer, model, color, true);
 		if (!dm->displayobject->independantRenderer()) {
-			map->z_changed[z] = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
+			map->changed = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
 		}
 	} else {
 		float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
@@ -1336,7 +1326,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		}
 
 		// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
-		auto dl = getDisplayList(map->z_renderers[1], {dm->textures[0], 0, 0}, shader);
+		auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader);
 	
 		// Make sure we do not have to reallocate each step
 		// DGDGDGDG: actually do it
@@ -1351,7 +1341,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 	if (L && dm->cb)
 	{
 		stopDisplayList(); // Needed to make sure we break texture chaining
-		auto dl = getDisplayList(map->z_renderers[1]);
+		auto dl = getDisplayList(map->renderer);
 		stopDisplayList(); // Needed to make sure we break texture chaining
 		dm->cb->dx = dx - map->scroll_x;
 		dm->cb->dy = dy - map->scroll_y;
@@ -1462,7 +1452,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 
 	if (m->move_max)
 	{
-		map->z_changed[dz] = true;
+		map->changed = true;
 		m->move_step += nb_keyframes;
 		if (m->move_step >= m->move_max) m->move_max = 0; // Reset once in place
 		// if (m->display_last == DL_NONE) m->display_last = DL_TRUE;
@@ -1483,34 +1473,28 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 					{
 						animdx = tlanimdx = map->tile_w * (adx * step / (float)m->move_max - adx);
 						animdy = tlanimdy = map->tile_h * (ady * step / (float)m->move_max - ady);
+						float dmpeel = 0;
 						dm = m;
 						while (dm)
 						{
-						 	// if (m != dm && dm->shader) {
-								// unbatchQuads((*vert_idx), (*col_idx));
-								// // printf(" -- unbatch3\n");
-
-								// for (zc = dm->nb_textures - 1; zc > 0; zc--)
-								// {
-								// 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
-								// 	tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
-								// }
-								// if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
-
-						 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-						 	// }
-
-							do_quad(L, m, dm, map, dz,
-								0,
-								dx + dm->dx * map->tile_w + animdx,
-								dy + dm->dy * map->tile_h + animdy,
-								dx + dm->dx * map->tile_w + tlanimdx,
-								dy + dm->dy * map->tile_h + tlanimdy,
-								dm->dw,
-								dm->dh,
-								r, g, b, a,
-								i, j);
+							map_object_sort *so = map->sort_mos[map->sort_mos_max++];
+							so->m = m;
+							so->dm = dm;
+							so->z = dz;
+							so->anim = 0;
+							so->dx = dx + dm->dx * map->tile_w + animdx;
+							so->dy = dy + dm->dy * map->tile_h + animdy;
+							so->dy_sort = j + dm->dy + animdy + ((float)dz / (map->zdepth)) + dm->dh + dmpeel;
+							so->tldx = dx + dm->dx * map->tile_w + tlanimdx;
+							so->tldy = dy + dm->dy * map->tile_h + tlanimdy;
+							so->r = r;
+							so->g = b;
+							so->b = b;
+							so->a = ((dm->dy < 0) && up_important) ? a / 3 : a;
+							so->i = i;
+							so->j = j;
 							dm = dm->next;
+							dmpeel += 0.001;
 						}
 					}
 				}
@@ -1556,7 +1540,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 				else if (dm->anim_loop > 0) dm->anim_loop--;
 			}
 			anim = (float)anim_step / dm->anim_max;
-			map->z_changed[dz] = true;
+			map->changed = true;
 		}
 		dm->world_x = bdx + (dm->dx + animdx) * map->tile_w;
 		dm->world_y = bdy + (dm->dy + animdy) * map->tile_h;
@@ -1575,32 +1559,22 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 	// }
 
-		map_object_sort &so = map->sort_mos[map->sort_mos_max++];
-		so.m = m;
-		so.dm = dm;
-		so.z = dz;
-		so.anim = anim;
-		so.dx = dx + (dm->dx + animdx) * map->tile_w;
-		so.dy = dy + (dm->dy + animdy) * map->tile_h;
-		so.dy_sort = j + dm->dy + animdy + ((float)dz / (map->zdepth)) + dm->dh + dmpeel;
-		so.tldx = dx + (dm->dx + tlanimdx) * map->tile_w;
-		so.tldy = dy + (dm->dy + tlanimdy) * map->tile_h;
-		so.r = r;
-		so.g = b;
-		so.b = b;
-		so.a = ((dm->dy < 0) && up_important) ? a / 3 : a;
-		so.i = i;
-		so.j = j;
-		// do_quad(L, m, dm, map, dz,
-		// 	anim,
-		// 	dx + (dm->dx + animdx) * map->tile_w,
-		// 	dy + (dm->dy + animdy) * map->tile_h,
-		// 	dx + (dm->dx + tlanimdx) * map->tile_w,
-		// 	dy + (dm->dy + tlanimdy) * map->tile_h,
-		// 	dm->dw,
-		// 	dm->dh,
-		// 	r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
-		// 	i, j);
+		map_object_sort *so = map->sort_mos[map->sort_mos_max++];
+		so->m = m;
+		so->dm = dm;
+		so->z = dz;
+		so->anim = anim;
+		so->dx = dx + (dm->dx + animdx) * map->tile_w;
+		so->dy = dy + (dm->dy + animdy) * map->tile_h;
+		so->dy_sort = j + dm->dy + animdy + ((float)dz / (map->zdepth)) + dm->dh + dmpeel;
+		so->tldx = dx + (dm->dx + tlanimdx) * map->tile_w;
+		so->tldy = dy + (dm->dy + tlanimdy) * map->tile_h;
+		so->r = r;
+		so->g = b;
+		so->b = b;
+		so->a = ((dm->dy < 0) && up_important) ? a / 3 : a;
+		so->i = i;
+		so->j = j;
 		dm->animdx = animdx;
 		dm->animdy = animdy;
 		dm = dm->next;
@@ -1615,9 +1589,9 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 
 #define MIN(a,b) ((a < b) ? a : b)
 
-static bool sort_mos(map_object_sort &i, map_object_sort &j) {
-	if (i.dy_sort == j.dy_sort) return i.dx < j.dx;
-	else return i.dy_sort < j.dy_sort;
+static bool sort_mos(map_object_sort *i, map_object_sort *j) {
+	if (i->dy_sort == j->dy_sort) return i->dx < j->dx;
+	else return i->dy_sort < j->dy_sort;
 }
 
 void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color)
@@ -1687,50 +1661,54 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 	if(maxj > map->h)
 		maxj = map->h;
 
-	int start_sort = 0;
-	map->sort_mos_max = 0;
-	for (z = 0; z < map->zdepth; z++) {
-		if (z == 6) start_sort = map->sort_mos_max;
-		for (j = minj; j < maxj; j++) {
-			for (i = mini; i < maxi; i++) {
-				map_object *mo = map->grids[i][j][z];
-				if (!mo) continue;
-				int dx = i * map->tile_w;
-				int dy = j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
+	RendererGL *render = map->renderer;
+	if (map->changed) {
+		render->resetDisplayLists();
+		render->setChanged(true);
 
-				if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && (always_show || map->grids_remembers[i][j])) || mo->on_unknown)
-				{
-					if (map->grids_seens[j*map->w+i])
+		int start_sort = 0;
+		map->sort_mos_max = 0;
+		for (z = 0; z < map->zdepth; z++) {
+			// DGDGDGDG add z-callbacks as DORCallbacks
+			if (z == 6) start_sort = map->sort_mos_max;
+			for (j = minj; j < maxj; j++) {
+				for (i = mini; i < maxi; i++) {
+					map_object *mo = map->grids[i][j][z];
+					if (!mo) continue;
+					int dx = i * map->tile_w;
+					int dy = j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
+
+					if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && (always_show || map->grids_remembers[i][j])) || mo->on_unknown)
 					{
-						display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
-					}
-					else
-					{
-						display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+						if (map->grids_seens[j*map->w+i])
+						{
+							display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
+						}
+						else
+						{
+							display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+						}
 					}
 				}
 			}
 		}
-	}
-	sort(map->sort_mos + start_sort, map->sort_mos + map->sort_mos_max, sort_mos);
-	// printf("sorted %d mos\n", map->sort_mos_max - start_sort);
+		sort(map->sort_mos + start_sort, map->sort_mos + map->sort_mos_max, sort_mos);
+		// printf("sorted %d mos\n", map->sort_mos_max - start_sort);
 
-	RendererGL *render = map->z_renderers[1];
-	render->resetDisplayLists();
-	render->setChanged(true);
-	for (int spos = 0; spos < map->sort_mos_max; spos++) {
-		map_object_sort &so = map->sort_mos[spos];
-		do_quad(L, so.m, so.dm, map, so.z,
-			so.anim,
-			so.dx,
-			so.dy,
-			so.tldx,
-			so.tldy,
-			so.dm->dw,
-			so.dm->dh,
-			so.r, so.g, so.b, so.a,
-			so.i, so.j);
+		for (int spos = 0; spos < map->sort_mos_max; spos++) {
+			map_object_sort *so = map->sort_mos[spos];
+			do_quad(L, so->m, so->dm, map, so->z,
+				so->anim,
+				so->dx,
+				so->dy,
+				so->tldx,
+				so->tldy,
+				so->dm->dw,
+				so->dm->dh,
+				so->r, so->g, so->b, so->a,
+				so->i, so->j);
 
+		}
 	}
 	render->toScreen(model, color);
 

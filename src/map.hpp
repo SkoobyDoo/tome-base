@@ -109,7 +109,7 @@ struct map_object_sort {
 };
 
 struct map_type {
-	map_object_sort *sort_mos;
+	map_object_sort **sort_mos;
 	int sort_mos_max;
 	map_object* ***grids;
 	int ***grids_ref;
@@ -166,9 +166,8 @@ struct map_type {
 	bool seen_changed;
 
 	// Render processing
-	bool *z_changed;
-	vec2 *z_offs;
-	RendererGL **z_renderers;
+	bool changed;
+	RendererGL *renderer;
 	unordered_map<string, float> *shader_to_shaderkind;
 	VBO *seens_vbo;
 	VBO *mm_vbo;
