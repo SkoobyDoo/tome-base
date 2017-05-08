@@ -699,8 +699,11 @@ static int map_free(lua_State *L)
 
 	delete map->shader_to_shaderkind;
 
-	if (map->grid_lines_renderer) delete map->grid_lines_renderer;
-	if (map->grid_lines) delete map->grid_lines;
+	if (map->grid_lines_renderer) {
+		map->grid_lines_renderer->remove(map->grid_lines);
+		delete map->grid_lines_renderer;
+		delete map->grid_lines;
+	}
 
 	luaL_unref(L, LUA_REGISTRYINDEX, map->mo_list_ref);
 

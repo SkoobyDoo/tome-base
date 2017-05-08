@@ -244,7 +244,7 @@ end
 
 --- Generate sub entities to make nice trees
 function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
-	basedir = basedir or "terrain/trees-joined/"
+	basedir = basedir or "terrain/trees/"
 	max_trees = max_trees or 3
 	g.add_displays = g.add_displays or {}
 	g.add_mos = g.add_mos or {}
@@ -299,7 +299,7 @@ function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
 			display_on_seen = true,
 			display_on_remember = true,
 			image = basedir..treeid..".png",
-			-- shader = "tree", shader_args = treedef.shader_args, -- DGDGDGDG
+			shader = "tree", shader_args = treedef.shader_args, -- DGDGDGDG
 		}
 		return add[#add]
 	end

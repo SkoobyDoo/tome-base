@@ -61,9 +61,9 @@ function _M:init(l, w, force_height)
 	local required_h = self.font:height() + self.font_h * (#list - 1)
 	local h = math.min(force_height and (force_height * game.h) or 999999999, required_h)
 	local c_text = require("engine.ui.Textzone").new{
+		config=function(self) self:setTextOutline(false) self:setTextShadow(false) end,
 		width=w+10, height=h, scrollbar=(h < required_h) and true or false, text=text, color=self.color,
-	}
-	c_text:setTextShadow(false)
+	}	
 
 	local uis = { {left = 3, top = 3, ui=c_text} }
 	local image

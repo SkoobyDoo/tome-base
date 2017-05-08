@@ -47,6 +47,8 @@ function _M:init(t)
 	if t.can_focus ~= nil then self.can_focus = t.can_focus end
 	self.scroll_inertia = 0
 
+	if t.config then t.config(self) end
+
 	Base.init(self, t)
 end
 

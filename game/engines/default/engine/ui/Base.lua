@@ -325,7 +325,9 @@ function _M:drawFrame(f, x, y, r, g, b, a, w, h, total_w, total_h, loffset_x, lo
 end
 
 function _M:setTextShadow(color, x, y)
-	if type(v) == "table" then -- Already a color, use it
+	if color == false or color == nil then
+		self.text_shadow = nil
+	elseif type(v) == "table" then -- Already a color, use it
 		self.text_shadow = {x=x, y=y or x, color=colors.smart1(v)}
 	else -- Just use a default outline value
 		self.text_shadow = {x=color or 1, y=color or 1, color={0, 0, 0, 0.7}}
@@ -333,7 +335,9 @@ function _M:setTextShadow(color, x, y)
 end
 
 function _M:setTextOutline(v)
-	if type(v) == "table" then -- Already a color, use it
+	if v == false or v == nil then
+		self.text_outline = nil
+	elseif type(v) == "table" then -- Already a color, use it
 		self.text_outline = colors.smart1(v)
 	elseif type(v) == "number" then -- Assuem this is the desired alpha
 		self.text_outline = {0, 0, 0, v}
