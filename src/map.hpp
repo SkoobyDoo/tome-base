@@ -88,6 +88,7 @@ struct map_object {
 	float anim_step, anim_speed;
 	enum display_last_kind display_last;
 	long uid;
+	bool hide;
 
 	DisplayObject *displayobject;
 	int do_ref;

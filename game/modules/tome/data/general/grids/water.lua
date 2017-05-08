@@ -135,7 +135,7 @@ newEntity{
 
 newEntity{ base="WATER_BASE",
 	define_as = "DEEP_WATER",
-	image="terrain/water_grass_5_1.png",
+	image="terrain/waternew.png", z=1,
 	air_level = -5, air_condition="water",
 }
 
@@ -145,7 +145,7 @@ newEntity{ base="WATER_BASE",
 
 newEntity{ base="WATER_BASE",
 	define_as = "DEEP_OCEAN_WATER",
-	image = "terrain/ocean_water_grass_5_1.png",
+	image = "terrain/waternew.png", z=1,
 	air_level = -5, air_condition="water",
 }
 

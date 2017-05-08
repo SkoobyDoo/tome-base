@@ -84,6 +84,7 @@ static int map_object_new(lua_State *L)
 	obj->textures_is3d = (bool*)calloc(nb_textures, sizeof(bool));
 	obj->nb_textures = nb_textures;
 	obj->uid = uid;
+	obj->hide = false;
 
 	obj->displayobject = NULL;
 	obj->do_ref = LUA_NOREF;
@@ -196,6 +197,13 @@ static int map_object_chain(lua_State *L)
 	obj->next = obj2;
 	lua_pushvalue(L, 2);
 	obj->next_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	return 0;
+}
+
+static int map_object_hide(lua_State *L)
+{
+	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
+	obj->hide = true;
 	return 0;
 }
 
@@ -1300,45 +1308,47 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		y1 = dy; y2 = map->tile_h * dh * dm->scale + dy;
 	}
 
-	if (dm->displayobject) {
-		// DGDGDGDG: integrate that as a chained DO perhaps
-		vec4 color = {r, g, b, a};
-		mat4 model = mat4();
-		model = glm::translate(model, glm::vec3(x1, y1, 0));
-		dm->displayobject->render(map->renderer, model, color, true);
-		if (!dm->displayobject->independantRenderer()) {
-			map->changed = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
-		}
-	} else {
-		float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
-		float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
-
-		float shaderkind = 0;
-		shader_type *shader = default_shader;
-		if (dm->shader) shader = dm->shader;
-		else if (m->shader) shader = m->shader;
-		else if (map->default_shader) shader = map->default_shader;
-
-		// DGDGDGDG: perhaps need to optimize here? chagning shader->name to a string instead of a char* ?
-		if (shader != map->default_shader && !map->shader_to_shaderkind->empty()) {
-			auto kind = map->shader_to_shaderkind->find(shader->name);
-			if (kind != map->shader_to_shaderkind->end()) {
-				shaderkind = kind->second;
-				shader = map->default_shader;
+	if (!dm->hide) {
+		if (dm->displayobject) {
+			// DGDGDGDG: integrate that as a chained DO perhaps
+			vec4 color = {r, g, b, a};
+			mat4 model = mat4();
+			model = glm::translate(model, glm::vec3(x1, y1, 0));
+			dm->displayobject->render(map->renderer, model, color, true);
+			if (!dm->displayobject->independantRenderer()) {
+				map->changed = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
 			}
+		} else {
+			float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
+			float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
+
+			float shaderkind = 0;
+			shader_type *shader = default_shader;
+			if (dm->shader) shader = dm->shader;
+			else if (m->shader) shader = m->shader;
+			else if (map->default_shader) shader = map->default_shader;
+
+			// DGDGDGDG: perhaps need to optimize here? chagning shader->name to a string instead of a char* ?
+			// if (shader != map->default_shader && !map->shader_to_shaderkind->empty()) {
+			// 	auto kind = map->shader_to_shaderkind->find(shader->name);
+			// 	if (kind != map->shader_to_shaderkind->end()) {
+			// 		shaderkind = kind->second;
+			// 		shader = map->default_shader;
+			// 	}
+			// }
+
+			// printf("MO using %dx%dx%d tex %d shader %s : %lx\n", (int)dx, (int)dy, z, dm->textures[0], shader->name, shader);
+			auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader);
+		
+			// Make sure we do not have to reallocate each step
+			// DGDGDGDG: actually do it
+
+			// Put it directly into the DisplayList
+			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
+			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
+			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
+			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
 		}
-
-		// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
-		auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader);
-	
-		// Make sure we do not have to reallocate each step
-		// DGDGDGDG: actually do it
-
-		// Put it directly into the DisplayList
-		dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-		dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-		dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 	}
 
 	if (L && dm->cb)
@@ -1592,6 +1602,10 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 
 #define MIN(a,b) ((a < b) ? a : b)
 
+static bool sort_mos_shader(map_object_sort *i, map_object_sort *j) {
+	return i->dm->shader < j->dm->shader;
+}
+
 static bool sort_mos(map_object_sort *i, map_object_sort *j) {
 	if (i->dy_sort == j->dy_sort) return i->dx < j->dx;
 	else return i->dy_sort < j->dy_sort;
@@ -1673,7 +1687,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 		map->sort_mos_max = 0;
 		for (z = 0; z < map->zdepth; z++) {
 			// DGDGDGDG add z-callbacks as DORCallbacks
-			if (z == 6) start_sort = map->sort_mos_max;
+			if (z == 6) { start_sort = map->sort_mos_max; }
 			for (j = minj; j < maxj; j++) {
 				for (i = mini; i < maxi; i++) {
 					map_object *mo = map->grids[i][j][z];
@@ -1695,6 +1709,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 				}
 			}
 		}
+		// stable_sort(map->sort_mos, map->sort_mos + start_sort, sort_mos_shader);
 		sort(map->sort_mos + start_sort, map->sort_mos + map->sort_mos_max, sort_mos);
 		// printf("sorted %d mos\n", map->sort_mos_max - start_sort);
 
@@ -2036,6 +2051,7 @@ static const struct luaL_Reg map_object_reg[] =
 	{"invalidate", map_object_invalid},
 	{"isValid", map_object_is_valid},
 	{"onSeen", map_object_on_seen},
+	{"hide", map_object_hide},
 	{"minimap", map_object_minimap},
 	{"resetMoveAnim", map_object_reset_move_anim},
 	{"setMoveAnim", map_object_set_move_anim},
