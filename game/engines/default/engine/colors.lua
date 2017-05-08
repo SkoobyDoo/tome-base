@@ -21,7 +21,7 @@
 -- Defines numerous colors by default
 -- @script engine.colors
 
-core.colors.reset()
+if core.colors then core.colors.reset() end
 colors = {}
 colors_simple = {}
 
@@ -36,7 +36,7 @@ colors_simple = {}
 function defineColor(name, r, g, b, br, bg, bb)
 	colors[name] = {r=r, g=g, b=b, br=br, bg=bg, bb=bb}
 	colors_simple[name] = {r, g, b}
-	core.colors.define256(name, r, g, b, 255)
+	if core.colors then core.colors.define256(name, r, g, b, 255) end
 end
 
 --- color -> foreground table
