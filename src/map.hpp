@@ -154,6 +154,7 @@ struct map_type {
 	int zdepth;
 	int tile_w, tile_h;
 	GLfloat tex_tile_w[3], tex_tile_h[3];
+	int zdepth_sort_start;
 
 	// Scrolling
 	float scroll_x, scroll_y;

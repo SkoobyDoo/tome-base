@@ -36,6 +36,7 @@ setmetatable(__map_store, {__mode="k"})
 
 --- The map vertical depth storage
 zdepth = 20
+zdepth_sort_start = 6
 
 --- The place of a terrain entity in a map grid
 TERRAIN = 1
@@ -287,6 +288,7 @@ function _M:makeCMap()
 	if not self._do_mm then self._do_mm = self._map:getMinimapDO()
 	else self._do_mm:setMap(self._map)
 	end
+	self._map:setSortStart(self.zdepth_sort_start)
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))
 	self._map:setupGridLines(unpack(self.grid_lines))

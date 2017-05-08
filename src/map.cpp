@@ -799,6 +799,14 @@ static int map_set_z_callback(lua_State *L)
 	return 0;
 }
 
+static int map_set_sort_start(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	map->zdepth_sort_start = lua_tonumber(L, 2);
+	return 0;
+}
+
+
 static int map_set_tint(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
@@ -1687,7 +1695,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 		map->sort_mos_max = 0;
 		for (z = 0; z < map->zdepth; z++) {
 			// DGDGDGDG add z-callbacks as DORCallbacks
-			if (z == 6) { start_sort = map->sort_mos_max; }
+			if (z == map->zdepth_sort_start) { start_sort = map->sort_mos_max; }
 			for (j = minj; j < maxj; j++) {
 				for (i = mini; i < maxi; i++) {
 					map_object *mo = map->grids[i][j][z];
@@ -2011,6 +2019,7 @@ static const struct luaL_Reg map_reg[] =
 	{"updateSeensTexture", map_update_seen_texture_lua},
 	{"bindSeensTexture", map_bind_seen_texture},
 	{"drawSeensTexture", map_draw_seen_texture},
+	{"setSortStart", map_set_sort_start},
 	{"setZoom", map_set_zoom},
 	{"setTint", map_set_tint},
 	{"setShown", map_set_shown},
