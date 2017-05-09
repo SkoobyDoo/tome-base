@@ -219,8 +219,10 @@ newTalent{
 		-- Attack		
 		local dam = t.getDamage(self,t)
 		local spd, hitted, dmg = self:attackTargetWith(target, offweapon.combat, nil, self:getOffHandMult(offweapon.combat, dam))
-		if hitted then
+		if hitted and target:canBe("disarm") then
 			target:setEffect(target.EFF_DISARMED, t.getDuration(self, t), {apply_power=self:combatAttack()})
+		else
+			game.logSeen(target, "%s resists the blow!", target.name:capitalize())
 		end
 		return true
 	end,

@@ -29,13 +29,13 @@ end
 function _M:registerDeath(src)
 	local pid = self:playerStatGetCharacterIdentifier(game.party:findMember{main=true})
 	local name = src.name
-	profile:saveModuleProfile("deaths", {source=name, cid=pid, nb={"inc",1}})
+	profile:incrDataProfile("deaths", {source=name, cid=pid, nb=1})
 end
 
 function _M:registerUniqueKilled(who)
 	local pid = self:playerStatGetCharacterIdentifier(game.party:findMember{main=true})
 
-	profile:saveModuleProfile("uniques", {victim=who.name, cid=pid, nb={"inc",1}})
+	profile:incrDataProfile("uniques", {victim=who.name, cid=pid, nb=1})
 end
 
 function _M:registerArtifactsPicked(what)
@@ -44,13 +44,13 @@ function _M:registerArtifactsPicked(what)
 	local pid = self:playerStatGetCharacterIdentifier(game.party:findMember{main=true})
 	local name = what:getName{do_color=false, do_count=false, force_id=true, no_add_name=true}
 
-	profile:saveModuleProfile("artifacts", {name=name, cid=pid, nb={"inc",1}})
+	profile:incrDataProfile("artifacts", {name=name, cid=pid, nb=1})
 end
 
 function _M:registerCharacterPlayed()
 	local pid = self:playerStatGetCharacterIdentifier(game.party:findMember{main=true})
 
-	profile:saveModuleProfile("characters", {cid=pid, nb={"inc",1}})
+	profile:incrDataProfile("characters", {cid=pid, nb=1})
 end
 
 function _M:registerLoreFound(lore)

@@ -696,9 +696,10 @@ function _M:addEntity(level, e, typ, x, y, no_added)
 		level:addEntity(e, nil, true)
 		if not no_added then e:added() end
 		-- Levelup ?
-		if self.actor_adjust_level and e.forceLevelup then
+		if self.actor_adjust_level and e.forceLevelup and not e._actor_adjust_level_applied then
 			local newlevel = self:actor_adjust_level(level, e)
 			e:forceLevelup(newlevel + (e.__forced_level or 0))
+			e._actor_adjust_level_applied = true
 		end
 	elseif typ == "projectile" then
 		-- We are additing it, this means there is no old position
@@ -1106,6 +1107,9 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	end
 	-- Delete the room_map if it's no longer needed
 	if not self._retain_level_room_map then map.room_map = nil end
+
+	-- Call a "post" finisher
+	if level_data.post_process_end then level_data.post_process_end(level, self) end
 
 	return level
 end

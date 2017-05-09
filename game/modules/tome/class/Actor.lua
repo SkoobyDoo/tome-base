@@ -1667,6 +1667,7 @@ function _M:reactionToward(target, no_reflection)
 	if rsrc == target and self ~= target and target:attr("encased_in_ice") then return -50 end  -- summons shouldn't hate each other and shouldn't hate summoner more than enemies
 
 	-- Neverending hatred
+	if rtarget:attr("hated_by_everybody") and rtarget ~= rsrc then return -100 end
 	if rsrc:attr("hates_everybody") and rtarget ~= rsrc then return -100 end
 	if rsrc:attr("hates_arcane") and rtarget:attr("has_arcane_knowledge") and not rtarget:attr("forbid_arcane") then return -100 end
 	if rsrc:attr("hates_antimagic") and rtarget:attr("forbid_arcane") then return -100 end
@@ -2856,7 +2857,6 @@ function _M:takeHit(value, src, death_note)
 		end
 	end
 
-
 	local dead, val = mod.class.interface.ActorLife.takeHit(self, value, src, death_note)
 
 	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
@@ -3312,7 +3312,7 @@ function _M:resetToFull()
 				self.mana = self:getMaxMana()
 			end
 		else
-			if res_def.invert_values then
+			if res_def.invert_values or res_def.switch_direction then
 				self[res_def.short_name] = self:check(res_def.getMinFunction) or self[res_def.short_name] or res_def.min
 			else
 				self[res_def.short_name] = self:check(res_def.getMaxFunction) or self[res_def.short_name] or res_def.max
@@ -4816,6 +4816,10 @@ function _M:getFeedbackDecay(mult)
 	end
 end
 
+function _M:alterTalentCost(t, rname, cost)
+	return cost
+end
+
 --- Called before a talent is used
 -- Check the actor can cast it
 -- @param ab the talent (not the id, the table)
@@ -4884,6 +4888,7 @@ function _M:preUseTalent(ab, silent, fake)
 				cost = ab[res_def.sustain_prop]
 				if cost then
 					cost = util.getval(cost, self, ab) or 0
+					cost = self:alterTalentCost(ab, res_def.sustain_prop, cost)
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
 					if cost ~= 0 and self[res_def.minname] and self[res_def.maxname] and self[res_def.minname] + cost > self[res_def.maxname] then
 						if not silent then game.logPlayer(self, "You %s %s to activate %s.", res_def.invert_values and "have too much committed" or "do not have enough uncommitted", res_def.name, ab.name) end
@@ -4913,10 +4918,11 @@ function _M:preUseTalent(ab, silent, fake)
 			cost = ab[rname]
 			if cost then
 				cost = (util.getval(cost, self, ab) or 0) * (util.getval(res_def.cost_factor, self, ab, true) or 1)
+				cost = self:alterTalentCost(ab, rname, cost)
 				if cost ~= 0 then
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
 					if res_def.invert_values then
-						if rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
+						if not res_def.ignore_max_use and rmax and self[res_def.getFunction](self) + cost > rmax then -- too much
 							if not silent then game.logPlayer(self, "You have too much %s to use %s.", res_def.name, ab.name) end
 							self.on_preuse_checking_resources = nil
 							return false
@@ -5379,6 +5385,7 @@ function _M:postUseTalent(ab, ret, silent)
 				cost = ab[res_def.sustain_prop]
 				if cost then
 					cost = (util.getval(cost, self, ab) or 0)
+					cost = self:alterTalentCost(ab, res_def.sustain_prop, cost)
 					if cost ~= 0 then
 						trigger = true
 						ret._applied_costs[res_def.short_name] = cost
@@ -5393,6 +5400,7 @@ function _M:postUseTalent(ab, ret, silent)
 				cost = ab[res_def.drain_prop]
 				if cost then
 					cost = util.getval(cost, self, ab) or 0
+					cost = self:alterTalentCost(ab, res_def.drain_prop, cost)
 					if cost ~= 0 then
 						trigger = true
 						ret._applied_drains[res_def.short_name] = cost
@@ -5477,6 +5485,7 @@ function _M:postUseTalent(ab, ret, silent)
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name
 			cost = ab[rname] and util.getval(ab[rname], self, ab) or 0
+			cost = self:alterTalentCost(ab, rname, cost)
 			if cost ~= 0 then
 				trigger = true
 				cost = cost * (util.getval(res_def.cost_factor, self, ab) or 1)
@@ -5721,17 +5730,20 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 			if not res_def.hidden_resource then
 				-- list resource cost
 				local cost = t[res_def.short_name] and util.getval(t[res_def.short_name], self, t) or 0
+				cost = self:alterTalentCost(t, res_def.short_name, cost)
 				if cost ~= 0 then
 					cost = cost * (util.getval(res_def.cost_factor, self, t) or 1)
-					d:add({"color",0x6f,0xff,0x83}, ("%s cost: "):format(res_def.name:capitalize()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
+					d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(res_def.name:capitalize(), cost >= 0 and "cost" or "gain"), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
 				end
 				-- list sustain cost
 				cost = t[res_def.sustain_prop] and util.getval(t[res_def.sustain_prop], self, t) or 0
+				cost = self:alterTalentCost(t, res_def.sustain_prop, cost)
 				if cost ~= 0 then
 					d:add({"color",0x6f,0xff,0x83}, ("Sustain %s cost: "):format(res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
 				end
 				-- list drain cost
 				cost = t[res_def.drain_prop] and util.getval(t[res_def.drain_prop], self, t) or 0
+				cost = self:alterTalentCost(t, res_def.drain_prop, cost)
 				if cost ~= 0 then
 					if res_def.invert_values then
 						d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(cost > 0 and "Generates" or "Removes", res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
@@ -5880,7 +5892,12 @@ function _M:startTalentCooldown(t, v)
 		self.talents_cd[t.id] = math.max(v, self.talents_cd[t.id] or 0)
 	else
 		if not t.cooldown then return end
-		self.talents_cd[t.id] = self:getTalentCooldown(t)
+		local cd = self:getTalentCooldown(t)
+
+		local hd = {"Actor:startTalentCooldown", t=t, cd=cd}
+		if self:triggerHook(hd) then cd = hd.cd end
+
+		self.talents_cd[t.id] = cd
 
 		if t.id ~= self.T_REDUX and self:hasEffect(self.EFF_REDUX) then
 			local eff = self:hasEffect(self.EFF_REDUX)
@@ -6416,22 +6433,32 @@ local save_for_effects = {
 }
 _M.save_for_effects = save_for_effects
 
---- Adjust temporary effects
+--- Adjust temporary effects right before they are applied
+-- @param eff_id the effect ID being applied
+-- @param e the effect definition
+-- @param p table containing the parameters for the effect being applied
+-- @return true if the effect should NOT be set
 function _M:on_set_temporary_effect(eff_id, e, p)
-	p.getName = self.tempeffect_def[eff_id].getName
-	p.resolveSource = self.tempeffect_def[eff_id].resolveSource
+	p.getName = e.getName
+	p.resolveSource = e.resolveSource
+
+	local olddur = old and not e.on_merge and old.dur or 0 -- let mergable effects handle their own duration
+	-- Adjust duration based on saves
 	if p.apply_power and (save_for_effects[e.type] or p.apply_save) then
-		local save = 0
 		p.maximum = p.dur
 		p.minimum = p.min_dur or 0 --Default minimum duration is 0. Can specify something else by putting min_dur=foo in p when calling setEffect()
-		save = self[p.apply_save or save_for_effects[e.type]](self)
-		--local duration = p.maximum - math.max(0, math.floor((save - p.apply_power) / 5))
-		--local duration = p.maximum - math.max(0, (math.floor(save/5) - math.floor(p.apply_power/5)))
-		local percentage = 1 - ((save - p.apply_power)/20)
+		local save = self[p.apply_save or save_for_effects[e.type]](self)
+		local saved, savechance = self:checkHitOld(save, p.apply_power) -- get save and save chance
+		-- failed save tuning parameters: increase mean_fact to increase avg duration, std_dev for more randomness
+		local mean_fact, std_dev = 1.1, 50
+		local mean_pct = (100-savechance)*mean_fact -- mean % duration on a failed save
+		local percentage = util.bound(rng.normalFloat(mean_pct, std_dev)/100, 0, 2) -- fraction duration
+		
 		local desired = p.maximum * percentage
 		local fraction = desired % 1
 		desired = math.floor(desired) + (rng.percent(100*fraction) and 1 or 0)
 		local duration = math.min(p.maximum, desired)
+		print(("[on_set_temporary_effect] %s Save %d vs Power %d (%d%% save: %s) :: dur mult: %0.3f(%d%%) :: dur %s ==> %d"):format(self.name, save, p.apply_power, savechance, saved, percentage, mean_pct, p.dur, duration))
 		p.dur = util.bound(duration, p.minimum or 0, p.maximum)
 		p.amount_decreased = p.maximum - p.dur
 		local save_type = nil
@@ -6442,17 +6469,17 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		elseif save_type == "combatSpellResist" then p.save_string = "Spell save"
 		end
 
-		if not p.no_ct_effect and not e.no_ct_effect and e.status == "detrimental" then self:crossTierEffect(eff_id, p.apply_power, p.apply_save or save_for_effects[e.type]) end
-		p.total_dur = p.dur
-
 		if p.dur > 0 and e.status == "detrimental" then
-			local saved = self:checkHit(save, p.apply_power, 0, 95)
+			-- apply cross-tier effects
+			if not p.no_ct_effect and not e.no_ct_effect then self:crossTierEffect(eff_id, p.apply_power, p.apply_save or save_for_effects[e.type]) end
+			p.total_dur = p.dur
+
 			local hd = {"Actor:effectSave", saved=saved, save=save, save_type=save_type, eff_id=eff_id, e=e, p=p,}
 			self:triggerHook(hd)
 			self:fireTalentCheck("callbackOnEffectSave", hd)
 			saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p
 			if saved then
-				game.logSeen(self, "#ORANGE#%s shrugs off the effect '%s'!", self.name:capitalize(), e.desc)
+				self:logCombat(p.src, "#ORANGE#%s shrugs off %s '%s'!", self.name:capitalize(), p.src and "#Target#'s" or "the effect", e.desc)
 				return true
 			end
 		end
@@ -6505,11 +6532,15 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		self:triggerTalent(self.T_SPINE_OF_THE_WORLD)
 	end
 
+	-- This could be utilized for more effects
 	if self:fireTalentCheck("callbackOnTemporaryEffect", eff_id, e, p) then return true end
 
-	if self.player and not self.tmp[eff_id] then
+	if self.player and not old then
 		p.__set_time = core.game.getTime()
 	end
+	
+	if p.dur <= 0 then return true end
+	p.dur = math.max(p.dur, olddur) -- don't shorten the existing duration because of a new application (on_merge may change it)
 end
 
 function _M:on_temporary_effect_added(eff_id, e, p)

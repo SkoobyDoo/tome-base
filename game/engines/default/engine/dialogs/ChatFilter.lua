@@ -38,6 +38,7 @@ function _M:init(adds)
 		{name = "Other achievements", kind = "achievement_other"},
 	}
 	for i, l in ipairs(adds or {}) do list[#list+1] = l end
+	self:triggerHook{"ChatFilters:list", list=list}
 
 	local c_desc = Textzone.new{width=self.iw - 10, height=1, auto_height=true, text="Select which types of chat events to see or not."}
 	local uis = { {left=0, top=0, ui=c_desc} }

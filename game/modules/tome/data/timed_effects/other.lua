@@ -2290,7 +2290,10 @@ newEffect{
 newEffect{
 	name = "ANTIMAGIC_DISRUPTION",
 	desc = "Antimagic Disruption",
-	long_desc = function(self, eff) return ("Your arcane powers are disrupted by your antimagic equipment."):format() end,
+	long_desc = function(self, eff)
+		local chance = self:attr("spell_failure") or 0
+		return ("Your arcane powers are disrupted by your antimagic equipment.  Arcane talents fail %d%% of the time and arcane sustains have a %0.1f%% chance to deactivate each turn."):format(chance, chance/10)
+	end,
 	type = "other",
 	subtype = { antimagic=true },
 	no_stop_enter_worlmap = true,
