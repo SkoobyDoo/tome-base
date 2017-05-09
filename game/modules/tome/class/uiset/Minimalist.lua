@@ -91,7 +91,7 @@ _M.allcontainers = {
 	-- "mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
 	"mod.class.uiset.minimalist.Toolbar",
 	"mod.class.uiset.minimalist.Resources",
-	-- "mod.class.uiset.minimalist.Effects",
+	"mod.class.uiset.minimalist.Effects",
 	"mod.class.uiset.minimalist.Hourglass",
 	"mod.class.uiset.minimalist.Hotkeys",
 	"mod.class.uiset.minimalist.Log",

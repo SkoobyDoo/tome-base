@@ -45,7 +45,7 @@ local grass_editer = { method="borders_def", def="grass"}
 newEntity{
 	define_as = "BOGTREE",
 	type = "wall", subtype = "water",
-	name = "tree",
+	name = "tree", z = 1,
 	image = "terrain/tree.png",
 	display = '#', color=colors.LIGHT_GREEN, back_color=colors.DARK_BLUE,
 	always_remember = true,
@@ -83,7 +83,7 @@ end
 
 newEntity{ base="WATER_BASE",
 	define_as = "BOGWATER",
-	name = "bog water",
+	name = "bog water", z = 1,
 	image="terrain/water_grass_5_1.png",
 }
 
