@@ -1677,14 +1677,10 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 	int mini = mx - 1, maxi = mx + map->mwidth + 2, minj =  my - 1, maxj = my + map->mheight + 2;
 	// int mini = mx - 50, maxi = mx + map->mwidth + 50, minj =  my - 50, maxj = my + map->mheight + 50;
 	// int mini = mx - 10, maxi = mx + map->mwidth + 10, minj =  my - 10, maxj = my + map->mheight + 10;
-	if(mini < 0)
-		mini = 0;
-	if(minj < 0)
-		minj = 0;
-	if(maxi > map->w)
-		maxi = map->w;
-	if(maxj > map->h)
-		maxj = map->h;
+	if(mini < 0) mini = 0;
+	if(minj < 0) minj = 0;
+	if(maxi > map->w) maxi = map->w;
+	if(maxj > map->h) maxj = map->h;
 
 	RendererGL *render = map->renderer;
 	if (map->changed) {

@@ -27,7 +27,7 @@ newEntity{
 	define_as = "BOGTREE",
 	type = "wall", subtype = "water",
 	name = "tree",
-	image = "terrain/poisoned_water_01.png",
+	image = "terrain/poison_waves_01.png",
 	display = '#', color=colors.LIGHT_GREEN, back_color=colors.DARK_BLUE,
 	always_remember = true,
 	can_pass = {pass_tree=1},
@@ -35,7 +35,7 @@ newEntity{
 	block_sight = true,
 	dig = "BOGWATER",
 	nice_tiler = { method="replace", base={"BOGTREE", 100, 1, 40}},
-	shader = "water",
+	shader = "water", shader_args = { waveSpeed=2000, waveAmplitude=3 },
 }
 for i = 1, 40 do
 	newEntity(class:makeNewTrees({base="BOGTREE", define_as = "BOGTREE"..i}, {
@@ -65,7 +65,7 @@ end
 newEntity{ base="WATER_BASE",
 	define_as = "BOGWATER",
 	name = "bog water",
-	image="terrain/poisoned_water_01.png",
+	image="terrain/poison_waves_01.png",
 }
 
 newEntity{ base="BOGWATER",

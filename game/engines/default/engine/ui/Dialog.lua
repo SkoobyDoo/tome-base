@@ -513,7 +513,7 @@ function _M:generate()
 	-- Overlays
 	self.overs = {}
 	if #(self.frame.overlays or {}) > 0 then
-		local overs_container = core.renderer.do_container()
+		local overs_container = core.renderer.container()
 		overs_container:translate(0, 0, 1)
 		self.full_container:add(overs_container)
 

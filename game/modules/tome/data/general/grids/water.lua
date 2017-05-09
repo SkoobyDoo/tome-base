@@ -121,7 +121,7 @@ newEntity{
 
 newEntity{
 	define_as = "WATER_BASE",
-	type = "floor", subtype = "water",
+	type = "floor", subtype = "water", z = 1,
 	name = "deep water", image = "terrain/water_floor.png",
 	display = '~', color=colors.AQUAMARINE, back_color=colors.DARK_BLUE,
 	always_remember = true,
@@ -135,7 +135,7 @@ newEntity{
 
 newEntity{ base="WATER_BASE",
 	define_as = "DEEP_WATER",
-	image="terrain/waternew.png", z=1,
+	image="terrain/water_grass_5_1.png", z=1,
 	air_level = -5, air_condition="water",
 }
 
@@ -145,7 +145,7 @@ newEntity{ base="WATER_BASE",
 
 newEntity{ base="WATER_BASE",
 	define_as = "DEEP_OCEAN_WATER",
-	image = "terrain/waternew.png", z=1,
+	image = "terrain/ocean_water_grass_5_1.png", z=1,
 	air_level = -5, air_condition="water",
 }
 
@@ -156,10 +156,10 @@ newEntity{ base="WATER_BASE",
 newEntity{
 	define_as = "POISON_DEEP_WATER",
 	type = "floor", subtype = "water",
-	name = "poisoned deep water", image = "terrain/poisoned_water_01.png",
+	name = "poisoned deep water", image = "terrain/poison_waves_01.png",
 	display = '~', color=colors.YELLOW_GREEN, back_color=colors.DARK_GREEN,
 --	add_displays = class:makeWater(true, "poison_"),
-	always_remember = true,
+	always_remember = true, z = 1,
 	air_level = -5, air_condition="water",
 
 	mindam = resolvers.mbonus(10, 25),
@@ -173,10 +173,8 @@ newEntity{
 		if dam > 0 and who.player then self:logCombat(who, "#Source# poisons #Target#!") end
 	end,
 	combatAttack = function(self) return rng.range(self.mindam, self.maxdam) end,
-	nice_tiler = { method="replace", base={"POISON_DEEP_WATER", 100, 1, 6}},
-	shader = "water",
+	shader = "water", shader_args = { waveSpeed=700, waveAmplitude=7 },
 }
-for i = 1, 6 do newEntity{ base="POISON_DEEP_WATER", define_as = "POISON_DEEP_WATER"..i, image = "terrain/poisoned_water_0"..i..".png" } end
 
 
 -----------------------------------------

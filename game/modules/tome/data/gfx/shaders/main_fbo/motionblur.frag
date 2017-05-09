@@ -1,7 +1,7 @@
 uniform float motionblur;
 uniform float tick;
 uniform sampler2D noisevol;
-uniform vec2 texSize;
+uniform vec2 screenSize;
 uniform sampler2D tex;
 uniform vec2 mapCoord;
 
@@ -10,10 +10,10 @@ void main(void)
 	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
 
 	int blursize = int(motionblur);
-	vec2 offset = 0.8/texSize;
+	vec2 offset = 0.8/screenSize;
 
 	float fTime0_X = tick / 20000.0;
-	float coord = gl_TexCoord[0].x + gl_TexCoord[0].y * texSize[0];
+	float coord = gl_TexCoord[0].x + gl_TexCoord[0].y * screenSize[0];
 	float noisy1 = texture2D(noisevol,vec2(coord,fTime0_X)).r;
 	float noisy2 = texture2D(noisevol,vec2(coord/5.0,fTime0_X/1.5)).r;
 	float noisy3 = texture2D(noisevol,vec2(coord/7.0,fTime0_X/2.0)).r;

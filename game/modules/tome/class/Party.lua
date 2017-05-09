@@ -279,6 +279,8 @@ function _M:setPlayer(actor, bypass)
 
 	if game.player.resetMainShader then game.player:resetMainShader() end
 
+	game:triggerEventUI("Party:switchedPlayer", actor)
+
 	return true
 end
 
