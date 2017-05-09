@@ -88,6 +88,7 @@ struct map_object {
 	float anim_step, anim_speed;
 	enum display_last_kind display_last;
 	long uid;
+	bool hide;
 
 	DisplayObject *displayobject;
 	int do_ref;
@@ -98,7 +99,19 @@ struct map_object {
 	int next_ref;
 };
 
+struct map_object_sort {
+	map_object *m, *dm;
+	int z;
+	float anim;
+	float dx, dy, dy_sort;
+	float tldx, tldy;
+	float r, g, b, a;
+	int i, j;
+};
+
 struct map_type {
+	map_object_sort **sort_mos;
+	int sort_mos_max;
 	map_object* ***grids;
 	int ***grids_ref;
 	float *grids_seens;
@@ -141,6 +154,7 @@ struct map_type {
 	int zdepth;
 	int tile_w, tile_h;
 	GLfloat tex_tile_w[3], tex_tile_h[3];
+	int zdepth_sort_start;
 
 	// Scrolling
 	float scroll_x, scroll_y;
@@ -154,9 +168,8 @@ struct map_type {
 	bool seen_changed;
 
 	// Render processing
-	bool *z_changed;
-	vec2 *z_offs;
-	RendererGL **z_renderers;
+	bool changed;
+	RendererGL *renderer;
 	unordered_map<string, float> *shader_to_shaderkind;
 	VBO *seens_vbo;
 	VBO *mm_vbo;

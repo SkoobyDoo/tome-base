@@ -88,6 +88,7 @@ void releaseDisplayList(DisplayList *dl) {
 
 DisplayList::DisplayList() {
 	glGenBuffers(1, &vbo);
+	list.reserve(4096);
 	// printf("Making new DL! %x with vbo %d\n", this, vbo);
 }
 // This really should never be actually used

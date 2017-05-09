@@ -58,14 +58,26 @@ newEntity{
 }
 for i = 1, 20 do
 	newEntity(class:makeNewTrees({base="BOGTREE", define_as = "BOGTREE"..i, image = "terrain/water_grass_5_1.png"}, {
-		{"small_willow", {"shadow", "trunk", "foliage_bare"}},
-		{"small_willow_moss", {"shadow", "trunk", "foliage_bare"}},
-		{"willow", {tall=-1, "shadow", "trunk", "foliage_bare"}},
-		{"willow_moss", {tall=-1, "shadow", "trunk", "foliage_bare"}},
-		{"small_willow", {"shadow", "trunk", "foliage_spring"}},
-		{"small_willow_moss", {"shadow", "trunk", "foliage_spring"}},
-		{"willow", {tall=-1, "shadow", "trunk", "foliage_spring"}},
-		{"willow_moss", {tall=-1, "shadow", "trunk", "foliage_spring"}},
+		{"small_willow_moss_trunk_foliage_spring", tall=0},
+		{"small_willow_moss_trunk_foliage_bare", tall=0},
+		{"small_willow_moss_trunk_foliage_spring", tall=0},
+		{"small_willow_moss_trunk_foliage_bare", tall=0},
+		{"small_willow_trunk_foliage_spring", tall=0},
+		{"small_willow_trunk_foliage_bare", tall=0},
+		{"small_willow_trunk_foliage_spring", tall=0},
+		{"small_willow_trunk_foliage_bare", tall=0},
+		{"small_willow_trunk_foliage_spring", tall=0},
+		{"small_willow_trunk_foliage_bare", tall=0},
+		{"willow_trunk_foliage_spring", tall=-1},
+		{"willow_trunk_foliage_bare", tall=-1},
+		{"willow_trunk_foliage_spring", tall=-1},
+		{"willow_trunk_foliage_bare", tall=-1},
+		{"willow_trunk_foliage_spring", tall=-1},
+		{"willow_trunk_foliage_bare", tall=-1},
+		{"willow_moss_trunk_foliage_spring", tall=-1},
+		{"willow_moss_trunk_foliage_bare", tall=-1},
+		{"willow_moss_trunk_foliage_spring", tall=-1},
+		{"willow_moss_trunk_foliage_bare", tall=-1},
 	}, 1))
 end
 

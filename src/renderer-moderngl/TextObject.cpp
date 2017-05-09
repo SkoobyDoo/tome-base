@@ -32,6 +32,7 @@ extern "C" {
 
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/TextObject.hpp"
+#include "colors.hpp"
 
 shader_type *DORText::default_shader = NULL;
 
@@ -322,6 +323,15 @@ void DORText::parseText() {
 						lua_pop(L, 3);
 						a = 1;
 					}
+					// DGDGDGDG fix & enable me
+					// string cname(next+1, (size_t)(codestop - (next+1)));
+					// Color *color = Color::find(cname);
+					// if (color) {
+					// 	vec4 rgba = color->get1();
+					// 	lr = r; lg = g; lb = b; la = a;
+					// 	r = rgba.r; g = rgba.g; b = rgba.b; a = rgba.a;
+					// 	printf("===== %s : %f %f %f %f\n", cname.c_str(), r,g,b,a);
+					// }
 					// Hexacolor
 					else if (codestop - (next+1) == 6)
 					{

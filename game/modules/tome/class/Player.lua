@@ -734,6 +734,16 @@ function _M:onTakeHit(value, src, death_note)
 	return ret
 end
 
+function _M:setEffect(eff_id, ...)
+	game:triggerEventUI("Player:setEffect", self, eff_id, ...)
+	return mod.class.Actor.setEffect(self, eff_id, ...)
+end
+
+function _M:removeEffect(eff_id, ...)
+	game:triggerEventUI("Player:removeEffect", self, eff_id, ...)
+	return mod.class.Actor.removeEffect(self, eff_id, ...)
+end
+
 function _M:on_set_temporary_effect(eff_id, e, p)
 	local ret = mod.class.Actor.on_set_temporary_effect(self, eff_id, e, p)
 

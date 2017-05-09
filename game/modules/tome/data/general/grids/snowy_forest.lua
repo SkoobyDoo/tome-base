@@ -31,8 +31,35 @@ newEntity{
 for i = 1, 14 do newEntity{ base = "SNOWY_GRASS", define_as = "SNOWY_PATCH"..i, image = ("terrain/grass/snowy_grass_main_%02d.png"):format(i) } end
 
 local snowy_treesdef = {
-	{"small_elm", {"shadow", "trunk", "foliage_winter"}},
-	{"elm", {tall=-1, "shadow", "trunk", "foliage_winter"}},
+	{"pine_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"burned_tree_03_trunk_ash_01_foliage_winter", tall=-1},
+	{"burned_tree_03_trunk_foliage_winter", tall=-1},
+	{"narrow_cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_willow_moss_trunk_foliage_winter", tall=0},
+	{"small_willow_moss_trunk_foliage_winter", tall=0},
+	{"small_oak_trunk_01_foliage_winter_%02d", 1, 3, tall=0},
+	{"small_oak_trunk_02_foliage_winter_%02d", 1, 3, tall=0},
+	{"small_elm_trunk_foliage_winter", tall=0},
+	{"cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_wider_pine_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"burned_tree_01_trunk_ash_01_foliage_winter", tall=-1},
+	{"burned_tree_01_trunk_foliage_winter", tall=-1},
+	{"small_narrow_pine_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"burned_tree_02_trunk_ash_01_foliage_winter", tall=-1},
+	{"burned_tree_02_trunk_foliage_winter", tall=-1},
+	{"tiny_cypress_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"elm_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_moss_trunk_foliage_winter", tall=-1},
+	{"willow_moss_trunk_foliage_winter", tall=-1},
+	{"oak_trunk_01_foliage_winter_%02d", 1, 3, tall=-1},
+	{"oak_trunk_02_foliage_winter_%02d", 1, 3, tall=-1},
 }
 
 newEntity{

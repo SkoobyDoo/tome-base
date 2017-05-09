@@ -957,6 +957,7 @@ function _M:defineDisplayCallback()
 	if self._mo == self._last_mo or not self._last_mo then
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
 			backparticles(x, y, w, h, zoom, on_map)
+			particles(x, y, w, h, zoom, on_map)
 			return true
 		end)
 	else

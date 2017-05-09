@@ -1605,7 +1605,7 @@ function _M:createFBOs()
 	for i, d in ipairs(effs) do
 		local s = Shader.new(d[2])
 		if s.shad then
-			s:setUniform("texSize", {w, h})
+			s:setUniform("screenSize", {w, h})
 			seffs[#seffs+1] = {d[1], s.shad}
 			self.posteffects[d[1]] = s.shad
 			if d[1] == "main" then self.fbo_shader = s end

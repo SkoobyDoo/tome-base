@@ -42,20 +42,20 @@ newEntity{
 }
 
 local treesdef = {
-	{"small_elm", {"shadow", "trunk", "foliage_summer"}},
-	{"small_elm", {"shadow", "trunk", "foliage_summer"}},
-	{"elm", {tall=-1, "shadow", "trunk", "foliage_summer"}},
-	{"elm", {tall=-1, "shadow", "trunk", "foliage_summer"}},
-	{"light_pine", {tall=-1, "shadow", "trunk", {"foliage_%02d",1,4}}},
-	{"light_small_wider_pine", {"shadow", "trunk", {"foliage_%02d",1,4}}},
-	{"light_small_narrow_pine", {"shadow", "trunk", {"foliage_%02d",1,4}}},
-	{"cypress", {tall=-1, "shadow", "trunk", {"foliage_%02d",1,4}}},
-	{"small_cypress", {tall=-1, "shadow", "trunk", {"foliage_%02d",1,4}}},
-	{"tiny_cypress", {"shadow", "trunk", {"foliage_%02d",1,4}}},
-	{"oak", {tall=-1, "shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-	{"oak", {tall=-1, "shadow", "trunk_02", {"foliage_summer_%02d",3,4}}},
-	{"small_oak", {"shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-	{"small_oak", {"shadow", "trunk_02", {"foliage_summer_%02d",3,4}}},
+	{"small_elm_trunk_foliage_summer", tall=0},
+	{"small_elm_trunk_foliage_summer", tall=0},
+	{"elm_trunk_foliage_summer", tall=-1},
+	{"elm_trunk_foliage_summer", tall=-1},
+	{"light_pine_trunk_foliage_%02d", 1, 4, tall=-1},
+	{"light_small_wider_pine_trunk_foliage_%02d", 1, 4, tall=0},
+	{"light_small_narrow_pine_trunk_foliage_%02d", 1, 4, tall=0},
+	{"cypress_trunk_foliage_%02d", 1, 4, tall=-1},
+	{"small_cypress_trunk_foliage_%02d", 1, 4, tall=-1},
+	{"tiny_cypress_trunk_foliage_%02d", 1, 4, tall=0},
+	{"oak_trunk_01_foliage_summer_%02d", 1, 2, tall=-1},
+	{"oak_trunk_02_foliage_summer_%02d", 3, 4, tall=-1},
+	{"small_oak_trunk_01_foliage_summer_%02d", 1, 2, tall=0},
+	{"small_oak_trunk_02_foliage_summer_%02d", 3, 4, tall=0},
 }
 
 newEntity{

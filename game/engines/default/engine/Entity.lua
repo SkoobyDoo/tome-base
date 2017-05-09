@@ -368,7 +368,10 @@ function _M:makeMapObject(tiles, idx)
 	-- Texture
 	-- DGDGDGDG: handle "invis.png" as a special "texture" that tells the engine to fully ignore it, no texture at all
 	-- This way this wont break sorting
-	local ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
+	local ok, btex, btexx, btexy, w, h, tex_x, tex_y
+	if self.image == "invis.png" then ok = false
+	else ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
+	end
 	local dy, dh = 0, 0
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
 
@@ -407,6 +410,8 @@ function _M:makeMapObject(tiles, idx)
 			-- print("=======", self.image, btexx, btexy, te)
 			self._mo:texture(0, btex, false, btexx, btexy, tex_x, tex_y)
 		end
+	else
+		self._mo:hide()
 	end
 
 	-- Additional MO chained to the same Z order

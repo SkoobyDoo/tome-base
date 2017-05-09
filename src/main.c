@@ -1116,6 +1116,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_core(L);
 		luaopen_core_mouse(L);
 		luaopen_core_gamepad(L);
+		luaopen_colors(L);
 		luaopen_font(L);
 		luaopen_fov(L);
 		luaopen_socket_core(L);
