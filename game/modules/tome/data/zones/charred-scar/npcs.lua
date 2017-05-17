@@ -32,6 +32,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(1,2), atk=2, apr=0, dammod={str=0.4} },
 
+	resolvers.auto_equip_filters{"Sun Paladin"},
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
 	lite = 3,
 

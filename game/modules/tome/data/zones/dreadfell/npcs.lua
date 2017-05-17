@@ -50,6 +50,7 @@ newEntity{ define_as = "THE_MASTER",
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, NECK=1, },
+	resolvers.auto_equip_filters("Berzerker"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="heavy", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
@@ -141,6 +142,7 @@ newEntity{ define_as = "PALE_DRAKE",
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, NECK=1, },
+	resolvers.auto_equip_filters("Archmage"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
@@ -210,6 +212,7 @@ What proud hero of renown was this before he was condemned to such a terrible fa
 	stats = { str=30, dex=20, con=30 },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, HANDS=1, FEET=1, },
+	resolvers.auto_equip_filters("Bulwark"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="mace", ego_chance=100, autoreq=true, forbid_power_source={antimagic=true}, force_drop=true,},
 		{type="armor", subtype="shield", ego_chance=100, autoreq=true, forbid_power_source={antimagic=true}, force_drop=true,},
@@ -240,7 +243,7 @@ What proud hero of renown was this before he was condemned to such a terrible fa
 		[Talents.T_SHIELD_EXPERTISE]=6,
 
 		[Talents.T_THICK_SKIN]={base=3, every=5, max=5},
-		[Talents.T_ARMOUR_TRAINING]={base=2, every=8, max=5},
+		[Talents.T_ARMOUR_TRAINING]={base=3, every=8, max=5},
 		[Talents.T_WEAPONS_MASTERY]={base=2, every=10, max=5},
 		[Talents.T_WEAPON_COMBAT]={base=2, every=10, max=5},
 
@@ -356,6 +359,11 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 	stats = { str=20, dex=20, cun=10, wil=40 },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, QUIVER=1  },
+	resolvers.auto_equip_filters{
+		MAINHAND = {type="weapon", subtype="sling"},
+		OFFHAND = {type="weapon", subtype="dagger"},
+		QUIVER={type="ammo", subtype="shot"}
+	},
 	equipment = resolvers.equip{
 		{type="weapon", subtype="sling", defined="HARESKIN_SLING", random_art_replace={chance=0}, autoreq=true, tome_drops="boss"},
 		{type="weapon", subtype="dagger", ego_chance=100, autoreq=true, forbid_power_source={antimagic=true}, force_drop=true},
