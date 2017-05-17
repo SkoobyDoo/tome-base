@@ -17,197 +17,410 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--local Birther = require "engine.Birther"
 local Talents = require "engine.interface.ActorTalents"
 
---- Resolves equipment creation for an actor
-function resolvers.equip(t)
-	return {__resolver="equip", __resolve_last=true, t}
+--- General object resolver function (for Actors or other entities using the inventory interface)
+-- creates an object according to a filter, possibly equipping it
+-- @param e: entity to resolve for to which the object is added
+-- @param filter: filter to use when generating the object
+-- @param do_wear: set true to wear the object if possible (Actors only), set false to not add the object to e
+--		searches for open inventory slots before replacing worn objects
+--		worn objects must be antimagic compatible with the wearing entity
+-- @param tries: number of attempts allowed to generate the object, default 2 (5 if do_wear is set)
+-- @return the resolved object 
+--	Objects not worn are placed in main inventory (unless do_wear == false)
+--	Objects are added to the game when resolved (affects uniques)
+-- Additional filter fields interpreted by this resolver:
+--		_use_object: object to use (skips random generation)
+--		defined: specific name (matching obj.DEFINE_AS) for an object
+--		base_list: a specifier to load the entities list from a file, format: <classname>:<file path>
+--		random_art_replace: table containing parameters to create a replacement object when dropping as loot
+--			chance: chance to drop in place of the unique object (previously existing uniques are always replaced)
+--			filter: object filter for replacement object (defaults to a unique, non-lore object)
+--		alter: a function(obj, e) to modify the object (called after generation, before adding to e)
+--		autoreq: set true to force gaining talents, stats, levels to equip the object (requires do_wear)
+--		force_inven: force adding the object to this inventory id (requires do_wear, skips normal checks)
+--		force_item: force adding the object to this inventory slot (requires do_wear, skips normal checks)
+--		force_drop: always drop the object on death (by default, only uniques are dropped)
+--		never_drop: never drop the object on death
+-- Additional filter fields are interpreted by other functions that can affect equipment generation:
+-- @see engine.zone:checkFilter: type, subtype, name, define_as, unique, properties, not_properties,
+--		check_filter, special, max_ood
+-- @see game.state:entityFilterAlter: force_tome_drops, no_tome_drops, tome, tome_mod
+-- @see game.state:entityFilter: ignore_material_restriction, tome_mod, forbid_power_source, power_source
+-- @see game.state:entityFilterPost: random_object
+-- @see game.state:egoFilter: automatically creates/updates the ego_filter field to check power_source compatibility
+function resolvers.generateObject(e, filter, do_wear, tries)
+	if do_wear then do_wear = e.__is_actor and do_wear end
+	filter = filter and table.clone(filter) or {}	
+	local o = filter._use_object
+	if o then -- filter contains the object to use
+		print("[General Object Resolver] using pre-generated object", o.name)
+	else
+		tries = tries or do_wear and 5 or 2
+		--print("General Object resolver", e.name, "filter:", filter) table.print(filter, "\t")
+		local base_list
+		if filter.base_list then -- load the base list defined for makeEntityByName
+			local _, _, class, file = filter.base_list:find("(.*):(.*)")
+			if class and file then
+				base_list = require(class):loadList(file)
+				if base_list then
+					base_list.__real_type = "object"
+				else
+					print("[General Object resolver] COULD NOT LOAD base_list:", filter.base_list)
+				end
+			end
+		end
+		repeat
+			local ok = true
+			tries = tries - 1
+			if filter.defined then -- make a specific object
+				local forced
+				o, forced = game.zone:makeEntityByName(game.level, base_list or "object", filter.defined, filter.random_art_replace and true or false)
+				if forced then -- If generation was forced, object is a previously existing unique
+					table.set(filter, "random_art_replace", "chance", 100)
+				end
+			else -- make an object using the normal probabilities after applying the filter
+				o = game.zone:makeEntity(game.level, base_list or "object", filter, nil, true)
+			end
+			print("##General Object resolver for ", e.name, "object:", o and o.name, "tries left:", tries)
+			-- check for incompatible equipment
+			if do_wear and not game.state:checkPowers(e, o, nil, "antimagic_only") then
+				ok = false
+				print("[General Object resolver] for ",e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
+			end
+		until o and ok or tries <= 0
+	end
+	
+	if o then
+		--print("Zone made us an equipment according to filter!", o:getName(), o.name)
+		if filter.alter then filter.alter(o, e) end
+		-- curse (done here to ensure object attributes get applied correctly, good place for a talent callback?)
+		if do_wear ~= false and e.knowTalent and e:knowTalent(e.T_DEFILING_TOUCH) then
+			e:callTalent(e.T_DEFILING_TOUCH, "curseItem", o)
+		end
+
+		if do_wear then
+			-- Auto alloc some talents, stats, and (possibly) levels to be able to wear the object
+			if filter.autoreq then
+				local req, oldreq = e:updateObjectRequirements(o)
+				if req then
+					if req.level and e.level < req.level then
+						print("[General Object resolver] autoreq: levelup to", req.level)
+						e:forceLevelup(req.level)
+					end
+					if req.talent then -- learn (forced) talents first (may affect stats)
+						for _, tid in ipairs(req.talent) do
+							local levls = 0
+							if type(tid) == "table" then
+								levls = tid[2] - e:getTalentLevelRaw(tid[1])
+								if levls > 0 then
+									print("[General Object resolver] autoreq: learning talent", tid[1], levls)
+									e:learnTalent(tid[1], true, levls)
+								end
+							else
+								if not e:knowTalent(tid) then
+									levls = 1
+									print("[General Object resolver] autoreq: learning talent", tid)
+									e:learnTalent(tid, true, levls)
+								end
+							end
+							if levls > 0 then
+								local tal = e:getTalentFromId(tid[1])
+								if tal and tal.generic then e.unused_generics = e.unused_generics - levls else e.unused_talents = e.unused_talents - levls end
+							end
+						end
+					end
+					if req.stat then
+						for s, v in pairs(req.stat) do
+							local gain = v - e:getStat(s)
+							if gain > 0 then
+								print("[General Object resolver] autoreq: gaining stat", s, gain)
+								e.unused_stats = e.unused_stats - gain
+								e:incStat(s, gain)
+							end
+						end
+					end
+				end
+				o.require = oldreq
+			end
+		
+			local invens  -- select inventories where object may be worn
+			if filter.force_inven then invens = {e:getInven(filter.force_inven)}
+			else
+				 -- checks any inventory equipment filters, works for non-actors w/ inventory interface
+				invens = mod.class.Actor.getFilteredInventories(e, o)
+			end
+			local replace, done = true, false
+			repeat
+				replace = not replace -- look for open slots before trying to replace other objects
+				for i, worn_inv in ipairs(invens) do
+					--print("[General Object resolver] trying inventory", worn_inv.name, "for", o..uid, o.name, replace and "REPLACE" or "NO REPLACE")
+					local worn = e:wearObject(o, replace, false, worn_inv, filter.force_item)
+					if worn == false then
+						if filter.force_inven then  -- force adding the object
+							print("Equipment resolver:", o.name, "FORCE adding to", worn_inv.name, worn_inv.id, "slot", filter.force_item)
+							local ro = e:removeObject(filter.force_inven, filter.force_item or 1)
+							e:addObject(worn_inv.id, o, true, filter.force_item)
+							if ro then e:addObject(e.INVEN_INVEN, ro) end -- replaced object to main inventory
+							done = true	break
+						else
+						print("[General Object resolver]", o.name, "NOT WORN in", worn_inv.name, worn_inv.id)
+						end
+					else
+						print("[General Object Resolver]", o.uid, o.name, "added to inventory", worn_inv.name)
+						if type(worn) == "table" then --put replaced object in main inventory
+							print("[General Object Resolver] moving replaced object to main inventory:", worn, worn.name)
+							e:addObject(e.INVEN_INVEN, worn)
+						end	
+						done = true	break
+					end
+				end
+			until done or replace
+			if not done then print("General Object resolver]", o.name, "NOT WORN") end
+		end
+		-- if not worn, add to main inventory unless do_wear == false
+		if do_wear ~= false then
+			game.zone:addEntity(game.level, o, "object") -- updates uniques list to prevent duplicates
+			if not o.wielded then
+				print("[General Object Resolver] adding to main inventory:", o, o.name)
+				e:addObject(e.INVEN_INVEN, o)
+			end
+		end
+
+		-- Determine the default object drop status (usually drop uniques only)
+		if not o.unique then o.no_drop = true end
+		if filter.force_drop then o.no_drop = false end
+		if filter.never_drop then o.no_drop = true end
+
+-- debugging
+o.no_unique_lore = true -- to not spam
+o:identify(true)
+--[[
+local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
+	game.log("#GREY#General Object Resolver:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
+end)
+--]]
+-- debugging
+
+		if filter.random_art_replace then
+			o.__special_boss_drop = filter.random_art_replace
+		end
+	else
+		print("[General Object Resolver] **FAILED** for", e.uid, e.name, "filter:", (string.fromTable(filter, 2)))
+game.log("[%s] %s #YELLOW_GREEN#Equipment resolver FAILED#LAST# \n#AQUAMARINE#filter:%s#LAST#", e.uid, e.name, string.fromTable(filter, 2)) -- debugging
+	end
+	return o
 end
+
+--- Resolves equipment creation for an actor
+-- @param t a table of object filters (resolvers.generateObject is called for each)
+-- Objects that cannot be equipped are added to the main inventory instead
+function resolvers.equip(t)
+	return {__resolver="equip", __resolve_last=true, t, _allow_random_boss=true}
+end
+
+--- Resolves equipment creation for an actor at birth (ignores material restrictions)
 function resolvers.equipbirth(t)
 	for i, filter in ipairs(t) do
 		filter.ignore_material_restriction = true
 	end
-	return {__resolver="equip", __resolve_last=true, t}
+	return {__resolver="equip", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the equipment creation
+
+--- Actually create and equip objects
+--  Creates the objects according to the filters and equips them if possible
+-- @param t the resolver table created by resolvers.equip
+-- @param e the entity (Actor) to add the equipment to
 function resolvers.calc.equip(t, e)
---	print("Equipment resolver for", e.name)
-	-- Iterate over object requests, try to create them and equip them
+	-- Iterate over object filters, trying to create and equip each
 	for i, filter in ipairs(t[1]) do
---		print("Equipment resolver", e.name, filter.type, filter.subtype, filter.defined, filter.random_art_replace)
-		local o
-		local tries = 0
-		repeat
-			local ok = true
-			tries = tries + 1
-			if not filter.defined then
-				o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-			else
-				local forced
-				o, forced = game.zone:makeEntityByName(game.level, "object", filter.defined, filter.random_art_replace and true or false)
-				-- If we forced the generation this means it was already found
-				if forced then
---					print("Serving unique "..o.name.." but forcing replacement drop")
-					filter.random_art_replace.chance = 100
-				end
-			end
-			if not game.state:checkPowers(e, o, nil, "antimagic_only") then
-				ok = false
-				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
-			end
-		until ok or tries > 4
+--		print("Equipment resolver", e.name, "filter:", filter) table.print(filter, "\t")
+		local o = resolvers.generateObject(e, filter, true, 5)
 		if o then
----		print("Zone made us an equipment according to filter!", o:getName())
-			-- curse (done here to ensure object attributes get applied correctly)
-			if e:knowTalent(e.T_DEFILING_TOUCH) then
-				local t = e:getTalentFromId(e.T_DEFILING_TOUCH)
-				t.curseItem(e, t, o)
-			end
-
-			-- Auto alloc some stats to be able to wear it
-			if filter.autoreq and rawget(o, "require") and rawget(o, "require").stat then
---				print("Autorequire stats")
-				for s, v in pairs(rawget(o, "require").stat) do
-					if e:getStat(s) < v then
-						e.unused_stats = e.unused_stats - (v - e:getStat(s))
-						e:incStat(s, v - e:getStat(s))
-					end
-				end
-			end
-			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
-				if filter.force_inven and e:getInven(filter.force_inven) then  -- we just really want it
-					e:addObject(filter.force_inven, o, true, filter.force_item)
-				else
-					e:addObject(e.INVEN_INVEN, o)
-				end
-			end
-			-- Do not drop it unless it is an ego or better
-			if not o.unique then o.no_drop = true --[[print(" * "..o.name.." => no drop")]] end
-			if filter.force_drop then o.no_drop = nil end
-			if filter.never_drop then o.no_drop = true end
-			game.zone:addEntity(game.level, o, "object")
-
+o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
 			if t[1].id then o:identify(t[1].id) end
+			
+		
+-- debugging
+local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
+	game.log("#ORANGE#resolvers.equip:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
+end)
+-- debugging
 
-			if filter.random_art_replace then
-				o.__special_boss_drop = filter.random_art_replace
-			end
 		end
 	end
-	-- Delete the origin field
-	return nil
+	return nil -- Deletes the origin field
 end
 
+--- Sets filters by inventory name controlling which objects may be automatically equipped by an entity (Actor)
+-- Actors (NPCs) will not auto equip items that don't pass the filter. see Actor:getFilteredInventories
+-- @param[1] t a table of filters indexed by inventory name, format:
+--		{[inven_def.name1] = {equipment filter 1}, [inven_def.name2] = {equipment filter 2}, ...}
+--		filter.ignore_material_restriction and filter.allow_uniques are set true if not defined
+--	Use the e._equipping_entity variable set by Actor:getFilteredInventories for the equipping actor within filter special functions
+-- @param[2] t a string matching the name of a Birther subclass ("Rogue", "Bulwark", ...)
+--		the autoequip filters for the subclass will be copied
+function resolvers.auto_equip_filters(t)
+	return {__resolver="auto_equip_filters", __resolve_last=false, t, _allow_random_boss=true}
+end
 
---- Resolves equipment creation for an actor
+--- Resolves the auto-equip filters for an actor by inventory slot
+function resolvers.calc.auto_equip_filters(t, e)
+	local filters = t[1]
+	if type(filters) == "string" then -- get subclass filters
+		local c_name = filters
+		local cc = table.get(engine.Birther.birth_descriptor_def, "subclass", c_name, "copy")
+		if cc then
+			for i, res in ipairs(cc) do
+				if type(res) == "table" and res.__resolver == "auto_equip_filters" then
+					resolvers.calc.auto_equip_filters(res, e)
+				end
+			end
+		else print("[resolvers.auto_equip_filters] COULD NOT FIND birth filters for", c_name)
+		end
+		return
+	end
+	for inven, filter in pairs(filters) do
+		local inv_id = "INVEN_"..inven
+		local inv = e:getInven(e[inv_id])
+		if inv then
+			if filter.ignore_material_restriction == nil then filter.ignore_material_restriction = true end
+			if filter.allow_uniques == nil then filter.allow_uniques = true end
+			inv.auto_equip_filter = filter
+		end
+	end
+end
+
+--- Resolves tinkers and attaches them to appropriate worn objects if possible
+-- @param t a table of object filters (resolvers.generateObject is called for each)
+-- discards the tinker if it cannot be attached (placed in main inventory if filter.keep_object is true)
+-- a tinker already attached is automatically placed in main inventory
 function resolvers.attachtinker(t)
-	return {__resolver="attachtinker", __resolve_last=true, t}
+	return {__resolver="attachtinker", __resolve_last=true, t, keep_object=t.keep_object, _allow_random_boss=true}
 end
+
+--- As resolvers.attachtinker but ignores material restrictions
 function resolvers.attachtinkerbirth(t)
 	for i, filter in ipairs(t) do
 		filter.ignore_material_restriction = true
 	end
-	return {__resolver="attachtinker", __resolve_last=true, t}
+	return {__resolver="attachtinker", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the equipment creation
+
+--- Actually create and attach the tinker
+-- @param t the resolver table created by resolvers.attachtinker
+-- @param e the entity (Actor) to add the tinker to
 function resolvers.calc.attachtinker(t, e)
-	print("Tinker resolver for", e.name)
-	-- Iterate of object requests, try to create them and equip them
+	local do_wear = false
+	-- Iterate over object filters, trying to create and attach each
 	for i, filter in ipairs(t[1]) do
-		print("Tinker resolver", e.name, filter.type, filter.subtype, filter.defined)
-		local o
-		if not filter.defined then
-			o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-		else
-			local forced
-			o, forced = game.zone:makeEntityByName(game.level, "object", filter.defined, filter.random_art_replace and true or false)
-			-- If we forced the generation this means it was already found
-			if forced then
---				print("Serving unique "..o.name.." but forcing replacement drop")
-				filter.random_art_replace.chance = 100
-			end
-		end
+		do_wear = false
+		local o = resolvers.generateObject(e, filter, false, 5)
 		if o then
-			print("Zone made us an Tinker according to filter!", o:getName())
-			-- Auto alloc some stats to be able to wear it
-			if filter.autoreq and rawget(o, "require") and rawget(o, "require").stat then
---				print("Autorequire stats")
-				for s, v in pairs(rawget(o, "require").stat) do
-					if e:getStat(s) < v then
-						e.unused_stats = e.unused_stats - (v - e:getStat(s))
-						e:incStat(s, v - e:getStat(s))
-					end
+o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
+			print("Zone made us a Tinker according to filter!", o:getName())
+			local base_inven, base_item = e:findTinkerSpot(o)
+			local base_o = base_inven and base_item and base_inven[base_item]
+			local ok
+			if base_o then
+				ok = e:doWearTinker(nil, nil, o, base_inven, base_item, base_o, true)
+				if t[1].id then o:identify(t[1].id) end
+				print("[resolvers.attachtinker] Attach Tinker", ok and "SUCCEEDED" or "FAILED", base_inven.name, base_item, base_o and base_o:getName())
+			end
+			if not ok then
+				print("[resolvers.attachtinker] Could not find tinker attach spot:", base_inven, base_item)
+				if (t.keep_object or filter.keep_object) and e:addObject(e.INVEN_INVEN, o) then
+					print("    --- added to main inventory") ok = true 
 				end
 			end
-
-			local base_inven, base_item = e:findTinkerSpot(o)
-			if base_inven and base_item then
-				local base_o = base_inven[base_item]
-				e:doWearTinker(nil, nil, o, base_inven, base_item, base_o, true)
-				if t[1].id then o:identify(t[1].id) end
-			end
+			if ok then game.zone:addEntity(game.level, o, "object") end -- updates uniques list to prevent duplicates		
+-- debugging
+local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
+	game.log("#ORANGE#resolvers.attachtinker:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
+end)
+-- debugging
 		end
 	end
-	-- Delete the origin field
-	return nil
+	return nil -- Deletes the origin field
 end
 
 --- Resolves inventory creation for an actor
+--  similar to resolvers.equip, but no checks are made for wearability (worn objects will not be replaced)
+-- @param t a table of object filters (resolvers.generateObject is called for each)
+--	additional filter fields interpreted:
+--		inven: inventory id of the inventory to add to (defaults to t.inven or main inventory)
+--		keep_object: set true to try main inventory if the object cannot be added to the specified inventory
+--		transmo: set true to designate the object for transmutation (defaults to t.transmo or nil)
 function resolvers.inventory(t)
-	return {__resolver="inventory", __resolve_last=true, t}
+	return {__resolver="inventory", __resolve_last=true, t, _allow_random_boss=true}
 end
+
+--- Resolves inventory creation for an actor at birth (ignores material restrictions)
 function resolvers.inventorybirth(t)
 	for i, filter in ipairs(t) do
 		filter.ignore_material_restriction = true
 	end
-	return {__resolver="inventory", __resolve_last=true, t}
+	return {__resolver="inventory", __resolve_last=true, t, _allow_random_boss=true}
 end
+
 --- Actually resolve the inventory creation
+-- @param t the resolver table created by resolvers.inventory
+-- @param e the entity (Actor) to add the objects to
 function resolvers.calc.inventory(t, e)
 	-- Iterate of object requests, try to create them and equip them
 	for i, filter in ipairs(t[1]) do
 		print("Inventory resolver", e.name, e.filter, filter.type, filter.subtype)
-		local o
-		if not filter.defined then
-			o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-		else
-			if filter.base_list then
-				local _, _, class, file = filter.base_list:find("(.*):(.*)")
-				if class and file then
-					local base_list = require(class):loadList(file)
-					base_list.__real_type = "object"
-					o = game.zone:makeEntityByName(game.level, base_list, filter.defined)
-				end
-			else
-				o = game.zone:makeEntityByName(game.level, "object", filter.defined)
-			end
-		end
+		local o = resolvers.generateObject(e, filter, false)
+		
 		if o then
---			print("Zone made us an inventory according to filter!", o:getName())
-			e:addObject(t[1].inven and e:getInven(t[1].inven) or e.INVEN_INVEN, o)
-			game.zone:addEntity(game.level, o, "object")
+o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
+			local inven = filter.inven or t[1].inven
+			if inven then inven = e:getInven(inven) or filter.keep_object and e.INVEN_INVEN
+			else inven = e.INVEN_INVEN
+			end
+			if inven then
+				local id = t[1].id
+				if filter.id ~= nil then id = filter.id end
+				if e:addObject(inven, o) or filter.keep_object and inven.id ~= e.INVEN_INVEN and e:addObject(e.INVEN_INVEN, o) then
+					game.zone:addEntity(game.level, o, "object")
+					if id ~= nil then o:identify(id) end
+					if filter.transmo or t[1].transmo then o.__transmo = true end
+				end
+			end
 
-			if t[1].id then o:identify(t[1].id) end
-			if t[1].transmo then o.__transmo = true end
-			if t[1].alter then t[1].alter(o) end
+-- debugging
+local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
+	game.log("#ORANGE#resolvers.inventory:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
+end)
+-- debugging
+
 		end
 	end
-	e:sortInven()
-	-- Delete the origin field
-	return nil
+	return nil -- Delete the origin field
 end
 
 --- Resolves drops creation for an actor
+-- 	Places objects in main inventory and marks them to be dropped on death
+-- @param t a table of object filters to be randomly selected from (resolvers.generateObject is called for each)
+-- 	additional resolver fields:
+--		chance = percent chance for drops (all or none, default 100)
+--		nb = number of drops (default 1)
+--		id: set the identify status of each object
 function resolvers.drops(t)
-	return {__resolver="drops", __resolve_last=true, t}
+	return {__resolver="drops", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the drops creation
+
+--- Actually resolve the drops creation adding each object to main inventory
+-- @param t the resolver table created by resolvers.drops
+-- @param e the entity (Actor) to add the objects to
 function resolvers.calc.drops(t, e)
 	t = t[1]
 	if not rng.percent(t.chance or 100) then return nil end
 	if t.check and not t.check(e) then return nil end
 
-	-- Iterate of object requests, try to create them and drops them
+	-- Iterate over object requests, adding each object to main inventory and marking it to drop
 	for i = 1, (t.nb or 1) do
 		local filter = t[rng.range(1, #t)]
 		filter = table.clone(filter)
@@ -218,33 +431,22 @@ function resolvers.calc.drops(t, e)
 			filter.not_properties[#filter.not_properties+1] = "lore"
 		end
 
---		print("Drops resolver", e.name, filter.type, filter.subtype, filter.defined)
-		local o
-		if not filter.defined then
-			o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-		else
-			local forced
-			o, forced = game.zone:makeEntityByName(game.level, "object", filter.defined, filter.random_art_replace and true or false)
-			-- If we forced the generation this means it was already found
-			if forced then
---				print("Serving unique "..o.name.." but forcing replacement drop")
-				filter.random_art_replace.chance = 100
-			end
-		end
+		print("Drops resolver", e.name, filter.type, filter.subtype, filter.defined)
+		local o = resolvers.generateObject(e, filter, nil)
+		
 		if o then
---			print("Zone made us a drop according to filter!", o:getName())
-			e:addObject(e.INVEN_INVEN, o)
-			game.zone:addEntity(game.level, o, "object")
+o.name = o.name.." <drops>" -- debugging
+-- debugging
+local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
+	game.log("#ORANGE#resolvers.drops:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
+end)
+-- debugging
 
-			if t.id then o:identify(t.id) end
-
-			if filter.random_art_replace then
-				o.__special_boss_drop = filter.random_art_replace
-			end
+			o.no_drop = false -- make sure it is dropped
+			if t.id ~= nil then o:identify(t.id) end
 		end
 	end
-	-- Delete the origin field
-	return nil
+	return nil -- Deletes the origin field
 end
 
 -- Resolves material level based on actor level
@@ -274,46 +476,53 @@ local function actor_final_level(e)
 	end
 end
 
---- Resolves drops creation for an actor; drops a created on the fly randart
+--- Creates a randart and adds it to inventory (to be dropped on death)
+-- 	@param t table of data to generate the randart:
+--	@field t._use_object: object to use (bypasses random generation)
+--	@field t.filter: optional filter for the base object
+--		(defaults to a random, plain object with material level 2 or more)
+-- 	@field t.data: data to pass to game.state:generateRandart
+--		(defaults to {lev=resolvers.current_level})
+--	@field t.no_add: set true to not add the randart to inventory (return it instead when resolved)
 function resolvers.drop_randart(t)
-	return {__resolver="drop_randart", __resolve_last=true, t}
+	return {__resolver="drop_randart", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the drops creation
+
+--- Actually resolve the randart
+-- @param t the resolver table created by resolvers.drop_randart
+-- @param e the entity (Actor) to add the randart to
 function resolvers.calc.drop_randart(t, e)
 	t = t[1]
-	local filter = t.filter
-
- 	local matresolver = resolvers.matlevel(5,50,1,2) -- Min material level 2
-   
---	game.log("#LIGHT_BLUE#Calculating randart drop for %s (uid %d, est level %d)",e.name,e.uid,actor_final_level(e))
-	if not filter then
-		filter = {ignore_material_restriction=true, no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, special=function(eq)
-			local matlevel = resolvers.calc.matlevel(matresolver,{level = actor_final_level(e)})
---			game.log("Checking equipment %s against material level %d for %s (final level %d)",eq.name,matlevel,e.name, actor_final_level(e))
-			return (not eq.unique and eq.randart_able) and eq.material_level == matlevel and true or false
-		end}
+	local o = t._use_object
+	if not o then
+		local data = t.data or {lev=resolvers.current_level}
+		if not data.base then -- generate a base object
+			local filter = t.filter
+			if not filter then
+				local matresolver = resolvers.matlevel(5,50,1,2) -- Min material level 2
+				filter = {ignore_material_restriction=true, no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, special=function(eq)
+					local matlevel = resolvers.calc.matlevel(matresolver,{level = actor_final_level(e)})
+					return (not eq.unique and eq.randart_able) and eq.material_level == matlevel and true or false
+				end}
+			end
+			data.base = resolvers.generateObject(e, filter, false, 5)
+		end
+		o = game.state:generateRandart(data)
 	end
+	if o then
+o.name = o.name.." <drop_randart>" -- debugging
+		o.no_drop = false
+		if t.id then o:identify(t.id) end
 
---	print("Randart Drops resolver")
-	local base = nil
-	if filter then
-		if not filter.defined then
-			base = game.zone:makeEntity(game.level, "object", filter, nil, true)
+o:identify(true) -- debugging
+
+		if t.no_add then
+			return o
 		else
-			base = game.zone:makeEntityByName(game.level, "object", filter.defined)
+			e:addObject(e.INVEN_INVEN, o)
+			game.zone:addEntity(game.level, o, "object")
 		end
 	end
-
-	local o = game.state:generateRandart{base=base, lev=resolvers.current_level}
-	if o then
---		print("Zone made us a randart drop according to filter!", o:getName{force_id=true})
-		e:addObject(e.INVEN_INVEN, o)
-		game.zone:addEntity(game.level, o, "object")
-
-		if t.id then o:identify(t.id) end
-	end
-	-- Delete the origin field
-	return nil
 end
 
 --- Resolves drops creation for an actor
@@ -350,7 +559,7 @@ end
 function resolvers.chatfeature(def, faction)
 	return {__resolver="chatfeature", def, faction}
 end
---- Actually resolve the drops creation
+--- Actually resolve the chat creation
 function resolvers.calc.chatfeature(t, e)
 	e.chat_faction = t[2]
 	t = t[1]
@@ -617,7 +826,7 @@ end
 
 --- Inscription resolver
 function resolvers.inscription(name, data, force_id)
-	return {__resolver="inscription", name, data, force_id}
+	return {__resolver="inscription", name, data, force_id, _allow_random_boss=true}
 end
 function resolvers.calc.inscription(t, e)
 	e:setInscription(t[3] or nil, t[1], t[2], false, false, nil, true, true)
@@ -635,7 +844,7 @@ local inscriptions_max = {
 }
 
 function resolvers.inscriptions(nb, list, kind, ignore_limits)
-	return {__resolver="inscriptions", nb, list, kind, ignore_limits}
+	return {__resolver="inscriptions", nb, list, kind, ignore_limits, _allow_random_boss=true}
 end
 function resolvers.calc.inscriptions(t, e)
 	local kind = nil
@@ -705,7 +914,7 @@ end
 function resolvers.talented_ai_tactic(method, tactic_total, weight_power)
 	local method = method or "simple_recursive"
 	return {__resolver="talented_ai_tactic", method, tactic_total, weight_power, __resolve_last=true,
-	}
+	_allow_random_boss=true}
 end
 
 -- Extra recursive methods not handled yet
@@ -840,7 +1049,6 @@ function resolvers.calc.talented_ai_tactic(t, e)
 end
 
 --- Racial Talents resolver
-
 local racials = {
 	halfling = {
 		T_HALFLING_LUCK = {last=10, base=0, every=4, max=5},
@@ -994,4 +1202,3 @@ end
 function resolvers.calc.command_staff(t, e)
 	e:commandStaff()
 end
-

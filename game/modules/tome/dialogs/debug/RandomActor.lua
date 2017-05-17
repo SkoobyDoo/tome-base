@@ -23,6 +23,7 @@ local Textbox = require "engine.ui.Textbox"
 local Button = require "engine.ui.Button"
 local Textzone = require "engine.ui.Textzone"
 local DebugConsole = require "engine.DebugConsole"
+local SummonCreature = require "mod.dialogs.debug.SummonCreature"
 
 module(..., package.seeall, class.inherit(engine.ui.Dialog))
 
@@ -42,8 +43,10 @@ local function formatHelp(f_lines, f_name, f_lnum)
 end
 
 -- set up context sensitive help
-local lines, fname, lnum = DebugConsole:functionHelp(game.zone.checkFilter, true)
+local lines, fname, lnum = DebugConsole:functionHelp(game.zone.checkFilter)
 _M.filter_help = "#GOLD#FILTER HELP#LAST# "..formatHelp(lines, fname, lnum)
+lines, fname, lnum = DebugConsole:functionHelp(game.state.entityFilterPost)
+_M.filter_help = _M.filter_help.."\n#GOLD#FILTER HELP#LAST# "..formatHelp(lines, fname, lnum)
 
 lines, fname, lnum = DebugConsole:functionHelp(game.state.createRandomBoss)
 _M.data_help = "#GOLD#DATA HELP#LAST# "..formatHelp(lines, fname, lnum)
@@ -325,12 +328,12 @@ function _M:generateBase()
 	end
 	local m
 	ok, m = pcall(game.zone.makeEntity, game.zone, game.level, "actor", filter)
-	
+
 	if ok then
 		if m then
 			if _M._base_actor then _M._base_actor:removed() end
 			local plr = game.player
-			m = _M:finishActor(m, plr.x, plr.y)
+			m = SummonCreature.finishActor(self, m, plr.x, plr.y)
 			_M._base_actor = m
 		else
 			game.log("#LIGHT_BLUE#Could not generate a base actor with filter: %s", _M._base_filter)
@@ -369,7 +372,7 @@ function _M:generateBoss()
 				m._debug_finished = false
 				if _M._boss_actor then _M._boss_actor:removed() end
 				local plr = game.player
-				m = _M:finishActor(m, plr.x, plr.y)
+				m = SummonCreature.finishActor(self, m, plr.x, plr.y)
 				_M._boss_actor = m
 			else
 				game.log("#LIGHT_BLUE#Could not generate a base actor with data: %s", _M._boss_data)
@@ -381,29 +384,11 @@ function _M:generateBoss()
 	end
 end
 
--- Note: issues with unique equipment...
--- added by resolver.equip (needed to prevent duplicate uniques occurring in the same actor
---game.zone:addEntity(game.level, o, "object") -- updates uniques
-
--- finish generating the actor (without adding it to the game)
-function _M:finishActor(actor, x, y)
-	if actor and not actor._debug_finished then
-		actor._debug_finished = true
-		local old_escort = actor.make_escort -- making escorts fails without a position
-		actor.make_escort = nil
-		-- Note: this triggers functions "addedToLevel", "on_added", "on_added_to_level" which includes spawning escorts, updating for game difficulty, etc.
-		game.zone:addEntity(game.level, actor, "actor", nil, nil, true)
-		actor.make_escort = old_escort
-		actor:resolve(); actor:resolve(nil, true) -- make sure all resolvers are complete
-	end
-	return actor
-end
-
 --- Place the generated actor
 function _M:placeActor(actor)
 	if actor then
 		local place_actor = actor:cloneFull()
-		require ("mod.dialogs.debug.SummonCreature").placeCreature(self, place_actor)
+		SummonCreature.placeCreature(self, place_actor)
 	end
 end
 

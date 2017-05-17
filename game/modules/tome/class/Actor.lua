@@ -3323,6 +3323,15 @@ end
 
 -- Level up talents to match actor level
 function _M:resolveLevelTalents()
+	-- learn any talents previously set to level up
+	if self.learn_tids then
+		for tid, lev in pairs(self.learn_tids) do
+			if self:getTalentLevelRaw(tid) < lev then
+				self:learnTalent(tid, true, lev - self:getTalentLevelRaw(tid))
+			end
+		end
+		self.learn_tids = nil
+	end
 	if not self.start_level or not self._levelup_talents then return end
 
 	local maxfact = 1  -- Balancing parameter for levels > 50: maxtalent level = actorlevel/50*maxfact * normal max talent level
@@ -4230,7 +4239,7 @@ end
 
 --- Checks if the given item should respect its slot_forbid value
 -- @param o the item to check
--- @param in_inven the inventory id in which the item is worn or tries to be worn
+-- @param in_inven_id the inventory id in which the item is worn or tries to be worn
 function _M:slotForbidCheck(o, in_inven_id)
 	in_inven_id = self:getInven(in_inven_id).id
 	if self:attr("allow_mainhand_2h_in_1h") and in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" then
@@ -4239,59 +4248,165 @@ function _M:slotForbidCheck(o, in_inven_id)
 	return true
 end
 
---- Can we wear this item?
-function _M:canWearObject(o, try_slot)
-	if self:attr("forbid_arcane") and o.power_source and o.power_source.arcane then
-		return nil, "antimagic"
-	end
---	if o.power_source and o.power_source.antimagic and not self:attr("forbid_arcane") then
---		return nil, "requires antimagic"
---	end
-
-	local oldreq = nil
-	if o.subtype == "shield" and self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
-		oldreq = rawget(o, "require")
-		o.require = table.clone(oldreq or {}, true)
-		if o.require.stat and o.require.stat.str then
-			o.require.stat.cun, o.require.stat.str = o.require.stat.str, nil
+--- get an ordered list of inventories in which an object may be equipped (does not check self:canWearObject)
+-- @param o: the object to equip
+-- @param filter_field: field to check in each inventory for an object filter (defaults to "auto_equip_filter")
+-- @return table of allowed inventories
+-- 		(sets filter._equipping_entity == self before testing the filter)
+function _M:getFilteredInventories(o, filter_field)
+	filter_field = filter_field or "auto_equip_filter"
+	-- checks main and offslot (could check others here)
+	local invens = {o:wornInven()}
+	invens[#invens+1] = self:getObjectOffslot(o)
+	for i = #invens, 1, -1 do
+		local inv = self:getInven(invens[i])
+		local ok
+		if inv then
+			ok = true
+			local flt = inv[filter_field]
+			if flt then
+				flt._equipping_entity = self
+				if not game.zone:checkFilter(o, flt, "object") then	ok = false end
+				flt._equipping_entity = nil
+			end
 		end
-		if o.require.talent then for i, tr in ipairs(o.require.talent) do
+		if ok then
+			invens[i] = inv
+		else
+			table.remove(invens, i)
+		end
+	end
+	return invens
+end
+
+--- Try to wear objects carried in main inventory, looking for open spots before replacing worn objects
+-- @param force: force retrying wearing of equipment (if new objects have been added)
+-- @param replace_chk: optional replacement compare function(new_obj, worn_obj) return true to allow replacement
+--		by default, an object is weighted according to its power rank plus material_level/2
+-- @param filter_field: field to check in each inventory for an object filter (defaults to "auto_equip_filter")
+-- 	a worn object is only replaced if the replacement passes the defined filter field or matches its type and subtype
+function _M:wearAllInventory(force, replace_chk, filter_field)
+	filter_field = filter_field or "auto_equip_filter"
+	local MainInven, o = self:getInven(self.INVEN_INVEN)
+	if MainInven and (force or not MainInven._no_equip_objects) then
+		print("[Actor:wearAllInventory] checking inventory items", self.uid, self.name, force, filter_field, replace_chk)
+		for i = #MainInven, 1, -1 do
+			o = MainInven[i]
+			print("[Actor:wearAllInventory]", self.name, self.uid, "checking", o.name, "type", o.type, o.subtype)
+			local invens = self:getFilteredInventories(o, filter_field)
+			if #invens > 0 and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
+				o = self:removeObject(self.INVEN_INVEN, i) -- remove from main inventory
+				local try_replace, done = true, false
+				repeat -- look for open slots before trying to replace other objects
+					try_replace = not try_replace
+					for j, inven in ipairs(invens) do
+						local ro, replace, worn = inven and inven[1], false
+--						print("[Actor:wearAllInventory]", self.uid, self.name, "checking inventory ", inven.name, o.name)
+						if try_replace and ro then
+							-- allow replacement for filtered inventories or matching types
+							if o.type == ro.type and o.subtype == ro.subtype or inven[filter_field] then
+								-- only replace with "better" equipment (could put more sophisticated criteria here)
+								if replace_chk then
+									replace = replace_chk(o, ro)
+								else replace = o:getPowerRank() + (o.material_level or 0)/2 > ro:getPowerRank() + (ro.material_level or 0)/2
+								end
+							end
+						end
+						worn = self:wearObject(o, replace, false, inven)
+						if worn then
+							print("[Actor:wearAllInventory]", self.name, self.uid, "wearing", inven.name, o.uid, o.name)
+game.log("#YELLOW#[Actor:wearAllInventory]#LAST# %s[%s](%s,%s) wearing %s%s", self.name, self.uid, self.x, self.y, o:getName({do_color=true, no_add_name=true}), type(worn)=="table" and ", #ORANGE#REPLACING#LAST# "..worn:getName({do_color=true, no_add_name=true}) or "") -- debugging
+							if type(worn) == "table" then -- Note: doesn't support auto-swapping tinkers
+								print("    --- replacing:", worn.uid, worn.name)
+								self:addObject(self.INVEN_INVEN, worn)
+							end
+							done = true break
+						end
+					end
+				until done or try_replace
+				-- return to main inventory if not worn
+				if not o.wielded then self:addObject(self.INVEN_INVEN, o) end
+			end
+		end
+		MainInven._no_equip_objects = true
+	end
+end
+
+--- Get updated requirements to wear an object
+-- applies known talents to modify requirements to wear an object
+-- @param o the object to test
+-- @return the new object require table
+-- @return the old object require table
+function _M:updateObjectRequirements(o)
+	local oldreq = rawget(o, "require")
+	if not oldreq then return oldreq end
+	local newreq
+	if o.subtype == "shield" and self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
+		newreq = newreq or table.clone(oldreq, true)
+		if newreq.stat and newreq.stat.str then
+			newreq.stat.cun, newreq.stat.str = newreq.stat.str, nil
+		end
+		if newreq.talent then for i, tr in ipairs(newreq.talent) do
 			if tr[1] == self.T_ARMOUR_TRAINING then
-				o.require.talent[i] = {self.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
+				newreq.talent[i] = {self.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
 				break
 			end
 		end end
 	end
 	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
-		oldreq = rawget(o, "require")
-		o.require = table.clone(oldreq or {}, true)
-		if o.require.stat and o.require.stat.str then
-			o.require.stat.dex, o.require.stat.str = o.require.stat.str, nil
+		newreq = newreq or table.clone(oldreq, true)
+		if newreq.stat and newreq.stat.str then
+			newreq.stat.dex, newreq.stat.str = newreq.stat.str, nil
 		end
-		if o.require.talent then for i, tr in ipairs(o.require.talent) do
+		if newreq.talent then for i, tr in ipairs(newreq.talent) do
 			if tr[1] == self.T_ARMOUR_TRAINING then
-				o.require.talent[i] = {self.T_AGILE_DEFENSE, 1}
+				newreq.talent[i] = {self.T_AGILE_DEFENSE, 1}
 				break
 			end
 		end end
 	end
 	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
-		oldreq = rawget(o, "require")
-		o.require = table.clone(oldreq or {}, true)
-		if o.require.stat and o.require.stat.str then
-			o.require.stat.mag, o.require.stat.str = o.require.stat.str, nil
+		newreq = newreq or table.clone(oldreq, true)
+		if newreq.stat and newreq.stat.str then
+			newreq.stat.mag, newreq.stat.str = newreq.stat.str, nil
 		end
 	end
+	return newreq or oldreq, oldreq
+end
 
-	local ok, reason = engine.interface.ActorInventory.canWearObject(self, o, try_slot)
-
-	if oldreq then
-		o.require = oldreq
+--- Can we wear this item?
+function _M:canWearObject(o, try_slot)
+	if self:attr("forbid_arcane") and o.power_source and o.power_source.arcane then
+		return nil, "antimagic"
 	end
 
+	local oldreq
+	o.require, oldreq = self:updateObjectRequirements(o)
+
+	local ok, reason = engine.interface.ActorInventory.canWearObject(self, o, try_slot)
+	o.require = oldreq
 	return ok, reason
 end
 
+--- search all inventories for an object (including attached tinkers)
+-- @param o: the object to look for
+-- @param fct: optional function(o, self, inven, slot, attached) to call when found
+-- @return[1] nil if not found
+-- @return[2] found inventory
+-- @return[2] found inventory slot
+-- @return[2] found object o was attacked to (if o.is_tinker is defined)
+function _M:searchAllInventories(o, fct)
+	local inv, slot, attached
+	self:inventoryApplyAll(function (inven, item, obj)
+		if obj == o or o.is_tinker and obj.tinker == o then
+			inv, slot, attached = inven, item, obj.tinker == o and obj or nil
+			--print("[Actor:searchAllInventories] found", o.name, "Inven:", inv.name or inv.id, "Slot:", slot, "tinkered to:", attached and attached.name)
+			if fct then fct(o, self, inv, slot, attached) end
+		end
+	end)
+	return inv, slot, attached
+end
+		
 function _M:lastLearntTalentsMax(what)
 	if self:attr("infinite_respec") then return 99999 end
 	return what == "generic" and 3 or 4
@@ -6916,8 +7031,8 @@ end
 
 function _M:canUseTinker(tinker)
 	if not tinker.is_tinker then return nil, "not an attachable item" end
-	if not self.can_tinker then return nil, "can not use attachements" end
-	if not self.can_tinker[tinker.is_tinker] then return nil, "can not use attachements of this type" end
+	if not self.can_tinker then return nil, "can not use attachments" end
+	if not self.can_tinker[tinker.is_tinker] then return nil, "can not use attachments of this type" end
 	if tinker.tinker_allow_attach and tinker:tinker_allow_attach() then return nil, tinker:tinker_allow_attach() end
 	return true
 end

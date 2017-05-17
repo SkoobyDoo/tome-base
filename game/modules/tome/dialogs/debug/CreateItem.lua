@@ -29,6 +29,7 @@ local Object = require "mod.class.Object"
 module(..., package.seeall, class.inherit(Dialog, Focusable, UIGroup))
 
 function _M:init()
+	self.actor = game.player
 	self:generateList()
 	Dialog.init(self, "DEBUG -- Create Object", 1, 1)
 	self.list_width = 500
@@ -164,6 +165,7 @@ function _M:init()
 			end
 		end,
 	}
+	self:setFocus(self.o_list)
 end
 
 function _M:on_register()
@@ -201,7 +203,7 @@ function _M:list_select(item, sel)
 			local ok, ret, special = xpcall(function()
 				item.obj = game.zone:finishEntity(game.level, "object", item.e)
 				item.obj.identified = true
-				local od = item.obj:getDesc({do_color=true}, nil, true, game.player)
+				local od = item.obj:getDesc({do_color=true}, nil, true, self.actor)
 				if type(od) == "string" then od = od:toTString() end
 				table.insert(od, 1, true)
 				table.insert(od, 1, "#CRIMSON#==Resolved Example==#LAST#")
@@ -230,8 +232,9 @@ function _M:objectToTarget(obj)
 			if act then
 				if act:getInven(act.INVEN_INVEN) then
 					if act:addObject(act.INVEN_INVEN, obj) then
-						game.log("#LIGHT_BLUE#Added %s to main inventory of [%s]%s at (%d, %d)", obj:getName({do_color=true}), act.uid, act.name, x, y)
 						game.zone:addEntity(game.level, obj, "object")
+						_M.findObject(self, obj, act)
+					else game.log("#LIGHT_BLUE#Could not add object to %s at (%d, %d)", act.name, x, y)
 					end
 				end
 			else
@@ -244,23 +247,22 @@ function _M:objectToTarget(obj)
 end
 
 --- Create the object, either dropping it or adding it to the player or npc's inventory
-function _M:acceptObject(obj)
+function _M:acceptObject(obj, actor)
 	if not obj then game.log("#LIGHT_BLUE#No object to create")
 	else
 		obj = obj:cloneFull()
-		local plr = game.player
-
-		-- choose where to put object (default is player inventory)
+		actor = actor or self.actor or game.player
+		-- choose where to put object (default is current actor's inventory)
 		local d = Dialog:multiButtonPopup("Place Object", "Place the object where?",
-			{{name=("Player Inventory"):format(), choice="player", fct=function(sel)
+			{{name=("Inventory of %s%s"):format( actor.name, actor.player and " #LIGHT_GREEN#(player)#LAST#" or ""), choice="player", fct=function(sel)
 				if not obj.quest and not obj.plot then obj.__transmo = true end
-				plr:addObject(plr.INVEN_INVEN, obj)
+				actor:addObject(actor.INVEN_INVEN, obj)
 				game.zone:addEntity(game.level, obj, "object")
-				game.log("#LIGHT_BLUE#Added %s to player inventory", obj:getName({do_color=true}))
+				_M.findObject(self, obj, actor)
 			end},
-			{name=("Drop @ Player"):format(), choice="drop", fct=function(sel)
-				game.zone:addEntity(game.level, obj, "object", plr.x, plr.y)
-				game.log("#LIGHT_BLUE#Dropped %s at (%d, %d)", obj:getName({do_color=true}), plr.x, plr.y)
+			{name=("Drop @ (%s, %s)%s"):format(actor.x, actor.y, actor.player and " #LIGHT_GREEN#(player)#LAST#" or ""), choice="drop", fct=function(sel)
+				game.zone:addEntity(game.level, obj, "object", actor.x, actor.y)
+				game.log("#LIGHT_BLUE#Dropped %s at (%d, %d)", obj:getName({do_color=true}), actor.x, actor.y)
 			end},
 			{name=("NPC Inventory"):format(), choice="npc", fct=function(sel)
 				local x, y, act = _M.objectToTarget(self, obj)
@@ -275,6 +277,15 @@ function _M:acceptObject(obj)
 			false, 4, 1 -- cancel on escape, default
 		)
 	end
+end
+
+--- Report all locations of obj in actor's inventories
+function _M:findObject(obj, actor)
+	if not (obj and actor) then return end
+	local inv, slot, attached = actor:searchAllInventories(obj, function(o, who, inven, slot, attached)
+		game.log("#LIGHT_BLUE#OBJECT:#LAST# %s%s: #LIGHT_BLUE#[%s] %s {%s, slot %s} at (%s, %s)#LAST#", o:getName({do_color=true, no_add_name=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", who.uid, who.name, inven.name, slot, who.x, who.y)
+	end)
+	return inv, slot, attached
 end
 
 -- debugging: check for bad objects
@@ -308,7 +319,7 @@ function _M:use(item)
 						for i = 1, qty do
 							local n = game.zone:finishEntity(game.level, "object", item.e, {ego_chance=-1000})
 							n:identify(true)
-							game.zone:addEntity(game.level, n, "object", game.player.x, game.player.y)
+							game.zone:addEntity(game.level, n, "object", self.actor.x, self.actor.y)
 							game.log("#LIGHT_BLUE#Created %s", n:getName({do_color=true}))
 						end
 					else
@@ -322,7 +333,7 @@ function _M:use(item)
 							for i = 1, qty do
 								local n = game.zone:finishEntity(game.level, "object", item.e, f)
 								n:identify(true)
-								game.zone:addEntity(game.level, n, "object", game.player.x, game.player.y)
+								game.zone:addEntity(game.level, n, "object", self.actor.x, self.actor.y)
 								game.log("#LIGHT_BLUE#Created %s", n:getName({do_color=true}))
 							end
 						end)

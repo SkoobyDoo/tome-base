@@ -46,57 +46,12 @@ _M._special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_k
 
 function _M:getRequirementDesc(who)
 	local base_getRequirementDesc = engine.Object.getRequirementDesc
-	if self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_SKIRMISHER_BUCKLER_EXPERTISE) then
-		local oldreq = rawget(self, "require")
-		self.require = table.clone(oldreq, true)
-		if self.require.stat and self.require.stat.str then
-			self.require.stat.cun, self.require.stat.str = self.require.stat.str, nil
-		end
-		if self.require.talent then for i, tr in ipairs(self.require.talent) do
-			if tr[1] == who.T_ARMOUR_TRAINING then
-				self.require.talent[i] = {who.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
-				break
-			end
-		end end
-
-		local desc = base_getRequirementDesc(self, who)
-
-		self.require = oldreq
-
-		return desc
-	elseif self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_AGILE_DEFENSE) then
-		local oldreq = rawget(self, "require")
-		self.require = table.clone(oldreq, true)
-		if self.require.stat and self.require.stat.str then
-			self.require.stat.dex, self.require.stat.str = self.require.stat.str, nil
-		end
-		if self.require.talent then for i, tr in ipairs(self.require.talent) do
-			if tr[1] == who.T_ARMOUR_TRAINING then
-				self.require.talent[i] = {who.T_AGILE_DEFENSE, 1}
-				break
-			end
-		end end
-
-		local desc = base_getRequirementDesc(self, who)
-
-		self.require = oldreq
-
-		return desc
-	elseif (self.type =="weapon" or self.type=="ammo") and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
-		local oldreq = rawget(self, "require")
-		self.require = table.clone(oldreq, true)
-		if self.require.stat and self.require.stat.str then
-			self.require.stat.mag, self.require.stat.str = self.require.stat.str, nil
-		end
-
-		local desc = base_getRequirementDesc(self, who)
-
-		self.require = oldreq
-
-		return desc
-	else
-		return base_getRequirementDesc(self, who)
-	end
+	
+	local oldreq
+	self.require, oldreq = who:updateObjectRequirements(self)
+	local ret = base_getRequirementDesc(self, who)
+	self.require = oldreq
+	return ret
 end
 
 local auto_moddable_tile_slots = {
@@ -465,8 +420,8 @@ function _M:getPowerRank()
 	if self.godslayer then return 10 end
 	if self.legendary then return 5 end
 	if self.unique then return 3 end
-	if self.egoed and self.greater_ego then return 2 end
-	if self.egoed or self.rare then return 1 end
+	if self.egoed and self.greater_ego or self.rare then return 2 end
+	if self.egoed then return 1 end
 	return 0
 end
 

@@ -395,7 +395,7 @@ end
 
 -- show the inventory screen
 function _M:showInventory()
-	if self.actor.no_inventory_access or not self.actor.player then return end
+	if not config.settings.cheat and (self.actor.no_inventory_access or not self.actor.player) then return end
 	local d
 	local titleupdator = self.actor:getEncumberTitleUpdator("Inventory")
 	local offset = self.actor.off_weapon_slots

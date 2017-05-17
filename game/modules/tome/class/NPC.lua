@@ -37,6 +37,28 @@ end
 
 _M._silent_talent_failure = true
 
+-- debugging: add some extra object resolvers to each NPC definition
+local alter = function(e)
+--	if e.material_level then e.material_level = e.material_level + 5 end
+end
+function _M.loadList(self, file, no_default, res, mod, loaded)
+--print("loading npc list with custom function")
+	local old_mod = mod
+	mod = function(e)
+		print("Custom modify called on:", e.name)
+		if old_mod then old_mod(e) end
+		if e.rarity and e.inven and #e.inven > 1 then
+			if e.inven[1] then e.inven[1].max = math.max(e.inven[1].max, 20) end
+			e:attr("max_encumber", 100)
+--			e[#e+1] = resolvers.equip{{properties={"slot"}, not_properties={"imbue_powers"}, alter=alter}}
+			e[#e+1] = resolvers.inventory{{properties={"slot"}, not_properties={"imbue_powers"}, alter=alter, ignore_material_restriction=true}}
+			e[#e+1] = resolvers.drops{nb=3, {properties={"slot"}, not_properties={"imbue_powers"}, alter=alter, ignore_material_restriction=true}}
+		end
+	end
+	return engine.Entity.loadList(self, file, no_default, res, mod, loaded)
+end
+-- debugging
+
 function _M:actBase()
 	-- Reduce shoving pressure every turn
 	if self.shove_pressure then
@@ -476,23 +498,20 @@ function _M:addedToLevel(level, x, y)
 			end
 			-- Give unrand bosses extra classes
 			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
-				local data = {}
-				if self.rank == 3.5 then data = {nb_classes=1}
-				elseif self.rank == 4 then data = {nb_classes=1}
-				elseif self.rank == 5 then data = {nb_classes=2}
-				elseif self.rank >= 10 then data = {nb_classes=3}
+				local nb_classes = 0
+				if self.rank >= 10 then nb_classes = 3
+				elseif self.rank >= 5 then nb_classes = 2
+				elseif self.rank >= 3.5 then nb_classes = 1
 				end
-				data.auto_sustain = true
-				data.forbid_equip = true
+				local data = {auto_sustain=true, forbid_equip=false, nb_classes=nb_classes, update_body=true, spend_points=true, autolevel=nb_classes<2 and self.autolevel or "random_boss"}
 				game.state:applyRandomClass(self, data, true)
+				self:resolve() self:resolve(nil, true)
 			end
 			-- Increase life
 			self.max_life_no_difficulty_boost = self.max_life
 			local lifeadd = self.max_life * 0.2
 			self.max_life = self.max_life + lifeadd
 			self.life = self.life + lifeadd
-			-- print("Insane increasing " .. self.name .. " life by " .. lifeadd)
-
 			self:attr("difficulty_boosted", 1)
 		elseif game.difficulty == game.DIFFICULTY_MADNESS then
 			-- Increase talent level
@@ -500,15 +519,15 @@ function _M:addedToLevel(level, x, y)
 				self:learnTalent(tid, true, math.ceil(lev * 1.7))
 			end
 			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
-				local data = {}
-				if self.rank == 3.5 then data = {nb_classes=1}
-				elseif self.rank == 4 then data = {nb_classes=2}
-				elseif self.rank == 5 then data = {nb_classes=3}
-				elseif self.rank >= 10 then data = {nb_classes=5}
+				local nb_classes = 0
+				if self.rank >= 10 then nb_classes = 5
+				elseif self.rank >= 5 then nb_classes = 3
+				elseif self.rank >= 4 then nb_classes = 2
+				elseif self.rank >= 3.5 then nb_classes = 1
 				end
-				data.auto_sustain = true
-				data.forbid_equip = true
+				local data = {auto_sustain=true, forbid_equip=false, nb_classes=nb_classes, update_body=true, spend_points=true, autolevel=nb_classes<2 and self.autolevel or "random_boss"}
 				game.state:applyRandomClass(self, data, true)
+				self:resolve() self:resolve(nil, true)
 			end
 			-- Increase life
 			self.max_life_no_difficulty_boost = self.max_life
@@ -518,39 +537,8 @@ function _M:addedToLevel(level, x, y)
 			
 			self:attr("difficulty_boosted", 1)
 		end
-		
-		-- try to equip inventory items
-		local MainInven, o = self:getInven(self.INVEN_INVEN)
 
---if config.settings.cheat then self:inventoryApplyAll(function(inv, item, o) o:identify(true) end) end-- temp
-		
-		if MainInven then --try to equip items from inventory
-			for i = #MainInven, 1, -1 do
-				o = MainInven[i]
-				local inven, worn = self:getInven(o:wornInven())
-					--print("[NPC:addedToLevel]", self.name, self.uid, "checking", o.name, "type", o.type)
-				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") and not (o.type and o.type == "weapon" and self.no_npc_weapon_equip) then -- check restrictions
-					--print("[NPC:addedToLevel]", self.name, self.uid, "passed restriction check", o.name)
-					local ro, replace = inven and inven[1], false
-					o = self:removeObject(self.INVEN_INVEN, i)
-					if o then
-
-					-- could put more sophisticated criteria here to pick the best gear
-						if ro and o.type == ro.type and o.subtype == ro.subtype and (o.rare or o.randart or o.unique) and not (ro.rare or ro.randart or ro.unique) then replace = true end
-						worn = self:wearObject(o, replace, false)
-						if worn then
-							print("[NPC:addedToLevel]", self.name, self.uid, "wearing", o.name)
-							if type(worn) == "table" then
-								print("--- replacing", worn.name)
-								self:addObject(self.INVEN_INVEN, worn)
-							end
-						else
-							self:addObject(self.INVEN_INVEN, o) -- put object back in main inventory
-						end
-					end
-				end
-			end
-		end
+		self:wearAllInventory()
 		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
 			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})
 		end
