@@ -52,29 +52,6 @@ newBirthDescriptor{
 	random_escort_possibilities = { {"tier1.1", 1, 2}, {"tier1.2", 1, 2}, {"daikara", 1, 2}, {"old-forest", 1, 4}, {"dreadfell", 1, 8}, {"reknor", 1, 2}, },
 
 	moddable_attachement_spots = "race_dwarf",
-	cosmetic_unlock = { -- debugging temporary
-		cosmetic_race_dwarf_female_beard = {
-			{priority=2, name="Beard [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.moddable_tile_ornament={female="beard_"..(actor.is_redhead and "redhead_" or "").."01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
-			{priority=2, name="Sideburns [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.moddable_tile_ornament={female="sideburners_"..(actor.is_redhead and "redhead_" or "").."01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
-			{priority=2, name="Mustache [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.moddable_tile_ornament={female="mustache_"..(actor.is_redhead and "redhead_" or "").."01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
-			{priority=2, name="Flip [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.moddable_tile_ornament={female="flip_"..(actor.is_redhead and "redhead_" or "").."01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
-			{priority=2, name="Donut [donator only]", donator=true, on_actor=function(actor) if actor.moddable_tile then actor.moddable_tile_ornament={female="donut_"..(actor.is_redhead and "redhead_" or "").."01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
-		},
-		cosmetic_race_human_redhead = {
-			{priority=1, name="Redhead [donator only]", donator=true, reset=function(actor) actor.is_redhead=false end, on_actor=function(actor) if actor.moddable_tile then actor.is_redhead = true actor.moddable_tile_base = "base_redhead_01.png" actor.moddable_tile_ornament2={male="beard_redhead_02"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Male" end},
-			{priority=1, name="Redhead [donator only]", donator=true, reset=function(actor) actor.is_redhead=false end, on_actor=function(actor) if actor.moddable_tile then actor.is_redhead = true actor.is_redhead = true actor.moddable_tile_base = "base_redhead_01.png" actor.moddable_tile_ornament2={female="braid_redhead_01"} end end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
-		},
-		cosmetic_bikini =  {
-			{name="Bikini [donator only]", donator=true, on_actor=function(actor, birther, last)
-				if not last then local o = birther.obj_list_by_name.Bikini if not o then print("No bikini found!") return end actor:getInven(actor.INVEN_BODY)[1] = o:cloneFull()
-				else actor:registerOnBirthForceWear("FUN_BIKINI") end
-			end, check=function(birth) return birth.descriptors_by_type.sex == "Female" end},
-			{name="Mankini [donator only]", donator=true, on_actor=function(actor, birther, last)
-				if not last then local o = birther.obj_list_by_name.Mankini if not o then print("No mankini found!") return end actor:getInven(actor.INVEN_BODY)[1] = o:cloneFull()
-				else actor:registerOnBirthForceWear("FUN_MANKINI") end
-			end, check=function(birth) return birth.descriptors_by_type.sex == "Male" end},
-		},
-	},
 }
 
 ---------------------------------------------------------
