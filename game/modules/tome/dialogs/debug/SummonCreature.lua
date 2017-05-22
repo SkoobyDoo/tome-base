@@ -80,7 +80,6 @@ function _M:finishActor(actor, x, y)
 		actor._debug_finished = true
 		actor:resolveLevelTalents() -- make sure all talents have been learned
 		actor:resolve(); actor:resolve(nil, true) -- make sure all resolvers are complete
-		actor:wearAllInventory() -- try to wear inventory items
 		local old_escort = actor.make_escort -- making escorts fails without a position
 		actor.make_escort = nil
 		-- Note: this triggers functions "addedToLevel", "on_added", "on_added_to_level" which includes spawning escorts, updating for game difficulty, etc.

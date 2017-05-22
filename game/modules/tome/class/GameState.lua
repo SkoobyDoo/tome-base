@@ -1930,7 +1930,7 @@ end
 --- Add one or more character classes to an actor, updating stats, talents, and equipment
 --	@param b = actor(boss) to update
 --	@param data = optional parameters:
---	@param data.update_body set true to add a full suite of inventories
+--	@param data.update_body a table of inventories to add, set true to add a full suite of inventories
 --	@param data.force_classes = specific subclasses to apply first, ignoring restrictions
 --		{"Rogue", "Necromancer", Corruptor = true, Bulwark = true, ...}
 --		applied in order of numerical index, then randomly
@@ -1943,7 +1943,7 @@ end
 --	@param data.add_trees = {["talent tree name 1"]=true/mastery bonus, ["talent tree name 2"]=true/mastery bonus, ..} additional talent trees to learn
 --	@param data.check_talents_level set true to enforce talent level restrictions <nil>
 --	@param data.auto_sustain set true to activate sustained talents at birth <nil>
---	@param data.forbid_equip set true to not apply equipment resolvers or equip inventory <nil>
+--	@param data.forbid_equip set true to not apply class equipment resolvers or equip inventory <nil>
 --	@param data.loot_quality = drop table to use for equipment <"boss">
 --	@param data.drop_equipment set true to force dropping of equipment <nil>
 --	@param instant set true to force instant learning of talents and generating golem <nil>
@@ -2119,9 +2119,10 @@ function _M:applyRandomClass(b, data, instant)
 
 	-- add a full set of inventories if needed
 	if data.update_body then
-		b.body = { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, FINGER = 2, NECK = 1, LITE = 1, BODY = 1, HEAD = 1, CLOAK = 1, HANDS = 1, BELT = 1, FEET = 1, TOOL = 1, QUIVER = 1, QS_QUIVER = 1 }
+		b.body = type(data.update_body) == "table" and data.update_body or { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, FINGER = 2, NECK = 1, LITE = 1, BODY = 1, HEAD = 1, CLOAK = 1, HANDS = 1, BELT = 1, FEET = 1, TOOL = 1, QUIVER = 1, QS_QUIVER = 1 }
 		b:initBody()
 	end
+
 	-- Select classes
 	local classes = Birther.birth_descriptor_def.subclass
 	if data.force_classes then -- apply forced classes first, by index, then in random order
@@ -2235,6 +2236,7 @@ function _M:createRandomBoss(base, data)
 	b.inven = {}
 	b.body = { INVEN = 1000, QS_MAINHAND = 1, QS_OFFHAND = 1, MAINHAND = 1, OFFHAND = 1, FINGER = 2, NECK = 1, LITE = 1, BODY = 1, HEAD = 1, CLOAK = 1, HANDS = 1, BELT = 1, FEET = 1, TOOL = 1, QUIVER = 1, QS_QUIVER = 1 }
 	b:initBody()
+	-- don't auto equip inventory if forbidden
 	if data.forbid_equip then b.inven[b.INVEN_INVEN]._no_equip_objects = true end
 	b:resolve()
 	-- Start with sustains sustained
@@ -2244,12 +2246,20 @@ function _M:createRandomBoss(base, data)
 	b.autolevel = "random_boss"
 	b.auto_stats = {}
 
---[[
-	-- Remove default equipment, if any (Needed?)
-	local todel = {}
-	for k, resolver in pairs(b) do if type(resolver) == "table" and resolver.__resolver and (resolver.__resolver == "equip" or resolver.__resolver == "drops") then todel[#todel+1] = k end end
-	for _, k in ipairs(todel) do b[k] = nil end
---]]
+	-- Update default equipment, if any, to "boss" levels
+	for k, resolver in ipairs(b) do
+		if type(resolver) == "table" and resolver.__resolver == "equip" then
+			resolver[1].id = nil
+			for i, d in ipairs(resolver[1]) do
+				d.name, d.id = nil, nil
+				d.ego_chance = nil
+				d.ignore_material_restriction = true
+				d.forbid_power_source = b.not_power_source
+				d.tome_drops = data.loot_quality or "boss"
+				d.force_drop = (data.drop_equipment == nil) and true or data.drop_equipment
+			end
+		end
+	end
 	
 	-- Boss worthy drops
 	b[#b+1] = resolvers.drops{chance=100, nb=data.loot_quantity or 3, {tome_drops=data.loot_quality or "boss"} }

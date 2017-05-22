@@ -81,7 +81,7 @@ newEntity{
 	resists = { all = 40, },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, FEET=1 },
-	resolvers.auto_equip_filters("Archmage"),
+	resolvers.auto_equip_filters("Archmage", true),
 	resolvers.equip{
 		{type="weapon", subtype="staff", defined="STAFF_ABSORPTION_AWAKENED", autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},

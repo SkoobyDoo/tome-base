@@ -77,7 +77,7 @@ function _M:initBody()
 			long_name = "INVEN_"..inven
 			def = self.inven_def[self[long_name]]
 			assert(def, "inventory slot undefined: "..inven)
-			self.inven[self[long_name]] = table.merge(self.inven[self[long_name]] or {}, {worn=def.is_worn, id=self[long_name], name=inven, stack_limit = def.stack_limit})
+			self.inven[self[long_name]] = table.merge(self.inven[self[long_name]] or {}, {worn=def.is_worn, id=self[long_name], name=inven, short_name=def.short_name, stack_limit = def.stack_limit})
 			if type(max) == "table" then
 				table.merge(self.inven[self[long_name]], max, true)
 			else
@@ -99,7 +99,7 @@ function _M:getInven(id)
 	end
 end
 
---- Returns the content of an inventory as a table
+--- Returns the inventory definition
 function _M:getInvenDef(id)
 	if type(id) == "number" then
 		return self.inven_def[id]

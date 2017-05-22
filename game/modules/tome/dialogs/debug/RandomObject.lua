@@ -63,12 +63,25 @@ _M.filter_help = _M.filter_help.."\n#GOLD#FILTER HELP#LAST# "..formatHelp(lines,
 lines, fname, lnum = DebugConsole:functionHelp(game.state.generateRandart)
 _M.data_help = "#GOLD#RANDART DATA HELP#LAST# "..formatHelp(lines, fname, lnum)
 
-lines, fname, lnum = DebugConsole:functionHelp(resolvers.generateObject)
-_M.resolver_genObj_help = "#GOLD#resolvers.generateObject#LAST# "..formatHelp(lines, fname, lnum)
+lines, fname, lnum = DebugConsole:functionHelp(resolvers.resolveObject)
+_M.resolver_genObj_help = "#GOLD#resolvers.resolveObject#LAST# "..formatHelp(lines, fname, lnum)
 
 --- configure resolvers that can be used
 _M.resolver_choices = {{name="None", resolver=nil, desc="Don't apply a resolver"},
-	{name="Equipment", resolver="equip", desc="Object will be equipped if possible, otherwise added to main inventory"},
+	{name="Equipment", resolver="equip", desc="Object will be equipped if possible, otherwise added to main inventory",
+	generate=function(dialog) -- generate an object, forcing antimagic check
+		local res_input, ok, t
+		if dialog._random_filter then
+			ok, t = dialog:interpretTable(dialog._random_filter, "equip resolver filter")
+			if not ok then return end
+			res_input = t
+		end
+		res_input = res_input or {}
+		res_input.check_antimagic = true
+		_M._random_filter_table = res_input
+		return resolvers.resolveObject(_M.actor, res_input, false, 5)
+	end,
+	},
 	{name="Inventory", resolver="inventory", desc="Object added to main inventory"},
 	{name="Drops", resolver="drops", desc="Object added to main inventory (dropped on death)"},
 	{name="Attach Tinker", resolver="attachtinker", desc="Tinker will be attached to a worn object"},
@@ -148,7 +161,7 @@ function _M:init(actor)
 Use "Generate" to create objects for preview and inspection.
 Use "Add Object" to choose where to put the object and add it to the game.
 (Mouse over controls for a preview of the generated object/working Actor. (Press #GOLD#'L'#LAST# to lua inspect.)
-#SALMON#Resolvers#LAST# act on the working actor (player) to generate a single object.
+#SALMON#Resolvers#LAST# act on the working actor (default: player) to generate a SINGLE object.
 They use the #LIGHT_GREEN#Random filter#LAST# as input unless noted otherwise and control object destination.
 Filters are interpreted by ToME and engine entity/object generation functions (game.zone:checkFilter, etc.).
 Interpretation of tables is within the _G environment (used by the Lua Console) using the current zone's #YELLOW_GREEN#object_list#LAST#.
@@ -573,7 +586,7 @@ function _M:generateRandom()
 		if apply_resolver.generate then
 			ok, o = pcall(apply_resolver.generate, self)
 		else
-			ok, o = pcall(resolvers.generateObject, _M.actor, filter, false)
+			ok, o = pcall(resolvers.resolveObject, _M.actor, filter, false)
 		end
 	else
 		ok, o = pcall(_M.generateByFilter, self, filter)

@@ -4248,84 +4248,39 @@ function _M:slotForbidCheck(o, in_inven_id)
 	return true
 end
 
---- get an ordered list of inventories in which an object may be equipped (does not check self:canWearObject)
--- @param o: the object to equip
--- @param filter_field: field to check in each inventory for an object filter (defaults to "auto_equip_filter")
--- @return table of allowed inventories
--- 		(sets filter._equipping_entity == self before testing the filter)
-function _M:getFilteredInventories(o, filter_field)
-	filter_field = filter_field or "auto_equip_filter"
-	-- checks main and offslot (could check others here)
-	local invens = {o:wornInven()}
-	invens[#invens+1] = self:getObjectOffslot(o)
-	for i = #invens, 1, -1 do
-		local inv = self:getInven(invens[i])
-		local ok
-		if inv then
-			ok = true
-			local flt = inv[filter_field]
-			if flt then
-				flt._equipping_entity = self
-				if not game.zone:checkFilter(o, flt, "object") then	ok = false end
-				flt._equipping_entity = nil
-			end
-		end
-		if ok then
-			invens[i] = inv
-		else
-			table.remove(invens, i)
-		end
-	end
-	return invens
-end
-
---- Try to wear objects carried in main inventory, looking for open spots before replacing worn objects
+--- Try to wear objects carried in main inventory, looking for the best spot to wear each
 -- @param force: force retrying wearing of equipment (if new objects have been added)
--- @param replace_chk: optional replacement compare function(new_obj, worn_obj) return true to allow replacement
---		by default, an object is weighted according to its power rank plus material_level/2
--- @param filter_field: field to check in each inventory for an object filter (defaults to "auto_equip_filter")
--- 	a worn object is only replaced if the replacement passes the defined filter field or matches its type and subtype
-function _M:wearAllInventory(force, replace_chk, filter_field)
-	filter_field = filter_field or "auto_equip_filter"
+-- @param ... arguments passed to obj:wornLocations for each object (weight_fn, filter_field, no_type_check)
+-- 	generally, an object is only replaced if the replacement passes the defined filter or matches its type/subtype
+function _M:wearAllInventory(force, ...)
 	local MainInven, o = self:getInven(self.INVEN_INVEN)
 	if MainInven and (force or not MainInven._no_equip_objects) then
-		print("[Actor:wearAllInventory] checking inventory items", self.uid, self.name, force, filter_field, replace_chk)
 		for i = #MainInven, 1, -1 do
+			if not o then print("[Actor:wearAllInventory]", self.uid, self.name, "wearing main inventory") end
 			o = MainInven[i]
-			print("[Actor:wearAllInventory]", self.name, self.uid, "checking", o.name, "type", o.type, o.subtype)
-			local invens = self:getFilteredInventories(o, filter_field)
-			if #invens > 0 and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
-				o = self:removeObject(self.INVEN_INVEN, i) -- remove from main inventory
-				local try_replace, done = true, false
-				repeat -- look for open slots before trying to replace other objects
-					try_replace = not try_replace
-					for j, inven in ipairs(invens) do
-						local ro, replace, worn = inven and inven[1], false
---						print("[Actor:wearAllInventory]", self.uid, self.name, "checking inventory ", inven.name, o.name)
-						if try_replace and ro then
-							-- allow replacement for filtered inventories or matching types
-							if o.type == ro.type and o.subtype == ro.subtype or inven[filter_field] then
-								-- only replace with "better" equipment (could put more sophisticated criteria here)
-								if replace_chk then
-									replace = replace_chk(o, ro)
-								else replace = o:getPowerRank() + (o.material_level or 0)/2 > ro:getPowerRank() + (ro.material_level or 0)/2
-								end
-							end
-						end
-						worn = self:wearObject(o, replace, false, inven)
+			--print("[Actor:wearAllInventory]", self.uid, self.name, "checking", o.name, "type", o.type, o.subtype)
+			if game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
+				local locs = o:wornLocations(self, ...) -- find places to wear
+				if locs then
+					o = self:removeObject(self.INVEN_INVEN, i) -- remove from main inventory
+print("[Actor:wearAllInventory] possible inventories for", o.uid, o.name, locs) table.print(locs) -- debugging
+					for j, inv in ipairs(locs) do
+						local ro, worn = inv.inv[inv.slot]
+						--print("\t\t attempting to wear", o.uid, o.name, "in", inv.inv.name, inv.slot)
+						worn = self:wearObject(o, true, false, inv.inv, inv.slot)
 						if worn then
-							print("[Actor:wearAllInventory]", self.name, self.uid, "wearing", inven.name, o.uid, o.name)
-game.log("#YELLOW#[Actor:wearAllInventory]#LAST# %s[%s](%s,%s) wearing %s%s", self.name, self.uid, self.x, self.y, o:getName({do_color=true, no_add_name=true}), type(worn)=="table" and ", #ORANGE#REPLACING#LAST# "..worn:getName({do_color=true, no_add_name=true}) or "") -- debugging
-							if type(worn) == "table" then -- Note: doesn't support auto-swapping tinkers
-								print("    --- replacing:", worn.uid, worn.name)
+							print("[Actor:wearAllInventory]", self.name, self.uid, o.uid, o.name, "WORN IN", inv.inv.name, inv.slot)
+game.log("#YELLOW#[Actor:wearAllInventory]#LAST# %s[%s](%s,%s) wearing %s%s", self.name, self.uid, self.x, self.y, o:getName({do_color=true, no_add_name=true}), type(worn)=="table" and ", #YELLOW#REPLACING#LAST# "..worn:getName({do_color=true, no_add_name=true}) or "") -- debugging
+							if type(worn) == "table" then -- Note: doesn't support auto-swapping tinkers (Actor:doWear)
+								print("    --- replaced:", worn.uid, worn.name)
 								self:addObject(self.INVEN_INVEN, worn)
 							end
-							done = true break
+							break
 						end
 					end
-				until done or try_replace
-				-- return to main inventory if not worn
-				if not o.wielded then self:addObject(self.INVEN_INVEN, o) end
+					-- return to main inventory if not worn
+					if not o.wielded then self:addObject(self.INVEN_INVEN, o) end
+				end
 			end
 		end
 		MainInven._no_equip_objects = true

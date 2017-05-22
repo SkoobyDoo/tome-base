@@ -313,6 +313,70 @@ function _M:use(who, typ, inven, item)
 	end
 end
 
+--- Find the best locations (inventory and slot) to try to wear an object in
+--		applies inventory filters, optionally sorted, does not check if the object can actually be worn
+-- @param use_actor: the actor to wear the object
+-- @param weight_fn[1]: a function(o, inven) returning a weight value for an object
+--		default is (1 + o:getPowerRank())*o.material_level, (0 for no object)
+-- @param weight_fn[2]: true weight is 1 (object) or 0 (no object) return empty locations (sorted)
+-- @param weight_fn[3]: false weight is 1 (object) or 0 (no object) return all locations (unsorted)
+-- @param filter_field: field to check in each inventory for an object filter (defaults: "auto_equip_filter")
+-- 		(sets filter._equipping_entity == use_actor before testing the filter)
+-- @param no_type_check: set to allow locations with objects of different type/subtype (automatic if a filter is defined)
+-- @return[1] nil if no locations could be found
+-- @return[2] an ordered list (table) of locations where the object can be worn, each with format:
+--		{inv=inventory (table), wt=sort weight, slot=slot within inventory}
+--		The sort weight for each location is computed = weight_fn(self, inven)-weight_fn(worn object, inven)
+--		(weight for objects that fail inventory filter checks is 0)
+--  	The list is sorted by descending weight, removing locations with sort weight <= 0
+function _M:wornLocations(use_actor, weight_fn, filter_field, no_type_check)
+	if not use_actor then return end
+	filter_field = filter_field == nil and "auto_equip_filter" or filter_field
+	if weight_fn == nil then
+		weight_fn = function(o, inven) return (1 + o:getPowerRank())*(o.material_level or 1) end
+	elseif weight_fn == true then
+		weight_fn = function(o, inven) return o and 1 or 0 end
+	end
+	-- considers main and offslot (could check others here)
+	-- Note: psionic focus needs code similar to that in the Telekinetic Grasp talent
+	local inv_ids = {self:wornInven()}
+	inv_ids[#inv_ids+1] = use_actor:getObjectOffslot(self)
+	local invens = {}
+	local new_wt = weight_fn and weight_fn(self) or 1
+	--print("[Object:wornLocations] found inventories", self.uid, self.name) table.print(inv_ids)
+	for i, id in ipairs(inv_ids) do
+		local inv = use_actor:getInven(id)
+		if inv then
+			local flt = inv[filter_field]
+			local match_types = not (no_type_check or flt)
+			if flt then
+				flt._equipping_entity = use_actor
+				if not game.zone:checkFilter(self, flt, "object") then inv = nil end
+			end
+			if inv then
+				local inv_name = use_actor:getInvenDef(id).short_name
+				for k = 1, math.min(inv.max, #inv + 1) do
+					local wo, wt = inv[k], new_wt
+					if wo then
+						if match_types and (self.type ~= wo.type or self.subtype ~= wo.subtype) and (inv_name == wo.slot or inv_name == use_actor:getObjectOffslot(wo)) then
+							wt = 0
+						elseif not flt or game.zone:checkFilter(wo, flt, "object") then
+							wt = wt - (weight_fn and weight_fn(wo) or 1)
+						end
+					end
+					if weight_fn == false or wt > 0 then invens[#invens+1] = {inv=inv, wt=wt, slot=k} end
+					if not wo then break end -- 1st open inventory slot
+				end
+			end
+			if flt then flt._equipping_entity = nil end
+		end
+	end
+	if #invens > 0 then
+		if weight_fn then table.sort(invens, function(a, b) return a.wt > b.wt end)	end
+		return invens
+	end
+end
+
 --- Returns a tooltip for the object
 function _M:tooltip(x, y, use_actor)
 	local str = self:getDesc({do_color=true}, game.player:getInven(self:wornInven()))
@@ -2027,6 +2091,13 @@ function _M:getDesc(name_param, compare_with, never_compare, use_actor)
 		if self.power_source.unknown then desc:add("Powered by ", {"color", "CRIMSON"}, "unknown forces", {"color", "LAST"}, true) end
 		self:triggerHook{"Object:descPowerSource", desc=desc, object=self}
 	end
+
+-- debugging
+--local weight_fn = function(o, inven) return (1 + o:getPowerRank()) * (o.material_level or 1) end
+--local weight_fn = function(o, inven) return ((1 + o:getPowerRank())*(o.material_level or 1))^.5 end
+local weight_fn = function(o, inven) return (1 + o:getPowerRank())*(o.material_level or 1) end
+desc:add({"color", "ORCHID"}, ("Power Value: %2.1f"):format(weight_fn(self)) ,{"color", "LAST"}, true)
+-- debugging
 
 	if self.encumber then
 		desc:add({"color",0x67,0xAD,0x00}, ("%0.2f Encumbrance."):format(self.encumber), {"color", "LAST"})
