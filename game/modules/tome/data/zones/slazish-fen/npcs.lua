@@ -135,7 +135,7 @@ newEntity{ base="BASE_NPC_NAGA", define_as = "ZOISLA",
 	resolvers.auto_equip_filters{MAINHAND = {subtype="trident"},},
 	resolvers.equip{
 		{type="weapon", subtype="trident", autoreq=true, force_drop=true, special_rarity="trident_rarity"},
-		{defined="ROBES_DEFLECTION", autoreq=true},
+		{defined="ROBES_DEFLECTION", replace_unique={type="armor", subtype="cloth"}, autoreq=true},
 	},
 	resolvers.drops{chance=100, nb=1, {unique=true, not_properties={"lore"}} },
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },

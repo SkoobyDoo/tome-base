@@ -59,9 +59,12 @@ newEntity{ define_as = "SHADE_OF_TELOS",
 	resists = {all = 25, [DamageType.COLD] = 100, [DamageType.ACID] = 100},
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, },
+	resolvers.auto_equip_filters("Archmage"),
 	resolvers.equip{
 		{type="weapon", subtype="staff", defined="TELOS_TOP_HALF", random_art_replace={chance=75}, autoreq=true},
-		{type="weapon", subtype="staff", defined="TELOS_BOTTOM_HALF", autoreq=true},
+		{type="weapon", subtype="staff", defined="TELOS_BOTTOM_HALF", autoreq=true,
+			replace_unique={not_properties={"slot_forbid"}, forbid_power_source={antimagic=true}, special=function(e) return e.slot == "OFFHAND" or e.offslot == "OFFHAND" end}
+		},
 	},
 	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
 
