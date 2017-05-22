@@ -292,8 +292,8 @@ function resolvers.auto_equip_filters(t, readonly)
 end
 
 --- Resolves the auto-equip filters for an actor by inventory slot
+--function resolvers.calc.auto_equip_filters(t, e, readonly)
 function resolvers.calc.auto_equip_filters(t, e, readonly)
-	readonly = readonly or t.readonly
 	local filters = t[1]
 	if type(filters) == "string" then -- get subclass filters
 		local c_name, ok = filters
@@ -303,7 +303,9 @@ function resolvers.calc.auto_equip_filters(t, e, readonly)
 game.log("[%s] %s: #ORCHID#resolvers.auto_equip_filters:#LAST# %s", e.uid, e.name, c_name) -- debugging
 			for i, res in ipairs(cc) do
 				if type(res) == "table" and res.__resolver == "auto_equip_filters" then
-					resolvers.calc.auto_equip_filters(res, e, readonly) ok = true
+					res = table.clone(res, true)
+					res.readonly = t.readonly or res.readonly
+					resolvers.calc.auto_equip_filters(res, e) ok = true
 				end
 			end
 		end
@@ -315,10 +317,11 @@ game.log("[%s] %s: #ORCHID#resolvers.auto_equip_filters:#LAST# {%s}", e.uid, e.n
 		local inven = e:getInven(inv)
 		if inven then
 			if not inven.auto_equip_filter or not inven.auto_equip_filter.readonly then
-				if filter.ignore_material_restriction == nil then filter.ignore_material_restriction = true end
-				if filter.allow_uniques == nil then filter.allow_uniques = true end
-				filter.readonly = readonly
-				inven.auto_equip_filter = filter
+				local aef = table.clone(filter, true)
+				if aef.ignore_material_restriction == nil then aef.ignore_material_restriction = true end
+				if aef.allow_uniques == nil then aef.allow_uniques = true end
+				aef.readonly = t.readonly
+				inven.auto_equip_filter = aef
 			end
 		end
 	end

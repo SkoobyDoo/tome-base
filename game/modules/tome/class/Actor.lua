@@ -4261,6 +4261,7 @@ function _M:wearAllInventory(force, ...)
 			--print("[Actor:wearAllInventory]", self.uid, self.name, "checking", o.name, "type", o.type, o.subtype)
 			if game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
 				local locs = o:wornLocations(self, ...) -- find places to wear
+				 -- Note: won't remove slot_forbid items or auto-swap tinkers (Actor:doWear)
 				if locs then
 					o = self:removeObject(self.INVEN_INVEN, i) -- remove from main inventory
 print("[Actor:wearAllInventory] possible inventories for", o.uid, o.name, locs) table.print(locs) -- debugging
@@ -4271,7 +4272,7 @@ print("[Actor:wearAllInventory] possible inventories for", o.uid, o.name, locs) 
 						if worn then
 							print("[Actor:wearAllInventory]", self.name, self.uid, o.uid, o.name, "WORN IN", inv.inv.name, inv.slot)
 game.log("#YELLOW#[Actor:wearAllInventory]#LAST# %s[%s](%s,%s) wearing %s%s", self.name, self.uid, self.x, self.y, o:getName({do_color=true, no_add_name=true}), type(worn)=="table" and ", #YELLOW#REPLACING#LAST# "..worn:getName({do_color=true, no_add_name=true}) or "") -- debugging
-							if type(worn) == "table" then -- Note: doesn't support auto-swapping tinkers (Actor:doWear)
+							if type(worn) == "table" then
 								print("    --- replaced:", worn.uid, worn.name)
 								self:addObject(self.INVEN_INVEN, worn)
 							end
