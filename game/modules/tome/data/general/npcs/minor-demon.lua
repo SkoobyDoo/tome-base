@@ -106,6 +106,7 @@ newEntity{ base = "BASE_NPC_DEMON",
 		[Talents.T_OVERPOWER]={base=1, every=6, max=5},
 		[Talents.T_RUSH]=6,
 	},
+	resolvers.auto_equip_filters("Bulwark"),
 	resolvers.equip{
 		{type="weapon", subtype="longsword", autoreq=true},
 		{type="armor", subtype="shield", autoreq=true},

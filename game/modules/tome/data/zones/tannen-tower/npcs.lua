@@ -49,6 +49,7 @@ newEntity{ define_as = "TANNEN",
 	blind_immune = 1,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1, },
+	resolvers.auto_equip_filters("Alchemist"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="staff", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="cloth", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
