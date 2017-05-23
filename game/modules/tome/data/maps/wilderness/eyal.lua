@@ -440,6 +440,7 @@ addSpot({35, 35}, "world-encounter", "noxious-caldera")
 addSpot({53, 5}, "world-encounter", "sludgenest")
 addSpot({162, 59}, "world-encounter", "orc-breeding-pits-spawn")
 addSpot({47, 34}, "world-encounter", "conclave-vault")
+addSpot({14, 25}, "world-encounter", "angolwen-quest")
 
 -- addZone section
 addZone({1, 1, 78, 43}, "zonename", "Maj'Eyal")
