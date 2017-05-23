@@ -50,6 +50,15 @@ newEntity{
 	ingredient_on_death = "ORC_HEART",
 }
 
+local summoner_equip_filters = resolvers.auto_equip_filters{
+	MAINHAND = {type="weapon", subtype="sling"},
+	QUIVER={properties={"archery_ammo"}, special=function(e, filter) -- must match the MAINHAND weapon, if any
+		local mh = filter._equipping_entity and filter._equipping_entity:getInven(filter._equipping_entity.INVEN_MAINHAND)
+		mh = mh and mh[1]
+		if not mh or mh.archery == e.archery_ammo then return true end
+	end}
+}
+
 newEntity{ base = "BASE_NPC_ORC_GORBAT",
 	name = "orc summoner", color=colors.YELLOW,
 	desc = [[A fierce orc attuned to the wilds.]],
@@ -58,8 +67,10 @@ newEntity{ base = "BASE_NPC_ORC_GORBAT",
 	rank = 2,
 	max_life = resolvers.rngavg(80,110),
 	life_rating = 12,
+	summoner_equip_filters,
 	resolvers.equip{
-		{type="weapon", subtype="sling", autoreq=true},
+		{type="weapon", subtype="sling", forbid_power_source={arcane=true}, autoreq=true},
+		{type="ammo", subtype="shot", forbid_power_source={arcane=true}, autoreq=true},
 		{type="charm", subtype="totem"}
 	},
 	combat_armor = 2, combat_def = 0,
@@ -86,8 +97,10 @@ newEntity{ base = "BASE_NPC_ORC_GORBAT",
 	rank = 3,
 	max_life = resolvers.rngavg(100,110),
 	life_rating = 13,
+	summoner_equip_filters,
 	resolvers.equip{
-		{type="weapon", subtype="sling", autoreq=true},
+		{type="weapon", subtype="sling", forbid_power_source={arcane=true}, autoreq=true},
+		{type="ammo", subtype="shot", forbid_power_source={arcane=true}, autoreq=true},
 		{type="charm", subtype="totem"}
 	},
 	combat_armor = 2, combat_def = 0,
@@ -153,10 +166,11 @@ newEntity{ base = "BASE_NPC_ORC_GORBAT",
 	rank = 3,
 	max_life = resolvers.rngavg(120,150),
 	life_rating = 15,
+	resolvers.auto_equip_filters("Bulwark"),
 	resolvers.equip{
-		{type="weapon", subtype="waraxe", autoreq=true},
-		{type="armor", subtype="shield", autoreq=true},
-		{type="armor", subtype="massive", autoreq=true},
+		{type="weapon", subtype="waraxe", forbid_power_source={arcane=true}, autoreq=true},
+		{type="armor", subtype="shield", forbid_power_source={arcane=true}, autoreq=true},
+		{type="armor", subtype="massive", forbid_power_source={arcane=true}, autoreq=true},
 	},
 	combat_armor = 2, combat_def = 3,
 

@@ -67,6 +67,7 @@ newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
 	moddable_tile = "special/%s_awaken_staff_of_absorbtion",
 	encumber = 7,
+	material_level = 5,
 	plot=true,
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.
 Light around it seems to dim and you can feel its tremendous power simply by touching it.
