@@ -32,7 +32,6 @@ local changer = function(id)
 	npc_list.__loaded_files = table.clone(npc_list.__loaded_files, true) -- Separate full cloning to not alter the base
 	npc_list.ignore_loaded = true
 	mod.class.NPC:loadList("/data/general/npcs/all.lua", nil, npc_list, function(e) if e.rarity then e.rarity = math.ceil(e.rarity * 35 + 4) end end, npc_list.__loaded_files)
-	for i = 1, #npc_list do npc_list[i].faction = "enemies" end
 
 	local walltype = "HARDWALL"
 	if game.level.data.generator and game.level.data.generator.map and game.level.data.generator.map.subvault_exterior_wall then walltype = game.level.data.generator.map.subvault_exterior_wall end
@@ -102,6 +101,9 @@ local changer = function(id)
 		grid_list = grid_list,
 		object_list = table.clone(game.zone.object_list, false),
 		trap_list = table.clone(game.zone.trap_list, false),
+		post_process = function(level)
+			for uid, e in pairs(level.entities) do e.faction = e.hard_faction or "enemies" end
+		end,
 	})
 	return zone
 end

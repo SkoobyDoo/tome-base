@@ -29,6 +29,7 @@ newEntity{ define_as = "ASSASSIN_LORD",
 	cant_be_moved = true,
 
 	resolvers.drops{chance=20, nb=1, {} },
+	resolvers.auto_equip_filters("Shadowblade"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", autoreq=true, force_drop=true, tome_drops="boss"},
 		{type="weapon", subtype="dagger", autoreq=true, force_drop=true, tome_drops="boss"},

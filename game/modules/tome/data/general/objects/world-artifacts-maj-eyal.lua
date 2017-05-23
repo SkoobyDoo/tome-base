@@ -463,7 +463,7 @@ newEntity{ base = "BASE_SLING",
 	wielder = {
 		inc_stats = { [Stats.STAT_DEX] = 4, [Stats.STAT_CUN] = 3,  },
 		inc_damage={ [DamageType.PHYSICAL] = 15 },
-		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_EYE_SHOT]=2},
+		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_SCATTER_SHOT]=2},
 	},
 }
 

@@ -48,7 +48,7 @@ newEntity{ base="BASE_NPC_ORC_VOR", define_as = "VOR",
 	resolvers.inscriptions(4, "rune"),
 	max_inscriptions = 5,
 	
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, TOOL=1 },
+	body = { INVEN = 20, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, TOOL=1 },
 
 	resolvers.equip{
 		{type="weapon", subtype="staff", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},

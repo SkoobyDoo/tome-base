@@ -392,6 +392,12 @@ function _M:orderSetConfigs(o)
 	end
 end
 
+function _M:orderSendIncrLog(o)
+	if not self.auth then cprofile.pushEvent("e='IncrLogConsume' ok=false") return end
+	self:command("CINC", o.data:len())
+	if self:read("200") then self.sock:send(o.data) cprofile.pushEvent("e='IncrLogConsume' ok=true") end
+end
+
 function _M:orderSendError(o)
 	o = table.serialize(o)
 	self:command("ERR_", o:len())

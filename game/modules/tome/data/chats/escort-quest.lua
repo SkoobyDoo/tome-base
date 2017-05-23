@@ -150,7 +150,7 @@ local reward_types = {
 				["psionic/feedback"] = 0.8,
 			},
 			talents = {
-				[Talents.T_BIOFEEDBACK] = 1,
+				[Talents.T_RESONANCE_FIELD] = 1,
 				[Talents.T_CONVERSION] = 1,
 			},
 			saves = { spell = 4, mental = 4 },
@@ -286,7 +286,7 @@ local function generate_rewards()
 			local tt_def = npc:getTalentTypeFrom(tt)
 			local cat = tt_def.type:gsub("/.*", "")
 			local doit = function(npc, player) game.party:reward("Select the party member to receive the reward:", function(player)
-				if player:knowTalentType(tt) == nil then player:setTalentTypeMastery(tt, mastery) end
+				if player:knowTalentType(tt) == nil then player:setTalentTypeMastery(tt, mastery - 1 + player:getTalentTypeMastery(tt)) end
 				player:learnTalentType(tt, false)
 				player:hasQuest(npc.quest_id).reward_message = ("gained talent category %s (at mastery %0.2f)"):format(cat:capitalize().." / "..tt_def.name:capitalize(), mastery)
 			end) end

@@ -265,13 +265,13 @@ end
 
 --- Clones the object, and all subobjects without cloning a subobject twice
 -- @param[type=table] self  Object to be cloned.
--- @param[type=table] post_copy  Optional, a table to be merged with the new object after cloning.
+-- @param[type=table] post_copy  Optional, a table to be merged (recursively) with the new object after cloning.
 -- @return a reference to the clone
 function _M:cloneFull(post_copy)
 	local clonetable = {}
 	local n = clonerecursfull(clonetable, self, nil, nil)
 	if post_copy then
-		for k, e in pairs(post_copy) do n[k] = e end
+		table.merge(n, post_copy, true)
 	end
 	return n
 --	return core.serial.cloneFull(self)
@@ -340,13 +340,13 @@ end
 -- @      or nil to use the default name/ref as keys on the clone
 -- @    v = the value to assign for instances of this node,
 -- @      or nil to use the default assignment value
--- @param[type=table] post_copy  Optional, a table to be merged with the new object after cloning.
+-- @param[type=table] post_copy  Optional, a table to be merged (recursively) with the new object after cloning.
 -- @return a reference to the clone
 function _M:cloneCustom(alt_nodes, post_copy)
 	local clonetable = {}
 	local n = cloneCustomRecurs(clonetable, self, nil, nil, alt_nodes)
 	if post_copy then
-		for k, e in pairs(post_copy) do n[k] = e end
+		table.merge(n, post_copy, true)
 	end
 	return n
 end

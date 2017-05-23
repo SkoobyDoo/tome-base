@@ -76,27 +76,24 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "CULTIST_RAK_SHOR",
 
 		-- When the bone shield is taken down, copy the player
 		if (not p or p.nb <= 0) and not self.copied_player then
+			local Talents = require("engine.interface.ActorTalents")
 			local a = mod.class.NPC.new{}
-			a:replaceWith(game.player:resolveSource():cloneFull())
+			local plr = game.player:resolveSource()
+			a:replaceWith(plr:cloneActor({rank=4,
+				level_range=self.level_range,
+				is_player_doomed_shade = true,
+				faction = self.faction,
+				life=plr.max_life*1.2,	max_life=plr.max_life*1.2, die_at=plr.die_at*1.2,
+				max_level=table.NIL_MERGE,
+				name = "Doomed Shade of "..plr.name,
+				desc = ([[The Dark Side of %s, completely consumed by hate...]]):format(plr.name),
+				killer_message = "but nobody knew why #sex# suddenly became evil",
+				color_r = 150, color_g = 150, color_b = 150,
+				ai = "tactical", ai_state = {talent_in=1},
+				}))
 			mod.class.NPC.castAs(a)
 			engine.interface.ActorAI.init(a, a)
-			a.no_drops = true
-			a.keep_inven_on_death = false
-			a.energy.value = 0
-			a.player = nil
-			a.rank = 4
-			a.name = "Doomed Shade of "..a.name
-			a.killer_message = "but nobody knew why #sex# suddenly became evil"
-			a.is_player_doomed_shade = true
-			a.color_r = 150 a.color_g = 150 a.color_b = 150
-			a:removeAllMOs()
-			a.ai = "tactical"
-			a.puuid = nil
-			a.ai_state = {talent_in=1}
-			a.faction = self.faction
 			a.inc_damage.all = (a.inc_damage.all or 0) - 40
-			a.max_life = a.max_life * 1.2
-			a.life = a.max_life
 			a.on_die = function(self)
 				world:gainAchievement("SHADOW_CLONE", game.player)
 				game:setAllowedBuild("afflicted")
@@ -105,38 +102,31 @@ newEntity{ base="BASE_NPC_ORC_RAK_SHOR", define_as = "CULTIST_RAK_SHOR",
 				game.logSeen(self, "As your shade dies, the magical veil protecting the stairs out vanishes.")
 			end
 
-			-- Remove some talents
-			local tids = {}
-			for tid, _ in pairs(a.talents) do
-				local t = a:getTalentFromId(tid)
-				if t.no_npc_use then tids[#tids+1] = t end
-			end
-			for i, t in ipairs(tids) do
-				if t.mode == "sustained" and a:isTalentActive(t.id) then a:forceUseTalent(t.id, {ignore_energy=true}) end
-				a.talents[t.id] = nil
-			end
-
-			-- Add some
-			a.talents[a.T_UNNATURAL_BODY] = 7
-			a.talents[a.T_RELENTLESS] = 7
-			a.talents[a.T_FEED_POWER] = 5
-			a.talents[a.T_FEED_STRENGTHS] = 5
-			a.talents[a.T_DARK_TENDRILS] = 5
-			a.talents[a.T_WILLFUL_STRIKE] = 7
-			a.talents[a.T_REPROACH] = 5
-			a.talents[a.T_CALL_SHADOWS] = 5
+			-- Remove any disallowed talents
+			a:unlearnTalentsOnClone()
+			-- Add some hate-based talents
+			table.insert(a, resolvers.talents{
+				[Talents.T_UNNATURAL_BODY]={base=5, every=10, max=7},
+				[Talents.T_RELENTLESS]={base=5, every=10, max=7},
+				[Talents.T_FEED_POWER]={base=5, every=10, max=5},
+				[Talents.T_FEED_STRENGTHS]={base=5, every=10, max=5},
+				[Talents.T_DARK_TENDRILS]={base=5, every=10, max=5},
+				[Talents.T_WILLFUL_STRIKE]={base=5, every=10, max=7},
+				[Talents.T_REPROACH]={base=5, every=10, max=5},
+				[Talents.T_CALL_SHADOWS]={base=5, every=10, max=5},
+			})
 			a:incStat("wil", a.level)
-
+			a:removeTimedEffectsOnClone()
 			local x, y = util.findFreeGrid(self.x, self.y, 10, true, {[engine.Map.ACTOR]=true})
 			if x and y then
-				game.zone:addEntity(game.level, a, "actor", x, y)
-
-				game.logPlayer(game.player, "#GREY#The cultist looks deep in your eyes. You feel torn apart!")
+				self:logCombat(game.player, "#GREY#The #Source# looks deep into your eyes. You feel torn apart!")
 				self:doEmote("Ra'kk kor merk ZUR!!!", 120)
+				game.zone:addEntity(game.level, a, "actor", x, y)
+				a:resolve()
 				self.copied_player = true
 			end
 
-			if a.alchemy_golem then
+			if plr.alchemy_golem then
 				a.alchemy_golem = nil
 				local t = a:getTalentFromId(a.T_REFIT_GOLEM)
 				t.action(a, t)

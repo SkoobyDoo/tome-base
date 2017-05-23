@@ -48,16 +48,21 @@ newEntity{ define_as = "GREATER_MUMMY_LORD",
 	infravision = 10,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, },
+	resolvers.auto_equip_filters{
+		MAINHAND = {type="weapon", not_properties={"twohanded"}},
+		OFFHAND = {special=shield_special},
+		BODY = {type="armor", special=function(e) return e.subtype=="mummy" or e.subtype=="heavy" or e.subtype=="massive" end},
+	},
 	equipment = resolvers.equip{
 		{type="weapon", subtype="longsword", defined="LONGSWORD_WINTERTIDE", random_art_replace={chance=75}, autoreq=true},
 		{type="armor", subtype="shield", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="mummy", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="head", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="mummy", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true, base_list="mod.class.Object:/data/zones/ancient-elven-ruins/objects.lua"},
+		{type="armor", subtype="head", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true, base_list="mod.class.Object:/data/zones/ancient-elven-ruins/objects.lua"},
 	},
-	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
-	
+	resolvers.drops{{tome_drops="boss", type="armor", subtype="heavy", forbid_power_source={antimagic=true}, autoreq=true,}},
+	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 	resolvers.talents{
-		[Talents.T_ARMOUR_TRAINING]={base=2, every=10, max=5},
+		[Talents.T_ARMOUR_TRAINING]={base=3, every=10, max=5},
 		[Talents.T_SHIELD_PUMMEL]={base=5, every=5, max=8},
 		[Talents.T_ASSAULT]={base=4, every=5, max=7},
 		[Talents.T_OVERPOWER]={base=5, every=5, max=8},
@@ -95,10 +100,11 @@ newEntity{ base = "BASE_NPC_MUMMY",
 	ai_state = { talent_in=4, },
 	stats = { mag=25, wil=20, },
 	infravision = 10,
-
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{
 		{type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="mummy", forbid_power_source={antimagic=true}, autoreq=true},
+--		{type="armor", subtype="mummy", forbid_power_source={antimagic=true}, autoreq=true, base_list="mod.class.Object:/data/zones/ancient-elven-ruins/objects.lua"},
+		{type="armor", subtype="mummy", force_drop=true, forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	resolvers.talents{
 		[Talents.T_STUNNING_BLOW]={base=2, every=7, max=6},
@@ -121,6 +127,7 @@ newEntity{ base = "BASE_NPC_MUMMY",
 	infravision = 10,
 
 	resolvers.equip{
+--		{type="armor", subtype="mummy", force_drop=true, forbid_power_source={antimagic=true}, autoreq=true, base_list="mod.class.Object:/data/zones/ancient-elven-ruins/objects.lua"},
 		{type="armor", subtype="mummy", force_drop=true, forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	autolevel = "caster",
@@ -144,7 +151,8 @@ newEntity{ base = "BASE_NPC_MUMMY",
 	infravision = 10,
 
 	resolvers.equip{
-		{type="armor", subtype="mummy", forbid_power_source={antimagic=true}, autoreq=true},
+--		{type="armor", subtype="mummy", forbid_power_source={antimagic=true}, autoreq=true, base_list="mod.class.Object:/data/zones/ancient-elven-ruins/objects.lua"},
+		{type="armor", subtype="mummy", force_drop=true, forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	autolevel = "ghoul",
 	resolvers.talents{
