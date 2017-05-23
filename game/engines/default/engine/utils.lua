@@ -845,13 +845,14 @@ end
 -- similar to tostring, but includes special handling of tables and functions
 --	surrounds non-numbers/booleans/nils/functions with ""
 -- @param v: the value
--- @param recurse: the recursion level for string.fromTable
+-- @param recurse: the recursion level for string.fromTable, set < 0 for basic tostring
 -- @param offset, prefix, suffix: inputs to string.fromTable for converting tables
 function string.fromValue(v, recurse, offset, prefix, suffix)
 	recurse, offset, prefix, suffix = recurse or 0, offset or ", ", prefix or "{", suffix or "}"
 	local vt, vs = type(v)
 	if vt == "table" then
-		if v.__ATOMIC or v.__CLASSNAME then -- create entity/atomic label
+		if recurse < 0 then vs = tostring(v)
+		elseif v.__ATOMIC or v.__CLASSNAME then -- create entity/atomic label
 			local abv = {}
 			if v.__CLASSNAME then abv[#abv+1] = "__CLASSNAME="..tostring(v.__CLASSNAME) end
 			if v.__ATOMIC then abv[#abv+1] = "ATOMIC" end
@@ -861,7 +862,7 @@ function string.fromValue(v, recurse, offset, prefix, suffix)
 		else vs = prefix.."\""..tostring(v).."\""..suffix
 		end
 	elseif vt == "function" then
-		vs = string.fromFunction(v)
+		vs = recurse >= 0 and string.fromFunction(v) or tostring(v)
 	elseif not (vt == "number" or vt == "boolean" or vt == "nil") then
 		vs = "\""..tostring(v).."\""
 	end

@@ -37,28 +37,6 @@ end
 
 _M._silent_talent_failure = true
 
--- debugging: add some extra object resolvers to each NPC definition
-local alter = function(e)
---	if e.material_level then e.material_level = e.material_level + 5 end
-end
-function _M.loadList(self, file, no_default, res, mod, loaded)
---print("loading npc list with custom function")
-	local old_mod = mod
-	mod = function(e)
-		print("Custom modify called on:", e.name)
-		if old_mod then old_mod(e) end
-		if e.rarity and e.inven and #e.inven > 1 then
-			if e.inven[1] then e.inven[1].max = math.max(e.inven[1].max, 20) end
-			e:attr("max_encumber", 100)
---			e[#e+1] = resolvers.equip{{properties={"slot"}, not_properties={"imbue_powers"}, alter=alter}}
-			e[#e+1] = resolvers.inventory{{properties={"slot"}, not_properties={"imbue_powers"}, alter=alter, ignore_material_restriction=true}}
-			e[#e+1] = resolvers.drops{nb=3, {properties={"slot"}, not_properties={"imbue_powers"}, alter=alter, ignore_material_restriction=true}}
-		end
-	end
-	return engine.Entity.loadList(self, file, no_default, res, mod, loaded)
-end
--- debugging
-
 function _M:actBase()
 	-- Reduce shoving pressure every turn
 	if self.shove_pressure then
@@ -496,7 +474,7 @@ function _M:addedToLevel(level, x, y)
 			for tid, lev in pairs(self.talents) do
 				self:learnTalent(tid, true, math.floor(lev / 2))
 			end
-			-- Give unrand bosses extra classes
+			-- Give randbosses extra classes
 			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
 				local nb_classes = 0
 				if self.rank >= 10 then nb_classes = 3

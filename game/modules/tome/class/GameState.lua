@@ -424,9 +424,6 @@ function _M:generateRandart(data)
 
 	local display = o.display
 
---o.baseobj = base:cloneFull() -- debugging code
---o.gendata = table.clone(data, true) -- debugging code
-
 	-- Load possible random powers
 	local powers_list = engine.Object:loadList(o.randart_able, nil, nil,
 		function(e)

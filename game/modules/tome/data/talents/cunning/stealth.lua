@@ -26,7 +26,6 @@ local function stealthDetection(self, radius, estimate)
 	local dist = 0
 	local closest, detect = math.huge, 0
 	for i, act in ipairs(self.fov.actors_dist) do
-print(("stealthDetection: checking actor %s at (%s, %s)"):format(act.name, act.x, act.y)) -- debugging test
 		dist = core.fov.distance(self.x, self.y, act.x, act.y)
 		if dist > radius then break end
 		if act ~= self and act:reactionToward(self) < 0 and not act:attr("blind") and (not act.fov or not act.fov.actors or act.fov.actors[self]) and (not estimate or self:canSee(act)) then

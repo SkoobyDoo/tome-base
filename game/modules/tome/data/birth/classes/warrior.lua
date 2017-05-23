@@ -338,7 +338,7 @@ newBirthDescriptor{
 		[ActorTalents.T_UNARMED_MASTERY] = 1, -- early game is absolutely stupid without this
 	},
 	copy = {
-		resolvers.auto_equip_filters{-- will not try to equip weapons on birth
+		resolvers.auto_equip_filters{-- will not try to equip weapons
 			MAINHAND = {type="none"}, OFFHAND = {type="none"}
 		},
 		resolvers.equipbirth{ id=true,

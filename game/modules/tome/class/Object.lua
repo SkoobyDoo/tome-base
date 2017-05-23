@@ -484,8 +484,9 @@ function _M:getPowerRank()
 	if self.godslayer then return 10 end
 	if self.legendary then return 5 end
 	if self.unique then return 3 end
-	if self.egoed and self.greater_ego or self.rare then return 2 end
-	if self.egoed then return 1 end
+	if self.egoed then
+		return math.min(2.5, 1 + (self.greater_ego and self.greater_ego or 0) + (self.rare and 1 or 0))
+	end
 	return 0
 end
 
@@ -2091,13 +2092,6 @@ function _M:getDesc(name_param, compare_with, never_compare, use_actor)
 		if self.power_source.unknown then desc:add("Powered by ", {"color", "CRIMSON"}, "unknown forces", {"color", "LAST"}, true) end
 		self:triggerHook{"Object:descPowerSource", desc=desc, object=self}
 	end
-
--- debugging
---local weight_fn = function(o, inven) return (1 + o:getPowerRank()) * (o.material_level or 1) end
---local weight_fn = function(o, inven) return ((1 + o:getPowerRank())*(o.material_level or 1))^.5 end
-local weight_fn = function(o, inven) return (1 + o:getPowerRank())*(o.material_level or 1) end
-desc:add({"color", "ORCHID"}, ("Power Value: %2.1f"):format(weight_fn(self)) ,{"color", "LAST"}, true)
--- debugging
 
 	if self.encumber then
 		desc:add({"color",0x67,0xAD,0x00}, ("%0.2f Encumbrance."):format(self.encumber), {"color", "LAST"})

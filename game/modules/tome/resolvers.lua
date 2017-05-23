@@ -57,13 +57,13 @@ local Talents = require "engine.interface.ActorTalents"
 function resolvers.resolveObject(e, filter, do_wear, tries)
 	if do_wear then do_wear = e.__is_actor and do_wear end
 	filter = filter and table.clone(filter) or {}
---print("## general resolver using filter:", filter) table.print(filter)
+	tries = tries or do_wear and 5 or 2
+	print("[resolveObject] CREATE FOR", e.uid, e.name, "do_wear/tries:", do_wear, tries, "filter:\n", (string.fromTable(filter, -1)))
 	local o = filter._use_object
 	if o then -- filter contains the object to use
 		print("[resolveObject] using pre-generated object", o.uid, o.name)
 	else
-		tries = tries or do_wear and 5 or 2
-		--print("General Object resolver", e.name, "filter:", filter) table.print(filter, "\t")
+		--print("[resolveObject]", e.name, "filter:", filter) table.print(filter, "\t")
 		local base_list
 		if filter.base_list then -- load the base list defined for makeEntityByName
 			local _, _, class, file = filter.base_list:find("(.*):(.*)")
@@ -83,10 +83,9 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 				local forced
 				o, forced = game.zone:makeEntityByName(game.level, base_list or "object", filter.defined, filter.random_art_replace and true or false)
 				if forced then -- If generation was forced, object is a previously existing unique
-						print("[resolveObject] FORCING UNIQUE (replaced on drop):", filter.defined, o.uid, o.name)
+					print("[resolveObject] FORCING UNIQUE (replaced on drop):", filter.defined, o.uid, o.name)
 					table.set(filter, "random_art_replace", "chance", 100)
 				elseif not o and filter.replace_unique then -- Replace with another object
---					local rpl_filter = type(filter.replace_unique) == "table" and filter.replace_unique or nil
 					local rpl_filter = filter.replace_unique
 					if type(rpl_filter) ~= "table" then
 						rpl_filter = table.clone(filter)
@@ -100,18 +99,16 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 			else -- make an object using the normal probabilities after applying the filter
 				o = game.zone:makeEntity(game.level, base_list or "object", filter, nil, true)
 			end
---			print("##General Object resolver for ", e.name, "object:", o and o.name, "tries left:", tries)
 			-- check for incompatible equipment
 			if (do_wear or filter.check_antimagic) and not game.state:checkPowers(e, o, nil, "antimagic_only") then
 				ok = false
---game.log("#YELLOW# object rejected for antimagic")
 				print("[resolveObject] for ", e.uid, e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
 			end
 		until o and ok or tries <= 0
 	end
-	
+
 	if o then
-		print("[resolveObject] for ", e.name, "object:", o.uid, o.name, "tries left:", tries)
+		print("[resolveObject] CREATED OBJECT:", o.uid, o.name, "tries left:", tries)
 		if filter.alter then filter.alter(o, e) end
 		-- curse (done here to ensure object attributes get applied correctly, good place for a talent callback?)
 		if do_wear ~= false and e.knowTalent and e:knowTalent(e.T_DEFILING_TOUCH) then
@@ -119,8 +116,7 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 		end
 
 		if do_wear then
-			-- Auto alloc some talents, stats, and (possibly) levels to be able to wear the object
-			if filter.autoreq then
+			if filter.autoreq then -- Auto alloc talents, stats, and levels to be able to wear the object
 				local req, oldreq = e:updateObjectRequirements(o)
 				if req then
 					if req.level and e.level < req.level then
@@ -173,9 +169,8 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 				invens = o:wornLocations(e, nil, nil)
 			end
 			if invens then
---print("[resolveObject] found inventory locations for", o.uid, o.name) table.print(invens) -- debugging
 				for i, worn_inv in ipairs(invens) do
-					print("[resolveObject] trying inventory", worn_inv.inv.name, worn_inv.slot, "for", o.uid, o.name, worn_inv.force and "FORCED" or "unforced")
+					--print("[resolveObject] trying inventory", worn_inv.inv.name, worn_inv.slot, "for", o.uid, o.name, worn_inv.force and "FORCED" or "unforced")
 					worn = e:wearObject(o, true, false, worn_inv.inv, worn_inv.slot)
 					if worn == false then
 						if worn_inv.force then  -- force adding the object
@@ -215,22 +210,11 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 		if filter.force_drop then o.no_drop = false end
 		if filter.never_drop then o.no_drop = true end
 
--- debugging
-o.no_unique_lore = true -- to not spam
-o:identify(true)
---[[
-local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
-	game.log("#GREY#General Object Resolver:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
-end)
---]]
--- debugging
-
 		if filter.random_art_replace then
 			o.__special_boss_drop = filter.random_art_replace
 		end
 	else
 		print("[resolveObject] **FAILED** for", e.uid, e.name, "filter:", (string.fromTable(filter, 2)))
-game.log("[%s] %s #YELLOW_GREEN#Object resolver FAILED#LAST# \n#AQUAMARINE#filter:%s#LAST#", e.uid, e.name, string.fromTable(filter, 2)) -- debugging
 	end
 	return o
 end
@@ -259,19 +243,11 @@ end
 function resolvers.calc.equip(t, e)
 	-- Iterate over object filters, trying to create and equip each
 	for i, filter in ipairs(t[1]) do
-		print("[resolvers.equip]", e.uid, e.name, (string.fromTable(filter, 1)))
+		--print("[resolvers.equip]", e.uid, e.name, (string.fromTable(filter, 1)))
 		local o = resolvers.resolveObject(e, filter, true, 5)
 		if o then
-o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
 			o._resolver_type = t.__resolver
 			if t[1].id then o:identify(t[1].id) end
-		
--- debugging
-local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
-	game.log("#ORANGE#resolvers.equip:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
-end)
--- debugging
-
 		end
 	end
 	return nil -- Deletes the origin field
@@ -300,7 +276,6 @@ function resolvers.calc.auto_equip_filters(t, e, readonly)
 		local cc = table.get(engine.Birther.birth_descriptor_def, "subclass", c_name, "copy")
 		if cc then
 			 print("[resolvers.auto_equip_filters] using birth descriptor for subclass:", c_name)
-game.log("[%s] %s: #ORCHID#resolvers.auto_equip_filters:#LAST# %s", e.uid, e.name, c_name) -- debugging
 			for i, res in ipairs(cc) do
 				if type(res) == "table" and res.__resolver == "auto_equip_filters" then
 					res = table.clone(res, true)
@@ -312,7 +287,6 @@ game.log("[%s] %s: #ORCHID#resolvers.auto_equip_filters:#LAST# %s", e.uid, e.nam
 		if not ok then print("[resolvers.auto_equip_filters] NO BIRTH auto_equip_filter for subclass:", c_name) end
 		return
 	end
-game.log("[%s] %s: #ORCHID#resolvers.auto_equip_filters:#LAST# {%s}", e.uid, e.name, table.concat(table.keys(filters), ", ")) -- debugging
 	for inv, filter in pairs(filters) do
 		local inven = e:getInven(inv)
 		if inven then
@@ -351,13 +325,11 @@ end
 function resolvers.calc.attachtinker(t, e)
 	-- Iterate over object filters, trying to create and attach each
 	for i, filter in ipairs(t[1]) do
-		print("[resolvers.attachtinker]", e.uid, e.name, (string.fromTable(filter, 1)))
+		--print("[resolvers.attachtinker]", e.uid, e.name, (string.fromTable(filter, 1)))
 		local o = resolvers.resolveObject(e, filter, false, 5)
 		if o then
-o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
 			o._resolver_type = t.__resolver
-			--print("Zone made us a Tinker according to filter!", o:getName())
-			print("[resolvers.attachtinker] created tinker:", o.uid, o:getName())
+			--print("[resolvers.attachtinker] created tinker:", o.uid, o:getName())
 			local base_inven, base_item = e:findTinkerSpot(o)
 			local base_o = base_inven and base_item and base_inven[base_item]
 			local ok
@@ -374,11 +346,6 @@ o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
 				end
 			end
 			if ok then game.zone:addEntity(game.level, o, "object") end -- updates uniques list to prevent duplicates		
--- debugging
-local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
-	game.log("#ORANGE#resolvers.attachtinker:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
-end)
--- debugging
 		end
 	end
 	return nil -- Deletes the origin field
@@ -409,13 +376,12 @@ end
 -- @param t the resolver table created by resolvers.inventory
 -- @param e the entity (Actor) to add the objects to
 function resolvers.calc.inventory(t, e)
-	-- Iterate of object requests, try to create them and equip them
+	-- Iterate over object requests, try to create them and add them
 	for i, filter in ipairs(t[1]) do
-		print("[resolvers.inventory]", e.uid, e.name, (string.fromTable(filter, 1)))
+		--print("[resolvers.inventory]", e.uid, e.name, (string.fromTable(filter, 1)))
 		local o = resolvers.resolveObject(e, filter, false)
 		
 		if o then
-o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
 			o._resolver_type = t.__resolver
 			local inven = filter.inven or t[1].inven
 			print("[resolvers.inventory] created object:", o.uid, o:getName(), "inventory:", inven, "keep:", filter.keep_object)
@@ -433,13 +399,6 @@ o.name = o.name.." <"..tostring(t.__resolver)..">" -- debugging
 					print("[resolvers.inventory] created object:", o.uid, o:getName(), "NOT ADDED")
 				end
 			end
-
--- debugging
-local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
-	game.log("#ORANGE#resolvers.inventory:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
-end)
--- debugging
-
 		end
 	end
 	return nil -- Delete the origin field
@@ -472,18 +431,11 @@ function resolvers.calc.drops(t, e)
 			filter.not_properties = filter.not_properties or {}
 			filter.not_properties[#filter.not_properties+1] = "lore"
 		end
-		print("[resolvers.drops]", e.uid, e.name, (string.fromTable(filter, 1)))
+		--print("[resolvers.drops]", e.uid, e.name, (string.fromTable(filter, 1)))
 		local o = resolvers.resolveObject(e, filter, nil)
 		
 		if o then
-o.name = o.name.." <drops>" -- debugging
 			o._resolver_type = "drops"
--- debugging
-local inv, slot, attached = e:searchAllInventories(o, function(o, e, inven, slot, attached)
-	game.log("#ORANGE#resolvers.drops:#LAST# %s%s [%s] %s {%s, slot %s} at (%s, %s)", o:getName({do_color=true}), attached and (" (attached to: %s)"):format(attached:getName({do_color=true, no_add_name=true})) or "", e.uid, e.name, inven.name, slot, e.x, e.y)
-end)
--- debugging
-
 			o.no_drop = false -- make sure it is dropped
 			if t.id ~= nil then o:identify(t.id) end
 		end
@@ -555,13 +507,9 @@ function resolvers.calc.drop_randart(t, e)
 		o = game.state:generateRandart(data)
 	end
 	if o then
-o.name = o.name.." <drop_randart>" -- debugging
 		o._resolver_type = "drop_randart"
 		o.no_drop = false
 		if t.id then o:identify(t.id) end
-
-o:identify(true) -- debugging
-
 		if t.no_add then
 			return o
 		else

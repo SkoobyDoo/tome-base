@@ -4264,14 +4264,12 @@ function _M:wearAllInventory(force, ...)
 				 -- Note: won't remove slot_forbid items or auto-swap tinkers (Actor:doWear)
 				if locs then
 					o = self:removeObject(self.INVEN_INVEN, i) -- remove from main inventory
-print("[Actor:wearAllInventory] possible inventories for", o.uid, o.name, locs) table.print(locs) -- debugging
 					for j, inv in ipairs(locs) do
 						local ro, worn = inv.inv[inv.slot]
 						--print("\t\t attempting to wear", o.uid, o.name, "in", inv.inv.name, inv.slot)
 						worn = self:wearObject(o, true, false, inv.inv, inv.slot)
 						if worn then
 							print("[Actor:wearAllInventory]", self.name, self.uid, o.uid, o.name, "WORN IN", inv.inv.name, inv.slot)
-game.log("#YELLOW#[Actor:wearAllInventory]#LAST# %s[%s](%s,%s) wearing %s%s", self.name, self.uid, self.x, self.y, o:getName({do_color=true, no_add_name=true}), type(worn)=="table" and ", #YELLOW#REPLACING#LAST# "..worn:getName({do_color=true, no_add_name=true}) or "") -- debugging
 							if type(worn) == "table" then
 								print("    --- replaced:", worn.uid, worn.name)
 								self:addObject(self.INVEN_INVEN, worn)
