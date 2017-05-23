@@ -386,6 +386,7 @@ function _M:part(channel)
 end
 
 function _M:saveChannels()
+	if type(game) ~= "table" then return end
 	local l = {
 		"chat.channels = chat.channels or {}",
 		"chat.channels["..string.format("%q", game.__mod_info.short_name).."]={}"
