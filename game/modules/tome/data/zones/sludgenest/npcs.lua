@@ -42,6 +42,7 @@ newEntity{ define_as = "CORRUPTED_OOZEMANCER",
 	combat_mindcrit = -28,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	resolvers.auto_equip_filters("Oozemancer"),
 	resolvers.equip{ {type="weapon", subtype="mindstar", forbid_power_source={antimagic=true}, autoreq=true}, },
 	resolvers.equip{ {type="weapon", subtype="mindstar", forbid_power_source={antimagic=true}, autoreq=true}, },
 	resolvers.equip{ {type="armor", subtype="cloth", forbid_power_source={antimagic=true}, autoreq=true}, },

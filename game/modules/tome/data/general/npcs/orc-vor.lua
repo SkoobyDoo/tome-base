@@ -30,6 +30,7 @@ newEntity{
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1, TOOL=1 },
 	resolvers.drops{chance=20, nb=1, {} },
 	resolvers.drops{chance=10, nb=1, {type="money"} },
+	resolvers.auto_equip_filters("Archmage"),
 	infravision = 10,
 	lite = 1,
 
