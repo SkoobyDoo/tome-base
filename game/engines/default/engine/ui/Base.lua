@@ -168,7 +168,7 @@ function _M:checkTileset(image)
 	print("Loading tile from tileset", f)
 	local tex = self.tilesets_texs[d.set]
 	if not tex then
-		tex = core.display.loadImage(d.set):glTexture(true, true)
+		tex = core.loader.png(d.set, true, true)
 		self.tilesets_texs[d.set] = tex
 		print("Loading tileset", d.set)
 	end

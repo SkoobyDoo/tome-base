@@ -90,8 +90,10 @@ function core.renderer.colorQuad(x, y, w, h, r, g, b, a, v)
 end
 
 function core.renderer.image(file, x, y, w, h, r, g, b, a, v)
-	local s = core.display.loadImage(file)
-	return core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
+	-- local s = core.display.loadImage(file)
+	-- return core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
+	local tex = core.loader.png(file)
+	return core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 end
 
 function core.renderer.surface(s, x, y, w, h, r, g, b, a, v)

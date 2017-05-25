@@ -226,7 +226,7 @@ void RendererGL::update() {
 
 				// Now we sort the flattened tree. This is awy faster than the full sort mode because here we sort DOs instead of vertices
 				// Also since we are not sorting vertices we likely dont need to use a stable sort -- DGDGDGDG: don't we ?
-				stable_sort(sorted_dos.begin(), sorted_dos.end(), sort_dos);
+				sort(sorted_dos.begin(), sorted_dos.end(), sort_dos);
 			}
 
 			// And now we can iterate the sorted flattened tree and render as a normal no sort render

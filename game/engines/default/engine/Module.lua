@@ -1111,6 +1111,9 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	-- TODO: Replace this with loading quickhotkeys from the profile.
 	if engine.interface.PlayerHotkeys then engine.interface.PlayerHotkeys:loadQuickHotkeys(mod.short_name, Savefile.hotkeys_file) end
 
+	-- Wait for all ressources
+	core.loader.waitAll()
+
 	core.wait.disable()
 	profile.waiting_auth_no_redraw = false
 

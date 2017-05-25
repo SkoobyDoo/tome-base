@@ -184,7 +184,6 @@ end
 function _M:resetTiles()
 	Entity:invalidateAllMO()
 	self.tiles = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, true, self.allow_backcolor)
-	self.tilesSurface = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, false, false)
 	self.tilesTactic = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, true, false)
 	self.tilesEffects = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, true, true)
 end
