@@ -45,14 +45,14 @@ function _M:texLoader(file, rw, rh)
 		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset(sfile)
 		if ts then return {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
 		else
-			local tex, rw, rh, tw, th, iw, ih = core.display.loadImage("/data/gfx/"..sfile):glTexture()
+			local tex, rw, rh, tw, th, iw, ih = core.loader.png("/data/gfx/"..sfile)
 			return {t=tex, w=iw, h=ih, tw=iw/rw, th=ih/rh, tx=0, ty=0}
 		end
 	else
 		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset("ui/"..file)
 		if ts then return {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
 		else
-			local tex, rw, rh, tw, th, iw, ih = core.display.loadImage("/data/gfx/ui/"..file):glTexture()
+			local tex, rw, rh, tw, th, iw, ih = core.loader.png("/data/gfx/ui/"..file)
 			return {t=tex, w=iw, h=ih, tw=iw/rw, th=ih/rh, tx=0, ty=0}
 		end
 	end

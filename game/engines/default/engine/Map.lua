@@ -1222,13 +1222,13 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 					e.overlay.effect_shader_tex = {}
 					if type(e.overlay.effect_shader) == "table" then
 						for i = 1, #e.overlay.effect_shader do
-							e.overlay.effect_shader_tex[i] = Tiles:loadImage(e.overlay.effect_shader[i]):glTexture()
+							e.overlay.effect_shader_tex[i] = Tiles:loadTexture(e.overlay.effect_shader[i])
 						end
 						e.overlay.effect_shader_tex.cur = 1
 						e.overlay.effect_shader_tex.cnt = 0
 						e.overlay.effect_shader_tex.max = e.overlay.effect_shader.max
 					else
-						e.overlay.effect_shader_tex[1] = Tiles:loadImage(e.overlay.effect_shader):glTexture()
+						e.overlay.effect_shader_tex[1] = Tiles:loadTexture(e.overlay.effect_shader)
 						e.overlay.effect_shader_tex.cur = 1
 						e.overlay.effect_shader_tex.cnt = 0
 						e.overlay.effect_shader_tex.max = 1

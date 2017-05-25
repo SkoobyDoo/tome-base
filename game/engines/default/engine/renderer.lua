@@ -46,7 +46,7 @@ function DOVertexes:debugQuad()
 	return self
 end
 
-local white = core.display.loadImage("/data/gfx/white.png"):glTexture()
+local white = core.loader.png("/data/gfx/white.png")
 core.renderer.white = white
 core.renderer.plaincolor = white
 
@@ -90,9 +90,8 @@ function core.renderer.colorQuad(x, y, w, h, r, g, b, a, v)
 end
 
 function core.renderer.image(file, x, y, w, h, r, g, b, a, v)
-	-- local s = core.display.loadImage(file)
-	-- return core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
 	local tex = core.loader.png(file)
+	if not tex then return end
 	return core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 end
 
@@ -153,13 +152,24 @@ function core.renderer.textureTile(btex, btexx, btexy, w, h, tex_x, tex_y)
 end
 
 function core.renderer.textureTable(s)
-	if type(s) == "string" then s = core.display.loadImage(s) end
-	local t = {tx=0, ty=0}
-	t.w, t.h = s:getSize()
-	t.t, t.tw, t.th = s:glTexture()
-	t.tw = t.w / t.tw
-	t.th = t.h / t.th
-	return t
+	if type(s) == "string" then
+		local tex = core.loader.png(s)
+		local w, h = tex:getSize()
+
+		local t = {tx=0, ty=0}
+		t.w, t.h = tex:getSize()
+		t.t, t.tw, t.th = tex, t.w, t.h
+		t.tw = 1
+		t.th = 1
+		return t
+	else
+		local t = {tx=0, ty=0}
+		t.w, t.h = s:getSize()
+		t.t, t.tw, t.th = s:glTexture()
+		t.tw = t.w / t.tw
+		t.th = t.h / t.th
+		return t
+	end
 end
 
 function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)

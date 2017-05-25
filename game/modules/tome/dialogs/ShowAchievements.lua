@@ -25,7 +25,6 @@ module(..., package.seeall, class.inherit(ShowAchievements))
 
 function _M:generateList(kind)
 	local tiles = Tiles.new(16, 16, nil, nil, true)
-	local cache = {}
 
 	-- Makes up the list
 	local list = {}
@@ -37,23 +36,21 @@ function _M:generateList(kind)
 			color = colors.simple(colors.LIGHT_GREEN)
 		end
 		local img = a.image or "trophy_gold.png"
-		local tex = cache[img]
-		if not tex then
-			local image = tiles:loadImage(img)
-			if image then
-				tex = {image:glTexture()}
-				cache[img] = tex
-			end
+		local renderer, ido
+		local tex = tiles:loadTexture(img)
+		if tex then
+			ido = core.renderer.texture(tex, 0, 0, 1, 1)
+			if ido then renderer = core.renderer.renderer():add(ido:removeFromParent()) end
 		end
 		if not data.notdone or a.show then
 			if a.show == "full" or not data.notdone then
-				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			elseif a.show == "none" then
-				list[#list+1] = { name="???", color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name="???", color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			elseif a.show == "name" then
-				list[#list+1] = { name=a.name, color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			else
-				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			end
 			i = i + 1
 		end

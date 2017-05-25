@@ -49,25 +49,7 @@ function _M:init(title, player)
 
 	self:generateList("main")
 	
-	local direct_draw= function(item, x, y, w, h, total_w, total_h, loffset_x, loffset_y, dest_area)
-		-- if there is object and is withing visible bounds
-		if item.tex and total_h + h > loffset_y and total_h < loffset_y + dest_area.h then 
-			local clip_y_start, clip_y_end = 0, 0
-			-- if it started before visible area then compute its top clip
-			if total_h < loffset_y then 
-				clip_y_start = loffset_y - total_h
-			end
-			-- if it ended after visible area then compute its bottom clip
-			if total_h + h > loffset_y + dest_area.h then 
-			   clip_y_end = total_h + h - loffset_y - dest_area.h 
-			end
-
-			local one_by_tex_h = 1 / h
-			item.tex[1]:toScreenPrecise(x, y, h, h - clip_y_start - clip_y_end, 0, 1, clip_y_start * one_by_tex_h, (h - clip_y_end) * one_by_tex_h)
-			return h, h, 0, 0, clip_y_start, clip_y_end
-		end 
-		return 0, 0, 0, 0, 0, 0
-	end
+	local direct_draw = function(item, h) if item.img_renderer then item.img_renderer:scale(h, h, 1) return item.img_renderer end end
 
 	self.c_list = ListColumns.new{width=math.floor(self.iw * 0.6 - 10), height=self.ih - 10 - self.c_self.h, floating_headers = true, scrollbar=true, sortable=true, columns={
 		{name="", width={24,"fixed"}, display_prop="--", direct_draw=direct_draw},
@@ -114,9 +96,7 @@ function _M:select(item)
 		if self.player and self.player.achievements and self.player.achievements[item.id] then
 			also = "#GOLD#Also achieved by your current character#LAST#\n"
 		end
-		self.c_image.item = item.tex
-		self.c_image.iw = item.tex[6]
-		self.c_image.ih = item.tex[7]
+		self.c_image:setDO(item.ido:clone():scale(128, 128))
 		local track = self:getTrack(item.a)
 		local desc = ("#GOLD#Achieved on:#LAST# %s\n#GOLD#Achieved by:#LAST# %s\n%s\n#GOLD#Description:#LAST# %s"):format(item.when, item.who, also, item.desc):toTString()
 		if track then
@@ -152,7 +132,6 @@ end
 
 function _M:generateList(kind)
 	local tiles = Tiles.new(16, 16, nil, nil, true)
-	local cache = {}
 
 	-- Makes up the list
 	local list = {}
@@ -164,23 +143,21 @@ function _M:generateList(kind)
 			color = colors.simple(colors.LIGHT_GREEN)
 		end
 		local img = a.image or "trophy_gold.png"
-		local tex = cache[img]
-		if not tex then
-			local image = tiles:loadImage(img)
-			if image then
-				tex = {image:glTexture()}
-				cache[img] = tex
-			end
+		local renderer, ido
+		local tex = tiles:loadTexture(img)
+		if tex then
+			ido = core.renderer.texture(tex, 0, 0, 1, 1)
+			if ido then renderer = core.renderer.renderer():add(ido:removeFromParent()) end
 		end
 		if not data.notdone or a.show then
 			if a.show == "full" or not data.notdone then
-				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			elseif a.show == "none" then
-				list[#list+1] = { name="???", color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name="???", color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			elseif a.show == "name" then
-				list[#list+1] = { name=a.name, color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc="-- Unknown --", category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			else
-				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, tex=tex, a=a }
+				list[#list+1] = { name=a.name, color=color, desc=a.desc, category=a.category or "--", when=data.when, who=data.who, order=a.order, id=id, img_renderer=renderer, ido=ido, a=a }
 			end
 			i = i + 1
 		end

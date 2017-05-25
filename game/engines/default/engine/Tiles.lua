@@ -81,6 +81,12 @@ function _M:loadImage(image)
 	return s
 end
 
+function _M:loadTexture(image)
+	local s = {core.loader.png(concatPrefix(self.prefix, image))}
+	if not s[1] then s = {core.loader.png(baseImageFile(image))} end
+	return unpack(s)
+end
+
 function _M:checkTileset(image, base)
 	local f
 	if not base then f = concatPrefix(self.prefix, image)
@@ -134,9 +140,23 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 				end
 			end
 			print("Loading tile", image, " even though tileset was", allow_tileset)
-			s = core.display.loadImage(concatPrefix(self.prefix, image))
-			if not s then s = core.display.loadImage(baseImageFile(image)) end
-			if s then is_image = true end
+
+			if self.texture then
+				local t, w, h  = core.loader.png(concatPrefix(self.prefix, image), self.sharp_scaling, not force_texture_repeat)
+				if not t then t, w, h = core.loader.png(baseImageFile(image), self.sharp_scaling, not force_texture_repeat) end
+				local ts, fx, fy, tsx, tsy, tw, th = t, 1, 1, 0, 0, w, h
+				if ts then
+					self.repo[char] = self.repo[char] or {}
+					self.repo[char][fgidx] = self.repo[char][fgidx] or {}
+					self.repo[char][fgidx][bgidx] = {ts, fx, fy, tw, th, tsx, tsy}
+					-- print(("------- TILE[%s] = texture (tile/%s: %fx%f %dx%d)"):format(char, ts:getValue(), fx, fy, tw, th))
+					return ts, fx, fy, tw, th, tsx, tsy
+				end
+			else
+				s = core.display.loadImage(concatPrefix(self.prefix, image))
+				if not s then s = core.display.loadImage(baseImageFile(image)) end
+				if s then is_image = true end
+			end
 		end
 
 		local pot_width = math.pow(2, math.ceil(math.log(self.w-0.1) / math.log(2.0)))

@@ -31,6 +31,7 @@ extern "C" {
 #include "math.h"
 }
 
+#include "core_loader.hpp"
 #include "spriter/Spriter.hpp"
 #include "spriter/SpriterCache.hpp"
 
@@ -48,28 +49,13 @@ texture_cache* DORSpriterCache::getTexture(string name) {
 	texture_cache *tex = new texture_cache;
 	tex_cache[name] = tex;
 
-	SDL_Surface *s = IMG_Load_RW(PHYSFSRWOPS_openRead(name.c_str()), TRUE);
-	if (!s) {
+	if (!loader_png(name.c_str(), &tex->tex, false, false, true)) {
 		printf("[SPRITER] texture file not found %s\n", name.c_str());
-		tex->tex = 0;
+		tex->tex.tex = 0;
 		return tex;
 	}
 
-	glGenTextures(1, &tex->tex);
-	tfglBindTexture(GL_TEXTURE_2D, tex->tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	GLint nOfColors = s->format->BytesPerPixel;
-	GLenum texture_format = sdl_gl_texture_format(s);
-	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
-
-	tex->w = s->w;
-	tex->h = s->h;
-
-	SDL_FreeSurface(s);
-	printf("[SPRITER] New texture %s = %d\n", name.c_str(), tex->tex);
+	printf("[SPRITER] New texture %s = %d (%dx%d)\n", name.c_str(), tex->tex.tex, tex->tex.w, tex->tex.h);
 	return tex;
 }
 
@@ -80,7 +66,7 @@ void DORSpriterCache::releaseTexture(texture_cache* tex) {
 			if (tex->used <= 0) {
 				tex_cache.erase(it);
 				printf("[SPRITER] Releasing texture %s = %d\n", it->first.c_str(), tex->tex);
-				glDeleteTextures(1, &tex->tex);
+				glDeleteTextures(1, &tex->tex.tex);
 				delete tex;
 			}
 			return;

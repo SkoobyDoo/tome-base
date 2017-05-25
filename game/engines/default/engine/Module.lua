@@ -204,7 +204,7 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 				local def = self:loadSavefileDescription(dir)
 				if def then
 					if def.loadable and fs.exists(dir.."/cur.png") then
-						def.screenshot = core.display.loadImage(dir.."/cur.png")
+						def.screenshot = core.loader.png(dir.."/cur.png")
 					end
 
 					table.insert(lss, def)
@@ -219,7 +219,7 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 				local def = self:loadSavefileDescription(dir)
 				if def then
 					if def.loadable and fs.exists(dir.."/cur.png") then
-						def.screenshot = core.display.loadImage(dir.."/cur.png")
+						def.screenshot = core.loader.png(dir.."/cur.png")
 					end
 
 					table.insert(lss, def)

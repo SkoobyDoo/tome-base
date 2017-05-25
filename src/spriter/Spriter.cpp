@@ -112,7 +112,7 @@ TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point init
 
 	if (!atlasData.active) {		
 		texture = DORSpriterCache::getTexture(initialFilePath);
-		aw = w = texture->w; ah = h = texture->h;
+		aw = w = texture->tex.w; ah = h = texture->tex.h;
 	} else {
 		string png = DORSpriter::currently_processing->scml;
 		png.replace(png.end() - 4, png.end(), "png");
@@ -127,15 +127,15 @@ TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point init
 		w = atlasData.ow;
 		h = atlasData.oh;
 		if (atlasData.rotated) {
-			tx1 = ax / texture->w;
-			ty1 = ay / texture->h;
-			tx2 = (ax + ah) / texture->w;
-			ty2 = (ay + aw) / texture->h;
+			tx1 = ax / texture->tex.w;
+			ty1 = ay / texture->tex.h;
+			tx2 = (ax + ah) / texture->tex.w;
+			ty2 = (ay + aw) / texture->tex.h;
 		} else {
-			tx1 = ax / texture->w;
-			ty1 = ay / texture->h;
-			tx2 = (ax + aw) / texture->w;
-			ty2 = (ay + ah) / texture->h;
+			tx1 = ax / texture->tex.w;
+			ty1 = ay / texture->tex.h;
+			tx2 = (ax + aw) / texture->tex.w;
+			ty2 = (ay + ah) / texture->tex.h;
 		}
 		rotated = atlasData.rotated;
 	}
@@ -148,7 +148,7 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 	DORSpriter *spriter = DORSpriter::currently_processing;
 
 	if (!spriter->render_z) {
-		auto dl = getDisplayList(spriter->render_container, {texture->tex, 0, 0}, spriter->shader);
+		auto dl = getDisplayList(spriter->render_container, {texture->tex.tex, 0, 0}, spriter->shader);
 
 		// Make the matrix corresponding to the shape
 		mat4 qm = mat4();
@@ -229,10 +229,10 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 		p4.pos = qm * p4.pos;
 
 		// And we're done!
-		spriter->render_container->zvertices.push_back({p1, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p2, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p3, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p4, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p1, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p2, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p3, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p4, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
 
 		spriter->render_microz += 0.01;
 	}

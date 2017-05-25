@@ -336,6 +336,7 @@ function _M:drawItem(item)
 			item.cols[i]._value = text
 		else
 			if not item.cols[i] then
+				local level = item.level
 				local offset = 0
 				if i == 1 then
 					offset = level * self.level_offset
