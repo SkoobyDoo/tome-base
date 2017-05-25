@@ -20,7 +20,7 @@
 newEntity{
 	name = "Novice mage",
 	type = "harmless", subtype = "special", unique = true,
-	immediate = {"world-encounter", "angolwen"},
+	immediate = {"world-encounter", "angolwen-quest"},
 	-- Spawn the novice mage near the player
 	on_encounter = function(self, who)
 		local x, y = self:findSpot(who)

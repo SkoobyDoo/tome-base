@@ -46,57 +46,12 @@ _M._special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_k
 
 function _M:getRequirementDesc(who)
 	local base_getRequirementDesc = engine.Object.getRequirementDesc
-	if self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_SKIRMISHER_BUCKLER_EXPERTISE) then
-		local oldreq = rawget(self, "require")
-		self.require = table.clone(oldreq, true)
-		if self.require.stat and self.require.stat.str then
-			self.require.stat.cun, self.require.stat.str = self.require.stat.str, nil
-		end
-		if self.require.talent then for i, tr in ipairs(self.require.talent) do
-			if tr[1] == who.T_ARMOUR_TRAINING then
-				self.require.talent[i] = {who.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
-				break
-			end
-		end end
-
-		local desc = base_getRequirementDesc(self, who)
-
-		self.require = oldreq
-
-		return desc
-	elseif self.subtype == "shield" and type(self.require) == "table" and who:knowTalent(who.T_AGILE_DEFENSE) then
-		local oldreq = rawget(self, "require")
-		self.require = table.clone(oldreq, true)
-		if self.require.stat and self.require.stat.str then
-			self.require.stat.dex, self.require.stat.str = self.require.stat.str, nil
-		end
-		if self.require.talent then for i, tr in ipairs(self.require.talent) do
-			if tr[1] == who.T_ARMOUR_TRAINING then
-				self.require.talent[i] = {who.T_AGILE_DEFENSE, 1}
-				break
-			end
-		end end
-
-		local desc = base_getRequirementDesc(self, who)
-
-		self.require = oldreq
-
-		return desc
-	elseif (self.type =="weapon" or self.type=="ammo") and type(self.require) == "table" and who:knowTalent(who.T_STRENGTH_OF_PURPOSE) then
-		local oldreq = rawget(self, "require")
-		self.require = table.clone(oldreq, true)
-		if self.require.stat and self.require.stat.str then
-			self.require.stat.mag, self.require.stat.str = self.require.stat.str, nil
-		end
-
-		local desc = base_getRequirementDesc(self, who)
-
-		self.require = oldreq
-
-		return desc
-	else
-		return base_getRequirementDesc(self, who)
-	end
+	
+	local oldreq
+	self.require, oldreq = who:updateObjectRequirements(self)
+	local ret = base_getRequirementDesc(self, who)
+	self.require = oldreq
+	return ret
 end
 
 local auto_moddable_tile_slots = {
@@ -358,6 +313,70 @@ function _M:use(who, typ, inven, item)
 	end
 end
 
+--- Find the best locations (inventory and slot) to try to wear an object in
+--		applies inventory filters, optionally sorted, does not check if the object can actually be worn
+-- @param use_actor: the actor to wear the object
+-- @param weight_fn[1]: a function(o, inven) returning a weight value for an object
+--		default is (1 + o:getPowerRank())*o.material_level, (0 for no object)
+-- @param weight_fn[2]: true weight is 1 (object) or 0 (no object) return empty locations (sorted)
+-- @param weight_fn[3]: false weight is 1 (object) or 0 (no object) return all locations (unsorted)
+-- @param filter_field: field to check in each inventory for an object filter (defaults: "auto_equip_filter")
+-- 		(sets filter._equipping_entity == use_actor before testing the filter)
+-- @param no_type_check: set to allow locations with objects of different type/subtype (automatic if a filter is defined)
+-- @return[1] nil if no locations could be found
+-- @return[2] an ordered list (table) of locations where the object can be worn, each with format:
+--		{inv=inventory (table), wt=sort weight, slot=slot within inventory}
+--		The sort weight for each location is computed = weight_fn(self, inven)-weight_fn(worn object, inven)
+--		(weight for objects that fail inventory filter checks is 0)
+--  	The list is sorted by descending weight, removing locations with sort weight <= 0
+function _M:wornLocations(use_actor, weight_fn, filter_field, no_type_check)
+	if not use_actor then return end
+	filter_field = filter_field == nil and "auto_equip_filter" or filter_field
+	if weight_fn == nil then
+		weight_fn = function(o, inven) return (1 + o:getPowerRank())*(o.material_level or 1) end
+	elseif weight_fn == true then
+		weight_fn = function(o, inven) return o and 1 or 0 end
+	end
+	-- considers main and offslot (could check others here)
+	-- Note: psionic focus needs code similar to that in the Telekinetic Grasp talent
+	local inv_ids = {self:wornInven()}
+	inv_ids[#inv_ids+1] = use_actor:getObjectOffslot(self)
+	local invens = {}
+	local new_wt = weight_fn and weight_fn(self) or 1
+	--print("[Object:wornLocations] found inventories", self.uid, self.name) table.print(inv_ids)
+	for i, id in ipairs(inv_ids) do
+		local inv = use_actor:getInven(id)
+		if inv then
+			local flt = inv[filter_field]
+			local match_types = not (no_type_check or flt)
+			if flt then
+				flt._equipping_entity = use_actor
+				if not game.zone:checkFilter(self, flt, "object") then inv = nil end
+			end
+			if inv then
+				local inv_name = use_actor:getInvenDef(id).short_name
+				for k = 1, math.min(inv.max, #inv + 1) do
+					local wo, wt = inv[k], new_wt
+					if wo then
+						if match_types and (self.type ~= wo.type or self.subtype ~= wo.subtype) and (inv_name == wo.slot or inv_name == use_actor:getObjectOffslot(wo)) then
+							wt = 0
+						elseif not flt or game.zone:checkFilter(wo, flt, "object") then
+							wt = wt - (weight_fn and weight_fn(wo) or 1)
+						end
+					end
+					if weight_fn == false or wt > 0 then invens[#invens+1] = {inv=inv, wt=wt, slot=k} end
+					if not wo then break end -- 1st open inventory slot
+				end
+			end
+			if flt then flt._equipping_entity = nil end
+		end
+	end
+	if #invens > 0 then
+		if weight_fn then table.sort(invens, function(a, b) return a.wt > b.wt end)	end
+		return invens
+	end
+end
+
 --- Returns a tooltip for the object
 function _M:tooltip(x, y, use_actor)
 	local str = self:getDesc({do_color=true}, game.player:getInven(self:wornInven()))
@@ -465,8 +484,9 @@ function _M:getPowerRank()
 	if self.godslayer then return 10 end
 	if self.legendary then return 5 end
 	if self.unique then return 3 end
-	if self.egoed and self.greater_ego then return 2 end
-	if self.egoed or self.rare then return 1 end
+	if self.egoed then
+		return math.min(2.5, 1 + (self.greater_ego and self.greater_ego or 0) + (self.rare and 1 or 0))
+	end
 	return 0
 end
 

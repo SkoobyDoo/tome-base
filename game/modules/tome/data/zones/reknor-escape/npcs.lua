@@ -47,6 +47,7 @@ newEntity{ define_as = "BROTOQ",
 	inc_damage = {all=-55},
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	resolvers.auto_equip_filters("Reaver"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="waraxe", defined="FAKE_SKULLCLEAVER", never_drop=true},
 		{type="weapon", subtype="longsword", forbid_power_source={antimagic=true}, autoreq=true},
