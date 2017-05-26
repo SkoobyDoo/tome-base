@@ -19,6 +19,7 @@
 
 require "engine.class"
 local UI = require "engine.ui.Base"
+local Dialog = require "engine.ui.Dialog"
 local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.make)
@@ -65,9 +66,49 @@ function _M:delete()
 end
 
 function _M:move(x, y)
+	self.x, self.y = x, y
 	self.texts:translate(x, y)
 	self.frame.container:translate(x, y)
 	self.display_entity:translate(x + 2, y + 2)
+end
+
+function _M:getDescription(player, e, p)
+	local name = e.desc
+	local desc = nil
+	local eff_subtype = table.concat(table.keys(e.subtype), "/")
+	if e.display_desc then name = e.display_desc(self, p) end
+	if p.save_string and p.amount_decreased and p.maximum and p.total_dur then
+		desc = ("#{bold}##GOLD#%s\n(%s: %s)#WHITE##{normal}#\n"):format(name, e.type, eff_subtype)..e.long_desc(player, p).." "..("%s reduced the duration of this effect by %d turns, from %d to %d."):format(p.save_string, p.amount_decreased, p.maximum, p.total_dur)
+	else
+		desc = ("#{bold}##GOLD#%s\n(%s: %s)#WHITE##{normal}#\n"):format(name, e.type, eff_subtype)..e.long_desc(player, p)
+	end
+	if self.removable then desc = desc.."\n---\nRight click to cancel early." end
+	return desc
+end
+
+function _M:positionMouse(x, y)
+	self.effects.mouse:replaceZone(self.x - x, self.y - y, 40, 40, function(button, mx, my, xrel, yrel, bx, by, event)
+		local player = self.effects:getPlayer()
+		local p = player.tmp[self.eff_id]
+		if not p then return end
+		local e = player:getEffectFromId(self.eff_id)
+
+		if config.settings.cheat and event == "button" and core.key.modState("shift") then
+			if button == "left" then
+				p.dur = p.dur + 1
+			elseif button == "right" then
+				p.dur = p.dur - 1
+			end
+		elseif self.removable and event == "button" and button == "right" then
+			Dialog:yesnoPopup(e.desc, "Really cancel "..e.desc.."?", function(ret)
+				if ret then
+					player:removeEffect(self.eff_id)
+				end
+			end)
+		end
+
+		game:tooltipDisplayAtMap(game.w, game.h, self:getDescription(player, e, p))
+	end, nil, "effects:"..self.eff_id, true, 1)
 end
 
 function _M:update(player)

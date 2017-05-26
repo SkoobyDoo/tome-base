@@ -744,6 +744,11 @@ function _M:removeEffect(eff_id, ...)
 	return mod.class.Actor.removeEffect(self, eff_id, ...)
 end
 
+function _M:postUseTalent(ab, ...)
+	game:triggerEventUI("Player:postUseTalent", self, ab, ...)
+	return mod.class.Actor.postUseTalent(self, ab, ...)
+end
+
 function _M:on_set_temporary_effect(eff_id, e, p)
 	local ret = mod.class.Actor.on_set_temporary_effect(self, eff_id, e, p)
 

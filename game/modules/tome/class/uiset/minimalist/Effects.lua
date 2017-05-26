@@ -25,6 +25,7 @@ local Shader = require "engine.Shader"
 local FontPackage = require "engine.FontPackage"
 local Tiles = require "engine.Tiles"
 local Effect = require "mod.class.uiset.minimalist.sub.Effect"
+local Sustain = require "mod.class.uiset.minimalist.sub.Sustain"
 
 --- Player frame for Minimalist ui
 module(..., package.seeall, class.inherit(MiniContainer))
@@ -58,6 +59,8 @@ function _M:init(minimalist, w, h)
 	game:registerEventUI(self, "Party:switchedPlayer")
 	game:registerEventUI(self, "Player:setEffect")
 	game:registerEventUI(self, "Player:removeEffect")
+	game:registerEventUI(self, "Player:postUseTalent")
+	self:onEventUI(nil, nil)
 end
 
 function _M:getName()
@@ -143,6 +146,15 @@ function _M:updateList()
 	if not player then return end
 
 	local good_e, bad_e = {}, {}
+
+	for tid, p in pairs(player.sustain_talents) do
+		local e = player.tempeffect_def[tid]
+		local de = self.all[tid]
+		if not de then de = Sustain.new(self, tid)
+		else self.all[tid] = nil end
+		good_e[tid] = de
+	end
+
 	for eff_id, p in pairs(player.tmp) do
 		local e = player.tempeffect_def[eff_id]
 		local de = self.all[eff_id]
@@ -170,8 +182,17 @@ function _M:updateList()
 		de:move(x, y)
 		y = y + self.rh
 	end
+
+	self.mouse_zone_x = x
+	self.mouse_zone_y = 0
+	self.mouse_zone_w = self.rw - x
+	self.mouse_zone_h = self.rh + y
+	self:setupMouse()
+
+	for eff_id, de in pairs(self.all) do de:positionMouse(self.mouse_zone_x, self.mouse_zone_y) end
 end
 
-function _M:onEventUI(kind, who)
+function _M:onEventUI(kind, who, v1, ...)
+	if kind == "Player:postUseTalent" and v1.mode ~= "sustained" then return end
 	game:onTickEnd(function() self:updateList() end, "Minimalist:EffectsUpdate")
 end
