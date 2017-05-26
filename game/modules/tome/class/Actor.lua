@@ -4242,7 +4242,7 @@ end
 -- @param in_inven_id the inventory id in which the item is worn or tries to be worn
 function _M:slotForbidCheck(o, in_inven_id)
 	in_inven_id = self:getInven(in_inven_id).id
-	if self:attr("allow_mainhand_2h_in_1h") and in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" then
+	if in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" and self:attr("allow_mainhand_2h_in_1h") then
 		return false
 	end
 	return true
@@ -4255,6 +4255,7 @@ end
 function _M:wearAllInventory(force, ...)
 	local MainInven, o = self:getInven(self.INVEN_INVEN)
 	if MainInven and (force or not MainInven._no_equip_objects) then
+		local party = game.party:hasMember(self)
 		for i = #MainInven, 1, -1 do
 			if not o then print("[Actor:wearAllInventory]", self.uid, self.name, "wearing main inventory") end
 			o = MainInven[i]
@@ -4273,6 +4274,9 @@ function _M:wearAllInventory(force, ...)
 							if type(worn) == "table" then
 								print("    --- replaced:", worn.uid, worn.name)
 								self:addObject(self.INVEN_INVEN, worn)
+							end
+							if party then
+								game.logSeen(self, "%s wears %s%s.", self.name:capitalize(), o:getName({do_color=true, no_add_name=true}), type(worn) == "table" and (" (replacing %s)"):format(worn:getName({no_add_name=true})) or "")
 							end
 							break
 						end

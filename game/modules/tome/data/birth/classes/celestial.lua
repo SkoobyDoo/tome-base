@@ -97,9 +97,22 @@ newBirthDescriptor{
 	copy = {
 		max_life = 110,
 		resolvers.auto_equip_filters{
-			MAINHAND = {type="weapon", not_properties={"twohanded"}},
+			MAINHAND = {type="weapon", special=function(e, filter) -- allow any weapon that doesn't forbid OFFHAND
+				if e.slot_forbid == "OFFHAND" then
+					local who = filter._equipping_entity
+					return who and not who:slotForbidCheck(e, who.INVEN_MAINHAND)
+				end
+				return true
+			end},
 			OFFHAND = {special=shield_special},
-			BODY = {type="armor", special=function(e) return e.subtype=="heavy" or e.subtype=="massive" end},
+			BODY = {type="armor", special=function(e, filter)
+				if e.subtype=="heavy" or e.subtype=="massive" then return true end
+				local who = filter._equipping_entity
+				if who then
+					local body = who:getInven(who.INVEN_BODY)
+					return not (body and body[1])
+				end
+			end},
 		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="mace", name="iron mace", autoreq=true, ego_chance=-1000},
