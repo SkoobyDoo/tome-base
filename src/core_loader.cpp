@@ -84,7 +84,7 @@ public:
 			GLint nOfColors = s->format->BytesPerPixel;
 			glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
 			SDL_FreeSurface(s);
-			printf("[LOADER] done loading PNG %s!\n", filename.c_str());
+			// printf("[LOADER] done loading PNG %s!\n", filename.c_str());
 		}
 	}
 };
@@ -222,7 +222,7 @@ void loader_tick() {
 			delete l;
 		}
 	}
-	printf("LOADER LEFT: %d\n", loader_running);
+	// printf("LOADER LEFT: %d\n", loader_running);
 }
 
 static int lua_loader_wait(lua_State *L) {
