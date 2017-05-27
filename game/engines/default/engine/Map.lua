@@ -279,7 +279,7 @@ function _M:getMinimapDO(forcenew)
 end
 
 function _M:makeCMap()
-	--util.show_backtrace()
+	-- util.show_backtrace()
 	self._map = core.map.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
 	if not self._do_map then self._do_map = self._map:getMapDO()
 	else self._do_map:setMap(self._map)

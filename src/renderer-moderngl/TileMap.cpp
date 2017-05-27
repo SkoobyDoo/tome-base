@@ -37,6 +37,20 @@ extern "C" {
  ** DORTileMap - a DO of a map
  *************************************************************************/
 
+DORTileMap::DORTileMap() {
+	setRendererName("map");
+}
+
+DORTileMap::~DORTileMap() {
+	if (map) map->map_dos->erase(this);
+}
+
+void DORTileMap::setMap(map_type *map) {
+	// if (this->map) this->map->map_dos->erase(this);
+	if (map) map->map_dos->insert(this);
+	this->map = map;
+};
+
 void DORTileMap::cloneInto(DisplayObject *_into) {
 	DisplayObject::cloneInto(_into);
 	DORTileMap *into = dynamic_cast<DORTileMap*>(_into);
@@ -44,13 +58,121 @@ void DORTileMap::cloneInto(DisplayObject *_into) {
 }
 
 void DORTileMap::toScreen(mat4 model, vec4 color) {
-	switch (mode) {
-		case TileMapMode::MAP:
-			map_toscreen(L, map, 0, 0, 1, true, model, color);
-		case TileMapMode::MINIMAP:
-			minimap_toscreen(map, model, mm_info.gridsize, mm_info.mdx, mm_info.mdy, mm_info.mdw, mm_info.mdh, mm_info.transp);
-	}
+	if (!map) return;
+	map_toscreen(L, map, 0, 0, 1, true, model, color);
 }
+
+
+/*************************************************************************
+ ** DORTileMiniMap - a DO of a map
+ *************************************************************************/
+
+DORTileMiniMap::DORTileMiniMap() {
+	glGenTextures(1, &tex[0]);
+	tglBindTexture(GL_TEXTURE_2D, tex[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+}
+
+DORTileMiniMap::~DORTileMiniMap() {
+	glDeleteTextures(1, &tex[0]);
+	if (map) map->minimap_dos->erase(this);
+}
+
+void DORTileMiniMap::setMap(map_type *map) {
+	// if (this->map) this->map->minimap_dos->erase(this);
+	if (map) map->minimap_dos->insert(this);
+	this->map = map;
+};
+
+void DORTileMiniMap::cloneInto(DisplayObject *_into) {
+	DisplayObject::cloneInto(_into);
+	DORTileMiniMap *into = dynamic_cast<DORTileMiniMap*>(_into);
+	into->map = map;
+}
+
+void DORTileMiniMap::setTexture(GLuint tex, int lua_ref, int id) {
+	if (id == 0) {
+		printf("[DORTileMiniMap] ERROR: Setting texture 0 is NOT ALLOWED\n");
+		return;
+	}
+	DORVertexes::setTexture(tex, lua_ref, id);
+}
+
+void DORTileMiniMap::setMinimapInfo(int mdx, int mdy, int mdw, int mdh, float transp) {
+	if (info.mdx == mdx && info.mdy == mdy && info.mdw == mdw && info.mdh == mdh && info.transp == transp) return;
+	bool full = (info.mdw != mdw || info.mdh != mdh);
+	info.mdx = mdx;
+	info.mdy = mdy;
+	info.mdw = mdw;
+	info.mdh = mdh;
+	info.transp = transp;
+	ready = true;
+	redrawMiniMap(full);
+}
+
+void DORTileMiniMap::redrawMiniMap(bool full_texture_update) {
+	if (!map || !ready) return;
+
+	int z = 0, i = 0, j = 0;
+	GLfloat r, g, b, a;
+
+	// Create/recreate the minimap data if needed
+	if (full_texture_update)
+	{
+		if (mm_data) delete mm_data;
+		mm_data = new GLubyte[4 * info.mdw * info.mdh];
+		clear();
+		addQuad(
+			0, 0, 0, 0,
+			0, info.mdh, 0, 1,
+			info.mdw, info.mdh, 1, 1,
+			info.mdw, 0, 1, 0,
+			1, 1, 1, 1
+		);
+	}
+
+	memset(mm_data, 0, info.mdw * info.mdh * 4 * sizeof(GLubyte));
+
+	int mini = info.mdx, maxi = info.mdx + info.mdw, minj = info.mdy, maxj = info.mdy + info.mdh;
+	if(mini < 0) mini = 0;
+	if(minj < 0) minj = 0;
+	if(maxi > map->w) maxi = map->w;
+	if(maxj > map->h) maxj = map->h;
+
+	int ptr;
+	for (z = 0; z < map->zdepth; z++) {
+		for (j = minj; j < maxj; j++) {
+			for (i = mini; i < maxi; i++) {
+				map_object *mo = map->grids[i][j][z];
+				if (!mo || mo->mm_r < 0) continue;
+				ptr = ((j-info.mdy) * info.mdw + (i-info.mdx)) * 4;
+
+				if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && map->grids_remembers[i][j]) || mo->on_unknown) {
+					if (map->grids_seens[j*map->w+i]) {
+						r = mo->mm_r; g = mo->mm_g; b = mo->mm_b; a = info.transp;
+					} else {
+						r = mo->mm_r * 0.6; g = mo->mm_g * 0.6; b = mo->mm_b * 0.6; a = info.transp * 0.6;
+					}
+					mm_data[ptr] = b * 255;
+					mm_data[ptr+1] = g * 255;
+					mm_data[ptr+2] = r * 255;
+					mm_data[ptr+3] = a * 255;
+				}
+			}
+		}
+	}
+
+	tglBindTexture(GL_TEXTURE_2D, tex[0]);
+	// Full texture update means we change size so we need a full call to glTexImage2D
+	if (full_texture_update) glTexImage2D(GL_TEXTURE_2D, 0, 4, info.mdw, info.mdh, 0, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
+	else glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.mdw, info.mdh, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
+
+	// printf("==updating %lx mm texture %d\n", this, full_texture_update);
+}
+
 
 /*************************************************************************
  ** DORTileObject - a DO of an entity (kinda, more exactly of a list of MOs)

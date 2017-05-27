@@ -75,7 +75,7 @@ function _M:getDefaultGeometry()
 	local w = self.rw
 	local h = self.rh * 2
 	local x = game.w - w
-	local y = 200
+	local y = 230
 	return x, y, w, h
 end
 

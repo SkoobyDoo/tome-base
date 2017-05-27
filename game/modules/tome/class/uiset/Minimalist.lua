@@ -88,7 +88,7 @@ end
 
 _M.allcontainers = {
 	"mod.class.uiset.minimalist.PlayerFrame",
-	-- "mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
+	"mod.class.uiset.minimalist.Minimap", -- DGDGDGDG: rewrite minimap code, it royaly sucks trolls ass
 	"mod.class.uiset.minimalist.Toolbar",
 	"mod.class.uiset.minimalist.Resources",
 	"mod.class.uiset.minimalist.Effects",

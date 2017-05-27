@@ -577,13 +577,6 @@ static int map_new(lua_State *L)
 	map->default_shader_ref = LUA_NOREF;
 	map->default_shader = NULL;
 
-	map->minimap = NULL;
-	map->mm_texture = 0;
-	map->mm_w = map->mm_h = 0;
-
-	map->minimap_gridsize = 4;
-	map->old_minimap_gridsize = 0;
-
 	map->is_hex = (is_hex > 0);
 	lua_pushlightuserdata(L, (void *)&IS_HEX_KEY); // push address as guaranteed unique key
 	lua_pushnumber(L, map->is_hex);
@@ -659,6 +652,7 @@ static int map_new(lua_State *L)
 	for (i = 0; i < zdepth; i++) map->z_callbacks[i] = LUA_NOREF;
 
 	map->changed = true;
+	map->minimap_changed = true;
 
 	map->renderer = new RendererGL(VBOMode::STREAM);
 	char *name = strdup("map-layer");
@@ -669,7 +663,9 @@ static int map_new(lua_State *L)
 	map->shader_to_shaderkind = new unordered_map<string, float>;
 
 	map->seens_vbo = NULL;
-	map->mm_vbo = NULL;
+
+	map->map_dos = new unordered_set<DORTileMap*>;
+	map->minimap_dos = new unordered_set<DORTileMiniMap*>;
 
 	return 1;
 }
@@ -718,11 +714,12 @@ static int map_free(lua_State *L)
 	glDeleteTextures(1, &map->seens_texture);
 	free(map->seens_map);
 
-	if (map->minimap) free(map->minimap);
-	if (map->mm_texture) glDeleteTextures(1, &map->mm_texture);
-
 	if (map->seens_vbo) delete map->seens_vbo;
-	if (map->mm_vbo) delete map->mm_vbo;
+
+	for (auto &it : *map->map_dos) it->setMap(NULL);
+	for (auto &it : *map->minimap_dos) it->setMap(NULL);
+	delete map->map_dos;
+	delete map->minimap_dos;
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -892,15 +889,6 @@ static int map_set_shown(lua_State *L)
 	return 0;
 }
 
-static int map_set_minimap_gridsize(lua_State *L)
-{
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
-	float s = luaL_checknumber(L, 2);
-	map->old_minimap_gridsize = map->minimap_gridsize;
-	map->minimap_gridsize = s;
-	return 0;
-}
-
 static int map_set_grid(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
@@ -950,6 +938,7 @@ static int map_set_grid(lua_State *L)
 		if (map->grids[x][y][i] != old) {
 			// printf("Invalidagin layer %d at %dx%d because %lx != %lx\n", i,x,y, old, map->grids[x][y][i]);
 			map->changed = true;
+			map->minimap_changed = true;
 		}
 
 		// Set the object in the mo list
@@ -977,6 +966,7 @@ static int map_set_seen(lua_State *L)
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_seens[y*map->w+x] = v;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -990,6 +980,7 @@ static int map_set_remember(lua_State *L)
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_remembers[x][y] = v;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1003,6 +994,7 @@ static int map_set_lite(lua_State *L)
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_lites[x][y] = v;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1028,6 +1020,7 @@ static int map_clean_seen(lua_State *L)
 		for (j = 0; j < map->h; j++)
 			map->grids_seens[j*map->w+i] = 0;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1040,6 +1033,7 @@ static int map_clean_remember(lua_State *L)
 		for (j = 0; j < map->h; j++)
 			map->grids_remembers[i][j] = false;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1052,6 +1046,7 @@ static int map_clean_lite(lua_State *L)
 		for (j = 0; j < map->h; j++)
 			map->grids_lites[i][j] = false;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1731,8 +1726,15 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 				so->i, so->j);
 
 		}
+
+		// map->changed = false;
 	}
 	render->toScreen(model, color);
+
+	if (map->minimap_changed) {
+		map->minimap_changed = false;
+		for (auto &it : *map->minimap_dos) it->redrawMiniMap();
+	}
 
 	/*
 	// Always display some more of the map to make sure we always see it all
@@ -1848,137 +1850,12 @@ static int map_line_grids(lua_State *L) {
 	return 0;	
 }
 
-static void minimap_update(map_type *map, int mdx, int mdy, int mdw, int mdh, float transp) {
-	int z = 0, i = 0, j = 0;
-	int vert_idx = 0;
-	int col_idx = 0;
-	GLfloat r, g, b, a;
-
-	if (!map->mm_vbo) map->mm_vbo = new VBO(VBOMode::STATIC);
-
-	int f = (map->is_hex & 1);
-	// Create/recreate the minimap data if needed
-	if (map->mm_w != mdw || map->mm_h != mdh || map->old_minimap_gridsize != map->minimap_gridsize)
-	{
-		if (map->mm_texture) glDeleteTextures(1, &(map->mm_texture));
-		if (map->minimap) free(map->minimap);
-
-		// In case we can't support NPOT textures round up to nearest POT
-		int realw=1;
-		int realh=1;
-		while (realw < mdw) realw *= 2;
-		while (realh < f + (1+f)*mdh) realh *= 2;
-
-		glGenTextures(1, &(map->mm_texture));
-		map->mm_w = mdw;
-		map->mm_h = mdh;
-		map->mm_rw = realw;
-		map->mm_rh = realh;
-		printf("C Map minimap texture: %d (%dx%d; %dx%d)\n", map->mm_texture, mdw, mdh, realw, realh);
-		tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-		map->minimap = (GLubyte*)calloc(realw*realh*4, sizeof(GLubyte));
-
-		map->mm_vbo->setTexture(map->mm_texture);
-		map->mm_vbo->addQuad(
-			0, 0, 0, 0,
-			0, mdh * map->minimap_gridsize, 0, (float)((1+f)*mdh)/(float)map->mm_rh,
-			mdw * map->minimap_gridsize, mdh * map->minimap_gridsize, (float)mdw/(float)map->mm_rw, (float)((1+f)*mdh)/(float)map->mm_rh,
-			mdw * map->minimap_gridsize, 0, (float)mdw/(float)map->mm_rw, 0,
-			1, 1, 1, 1
-		);
-		map->old_minimap_gridsize = map->minimap_gridsize;
-	}
-
-	int ptr;
-	GLubyte *mm = map->minimap;
-	memset(mm, 0, map->mm_rh * map->mm_rw * 4 * sizeof(GLubyte));
-
-	int mini = mdx, maxi = mdx + mdw, minj = mdy, maxj = mdy + mdh;
-
-	if(mini < 0)
-		mini = 0;
-	if(minj < 0)
-		minj = 0;
-	if(maxi > map->w)
-		maxi = map->w;
-	if(maxj > map->h)
-		maxj = map->h;
-
-	for (z = 0; z < map->zdepth; z++)
-	{
-		for (j = minj; j < maxj; j++)
-		{
-			for (i = mini; i < maxi; i++)
-			{
-				map_object *mo = map->grids[i][j][z];
-				if (!mo || mo->mm_r < 0) continue;
-				ptr = (((1+f)*(j-mdy) + (i & f)) * map->mm_rw + (i-mdx)) * 4;
-
-				if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && map->grids_remembers[i][j]) || mo->on_unknown)
-				{
-					if (map->grids_seens[j*map->w+i])
-					{
-						r = mo->mm_r; g = mo->mm_g; b = mo->mm_b; a = transp;
-					}
-					else
-					{
-						r = mo->mm_r * 0.6; g = mo->mm_g * 0.6; b = mo->mm_b * 0.6; a = transp * 0.6;
-					}
-					mm[ptr] = b * 255;
-					mm[ptr+1] = g * 255;
-					mm[ptr+2] = r * 255;
-					mm[ptr+3] = a * 255;
-					if (f) {
-						ptr += 4 * map->mm_rw;
-						mm[ptr] = b * 255;
-						mm[ptr+1] = g * 255;
-						mm[ptr+2] = r * 255;
-						mm[ptr+3] = a * 255;
-					}
-				}
-			}
-		}
-	}
-	tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, GL_BGRA, GL_UNSIGNED_BYTE, mm);
-}
-
-static int lua_minimap_to_screen(lua_State *L)
-{
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
-	int x = luaL_checknumber(L, 2);
-	int y = luaL_checknumber(L, 3);
-	int mdx = luaL_checknumber(L, 4);
-	int mdy = luaL_checknumber(L, 5);
-	int mdw = luaL_checknumber(L, 6);
-	int mdh = luaL_checknumber(L, 7);
-	float transp = luaL_checknumber(L, 8);
-
-	minimap_update(map, mdx, mdy, mdw, mdh, transp);
-
-	map->mm_vbo->toScreen(x, y, 0, 1, 1);
-	return 0;
-}
-
-void minimap_toscreen(map_type *map, mat4 model, int gridsize, int mdx, int mdy, int mdw, int mdh, float transp) {
-	map->old_minimap_gridsize = map->minimap_gridsize;
-	map->minimap_gridsize = gridsize;
-	minimap_update(map, mdx, mdy, mdw, mdh, transp);
-	map->mm_vbo->toScreen(model);
-}
-
 static int map_get_display_object(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 
 	DORTileMap *tm = new DORTileMap();
 	tm->setMap(map);
-	tm->setMode(TileMapMode::MAP);
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = tm;
@@ -1990,13 +1867,12 @@ static int map_get_display_object_mm(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 
-	DORTileMap *tm = new DORTileMap();
+	DORTileMiniMap *tm = new DORTileMiniMap();
 	tm->setMap(map);
-	tm->setMode(TileMapMode::MINIMAP);
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = tm;
-	auxiliar_setclass(L, "gl{tilemap}", -1);
+	auxiliar_setclass(L, "gl{tileminimap}", -1);
 	return 1;
 }
 
@@ -2034,10 +1910,8 @@ static const struct luaL_Reg map_reg[] =
 	{"setScroll", map_set_scroll},
 	{"getScroll", map_get_scroll},
 	{"toScreen", lua_map_toscreen},
-	{"toScreenMiniMap", lua_minimap_to_screen},
 	{"toScreenLineGrids", map_line_grids},
 	{"setupGridLines", map_define_grid_lines},
-	{"setupMiniMapGridSize", map_set_minimap_gridsize},
 	{"getMapDO", map_get_display_object},
 	{"getMinimapDO", map_get_display_object_mm},
 	{NULL, NULL},

@@ -1315,7 +1315,6 @@ end
 
 --- Update the zone name, if needed
 function _M:updateZoneName()
-	if not self.zone_font then return end
 	local name
 	if self.zone.display_name then
 		name = self.zone.display_name()
@@ -1328,9 +1327,11 @@ function _M:updateZoneName()
 			name = ("%s (%d)"):format(self.zone.name, lev)
 		end
 	end
-	self.zone_name = name
-	self.old_zone_name = self.zone_name -- For compatibility
-	print("Updating zone name", name)
+	if self.zone_name ~= name then
+		self.zone_name = name
+		self.old_zone_name = self.zone_name -- For compatibility
+		print("Updating zone name", name)
+	end
 end
 
 function _M:tick()

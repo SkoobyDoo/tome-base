@@ -24,6 +24,7 @@
 #include <renderer-moderngl/Renderer.hpp>
 #include <renderer-moderngl/VBO.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 /****************************************************************************
  ** A special DORCallback to handle what is needed by map code
@@ -109,6 +110,8 @@ struct map_object_sort {
 	int i, j;
 };
 
+class DORTileMap;
+class DORTileMiniMap;
 struct map_type {
 	map_object_sort **sort_mos;
 	int sort_mos_max;
@@ -118,12 +121,6 @@ struct map_type {
 	bool **grids_remembers;
 	bool **grids_lites;
 	bool **grids_important;
-
-	GLubyte *minimap;
-	GLuint mm_texture;
-	int mm_w, mm_h;
-	int mm_rw, mm_rh;
-	int minimap_gridsize, old_minimap_gridsize;
 
 	int nb_grid_lines_vertices;
 	DORVertexes *grid_lines;
@@ -168,11 +165,14 @@ struct map_type {
 	bool seen_changed;
 
 	// Render processing
-	bool changed;
+	bool changed, minimap_changed;
 	RendererGL *renderer;
 	unordered_map<string, float> *shader_to_shaderkind;
 	VBO *seens_vbo;
-	VBO *mm_vbo;
+
+	// Referencing
+	unordered_set<DORTileMap*> *map_dos;
+	unordered_set<DORTileMiniMap*> *minimap_dos;
 };
 
 extern void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color);
