@@ -86,7 +86,14 @@ newBirthDescriptor{
 	copy = {
 		resolvers.auto_equip_filters{
 			MAINHAND = {type="weapon", properties={"twohanded"}},
-			OFFHAND = {type="none"}
+			OFFHAND = {special=function(e, filter) -- only allow if there is already a weapon in MAINHAND
+				local who = filter._equipping_entity
+				if who then
+					local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+					if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+				end
+				return false
+			end},
 		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -147,9 +154,22 @@ newBirthDescriptor{
 	},
 	copy = {
 		resolvers.auto_equip_filters{
-			MAINHAND = {type="weapon", not_properties={"twohanded"}},
+			MAINHAND = {type="weapon", special=function(e, filter) -- allow any weapon that doesn't forbid OFFHAND
+				if e.slot_forbid == "OFFHAND" then
+					local who = filter._equipping_entity
+					return who and not who:slotForbidCheck(e, who.INVEN_MAINHAND)
+				end
+				return true
+			end},
 			OFFHAND = {special=shield_special},
-			BODY = {type="armor", special=function(e) return e.subtype=="heavy" or e.subtype=="massive" end},
+			BODY = {type="armor", special=function(e, filter)
+				if e.subtype=="heavy" or e.subtype=="massive" then return true end
+				local who = filter._equipping_entity
+				if who then
+					local body = who:getInven(who.INVEN_BODY)
+					return not (body and body[1])
+				end
+			end},
 		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -203,6 +223,14 @@ newBirthDescriptor{
 	copy = {
 		max_life = 110,
 		resolvers.auto_equip_filters{MAINHAND = {type="weapon", properties={"archery"}},
+			OFFHAND = {special=function(e, filter) -- only allow if there is a 1H weapon in MAINHAND
+				local who = filter._equipping_entity
+				if who then
+					local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+					if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+				end
+				return false
+			end},
 			QUIVER={properties={"archery_ammo"}, special=function(e, filter) -- must match the MAINHAND weapon, if any
 				local mh = filter._equipping_entity and filter._equipping_entity:getInven(filter._equipping_entity.INVEN_MAINHAND)
 				mh = mh and mh[1]

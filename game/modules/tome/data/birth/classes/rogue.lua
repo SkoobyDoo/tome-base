@@ -86,7 +86,7 @@ newBirthDescriptor{
 		resolvers.auto_equip_filters{
 			MAINHAND = {type="weapon", subtype="dagger"},
 			OFFHAND = {type="weapon", subtype="dagger"},
-			BODY = {type="armor", special=function(e) return e.subtype=="light" or e.subtype=="cloth" end},
+			BODY = {type="armor", special=function(e) return e.subtype=="light" or e.subtype=="cloth" or e.subtype=="mummy" end},
 		},
 		equipment = resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},
@@ -155,7 +155,7 @@ newBirthDescriptor{
 		resolvers.auto_equip_filters{
 			MAINHAND = {type="weapon", subtype="dagger"},
 			OFFHAND = {type="weapon", subtype="dagger"},
-			BODY = {type="armor", special=function(e) return e.subtype=="light" or e.subtype=="cloth" end},
+			BODY = {type="armor", special=function(e) return e.subtype=="light" or e.subtype=="cloth" or e.subtype=="mummy" end},
 		},
 		equipment = resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},
@@ -271,6 +271,7 @@ newBirthDescriptor{
 		resolvers.auto_equip_filters{
 			MAINHAND = {type="weapon", subtype="sling"},
 			OFFHAND = {special=shield_special},
+			BODY = {type="armor", special=function(e) return e.subtype=="light" or e.subtype=="cloth" or e.subtype=="mummy" end},
 			QUIVER={properties={"archery_ammo"}, special=function(e, filter) -- must match the MAINHAND weapon, if any
 				local mh = filter._equipping_entity and filter._equipping_entity:getInven(filter._equipping_entity.INVEN_MAINHAND)
 				mh = mh and mh[1]

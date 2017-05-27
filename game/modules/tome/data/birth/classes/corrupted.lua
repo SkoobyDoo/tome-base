@@ -83,7 +83,13 @@ newBirthDescriptor{
 	},
 	copy = {
 		resolvers.auto_equip_filters{
-			MAINHAND = {type="weapon", not_properties={"twohanded"}},
+			MAINHAND = {type="weapon", special=function(e, filter) -- allow any weapon that doesn't forbid OFFHAND
+				if e.slot_forbid == "OFFHAND" then
+					local who = filter._equipping_entity
+					return who and not who:slotForbidCheck(e, who.INVEN_MAINHAND)
+				end
+				return true
+			end},
 			OFFHAND = {type="weapon", not_properties={"twohanded"}}
 		},
 		resolvers.equipbirth{ id=true,
