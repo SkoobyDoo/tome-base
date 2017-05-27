@@ -716,8 +716,8 @@ static int map_free(lua_State *L)
 
 	if (map->seens_vbo) delete map->seens_vbo;
 
-	for (auto &it : *map->map_dos) it->setMap(NULL);
-	for (auto &it : *map->minimap_dos) it->setMap(NULL);
+	for (auto &it : *map->map_dos) it->mapDeath(map);
+	for (auto &it : *map->minimap_dos) it->mapDeath(map);
 	delete map->map_dos;
 	delete map->minimap_dos;
 

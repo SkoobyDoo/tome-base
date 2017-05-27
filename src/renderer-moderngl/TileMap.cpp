@@ -45,9 +45,14 @@ DORTileMap::~DORTileMap() {
 	if (map) map->map_dos->erase(this);
 }
 
+void DORTileMap::mapDeath(map_type *map) {
+	if (this->map != map) return;
+	this->map = NULL;
+};
+
 void DORTileMap::setMap(map_type *map) {
-	// if (this->map) this->map->map_dos->erase(this);
-	if (map) map->map_dos->insert(this);
+	if (!map) { printf("[DORTileMap] ERROR: trying to setMap a NULL map\n"); return; }
+	map->map_dos->insert(this);
 	this->map = map;
 };
 
@@ -74,6 +79,7 @@ DORTileMiniMap::DORTileMiniMap() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	printf("===tilemap %ld with texture %d\n", this, tex[0]);
 }
 
 DORTileMiniMap::~DORTileMiniMap() {
@@ -81,9 +87,14 @@ DORTileMiniMap::~DORTileMiniMap() {
 	if (map) map->minimap_dos->erase(this);
 }
 
+void DORTileMiniMap::mapDeath(map_type *map) {
+	if (this->map != map) return;
+	this->map = NULL;
+};
+
 void DORTileMiniMap::setMap(map_type *map) {
-	// if (this->map) this->map->minimap_dos->erase(this);
-	if (map) map->minimap_dos->insert(this);
+	if (!map) { printf("[DORTileMiniMap] ERROR: trying to setMap a NULL map\n"); return; }
+	map->minimap_dos->insert(this);
 	this->map = map;
 };
 
@@ -170,7 +181,7 @@ void DORTileMiniMap::redrawMiniMap(bool full_texture_update) {
 	if (full_texture_update) glTexImage2D(GL_TEXTURE_2D, 0, 4, info.mdw, info.mdh, 0, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
 	else glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.mdw, info.mdh, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
 
-	// printf("==updating %lx mm texture %d\n", this, full_texture_update);
+	printf("==updating %lx mm texture %d\n", this, full_texture_update);
 }
 
 

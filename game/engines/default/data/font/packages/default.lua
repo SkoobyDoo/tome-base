@@ -51,4 +51,5 @@ newPackage{ id = "fantasy", name = "Fantasy", weight = 100,
 	bignews = {font="/data/font/Salsa-Regular.ttf", normal=30},
 	resources_normal = {font="/data/font/Salsa-Regular.ttf", normal=14},
 	resources_small = {font="/data/font/Salsa-Regular.ttf", normal=12},
+	-- lore = {font="/data/font/Allura-Regular.ttf", normal=32, small=12, big=18},
 }

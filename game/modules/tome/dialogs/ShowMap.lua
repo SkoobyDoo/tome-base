@@ -19,12 +19,11 @@
 
 require "engine.class"
 local Dialog = require "engine.ui.Dialog"
-local GenericContainer = require "engine.ui.GenericContainer"
+local DisplayObject = require "engine.ui.DisplayObject"
 
 module(..., package.seeall, class.inherit(Dialog))
 
-function _M:init(mm_mode)
-	self.mm_mode = mm_mode
+function _M:init()
 	self.title_shadow = false
 	self.color = {r=0x3a, g=0x35, b=0x33}
 
@@ -46,29 +45,30 @@ function _M:init(mm_mode)
 
 	local t_per_w, t_per_h = math.floor(mw / self.bsize), math.floor(mh / self.bsize)
 
-	Dialog.init(self, "Map: #0080FF#"..game.old_zone_name, 1, 1)
+	Dialog.init(self, "Map: #0080FF#"..game.zone_name, 1, 1)
 
-	local mc = GenericContainer.new{width=mw, height=mh}
+	local mmdo = game.level.map:getMinimapDO(true)
+	local mc = DisplayObject.new{width=mw, height=mh, DO=mmdo}
 	local uis = { {left=0, top=0, ui=mc} }
 
-	game.minimap_scroll_x = util.bound(game.minimap_scroll_x, 0, math.max(0, map.w - t_per_w))
-	game.minimap_scroll_y = util.bound(game.minimap_scroll_y, 0, math.max(0, map.h - t_per_h))
+	local minimap_scroll_x = util.bound(game.minimap_scroll_x, 0, math.max(0, map.w - t_per_w))
+	local minimap_scroll_y = util.bound(game.minimap_scroll_y, 0, math.max(0, map.h - t_per_h))
 
 	mc.mouse:registerZone(0, 0, mc.w, mc.h, function(button, mx, my, xrel, yrel, bx, by, event)
 		if event == "out" then game.tooltip_x, game.tooltip_y = 1, 1 return end
 
 		game.tooltip_x, game.tooltip_y = 1, 1
 		local basex, basey = math.floor(bx / self.bsize), math.floor(by / self.bsize)
-		local dx, dy = game.minimap_scroll_x + basex, game.minimap_scroll_y + basey
+		local dx, dy = minimap_scroll_x + basex, minimap_scroll_y + basey
 		local ts = game.tooltip:getTooltipAtMap(dx, dy, dx, dy)
 		if ts then game.tooltip:set(ts) game.tooltip:display() else game.tooltip:erase() end
 
 		if button == "right" then
-			game.minimap_scroll_x = dx - math.floor(t_per_w / 2)
-			game.minimap_scroll_y = dy - math.floor(t_per_h / 2)
+			minimap_scroll_x = dx - math.floor(t_per_w / 2)
+			minimap_scroll_y = dy - math.floor(t_per_h / 2)
 
-			game.minimap_scroll_x = util.bound(game.minimap_scroll_x, 0, math.max(0, map.w - t_per_w))
-			game.minimap_scroll_y = util.bound(game.minimap_scroll_y, 0, math.max(0, map.h - t_per_h))
+			minimap_scroll_x = util.bound(minimap_scroll_x, 0, math.max(0, map.w - t_per_w))
+			minimap_scroll_y = util.bound(minimap_scroll_y, 0, math.max(0, map.h - t_per_h))
 		elseif button == "left" and not xrel and not yrel and event == "button" then
 			game.player:mouseMove(dx, dy)
 		elseif xrel or yrel then
@@ -79,8 +79,6 @@ function _M:init(mm_mode)
 
 	end, nil, nil, true)
 
-	mc.do_container:add(game.level.map:getMinimapDO(true))
-
 	self:loadUI(uis)
 	self.key:addBind("EXIT", function() game:unregisterDialog(self) end)
 	self.key:addBind("ACCEPT", function() game:unregisterDialog(self) end)
@@ -88,25 +86,8 @@ function _M:init(mm_mode)
 	self:setupUI(true, true)
 	self:setFocus(1)
 
+	mmdo:scale(10, 10, 1):setMinimapInfo(0, 0, 50, 50, 0.85)
+	-- mmdo:scale(10, 10, 1):setMinimapInfo(minimap_scroll_x, minimap_scroll_y, math.floor(self.iw / self.bsize), math.floor(self.ih / self.bsize), 0.85)
+
 	game:playSound("actions/read")
-
-	game.uiset.no_minimap = true
-	game.level.map._map:setupMiniMapGridSize(self.bsize)
-end
-
-function _M:unload()
-	game.uiset.no_minimap = nil
-	game.uiset:setupMinimap(game.level)
-
-	if self.mm_mode then self.mm_mode() end
-end
-
-function _M:innerDisplay(x, y, nb_keyframes)
-	if not game.level then return end
-	local map = game.level.map
-
-	local w = math.floor(self.iw / self.bsize)
-	local h = math.floor(self.ih / self.bsize)
-
-	map:minimapDisplay(x + self.ix, y + self.iy, game.minimap_scroll_x, game.minimap_scroll_y, w, h, 0.85)
 end

@@ -42,6 +42,7 @@ public:
 	DO_STANDARD_CLONE_METHOD(DORTileMap);
 	virtual const char* getKind() { return "DORTileMap"; };
 
+	void mapDeath(map_type *map);
 	void setMap(map_type *map);
 	virtual void toScreen(mat4 cur_model, vec4 color);
 };
@@ -74,6 +75,7 @@ public:
 
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 
+	void mapDeath(map_type *map);
 	void setMap(map_type *map);
 	void redrawMiniMap(bool full_texture_update = false);
 	void setMinimapInfo(int mdx, int mdy, int mdw, int mdh, float transp);
