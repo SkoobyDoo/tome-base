@@ -82,7 +82,7 @@ function _M:generateList()
 
 				-- Have to load the profile to get the highscores
 				profile:addStatFields(unpack(mod.profile_stats_fields or {}))
-				profile:loadModuleProfile(mod.short_name)
+				profile:loadModuleProfile(mod.short_name, mod)
 				print ("Loaded profile for "..mod.short_name.."\n")
 				mod.highscores = {}
 				if (profile.mod.scores and profile.mod.scores.sc) then

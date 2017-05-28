@@ -2548,21 +2548,21 @@ newEffect{
 		end
 		
 		-- Split the damage
-		if #clones > 0 and not self.turn_procs.temporal_fugue_damage then
-			self.turn_procs.temporal_fugue_damage = true
+		if #clones > 0 and not self.turn_procs.temporal_fugue_damage_self and not self.turn_procs.temporal_fugue_damage_target then
+			self.turn_procs.temporal_fugue_damage_self = true
 			cb.value = cb.value/#clones
 			game:delayedLogMessage(self, nil, "fugue_damage", "#STEEL_BLUE##Source# shares damage with %s fugue clones!", string.his_her(self))
 			for i = 1, #clones do
 				local target = clones[i]
 				if target ~= self then
-					target.turn_procs.temporal_fugue_damage = true
+					target.turn_procs.temporal_fugue_damage_target = true
 					target:takeHit(cb.value, src)
 					game:delayedLogDamage(src or self, self, 0, ("#STEEL_BLUE#(%d shared)#LAST#"):format(cb.value), nil)
-					target.turn_procs.temporal_fugue_damage = nil
+					target.turn_procs.temporal_fugue_damage_target = nil
 				end
 			end
 			
-			self.turn_procs.temporal_fugue_damage = nil
+			self.turn_procs.temporal_fugue_damage_self = nil
 		end
 		
 		-- If we're the last clone remove the effect
@@ -3288,3 +3288,37 @@ newEffect{
 	end,
 }
 
+newEffect{
+	name = "SLIPPERY_GROUND", image = "talents/freeze.png",
+	desc = "Slippery Ground",
+	long_desc = function(self, eff) return ("The target is having trouble keeping their balance. Each time it tries to use a talent there is %d%% chance of failure."):format(eff.fail) end,
+	type = "other",
+	subtype = { nature=true },
+	status = "detrimental",
+	parameters = {fail=20},
+	on_gain = function(self, err) return "#Target# is struggling to keep his footing!", "+Slippery Ground" end,
+	on_lose = function(self, err) return "#Target# regains their balance.", "-Slippery Ground" end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("talent_fail_chance", eff.fail)
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("talent_fail_chance", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "FROZEN_GROUND", image = "talents/freeze.png",
+	desc = "Frozen Ground",
+	long_desc = function(self, eff) return ("The target is energized by the cold while wearing the Frost Treads, gaining 20%% increased cold damage."):format(eff.fail) end,
+	type = "other",
+	subtype = { nature=true },
+	status = "beneficial",
+	parameters = {},
+	on_gain = function(self, err) return "#Target# is energized by the cold!", "+Frozen Ground" end,
+	on_lose = function(self, err) return "#Target# regains balance.", "-Frozen Ground" end,
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "inc_damage", {[engine.DamageType.COLD] = 20})
+	end,
+	deactivate = function(self, eff)
+	end,
+}

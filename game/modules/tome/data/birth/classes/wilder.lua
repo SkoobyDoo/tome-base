@@ -94,10 +94,6 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 90,
-		resolvers.auto_equip_filters{
-			MAINHAND = {type="weapon", subtype="mindstar"},
-			OFFHAND = {type="weapon", subtype="mindstar"},
-		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
