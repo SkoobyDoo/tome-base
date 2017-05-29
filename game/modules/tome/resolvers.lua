@@ -50,6 +50,7 @@ local Talents = require "engine.interface.ActorTalents"
 -- Additional filter fields are interpreted by other functions that can affect equipment generation:
 -- @see engine.zone:checkFilter: type, subtype, name, define_as, unique, properties, not_properties,
 --		check_filter, special, max_ood
+-- @see engine.zone:makeEntity: special_rarity
 -- @see game.state:entityFilterAlter: force_tome_drops, no_tome_drops, tome, tome_mod
 -- @see game.state:entityFilter: ignore_material_restriction, tome_mod, forbid_power_source, power_source
 -- @see game.state:entityFilterPost: random_object
@@ -75,6 +76,7 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 					print("[resolveObject] COULD NOT LOAD base_list:", filter.base_list)
 				end
 			end
+			filter.base_list = nil
 		end
 		repeat
 			local ok = true
@@ -215,6 +217,7 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 		end
 	else
 		print("[resolveObject] **FAILED** for", e.uid, e.name, "filter:", (string.fromTable(filter, 2)))
+		game.log("[%s] %s #YELLOW_GREEN#Object resolver FAILED#LAST# \n#AQUAMARINE#filter:%s#LAST#", e.uid, e.name, string.fromTable(filter, 2)) -- debugging
 	end
 	return o
 end
