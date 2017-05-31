@@ -24,6 +24,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="armor", subtype="heavy", id=true, tome_drops="store"},
@@ -41,6 +42,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="armor", subtype="light", id=true, tome_drops="store"},
@@ -58,10 +60,10 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="armor", subtype="cloth", id=true, tome_drops="store"},
---			{type="armor", subtype="robe", id=true, tome_drops="store"},
 			{type="armor", subtype="cloak", id=true, tome_drops="store"},
 			{type="armor", subtype="belt", id=true, tome_drops="store"},
 		},
@@ -75,6 +77,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="greatsword", id=true, tome_drops="store"},
@@ -90,6 +93,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="waraxe", id=true, tome_drops="store"},
@@ -105,6 +109,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="mindstar", id=true, tome_drops="store"},
@@ -121,6 +126,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="greatmaul", id=true, tome_drops="store"},
@@ -136,6 +142,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{special=function(o) return o.type == "weapon" and o.twohanded end, id=true, tome_drops="store"},
@@ -150,6 +157,8 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
+		player_material_level = true,
 		filters = {
 			{special=function(o) return o.type == "weapon" and not o.twohanded end, id=true, tome_drops="store"},
 		},
@@ -163,6 +172,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="longbow", id=true, tome_drops="store"},
@@ -179,6 +189,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = function()
 			return {type="weapon", subtype="dagger", id=true, tome_drops="store"}
@@ -192,6 +203,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = function()
 			return {type="weapon", subtype="staff", id=true, tome_drops="store"}
@@ -206,9 +218,10 @@ newEntity{
 	store = {
 		purse = 10,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
-			{type="scroll", subtype="infusion", id=true},
+			{type="scroll", subtype="infusion", id=true, ego_chance = 1000},
 		},
 	},
 }
@@ -220,9 +233,10 @@ newEntity{
 	store = {
 		purse = 10,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
-			{type="scroll", subtype="rune", id=true},
+			{type="scroll", subtype="rune", id=true, ego_chance = 1000},
 		},
 	},
 }
@@ -234,6 +248,7 @@ newEntity{
 	store = {
 		purse = 30,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="gem", id=true},
@@ -248,6 +263,7 @@ newEntity{
 	store = {
 		purse = 10,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="lite", id=true, tome_drops="store"},
@@ -267,6 +283,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = function()
 			return rng.table{
@@ -286,6 +303,7 @@ newEntity{
 	store = {
 		purse = 20,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="jewelry", id=true},
@@ -308,8 +326,10 @@ newEntity{
 	store = {
 		purse = 10,
 		empty_before_restock = false,
+		nb_fill = 4,
+		player_material_level = true,
 		filters = {
-			{type="scroll", subtype="rune", id=true},
+			{type="scroll", subtype="rune", id=true, ego_chance = 1000},
 		},
 		fixed = {
 			{id=true, defined="LINANIIL_LECTURE"},
@@ -321,12 +341,13 @@ newEntity{
 -------------------------------------------------------------
 -- Last Hope
 -------------------------------------------------------------
+-- Make me more interesting
 newEntity{
 	define_as = "LOST_MERCHANT",
 	name = "rare goods",
 	display = '7', color=colors.BLUE,
 	store = {
-		nb_fill = 20,
+		nb_fill = 4,
 		purse = 35,
 		empty_before_restock = false,
 		player_material_level = true,
@@ -364,7 +385,7 @@ newEntity{
 }
 
 -------------------------------------------------------------
--- Zigur
+-- Zigur:  Arcane items banned from equipment shops
 -------------------------------------------------------------
 newEntity{
 	define_as = "ZIGUR_LIBRARY",
@@ -386,19 +407,21 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
-                filters = {
-                        {type="armor", subtype="heavy", id=true, tome_drops="store"},
-                        {type="armor", subtype="massive", id=true, tome_drops="store"},
-                        {type="armor", subtype="shield", id=true, tome_drops="store"},
-                        {type="armor", subtype="head", id=true, tome_drops="store"},
-                },
+		filters = {
+			{type="armor", subtype="heavy", id=true, tome_drops="store"},
+			{type="armor", subtype="massive", id=true, tome_drops="store"},
+			{type="armor", subtype="shield", id=true, tome_drops="store"},
+			{type="armor", subtype="head", id=true, tome_drops="store"},
+		},
 		post_filter = function(e)
 			if e.power_source and e.power_source.arcane then return false end
 			return true
 		end,
 	},
 }
+
 newEntity{
 	define_as = "ZIGUR_LARMOR",
 	name = "tanner",
@@ -406,13 +429,14 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
-                filters = {
-                        {type="armor", subtype="light", id=true, tome_drops="store"},
-                        {type="armor", subtype="hands", id=true, tome_drops="store"},
-                        {type="armor", subtype="feet", id=true, tome_drops="store"},
-                        {type="armor", subtype="belt", id=true, tome_drops="store"},
-                },
+		filters = {
+			{type="armor", subtype="light", id=true, tome_drops="store"},
+			{type="armor", subtype="hands", id=true, tome_drops="store"},
+			{type="armor", subtype="feet", id=true, tome_drops="store"},
+			{type="armor", subtype="belt", id=true, tome_drops="store"},
+		},
 		post_filter = function(e)
 			if e.power_source and e.power_source.arcane then return false end
 			return true
@@ -427,6 +451,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="greatsword", id=true, tome_drops="store"},
@@ -446,6 +471,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="waraxe", id=true, tome_drops="store"},
@@ -465,6 +491,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="greatmaul", id=true, tome_drops="store"},
@@ -484,6 +511,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = function()
 			return {type="weapon", subtype="dagger", id=true, tome_drops="store"}
@@ -502,6 +530,7 @@ newEntity{
 	store = {
 		purse = 25,
 		empty_before_restock = false,
+		nb_fill = 4,
 		player_material_level = true,
 		filters = {
 			{type="weapon", subtype="sling", id=true, tome_drops="store"},
@@ -540,11 +569,9 @@ newEntity{
 	},
 }
 
-
 -------------------------------------------------------------
 -- Arena
 -------------------------------------------------------------
--- Should this use player_material_level?
 newEntity{
 	define_as = "ARENA_SHOP",
 	name = "gladiator's wares",
@@ -576,7 +603,6 @@ newEntity{
 			{type="armor", subtype="feet", id=true, tome_drops="boss"},
 			{type="armor", subtype="belt", id=true, tome_drops="boss"},
 			{type="armor", subtype="cloth", id=true, tome_drops="store"},
---			{type="armor", subtype="robe", id=true, tome_drops="store"},
 			{type="armor", subtype="cloak", id=true, tome_drops="store"},
 			{type="armor", subtype="belt", id=true, tome_drops="store"},
 			{type="charm", subtype="torque", id=true, tome_drops="boss"},
@@ -592,4 +618,215 @@ newEntity{
 
 		}
 	}
+}
+
+-------------------------------------------------------------
+-- Gates of Morning:  Smaller stock size, 2 greater egos guaranteed, 300% sell prices (avoid Celestials buying high tier stuff early)
+-------------------------------------------------------------
+
+newEntity{
+	define_as = "GATES_HEAVY_ARMOR",
+	name = "armour smith",
+	display = '2', color=colors.UMBER,
+	store = {
+		purse = 25,
+		nb_fill = 2,
+		sell_percent = 300,
+		empty_before_restock = false,
+		filters = {
+			{type="armor", subtype="heavy", id=true, tome_drops="store"},
+			{type="armor", subtype="massive", id=true, tome_drops="store"},
+			{type="armor", subtype="shield", id=true, tome_drops="store"},
+			{type="armor", subtype="head", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_LIGHT_ARMOR",
+	name = "tanner",
+	display = '2', color=colors.UMBER,
+	store = {
+		purse = 25,
+		nb_fill = 2,
+		sell_percent = 300,
+		empty_before_restock = false,
+		filters = {
+				{type="armor", subtype="light", id=true, tome_drops="store"},
+				{type="armor", subtype="hands", id=true, tome_drops="store"},
+				{type="armor", subtype="feet", id=true, tome_drops="store"},
+				{type="armor", subtype="belt", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_CLOTH",
+	name = "tailor",
+	display = '2', color=colors.UMBER,
+	store = {
+		purse = 25,
+		empty_before_restock = false,
+		nb_fill = 2,
+		sell_percent = 300,
+		filters = {
+			{type="armor", subtype="cloth", id=true, tome_drops="store"},
+			{type="armor", subtype="cloak", id=true, tome_drops="store"},
+			{type="armor", subtype="belt", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_SWORD_WEAPON",
+	name = "sword smith",
+	display = '3', color=colors.UMBER,
+	store = {
+		purse = 25,
+		empty_before_restock = false,
+		nb_fill = 2,
+		sell_percent = 300,
+		filters = {
+			{type="weapon", subtype="greatsword", id=true, tome_drops="store"},
+			{type="weapon", subtype="longsword", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_AXE_WEAPON",
+	name = "axe smith",
+	display = '3', color=colors.UMBER,
+	store = {
+		purse = 25,
+		empty_before_restock = false,
+		nb_fill = 2,
+		sell_percent = 300,
+		filters = {
+			{type="weapon", subtype="waraxe", id=true, tome_drops="store"},
+			{type="weapon", subtype="battleaxe", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_MACE_WEAPON",
+	name = "mace smith",
+	display = '3', color=colors.UMBER,
+	store = {
+		purse = 25,
+		empty_before_restock = false,
+		nb_fill = 2,
+		sell_percent = 300,
+		filters = {
+			{type="weapon", subtype="greatmaul", id=true, tome_drops="store"},
+			{type="weapon", subtype="mace", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_KNIFE_WEAPON",
+	name = "knife smith",
+	display = '3', color=colors.UMBER,
+	store = {
+		purse = 25,
+		empty_before_restock = false,
+		nb_fill = 2,
+		sell_percent = 300,
+		filters = function()
+			return {type="weapon", subtype="dagger", id=true, tome_drops="store"}
+		end,
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_ARCHER_WEAPON",
+	name = "archery",
+	display = '3', color=colors.UMBER,
+	store = {
+		purse = 25,
+		empty_before_restock = false,
+		nb_fill = 2,
+		sell_percent = 300,
+		filters = {
+			{type="weapon", subtype="sling", id=true, tome_drops="store"},
+			{type="weapon", subtype="longbow", id=true, tome_drops="store"},
+			{type="ammo", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_STAFF_WEAPON",
+	name = "staves",
+	display = '3', color=colors.UMBER,
+	store = {
+		purse = 25,
+		empty_before_restock = false,
+		nb_fill = 2,
+		sell_percent = 300,
+		filters = {
+			{type="weapon", subtype="sling", id=true, tome_drops="store"},
+			{type="weapon", subtype="longbow", id=true, tome_drops="store"},
+			{type="ammo", id=true, tome_drops="store"},
+		},
+		post_filter = function(e)
+			if e.greater_ego and e.greater_ego > 1 then return true else return false end
+		end,
+	},
+}
+
+newEntity{
+	define_as = "GATES_RUNES",
+	name = "rune store and library",
+	display = '5', color=colors.WHITE,
+	store = {
+		purse = 10,
+		nb_fill = 4,
+		player_material_level = true,
+		empty_before_restock = false,
+		filters = {
+			{type="scroll", subtype="rune", id=true, ego_chance = 1000 },
+		},
+	},
+}
+
+newEntity{
+	define_as = "GATES_POTION",
+	name = "infusion store",
+	display = '4', color=colors.LIGHT_BLUE,
+	store = {
+		purse = 10,
+		nb_fill = 4,
+		player_material_level = true,
+		empty_before_restock = false,
+		filters = {
+			{type="scroll", subtype="infusion", id=true, ego_chance = 1000},
+		},
+	},
 }
