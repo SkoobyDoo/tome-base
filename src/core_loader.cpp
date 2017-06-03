@@ -160,6 +160,10 @@ static int lua_loader_png(lua_State *L) {
 	loader_running++;
 	SDL_mutexV(loader_mutex);
 	SDL_SemPost(loader_sem);
+	// LoaderPNG *l = new LoaderPNG(filename, file, t);
+	// l->load();
+	// l->finish();
+	// delete l;
 
 	lua_pushnumber(L, sw);
 	lua_pushnumber(L, sh);

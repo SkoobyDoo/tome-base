@@ -96,12 +96,13 @@ function _M:update(nb_keyframes)
 	if self.old_name ~= game.zone_name then
 		self.text_name:text(game.zone_name or ""):center()
 		local w = self.text_name:getStats()
+		-- Ensure the zone name is always at most 200 pixels
 		if w > 200 then self.text_name:scale(200 / w, 200 / w, 1)
 		else self.text_name:scale(1, 1, 1) end
 		self.old_name = game.zone_name
 	end
 	if self.old_map ~= game.level.map then
-		self.mm_do = game.level.map:getMinimapDO():scale(3, 3, 1)
+		self.mm_do = game.level.map:getMinimapDO():scale(3, 3, 1):translate(0, 0, 100)
 		self.mm_container:clear()
 		self.mm_container:add(self.mm_do)
 		self.old_map = game.level.map

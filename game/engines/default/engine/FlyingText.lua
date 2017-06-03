@@ -69,7 +69,7 @@ function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	f.popout_dur = math.max(3, math.floor(f.duration / 4)),
 	self:applyShadowOutline(f.DO)
 	f.DO:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
-	f.DO:text(str)
+	f.DO:text(str, true)
 	f.DO:center()
 	f.DO:translate(x, y)
 	if self.tilt then f.DO:rotate(0, 0, math.rad(self.tilt * f.xvel / 5)) end

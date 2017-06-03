@@ -131,8 +131,7 @@ void DORTileMiniMap::redrawMiniMap(bool full_texture_update) {
 	GLfloat r, g, b, a;
 
 	// Create/recreate the minimap data if needed
-	if (full_texture_update)
-	{
+	if (full_texture_update) {
 		if (mm_data) delete mm_data;
 		mm_data = new GLubyte[4 * info.mdw * info.mdh];
 		clear();
@@ -180,8 +179,6 @@ void DORTileMiniMap::redrawMiniMap(bool full_texture_update) {
 	// Full texture update means we change size so we need a full call to glTexImage2D
 	if (full_texture_update) glTexImage2D(GL_TEXTURE_2D, 0, 4, info.mdw, info.mdh, 0, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
 	else glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.mdw, info.mdh, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
-
-	printf("==updating %lx mm texture %d\n", this, full_texture_update);
 }
 
 
