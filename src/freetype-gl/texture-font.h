@@ -196,8 +196,6 @@ typedef struct texture_glyph_t
 
 } texture_glyph_t;
 
-
-
 /**
  *  Texture font structure.
  */

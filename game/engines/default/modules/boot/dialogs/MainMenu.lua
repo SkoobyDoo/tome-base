@@ -134,14 +134,14 @@ function _M:updateUI()
 ----------------------------
 ----------------------------DGDGDGDG remove this
 ----------------------------
---[[
+-- [[
 	local tree = {}
 	for i = 1, 1000 do tree[#tree+1] = {name='this is azlkdj a long text '..i, plop="kjhekjghekg", plop3="kjhekjghekg"} end
 	local test = require("engine.ui.TreeList").new{scrollbar=true, width=self.iw * 2, height=self.ih * 3, columns={
 		{name="Inventory", width=50, display_prop="name", sort="name"},
 		{name="2", width=25, display_prop="plop", sort="plop"},
 		{name="3", width=25, display_prop="plop3", sort="plop3"},
-	}, tree=tree, fct=function(t) end}
+	}, tree=tree, fct=function(t) core.game.CProfiler("luastarted.profiler.prof") end}
 	
 	uis = { {left=0, top=0, ui=test},  }
 --]]

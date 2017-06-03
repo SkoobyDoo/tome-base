@@ -45,6 +45,9 @@ function _M:setupProfiler()
 			print("Stopped profiler")
 		end
 	end)
+	self:addCommand(self._c, {"ctrl","alt","shift"}, function()
+		if core.game.CProfiler then core.game.CProfiler("luastarted.profiler.prof") end
+	end)
 end
 
 --- Adds the game reboot keybind (ctrl, alt, shift, r/n)

@@ -54,6 +54,21 @@ void DORText::cloneInto(DisplayObject* _into) {
 	into->setText(text);
 }
 
+ftgl::texture_glyph_t *DORText::getGlyph(uint32_t codepoint) {
+	auto glyph_map = font->glyph_map;
+	if (font->font->rendermode == ftgl::RENDER_OUTLINE_POSITIVE) glyph_map = font->glyph_map_outline;
+
+	auto it = glyph_map->find(codepoint);
+	if (it != glyph_map->end()) return it->second;
+
+	ftgl::texture_glyph_t *g = ftgl::texture_font_get_glyph(font->font, codepoint);
+	if (g) {
+		std::pair<uint32_t, ftgl::texture_glyph_t*> p(codepoint, g);
+		glyph_map->insert(p);
+	}
+	return g;
+}
+
 int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
 	int x = 0, y = by;
 	ssize_t off = 1;
@@ -68,7 +83,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 
 		font->font->outline_thickness = 0;
 		font->font->rendermode = ftgl::RENDER_SIGNED_DISTANCE_FIELD;
-		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
+		ftgl::texture_glyph_t *d = getGlyph(c);
 		if (d) {
 			float kerning = 0;
 			if (last_glyph) {
@@ -96,7 +111,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			if (outline) {
 				font->font->outline_thickness = 2;
 				font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
-				ftgl::texture_glyph_t *doutline = ftgl::texture_font_get_glyph(font->font, c);
+				ftgl::texture_glyph_t *doutline = getGlyph(c);
 				if (doutline) {
 					float x0  = bx + x + doutline->offset_x * scale;
 					float x1  = x0 + doutline->width * scale;
@@ -132,7 +147,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 		str += off;
 		len -= off;
 
-		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
+		ftgl::texture_glyph_t *d = getGlyph(c);
 		if (d) {
 			if (oldc) {
 				x += texture_glyph_get_kerning(d, oldc) * scale;
@@ -421,12 +436,20 @@ void DORText::parseTextSimple() {
 }
 
 void DORText::setText(const char *text, bool simple) {
+	// text = "je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop ";
+	// ProfilerStart("nameOfProfile.log");
+	// for (int i = 0; i < 10000; i++) {
+
 	free((void*)this->text);
 	size_t len = strlen(text);
 	this->text = (char*)malloc(len + 1);
 	strcpy(this->text, text);
 	if (simple) parseTextSimple();
 	else parseText();
+	
+	// }
+	// ProfilerStop();
+	// exit(0);
 }
 
 void DORText::center() {

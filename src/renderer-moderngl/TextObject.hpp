@@ -50,6 +50,7 @@ private:
 	vec4 outline_color;
 
 	virtual void cloneInto(DisplayObject *into);
+	ftgl::texture_glyph_t *getGlyph(uint32_t codepoint);
 
 public:
 	int nb_lines = 1;
