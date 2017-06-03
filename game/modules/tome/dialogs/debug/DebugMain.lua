@@ -124,7 +124,7 @@ function _M:use(item)
 						game.level:removeEntity(e)
 					else
 						game.log("#GREY#Killing [%s] %s at (%s, %s)", e.uid, e.name, e.x, e.y)
-						e:die(p, "By Cheating!")
+						e:die(game.player, "By Cheating!")
 					end
 					count = count + 1
 				end

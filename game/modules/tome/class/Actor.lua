@@ -6745,6 +6745,7 @@ function _M:addedToLevel(level, x, y)
 						if m and m:canMove(x, y) then
 							if filter.no_subescort then m.make_escort = nil end
 							if self._empty_drops_escort then m:emptyDrops() end
+							m.faction = m.hard_faction or game.zone.special_level_faction or self.faction
 							game.zone:addEntity(game.level, m, "actor", x, y)
 							if filter.post then filter.post(self, m) end
 						elseif m then m:removed() end

@@ -370,7 +370,8 @@ end
 -- @param level a Level object to generate for
 -- @param type one of "object" "terrain" "actor" "trap" or a table of entities with __real_type defined
 -- @param filter a filter table with optional fields:
---		base_list: an entities list (table) or a specifier to load the entities list from a file, format: <classname>:<file path>
+--		base_list: an entities list (table) or a specifier to load the entities list from a file, format: <classname>:<file path> (takes priority over type)
+--		special_rarity: alternate field for entity rarity field (default 'rarity')
 --		nb_tries: maximum number of attempts to randomly pick the entity from the list
 -- @param force_level if not nil forces the current level for resolvers to this one
 -- @param prob_filter if true a new probability list based on this filter will be generated, ensuring to find objects better but at a slightly slower cost (maybe)
@@ -403,7 +404,7 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 		if tries == 0 then return nil end
 	-- Generate a specific probability list, slower to generate but no need to "try and be lucky"
 	elseif filter then
-		local base_list = nil
+		local base_list = list
 		if filter.base_list then
 			if _G.type(filter.base_list) == "table" then base_list = filter.base_list
 			else
@@ -412,12 +413,15 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 					base_list = require(class):loadList(file)
 				end
 			end
+			type = base_list and base_list.__real_type or type
+		elseif base_list then -- type = base_list.__real_type
 		elseif type == "actor" then base_list = self.npc_list
 		elseif type == "object" then base_list = self.object_list
 		elseif type == "trap" then base_list = self.trap_list
-		else
-			base_list = list or self:getEntities(level, type) if not base_list then return nil end 
+		elseif not base_list then 
+			base_list = self:getEntities(level, type)
 		end
+		if not base_list then return nil end
 		local list = self:computeRarities(type, base_list, level, function(e) return self:checkFilter(e, filter, type) end, filter.add_levels, filter.special_rarity)
 		e = self:pickEntity(list)
 		print("[MAKE ENTITY] prob list generation", e and e.name, "from list size", #list)
