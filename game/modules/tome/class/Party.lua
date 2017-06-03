@@ -84,6 +84,7 @@ function _M:addMember(actor, def)
 	end
 
 	-- Notify the UI
+	game:triggerEventUI("Party:addMember", actor)
 	if game.player then game.player.changed = true end
 end
 
@@ -111,6 +112,7 @@ function _M:removeMember(actor, silent)
 	end
 
 	-- Notify the UI
+	game:triggerEventUI("Party:removeMember", actor)
 	game.player.changed = true
 end
 

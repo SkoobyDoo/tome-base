@@ -23,8 +23,7 @@ local MiniContainer = require "mod.class.uiset.minimalist.MiniContainer"
 local Shader = require "engine.Shader"
 local FontPackage = require "engine.FontPackage"
 local Tiles = require "engine.Tiles"
-local Effect = require "mod.class.uiset.minimalist.sub.Effect"
-local Sustain = require "mod.class.uiset.minimalist.sub.Sustain"
+local PartyMember = require "mod.class.uiset.minimalist.sub.PartyMember"
 
 --- Player frame for Minimalist ui
 module(..., package.seeall, class.inherit(MiniContainer))
@@ -39,31 +38,29 @@ function _M:init(minimalist, w, h)
 	MiniContainer.init(self, minimalist)
 
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
-	self.buff_font = core.display.newFont(font_mono, size_mono * 2, true)
-	self.buff_font_small = core.display.newFont(font_mono, size_mono * 1.4, true)
-	self.buff_font_smaller = core.display.newFont(font_mono, size_mono * 1, true)
+	self.buff_font = core.display.newFont(font_mono, size_mono, true)
 
-	self.do_container = core.renderer.renderer("dynamic"):setRendererName("Effects MiniContainer")
+	self.do_container = core.renderer.renderer("dynamic"):setRendererName("Party MiniContainer")
 
 	self.all = {}
 
+	self.backs_layer = core.renderer.container()
 	self.icons_layer = core.renderer.container()
 	self.frames_layer = core.renderer.container()
 	self.texts_layer = core.renderer.container()
 
-	self.do_container:add(self.icons_layer):add(self.frames_layer):add(self.texts_layer)
+	self.do_container:add(self.backs_layer):add(self.icons_layer):add(self.frames_layer):add(self.texts_layer)
 
 	self.base_frame = UI:makeFrameDO("ui/icon-frame/frame", self.rw, self.rh)
 
 	game:registerEventUI(self, "Party:switchedPlayer")
-	game:registerEventUI(self, "Player:setEffect")
-	game:registerEventUI(self, "Player:removeEffect")
-	game:registerEventUI(self, "Player:postUseTalent")
+	game:registerEventUI(self, "Party:addMember")
+	game:registerEventUI(self, "Party:removeMember")
 	self:onEventUI(nil, nil)
 end
 
 function _M:getName()
-	return "Effects"
+	return "Party"
 end
 
 function _M:getMoveHandleLocation()
@@ -71,15 +68,15 @@ function _M:getMoveHandleLocation()
 end
 
 function _M:getDefaultGeometry()
-	local w = self.rw
-	local h = self.rh * 2
-	local x = game.w - w
-	local y = 230
+	local w = self.rw * 2
+	local h = self.rh
+	local x = 350
+	local y = 0
 	return x, y, w, h
 end
 
 function _M:getDefaultOrientation()
-	return "bottom"
+	return "top"
 end
 
 function _M:onSnapChange()
@@ -121,7 +118,6 @@ function _M:loadConfig(config)
 end
 
 function _M:editMenu()
-	local player = self:getPlayer()
 	local list = {
 		{ name = "Force orientation: natural", fct=function() self:forceOrientation("natural") end },
 		{ name = "Force orientation: horizontal", fct=function() self:forceOrientation("horizontal") end },
@@ -130,36 +126,21 @@ function _M:editMenu()
 	return list
 end
 
-function _M:getPlayer()
-	return game:getPlayer()
-end
-
 function _M:update(nb_keyframes)
-	local player = self:getPlayer()
-	if not player then return end
-	for _, de in pairs(self.all) do de:update(player) end
+	for _, de in pairs(self.all) do de:update() end
 end
 
 function _M:updateList()
-	local player = self:getPlayer()
-	if not player then return end
+	local plist = {}, {}
 
-	local good_e, bad_e = {}, {}
-
-	for tid, p in pairs(player.sustain_talents) do
-		local e = player.tempeffect_def[tid]
-		local de = self.all[tid]
-		if not de then de = Sustain.new(self, tid)
-		else self.all[tid] = nil end
-		good_e[tid] = de
-	end
-
-	for eff_id, p in pairs(player.tmp) do
-		local e = player.tempeffect_def[eff_id]
-		local de = self.all[eff_id]
-		if not de then de = Effect.new(self, eff_id)
-		else self.all[eff_id] = nil end
-		if e.status == "detrimental" then bad_e[eff_id] = de else good_e[eff_id] = de end
+	if game.party and #game.party.m_list >= 2 and game.level then
+		for i = 1, #game.party.m_list do
+			local a = game.party.m_list[i]
+			local de = self.all[a]
+			if not de then de = PartyMember.new(self, a)
+			else self.all[a] = nil end
+			plist[i] = {a=a, de=de}
+		end
 	end
 
 	-- Remove old
@@ -168,30 +149,20 @@ function _M:updateList()
 
 	local x = 0
 	local y = 0
-	for eff_id, de in pairs(good_e) do
-		self.all[eff_id] = de
-		de:move(x, y)
-		y = y + self.rh
+	for i, d in ipairs(plist) do
+		self.all[d.a] = d.de
+		d.de:move(x, y)
+		x = x + self.rw
 	end
-
-	x = x - self.rw
-	y = 0
-	for eff_id, de in pairs(bad_e) do
-		self.all[eff_id] = de
-		de:move(x, y)
-		y = y + self.rh
-	end
-
-	self.mouse_zone_x = x
+	self.mouse_zone_x = 0
 	self.mouse_zone_y = 0
-	self.mouse_zone_w = self.rw - x
+	self.mouse_zone_w = self.rw + x
 	self.mouse_zone_h = self.rh + y
 	self:setupMouse()
 
-	for eff_id, de in pairs(self.all) do de:positionMouse(self.mouse_zone_x, self.mouse_zone_y) end
+	for a, de in pairs(self.all) do de:positionMouse(self.mouse_zone_x, self.mouse_zone_y) end
 end
 
 function _M:onEventUI(kind, who, v1, ...)
-	if kind == "Player:postUseTalent" and v1.mode ~= "sustained" then return end
-	game:onTickEnd(function() self:updateList() end, "Minimalist:EffectsUpdate")
+	self:updateList()
 end

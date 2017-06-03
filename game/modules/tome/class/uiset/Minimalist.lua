@@ -95,6 +95,7 @@ _M.allcontainers = {
 	"mod.class.uiset.minimalist.Hourglass",
 	"mod.class.uiset.minimalist.Hotkeys",
 	"mod.class.uiset.minimalist.Log",
+	"mod.class.uiset.minimalist.Party",
 	-- DGDGDGDG: missing: arena special display, zone specific_ui display (can those 2 be merged? likely)
 	-- DGDGDGDG: missing: chatlog
 }
