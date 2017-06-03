@@ -159,6 +159,7 @@ void font_update_atlas(font_type *f) {
 	if (f->atlas->changed) {
 		glBindTexture(GL_TEXTURE_2D, f->atlas->id);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, f->atlas->width, f->atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, f->atlas->data);
+		f->atlas->changed = false;
 	}
 }
 

@@ -35,7 +35,7 @@ function _M:init()
 	local Mw, Mh = math.floor(game.w * 0.9), math.floor(game.h * 0.9)
 
 	while mw > Mw or mh > Mh do
-		if self.bsize <= 22 then break end
+		if self.bsize <= 5 then break end
 		self.bsize = self.bsize - 1
 		mw, mh = map.w * self.bsize, map.h * self.bsize
 	end
@@ -86,8 +86,7 @@ function _M:init()
 	self:setupUI(true, true)
 	self:setFocus(1)
 
-	mmdo:scale(10, 10, 1):setMinimapInfo(0, 0, 50, 50, 0.85)
-	-- mmdo:scale(10, 10, 1):setMinimapInfo(minimap_scroll_x, minimap_scroll_y, math.floor(self.iw / self.bsize), math.floor(self.ih / self.bsize), 0.85)
+	mmdo:scale(self.bsize, self.bsize, 1):setMinimapInfo(minimap_scroll_x, minimap_scroll_y, math.floor(self.iw / self.bsize), math.floor(self.ih / self.bsize), 0.85)
 
 	game:playSound("actions/read")
 end
