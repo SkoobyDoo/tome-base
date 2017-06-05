@@ -162,7 +162,7 @@ end
 
 --- Returns a clone of a table
 -- @param tbl The original table to be cloned
--- @param deep Boolean to determine if recursive cloning occurs
+-- @param deep Boolean allow recursive cloning (unless .__ATOMIC or .__CLASSNAME is defined)
 -- @param k_skip A table containing key values set to true if you want to skip them.
 -- @return The cloned table.
 function table.clone(tbl, deep, k_skip)
@@ -185,27 +185,27 @@ end
 table.NIL_MERGE = {}
 
 --- Merges two tables in-place.
--- The table.NIL_MERGE is a special value that will nil out the corresponding dst key.
 -- @param dst The destination table, which will have all merged values.
 -- @param src The source table, supplying values to be merged.
 -- @param deep Boolean that determines if tables will be recursively merged.
 -- @param k_skip A table containing key values set to true if you want to skip them.
 -- @param k_skip_deep Like k_skip, except this table is passed on to the deep recursions.
 -- @param addnumbers Boolean that determines if two numbers will be added rather than replaced.
+-- assign the special value table.NIL_MERGE in src to set the corresponding dst field to nil.
+-- subtables containing .__ATOMIC or .__CLASSNAME will be copied by reference.
 function table.merge(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 	k_skip = k_skip or {}
 	k_skip_deep = k_skip_deep or {}
 	for k, e in pairs(src) do
 		if not k_skip[k] and not k_skip_deep[k] then
 			-- Recursively merge tables
-			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
+			if e == table.NIL_MERGE then -- remove corresponding field
+				dst[k] = nil
+			elseif deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				table.merge(dst[k], e, deep, nil, k_skip_deep, addnumbers)
 			-- Clone tables if into the destination
 			elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				dst[k] = table.clone(e, deep, nil, k_skip_deep)
-			-- Nil out any NIL_MERGE entries
-			elseif e == table.NIL_MERGE then
-				dst[k] = nil
 			-- Add number entries if "add" is set
 			elseif addnumbers and not dst.__no_merge_add and dst[k] and type(dst[k]) == "number" and type(e) == "number" then
 				dst[k] = dst[k] + e
@@ -816,6 +816,92 @@ function string.splitLines(str, max_width, font)
 		end
 	end
 	return lines
+end
+
+--- create a textual abbreviation for a function
+--	@param fct the function
+--	@param fmt output format for filepath, line number, first line of code
+--		(default: "\"<function( defined: %s, line %s): %s>\"" )
+--	@return string using the format provided
+function string.fromFunction(fct, fmt)
+	local info = debug.getinfo(fct, "S")
+	local fpath = string.gsub(info.source,"@","")
+	local firstline = ""
+	fmt = fmt or "\"<function( defined: %s, line %s): %s>\""
+	if not fs.exists(fpath) then
+		fpath = "no file path"
+		firstline = info.short_src
+	else
+		local f = fs.open(fpath, "r")
+		local line_num = 0
+		while true do -- could continue with body here
+			firstline = f:readLine()
+			if firstline then
+				line_num = line_num + 1
+				if line_num == info.linedefined then break end
+			end
+		end
+	end
+	return (fmt):format(fpath, info.linedefined, tostring(firstline))
+end
+
+--- Create a textual representation of a value
+-- similar to tostring, but includes special handling of tables and functions
+--	surrounds non-numbers/booleans/nils/functions with ""
+-- @param v: the value
+-- @param recurse: the recursion level for string.fromTable, set < 0 for basic tostring
+-- @param offset, prefix, suffix: inputs to string.fromTable for converting tables
+function string.fromValue(v, recurse, offset, prefix, suffix)
+	recurse, offset, prefix, suffix = recurse or 0, offset or ", ", prefix or "{", suffix or "}"
+	local vt, vs = type(v)
+	if vt == "table" then
+		if recurse < 0 then vs = tostring(v)
+		elseif v.__ATOMIC or v.__CLASSNAME then -- create entity/atomic label
+			local abv = {}
+			if v.__CLASSNAME then abv[#abv+1] = "__CLASSNAME="..tostring(v.__CLASSNAME) end
+			if v.__ATOMIC then abv[#abv+1] = "ATOMIC" end
+			vs = ("%s\"%s%s%s\"%s"):format(prefix, v, v.__CLASSNAME and ", __CLASSNAME="..tostring(v.__CLASSNAME) or "", v.__ATOMIC and ", ATOMIC" or "", suffix)
+		elseif recurse > 0 then -- get recursive string
+			vs = string.fromTable(v, recurse - 1, offset, prefix, suffix)
+		else vs = prefix.."\""..tostring(v).."\""..suffix
+		end
+	elseif vt == "function" then
+		vs = recurse >= 0 and string.fromFunction(v) or tostring(v)
+	elseif not (vt == "number" or vt == "boolean" or vt == "nil") then
+		vs = "\""..tostring(v).."\""
+	end
+	return vs or tostring(v)
+end
+
+--- Create a textual representation of a table
+--	This is like reverse-interpreting back to lua code, compatible for strings, numbers, and tables
+--	@param src: source table
+--	@param recurse: recursion level for subtables (default 0)
+--	@param offset: string to insert between table fields (default: ", ")
+--	@param prefix: prefix for the table and subtables (default: "{")
+--	@param suffix: suffix for the table and subtables (default: "}")
+--  @param key_recurse the recursion level for keys that are tables (default 0)
+--	@return[1] single line text representation of src
+--		non-string table.keys are surrounded by "[", "]"
+--	@return[2] indexed table containing strings for each key/value pair in src (@recursion level 0)
+--		recursed subtables are converted and embedded
+--		subtables containing .__ATOMIC or .__CLASSNAME are never converted, but are noted
+--		functions are converted to embedded strings using string.fromFunction
+function string.fromTable(src, recurse, offset, prefix, suffix, key_recurse)
+	if type(src) ~= "table" then print("string.fromTable has no table:", src) return tostring(src) end
+	local tt = {}
+	recurse, offset, prefix, suffix = recurse or 0, offset or ", ", prefix or "{", suffix or "}"
+	for k, v in pairs(src) do
+		local kt, vt = type(k), type(v)
+		local ks, vs
+		if kt ~= "string" then
+			ks = "["..string.fromValue(k, key_recurse, offset, prefix, suffix).."]"
+		end
+		vs = string.fromValue(v, recurse, offset, prefix, suffix)
+		tt[#tt+1] = ("%s=%s"):format(ks or tostring(k), vs or tostring(v))
+	end
+	-- could sort here if desired
+	return prefix..table.concat(tt, offset)..suffix, tt
 end
 
 -- Split a string by the given character(s)

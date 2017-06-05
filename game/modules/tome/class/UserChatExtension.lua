@@ -75,6 +75,8 @@ function _M:event(e)
 			self.chat:addMessage("link", e.channel, e.login, {e.name, color}, "#ANTIQUE_WHITE#has linked a creature: #WHITE# "..data.name, {mode="tooltip", tooltip=data.desc})
 		elseif data.kind == "killer-link" then
 			self.chat:addMessage("death", e.channel, e.login, {e.name, color}, "#CRIMSON#"..data.msg.."#WHITE#", data.desc and {mode="tooltip", tooltip=data.desc} or nil)
+		else
+			self:triggerHook{"UserChat:event", color=color, e=e, data=data}
 		end
 	end
 end

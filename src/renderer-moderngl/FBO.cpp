@@ -215,7 +215,7 @@ void DORTarget::setAutoRender(SubRenderer *o, int ref) {
 	setChanged();
 }
 
-void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORTarget::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (subrender) {
 		stopDisplayList(); // Needed to make sure we break texture chaining
 		auto dl = getDisplayList(container);
@@ -225,7 +225,7 @@ void DORTarget::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bo
 	DORVertexes::render(container, cur_model, cur_color, cur_visible);
 }
 
-void DORTarget::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORTarget::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (subrender) {
 		int startat = container->zvertices.size();
 		container->zvertices.resize(startat + 1);

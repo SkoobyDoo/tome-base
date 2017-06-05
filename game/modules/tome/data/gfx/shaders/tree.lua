@@ -18,8 +18,9 @@
 -- darkgod@te4.org
 
 return {
-	frag = "tree",
-	vert = "default/gl-extended",
+	frag = "default/gl",
+	vert = "tree",
+	-- vert = "default/gl-extended",
 	args = {
 		tree_attenuation = attenuation or 35,
 	},

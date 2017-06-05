@@ -734,6 +734,21 @@ function _M:onTakeHit(value, src, death_note)
 	return ret
 end
 
+function _M:setEffect(eff_id, ...)
+	game:triggerEventUI("Player:setEffect", self, eff_id, ...)
+	return mod.class.Actor.setEffect(self, eff_id, ...)
+end
+
+function _M:removeEffect(eff_id, ...)
+	game:triggerEventUI("Player:removeEffect", self, eff_id, ...)
+	return mod.class.Actor.removeEffect(self, eff_id, ...)
+end
+
+function _M:postUseTalent(ab, ...)
+	game:triggerEventUI("Player:postUseTalent", self, ab, ...)
+	return mod.class.Actor.postUseTalent(self, ab, ...)
+end
+
 function _M:on_set_temporary_effect(eff_id, e, p)
 	local ret = mod.class.Actor.on_set_temporary_effect(self, eff_id, e, p)
 
@@ -1012,7 +1027,7 @@ function _M:restCheck()
 		-- Check for resources
 		for res, res_def in ipairs(_M.resources_def) do
 			if res_def.wait_on_rest and res_def.regen_prop and self:attr(res_def.regen_prop) then
-				if not res_def.invert_values then
+				if not res_def.invert_values and not res_def.switch_direction then
 					if self[res_def.regen_prop] > 0.0001 and self:check(res_def.getFunction) < self:check(res_def.getMaxFunction) then return true end
 				else
 					if self[res_def.regen_prop] < -0.0001 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end

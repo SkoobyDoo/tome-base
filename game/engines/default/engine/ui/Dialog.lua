@@ -243,8 +243,10 @@ end
 -- @param w, h = width and height of the dialog (in pixels, optional: dialog sized to its elements by default)
 -- @param no_leave set true to force a selection
 -- @param escape = the default choice (number) to select if escape is pressed
-function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape)
+-- @param default = the default choice (number) to select (highlight) when the dialog opens, default 1
+function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape, default)
 	escape = escape or 1
+	default = default or 1
 	-- compute display limits
 	local max_w, max_h = w or game.w*.75, h or game.h*.75
 
@@ -256,7 +258,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	
 	local d = new(title, w or 1, h or 1)
 --print(("[multiButtonPopup] initialized: (w:%s,h:%s), (maxw:%s,maxh:%s) "):format(w, h, max_w, max_h))
-	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) choice_fct(button_list[escape]) end) end
+	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d)
+			if choice_fct then choice_fct(button_list[escape]) end
+		end)
+	end
 
 	local num_buttons = math.min(#button_list, 50)
 	local buttons, buttons_width, button_height = {}, 0, 0
@@ -298,7 +303,7 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	local width = w or math.min(max_w, math.max(text_width + 20, max_buttons_width + 20))
 	local height = h or math.min(max_h, text_height + 10 + nrow*button_height)
 	local uis = {
-		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text}}
+		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text, can_focus=false}}
 	}
 	-- actually place the buttons in the dialog
 	top = math.max(text_height, text_height + (height - text_height - nrow*button_height - 5)/2)
@@ -312,7 +317,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 		end
 	end
 	d:loadUI(uis)
-	if uis[escape + 1] then d:setFocus(uis[escape + 1]) end
+	-- set default focus if possible
+	if uis[default + 1] then d:setFocus(uis[default + 1])
+	elseif uis[escape + 1] then d:setFocus(uis[escape + 1])
+	end
 	d:setupUI(not w, not h)
 	game:registerDialog(d)
 	return d
@@ -494,9 +502,9 @@ function _M:generate()
 		local b2hw = math.floor(b2.w / 2)
 		local b2l = self:getAtlasTexture(self.frame.b2l)
 		local b2r = self:getAtlasTexture(self.frame.b2r)
-		self.frame_container:add(fromTextureTable(b2l, cx + b1.w, cy, mw - b1.w - b2hw, nil, true, r, g, b, a))
-		self.frame_container:add(fromTextureTable(b2r, cx + mw + b2hw, cy, mw - b3.w - b2hw, nil, true, r, g, b, a))
-		self.frame_container:add(fromTextureTable(b2, cx + mw - b2hw, cy, nil, nil, false, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2l, cx + b1.w, cy + h - b2.h, mw - b1.w - b2hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2r, cx + mw + b2hw, cy + h - b2.h, mw - b3.w - b2hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2, cx + mw - b2hw, cy + h - b2.h, nil, nil, false, r, g, b, a))
 	else
 		self.frame_container:add(fromTextureTable(b8, cx + b7.w, cy + 0, w - b7.w - b9.w, nil, true, r, g, b, a))
 		self.frame_container:add(fromTextureTable(b2, cx + b1.w, cy + h - b2.h, w - b1.w - b3.w, nil, true, r, g, b, a))
@@ -505,7 +513,7 @@ function _M:generate()
 	-- Overlays
 	self.overs = {}
 	if #(self.frame.overlays or {}) > 0 then
-		local overs_container = core.renderer.do_container()
+		local overs_container = core.renderer.container()
 		overs_container:translate(0, 0, 1)
 		self.full_container:add(overs_container)
 
@@ -549,7 +557,7 @@ function _M:updateTitle(title)
 	if type(title)=="function" then title = title() end
 
 	if not self.title_do then
-		self.title_do = core.renderer.text(self.font_bold)
+		self.title_do = core.renderer.text(self.font_bold):scale(1.15, 1.15, 1)
 		self.do_container:add(self.title_do)
 	else
 		self.title_do:removeFromParent()
@@ -560,7 +568,7 @@ function _M:updateTitle(title)
 	if self.title_shadow then self.title_do:outline(1) end
 	-- if self.title_shadow then self.title_do:shadow(self.font_bold_h / 10, self.font_bold_h / 10, 0, 0, 0, 0.7) end
 	self.title_do:text(title)
-	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, 10)
+	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats() * 1.15) / 2, self.frame.title_y, 10)
 	self.font_bold:setStyle("normal")
 end
 

@@ -34,25 +34,27 @@ local b_danger1
 local b_friend
 local b_enemy
 local b_neutral
+local b_lifebar
 
 function _M:setup()
 	if self.setuped then return end
 	self.setuped = true
 	local tactic_tiles = Tiles.new(BASE_W, BASE_H, nil, nil, true, false)
-	local assf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_self)
-	local assf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_powerful)
-	local assf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger2)
-	local assf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger1)
-	local assf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_friend)
-	local assf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_enemy)
-	local assf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_neutral)
-	local ssf_self = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_self)
-	local ssf_powerful = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_powerful)
-	local ssf_danger2 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger2)
-	local ssf_danger1 = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger1)
-	local ssf_friend = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_friend)
-	local ssf_enemy = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_enemy)
-	local ssf_neutral = tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_neutral)
+	local assf_self = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_self, nil, nil, true))
+	local assf_powerful = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_powerful, nil, nil, true))
+	local assf_danger2 = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger2, nil, nil, true))
+	local assf_danger1 = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_danger1, nil, nil, true))
+	local assf_friend = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_friend, nil, nil, true))
+	local assf_enemy = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_enemy, nil, nil, true))
+	local assf_neutral = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "alt_side_"..Map.faction_neutral, nil, nil, true))
+	local ssf_self = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_self, nil, nil, true))
+	local ssf_powerful = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_powerful, nil, nil, true))
+	local ssf_danger2 = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger2, nil, nil, true))
+	local ssf_danger1 = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_danger1, nil, nil, true))
+	local ssf_friend = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_friend, nil, nil, true))
+	local ssf_enemy = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_enemy, nil, nil, true))
+	local ssf_neutral = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "side_"..Map.faction_neutral, nil, nil, true))
+	b_lifebar = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "lifebar.png", nil, nil, true))
 
 	if config.settings.tome.flagpost_tactical then
 		b_self = assf_self
@@ -80,14 +82,14 @@ function _M:init(actor)
 	self.actor = actor
 	self.DO = core.renderer.renderer():setRendererName("Tactical:UID:"..self.actor.uid)
 
-	self.DO_life = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
-	self.DO_life_missing = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
+	self.DO_life = core.renderer.fromTextureTable(b_lifebar, 0, 0, 1, 1, false, 1, 1, 1, 1, nil, 0)
+	self.DO_life_missing = core.renderer.fromTextureTable(b_lifebar, 0, 0, 1, 1, false, 1, 1, 1, 1, nil, 0)
 	self.CO_life = core.renderer.container()
 	self.CO_life:add(self.DO_life)
 	self.CO_life:add(self.DO_life_missing)
 	self.DO:add(self.CO_life)
 
-	self.DO_tactical = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1)
+	self.DO_tactical = core.renderer.vertexes()
 	self.DO:add(self.DO_tactical)
 
 	TacticalOverlay.init(self)
@@ -155,10 +157,11 @@ function _M:toScreenBack(x, y, w, h)
 		end
 	end
 	if tactical_texture and self.old_tactical ~= tactical_texture then
-		self.DO_tactical:texture(tactical_texture)
-		self.DO_tactical:scale(w, h, 1)
+		self.DO_tactical:clear()
+		core.renderer.fromTextureTable(tactical_texture, 0, 0, w, h, false, 1, 1, 1, 1, self.DO_tactical)
 	end
 
+	-- DGDGDGDG They all use the same texture atlas, we shouldnt draw the DO but pass it to the map code
 	self.DO:toScreen(x, y)
 
 	self.old_friend = friend

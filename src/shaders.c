@@ -281,7 +281,7 @@ static int program_clone(lua_State *L)
 	lua_setmetatable(L, 2);
 	lua_pop(L, 1);
 
-	printf("Cloned shader %d\n", p->shader);
+	// printf("Cloned shader %d\n", p->shader);
 
 	return 1;
 }
@@ -625,7 +625,7 @@ static int program_compile(lua_State *L)
 		uniLoc = glGetUniformLocation(p->shader, buffer);
 		if(uniLoc>=0)	// Test for valid uniform location
 		{
-			printf("*p %i: Uniform: %i: %X %s\n", p->shader,uniLoc, dummytype, buffer);
+			// printf("*p %i: Uniform: %i: %X %s\n", p->shader,uniLoc, dummytype, buffer);
 			// Add a C closure to define the uniform
 			if (dummytype == GL_FLOAT) {
 				// Compute the name

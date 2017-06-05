@@ -24,6 +24,7 @@
 #include <renderer-moderngl/Renderer.hpp>
 #include <renderer-moderngl/VBO.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 /****************************************************************************
  ** A special DORCallback to handle what is needed by map code
@@ -57,7 +58,7 @@ public:
 
 enum display_last_kind {DL_NONE, DL_TRUE_LAST, DL_TRUE};
 
-struct s_map_object {
+struct map_object {
 	int nb_textures;
 	int *textures_ref;
 	GLuint *textures;
@@ -88,18 +89,32 @@ struct s_map_object {
 	float anim_step, anim_speed;
 	enum display_last_kind display_last;
 	long uid;
+	bool hide;
 
 	DisplayObject *displayobject;
 	int do_ref;
 
 	DORCallbackMap *cb;
 
-	struct s_map_object *next;
+	map_object *next;
 	int next_ref;
 };
-typedef struct s_map_object map_object;
 
-typedef struct {
+struct map_object_sort {
+	map_object *m, *dm;
+	int z;
+	float anim;
+	float dx, dy, dy_sort;
+	float tldx, tldy;
+	float r, g, b, a;
+	int i, j;
+};
+
+class DORTileMap;
+class DORTileMiniMap;
+struct map_type {
+	map_object_sort **sort_mos;
+	int sort_mos_max;
 	map_object* ***grids;
 	int ***grids_ref;
 	float *grids_seens;
@@ -107,20 +122,10 @@ typedef struct {
 	bool **grids_lites;
 	bool **grids_important;
 
-	GLubyte *minimap;
-	GLuint mm_texture;
-	int mm_w, mm_h;
-	int mm_rw, mm_rh;
-	int minimap_gridsize, old_minimap_gridsize;
-
 	int nb_grid_lines_vertices;
-	GLfloat *grid_lines_vertices;
-	GLfloat *grid_lines_colors;
-	GLfloat *grid_lines_textures;
+	DORVertexes *grid_lines;
+	RendererGL *grid_lines_renderer;
 
-	GLfloat *vertices;
-	GLfloat *colors;
-	GLfloat *texcoords;
 	GLubyte *seens_map;
 	int seens_map_w, seens_map_h;
 
@@ -132,7 +137,6 @@ typedef struct {
 	GLuint seens_texture;
 
 	int mo_list_ref;
-
 
 	int is_hex;
 
@@ -147,6 +151,7 @@ typedef struct {
 	int zdepth;
 	int tile_w, tile_h;
 	GLfloat tex_tile_w[3], tex_tile_h[3];
+	int zdepth_sort_start;
 
 	// Scrolling
 	float scroll_x, scroll_y;
@@ -160,12 +165,15 @@ typedef struct {
 	bool seen_changed;
 
 	// Render processing
-	bool *z_changed;
-	RendererGL **z_renderers;
+	bool changed, minimap_changed;
+	RendererGL *renderer;
 	unordered_map<string, float> *shader_to_shaderkind;
 	VBO *seens_vbo;
-	VBO *mm_vbo;
-} map_type;
+
+	// Referencing
+	unordered_set<DORTileMap*> *map_dos;
+	unordered_set<DORTileMiniMap*> *minimap_dos;
+};
 
 extern void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color);
 extern void minimap_toscreen(map_type *map, mat4 model, int gridsize, int mdx, int mdy, int mdw, int mdh, float transp);

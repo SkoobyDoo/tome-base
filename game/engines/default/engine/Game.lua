@@ -351,9 +351,9 @@ function _M:onTickEndExecute()
 	if self.on_tick_end and #self.on_tick_end > 0 then
 		local fs = self.on_tick_end
 		self.on_tick_end = {}
+		self.on_tick_end_names = nil
 		for i = 1, #fs do fs[i]() end
 	end
-	self.on_tick_end_names = nil
 end
 
 --- Register things to do on tick end

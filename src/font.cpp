@@ -82,6 +82,8 @@ static int sdl_free_font(lua_State *L)
 		}
 	}
 	delete f->fontname;
+	delete f->glyph_map;
+	delete f->glyph_map_outline;
 	lua_pushnumber(L, 1);
 	return 1;
 }
@@ -101,6 +103,8 @@ static int sdl_new_font(lua_State *L)
 	auxiliar_setclass(L, "sdl{font}", -1);
 
 	f->fontname = new string(name);
+	f->glyph_map = new unordered_map<uint32_t, ftgl::texture_glyph_t*>;
+	f->glyph_map_outline = new unordered_map<uint32_t, ftgl::texture_glyph_t*>;
 
 	auto am = atlases.find(*f->fontname);
 	if (am != atlases.end()) { // Found, use it
@@ -159,6 +163,7 @@ void font_update_atlas(font_type *f) {
 	if (f->atlas->changed) {
 		glBindTexture(GL_TEXTURE_2D, f->atlas->id);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, f->atlas->width, f->atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, f->atlas->data);
+		f->atlas->changed = false;
 	}
 }
 

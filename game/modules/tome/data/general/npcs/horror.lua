@@ -77,7 +77,7 @@ Each swing drips pustulant fluid before it, and each droplet writhes and wriggle
 	resolvers.equip{
 		{type="weapon", subtype="waraxe", ego_chance = 100, autoreq=true},
 		{type="weapon", subtype="waraxe", ego_chance = 100, autoreq=true},
-		{type="armor", subtype="robe", ego_chance = 100, autoreq=true}
+		{type="armor", subtype="cloth", ego_chance = 100, autoreq=true}
 	},
 
 	talent_cd_reduction = {[Talents.T_BLINDSIDE]=4},

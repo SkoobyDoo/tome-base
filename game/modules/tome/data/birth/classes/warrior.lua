@@ -84,6 +84,10 @@ newBirthDescriptor{
 		[ActorTalents.T_ARMOUR_TRAINING] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", properties={"twohanded"}},
+			OFFHAND = {type="none"}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="heavy", name="iron mail armour", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -93,6 +97,11 @@ newBirthDescriptor{
 		life_rating = 3,
 	},
 }
+
+local shield_special = function(e) -- allows any object with shield combat
+	local combat = e.shield_normal_combat and e.combat or e.special_combat
+	return combat and combat.block
+end
 
 newBirthDescriptor{
 	type = "subclass",
@@ -137,6 +146,11 @@ newBirthDescriptor{
 		[ActorTalents.T_WEAPONS_MASTERY] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", not_properties={"twohanded"}},
+			OFFHAND = {special=shield_special},
+			BODY = {type="armor", special=function(e) return e.subtype=="heavy" or e.subtype=="massive" end},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -188,6 +202,13 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 110,
+		resolvers.auto_equip_filters{MAINHAND = {type="weapon", properties={"archery"}},
+			QUIVER={properties={"archery_ammo"}, special=function(e, filter) -- must match the MAINHAND weapon, if any
+				local mh = filter._equipping_entity and filter._equipping_entity:getInven(filter._equipping_entity.INVEN_MAINHAND)
+				mh = mh and mh[1]
+				if not mh or mh.archery == e.archery_ammo then return true end
+			end}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
@@ -317,6 +338,9 @@ newBirthDescriptor{
 		[ActorTalents.T_UNARMED_MASTERY] = 1, -- early game is absolutely stupid without this
 	},
 	copy = {
+		resolvers.auto_equip_filters{-- will not try to equip weapons
+			MAINHAND = {type="none"}, OFFHAND = {type="none"}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="armor", subtype="hands", name="iron gauntlets", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="light", name="rough leather armour", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -329,6 +353,4 @@ newBirthDescriptor{
 		life_rating = 2,
 	},
 }
-
-
 

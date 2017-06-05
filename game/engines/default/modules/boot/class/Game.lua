@@ -98,6 +98,7 @@ function _M:init()
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
+	self.key:setupProfiler()
 	self.stopped = config.settings.boot_menu_background
 	-- self.stopped = true
 	if core.display.safeMode() then self.stopped = true end

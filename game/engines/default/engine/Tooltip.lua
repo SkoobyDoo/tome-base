@@ -61,6 +61,7 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	self.uis_h = 0
 	self.last_display_x = 0
 	self.last_display_y = 0
+	self.last_update_time = 0
 	self.container = UIContainer.new{width = self.w, height = self.h }
 	Base.init(self, {require_renderer=true})
 
@@ -78,6 +79,13 @@ end
 function _M:set(str, ...)
 	-- if locked change is forbiden
 	if self.locked then return end
+
+	if (core.game.getTime() - self.last_update_time < 100) then
+		self.to_update_next = {str=str, args={...}}
+		return
+	end
+
+	self.last_update_time = core.game.getTime()
 	self.pingpong = 0
 	self.pingpong_last = nil
 	str = str or {}
@@ -209,6 +217,11 @@ function _M:display() end
 function _M:toScreen(x, y, nb_keyframes)
 	self.last_display_x = x
 	self.last_display_y = y
+
+	if self.to_update_next and (core.game.getTime() - self.last_update_time >= 100) then
+		self:set(self.to_update_next.str, unpack(self.to_update_next.args))
+		self.to_update_next = nil
+	end
 
 	if self.inhibited == true or self.empty == true then return nil end
 	nb_keyframes = nb_keyframes or 0

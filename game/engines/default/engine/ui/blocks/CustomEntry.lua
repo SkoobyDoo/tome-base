@@ -46,6 +46,14 @@ end
 function _M:select(v)
 	if self.selected == v then return end
 	self.selected = v
+	if not self.frame then return end
+	if v then
+		self.cur_frame.container:color(1, 1, 1, 1)
+		self.cur_frame.container:shown(v)
+	else
+		-- self.cur_frame.container:shown(false)
+		self.cur_frame.container:tween(8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
+	end
 end
 
 function _M:onFocusChange(v)

@@ -18,9 +18,16 @@
 -- darkgod@te4.org
 
 return {
-	frag = "lava",
-	vert = nil,
+	require_kind = "adv",
+	frag = "default/gl",
+	vert = "water",
+	-- frag = "water",
+	-- vert = "default/gl-extended",
 	args = {
+		tex = { texture = 0 },
+		waveDir = waveDir or {1, -1},
+		waveSpeed = waveSpeed or 2000,
+		waveAmplitude = waveAmplitude or 3,
 	},
 	clone = false,
 }

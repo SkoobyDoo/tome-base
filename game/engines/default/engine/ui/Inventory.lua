@@ -84,7 +84,7 @@ function _M:generate()
 			for _, lt in ipairs(_M._last_tabs) do if lt.kind then last_kinds[lt.kind] = true end end
 			for j, row in ipairs(self.c_tabs.dlist) do for i, item in ipairs(row) do
 				if sel_all or last_kinds[item.data.kind] then
-					item.selected = true
+					self.c_tabs:setSelected(item, true)
 					found_tab = true
 					self.c_tabs.sel_i, self.c_tabs.sel_j = i, j
 					if sel_all and item.data.filter=="all" then _M._last_tabs_i = i end
@@ -93,7 +93,7 @@ function _M:generate()
 		end
 		if not found_tab then
 			self.c_tabs.sel_i, self.c_tabs.sel_j = 1, 1
-			self.c_tabs.dlist[1][1].selected = true
+			self.c_tabs:setSelected(self.c_tabs.dlist[1][1], true)
 		end
 
 		self.uis[#self.uis+1] = {x=0, y=0, ui=self.c_tabs}
@@ -106,7 +106,7 @@ function _M:generate()
 	end
 
 
-	self.c_inven = ListColumns.new{width=self.w, height=self.h - (self.c_tabs and self.c_tabs.h or 0), sortable=true, scrollbar=true, columns=self.columns or {
+	self.c_inven = ListColumns.new{width=self.w, height=self.h - (self.c_tabs and self.c_tabs.h or 0), floating_headers=true, sortable=true, scrollbar=true, columns=self.columns or {
 		{name="", width={33,"fixed"}, display_prop="char", sort="id"},
 		{name="", width={24,"fixed"}, display_prop="object", sort="sortname", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
 		{name="Inventory", width=72, display_prop="name", sort="sortname"},
@@ -214,6 +214,7 @@ function _M:updateTabFilterList(list)
 		if item.data.filter == "all" then
 			is_all = true
 			for i, row in ipairs(self.c_tabs.dlist) do for j, item in ipairs(row) do item.selected = item.data.filter ~= "all" end end
+			self.c_tabs:updateSelection()
 			list = self.c_tabs:getAllSelected()
 		end
 	end
@@ -297,6 +298,9 @@ end
 
 function _M:display(x, y, nb_keyframes, ox, oy)
 	self._last_x, _last_y, self._last_ox, self._last_oy = x, y, ox, oy
+
+	self.last_display_x = ox
+	self.last_display_y = oy
 
 	-- UI elements
 	for i = 1, #self.uis do

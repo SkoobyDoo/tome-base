@@ -32,6 +32,7 @@ extern "C" {
 
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/TextObject.hpp"
+#include "colors.hpp"
 
 shader_type *DORText::default_shader = NULL;
 
@@ -53,6 +54,21 @@ void DORText::cloneInto(DisplayObject* _into) {
 	into->setText(text);
 }
 
+ftgl::texture_glyph_t *DORText::getGlyph(uint32_t codepoint) {
+	auto glyph_map = font->glyph_map;
+	if (font->font->rendermode == ftgl::RENDER_OUTLINE_POSITIVE) glyph_map = font->glyph_map_outline;
+
+	auto it = glyph_map->find(codepoint);
+	if (it != glyph_map->end()) return it->second;
+
+	ftgl::texture_glyph_t *g = ftgl::texture_font_get_glyph(font->font, codepoint);
+	if (g) {
+		std::pair<uint32_t, ftgl::texture_glyph_t*> p(codepoint, g);
+		glyph_map->insert(p);
+	}
+	return g;
+}
+
 int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
 	int x = 0, y = by;
 	ssize_t off = 1;
@@ -67,7 +83,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 
 		font->font->outline_thickness = 0;
 		font->font->rendermode = ftgl::RENDER_SIGNED_DISTANCE_FIELD;
-		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
+		ftgl::texture_glyph_t *d = getGlyph(c);
 		if (d) {
 			float kerning = 0;
 			if (last_glyph) {
@@ -95,7 +111,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			if (outline) {
 				font->font->outline_thickness = 2;
 				font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
-				ftgl::texture_glyph_t *doutline = ftgl::texture_font_get_glyph(font->font, c);
+				ftgl::texture_glyph_t *doutline = getGlyph(c);
 				if (doutline) {
 					float x0  = bx + x + doutline->offset_x * scale;
 					float x1  = x0 + doutline->width * scale;
@@ -103,10 +119,10 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 					float y0 = by + (font->font->ascender - doutline->offset_y) * scale;
 					float y1 = y0 + (doutline->height) * scale;
 
-					vertices.push_back({{x0+italicx, y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					vertices.push_back({{x1+italicx, y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					vertices.push_back({{x1, y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					vertices.push_back({{x0, y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{1+x0+italicx, 1+y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{1+x1+italicx, 1+y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{1+x1, 1+y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+					vertices.push_back({{1+x0, 1+y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
 				}
 			}
 
@@ -131,7 +147,7 @@ int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
 		str += off;
 		len -= off;
 
-		ftgl::texture_glyph_t *d = ftgl::texture_font_get_glyph(font->font, c);
+		ftgl::texture_glyph_t *d = getGlyph(c);
 		if (d) {
 			if (oldc) {
 				x += texture_glyph_get_kerning(d, oldc) * scale;
@@ -322,6 +338,15 @@ void DORText::parseText() {
 						lua_pop(L, 3);
 						a = 1;
 					}
+					// DGDGDGDG fix & enable me
+					// string cname(next+1, (size_t)(codestop - (next+1)));
+					// Color *color = Color::find(cname);
+					// if (color) {
+					// 	vec4 rgba = color->get1();
+					// 	lr = r; lg = g; lb = b; la = a;
+					// 	r = rgba.r; g = rgba.g; b = rgba.b; a = rgba.a;
+					// 	printf("===== %s : %f %f %f %f\n", cname.c_str(), r,g,b,a);
+					// }
 					// Hexacolor
 					else if (codestop - (next+1) == 6)
 					{
@@ -411,12 +436,20 @@ void DORText::parseTextSimple() {
 }
 
 void DORText::setText(const char *text, bool simple) {
+	// text = "je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop je suis un lon#BLUE#text loli\n loz #{italic}#AHAH plop ";
+	// ProfilerStart("nameOfProfile.log");
+	// for (int i = 0; i < 10000; i++) {
+
 	free((void*)this->text);
 	size_t len = strlen(text);
 	this->text = (char*)malloc(len + 1);
 	strcpy(this->text, text);
 	if (simple) parseTextSimple();
 	else parseText();
+	
+	// }
+	// ProfilerStop();
+	// exit(0);
 }
 
 void DORText::center() {
@@ -445,16 +478,20 @@ void DORText::clear() {
 	entities_container.clear();
 }
 
-void DORText::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORText::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	DORVertexes::render(container, cur_model, cur_color, true);
-	entities_container.render(container, cur_model * model, cur_color * color, true);
+	mat4 emodel = cur_model * model;
+	vec4 ecolor = cur_color * color;
+	entities_container.render(container, emodel, ecolor, true);
 }
 
-void DORText::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORText::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible) return;
 	DORVertexes::renderZ(container, cur_model, cur_color, true);
-	entities_container.renderZ(container, cur_model * model, cur_color * color, true);
+	mat4 emodel = cur_model * model;
+	vec4 ecolor = cur_color * color;
+	entities_container.renderZ(container, emodel, ecolor, true);
 }
 
 DORText::~DORText() {

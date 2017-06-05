@@ -698,6 +698,7 @@ void on_redraw()
 		keyframes_done = 0;
 	}
 
+	loader_tick();
 #ifdef STEAM_TE4
 	if (!no_steam) te4_steam_callbacks();
 #endif
@@ -1116,6 +1117,8 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_core(L);
 		luaopen_core_mouse(L);
 		luaopen_core_gamepad(L);
+		luaopen_loader(L);
+		luaopen_colors(L);
 		luaopen_font(L);
 		luaopen_fov(L);
 		luaopen_socket_core(L);

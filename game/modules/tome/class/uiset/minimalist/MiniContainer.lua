@@ -45,14 +45,14 @@ function _M:texLoader(file, rw, rh)
 		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset(sfile)
 		if ts then return {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
 		else
-			local tex, rw, rh, tw, th, iw, ih = core.display.loadImage("/data/gfx/"..sfile):glTexture()
+			local tex, rw, rh, tw, th, iw, ih = core.loader.png("/data/gfx/"..sfile)
 			return {t=tex, w=iw, h=ih, tw=iw/rw, th=ih/rh, tx=0, ty=0}
 		end
 	else
 		local ts, fx, fy, tsx, tsy, tw, th = UI:checkTileset("ui/"..file)
 		if ts then return {t=ts, tw=fx, th=fy, w=tw, h=th, tx=tsx, ty=tsy}
 		else
-			local tex, rw, rh, tw, th, iw, ih = core.display.loadImage("/data/gfx/ui/"..file):glTexture()
+			local tex, rw, rh, tw, th, iw, ih = core.loader.png("/data/gfx/ui/"..file)
 			return {t=tex, w=iw, h=ih, tw=iw/rw, th=ih/rh, tx=0, ty=0}
 		end
 	end
@@ -306,8 +306,9 @@ function _M:setupMouse(first)
 	if first then self.mouse_first_setup = true end
 	if not self.mouse_first_setup then return end
 
+	local x, y = self.x + (self.mouse_zone_x or 0), self.y + (self.mouse_zone_y or 0)
 	local w, h = self.mouse_zone_w or self.w, self.mouse_zone_h or self.h
-	if not game.mouse:updateZone(self.mousezone_id, self.x, self.y, w, h, nil, self.scale) then
+	if not game.mouse:updateZone(self.mousezone_id, x, y, w, h, nil, self.scale) then
 		game.mouse:unregisterZone(self.mousezone_id)
 
 		local fct = function(button, mx, my, xrel, yrel, bx, by, event)
@@ -319,6 +320,6 @@ function _M:setupMouse(first)
 			-- Notice how we pass bx, by instead of mx, my! This way we always have 0x0 relative and rescaled and no need to use delegate offsets
 			self.mouse:delegate(button, bx, by, xrel, yrel, bx, by, event)
 		end
-		game.mouse:registerZone(self.x, self.y, w, h, fct, nil, self.mousezone_id, true, self.scale)
+		game.mouse:registerZone(x, y, w, h, fct, nil, self.mousezone_id, true, self.scale)
 	end
 end

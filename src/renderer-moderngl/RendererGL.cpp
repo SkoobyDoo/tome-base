@@ -88,6 +88,7 @@ void releaseDisplayList(DisplayList *dl) {
 
 DisplayList::DisplayList() {
 	glGenBuffers(1, &vbo);
+	list.reserve(4096);
 	// printf("Making new DL! %x with vbo %d\n", this, vbo);
 }
 // This really should never be actually used
@@ -225,7 +226,7 @@ void RendererGL::update() {
 
 				// Now we sort the flattened tree. This is awy faster than the full sort mode because here we sort DOs instead of vertices
 				// Also since we are not sorting vertices we likely dont need to use a stable sort -- DGDGDGDG: don't we ?
-				stable_sort(sorted_dos.begin(), sorted_dos.end(), sort_dos);
+				sort(sorted_dos.begin(), sorted_dos.end(), sort_dos);
 			}
 
 			// And now we can iterate the sorted flattened tree and render as a normal no sort render
@@ -259,7 +260,7 @@ void RendererGL::update() {
 		if (!(*dl)->sub && !(*dl)->tick) {
 			if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
 
-			// printf("REBUILDING THE VBO %d...\n", (*dl)->vbo);
+			// printf("REBUILDING THE VBO %d with %d elements...\n", (*dl)->vbo, (*dl)->list.size());
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, (GLuint)mode);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());

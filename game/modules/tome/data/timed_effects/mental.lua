@@ -1601,104 +1601,13 @@ newEffect{
 		if rng.percent(chance) then
 			if self:attr("sleep") or self:checkHit(eff.src:combatMindpower(), self:combatMentalResist(), 0, 95, 5) then
 				t.summon_inner_demons(eff.src, self, t)
+				self:removeEffectsFilter({subtype={["sleep"] = true}}, 3) -- Allow the player to actually react to one of the biggest threats in the game before 50 more spawn
 			else
 				eff.dur = 0
 			end
 		end
 	end,
 }
-
-newEffect{
-	name = "PACIFICATION_HEX", image = "talents/pacification_hex.png",
-	desc = "Pacification Hex",
-	long_desc = function(self, eff) return ("The target is hexed, granting it %d%% chance each turn to be dazed for 3 turns."):format(eff.chance) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = {chance=10, power=10},
-	on_gain = function(self, err) return "#Target# is hexed!", "+Pacification Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Pacification Hex" end,
-	-- Damage each turn
-	on_timeout = function(self, eff)
-		if not self:hasEffect(self.EFF_DAZED) and rng.percent(eff.chance) and self:canBe("stun") then
-			self:setEffect(self.EFF_DAZED, 3, {})
-			if not self:checkHit(eff.power, self:combatSpellResist(), 0, 95, 15) then eff.dur = 0 end
-		end
-	end,
-	activate = function(self, eff)
-		if self:canBe("stun") then
-			self:setEffect(self.EFF_DAZED, 3, {})
-		end
-		if core.shader.active() then
-			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, oversize=0.5, a=225, appear=8, speed=0, img="pacification_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
-		end
-	end,
-	deactivate = function(self, eff)
-		if eff.particle then self:removeParticles(eff.particle) end
-	end,
-}
-
-newEffect{
-	name = "BURNING_HEX", image = "talents/burning_hex.png",
-	desc = "Burning Hex",
-	long_desc = function(self, eff) return ("The target is hexed.  Each time it uses an ability it takes %0.2f fire damage, and talent cooldowns are increased by %s plus 1 turn."):
-		format(eff.dam, eff.power and ("%d%%"):format((eff.power-1)*100) or "")
-	end,
-	type = "mental",
-	subtype = { hex=true, fire=true },
-	status = "detrimental",
-	-- _M:getTalentCooldown(t) in mod.class.Actor.lua references this table to compute cooldowns
-	parameters = {dam=10, power = 1},
-	on_gain = function(self, err) return "#Target# is hexed!", "+Burning Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Burning Hex" end,
-}
-
-newEffect{
-	name = "EMPATHIC_HEX", image = "talents/empathic_hex.png",
-	desc = "Empathic Hex",
-	long_desc = function(self, eff) return ("The target is hexed, creating an empathic bond with its victims. It takes %d%% feedback damage from all damage done."):format(eff.power) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = { power=10 },
-	on_gain = function(self, err) return "#Target# is hexed.", "+Empathic Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Empathic hex" end,
-	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("martyrdom", eff.power)
-		if core.shader.active() then
-			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {toback=true, shader=true, oversize=0.5, a=225, appear=8, speed=0, img="empathic_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
-		end
-	end,
-	deactivate = function(self, eff)
-		if eff.particle then self:removeParticles(eff.particle) end
-		self:removeTemporaryValue("martyrdom", eff.tmpid)
-	end,
-}
-
-newEffect{
-	name = "DOMINATION_HEX", image = "talents/domination_hex.png",
-	desc = "Domination Hex",
-	long_desc = function(self, eff) return ("The target is hexed, temporarily changing its faction to %s."):format(engine.Faction.factions[eff.faction].name) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = {},
-	on_gain = function(self, err) return "#Target# is hexed.", "+Domination Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Domination hex" end,
-	activate = function(self, eff)
-		self:setTarget() -- clear ai target
-		eff.olf_faction = self.faction
-		self.faction = eff.src.faction
-		if core.shader.active() then
-			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, oversize=1, a=225, appear=8, speed=0, img="domination_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
-		end
-	end,
-	deactivate = function(self, eff)
-		if eff.particle then self:removeParticles(eff.particle) end
-		self.faction = eff.olf_faction
-	end,
-}
-
 
 newEffect{
 	name = "DOMINATE_ENTHRALL", image = "talents/yeek_will.png",

@@ -154,7 +154,7 @@ function _M:runReal()
 	-- Create the map scroll text overlay
 	self.caps_scroll = core.renderer.renderer("static"):color(1, 1, 1, 0.7)
 	local lfont = FontPackage:get("bignews", true)
-	local txt = core.renderer.text(lfont):text("#GOLD#<Scroll mode, press direction keys to scroll, press again to exit>"):center()
+	local txt = core.renderer.text(lfont):outline(1):text("#GOLD#<Scroll mode, press direction keys to scroll, press again to exit>"):center()
 	self.caps_scroll:add(txt)
 
 	self.inited = true
@@ -781,8 +781,7 @@ function _M:changeLevel(lev, zone, params)
 		d = self.player:showEquipInven(titleupdator(), nil, function(o, inven, item, button, event)
 			if not o then return end
 			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", self.player, o, item, inven, function(_, _, _, stop)
-				d:generate()
-				d:generateList()
+				d:updateData()
 				d:updateTitle(titleupdator())
 				if stop then self:unregisterDialog(d) end
 			end, true)
@@ -903,7 +902,7 @@ function _M:changeLevelReal(lev, zone, params)
 	end
 
 	-- clear chrono worlds and their various effects
-	if self._chronoworlds then self._chronoworlds = nil end
+	if self._chronoworlds and not params.keep_chronoworlds then self._chronoworlds = nil end
 
 	local left_zone = self.zone
 	local old_lev = (self.level and not zone) and self.level.level or -1000
@@ -1316,7 +1315,6 @@ end
 
 --- Update the zone name, if needed
 function _M:updateZoneName()
-	if not self.zone_font then return end
 	local name
 	if self.zone.display_name then
 		name = self.zone.display_name()
@@ -1329,9 +1327,11 @@ function _M:updateZoneName()
 			name = ("%s (%d)"):format(self.zone.name, lev)
 		end
 	end
-	self.zone_name = name
-	self.old_zone_name = self.zone_name -- For compatibility
-	print("Updating zone name", name)
+	if self.zone_name ~= name then
+		self.zone_name = name
+		self.old_zone_name = self.zone_name -- For compatibility
+		print("Updating zone name", name)
+	end
 end
 
 function _M:tick()
@@ -1606,24 +1606,24 @@ function _M:createFBOs()
 	for i, d in ipairs(effs) do
 		local s = Shader.new(d[2])
 		if s.shad then
-			s:setUniform("texSize", {w, h})
+			s:setUniform("screenSize", {w, h})
 			seffs[#seffs+1] = {d[1], s.shad}
 			self.posteffects[d[1]] = s.shad
 			if d[1] == "main" then self.fbo_shader = s end
 		end
 	end
 
-	local bloom_shader = Shader.new("bloom/bloom")
-	local hblur_shader = Shader.new("bloom/hblur") hblur_shader:setUniform("texSize", {w, h})
-	local vblur_shader = Shader.new("bloom/vblur") vblur_shader:setUniform("texSize", {w, h})
-	local combine_shader = Shader.new("bloom/combine")
+	-- local bloom_shader = Shader.new("bloom/bloom")
+	-- local hblur_shader = Shader.new("bloom/hblur") hblur_shader:setUniform("texSize", {w, h})
+	-- local vblur_shader = Shader.new("bloom/vblur") vblur_shader:setUniform("texSize", {w, h})
+	-- local combine_shader = Shader.new("bloom/combine")
 
 	self.full_fbo_shader = Shader.new("full_fbo")
 
-	self.fbobloom = core.renderer.target()
-	self.fbobloom:bloomMode(20, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
-	self.fbobloomrenderer = core.renderer.renderer("static"):add(self.fbobloom)
-	core.particles.defineBloomFBO(self.fbobloom)
+	-- self.fbobloom = core.renderer.target()
+	-- self.fbobloom:bloomMode(20, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
+	-- self.fbobloomrenderer = core.renderer.renderer("static"):add(self.fbobloom)
+	-- core.particles.defineBloomFBO(self.fbobloom)
 
 	self.fbo2 = core.renderer.target()
 	self.fbo_posteffects = self.fbo2:postEffectsMode(unpack(seffs))
@@ -1665,9 +1665,9 @@ function _M:displayMap(nb_keyframes)
 		self.fbo:use(true)
 			if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
 			map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov)
-			if core.particles.hasBlooms() then
-				self.fbobloom:use(true) core.particles.drawBlooms() self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
-			end
+			-- if core.particles.hasBlooms() then
+			-- 	self.fbobloom:use(true) core.particles.drawBlooms() self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+			-- end
 			if self.level.data.foreground then self.level.data.foreground(self.level, 0, 0, nb_keyframes) end
 			if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 			if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
@@ -1698,9 +1698,9 @@ function _M:displayMap(nb_keyframes)
 
 		-- Mouse gestures
 		if self.gestures:update() then
-			self.fbobloom:use(true)
+			-- self.fbobloom:use(true)
 			self.gestures:display(map.display_x, map.display_y, nb_keyframes)
-			self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+			-- self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
 		end
 
 		-- Inform the player that map is in scroll mode
@@ -1846,13 +1846,6 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			package.loaded["mod.dialogs.UberTalent"] = nil
-			package.loaded["mod.dialogs.elements.TalentGrid"] = nil
-			package.loaded["mod.dialogs.elements.blocks.Talent"] = nil
-			self.on_finish_prodigies = self.on_finish_prodigies or {}
-			local d = require("mod.dialogs.UberTalent").new(self.player, self.on_finish_prodigies)
-			game:registerDialog(d)
-do return end
 			self:changeLevel(game.level.level + 1)
 do return end
 			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)
@@ -1865,8 +1858,6 @@ do return end
 			print(f, err)
 			setfenv(f, setmetatable({level=self.level, zone=self.zone}, {__index=_G}))
 			print(pcall(f))
-do return end
-			self:registerDialog(require("mod.dialogs.DownloadCharball").new())
 		end end,
 		[{"_f","ctrl"}] = function() if config.settings.cheat then
 			self.player.quests["love-melinda"] = nil
@@ -2042,8 +2033,7 @@ do return end
 			d = self.player:showEquipInven(titleupdator(), nil, function(o, inven, item, button, event)
 				if not o then return end
 				local ud = require("mod.dialogs.UseItemDialog").new(event == "button", self.player, o, item, inven, function(_, _, _, stop)
-					d:generate()
-					d:generateList()
+					d:updateData()
 					d:updateTitle(titleupdator())
 					if stop then self:unregisterDialog(d) end
 				end)
@@ -2224,18 +2214,7 @@ do return end
 		end,
 
 		SHOW_MAP = function()
-			if config.settings.tome.uiset_mode == "Minimalist" then
-				self.uiset.mm_mode = util.boundWrap((self.uiset.mm_mode or 2) + 1, 1, 3)
-				if self.uiset.mm_mode == 1 then
-					self.uiset.no_minimap = true
-				elseif self.uiset.mm_mode == 2 then
-					self.uiset.no_minimap = false
-				elseif self.uiset.mm_mode == 3 then
-					game:registerDialog(require("mod.dialogs.ShowMap").new(function() self.uiset.mm_mode = 1 self.uiset.no_minimap = true end))
-				end
-			else
-				game:registerDialog(require("mod.dialogs.ShowMap").new())
-			end
+			game:registerDialog(require("mod.dialogs.ShowMap").new())
 		end,
 
 		USERCHAT_SHOW_TALK = function()

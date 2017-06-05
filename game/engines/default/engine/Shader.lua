@@ -173,7 +173,7 @@ function _M:loaded()
 		-- print("[SHADER] using permcached shader "..self.totalname)
 		self.shad = _M.progsperm[self.totalname]
 	elseif _M.progs[self.totalname] then
-		print("[SHADER] using cached shader "..self.totalname)
+		-- print("[SHADER] using cached shader "..self.totalname)
 		self.shad = _M.progs[self.totalname].shad
 		_M.progs[self.totalname].dieat = os.time() + 60*4
 		if _M.progsreset[self.totalname] and self.shad then
@@ -256,7 +256,7 @@ end
 function _M:setResetUniform(k, v)
 	if not self.shad then return self end
 	if type(v) == "number" then
-		print("[SHADER] setting reset param", k, v)
+		-- print("[SHADER] setting reset param", k, v)
 		self.shad:resetParamNumber(k, v)
 	elseif type(v) == "table" then
 		if v.texture then
@@ -269,7 +269,7 @@ function _M:setResetUniform(k, v)
 --			print("[SHADER] setting vec3 param", k, v[1], v[2], v[3])
 			self.shad:resetParamNumber3(k, v[1], v[2], v[3])
 		elseif #v == 4 then
-			print("[SHADER] setting vec4 param", k, v[1], v[2], v[3], v[4])
+			-- print("[SHADER] setting vec4 param", k, v[1], v[2], v[3], v[4])
 			self.shad:resetParamNumber4(k, v[1], v[2], v[3], v[4])
 		end
 	end

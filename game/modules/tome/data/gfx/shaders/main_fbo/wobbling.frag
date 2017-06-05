@@ -1,6 +1,6 @@
 uniform float wobbling;
 uniform float tick;
-uniform vec2 texSize;
+uniform vec2 screenSize;
 uniform sampler2D tex;
 
 const float PI = 3.1415926535897932;
@@ -146,13 +146,13 @@ void main(void)
 {
 	float scaledTime = tick / 5000.0;
 	vec2 coord = gl_TexCoord[0].xy;
-	coord.x *= texSize.x / texSize.y;
+	coord.x *= screenSize.x / screenSize.y;
 	vec2 offset =
 		snoise2(vec3(coord / 2.0,  scaledTime / 0.25)) * 0.33 * 3.0 + 
 		snoise2(vec3(coord / 2.0, scaledTime / 2.0)) * 0.0 + 
 		snoise2(vec3(coord / 4.0, scaledTime / 4.0)) * 0.0;
 
-	offset.x *= texSize.x / texSize.y;
+	offset.x *= screenSize.x / screenSize.y;
 
 	float ratio = clamp(1.5 * pow(length(vec2(0.5, 0.5) - gl_TexCoord[0].xy) / (0.7071), 2.0), 0.0, 1.0); //sqrt(2) / 2 = 0.7071
 	ratio *= (1.0 + snoise(vec3(coord / 2.0, scaledTime / 0.25 + 10.0))) * 0.5;

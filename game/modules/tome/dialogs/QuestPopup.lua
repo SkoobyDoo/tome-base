@@ -88,18 +88,19 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	game:registerDialog(require("engine.dialogs.ShowQuests").new(game.party:findMember{main=true}, self.quest.id))
 end
 
-function _M:drawFrame(x, y, r, g, b, a)
-	-- Draw the glow
-	if a >= 1 then
-		local a = (1 + math.sin(core.game.getTime() / 500)) / 2
-		local x = x + self.frame.ox1
-		local y = y + self.frame.oy1
-		local mw = math.floor(self.frame.w / 2)
-		local blhw = math.floor(self.blight.w / 2)
-		local blhh = math.floor(self.blight.h / 2)
-		local b8hh = math.floor(self.b8.h / 2)
-		self.blight.t:toScreenFull(x + mw - blhw, y - blhh + b8hh, self.blight.w, self.blight.h, self.blight.tw, self.blight.th, r, g, b, 0.5 + 0.5 * a)
-	end
+-- DGDGDGDG replace
+-- function _M:drawFrame(x, y, r, g, b, a)
+-- 	-- Draw the glow
+-- 	if a >= 1 then
+-- 		local a = (1 + math.sin(core.game.getTime() / 500)) / 2
+-- 		local x = x + self.frame.ox1
+-- 		local y = y + self.frame.oy1
+-- 		local mw = math.floor(self.frame.w / 2)
+-- 		local blhw = math.floor(self.blight.w / 2)
+-- 		local blhh = math.floor(self.blight.h / 2)
+-- 		local b8hh = math.floor(self.b8.h / 2)
+-- 		self.blight.t:toScreenFull(x + mw - blhw, y - blhh + b8hh, self.blight.w, self.blight.h, self.blight.tw, self.blight.th, r, g, b, 0.5 + 0.5 * a)
+-- 	end
 	
-	Dialog.drawFrame(self, x, y, r, g, b, a)
-end
+-- 	Dialog.drawFrame(self, x, y, r, g, b, a)
+-- end

@@ -38,6 +38,7 @@ function _M:init(t)
 	assert(self.h or self.nb_items, "no tree height/nb_items")
 	self.fct = t.fct
 	self.on_drag = t.on_drag
+	self.on_drag_end = t.on_drag_end
 	self.on_expand = t.on_expand
 	self.on_drawitem = t.on_drawitem
 	self.select = t.select
@@ -133,6 +134,7 @@ function _M:generate()
 			if (self.all_clicks or button == "left") and button ~= "wheelup" and button ~= "wheeldown" and event == "button" then self:onUse(button) end
 		end
 		if event == "motion" and button == "left" and self.on_drag then self.on_drag(self.list[self.sel], self.sel) end
+		if button == "drag-end" and self.on_drag_end then self.on_drag_end(self.list[self.sel], self.sel) end
 	end)
 	self.key:addBinds{
 		ACCEPT = function() self:onUse("left") end,
@@ -280,7 +282,7 @@ function _M:drawItem(item)
 
 	local x = 0
 	for i, col in ipairs(self.columns) do
-		if not col.direct_draw then
+		if not col.direct_draw or is_header then
 			local fw = col.width
 			local level = item.level
 			local color = item.color or {255,255,255}
@@ -289,6 +291,7 @@ function _M:drawItem(item)
 
 			if is_header then
 				text = tostring(item[i].name)
+				if not text or text == "" then text = " " end
 			elseif type(col.display_prop) == "function" then
 				text = tostring(col.display_prop(item))
 			else
@@ -312,7 +315,7 @@ function _M:drawItem(item)
 				if is_header then
 					opts = {frame="ui/heading-sel", frame_sel="ui/heading"}
 				end
-				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset, 1, true)
+				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset, 1, not is_header)
 				item.cols[i]._entry:translate(x + offset, 0, 0)
 				item.cols[i]._entry:select(is_header)
 				local ec = item.cols[i]._entry:get()
@@ -333,6 +336,7 @@ function _M:drawItem(item)
 			item.cols[i]._value = text
 		else
 			if not item.cols[i] then
+				local level = item.level
 				local offset = 0
 				if i == 1 then
 					offset = level * self.level_offset
@@ -439,6 +443,7 @@ function _M:onSelect(sel)
 		local item = self.list[i]
 		if item then
 			if i >= self.scroll and i <= max then
+				item._pos_y = pos
 				item._container:translate(0, pos, 0)
 				for c = 1, #item.cols do item.cols[c]._entry:shown(true) end
 				pos = pos + self.fh
@@ -481,4 +486,10 @@ function _M:onUse(...)
 	self:sound("button")
 	if item.fct then item.fct(item, self.sel, ...)
 	else self.fct(item, self.sel, ...) end
+end
+
+
+function _M:display(x, y, nb_keyframes, ox, oy)
+	self.last_display_x = ox
+	self.last_display_y = oy
 end

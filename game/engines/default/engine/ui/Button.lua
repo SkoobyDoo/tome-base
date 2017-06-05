@@ -26,6 +26,8 @@ local Focusable = require "engine.ui.Focusable"
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
+	self:proxyData{"hide"}
+
 	self.text = assert(t.text, "no button text")
 	self.fct = assert(t.fct, "no button fct")
 	self.on_select = t.on_select
@@ -65,6 +67,7 @@ function _M:generate()
 	self.frame_sel_do.container:color(1, 1, 1, 0)
 	self.do_container:add(self.frame_do.container)
 	self.do_container:add(self.frame_sel_do.container)
+	self.do_container:shown(not self.hide)
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -78,4 +81,11 @@ end
 
 function _M:on_focus_change(status)
 	self.frame_sel_do.container:tween(8, "a", nil, status and 1 or 0, "inOutQuad")
+end
+
+function _M:proxyDataSet(k, v)
+	if k == "hide" and self.do_container then
+		self.do_container:shown(not v)
+	end
+	return true
 end

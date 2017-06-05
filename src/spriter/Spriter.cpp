@@ -112,7 +112,7 @@ TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point init
 
 	if (!atlasData.active) {		
 		texture = DORSpriterCache::getTexture(initialFilePath);
-		aw = w = texture->w; ah = h = texture->h;
+		aw = w = texture->tex.w; ah = h = texture->tex.h;
 	} else {
 		string png = DORSpriter::currently_processing->scml;
 		png.replace(png.end() - 4, png.end(), "png");
@@ -127,15 +127,15 @@ TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point init
 		w = atlasData.ow;
 		h = atlasData.oh;
 		if (atlasData.rotated) {
-			tx1 = ax / texture->w;
-			ty1 = ay / texture->h;
-			tx2 = (ax + ah) / texture->w;
-			ty2 = (ay + aw) / texture->h;
+			tx1 = ax / texture->tex.w;
+			ty1 = ay / texture->tex.h;
+			tx2 = (ax + ah) / texture->tex.w;
+			ty2 = (ay + aw) / texture->tex.h;
 		} else {
-			tx1 = ax / texture->w;
-			ty1 = ay / texture->h;
-			tx2 = (ax + aw) / texture->w;
-			ty2 = (ay + ah) / texture->h;
+			tx1 = ax / texture->tex.w;
+			ty1 = ay / texture->tex.h;
+			tx2 = (ax + aw) / texture->tex.w;
+			ty2 = (ay + ah) / texture->tex.h;
 		}
 		rotated = atlasData.rotated;
 	}
@@ -148,7 +148,7 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 	DORSpriter *spriter = DORSpriter::currently_processing;
 
 	if (!spriter->render_z) {
-		auto dl = getDisplayList(spriter->render_container, {texture->tex, 0, 0}, spriter->shader);
+		auto dl = getDisplayList(spriter->render_container, {texture->tex.tex, 0, 0}, spriter->shader);
 
 		// Make the matrix corresponding to the shape
 		mat4 qm = mat4();
@@ -229,10 +229,10 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 		p4.pos = qm * p4.pos;
 
 		// And we're done!
-		spriter->render_container->zvertices.push_back({p1, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p2, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p3, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p4, {texture->tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p1, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p2, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p3, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p4, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
 
 		spriter->render_microz += 0.01;
 	}
@@ -334,31 +334,33 @@ void DORSpriter::onKeyframe(float nb_keyframe) {
 	}
 }
 
-void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORSpriter::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible || !instance) return;
-	cur_model *= model;
-	cur_color *= color;
 	currently_processing = this;
-	render_z = false; render_model = cur_model; render_color = cur_color; render_container = container;
+	render_z = false;
+	render_model = cur_model * model;
+	render_color = cur_color * color;
+	render_container = container;
 	instance->render();
 	resetChanged();
 }
 
-void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color, bool cur_visible) {
+void DORSpriter::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
 	if (!visible || !cur_visible || !instance) return;
-	cur_model *= model;
-	cur_color *= color;
 	currently_processing = this;
-	render_z = true; render_model = cur_model; render_color = cur_color; render_container = container; render_microz = 0;
+	render_z = true;
+	render_model = cur_model * model;
+	render_color = cur_color * color;
+	render_container = container; render_microz = 0;
 	instance->render();
 	resetChanged();
 }
 
-void DORSpriter::sortZ(RendererGL *container, mat4 cur_model) {
-	cur_model *= model;
+void DORSpriter::sortZ(RendererGL *container, mat4& cur_model) {
+	mat4 vmodel = cur_model * model;
 
 	// We take a "virtual" point at 0 coordinates
-	vec4 virtualz = cur_model * vec4(0, 0, 0, 1);
+	vec4 virtualz = vmodel * vec4(0, 0, 0, 1);
 	sort_z = virtualz.z;
 	sort_shader = shader;
 	sort_tex = {99999,0,0}; // DGDGDGDG UGH we need a wayto find the actual texture

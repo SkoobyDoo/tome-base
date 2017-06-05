@@ -19,11 +19,15 @@
 
 return {
 	require_kind = "adv",
-	frag = "water",
-	vert = "default/gl-extended",
+	frag = "default/gl",
+	vert = "water",
+	-- frag = "water",
+	-- vert = "default/gl-extended",
 	args = {
 		tex = { texture = 0 },
-		iResolution = size or {64.0, 64.0},
+		waveDir = waveDir or {1, 1},
+		waveSpeed = waveSpeed or 1500,
+		waveAmplitude = waveAmplitude or 5,
 	},
 	clone = false,
 }

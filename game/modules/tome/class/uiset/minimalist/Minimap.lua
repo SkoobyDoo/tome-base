@@ -93,9 +93,16 @@ end
 
 function _M:update(nb_keyframes)
 	if not game.level or not game.level.map then return end
-	if self.old_name ~= game.zone_name then self.text_name:text(game.zone_name or ""):center() self.old_name = game.zone_name end
+	if self.old_name ~= game.zone_name then
+		self.text_name:text(game.zone_name or ""):center()
+		local w = self.text_name:getStats()
+		-- Ensure the zone name is always at most 200 pixels
+		if w > 200 then self.text_name:scale(200 / w, 200 / w, 1)
+		else self.text_name:scale(1, 1, 1) end
+		self.old_name = game.zone_name
+	end
 	if self.old_map ~= game.level.map then
-		self.mm_do = game.level.map:getMinimapDO()
+		self.mm_do = game.level.map:getMinimapDO():scale(3, 3, 1):translate(0, 0, 100)
 		self.mm_container:clear()
 		self.mm_container:add(self.mm_do)
 		self.old_map = game.level.map
@@ -103,7 +110,7 @@ function _M:update(nb_keyframes)
 	if self.mm_do then
 		if game.player.x then game.minimap_scroll_x, game.minimap_scroll_y = util.bound(game.player.x - 25, 0, game.level.map.w - 50), util.bound(game.player.y - 25, 0, game.level.map.h - 50)
 		else game.minimap_scroll_x, game.minimap_scroll_y = 0, 0 end
-		self.mm_do:setMinimapInfo(3, game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 0.85)
+		self.mm_do:setMinimapInfo(game.minimap_scroll_x, game.minimap_scroll_y, 50, 50, 0.85)
 	end
 end
 

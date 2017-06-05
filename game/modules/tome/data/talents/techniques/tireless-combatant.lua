@@ -19,7 +19,7 @@ newTalent {
 	short_name = "SKIRMISHER_BREATHING_ROOM",
 	name = "Breathing Room",
 	type = {"technique/tireless-combatant", 1},
-	require = techs_wil_req1,
+	require = techs_strdex_req1,
 	mode = "passive",
 	points = 5,
 	getRestoreRate = function(self, t)
@@ -81,7 +81,7 @@ newTalent {
 	cooldown = 10,
 	sustain_stamina = 0,
 	no_energy = true,
-	require = techs_wil_req2,
+	require = techs_strdex_req2,
 	tactical = { STAMINA = 2 },
 	random_ego = "utility",
 	activate = function(self, t)
@@ -113,7 +113,7 @@ newTalent {
 	short_name = "SKIRMISHER_DAUNTLESS_CHALLENGER",
 	name = "Dauntless Challenger",
 	type = {"technique/tireless-combatant", 3},
-	require = techs_wil_req3,
+	require = techs_strdex_req3,
 	mode = "passive",
 	points = 5,
 	getStaminaRate = function(self, t)
@@ -171,7 +171,7 @@ newTalent {
 	short_name = "SKIRMISHER_THE_ETERNAL_WARRIOR",
 	name = "The Eternal Warrior",
 	type = {"technique/tireless-combatant", 4},
-	require = techs_wil_req4,
+	require = techs_strdex_req4,
 	mode = "passive",
 	points = 5,
 	getResist = function(self, t)

@@ -33,8 +33,7 @@ using namespace SpriterEngine;
 
 struct texture_cache
 {
-	GLuint tex = 0;
-	int w = 0, h = 0;
+	texture_type tex;
 	int used = 0;
 };
 

@@ -42,7 +42,12 @@ project "TEngine"
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
 	buildoptions { "-std=c++11" }
-	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	if _OPTIONS.profiling then
+		defines { "TE4_PROFILING" }
+		buildoptions { "-fno-omit-frame-pointer" }
+		linkoptions{ "-fno-omit-frame-pointer" }
+		links{"profiler"}
+	end
 
 	if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib "} end
 	if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib64 "} end
@@ -51,6 +56,7 @@ project "TEngine"
 	if _OPTIONS.relpath == "64" then defines{"TE4_RELPATH64"} end
 
 	links { "m" }
+
 
 	if _OPTIONS.no_rwops_size then defines{"NO_RWOPS_SIZE"} end
 

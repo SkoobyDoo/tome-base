@@ -97,7 +97,7 @@ function _M:enableFBORenderer(texture, shader)
 	self.fbo_shader.shad:uniMapCoord(Map.viewport.width, Map.viewport.height)
 	self.fbo_shader.shad:uniScrollOffset(0, 0)
 
-	self.quad_texture = engine.Tiles:loadImage(texture):glTexture()
+	self.quad_texture = engine.Tiles:loadTexture(texture)
 	self.fbo:shader(self.fbo_shader)
 	self.fbo:texture(self.quad_texture, 1)
 

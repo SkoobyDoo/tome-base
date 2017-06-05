@@ -103,8 +103,7 @@ function _M:use(item)
 		d = item.actor:showEquipInven(item.actor.name..": Inventory", nil, function(o, inven, item, button, event)
 			if not o then return end
 			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", actor, o, item, inven, function(_, _, _, stop)
-				d:generate()
-				d:generateList()
+				d:updateData()
 				if stop then game:unregisterDialog(d) end
 			end)
 			game:registerDialog(ud)

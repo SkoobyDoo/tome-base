@@ -395,7 +395,7 @@ end
 
 -- show the inventory screen
 function _M:showInventory()
-	if self.actor.no_inventory_access or not self.actor.player then return end
+	if not config.settings.cheat and (self.actor.no_inventory_access or not self.actor.player) then return end
 	local d
 	local titleupdator = self.actor:getEncumberTitleUpdator("Inventory")
 	local offset = self.actor.off_weapon_slots
@@ -403,8 +403,7 @@ function _M:showInventory()
 		function(o, inven, item, button, event)
 			if not o then return end
 			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", self.actor, o, item, inven, function(_, _, _, stop)
-				d:generate()
-				d:generateList()
+				d:updateData()
 				d:updateTitle(titleupdator())
 				if stop then game:unregisterDialog(d) game:unregisterDialog(self)
 				end
@@ -882,7 +881,7 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 				aspeed = 1/actor:combatSpeed(mean)
 			end
 			if type == "psionic" then actor:attr("use_psi_combat", -1) end
-			return {obj=o, atk=atk, dmg=dmg, apr=apr, crit=crit, crit_power=crit_power, aspeed=aspeed, range=range, mspeed=mspeed, archery=archery, mean=mean, ammo=ammo, block=mean.block, talented=mean.talented}
+			return {obj=o, atk=atk, dmg=dmg, apr=apr, crit=crit, crit_power=crit_power or 0, aspeed=aspeed, range=range, mspeed=mspeed, archery=archery, mean=mean, ammo=ammo, block=mean.block, talented=mean.talented}
 		end
 
 		-- display the combat (comparison) stats for a combat slot
@@ -912,6 +911,65 @@ The amount of %s automatically gained or lost each turn.]]):format(res_def.name,
 				self:mouseTooltip(self.TOOLTIP_COMBAT_BLOCK, s:drawColorStringBlended(self.font, ("Block : #00ff00#%s"):format(text), self.w*.14, h, 255, 255, 255, true))-- h = h + self.font_h
 			end
 			h = h + self.font_h
+
+-- DGDGDGDG Display old damage with previously unscaled stats
+if config.settings.cheat then
+
+	--- Previous combatDamage function with unscaled stat bonuses
+	-- Calculate combat damage for a weapon (with an optional damage field for ranged)
+	-- Talent bonuses are always based on the base weapon
+	local function combatDamageOld(self, weapon, adddammod, damage)
+		weapon = weapon or self.combat or {}
+		local dammod = self:getDammod(damage or weapon)
+		local totstat = 0
+		for stat, mod in pairs(dammod) do
+			totstat = totstat + self:getStat(stat) * mod
+		end
+		if adddammod then
+			for stat, mod in pairs(adddammod) do
+				totstat = totstat + self:getStat(stat) * mod
+			end
+		end
+		if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then totstat = totstat + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
+		local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
+		local power = self:combatDamagePower(damage or weapon)
+		return self:rescaleDamage(0.3*(self:combatPhysicalpower(nil, weapon) + totstat) * power * talented_mod)
+	end
+
+	local p_old_combatDamage, atc_old_combatDamage = rawget(player, "combatDamage")
+	player.combatDamage = combatDamageOld
+	local combat = get_combat_stats(player, type, inven_id, item)
+	local combatc = {}
+	if actor_to_compare then
+		atc_old_combatDamage = actor_to_compare and rawget(actor_to_compare, "combatDamage")
+		actor_to_compare.combatDamage = combatDamageOld
+		combatc = get_combat_stats(actor_to_compare, type, inven_id, item)
+	end
+	local dm = {}
+	local dammod = player:getDammod(combat.ammo and combat.ammo.combat or combat.mean)
+--table.set(game, "debug", "combat", combat)
+	for stat, i in pairs(dammod) do
+		local name = Stats.stats_def[stat].short_name:capitalize()
+		if player:knowTalent(player.T_STRENGTH_OF_PURPOSE) then
+			if name == "Str" then name = "Mag" end
+		end
+		if combat.talented == "knife" and player:knowTalent(player.T_LETHALITY) then
+			if name == "Str" then name = "Cun" end
+		end
+		dm[#dm+1] = ("%d%% %s"):format(i * 100, name)
+	end
+	text = compare_fields(player, actor_to_compare,
+		function(actor, ...)
+			return actor == actor_to_compare and combatc.dmg or combat.dmg
+		end,
+		"%3d", "%+.0f", 1, false, false, dam)
+	self:mouseTooltip("OLD DAMAGE (unscaled stat bonuses)", s:drawColorStringBlended(self.font, ("Old Damage   : #00ff00#%s [%s]"):format(text, table.concatNice(dm, ", ")), w, h, 255, 255, 255, true))
+		h = h + self.font_h
+	player.combatDamage = p_old_combatDamage
+	if actor_to_compare then actor_to_compare.combatDamage = atc_old_combatDamage end
+end
+-- DGDGDGDG end old damage display
+
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.apr or combat.apr end, "%3d", "%+.0f", 1, false, false, dam)
 			self:mouseTooltip(self.TOOLTIP_COMBAT_APR,    s:drawColorStringBlended(self.font, ("APR          : #00ff00#%s"):format(text), w, h, 255, 255, 255, true)) h = h + self.font_h
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return actor == actor_to_compare and combatc.crit or combat.crit end, "%3d%%", "%+.0f%%", 1, false, false, dam)

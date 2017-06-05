@@ -1275,11 +1275,32 @@ static int gl_tilemap_setmap(lua_State *L)
 	return 1;
 }
 
-static int gl_tilemap_setminimap_info(lua_State *L)
+/******************************************************************
+ ** TileMiniMap -- no constructor, this is in map.cpp
+ ******************************************************************/
+static int gl_tileminimap_free(lua_State *L)
 {
-	DORTileMap *v = userdata_to_DO<DORTileMap>(__FUNCTION__, L, 1, "gl{tilemap}");
+	DORTileMiniMap *v = userdata_to_DO<DORTileMiniMap>(__FUNCTION__, L, 1, "gl{tileminimap}");
+	delete(v);
+	lua_pushnumber(L, 1);
+	return 1;
+}
 
-	v->setMinimapInfo(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6), luaL_checknumber(L, 7));
+static int gl_tileminimap_setmap(lua_State *L)
+{
+	DORTileMiniMap *v = userdata_to_DO<DORTileMiniMap>(__FUNCTION__, L, 1, "gl{tileminimap}");
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 2);
+
+	v->setMap(map);	
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_tileminimap_setinfo(lua_State *L)
+{
+	DORTileMiniMap *v = userdata_to_DO<DORTileMiniMap>(__FUNCTION__, L, 1, "gl{tileminimap}");
+
+	v->setMinimapInfo(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6));
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -1985,7 +2006,33 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"clone", gl_generic_clone},
 	{"removeFromParent", gl_generic_remove_from_parent},
 	{"setMap", gl_tilemap_setmap},
-	{"setMinimapInfo", gl_tilemap_setminimap_info},
+	{NULL, NULL},
+};
+
+static const struct luaL_Reg gl_tileminimap_reg[] =
+{
+	{"__gc", gl_tileminimap_free},
+	{"getKind", gl_generic_getkind},
+	{"getColor", gl_generic_color_get},
+	{"getTranslate", gl_generic_translate_get},
+	{"getRotate", gl_generic_rotate_get},
+	{"getScale", gl_generic_scale_get},
+	{"getShown", gl_generic_shown_get},
+	{"shown", gl_generic_shown},
+	{"color", gl_generic_color},
+	{"resetMatrix", gl_generic_reset_matrix},
+	{"physicCreate", gl_generic_physic_create},
+	{"physicDestroy", gl_generic_physic_destroy},
+	{"physic", gl_generic_get_physic},
+	{"rawtween", gl_generic_tween},
+	{"rawcancelTween", gl_generic_cancel_tween},
+	{"translate", gl_generic_translate},
+	{"rotate", gl_generic_rotate},
+	{"scale", gl_generic_scale},
+	{"clone", gl_generic_clone},
+	{"removeFromParent", gl_generic_remove_from_parent},
+	{"setMap", gl_tileminimap_setmap},
+	{"setMinimapInfo", gl_tileminimap_setinfo},
 	{NULL, NULL},
 };
 
@@ -2143,6 +2190,7 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{callback}", gl_callback_reg);
 	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
 	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
+	auxiliar_newclass(L, "gl{tileminimap}", gl_tileminimap_reg);
 	auxiliar_newclass(L, "gl{particles}", gl_particles_reg);
 	auxiliar_newclass(L, "gl{staticsub}", gl_staticsub_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);

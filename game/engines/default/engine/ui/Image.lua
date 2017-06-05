@@ -26,16 +26,18 @@ local Base = require "engine.ui.Base"
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)
-	if t.tex then
-		error("ui.Image t.tex unsupported")
-	else
-		self.file = tostring(assert(t.file, "no image file"))
-		self.image = Tiles:loadImage(self.file)
-		local iw, ih = 0, 0
-		if self.image then iw, ih = self.image:getSize() end
-		self.iw, self.ih = iw, ih
-		if t.auto_width then t.width = iw end
-		if t.auto_height then t.height = ih end
+	if not t.empty then
+		if t.tex then
+			error("ui.Image t.tex unsupported")
+		else
+			self.file = tostring(assert(t.file, "no image file"))
+			self.image = Tiles:loadImage(self.file)
+			local iw, ih = 0, 0
+			if self.image then iw, ih = self.image:getSize() end
+			self.iw, self.ih = iw, ih
+			if t.auto_width then t.width = iw end
+			if t.auto_height then t.height = ih end
+		end
 	end
 	self.w = assert(t.width, "no image width") * (t.zoom or 1)
 	self.h = assert(t.height, "no image height") * (t.zoom or 1)
@@ -56,4 +58,9 @@ function _M:generate()
 		if self.back_color then self.do_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.back_color))) end
 		self.do_container:add(core.renderer.fromSurface(self.image, 0, 0, self.w, self.h, false, 1, 1, 1, 1))
 	end
+end
+
+function _M:setDO(d)
+	self.do_container:clear()
+	if d then self.do_container:add(d) end
 end

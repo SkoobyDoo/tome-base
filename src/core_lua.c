@@ -546,6 +546,22 @@ static int lua_getclasstable(lua_State *L) {
 	return 1;
 }
 
+#ifdef TE4_PROFILING
+static bool cprofiler_running = FALSE;
+static int lua_cprofiler(lua_State *L) {
+	if (cprofiler_running) {
+		ProfilerStop();
+		printf("[CProfiler] Stopped\n");
+	} else {
+		const char *filename = luaL_checkstring(L, 1);
+		ProfilerStart(filename);
+		cprofiler_running = TRUE;
+		printf("[CProfiler] Started %s\n", filename);
+	}
+	return 0;
+}
+#endif
+
 static int lua_open_browser(lua_State *L)
 {
 #if defined(SELFEXE_LINUX) || defined(SELFEXE_BSD)
@@ -585,6 +601,9 @@ static const struct luaL_Reg gamelib[] =
 	{"checkError", lua_check_error},
 	{"resetLocale", lua_reset_locale},
 	{"openBrowser", lua_open_browser},
+#ifdef TE4_PROFILING
+	{"CProfiler", lua_cprofiler},
+#endif
 	{NULL, NULL},
 };
 

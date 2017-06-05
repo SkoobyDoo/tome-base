@@ -23,8 +23,7 @@ local change_inven = function(npc, player)
 	d = require("mod.dialogs.ShowEquipInven").new(titleupdator(), npc, nil, function(o, inven, item, button, event)
 		if not o then return end
 		local ud = require("mod.dialogs.UseItemDialog").new(event == "button", npc, o, item, inven, function(_, _, _, stop)
-			d:generate()
-			d:generateList()
+			d:updateData()
 			d:updateTitle(titleupdator())
 			if stop then game:unregisterDialog(d) end
 		end, true, player)

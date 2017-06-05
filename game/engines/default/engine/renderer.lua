@@ -46,7 +46,7 @@ function DOVertexes:debugQuad()
 	return self
 end
 
-local white = core.display.loadImage("/data/gfx/white.png"):glTexture()
+local white = core.loader.png("/data/gfx/white.png")
 core.renderer.white = white
 core.renderer.plaincolor = white
 
@@ -90,8 +90,9 @@ function core.renderer.colorQuad(x, y, w, h, r, g, b, a, v)
 end
 
 function core.renderer.image(file, x, y, w, h, r, g, b, a, v)
-	local s = core.display.loadImage(file)
-	return core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
+	local tex = core.loader.png(file)
+	if not tex then return end
+	return core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 end
 
 function core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
@@ -141,14 +142,34 @@ function core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 	return v, w, h
 end
 
-function core.renderer.textureTable(s)
-	if type(s) == "string" then s = core.display.loadImage(s) end
-	local t = {tx=0, ty=0}
-	t.w, t.h = s:getSize()
-	t.t, t.tw, t.th = s:glTexture()
-	t.tw = t.w / t.tw
-	t.th = t.h / t.th
+function core.renderer.textureTile(btex, btexx, btexy, w, h, tex_x, tex_y)
+	local t = {tx=tex_x or 0, ty=tex_y or 0}
+	t.w, t.h = w, h
+	t.t = btex
+	t.tw = btexx
+	t.th = btexy
 	return t
+end
+
+function core.renderer.textureTable(s)
+	if type(s) == "string" then
+		local tex = core.loader.png(s)
+		local w, h = tex:getSize()
+
+		local t = {tx=0, ty=0}
+		t.w, t.h = tex:getSize()
+		t.t, t.tw, t.th = tex, t.w, t.h
+		t.tw = 1
+		t.th = 1
+		return t
+	else
+		local t = {tx=0, ty=0}
+		t.w, t.h = s:getSize()
+		t.t, t.tw, t.th = s:glTexture()
+		t.tw = t.w / t.tw
+		t.th = t.h / t.th
+		return t
+	end
 end
 
 function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
@@ -156,7 +177,8 @@ function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
 	return core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
 end
 
-function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
+function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v, safeoffset)
+	safeoffset = safeoffset or 0
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	x = math.floor(x or 0)
 	y = math.floor(y or 0)
@@ -169,10 +191,10 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 		local x2, y2 = x + w, y + h
 		if not v then v = core.renderer.vertexes() end
 		v:quad(
-			x1+0.375, y1+0.375, u1, v1,
-			x2+0.375, y1+0.375, u2, v1,
-			x2+0.375, y2+0.375, u2, v2,
-			x1+0.375, y2+0.375, u1, v2,
+			x1, y1, u1, v1,
+			x2+safeoffset, y1, u2, v1,
+			x2+safeoffset, y2+safeoffset, u2, v2,
+			x1, y2+safeoffset, u1, v2,
 			r, g, b, a
 		)
 		v:texture(t.t)
@@ -199,9 +221,9 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 
 				v:quad(
 					x1, y1, u1, v1,
-					x2+0.375, y1, u2, v1,
-					x2+0.375, y2+0.375, u2, v2,
-					x1, y2+0.375, u1, v2,
+					x2+safeoffset, y1, u2, v1,
+					x2+safeoffset, y2+safeoffset, u2, v2,
+					x1, y2+safeoffset, u1, v2,
 					r, g, b, a
 				)
 			end
@@ -210,7 +232,8 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 	end
 end
 
-function core.renderer.fromTextureTableCut(t, x, y, w, h, py, ph, r, g, b, a, v)
+function core.renderer.fromTextureTableCut(t, x, y, w, h, py, ph, r, g, b, a, v, safeoffset)
+	safeoffset = safeoffset or 0.375
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	x = math.floor(x or 0)
 	y = math.floor(y or 0)
@@ -233,9 +256,9 @@ function core.renderer.fromTextureTableCut(t, x, y, w, h, py, ph, r, g, b, a, v)
 	if not v then v = core.renderer.vertexes() end
 	v:quad(
 		x1, y1, u1, v1,
-		x2+0.375, y1, u2, v1,
-		x2+0.375, y2+0.375, u2, v2,
-		x1, y2+0.375, u1, v2,
+		x2+safeoffset, y1, u2, v1,
+		x2+safeoffset, y2+safeoffset, u2, v2,
+		x1, y2+safeoffset, u1, v2,
 		r, g, b, a
 	)
 	v:texture(t.t)
