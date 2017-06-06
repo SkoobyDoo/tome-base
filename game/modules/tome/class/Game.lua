@@ -1846,6 +1846,8 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
+			profile.chat:addMessage("talk", "tome", "t8", {"t8", colors.YELLOW}, "test messagin with a long messsage test messagin with a long messsage test messagin with a long messsage test messagin with a long messsage test messagin with a long messsage test messagin with a long messsage ")
+do return end
 			self:changeLevel(game.level.level + 1)
 do return end
 			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)

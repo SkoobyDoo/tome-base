@@ -336,6 +336,16 @@ void DORTweener::killMe() {
 	IRealtime::killMe();
 }
 
+bool DORTweener::hasTween(TweenSlot slot) {
+	auto &t = tweens[(short)slot];
+	return t.time != 0;
+}
+
+bool DisplayObject::hasTween(TweenSlot slot) {
+	if (!tweener) return false;
+	return tweener->hasTween(slot);
+}
+
 void DisplayObject::tween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref) {
 	// if (to == getDefaultTweenSlotValue(slot)) return; // If we want to go to a value we already have, no need to botehr at all
 	if (!tweener) tweener = new DORTweener(this);

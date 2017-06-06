@@ -317,6 +317,12 @@ static int gl_generic_cancel_tween(lua_State *L)
 	lua_pushvalue(L, 1);
 	return 1;
 }
+static int gl_generic_has_tween(lua_State *L)
+{
+	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	lua_pushboolean(L, c->hasTween((TweenSlot)lua_tonumber(L, 2)));
+	return 1;
+}
 
 static int gl_generic_translate(lua_State *L)
 {
@@ -1763,6 +1769,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1824,6 +1831,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1852,6 +1860,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1886,6 +1895,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1923,6 +1933,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1950,6 +1961,7 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -1975,6 +1987,7 @@ static const struct luaL_Reg gl_tileobject_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -2000,6 +2013,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -2026,6 +2040,7 @@ static const struct luaL_Reg gl_tileminimap_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -2053,6 +2068,7 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -2078,6 +2094,7 @@ static const struct luaL_Reg gl_staticsub_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},
@@ -2108,6 +2125,7 @@ static const struct luaL_Reg gl_spriter_reg[] =
 	{"physic", gl_generic_get_physic},
 	{"rawtween", gl_generic_tween},
 	{"rawcancelTween", gl_generic_cancel_tween},
+	{"rawhasTween", gl_generic_has_tween},
 	{"translate", gl_generic_translate},
 	{"rotate", gl_generic_rotate},
 	{"scale", gl_generic_scale},

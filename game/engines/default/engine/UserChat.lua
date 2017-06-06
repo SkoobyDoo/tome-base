@@ -46,6 +46,8 @@ function _M:init()
 	self.full_log = {}
 	self.last_whispers = {}
 	self.friends = {}
+	self.cache_next_id = 1
+	self.cache = {}
 end
 
 --- Hook up in the current running game
@@ -125,7 +127,8 @@ function _M:addMessage(kind, channel, login, name, msg, extra_data, no_change)
 		pcall(function() msg = msg:lpegSub(urlfind, "#LIGHT_BLUE##{italic}#"..url.."#{normal}##LAST#") end)
 	end
 
-	local item = {channel=channel, kind=kind, login=login, name=name, color_name=color_name, msg=msg, url=url, extra_data=extra_data, timestamp=core.game.getTime()}
+	local item = {channel=channel, kind=kind, login=login, name=name, color_name=color_name, msg=msg, url=url, extra_data=extra_data, timestamp=core.game.getTime(), id=self.cache_next_id}
+	self.cache_next_id = self.cache_next_id + 1
 	if self:filterMessage(item) then return end
 	if self.uc_ext and self.uc_ext.filterMessage then
 		if self.uc_ext:filterMessage(item) then return end
@@ -589,7 +592,7 @@ function _M:resize(x, y, w, h, fontname, fontsize)
 	local wself = self:weakSelf()
 	local cb = core.renderer.callback(function()
 		if not wself.__getstrong then return end
-		wself.__getstrong:update()
+		wself.__getstrong:display()
 	end)
 	self.renderer:add(cb)
 
@@ -682,8 +685,10 @@ function _M:display()
 	self.changed = false
 
 	-- Erase and the display
+	self.history_container:clear()
 	self.dlist = {}
-	local h = 0
+	local h = self.h
+	local fh = self.font_h
 	local log = {}
 	if self.full_log then log = self.full_log end
 	local old_style = self.font:getStyle()
@@ -698,14 +703,39 @@ function _M:display()
 			tstr = tstring{"[", self:getChannelCode(log[z].channel), "-", log[z].channel, "] <", {"color",unpack(colors.simple(log[z].color_name))}, log[z].name, {"color", "LAST"}, "> "}
 		end
 		tstr:merge(log[z].msg:toTString())
-		--local gen = tstring.makeLineTextures(tstr, self.w, self.font_mono)
-		local gen = self.font_mono:draw(tstr:toString(), self.w, 255, 255, 255)
-		for i = #gen, 1, -1 do
-			gen[i].login = log[z].login
-			gen[i].extra_data = log[z].extra_data
-			self.dlist[#self.dlist+1] = {item=gen[i], date=log[z].reset_fade or log[z].timestamp, src=log[z]}
-			h = h + self.fh
-			if h > self.h - self.fh then stop=true break end
+
+		local lines = tstr:toString():splitLines(self.w, self.font)
+		table.print(lines)
+		for i, line in ripairs(lines) do
+			local tid = log[z].id + i / 10
+
+			local text
+			if self.cache[tid] then
+				text = self.cache[tid]
+			else
+				text = core.renderer.text(self.font)
+				self:applyShadowOutline(text)
+				text:text(line)
+				self.cache[tid] = text
+			end
+
+			text:removeFromParent():translate(0, h - fh, 10)
+			self.history_container:add(text)
+
+			if self.fading and not text:hasTween("wait") then text:tween(30 * self.fading, "wait", function(toto) toto:tween(30, "a", nil, 0, "linear") end) end
+
+			--local gen = tstring.makeLineTextures(tstr, self.w, self.font_mono)
+			-- local gen = self.font_mono:draw(tstr:toString(), self.w, 255, 255, 255)
+			-- for i = #gen, 1, -1 do
+			-- 	gen[i].login = log[z].login
+			-- 	gen[i].extra_data = log[z].extra_data
+			-- 	self.dlist[#self.dlist+1] = {item=gen[i], date=log[z].reset_fade or log[z].timestamp, src=log[z]}
+			-- 	h = h + self.fh
+			-- 	if h > self.h - self.fh then stop=true break end
+			-- end
+			self.dlist[#self.dlist+1] = {item=text, date=log[z].reset_fade or log[z].timestamp, src=log[z]}
+			h = h - fh
+			if h < fh then stop=true break end
 		end
 		if stop then break end
 	end
@@ -716,43 +746,43 @@ end
 function _M:toScreen()
 	self:display()
 
-	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
+	-- local shader = Shader.default.textoutline and Shader.default.textoutline.shad
 
-	if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
-	local h = self.display_y + self.h -  self.fh
-	local now = core.game.getTime()
-	for i = 1, #self.dlist do
-		local item = self.dlist[i].item
+	-- if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
+	-- local h = self.display_y + self.h -  self.fh
+	-- local now = core.game.getTime()
+	-- for i = 1, #self.dlist do
+	-- 	local item = self.dlist[i].item
 
-		local fade = 1
-		if self.fading and self.fading > 0 then
-			fade = now - self.dlist[i].date
-			if fade < self.fading * 1000 then fade = 1
-			elseif fade < self.fading * 2000 then fade = (self.fading * 2000 - fade) / (self.fading * 1000)
-			else fade = 0 end
-			self.dlist[i].src.faded = fade
-		end
+	-- 	local fade = 1
+	-- 	if self.fading and self.fading > 0 then
+	-- 		fade = now - self.dlist[i].date
+	-- 		if fade < self.fading * 1000 then fade = 1
+	-- 		elseif fade < self.fading * 2000 then fade = (self.fading * 2000 - fade) / (self.fading * 1000)
+	-- 		else fade = 0 end
+	-- 		self.dlist[i].src.faded = fade
+	-- 	end
 
-		self.dlist[i].dh = h
-		if self.shadow then
-			if shader then
-				shader:use(true)
-				shader:uniOutlineSize(0.7, 0.7)
-				shader:uniTextSize(item._tex_w, item._tex_h)
-			else
-				item._tex:toScreenFull(self.display_x+2, h+2, item.w, item.h, item._tex_w, item._tex_h, 0,0,0, self.shadow * fade)
-			end
-		end
-		item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
-		if self.shadow and shader then shader:use(false) end
-		h = h - self.fh
-	end
+	-- 	self.dlist[i].dh = h
+	-- 	if self.shadow then
+	-- 		if shader then
+	-- 			shader:use(true)
+	-- 			shader:uniOutlineSize(0.7, 0.7)
+	-- 			shader:uniTextSize(item._tex_w, item._tex_h)
+	-- 		else
+	-- 			item._tex:toScreenFull(self.display_x+2, h+2, item.w, item.h, item._tex_w, item._tex_h, 0,0,0, self.shadow * fade)
+	-- 		end
+	-- 	end
+	-- 	item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
+	-- 	if self.shadow and shader then shader:use(false) end
+	-- 	h = h - self.fh
+	-- end
 
-	if not self.fading then
-		self.scrollbar.pos = self.scroll
-		self.scrollbar.max = self.max - self.max_display + 1
-		self.scrollbar:display(self.display_x + self.w - self.scrollbar.w, self.display_y)
-	end
+	-- if not self.fading then
+	-- 	self.scrollbar.pos = self.scroll
+	-- 	self.scrollbar.max = self.max - self.max_display + 1
+	-- 	self.scrollbar:display(self.display_x + self.w - self.scrollbar.w, self.display_y)
+	-- end
 end
 
 --- Scroll the zone
@@ -768,12 +798,10 @@ function _M:scrollUp(i)
 	self:resetFade()
 end
 
-function _M:resetFade()
-	local log = {}
-	if self.channels[self.cur_channel] then log = self.channels[self.cur_channel].log end
 
+function _M:resetFade()
 	-- Reset fade
-	for i = 1,#log do
-		log[i].reset_fade = core.game.getTime()
+	for _, d in ipairs(self.cache) do
+		d:tween(5, "a", nil, 1, "linear")
 	end
 end

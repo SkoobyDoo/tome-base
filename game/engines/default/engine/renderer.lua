@@ -371,6 +371,15 @@ local function doCancelTween(self, slot)
 	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
 	return self:rawcancelTween(slotid)
 end
+local function doHasTween(self, slot)
+	if slot == true then
+		for name, slotid in pairs(tweenslots) do if self:rawhasTween(slotid) then return true end end
+		return false
+	end
+	local slotid = tweenslots[slot]
+	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
+	return self:rawhasTween(slotid)
+end
 
 -----------------------------------------------------------------------------------
 -- Misc other convenient stuff
@@ -421,4 +430,5 @@ for _, DO in pairs(DOAll) do
 	DO.physicEnable = doPhysicEnable
 	DO.tween = doTween
 	DO.cancelTween = doCancelTween
+	DO.hasTween = doHasTween
 end
