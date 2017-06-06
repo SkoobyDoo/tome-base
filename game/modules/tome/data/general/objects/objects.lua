@@ -66,7 +66,6 @@ loadIfNot("/data/general/objects/slings.lua")
 -- Armours
 loadIfNot("/data/general/objects/shields.lua")
 loadIfNot("/data/general/objects/cloth-armors.lua")
-loadIfNot("/data/general/objects/mummy-wrappings.lua")
 loadIfNot("/data/general/objects/light-armors.lua")
 loadIfNot("/data/general/objects/heavy-armors.lua")
 loadIfNot("/data/general/objects/massive-armors.lua")
