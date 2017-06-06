@@ -705,7 +705,6 @@ function _M:display()
 		tstr:merge(log[z].msg:toTString())
 
 		local lines = tstr:toString():splitLines(self.w, self.font)
-		table.print(lines)
 		for i, line in ripairs(lines) do
 			local tid = log[z].id + i / 10
 

@@ -51,7 +51,10 @@ function _M:init(minimalist, w, h)
 
 	self.do_container:add(self.backs_layer):add(self.icons_layer):add(self.frames_layer):add(self.texts_layer)
 
-	self.base_frame = UI:makeFrameDO("ui/icon-frame/frame", self.rw, self.rh)
+	self.base_portrait = self:texLoader("party-portrait.png")
+	self.base_portrait_unsel = self:texLoader("party-portrait-unselect.png")
+	self.base_portrait_lev = self:texLoader("party-portrait-lev.png")
+	self.base_portrait_unsel_lev = self:texLoader("party-portrait-unselect-lev.png")
 
 	game:registerEventUI(self, "Party:switchedPlayer")
 	game:registerEventUI(self, "Party:addMember")

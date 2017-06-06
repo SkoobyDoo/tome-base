@@ -24,18 +24,13 @@ local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.make)
 
-local frames_colors = {
-	sustain = {0.6, 0.6, 0, 1},
-}
-
 function _M:init(party, a)
-	local color = frames_colors.sustain
-
 	self.party = party
 	self.a = a
-	self.back = core.renderer.colorQuad(0, 0, 40, 40, 0, 0, 0, 1)
-	self.lifebar = core.renderer.colorQuad(0, 0, 40, 40, 0xc0/255, 0, 0, 1)
-	self.frame = UI:cloneFrameDO(party.base_frame)
+	self.backlife = core.renderer.container()
+	self.back = core.renderer.colorQuad(0, 0, 34, 34, 0, 0, 0, 1)
+	self.lifebar = core.renderer.colorQuad(0, 0, 34, 34, 0xc0/255, 0, 0, 1)
+	self.frame = core.renderer.container()
 	self.display_entity = a:getEntityDisplayObject(party.tiles, 38, 38, 1, false, false, true)
 	self.texts = core.renderer.container()
 	if a.summon_time then
@@ -44,26 +39,24 @@ function _M:init(party, a)
 		self.texts:add(self.text_overlay)
 	end
 
-	party.frames_layer:add(self.frame.container:color(unpack(color)))
-	party.backs_layer:add(self.back):add(self.lifebar)
+	party.frames_layer:add(self.frame)
+	party.backs_layer:add(self.backlife) self.backlife:add(self.back):add(self.lifebar)
 	party.icons_layer:add(self.display_entity)
 	party.texts_layer:add(self.texts)
 end
 
 function _M:delete()
-	self.back:removeFromParent()
-	self.lifebar:removeFromParent()
+	self.backlife:removeFromParent()
 	self.texts:removeFromParent()
-	self.frame.container:removeFromParent()
+	self.frame:removeFromParent()
 	self.display_entity:removeFromParent()
 end
 
 function _M:move(x, y)
 	self.x, self.y = x, y
-	self.back:translate(x, y)
-	self.lifebar:translate(x, y)
+	self.backlife:translate(x + 6, y + 6)
 	self.texts:translate(x, y)
-	self.frame.container:translate(x, y)
+	self.frame:translate(x, y)
 	self.display_entity:translate(x + 2, y + 2)
 end
 
@@ -107,7 +100,17 @@ function _M:update(player)
 
 	local p = math.min(1, math.max(0, a.life / a.max_life))
 	if p ~= self.old_p then
-		self.lifebar:tween(7, "scale_y", nil, p):tween(7, "y", nil, math.ceil(40 * (1-p)))
+		self.lifebar:tween(7, "scale_y", nil, p):tween(7, "y", nil, math.floor(36 * (1-p)))
 		self.old_p = p
+	end
+
+
+	local p = (game.player == a) and "base_portrait" or "base_portrait_unsel"
+	if a.unused_stats > 0 or a.unused_talents > 0 or a.unused_generics > 0 or a.unused_talents_types > 0 and def.control == "full" then
+		p = (game.player == a) and "base_portrait_lev" or "base_portrait_unsel_lev"
+	end
+	if p ~= self.old_frame then
+		self.frame:clear():add(core.renderer.fromTextureTable(self.party[p], 0, 0, 40, 40))
+		self.old_frame = p
 	end
 end
