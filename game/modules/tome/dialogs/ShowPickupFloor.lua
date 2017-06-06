@@ -64,10 +64,11 @@ function _M:updateTitle(title)
 end
 
 function _M:drawFrame(x, y, r, g, b, a)
-	Base.drawFrame(self, x, y, r, g, b, a)
-	if r == 0 then return end -- Drawing the shadow
-	if self.ui ~= "metal" then return end
-	if not self.title_fill then return end
+	-- DGDGDGDG wtf
+	-- Base.drawFrame(self, x, y, r, g, b, a)
+	-- if r == 0 then return end -- Drawing the shadow
+	-- if self.ui ~= "metal" then return end
+	-- if not self.title_fill then return end
 
-	core.display.drawQuad(x + self.frame.title_x, y + self.frame.title_y, self.title_fill, self.frame.title_h, self.title_fill_color.r, self.title_fill_color.g, self.title_fill_color.b, 60)
+	-- core.display.drawQuad(x + self.frame.title_x, y + self.frame.title_y, self.title_fill, self.frame.title_h, self.title_fill_color.r, self.title_fill_color.g, self.title_fill_color.b, 60)
 end
