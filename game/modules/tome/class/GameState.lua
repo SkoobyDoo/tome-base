@@ -2013,7 +2013,7 @@ function _M:applyRandomClass(b, data, instant)
 							d.name, d.id = nil, nil
 							d.ego_chance = nil
 							d.ignore_material_restriction = true
-							d.forbid_power_source = b.not_power_source
+							d.forbid_power_source = table.clone(b.not_power_source, nil, {nature=true})
 							d.tome_drops = data.loot_quality or "boss"
 							d.force_drop = (data.drop_equipment == nil) and true or data.drop_equipment
 						end
