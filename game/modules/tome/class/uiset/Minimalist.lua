@@ -97,6 +97,7 @@ _M.allcontainers = {
 	"mod.class.uiset.minimalist.Party",
 	"mod.class.uiset.minimalist.Log",
 	"mod.class.uiset.minimalist.UserChat",
+	"mod.class.uiset.minimalist.CustomZone",
 	-- DGDGDGDG: missing: arena special display, zone specific_ui display (can those 2 be merged? likely)
 }
 

@@ -20,6 +20,7 @@
 require "engine.class"
 local Zone = require "engine.Zone"
 local Map = require "engine.Map"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Zone))
 

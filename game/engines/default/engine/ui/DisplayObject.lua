@@ -19,29 +19,23 @@
 
 require "engine.class"
 local Base = require "engine.ui.Base"
-local Tiles = require "engine.Tiles"
+local Focusable = require "engine.ui.Focusable"
 
-
---- @classmod engine.ui.ActorFrame
-module(..., package.seeall, class.inherit(Base))
+--- An empty space that contains a DO
+-- @classmod engine.ui.DisplayObject
+module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
-	self.actor = assert(t.actor, "no actorframe actor")
-	self.w = assert(t.w, "no actorframe w")
-	self.h = assert(t.h, "no actorframe h")
-	self.tiles = t.tiles or Tiles.new(self.w, self.h, nil, nil, true, nil)
-
-	t.request_renderer = true
+	self.DO = assert(t.DO, "no do DO")
+	self.w = assert(t.width, "no do width")
+	self.h = assert(t.height, "no do height")
 	Base.init(self, t)
-	self:setActor(self.actor)
-end
-
-function _M:setActor(actor)
-	if actor.getDO then
-		self.actor = actor
-		self.do_container:clear():add(self.actor:getDO(self.w, self.h))
-	end
 end
 
 function _M:generate()
+	self.mouse:reset()
+	self.key:reset()
+	self.do_container:clear()
+
+	self.do_container:add(self.DO)
 end
