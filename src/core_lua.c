@@ -300,7 +300,7 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp, bool
 		largest_size = realh*realw*4;
 		printf("Upgrading black texture to size %d\n", largest_size);
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, realw, realh, 0, texture_format, GL_UNSIGNED_BYTE, largest_black);
+	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors == 4 ? GL_RGBA : GL_RGB, realw, realh, 0, texture_format, GL_UNSIGNED_BYTE, largest_black);
 
 #ifdef _DEBUG
 	GLenum err = glGetError();
@@ -717,7 +717,7 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	tfglBindTexture(GL_TEXTURE_2D, st->tex);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, w, dh, 0, GL_RGBA, GL_UNSIGNED_BYTE, sdm);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, dh, 0, GL_RGBA, GL_UNSIGNED_BYTE, sdm);
 
 	free(tmp);
 	free(sdm);

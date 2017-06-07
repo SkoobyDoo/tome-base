@@ -95,7 +95,7 @@ static int enable(lua_State *L)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, 3, bkg_w, bkg_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bkg_w, bkg_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, w, h);
 		printf("Make wait background texture %d : %dx%d\n", bkg_t, w, h);
 

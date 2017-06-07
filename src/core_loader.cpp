@@ -82,7 +82,7 @@ public:
 			tfglBindTexture(GL_TEXTURE_2D, tex->tex);
 			GLenum texture_format = sdl_gl_texture_format(s);
 			GLint nOfColors = s->format->BytesPerPixel;
-			glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
+			glTexImage2D(GL_TEXTURE_2D, 0, nOfColors == 4 ? GL_RGBA : GL_RGB, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
 			SDL_FreeSurface(s);
 			// printf("[LOADER] done loading PNG %s!\n", filename.c_str());
 		}

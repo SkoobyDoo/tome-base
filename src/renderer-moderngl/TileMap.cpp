@@ -177,7 +177,7 @@ void DORTileMiniMap::redrawMiniMap(bool full_texture_update) {
 
 	tglBindTexture(GL_TEXTURE_2D, tex[0]);
 	// Full texture update means we change size so we need a full call to glTexImage2D
-	if (full_texture_update) glTexImage2D(GL_TEXTURE_2D, 0, 4, info.mdw, info.mdh, 0, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
+	if (full_texture_update) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.mdw, info.mdh, 0, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
 	else glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.mdw, info.mdh, GL_BGRA, GL_UNSIGNED_BYTE, mm_data);
 }
 
