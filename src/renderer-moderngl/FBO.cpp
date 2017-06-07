@@ -64,6 +64,7 @@ DORTarget::DORTarget(int w, int h, int nbt, bool hdr, bool depth) {
 		w, 0, 1, 1,
 		1, 1, 1, 1
 	);
+	printf("[RendererGL] New FBO %dx%d\n", w, h);
 }
 DORTarget::~DORTarget() {
 	if (mode) delete mode;

@@ -1171,6 +1171,18 @@ static int gl_text_stats(lua_State *L)
 	return 3;
 }
 
+static int gl_text_texture(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
+	int id = lua_tonumber(L, 3);
+	lua_pushvalue(L, 2);
+	v->setTexture(t->tex, luaL_ref(L, LUA_REGISTRYINDEX), id);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_text_shader(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
@@ -1917,6 +1929,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"linefeed", gl_text_linefeed},
 	{"getLetterPosition", gl_text_get_letter_position},
 	{"center", gl_text_center},
+	{"texture", gl_text_texture},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},
 	{"getKind", gl_generic_getkind},

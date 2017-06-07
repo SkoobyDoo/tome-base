@@ -46,6 +46,7 @@ View::~View() {
 void View::setOrthoView(int w, int h) {
 	mode = ViewMode::ORTHO;
 	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+	printf("[RendererGL] View set %dx%d\n", w, h);
 }
 
 void View::setProjectView(

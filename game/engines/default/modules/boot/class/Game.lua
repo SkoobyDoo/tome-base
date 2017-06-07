@@ -483,7 +483,7 @@ function _M:display(nb_keyframes)
 	
 
 	-- If background anim is stopped, things are greatly simplified
-	if self.stopped then
+	if self.stopped then		
 		self.full_fbo:use(true)
 		self.renderer:toScreen()
 		self.logdisplay:toScreen()
