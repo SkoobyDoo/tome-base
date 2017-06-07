@@ -59,13 +59,7 @@ public:
 
 	static void defaultShader(shader_type *s) { default_shader = s; };
 
-	DORText() {
-		text = (char*)malloc(1);
-		text[0] = '\0';
-		font_color = {1, 1, 1, 1};
-		entities_container.setParent(this);
-		if (default_shader) setShader(default_shader);
-	};
+	DORText();
 	virtual ~DORText();
 	DO_STANDARD_CLONE_METHOD(DORText);
 	virtual const char* getKind() { return "DORText"; };
@@ -93,7 +87,7 @@ public:
 	virtual void clear();
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 
 private:
 	void parseText();

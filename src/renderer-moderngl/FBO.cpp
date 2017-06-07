@@ -226,16 +226,16 @@ void DORTarget::render(RendererGL *container, mat4& cur_model, vec4& cur_color, 
 	DORVertexes::render(container, cur_model, cur_color, cur_visible);
 }
 
-void DORTarget::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
-	if (subrender) {
-		int startat = container->zvertices.size();
-		container->zvertices.resize(startat + 1);
-		sortable_vertex *dest = container->zvertices.data();
-		dest[startat].tick = this;
-	}
+// void DORTarget::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
+// 	if (subrender) {
+// 		int startat = container->zvertices.size();
+// 		container->zvertices.resize(startat + 1);
+// 		sortable_vertex *dest = container->zvertices.data();
+// 		dest[startat].tick = this;
+// 	}
 
-	DORVertexes::renderZ(container, cur_model, cur_color, cur_visible);
-}
+// 	DORVertexes::renderZ(container, cur_model, cur_color, cur_visible);
+// }
 
 void DORTarget::tick() {
 	if (!subrender) return;

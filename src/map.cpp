@@ -1325,7 +1325,6 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 			float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
 			float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
 
-			float shaderkind = 0;
 			shader_type *shader = default_shader;
 			if (dm->shader) shader = dm->shader;
 			else if (m->shader) shader = m->shader;
@@ -1341,16 +1340,20 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 			// }
 
 			// printf("MO using %dx%dx%d tex %d shader %s : %lx\n", (int)dx, (int)dy, z, dm->textures[0], shader->name, shader);
-			auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader);
+			auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO);
 		
 			// Make sure we do not have to reallocate each step
 			// DGDGDGDG: actually do it
 
 			// Put it directly into the DisplayList
-			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
-			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
-			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
-			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
+			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}});
+			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}});
+			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}});
+			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}});
+			dl->list_map_info.push_back({{dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}});
+			dl->list_map_info.push_back({{dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}});
+			dl->list_map_info.push_back({{dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}});
+			dl->list_map_info.push_back({{dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}});
 		}
 	}
 

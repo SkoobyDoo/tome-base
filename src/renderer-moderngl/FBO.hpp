@@ -217,7 +217,7 @@ public:
 	void setAutoRender(SubRenderer *subrender, int ref);
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 	virtual void tick();
 
 	virtual void onScreenResize(int w, int h);

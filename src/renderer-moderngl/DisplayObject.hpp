@@ -46,17 +46,27 @@ class DORPhysic;
 
 const int DO_MAX_TEX = 3;
 
+enum {
+	VERTEX_BASE = 0,
+	VERTEX_MAP_INFO = 1,
+	VERTEX_KIND_INFO = 2,
+	VERTEX_MODEL_INFO = 4,
+};
+
 struct vertex {
 	vec4 pos;
 	vec2 tex;
 	vec4 color;
-
-	// DGDGDGDG: really if that could be split off and only "tacked on" when needed it'd rule ..
-	// We could even exclude color when unwanted, and to make it all configurable maybe use C++ <bitset> which
-	// converts to a long int, making display list invalidation very easy for any combo
+};
+struct vertex_map_info {
 	vec4 texcoords;
 	vec4 mapcoords;
+};
+struct vertex_kind_info {
  	float kind;
+};
+struct vertex_model_info {
+	mat4 model;
 };
 
 struct recomputematrix {
@@ -175,7 +185,7 @@ public:
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) = 0;
-	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) = 0;
+	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) = 0;
 	virtual void sortZ(RendererGL *container, mat4& cur_model) = 0;
 };
 
@@ -194,7 +204,11 @@ public:
  ****************************************************************************/
 class DORVertexes : public DORFlatSortable{
 protected:
+	uint8_t data_kind = VERTEX_BASE;
 	vector<vertex> vertices;
+	vector<vertex_map_info> vertices_map_info;
+	vector<vertex_kind_info> vertices_kind_info;
+	vector<vertex_model_info> vertices_model_info;
 	array<int, DO_MAX_TEX> tex_lua_ref{{ LUA_NOREF, LUA_NOREF, LUA_NOREF}};
 	array<GLuint, DO_MAX_TEX> tex{{0, 0, 0}};
 	int tex_max = 1;
@@ -215,6 +229,8 @@ public:
 	virtual const char* getKind() { return "DORVertexes"; };
 
 	void clear();
+
+	void setDataKinds(uint8_t kinds);
 
 	void reserveQuads(int nb) { vertices.reserve(4 * nb); };
 
@@ -246,7 +262,7 @@ public:
 	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
@@ -265,7 +281,7 @@ public:
 	virtual void containerClear();
 
 	virtual void containerRender(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
-	virtual void containerRenderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	// virtual void containerRenderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 	virtual void containerSortZ(RendererGL *container, mat4& cur_model);
 };
 class DORContainer : public DORFlatSortable, public IContainer{
@@ -282,7 +298,7 @@ public:
 	virtual void clear();
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
@@ -307,7 +323,7 @@ public:
 	void setRendererName(char *name, bool copy);
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
-	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4& cur_model);
 
 	virtual void toScreenSimple();

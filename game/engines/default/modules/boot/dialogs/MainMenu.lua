@@ -79,6 +79,7 @@ function _M:init()
 --	if config.settings.cheat then l[#l+1] = {name="webtest", fct=function() util.browserOpenUrl("http://google.com") end} end
 --	if config.settings.cheat then l[#l+1] = {name="webtest", fct=function() util.browserOpenUrl("asset://te4/html/test.html") end} end
 	-- if config.settings.cheat then l[#l+1] = {name="foo", fct=function() Dialog:simpleWaiter("Test", "Test", 500, nil, 500) end} end
+	if config.settings.cheat then l[#l+1] = {name="foo", fct=function() if core.game.CProfiler then core.game.CProfiler("luastarted.profiler.prof") end end} end
 
 	self.c_background = Button.new{text=game.stopped and "Enable background" or "Disable background", fct=function() self:switchBackground() end}
 	self.c_version = Textzone.new{font={FontPackage:getFont("default"), 10}, auto_width=true, auto_height=true, text=("#B9E100#T-Engine4 version: %d.%d.%d"):format(engine.version[1], engine.version[2], engine.version[3])}
@@ -134,7 +135,7 @@ function _M:updateUI()
 ----------------------------
 ----------------------------DGDGDGDG remove this
 ----------------------------
---[[
+-- [[
 	local tree = {}
 	for i = 1, 1000 do tree[#tree+1] = {name='this is azlkdj a long text '..i, plop="kjhekjghekg", plop3="kjhekjghekg"} end
 	local test = require("engine.ui.TreeList").new{scrollbar=true, width=self.iw * 2, height=self.ih * 3, columns={

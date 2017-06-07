@@ -101,52 +101,56 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			float y1 = y0 + (d->height) * scale;
 			positions.push_back({x0, y});
 
-			if (shadow_x || shadow_y) {
-				vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				vertices.push_back({{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				vertices.push_back({{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-				vertices.push_back({{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-			}
+			// if (shadow_x || shadow_y) {
+			// 	vertices.push_back({{shadow_x+x0+italicx, shadow_y+y0, -1, 1},	{d->s0, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			// 	vertices.push_back({{shadow_x+x1+italicx, shadow_y+y0, -1, 1},	{d->s1, d->t0}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			// 	vertices.push_back({{shadow_x+x1, shadow_y+y1, -1, 1},	{d->s1, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			// 	vertices.push_back({{shadow_x+x0, shadow_y+y1, -1, 1},	{d->s0, d->t1}, shadow_color, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			// }
 
-			if (outline) {
-				font->font->outline_thickness = 2;
-				font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
-				ftgl::texture_glyph_t *doutline = getGlyph(c);
-				if (doutline) {
-					float x0  = bx + x + doutline->offset_x * scale;
-					float x1  = x0 + doutline->width * scale;
-					float italicx = - doutline->offset_x * scale * italic;
-					float y0 = by + (font->font->ascender - doutline->offset_y) * scale;
-					float y1 = y0 + (doutline->height) * scale;
+			// if (outline) {
+			// 	font->font->outline_thickness = 2;
+			// 	font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
+			// 	ftgl::texture_glyph_t *doutline = getGlyph(c);
+			// 	if (doutline) {
+			// 		float x0  = bx + x + doutline->offset_x * scale;
+			// 		float x1  = x0 + doutline->width * scale;
+			// 		float italicx = - doutline->offset_x * scale * italic;
+			// 		float y0 = by + (font->font->ascender - doutline->offset_y) * scale;
+			// 		float y1 = y0 + (doutline->height) * scale;
 
-					vertices.push_back({{1+x0+italicx, 1+y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					vertices.push_back({{1+x1+italicx, 1+y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					vertices.push_back({{1+x1, 1+y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-					vertices.push_back({{1+x0, 1+y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
-				}
-			}
+			// 		vertices.push_back({{1+x0+italicx, 1+y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+			// 		vertices.push_back({{1+x1+italicx, 1+y0, 0, 1},	{doutline->s1, doutline->t0}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+			// 		vertices.push_back({{1+x1, 1+y1, 0, 1},	{doutline->s1, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+			// 		vertices.push_back({{1+x0, 1+y1, 0, 1},	{doutline->s0, doutline->t1}, outline_color, {style == FONT_STYLE_BOLD, 1, 0, 0}});
+			// 	}
+			// }
 
-			vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-			vertices.push_back({{x1+italicx, y0, 0, 1},	{d->s1, d->t0}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-			vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
-			vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
+			vertices.push_back({{x0+italicx, y0, 0, 1},	{d->s0, d->t0}, {r, g, b, a}});
+			vertices.push_back({{x1+italicx, y0, 0, 1},	{d->s1, d->t0}, {r, g, b, a}});
+			vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}});
+			vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}});
+			vertices_kind_info.push_back({(style == FONT_STYLE_BOLD ? 1.0f : 0.0f)});
+			vertices_kind_info.push_back({(style == FONT_STYLE_BOLD ? 1.0f : 0.0f)});
+			vertices_kind_info.push_back({(style == FONT_STYLE_BOLD ? 1.0f : 0.0f)});
+			vertices_kind_info.push_back({(style == FONT_STYLE_BOLD ? 1.0f : 0.0f)});
 
 			// Much trickery, such dev
-			if (style == FONT_STYLE_UNDERLINED) {
-				ftgl::texture_glyph_t *ul = getGlyph('_');
-				if (ul) {
-					float x0  = bx + x;
-					float x1  = x0 + d->advance_x * scale;
-					float y0 = by + (font->font->ascender * 1.05 - ul->offset_y) * scale;
-					float y1 = y0 + (ul->height) * scale;
-					float s2 = (ul->s1 - ul->s0) / 1.5;
+			// if (style == FONT_STYLE_UNDERLINED) {
+			// 	ftgl::texture_glyph_t *ul = getGlyph('_');
+			// 	if (ul) {
+			// 		float x0  = bx + x;
+			// 		float x1  = x0 + d->advance_x * scale;
+			// 		float y0 = by + (font->font->ascender * 1.05 - ul->offset_y) * scale;
+			// 		float y1 = y0 + (ul->height) * scale;
+			// 		float s2 = (ul->s1 - ul->s0) / 1.5;
 
-					vertices.push_back({{x0, y0, 0, 1},	{ul->s0 + s2, ul->t0}, {r, g, b, a}, {0, 0, 0, 0}});
-					vertices.push_back({{x1, y0, 0, 1},	{ul->s1 - s2, ul->t0}, {r, g, b, a}, {0, 0, 0, 0}});
-					vertices.push_back({{x1, y1, 0, 1},	{ul->s1 - s2, ul->t1}, {r, g, b, a}, {0, 0, 0, 0}});
-					vertices.push_back({{x0, y1, 0, 1},	{ul->s0 + s2, ul->t1}, {r, g, b, a}, {0, 0, 0, 0}});
-				}
-			}			
+			// 		vertices.push_back({{x0, y0, 0, 1},	{ul->s0 + s2, ul->t0}, {r, g, b, a}, {0, 0, 0, 0}});
+			// 		vertices.push_back({{x1, y0, 0, 1},	{ul->s1 - s2, ul->t0}, {r, g, b, a}, {0, 0, 0, 0}});
+			// 		vertices.push_back({{x1, y1, 0, 1},	{ul->s1 - s2, ul->t1}, {r, g, b, a}, {0, 0, 0, 0}});
+			// 		vertices.push_back({{x0, y1, 0, 1},	{ul->s0 + s2, ul->t1}, {r, g, b, a}, {0, 0, 0, 0}});
+			// 	}
+			// }			
 
 			x += d->advance_x * scale * (style == FONT_STYLE_BOLD ? 1.1 : 1);
 		}
@@ -197,6 +201,7 @@ void DORText::parseText() {
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	vertices.reserve(len * 4);
+	vertices_kind_info.reserve(len * 4);
 
 	int font_h = f->lineskip * f->scale;
 	int nb_lines = 1;
@@ -503,13 +508,22 @@ void DORText::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bo
 	entities_container.render(container, emodel, ecolor, true);
 }
 
-void DORText::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
-	if (!visible || !cur_visible) return;
-	DORVertexes::renderZ(container, cur_model, cur_color, true);
-	mat4 emodel = cur_model * model;
-	vec4 ecolor = cur_color * color;
-	entities_container.renderZ(container, emodel, ecolor, true);
-}
+// void DORText::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
+// 	if (!visible || !cur_visible) return;
+// 	DORVertexes::renderZ(container, cur_model, cur_color, true);
+// 	mat4 emodel = cur_model * model;
+// 	vec4 ecolor = cur_color * color;
+// 	entities_container.renderZ(container, emodel, ecolor, true);
+// }
+
+DORText::DORText() {
+	text = (char*)malloc(1);
+	text[0] = '\0';
+	font_color = {1, 1, 1, 1};
+	entities_container.setParent(this);
+	if (default_shader) setShader(default_shader);
+	setDataKinds(VERTEX_BASE + VERTEX_KIND_INFO);
+};
 
 DORText::~DORText() {
 	free((void*)text);

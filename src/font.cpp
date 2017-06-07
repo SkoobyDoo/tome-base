@@ -340,7 +340,7 @@ const luaL_Reg fontlib[] = {
 
 int luaopen_font(lua_State *L)
 {
-	default_atlas_chars = strdup("abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMOPQRSTUVWXYZ0123456789.-/*&~\"'\\{}()[]|^%%*$! =+,€");
+	default_atlas_chars = strdup("abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMOPQRSTUVWXYZ0123456789.-_/*&~\"'\\{}()[]|^%%*$! =+,€");
 	default_atlas_chars_bold = FALSE;
 
 	auxiliar_newclass(L, "sdl{font}", sdl_font_reg);

@@ -241,10 +241,10 @@ void DORTileObject::render(RendererGL *container, mat4& cur_model, vec4& color, 
 	DORContainer::render(container, cur_model, color, cur_visible);
 }
 
-void DORTileObject::renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) {
-	if (mos_changed) regenData();
-	DORContainer::renderZ(container, cur_model, color, cur_visible);
-}
+// void DORTileObject::renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) {
+// 	if (mos_changed) regenData();
+// 	DORContainer::renderZ(container, cur_model, color, cur_visible);
+// }
 
 void DORTileObject::sortZ(RendererGL *container, mat4& cur_model) {
 	mat4 vmodel = cur_model * model;

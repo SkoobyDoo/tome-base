@@ -40,15 +40,15 @@ void stopDisplayList() {
 }
 
 DisplayList* getDisplayList(RendererGL *container) {
-	return getDisplayList(container, {0,0,0}, NULL);
+	return getDisplayList(container, {0,0,0}, NULL, VERTEX_BASE);
 }
-DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader) {
+DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader, uint8_t data_kind) {
 	if (available_dls.empty()) {
 		available_dls.push(new DisplayList());
 	}
 
 	// printf("test::: %d ?? %d ::: %lx ?? %lx\n", current_used_dl ? current_used_dl->tex : 0 ,tex, current_used_dl ? current_used_dl->shader : 0 ,shader);
-	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader && current_used_dl_container == container) {
+	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader && current_used_dl_container == container && current_used_dl->data_kind == data_kind) {
 		// printf("Reussing current DL! %x with %d, %d, %x\n", current_used_dl, current_used_dl->vbo, current_used_dl->tex[0], current_used_dl->shader);
 		// current_used_dl->used++;
 		// container->addDisplayList(current_used_dl);
@@ -59,6 +59,7 @@ DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex
 	available_dls.pop();
 	dl->tex = tex;
 	dl->shader = shader;
+	dl->data_kind = data_kind;
 	// printf("Getting DL! %x with %d, %d, %x\n", dl, dl->vbo, tex, shader);
 	dl->used++;
 	current_used_dl = dl;
@@ -73,6 +74,8 @@ void releaseDisplayList(DisplayList *dl) {
 		// Clear will nto release the memory, just "forget" about the data
 		// we keep the VBO allocated for later
 		dl->list.clear();
+		dl->list_map_info.clear();
+		dl->list_kind_info.clear();
 		dl->tex = {0,0,0};
 		dl->shader = NULL;
 		dl->sub = NULL;
@@ -87,15 +90,14 @@ void releaseDisplayList(DisplayList *dl) {
 }
 
 DisplayList::DisplayList() {
-	glGenBuffers(1, &vbo);
+	glGenBuffers(3, vbo);
 	list.reserve(4096);
 	// printf("Making new DL! %x with vbo %d\n", this, vbo);
 }
 // This really should never be actually used
 DisplayList::~DisplayList() {
 	// printf("Deleteing DL! %x with vbo %d\n", this, vbo);
-	glDeleteBuffers(1, &vbo);
-	vbo = 0;
+	glDeleteBuffers(3, vbo);
 }
 
 /***************************************************************************
@@ -135,14 +137,14 @@ void RendererGL::setShader(shader_type *s, int lua_ref) {
 	my_default_shader_lua_ref = lua_ref;
 }
 
-bool sortable_vertex::operator<(const sortable_vertex &i) const {
-	if (v.pos.z == i.v.pos.z) {
-		if (shader == i.shader) return tex < i.tex;
-		else return shader < i.shader;
-	} else {
-		return v.pos.z < i.v.pos.z;
-	}
-}
+// bool sortable_vertex::operator<(const sortable_vertex &i) const {
+// 	if (v.pos.z == i.v.pos.z) {
+// 		if (shader == i.shader) return tex < i.tex;
+// 		else return shader < i.shader;
+// 	} else {
+// 		return v.pos.z < i.v.pos.z;
+// 	}
+// }
 
 static bool sort_dos(DORFlatSortable *i, DORFlatSortable *j) {
 	if (i->sort_z == j->sort_z) {
@@ -158,37 +160,37 @@ bool RendererGL::usesElementsVBO() {
 }
 
 void RendererGL::sortedToDL() {
-	array<GLuint, DO_MAX_TEX> tex {{0,0,0}};
-	shader_type *shader = NULL;
-	DisplayList *dl = NULL;
+	// array<GLuint, DO_MAX_TEX> tex {{0,0,0}};
+	// shader_type *shader = NULL;
+	// DisplayList *dl = NULL;
 
-	// Make sure we do not have to reallocate each step
-	int nb = zvertices.size();
-	int startat = -1;
+	// // Make sure we do not have to reallocate each step
+	// int nb = zvertices.size();
+	// int startat = -1;
 
-	for (auto v = zvertices.begin(); v != zvertices.end(); v++) {
-		if (v->sub) {
-			stopDisplayList(); // Needed to make sure we break texture chaining
-			dl = getDisplayList(this);
-			stopDisplayList(); // Needed to make sure we break texture chaining
-			dl->sub = v->sub;
-			dl = NULL;
-		} else if (v->tick) {
-			stopDisplayList(); // Needed to make sure we break texture chaining
-			dl = getDisplayList(this);
-			stopDisplayList(); // Needed to make sure we break texture chaining
-			dl->tick = v->tick;
-			dl = NULL;
-		} else {
-			if (!dl || (tex != v->tex) || (shader != v->shader)) {
-				tex = v->tex; shader = v->shader;
-				dl = getDisplayList(this, tex, shader);
-				startat = dl->list.size();
-				dl->list.reserve(startat + nb); // Meh; will probably reserve way too much. but meh
-			}
-			dl->list.push_back(v->v);
-		}
-	}
+	// for (auto v = zvertices.begin(); v != zvertices.end(); v++) {
+	// 	if (v->sub) {
+	// 		stopDisplayList(); // Needed to make sure we break texture chaining
+	// 		dl = getDisplayList(this);
+	// 		stopDisplayList(); // Needed to make sure we break texture chaining
+	// 		dl->sub = v->sub;
+	// 		dl = NULL;
+	// 	} else if (v->tick) {
+	// 		stopDisplayList(); // Needed to make sure we break texture chaining
+	// 		dl = getDisplayList(this);
+	// 		stopDisplayList(); // Needed to make sure we break texture chaining
+	// 		dl->tick = v->tick;
+	// 		dl = NULL;
+	// 	} else {
+	// 		if (!dl || (tex != v->tex) || (shader != v->shader)) {
+	// 			tex = v->tex; shader = v->shader;
+	// 			dl = getDisplayList(this, tex, shader);
+	// 			startat = dl->list.size();
+	// 			dl->list.reserve(startat + nb); // Meh; will probably reserve way too much. but meh
+	// 		}
+	// 		dl->list.push_back(v->v);
+	// 	}
+	// }
 }
 
 void RendererGL::resetDisplayLists() {
@@ -215,7 +217,7 @@ void RendererGL::update() {
 			// If nothing that can alter sort order changed, we can just quickly recompute the DisplayLists just like in the no sort method
 			if (recompute_fast_sort) {
 				recompute_fast_sort = false;
-				// printf("FST SORT\n");
+				printf("FST SORT\n");
 				sorted_dos.clear();
 
 				// First we iterate over the DOs tree to "flatten" in
@@ -239,14 +241,14 @@ void RendererGL::update() {
 				}
 			}
 		} else if (zsort == SortMode::FULL) {
-			zvertices.clear();
-			for (auto it = dos.begin() ; it != dos.end(); ++it) {
-				DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
-				if (i) i->renderZ(this, cur_model, color, true);
-			}
-			stable_sort(zvertices.begin(), zvertices.end());
+			// zvertices.clear();
+			// for (auto it = dos.begin() ; it != dos.end(); ++it) {
+			// 	DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
+			// 	if (i) i->renderZ(this, cur_model, color, true);
+			// }
+			// stable_sort(zvertices.begin(), zvertices.end());
 
-			sortedToDL();
+			// sortedToDL();
 		}
 
 		// Notify we dont need to be rebuilt again unless more stuff changes
@@ -260,10 +262,21 @@ void RendererGL::update() {
 		if (!(*dl)->sub && !(*dl)->tick) {
 			if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
 
-			// printf("REBUILDING THE VBO %d with %d elements...\n", (*dl)->vbo, (*dl)->list.size());
-			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
+			// printf("REBUILDING THE VBO %d with %d elements of size %dko...\n", (*dl)->vbo, (*dl)->list.size(), sizeof(vertex) * (*dl)->list.size() / 1024);
+			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[0]);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * (*dl)->list.size(), NULL, (GLuint)mode);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * (*dl)->list.size(), (*dl)->list.data());
+
+			if ((*dl)->data_kind & VERTEX_KIND_INFO) {
+				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[1]);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_kind_info) * (*dl)->list_kind_info.size(), NULL, (GLuint)mode);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_kind_info) * (*dl)->list_kind_info.size(), (*dl)->list_kind_info.data());				
+			}
+			if ((*dl)->data_kind & VERTEX_MAP_INFO) {
+				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[2]);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_map_info) * (*dl)->list_map_info.size(), NULL, (GLuint)mode);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_map_info) * (*dl)->list_map_info.size(), (*dl)->list_map_info.data());				
+			}
 		}
 	}
 
@@ -379,7 +392,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 			if (cutting) activateCutting(cur_model, true);
 		} else {
 			// Bind the vertices
-			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo);
+			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[0]);
 	 		tglActiveTexture(GL_TEXTURE0);
 		 	tglBindTexture(GL_TEXTURE_2D, (*dl)->tex[0]);
 		 	for (int i = 1; i < DO_MAX_TEX; i++) { if ((*dl)->tex[i]) {
@@ -426,17 +439,25 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				glEnableVertexAttribArray(shader->color_attrib);
 				glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, color));
 			}
-			if (shader->texcoorddata_attrib != -1) {
-				glEnableVertexAttribArray(shader->texcoorddata_attrib);
-				glVertexAttribPointer(shader->texcoorddata_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, texcoords));
+
+			if ((*dl)->data_kind & VERTEX_KIND_INFO) {
+				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[1]);
+				if (shader->kind_attrib != -1) {
+					glEnableVertexAttribArray(shader->kind_attrib);
+					glVertexAttribPointer(shader->kind_attrib, 1, GL_FLOAT, GL_FALSE, sizeof(vertex_kind_info), (void*)offsetof(vertex_kind_info, kind));
+				}
 			}
-			if (shader->mapcoord_attrib != -1) {
-				glEnableVertexAttribArray(shader->mapcoord_attrib);
-				glVertexAttribPointer(shader->mapcoord_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, mapcoords));
-			}
-			if (shader->kind_attrib != -1) {
-				glEnableVertexAttribArray(shader->kind_attrib);
-				glVertexAttribPointer(shader->kind_attrib, 1, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex, kind));
+
+			if ((*dl)->data_kind & VERTEX_MAP_INFO) {
+				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[2]);
+				if (shader->texcoorddata_attrib != -1) {
+					glEnableVertexAttribArray(shader->texcoorddata_attrib);
+					glVertexAttribPointer(shader->texcoorddata_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_map_info), (void*)offsetof(vertex_map_info, texcoords));
+				}
+				if (shader->mapcoord_attrib != -1) {
+					glEnableVertexAttribArray(shader->mapcoord_attrib);
+					glVertexAttribPointer(shader->mapcoord_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_map_info), (void*)offsetof(vertex_map_info, mapcoords));
+				}
 			}
 
 			if (kind == RenderKind::QUADS) {

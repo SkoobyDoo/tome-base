@@ -148,7 +148,7 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 	DORSpriter *spriter = DORSpriter::currently_processing;
 
 	if (!spriter->render_z) {
-		auto dl = getDisplayList(spriter->render_container, {texture->tex.tex, 0, 0}, spriter->shader);
+		auto dl = getDisplayList(spriter->render_container, {texture->tex.tex, 0, 0}, spriter->shader, VERTEX_BASE);
 
 		// Make the matrix corresponding to the shape
 		mat4 qm = mat4();
@@ -192,49 +192,49 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 		dl->list.push_back(p3);
 		dl->list.push_back(p4);
 	} else {
-		// Make the matrix corresponding to the shape
-		mat4 qm = mat4();
-		qm = glm::translate(qm, glm::vec3((float)spriteInfo->getPosition().x, (float)spriteInfo->getPosition().y, 0));
-		qm = glm::rotate(qm, (float)spriteInfo->getAngle(), glm::vec3(0, 0, 1));
-		qm = glm::scale(qm, glm::vec3((float)spriteInfo->getScale().x, (float)spriteInfo->getScale().y, 1));
-		qm = spriter->render_model * qm;
+		// // Make the matrix corresponding to the shape
+		// mat4 qm = mat4();
+		// qm = glm::translate(qm, glm::vec3((float)spriteInfo->getPosition().x, (float)spriteInfo->getPosition().y, 0));
+		// qm = glm::rotate(qm, (float)spriteInfo->getAngle(), glm::vec3(0, 0, 1));
+		// qm = glm::scale(qm, glm::vec3((float)spriteInfo->getScale().x, (float)spriteInfo->getScale().y, 1));
+		// qm = spriter->render_model * qm;
 
-		// Make the vertexes, un-rotated & unscaled
-		vec2 origin = {spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff};
-		vec4 color = {1, 1, 1, spriteInfo->getAlpha()};
-		float px1 = -origin.x, py1 = -origin.y;
-		float px2 = aw-origin.x, py2 = ah-origin.y;
-		color = spriter->render_color * color;
+		// // Make the vertexes, un-rotated & unscaled
+		// vec2 origin = {spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff};
+		// vec4 color = {1, 1, 1, spriteInfo->getAlpha()};
+		// float px1 = -origin.x, py1 = -origin.y;
+		// float px2 = aw-origin.x, py2 = ah-origin.y;
+		// color = spriter->render_color * color;
 
-		vertex p1;
-		vertex p2;
-		vertex p3;
-		vertex p4;
-		if (rotated) {
-			p1 = {{px1, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
-			p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty2}, color};
-			p3 = {{px2, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
-			p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty1}, color};
-		} else {
-			p1 = {{px1, py1, spriter->render_microz, 1}, {tx1, ty1}, color};
-			p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
-			p3 = {{px2, py2, spriter->render_microz, 1}, {tx2, ty2}, color};
-			p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
-		}
+		// vertex p1;
+		// vertex p2;
+		// vertex p3;
+		// vertex p4;
+		// if (rotated) {
+		// 	p1 = {{px1, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
+		// 	p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty2}, color};
+		// 	p3 = {{px2, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
+		// 	p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty1}, color};
+		// } else {
+		// 	p1 = {{px1, py1, spriter->render_microz, 1}, {tx1, ty1}, color};
+		// 	p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
+		// 	p3 = {{px2, py2, spriter->render_microz, 1}, {tx2, ty2}, color};
+		// 	p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
+		// }
 
-		// Now apply the matrix on them
-		p1.pos = qm * p1.pos;
-		p2.pos = qm * p2.pos;
-		p3.pos = qm * p3.pos;
-		p4.pos = qm * p4.pos;
+		// // Now apply the matrix on them
+		// p1.pos = qm * p1.pos;
+		// p2.pos = qm * p2.pos;
+		// p3.pos = qm * p3.pos;
+		// p4.pos = qm * p4.pos;
 
-		// And we're done!
-		spriter->render_container->zvertices.push_back({p1, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p2, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p3, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
-		spriter->render_container->zvertices.push_back({p4, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		// // And we're done!
+		// spriter->render_container->zvertices.push_back({p1, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		// spriter->render_container->zvertices.push_back({p2, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		// spriter->render_container->zvertices.push_back({p3, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		// spriter->render_container->zvertices.push_back({p4, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
 
-		spriter->render_microz += 0.01;
+		// spriter->render_microz += 0.01;
 	}
 }
 
@@ -345,16 +345,16 @@ void DORSpriter::render(RendererGL *container, mat4& cur_model, vec4& cur_color,
 	resetChanged();
 }
 
-void DORSpriter::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
-	if (!visible || !cur_visible || !instance) return;
-	currently_processing = this;
-	render_z = true;
-	render_model = cur_model * model;
-	render_color = cur_color * color;
-	render_container = container; render_microz = 0;
-	instance->render();
-	resetChanged();
-}
+// void DORSpriter::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
+// 	if (!visible || !cur_visible || !instance) return;
+// 	currently_processing = this;
+// 	render_z = true;
+// 	render_model = cur_model * model;
+// 	render_color = cur_color * color;
+// 	render_container = container; render_microz = 0;
+// 	instance->render();
+// 	resetChanged();
+// }
 
 void DORSpriter::sortZ(RendererGL *container, mat4& cur_model) {
 	mat4 vmodel = cur_model * model;

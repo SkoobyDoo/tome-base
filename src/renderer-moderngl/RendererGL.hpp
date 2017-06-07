@@ -27,15 +27,15 @@
 
 class RendererGL;
 
-struct sortable_vertex {
-	vertex v;
-	array<GLuint, DO_MAX_TEX> tex;
-	shader_type *shader;
-	SubRenderer *sub;
-	DisplayObject *tick;
+// struct sortable_vertex {
+// 	vertex v;
+// 	array<GLuint, DO_MAX_TEX> tex;
+// 	shader_type *shader;
+// 	SubRenderer *sub;
+// 	DisplayObject *tick;
 	
-	bool operator<(const sortable_vertex &i) const;
-};
+// 	bool operator<(const sortable_vertex &i) const;
+// };
 
 /****************************************************************************
  ** Display lists contain a VBO, texture, ... and a list of vertices to be
@@ -44,11 +44,13 @@ struct sortable_vertex {
 class DisplayList {
 public:
 	int used = 0;
-	GLuint vbo = 0;
+	GLuint vbo[3] = {0,0,0};
 	array<GLuint, DO_MAX_TEX> tex{{0,0,0}};
 	shader_type *shader = NULL;
-	// DGDGDGDG: make two kind of vertex, the extended & non expanded one and thus two vectors. RendererGL should be able to detect abd pul lthe correct one
+	uint8_t data_kind = VERTEX_BASE;
 	vector<vertex> list;
+	vector<vertex_kind_info> list_kind_info;
+	vector<vertex_map_info> list_map_info;
 	SubRenderer *sub = NULL;
 	DisplayObject *tick = NULL;
 
@@ -57,7 +59,7 @@ public:
 };
 
 extern void stopDisplayList();
-extern DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader);
+extern DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader, uint8_t data_kind);
 extern DisplayList* getDisplayList(RendererGL *container);
 
 /****************************************************************************
@@ -104,7 +106,7 @@ protected:
 
 public:
 	vector<DORFlatSortable*> sorted_dos;
-	vector<sortable_vertex> zvertices;
+	// vector<sortable_vertex> zvertices;
 
 	RendererGL(VBOMode mode);
 	virtual ~RendererGL();
