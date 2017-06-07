@@ -1475,7 +1475,6 @@ Hard to tell if that really helped its former owner, but it's clear that the ski
 	use_no_energy = true,
 	combat = {
 		range = 10,
-		physspeed = 0.8,
 	},
 	wielder = {
 		movement_speed = 0.2,
