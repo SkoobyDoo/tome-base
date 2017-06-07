@@ -74,7 +74,7 @@ void View::onScreenResize(int w, int h) {
 
 	switch (mode) {
 		case ViewMode::ORTHO:
-			setOrthoView(w, h);
+			setOrthoView(w / screen_zoom, h / screen_zoom);
 			break;
 		default:
 			break;
