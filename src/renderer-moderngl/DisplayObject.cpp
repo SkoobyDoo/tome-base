@@ -554,6 +554,32 @@ int DORVertexes::addQuad(vertex v1, vertex v2, vertex v3, vertex v4) {
 	return 0;
 }
 
+int DORVertexes::addQuadKindInfo(float v1, float v2, float v3, float v4) {
+	int size = vertices_kind_info.size();
+	if (size + 4 >= vertices_kind_info.capacity()) {vertices_kind_info.reserve(vertices_kind_info.capacity() * 2);}
+
+	vertices_kind_info.push_back({v1});
+	vertices_kind_info.push_back({v2});
+	vertices_kind_info.push_back({v3});
+	vertices_kind_info.push_back({v4});
+
+	setChanged();
+	return 0;
+}
+
+int DORVertexes::addQuadMapInfo(vertex_map_info v1, vertex_map_info v2, vertex_map_info v3, vertex_map_info v4) {
+	int size = vertices_map_info.size();
+	if (size + 4 >= vertices_map_info.capacity()) {vertices_map_info.reserve(vertices_map_info.capacity() * 2);}
+
+	vertices_map_info.push_back(v1);
+	vertices_map_info.push_back(v2);
+	vertices_map_info.push_back(v3);
+	vertices_map_info.push_back(v4);
+
+	setChanged();
+	return 0;
+}
+
 int DORVertexes::addQuadPie(
 		float x1, float y1, float x2, float y2,
 		float u1, float v1, float u2, float v2,

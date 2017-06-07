@@ -255,6 +255,8 @@ public:
 		float r, float g, float b, float a
 	);
 	int addQuad(vertex v1, vertex v2, vertex v3, vertex v4);
+	int addQuadKindInfo(float v1, float v2, float v3, float v4);
+	int addQuadMapInfo(vertex_map_info v1, vertex_map_info v2, vertex_map_info v3, vertex_map_info v4);
 	void loadObj(const string &filename);
 	GLuint getTexture(int id) { return tex[id]; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
