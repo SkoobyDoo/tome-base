@@ -131,6 +131,23 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			vertices.push_back({{x1, y1, 0, 1},	{d->s1, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 			vertices.push_back({{x0, y1, 0, 1},	{d->s0, d->t1}, {r, g, b, a}, {style == FONT_STYLE_BOLD, 0, 0, 0}});
 
+			// Much trickery, such dev
+			if (style == FONT_STYLE_UNDERLINED) {
+				ftgl::texture_glyph_t *ul = getGlyph('_');
+				if (ul) {
+					float x0  = bx + x;
+					float x1  = x0 + d->advance_x * scale;
+					float y0 = by + (font->font->ascender * 1.05 - ul->offset_y) * scale;
+					float y1 = y0 + (ul->height) * scale;
+					float s2 = (ul->s1 - ul->s0) / 1.5;
+
+					vertices.push_back({{x0, y0, 0, 1},	{ul->s0 + s2, ul->t0}, {r, g, b, a}, {0, 0, 0, 0}});
+					vertices.push_back({{x1, y0, 0, 1},	{ul->s1 - s2, ul->t0}, {r, g, b, a}, {0, 0, 0, 0}});
+					vertices.push_back({{x1, y1, 0, 1},	{ul->s1 - s2, ul->t1}, {r, g, b, a}, {0, 0, 0, 0}});
+					vertices.push_back({{x0, y1, 0, 1},	{ul->s0 + s2, ul->t1}, {r, g, b, a}, {0, 0, 0, 0}});
+				}
+			}			
+
 			x += d->advance_x * scale * (style == FONT_STYLE_BOLD ? 1.1 : 1);
 		}
 	}

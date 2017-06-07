@@ -46,7 +46,7 @@ class DORPhysic;
 
 const int DO_MAX_TEX = 3;
 
-typedef struct {
+struct vertex {
 	vec4 pos;
 	vec2 tex;
 	vec4 color;
@@ -57,7 +57,7 @@ typedef struct {
 	vec4 texcoords;
 	vec4 mapcoords;
  	float kind;
-} vertex;
+};
 
 struct recomputematrix {
 	mat4 model;
