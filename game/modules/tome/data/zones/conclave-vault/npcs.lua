@@ -108,6 +108,7 @@ newEntity{ base = "BASE_NPC_OGRE", define_as = "OGRE_SENTRY",
 	max_life = resolvers.rngavg(110,120), life_rating = 13,
 	blind_immune = 1,
 
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{{type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, autoreq=true} },
 	resolvers.talents{
 		[Talents.T_STUNNING_BLOW]={base=3, every=4, max=8},
@@ -151,8 +152,9 @@ newEntity{ base = "BASE_NPC_OGRE", define_as = "HEALER_ASTELRID",
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, TOOL=1 },
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{
-		{defined="ASTELRID_CLUBSTAFF"},
+		{defined="ASTELRID_CLUBSTAFF", replace_unique={type="weapon", subtype="greatmaul", tome_drops="boss", forbid_power_source={antimagic=true}}, autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="head", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="feet", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},

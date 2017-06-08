@@ -98,17 +98,23 @@ function _M:generate()
 	self.key:addCommands{
 		_LEFT = function() self.cursor = util.bound(self.cursor - 1, 1, #self.tmp+1) self.scroll = util.scroll(self.cursor, self.scroll, self.max_display) self:updateText() end,
 		_RIGHT = function() self.cursor = util.bound(self.cursor + 1, 1, #self.tmp+1) self.scroll = util.scroll(self.cursor, self.scroll, self.max_display) self:updateText() end,
-		_DELETE = function()
-			if self.cursor <= #self.tmp then
-				table.remove(self.tmp, self.cursor)
+		_BACKSPACE = function()
+			if self.cursor > 1 then
+				local st = core.key.modState("ctrl") and 1 or self.cursor - 1
+				for i = self.cursor - 1, st, -1 do
+					table.remove(self.tmp, i)
+					self.cursor = self.cursor - 1
+					self.scroll = util.scroll(self.cursor, self.scroll, self.max_display)
+				end
 				self:updateText()
 			end
 		end,
-		_BACKSPACE = function()
-			if self.cursor > 1 then
-				table.remove(self.tmp, self.cursor - 1)
-				self.cursor = self.cursor - 1
-				self.scroll = util.scroll(self.cursor, self.scroll, self.max_display)
+		_DELETE = function()
+			if self.cursor <= #self.tmp then
+				local num = core.key.modState("ctrl") and #self.tmp - self.cursor + 1 or 1
+				for i = 1, num do
+					table.remove(self.tmp, self.cursor)
+				end
 				self:updateText()
 			end
 		end,

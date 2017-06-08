@@ -220,6 +220,10 @@ newBirthDescriptor{
 	copy = {
 		forbid_arcane = 2,
 		max_life = 90,
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", subtype="mindstar"},
+			OFFHAND = {type="weapon", subtype="mindstar"},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
@@ -230,6 +234,11 @@ newBirthDescriptor{
 		life_rating = -3,
 	},
 }
+
+local shield_special = function(e) -- allows any object with shield combat
+	local combat = e.shield_normal_combat and e.combat or e.special_combat
+	return combat and combat.block
+end
 
 newBirthDescriptor{
 	type = "subclass",
@@ -275,6 +284,10 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 110,
+		resolvers.auto_equip_filters{
+			MAINHAND = {special=shield_special},
+			OFFHAND = {special=shield_special}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},

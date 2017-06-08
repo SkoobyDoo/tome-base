@@ -1667,9 +1667,10 @@ function _M:reactionToward(target, no_reflection)
 	if rsrc == target and self ~= target and target:attr("encased_in_ice") then return -50 end  -- summons shouldn't hate each other and shouldn't hate summoner more than enemies
 
 	-- Neverending hatred
-	if rsrc:attr("hates_everybody") and rtarget ~= rsrc then return -100 end
-	if rsrc:attr("hates_arcane") and rtarget:attr("has_arcane_knowledge") and not rtarget:attr("forbid_arcane") then return -100 end
-	if rsrc:attr("hates_antimagic") and rtarget:attr("forbid_arcane") then return -100 end
+	if rtarget.attr and rtarget:attr("hated_by_everybody") and rtarget ~= rsrc then return -100 end
+	if rsrc.attr and rsrc:attr("hates_everybody") and rtarget ~= rsrc then return -100 end
+	if rsrc.attr and rtarget.attr and rsrc:attr("hates_arcane") and rtarget:attr("has_arcane_knowledge") and not rtarget:attr("forbid_arcane") then return -100 end
+	if rsrc.attr and rtarget.attr and rsrc:attr("hates_antimagic") and rtarget:attr("forbid_arcane") then return -100 end
 
 	local v = engine.Actor.reactionToward(rsrc, rtarget)
 
@@ -3311,7 +3312,7 @@ function _M:resetToFull()
 				self.mana = self:getMaxMana()
 			end
 		else
-			if res_def.invert_values then
+			if res_def.invert_values or res_def.switch_direction then
 				self[res_def.short_name] = self:check(res_def.getMinFunction) or self[res_def.short_name] or res_def.min
 			else
 				self[res_def.short_name] = self:check(res_def.getMaxFunction) or self[res_def.short_name] or res_def.max
@@ -3322,6 +3323,15 @@ end
 
 -- Level up talents to match actor level
 function _M:resolveLevelTalents()
+	-- learn any talents previously set to level up
+	if self.learn_tids then
+		for tid, lev in pairs(self.learn_tids) do
+			if self:getTalentLevelRaw(tid) < lev then
+				self:learnTalent(tid, true, lev - self:getTalentLevelRaw(tid))
+			end
+		end
+		self.learn_tids = nil
+	end
 	if not self.start_level or not self._levelup_talents then return end
 
 	local maxfact = 1  -- Balancing parameter for levels > 50: maxtalent level = actorlevel/50*maxfact * normal max talent level
@@ -4229,13 +4239,97 @@ end
 
 --- Checks if the given item should respect its slot_forbid value
 -- @param o the item to check
--- @param in_inven the inventory id in which the item is worn or tries to be worn
+-- @param in_inven_id the inventory id in which the item is worn or tries to be worn
 function _M:slotForbidCheck(o, in_inven_id)
 	in_inven_id = self:getInven(in_inven_id).id
-	if self:attr("allow_mainhand_2h_in_1h") and in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" then
+	if in_inven_id == self.INVEN_MAINHAND and o.slot_forbid == "OFFHAND" and self:attr("allow_mainhand_2h_in_1h") then
 		return false
 	end
 	return true
+end
+
+--- Try to wear objects carried in main inventory, looking for the best spot to wear each
+-- @param force: force retrying wearing of equipment (if new objects have been added)
+-- @param ... arguments passed to obj:wornLocations for each object (weight_fn, filter_field, no_type_check)
+-- 	generally, an object is only replaced if the replacement passes the defined filter or matches its type/subtype
+function _M:wearAllInventory(force, ...)
+	local MainInven, o = self:getInven(self.INVEN_INVEN)
+	if MainInven and (force or not MainInven._no_equip_objects) then
+		local party = game.party:hasMember(self)
+		for i = #MainInven, 1, -1 do
+			if not o then print("[Actor:wearAllInventory]", self.uid, self.name, "wearing main inventory") end
+			o = MainInven[i]
+			--print("[Actor:wearAllInventory]", self.uid, self.name, "checking", o.name, "type", o.type, o.subtype)
+			if game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
+				local locs = o:wornLocations(self, ...) -- find places to wear
+				 -- Note: won't remove slot_forbid items or auto-swap tinkers (Actor:doWear)
+				if locs then
+					o = self:removeObject(self.INVEN_INVEN, i) -- remove from main inventory
+					for j, inv in ipairs(locs) do
+						local ro, worn = inv.inv[inv.slot]
+						--print("\t\t attempting to wear", o.uid, o.name, "in", inv.inv.name, inv.slot)
+						worn = self:wearObject(o, true, false, inv.inv, inv.slot)
+						if worn then
+							print("[Actor:wearAllInventory]", self.name, self.uid, o.uid, o.name, "WORN IN", inv.inv.name, inv.slot)
+							if type(worn) == "table" then
+								print("    --- replaced:", worn.uid, worn.name)
+								self:addObject(self.INVEN_INVEN, worn)
+							end
+							if party then
+								game.logSeen(self, "%s wears %s%s.", self.name:capitalize(), o:getName({do_color=true, no_add_name=true}), type(worn) == "table" and (" (replacing %s)"):format(worn:getName({no_add_name=true})) or "")
+							end
+							break
+						end
+					end
+					-- return to main inventory if not worn
+					if not o.wielded then self:addObject(self.INVEN_INVEN, o) end
+				end
+			end
+		end
+		MainInven._no_equip_objects = true
+	end
+end
+
+--- Get updated requirements to wear an object
+-- applies known talents to modify requirements to wear an object
+-- @param o the object to test
+-- @return the new object require table
+-- @return the old object require table
+function _M:updateObjectRequirements(o)
+	local oldreq = rawget(o, "require")
+	if not oldreq then return oldreq end
+	local newreq
+	if o.subtype == "shield" and self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
+		newreq = newreq or table.clone(oldreq, true)
+		if newreq.stat and newreq.stat.str then
+			newreq.stat.cun, newreq.stat.str = newreq.stat.str, nil
+		end
+		if newreq.talent then for i, tr in ipairs(newreq.talent) do
+			if tr[1] == self.T_ARMOUR_TRAINING then
+				newreq.talent[i] = {self.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
+				break
+			end
+		end end
+	end
+	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
+		newreq = newreq or table.clone(oldreq, true)
+		if newreq.stat and newreq.stat.str then
+			newreq.stat.dex, newreq.stat.str = newreq.stat.str, nil
+		end
+		if newreq.talent then for i, tr in ipairs(newreq.talent) do
+			if tr[1] == self.T_ARMOUR_TRAINING then
+				newreq.talent[i] = {self.T_AGILE_DEFENSE, 1}
+				break
+			end
+		end end
+	end
+	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
+		newreq = newreq or table.clone(oldreq, true)
+		if newreq.stat and newreq.stat.str then
+			newreq.stat.mag, newreq.stat.str = newreq.stat.str, nil
+		end
+	end
+	return newreq or oldreq, oldreq
 end
 
 --- Can we wear this item?
@@ -4243,54 +4337,34 @@ function _M:canWearObject(o, try_slot)
 	if self:attr("forbid_arcane") and o.power_source and o.power_source.arcane then
 		return nil, "antimagic"
 	end
---	if o.power_source and o.power_source.antimagic and not self:attr("forbid_arcane") then
---		return nil, "requires antimagic"
---	end
 
-	local oldreq = nil
-	if o.subtype == "shield" and self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
-		oldreq = rawget(o, "require")
-		o.require = table.clone(oldreq or {}, true)
-		if o.require.stat and o.require.stat.str then
-			o.require.stat.cun, o.require.stat.str = o.require.stat.str, nil
-		end
-		if o.require.talent then for i, tr in ipairs(o.require.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				o.require.talent[i] = {self.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
-				break
-			end
-		end end
-	end
-	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
-		oldreq = rawget(o, "require")
-		o.require = table.clone(oldreq or {}, true)
-		if o.require.stat and o.require.stat.str then
-			o.require.stat.dex, o.require.stat.str = o.require.stat.str, nil
-		end
-		if o.require.talent then for i, tr in ipairs(o.require.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				o.require.talent[i] = {self.T_AGILE_DEFENSE, 1}
-				break
-			end
-		end end
-	end
-	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
-		oldreq = rawget(o, "require")
-		o.require = table.clone(oldreq or {}, true)
-		if o.require.stat and o.require.stat.str then
-			o.require.stat.mag, o.require.stat.str = o.require.stat.str, nil
-		end
-	end
+	local oldreq
+	o.require, oldreq = self:updateObjectRequirements(o)
 
 	local ok, reason = engine.interface.ActorInventory.canWearObject(self, o, try_slot)
-
-	if oldreq then
-		o.require = oldreq
-	end
-
+	o.require = oldreq
 	return ok, reason
 end
 
+--- search all inventories for an object (including attached tinkers)
+-- @param o: the object to look for
+-- @param fct: optional function(o, self, inven, slot, attached) to call when found
+-- @return[1] nil if not found
+-- @return[2] found inventory
+-- @return[2] found inventory slot
+-- @return[2] found object o was attacked to (if o.is_tinker is defined)
+function _M:searchAllInventories(o, fct)
+	local inv, slot, attached
+	self:inventoryApplyAll(function (inven, item, obj)
+		if obj == o or o.is_tinker and obj.tinker == o then
+			inv, slot, attached = inven, item, obj.tinker == o and obj or nil
+			--print("[Actor:searchAllInventories] found", o.name, "Inven:", inv.name or inv.id, "Slot:", slot, "tinkered to:", attached and attached.name)
+			if fct then fct(o, self, inv, slot, attached) end
+		end
+	end)
+	return inv, slot, attached
+end
+		
 function _M:lastLearntTalentsMax(what)
 	if self:attr("infinite_respec") then return 99999 end
 	return what == "generic" and 3 or 4
@@ -4811,6 +4885,10 @@ function _M:getFeedbackDecay(mult)
 	end
 end
 
+function _M:alterTalentCost(t, rname, cost)
+	return cost
+end
+
 --- Called before a talent is used
 -- Check the actor can cast it
 -- @param ab the talent (not the id, the table)
@@ -4879,6 +4957,7 @@ function _M:preUseTalent(ab, silent, fake)
 				cost = ab[res_def.sustain_prop]
 				if cost then
 					cost = util.getval(cost, self, ab) or 0
+					cost = self:alterTalentCost(ab, res_def.sustain_prop, cost)
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
 					if cost ~= 0 and self[res_def.minname] and self[res_def.maxname] and self[res_def.minname] + cost > self[res_def.maxname] then
 						if not silent then game.logPlayer(self, "You %s %s to activate %s.", res_def.invert_values and "have too much committed" or "do not have enough uncommitted", res_def.name, ab.name) end
@@ -4908,6 +4987,7 @@ function _M:preUseTalent(ab, silent, fake)
 			cost = ab[rname]
 			if cost then
 				cost = (util.getval(cost, self, ab) or 0) * (util.getval(res_def.cost_factor, self, ab, true) or 1)
+				cost = self:alterTalentCost(ab, rname, cost)
 				if cost ~= 0 then
 					rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
 					if res_def.invert_values then
@@ -5374,6 +5454,7 @@ function _M:postUseTalent(ab, ret, silent)
 				cost = ab[res_def.sustain_prop]
 				if cost then
 					cost = (util.getval(cost, self, ab) or 0)
+					cost = self:alterTalentCost(ab, res_def.sustain_prop, cost)
 					if cost ~= 0 then
 						trigger = true
 						ret._applied_costs[res_def.short_name] = cost
@@ -5388,6 +5469,7 @@ function _M:postUseTalent(ab, ret, silent)
 				cost = ab[res_def.drain_prop]
 				if cost then
 					cost = util.getval(cost, self, ab) or 0
+					cost = self:alterTalentCost(ab, res_def.drain_prop, cost)
 					if cost ~= 0 then
 						trigger = true
 						ret._applied_drains[res_def.short_name] = cost
@@ -5472,6 +5554,7 @@ function _M:postUseTalent(ab, ret, silent)
 		for res, res_def in ipairs(_M.resources_def) do
 			rname = res_def.short_name
 			cost = ab[rname] and util.getval(ab[rname], self, ab) or 0
+			cost = self:alterTalentCost(ab, rname, cost)
 			if cost ~= 0 then
 				trigger = true
 				cost = cost * (util.getval(res_def.cost_factor, self, ab) or 1)
@@ -5716,17 +5799,20 @@ function _M:getTalentFullDescription(t, addlevel, config, fake_mastery)
 			if not res_def.hidden_resource then
 				-- list resource cost
 				local cost = t[res_def.short_name] and util.getval(t[res_def.short_name], self, t) or 0
+				cost = self:alterTalentCost(t, res_def.short_name, cost)
 				if cost ~= 0 then
 					cost = cost * (util.getval(res_def.cost_factor, self, t) or 1)
-					d:add({"color",0x6f,0xff,0x83}, ("%s cost: "):format(res_def.name:capitalize()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
+					d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(res_def.name:capitalize(), cost >= 0 and "cost" or "gain"), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
 				end
 				-- list sustain cost
 				cost = t[res_def.sustain_prop] and util.getval(t[res_def.sustain_prop], self, t) or 0
+				cost = self:alterTalentCost(t, res_def.sustain_prop, cost)
 				if cost ~= 0 then
 					d:add({"color",0x6f,0xff,0x83}, ("Sustain %s cost: "):format(res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(cost, .1), true)
 				end
 				-- list drain cost
 				cost = t[res_def.drain_prop] and util.getval(t[res_def.drain_prop], self, t) or 0
+				cost = self:alterTalentCost(t, res_def.drain_prop, cost)
 				if cost ~= 0 then
 					if res_def.invert_values then
 						d:add({"color",0x6f,0xff,0x83}, ("%s %s: "):format(cost > 0 and "Generates" or "Removes", res_def.name:lower()), res_def.color or {"color",0xff,0xa8,0xa8}, ""..math.round(math.abs(cost), .1), true)
@@ -6659,6 +6745,7 @@ function _M:addedToLevel(level, x, y)
 						if m and m:canMove(x, y) then
 							if filter.no_subescort then m.make_escort = nil end
 							if self._empty_drops_escort then m:emptyDrops() end
+							m.faction = m.hard_faction or game.zone.special_level_faction or self.faction
 							game.zone:addEntity(game.level, m, "actor", x, y)
 							if filter.post then filter.post(self, m) end
 						elseif m then m:removed() end
@@ -6903,8 +6990,8 @@ end
 
 function _M:canUseTinker(tinker)
 	if not tinker.is_tinker then return nil, "not an attachable item" end
-	if not self.can_tinker then return nil, "can not use attachements" end
-	if not self.can_tinker[tinker.is_tinker] then return nil, "can not use attachements of this type" end
+	if not self.can_tinker then return nil, "can not use attachments" end
+	if not self.can_tinker[tinker.is_tinker] then return nil, "can not use attachments of this type" end
 	if tinker.tinker_allow_attach and tinker:tinker_allow_attach() then return nil, tinker:tinker_allow_attach() end
 	return true
 end

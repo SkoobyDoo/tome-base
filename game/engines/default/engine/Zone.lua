@@ -263,11 +263,30 @@ function _M:computeRarities(type, list, level, filter, add_level, rarity_field)
 end
 
 --- Checks an entity against a filter
-function _M:checkFilter(e, filter, type)
-	if e.unique and game.uniques[e.__CLASSNAME.."/"..e.unique] then print("refused unique", e.name, e.__CLASSNAME.."/"..e.unique) return false end
+--	@param e: the entity to check
+--	@param filter: the filter to use, a table specifying the checks to perform on the entity
+--	@param typ: the type of entity, one of "actor", "projectie", "object", "trap", "terrain", "grid", "trigger"
+--	@return true if the entity passes all of the filter checks
+--	filter fields interpreted:
+--		allow_uniques: don't reject existing uniques
+--		unique: e[unique] must be defined
+--		ignore: a filter specifying what entities to be specifically rejected
+--		type: e[type] must match exactly
+--		subtype: e[subtype] must match exactly
+--		name: e[name] must match exactly
+--		define_as: e.define_as must match exactly
+--		properties: table of keys, e[key] MUST BE defined for all
+--		not_properties: table of keys, e[key] MUST NOT BE defined for all
+--		special: function(e, filter) that must return true
+--		max_ood: perform an Out of Depth check (requires resolvers.current_level + max_ood > e.level_range[1])
+--	Rejects existing uniques
+--	If it is defined, e.checkFilter(filter) must return true
+--	If it is defined, self:check_filter(e, filter, typ) must return true
+function _M:checkFilter(e, filter, typ)
+	if e.unique and not (filter and filter.allow_uniques) and game.uniques[e.__CLASSNAME.."/"..e.unique] then print("refused unique", e.name, e.__CLASSNAME.."/"..e.unique) return false end
 
 	if not filter then return true end
-	if filter.ignore and self:checkFilter(e, filter.ignore, type) then return false end
+	if filter.ignore and self:checkFilter(e, filter.ignore, typ) then return false end
 
 	print("Checking filter", filter.type, filter.subtype, "::", e.type,e.subtype,e.name)
 	if filter.type and filter.type ~= e.type then return false end
@@ -282,8 +301,8 @@ function _M:checkFilter(e, filter, type)
 		for i = 1, #filter.not_properties do if e[filter.not_properties[i]] then return false end end
 	end
 	if e.checkFilter and not e:checkFilter(filter) then return false end
-	if filter.special and not filter.special(e) then return false end
-	if self.check_filter and not self:check_filter(e, filter, type) then return false end
+	if filter.special and not filter.special(e, filter) then return false end
+	if self.check_filter and not self:check_filter(e, filter, typ) then return false end
 	if filter.max_ood and resolvers.current_level and e.level_range and resolvers.current_level + filter.max_ood < e.level_range[1] then print("Refused max_ood", e.name, e.level_range[1]) return false end
 
 	if e.unique then print("accepted unique", e.name, e.__CLASSNAME.."/"..e.unique) end
@@ -291,18 +310,14 @@ function _M:checkFilter(e, filter, type)
 	return true
 end
 
---- Return a string describing the filter
-function _M:filterToString(filter)
-	local ps = ""
-	for what, check in pairs(filter) do
-		ps = ps .. what.."="..check..","
-	end
-	return ps
+--- Return a string summary of a filter
+function _M:filterToString(filter, ...)
+	return string.fromTable(filter, ...)
 end
 
 --- Picks an entity from a computed probability list
 function _M:pickEntity(list)
-	if #list == 0 then return nil end
+	if not list or #list == 0 then return nil end
 	local r = rng.range(1, list.total)
 	for i = 1, #list do
 --		print("test", r, ":=:", list[i].genprob)
@@ -351,10 +366,13 @@ function _M:getEntities(level, type)
 	return list
 end
 
---- Picks and resolve an entity
+--- Picks and resolves an entity
 -- @param level a Level object to generate for
--- @param type one of "object" "terrain" "actor" "trap"
--- @param filter a filter table
+-- @param type one of "object" "terrain" "actor" "trap" or a table of entities with __real_type defined
+-- @param filter a filter table with optional fields:
+--		base_list: an entities list (table) or a specifier to load the entities list from a file, format: <classname>:<file path> (takes priority over type)
+--		special_rarity: alternate field for entity rarity field (default 'rarity')
+--		nb_tries: maximum number of attempts to randomly pick the entity from the list
 -- @param force_level if not nil forces the current level for resolvers to this one
 -- @param prob_filter if true a new probability list based on this filter will be generated, ensuring to find objects better but at a slightly slower cost (maybe)
 -- @return[1] nil if a filter was given an nothing found
@@ -367,10 +385,15 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 	if filter == nil then filter = util.getval(self.default_filter, self, level, type) end
 	if filter and self.alter_filter then filter = util.getval(self.alter_filter, self, level, type, filter) end
 
+	local list
+	if _G.type(type) == "table" then -- use the provided list
+		list = type
+		type = type.__real_type or ""
+	end
 	local e
 	-- No probability list, use the default one and apply filter
 	if not prob_filter then
-		local list = self:getEntities(level, type)
+		list = list or self:getEntities(level, type)
 		local tries = filter and filter.nb_tries or 500
 		-- CRUDE ! Brute force ! Make me smarter !
 		while tries > 0 do
@@ -381,7 +404,7 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 		if tries == 0 then return nil end
 	-- Generate a specific probability list, slower to generate but no need to "try and be lucky"
 	elseif filter then
-		local base_list = nil
+		local base_list = list
 		if filter.base_list then
 			if _G.type(filter.base_list) == "table" then base_list = filter.base_list
 			else
@@ -390,17 +413,21 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 					base_list = require(class):loadList(file)
 				end
 			end
+			type = base_list and base_list.__real_type or type
+		elseif base_list then -- type = base_list.__real_type
 		elseif type == "actor" then base_list = self.npc_list
 		elseif type == "object" then base_list = self.object_list
 		elseif type == "trap" then base_list = self.trap_list
-		else base_list = self:getEntities(level, type) if not base_list then return nil end end
+		elseif not base_list then 
+			base_list = self:getEntities(level, type)
+		end
+		if not base_list then return nil end
 		local list = self:computeRarities(type, base_list, level, function(e) return self:checkFilter(e, filter, type) end, filter.add_levels, filter.special_rarity)
 		e = self:pickEntity(list)
 		print("[MAKE ENTITY] prob list generation", e and e.name, "from list size", #list)
 		if not e then return nil end
-	-- No filter
-	else
-		local list = self:getEntities(level, type)
+	else -- No filter
+		list = list or self:getEntities(level, type)
 		local tries = filter and filter.nb_tries or 50 -- A little crude here too but we only check 50 times, this is simply to prevent duplicate uniques
 		while tries > 0 do
 			e = self:pickEntity(list)
@@ -420,9 +447,20 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 	return e
 end
 
---- Find a given entity and resolve it
--- @return[1] nil if a filter was given an nothing found
+--- Find a specific entity and resolve it
+-- @param level a Level object to generate for
+-- @param type defines where to find the entity definition:
+--		a table is searched directly as a list of entities
+--		"object" -- look in zone.object_list
+--		"terrain", "grid", "trigger" -- look in zone.grid_list
+--		"actor" -- look in zone.npc_list
+--		"trap" -- look in zone.trap_list
+--		other strings -- specifier to load the entities list from a file, format: <classname>:<file path>
+-- @param name the name of the entity to find (must match entity.define_as exactly)
+-- @param force_unique if not set, duplicate uniques will not be generated
+-- @return[1] nil if the entity could not be found or was a pre-existing unique
 -- @return[2] the fully resolved entity, ready to be used on a level
+-- @return[2] boolean true if the entity was a pre-existing unique
 function _M:makeEntityByName(level, type, name, force_unique)
 	resolvers.current_level = self.base_level + level.level - 1
 
@@ -432,7 +470,16 @@ function _M:makeEntityByName(level, type, name, force_unique)
 	elseif type == "object" then e = self.object_list[name]
 	elseif type == "grid" or type == "terrain" or type == "trigger" then e = self.grid_list[name]
 	elseif type == "trap" then e = self.trap_list[name]
+	else
+		local base_list
+		local _, _, class, file = type:find("(.*):(.*)")
+		if class and file then
+			base_list = require(class):loadList(file)
+			type = base_list.__real_type or type
+		end
+		e = base_list and base_list[name]
 	end
+	
 	if not e then return nil end
 
 	local forced = false
@@ -679,17 +726,18 @@ function _M:finishEntity(level, type, e, ego_filter)
 end
 
 --- Do the various stuff needed to setup an entity on the level
--- Grids do not really need that, this is mostly done for traps, objects and actors<br/>
+-- Grids do not really need this, it is mostly done for traps, objects and actors<br/>
 -- This will do all the correct initializations and setup required
--- @param level the level on which to add the entity
--- @param e the entity to add
--- @param typ the type of entity, one of "actor", "object", "trap" or "terrain"
--- @param x the coordinates where to add it. This CAN be null in which case it wont be added to the map
--- @param y the coordinates where to add it. This CAN be null in which case it wont be added to the map
--- @param no_added have we added it
+-- @param level: the level on which to add the entity
+-- @param e: the entity to add
+-- @param typ: the type of entity, one of "actor", "projectile", "object", "trap", "terrain", "grid", "trigger"
+-- @param x:  x coordinate. This CAN be null in which case it wont be added to the map
+-- @param y: y coordinate.  This CAN be null in which case it wont be added to the map
+-- @param no_added: set true to prevent calling e:added()
+--	checks e.addedToLevel then e.on_added after adding the entity
 function _M:addEntity(level, e, typ, x, y, no_added)
 	if typ == "actor" then
-		-- We are additing it, this means there is no old position
+		-- We are adding it, this means there is no old position
 		e.x = nil
 		e.y = nil
 		if x and y then e:move(x, y, true) end
@@ -702,7 +750,7 @@ function _M:addEntity(level, e, typ, x, y, no_added)
 			e._actor_adjust_level_applied = true
 		end
 	elseif typ == "projectile" then
-		-- We are additing it, this means there is no old position
+		-- We are adding it, this means there is no old position
 		e.x = nil
 		e.y = nil
 		if x and y then e:move(x, y, true) end

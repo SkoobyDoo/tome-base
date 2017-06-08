@@ -20,8 +20,8 @@
 -- Find a random spot
 local x, y = game.state:findEventGrid(level)
 if not x then return false end
-print("placing sub-vault at", x, y)
 local id = "sub-vault"..game.turn.."-"..rng.range(1,9999)
+print("[EVENT] Placing event", id, "at", x, y)
 
 local changer = function(id)
 	local grid_list = table.clone(game.zone.grid_list)
@@ -72,9 +72,9 @@ local changer = function(id)
 		ambient_music = game.zone.ambient_music,
 		reload_lists = false,
 		persistent = "zone",
---		_max_level_generation_count = 2,
-		min_material_level = game.zone.min_material_level,
-		max_material_level = game.zone.max_material_level,
+--		_max_level_generation_count = 5,
+		min_material_level = util.getval(game.zone.min_material_level),
+		max_material_level = util.getval(game.zone.max_material_level),
 		no_worldport = game.zone.no_worldport,
 		generator =  {
 			map = table.merge(basemap, {
@@ -110,9 +110,11 @@ end
 
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
 g.name = "hidden vault"
+g.always_remember = true
 g.desc = [[Crumbling stairs lead down to something.]]
 g.show_tooltip = true
 g.display='>' g.color_r=0 g.color_g=0 g.color_b=255 g.notice = true
+g.special_minimap = colors.VIOLET
 g.change_level=1 g.change_zone=id g.glow=true
 g:removeAllMOs()
 if engine.Map.tiles.nicer_tiles then
@@ -124,19 +126,17 @@ g:altered()
 g:initGlow()
 g.real_change = changer
 g.change_level_check = function(self) -- limit stair scumming
-	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
 	self._use_count = self._use_count - 1
 	self.name = "collapsing hidden vault"
 	if self._use_count < 1 then
 		self.change_level_check = nil
-		self.real_change = nil
 		self.change_level = nil
 		self.name = "collapsed hidden vault"
 		self.desc = [[A collapsed stairway, leading down]]
 	elseif self._use_count < 2 then
 		self.name = "nearly collapsed hidden vault"
 	end
-	self.special_minimap = colors.BLUE
+	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
 	return true
 end
 game.zone:addEntity(game.level, g, "terrain", x, y)

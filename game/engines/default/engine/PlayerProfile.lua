@@ -535,6 +535,12 @@ function _M:waitFirstAuth(timeout)
 	end
 end
 
+function _M:onAuth(fct)
+	if self.auth then fct() return end
+	self.on_auth_cb = self.on_auth_cb or {}
+	self.on_auth_cb[#self.on_auth_cb+1] = fct
+end
+
 function _M:eventAuth(e)
 	self.waiting_auth = false
 	self.connected = true
@@ -543,6 +549,8 @@ function _M:eventAuth(e)
 		self.auth = e.ok:unserialize()
 		print("[PROFILE] Main thread got authed", self.auth.name)
 		self:getConfigs("generic", function(e) self:syncOnline(e.module) end)
+		for _, fct in ipairs(self.on_auth_cb or {}) do fct() end
+		self.on_auth_cb = nil
 	else
 		self.auth_last_error = e.reason or "unknown"
 	end
@@ -604,11 +612,13 @@ end
 
 function _M:eventConnected(e)
 	if game and type(game) == "table" and game.log then game.log("#YELLOW#Connection to online server established.") end
+	print("[PlayerProfile] eventConnected")
 	self.connected = true
 end
 
 function _M:eventDisconnected(e)
 	if game and type(game) == "table" and game.log and self.connected then game.log("#YELLOW#Connection to online server lost, trying to reconnect.") end
+	print("[PlayerProfile] eventDisconnected")
 	self.connected = false
 end
 

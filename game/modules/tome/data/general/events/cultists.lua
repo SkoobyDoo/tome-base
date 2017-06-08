@@ -17,7 +17,7 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Unique
+-- Unique throughout the game
 if game.state:doneEvent(event_id) then return end
 
 local list = {}

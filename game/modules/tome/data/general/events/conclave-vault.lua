@@ -21,6 +21,7 @@
 local x, y = game.state:findEventGrid(level)
 if not x then return false end
 
+print("[EVENT] Placing event conclave-vault at", x, y)
 local Talents = require("engine.interface.ActorTalents")
 
 local skeletons = mod.class.NPC:loadList("/data/general/npcs/skeleton.lua")
