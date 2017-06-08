@@ -622,7 +622,7 @@ static int particles_get_do(lua_State *L)
 {
 	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
 	if (!lua_istable(L, 2)) {
-		lua_pushstring(L, "2nd argument is not an engine.Particles");
+		lua_pushliteral(L, "2nd argument is not an engine.Particles");
 		lua_error(L);
 		return 0;
 	}
@@ -882,31 +882,31 @@ int luaopen_particles(lua_State *L)
 {
 	auxiliar_newclass(L, "core{particles}", particles_reg);
 	luaL_openlib(L, "core.particles", particleslib, 0);
-	lua_pushstring(L, "ETERNAL");
+	lua_pushliteral(L, "ETERNAL");
 	lua_pushnumber(L, PARTICLE_ETERNAL);
 	lua_rawset(L, -3);
 
-	lua_pushstring(L, "ENGINE_LINES");
+	lua_pushliteral(L, "ENGINE_LINES");
 	lua_pushnumber(L, ENGINE_LINES);
 	lua_rawset(L, -3);
 
-	lua_pushstring(L, "ENGINE_POINTS");
+	lua_pushliteral(L, "ENGINE_POINTS");
 	lua_pushnumber(L, ENGINE_POINTS);
 	lua_rawset(L, -3);
 
-	lua_pushstring(L, "BLEND_NORMAL");
+	lua_pushliteral(L, "BLEND_NORMAL");
 	lua_pushnumber(L, BLEND_NORMAL);
 	lua_rawset(L, -3);
 
-	lua_pushstring(L, "BLEND_SHINY");
+	lua_pushliteral(L, "BLEND_SHINY");
 	lua_pushnumber(L, BLEND_SHINY);
 	lua_rawset(L, -3);
 
-	lua_pushstring(L, "BLEND_ADDITIVE");
+	lua_pushliteral(L, "BLEND_ADDITIVE");
 	lua_pushnumber(L, BLEND_ADDITIVE);
 	lua_rawset(L, -3);
 
-	lua_pushstring(L, "BLEND_MIXED");
+	lua_pushliteral(L, "BLEND_MIXED");
 	lua_pushnumber(L, BLEND_MIXED);
 	lua_rawset(L, -3);
 
@@ -947,7 +947,7 @@ void thread_particle_run(particle_thread *pt, plist *l)
 		}
 		else {
 			bool run = FALSE;
-			lua_pushstring(L, "ps");
+			lua_pushliteral(L, "ps");
 			lua_rawget(L, -2);
 			if (!lua_isnil(L, -1)) run = TRUE;
 			lua_pop(L, 1);
@@ -1004,19 +1004,19 @@ void thread_particle_init(particle_thread *pt, plist *l)
 		}
 
 		// Copy tile_w and tile_h for compatibility with old code
-		lua_pushstring(L, "engine");
+		lua_pushliteral(L, "engine");
 		lua_newtable(L);
 
-		lua_pushstring(L, "Map");
+		lua_pushliteral(L, "Map");
 		lua_newtable(L);
 
-		lua_pushstring(L, "tile_w");
-		lua_pushstring(L, "tile_w");
+		lua_pushliteral(L, "tile_w");
+		lua_pushliteral(L, "tile_w");
 		lua_gettable(L, -7);
 		tile_w = lua_tonumber(L, -1);
 		lua_settable(L, -3);
-		lua_pushstring(L, "tile_h");
-		lua_pushstring(L, "tile_h");
+		lua_pushliteral(L, "tile_h");
+		lua_pushliteral(L, "tile_h");
 		lua_gettable(L, -7);
 		tile_h = lua_tonumber(L, -1);
 		lua_settable(L, -3);
@@ -1026,7 +1026,7 @@ void thread_particle_init(particle_thread *pt, plist *l)
 
 		// The metatable which references the global space
 		lua_newtable(L);
-		lua_pushstring(L, "__index");
+		lua_pushliteral(L, "__index");
 		lua_pushvalue(L, LUA_GLOBALSINDEX);
 		lua_settable(L, -3);
 
@@ -1046,7 +1046,7 @@ void thread_particle_init(particle_thread *pt, plist *l)
 		}
 
 		// Check base size
-		lua_pushstring(L, "base_size");
+		lua_pushliteral(L, "base_size");
 		lua_gettable(L, -7);
 		base_size = lua_tonumber(L, -1);
 		lua_pop(L, 1);
@@ -1082,23 +1082,23 @@ void thread_particle_init(particle_thread *pt, plist *l)
 	// Grab all parameters
 	lua_pushvalue(L, 1);
 
-	lua_pushstring(L, "system_rotation");
+	lua_pushliteral(L, "system_rotation");
 	lua_gettable(L, -2);
 	ps->rotate = lua_tonumber(L, -1); lua_pop(L, 1);
 
-	lua_pushstring(L, "system_rotationv");
+	lua_pushliteral(L, "system_rotationv");
 	lua_gettable(L, -2);
 	ps->rotate_v = lua_tonumber(L, -1); lua_pop(L, 1);
 
-	lua_pushstring(L, "engine");
+	lua_pushliteral(L, "engine");
 	lua_gettable(L, -2);
 	ps->engine = lua_tonumber(L, -1); lua_pop(L, 1);
 
-	lua_pushstring(L, "blend_mode");
+	lua_pushliteral(L, "blend_mode");
 	lua_gettable(L, -2);
 	ps->blend_mode = lua_tonumber(L, -1); lua_pop(L, 1);
 
-	lua_pushstring(L, "generator");
+	lua_pushliteral(L, "generator");
 	lua_gettable(L, -2);
 	if (lua_isnil(L, -1))
 	{
@@ -1117,7 +1117,7 @@ void thread_particle_init(particle_thread *pt, plist *l)
 
 	if (l->generator_ref == LUA_NOREF)
 	{
-		lua_pushstring(L, "base");
+		lua_pushliteral(L, "base");
 		lua_gettable(L, -2);
 		ps->base = (float)lua_tonumber(L, -1);
 		lua_pop(L, 1);
@@ -1160,10 +1160,10 @@ void thread_particle_init(particle_thread *pt, plist *l)
 
 	// Push a special emitter
 	lua_newtable(L);
-	lua_pushstring(L, "ps");
+	lua_pushliteral(L, "ps");
 	lua_newtable(L);
 
-	lua_pushstring(L, "emit");
+	lua_pushliteral(L, "emit");
 	lua_pushlightuserdata(L, l);
 	lua_pushcclosure(L, particles_emit, 1);
 	lua_settable(L, -3);

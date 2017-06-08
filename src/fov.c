@@ -492,31 +492,31 @@ static void map_default_seen(void *m, int x, int y, int dx, int dy, int radius, 
 	if (!lua_istable(fov->L, -1)) { lua_pop(fov->L, 2); return; }
 
 	// Check if dead
-	lua_pushstring(fov->L, "dead");
+	lua_pushliteral(fov->L, "dead");
 	lua_gettable(fov->L, -2);
 	if (lua_toboolean(fov->L, -1)) { lua_pop(fov->L, 3); return; }
 	lua_pop(fov->L, 1);
 
 	// Set sqdist in the actor for faster sorting
-	lua_pushstring(fov->L, "__sqdist");
+	lua_pushliteral(fov->L, "__sqdist");
 	lua_pushnumber(fov->L, sqdist);
 	lua_rawset(fov->L, -3);
 
 	// Make a table to hold data
 	lua_newtable(fov->L);
-	lua_pushstring(fov->L, "x");
+	lua_pushliteral(fov->L, "x");
 	lua_pushnumber(fov->L, x);
 	lua_rawset(fov->L, -3);
-	lua_pushstring(fov->L, "y");
+	lua_pushliteral(fov->L, "y");
 	lua_pushnumber(fov->L, y);
 	lua_rawset(fov->L, -3);
-	lua_pushstring(fov->L, "dx");
+	lua_pushliteral(fov->L, "dx");
 	lua_pushnumber(fov->L, dx);
 	lua_rawset(fov->L, -3);
-	lua_pushstring(fov->L, "dy");
+	lua_pushliteral(fov->L, "dy");
 	lua_pushnumber(fov->L, dy);
 	lua_rawset(fov->L, -3);
-	lua_pushstring(fov->L, "sqdist");
+	lua_pushliteral(fov->L, "sqdist");
 	lua_pushnumber(fov->L, sqdist);
 	lua_rawset(fov->L, -3);
 
@@ -532,7 +532,7 @@ static void map_default_seen(void *m, int x, int y, int dx, int dy, int radius, 
 	lua_rawset(fov->L, STACK_DIST);
 
 	// Call seen_by, if possible
-	lua_pushstring(fov->L, "updateFOV");
+	lua_pushliteral(fov->L, "updateFOV");
 	lua_gettable(fov->L, -3);
 	lua_pushvalue(fov->L, -3);
 	lua_pushvalue(fov->L, STACK_SELF);
@@ -540,7 +540,7 @@ static void map_default_seen(void *m, int x, int y, int dx, int dy, int radius, 
 	lua_call(fov->L, 3, 0);
 
 	// Call seen_by, if possible
-	lua_pushstring(fov->L, "seen_by");
+	lua_pushliteral(fov->L, "seen_by");
 	lua_gettable(fov->L, -3);
 	if (lua_isfunction(fov->L, -1))
 	{

@@ -941,16 +941,17 @@ void DORVertexes::render(RendererGL *container, mat4& cur_model, vec4& cur_color
 		vertex_model_info vm;
 		vm.model = vmodel;
 		std::fill_n(std::begin(dl->list_model_info) + startat, nb, vm);
+		for (int di = startat; di < startat + nb; di++) {
+			dest[di].color = vcolor * dest[di].color;
+		}		
 		// printf("rendering with model info\n");
 	} else {
 		// printf("rendering withOUT model info\n");
 		for (int di = startat; di < startat + nb; di++) {
 			dest[di].pos = vmodel * dest[di].pos;
+			dest[di].color = vcolor * dest[di].color;
 		}		
 	}
-	for (int di = startat; di < startat + nb; di++) {
-		dest[di].color = vcolor * dest[di].color;
-	}		
 
 	if (data_kind & VERTEX_KIND_INFO) {
 		// Make sure we do not have to reallocate each step

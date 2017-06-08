@@ -540,7 +540,7 @@ static int lua_getclasstable(lua_State *L) {
 	bool raw = lua_toboolean(L, 2);
 	luaL_getmetatable(L, classname);
 	if (!raw) {
-		lua_pushstring(L, "__index");
+		lua_pushliteral(L, "__index");
 		lua_gettable(L, -2);
 	}
 	return 1;

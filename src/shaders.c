@@ -277,7 +277,7 @@ static int program_clone(lua_State *L)
 	}
 
 	// Capture a reference to the parent so it is not GC'ed before us
-	lua_pushstring(L, "_parent_clone");
+	lua_pushliteral(L, "_parent_clone");
 	lua_pushvalue(L, 1);
 	lua_rawset(L, 4);
 
@@ -593,17 +593,17 @@ static int program_compile(lua_State *L)
 	lua_newtable(L);
 
 	// Add GC method
-	lua_pushstring(L, "__gc");
+	lua_pushliteral(L, "__gc");
 	lua_pushcfunction(L, program_free);
 	lua_rawset(L, -3);
 	
 	// New Index -- stack index 4
-	lua_pushstring(L, "__index");
+	lua_pushliteral(L, "__index");
 	lua_newtable(L);
 
 	// Grab current index table -- stack index 5
 	lua_getmetatable(L, 1);
-	lua_pushstring(L, "__index");
+	lua_pushliteral(L, "__index");
 	lua_rawget(L, -2);
 	lua_remove(L, -2);
 
@@ -632,7 +632,7 @@ static int program_compile(lua_State *L)
 			// Add a C closure to define the uniform
 			if (dummytype == GL_FLOAT) {
 				// Compute the name
-				lua_pushstring(L, "uni");
+				lua_pushliteral(L, "uni");
 				buffer[0] = toupper(buffer[0]);
 				lua_pushstring(L, buffer);
 				lua_concat(L, 2);
@@ -643,7 +643,7 @@ static int program_compile(lua_State *L)
 				lua_rawset(L, 4);
 			} else if (dummytype == GL_FLOAT_VEC2) {
 				// Compute the name
-				lua_pushstring(L, "uni");
+				lua_pushliteral(L, "uni");
 				buffer[0] = toupper(buffer[0]);
 				lua_pushstring(L, buffer);
 				lua_concat(L, 2);
@@ -654,7 +654,7 @@ static int program_compile(lua_State *L)
 				lua_rawset(L, 4);
 			} else if (dummytype == GL_FLOAT_VEC3) {
 				// Compute the name
-				lua_pushstring(L, "uni");
+				lua_pushliteral(L, "uni");
 				buffer[0] = toupper(buffer[0]);
 				lua_pushstring(L, buffer);
 				lua_concat(L, 2);
@@ -665,7 +665,7 @@ static int program_compile(lua_State *L)
 				lua_rawset(L, 4);
 			} else if (dummytype == GL_FLOAT_VEC4) {
 				// Compute the name
-				lua_pushstring(L, "uni");
+				lua_pushliteral(L, "uni");
 				buffer[0] = toupper(buffer[0]);
 				lua_pushstring(L, buffer);
 				lua_concat(L, 2);
@@ -676,7 +676,7 @@ static int program_compile(lua_State *L)
 				lua_rawset(L, 4);
 			} else if (dummytype == GL_SAMPLER_2D) {
 				// Compute the name
-				lua_pushstring(L, "uni");
+				lua_pushliteral(L, "uni");
 				buffer[0] = toupper(buffer[0]);
 				lua_pushstring(L, buffer);
 				lua_concat(L, 2);

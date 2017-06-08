@@ -289,7 +289,7 @@ int event_filter(void *userdata, SDL_Event* event)
 	if (event->type == SDL_QUIT && (current_game != LUA_NOREF))
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-		lua_pushstring(L, "onQuit");
+		lua_pushliteral(L, "onQuit");
 		lua_gettable(L, -2);
 		lua_remove(L, -2);
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
@@ -321,7 +321,7 @@ bool on_event(SDL_Event *event)
 			lastc = event->text.text[0];
 
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushstring(L, "receiveKey");
+			lua_pushliteral(L, "receiveKey");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
@@ -347,7 +347,7 @@ bool on_event(SDL_Event *event)
 		if (current_keyhandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushstring(L, "receiveKey");
+			lua_pushliteral(L, "receiveKey");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
@@ -403,7 +403,7 @@ bool on_event(SDL_Event *event)
 		if (current_mousehandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveMouse");
+			lua_pushliteral(L, "receiveMouse");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
@@ -413,21 +413,21 @@ bool on_event(SDL_Event *event)
 #if 1
 				{
 				SDL_Keymod _pKeyState = SDL_GetModState();
-				if (_pKeyState & KMOD_ALT) lua_pushstring(L, "right");
-				else lua_pushstring(L, "left");
+				if (_pKeyState & KMOD_ALT) lua_pushliteral(L, "right");
+				else lua_pushliteral(L, "left");
 				}
 #else
-				lua_pushstring(L, "left");
+				lua_pushliteral(L, "left");
 #endif
 				break;
 			case SDL_BUTTON_MIDDLE:
-				lua_pushstring(L, "middle");
+				lua_pushliteral(L, "middle");
 				break;
 			case SDL_BUTTON_RIGHT:
-				lua_pushstring(L, "right");
+				lua_pushliteral(L, "right");
 				break;
 			default:
-				lua_pushstring(L, "button");
+				lua_pushliteral(L, "button");
 				lua_pushnumber(L, event->button.button);
 				lua_concat(L, 2);
 				break;
@@ -448,15 +448,15 @@ bool on_event(SDL_Event *event)
 			for (i = 0; i <= 1; i++)
 			{
 				lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-				lua_pushstring(L, "receiveMouse");
+				lua_pushliteral(L, "receiveMouse");
 				lua_gettable(L, -2);
 				lua_remove(L, -2);
 				lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-				if (event->wheel.y > 0) lua_pushstring(L, "wheelup");
-				else if (event->wheel.y < 0) lua_pushstring(L, "wheeldown");
-				else if (event->wheel.x > 0) lua_pushstring(L, "wheelleft");
-				else if (event->wheel.x < 0) lua_pushstring(L, "wheelright");
-				else lua_pushstring(L, "wheelnone");
+				if (event->wheel.y > 0) lua_pushliteral(L, "wheelup");
+				else if (event->wheel.y < 0) lua_pushliteral(L, "wheeldown");
+				else if (event->wheel.x > 0) lua_pushliteral(L, "wheelleft");
+				else if (event->wheel.x < 0) lua_pushliteral(L, "wheelright");
+				else lua_pushliteral(L, "wheelnone");
 				lua_pushnumber(L, x / screen_zoom);
 				lua_pushnumber(L, y / screen_zoom);
 				lua_pushboolean(L, i);
@@ -471,16 +471,16 @@ bool on_event(SDL_Event *event)
 		if (current_mousehandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveMouseMotion");
+			lua_pushliteral(L, "receiveMouseMotion");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			if (event->motion.state & SDL_BUTTON(1)) lua_pushstring(L, "left");
-			else if (event->motion.state & SDL_BUTTON(2)) lua_pushstring(L, "middle");
-			else if (event->motion.state & SDL_BUTTON(3)) lua_pushstring(L, "right");
-			else if (event->motion.state & SDL_BUTTON(4)) lua_pushstring(L, "wheelup");
-			else if (event->motion.state & SDL_BUTTON(5)) lua_pushstring(L, "wheeldown");
-			else lua_pushstring(L, "none");
+			if (event->motion.state & SDL_BUTTON(1)) lua_pushliteral(L, "left");
+			else if (event->motion.state & SDL_BUTTON(2)) lua_pushliteral(L, "middle");
+			else if (event->motion.state & SDL_BUTTON(3)) lua_pushliteral(L, "right");
+			else if (event->motion.state & SDL_BUTTON(4)) lua_pushliteral(L, "wheelup");
+			else if (event->motion.state & SDL_BUTTON(5)) lua_pushliteral(L, "wheeldown");
+			else lua_pushliteral(L, "none");
 			lua_pushnumber(L, event->motion.x / screen_zoom);
 			lua_pushnumber(L, event->motion.y / screen_zoom);
 			lua_pushnumber(L, event->motion.xrel);
@@ -493,7 +493,7 @@ bool on_event(SDL_Event *event)
 		if (current_mousehandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveTouch");
+			lua_pushliteral(L, "receiveTouch");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
@@ -511,7 +511,7 @@ bool on_event(SDL_Event *event)
 		if (current_mousehandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveTouchMotion");
+			lua_pushliteral(L, "receiveTouchMotion");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
@@ -528,7 +528,7 @@ bool on_event(SDL_Event *event)
 		if (current_mousehandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveTouchGesture");
+			lua_pushliteral(L, "receiveTouchGesture");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
@@ -544,7 +544,7 @@ bool on_event(SDL_Event *event)
 		if (current_gamepadhandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
-			lua_pushstring(L, "receiveDevice");
+			lua_pushliteral(L, "receiveDevice");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
@@ -558,7 +558,7 @@ bool on_event(SDL_Event *event)
 		if (current_gamepadhandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
-			lua_pushstring(L, "receiveDevice");
+			lua_pushliteral(L, "receiveDevice");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
@@ -573,7 +573,7 @@ bool on_event(SDL_Event *event)
 		if (current_gamepadhandler != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
-			lua_pushstring(L, "receiveButton");
+			lua_pushliteral(L, "receiveButton");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
@@ -588,7 +588,7 @@ bool on_event(SDL_Event *event)
 		{
 			float v = (float)event->caxis.value / 32770;
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
-			lua_pushstring(L, "receiveAxis");
+			lua_pushliteral(L, "receiveAxis");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
@@ -610,7 +610,7 @@ void on_tick()
 	if (current_game != LUA_NOREF)
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-		lua_pushstring(L, "tick");
+		lua_pushliteral(L, "tick");
 		lua_gettable(L, -2);
 		lua_remove(L, -2);
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
@@ -650,7 +650,7 @@ static void call_draw(float nb_keyframes)
 	if (current_game != LUA_NOREF)
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-		lua_pushstring(L, "display");
+		lua_pushliteral(L, "display");
 		lua_gettable(L, -2);
 		lua_remove(L, -2);
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
@@ -712,7 +712,7 @@ void pass_command_args(int argc, char *argv[])
 	if (current_game != LUA_NOREF)
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-		lua_pushstring(L, "commandLineArgs");
+		lua_pushliteral(L, "commandLineArgs");
 		lua_gettable(L, -2);
 		lua_remove(L, -2);
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
@@ -792,7 +792,7 @@ void on_music_stop()
 	if (current_game != LUA_NOREF)
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-		lua_pushstring(L, "onMusicStop");
+		lua_pushliteral(L, "onMusicStop");
 		lua_gettable(L, -2);
 		lua_remove(L, -2);
 		if (lua_isfunction(L, -1))
@@ -1298,7 +1298,7 @@ void handleIdleTransition(int goIdle)
 		if (current_game != LUA_NOREF)
 		{
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-			lua_pushstring(L, "idling");
+			lua_pushliteral(L, "idling");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
@@ -1495,7 +1495,7 @@ int main(int argc, char *argv[])
 						if (current_game != LUA_NOREF)
 						{
 							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-							lua_pushstring(L, "onResolutionChange");
+							lua_pushliteral(L, "onResolutionChange");
 							lua_gettable(L, -2);
 							lua_remove(L, -2);
 							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
@@ -1515,7 +1515,7 @@ int main(int argc, char *argv[])
 						if (current_game != LUA_NOREF)
 						{
 							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-							lua_pushstring(L, "onWindowMoved");
+							lua_pushliteral(L, "onWindowMoved");
 							lua_gettable(L, -2);
 							lua_remove(L, -2);
 							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);

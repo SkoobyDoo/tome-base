@@ -388,7 +388,7 @@ static void tbl_basic_serialize(lua_State *L, serial_type *s, int type, int idx)
 		lua_dump(L, tbl_dump_function, s);
 		writeTblFixed(s, "\")", 2);
 	} else if (type == LUA_TTABLE) {
-		lua_pushstring(L, "__CLASSNAME");
+		lua_pushliteral(L, "__CLASSNAME");
 		lua_rawget(L, idx - 1);
 		// This is an object, register for saving later
 		if (!lua_isnil(L, -1))

@@ -309,7 +309,7 @@ void DORText::parseText() {
 					if (lua_istable(L, -1))
 					{
 						// Grab the method
-						lua_pushstring(L, "getEntityDisplayObject");
+						lua_pushliteral(L, "getEntityDisplayObject");
 						lua_gettable(L, -2);
 						// Add parameters
 						lua_pushvalue(L, -2);
@@ -357,7 +357,7 @@ void DORText::parseText() {
 						lr = r; lg = g; lb = b; la = a;
 						r = rgba.r; g = rgba.g; b = rgba.b; a = rgba.a;
 					// Hexacolor
-					} else if (codestop - (next+1) == 6){
+					} else if (codestop - (next+1) == 6) {
 						lr = r;
 						lg = g;
 						lb = b;

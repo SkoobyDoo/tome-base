@@ -323,7 +323,7 @@ void DORSpriter::onKeyframe(float nb_keyframe) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
 		lua_rawgeti(L, LUA_REGISTRYINDEX, trigger_cb_lua_ref);
 		lua_rawgeti(L, -2, getWeakSelfRef());
-		lua_pushstring(L, "animStop");
+		lua_pushliteral(L, "animStop");
 		lua_pushstring(L, instance->currentAnimationName().c_str());
 		if (lua_pcall(L, 3, 0, 0))
 		{

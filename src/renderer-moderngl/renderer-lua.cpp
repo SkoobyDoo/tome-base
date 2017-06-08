@@ -1612,7 +1612,7 @@ static int body_add_fixture(lua_State *L)
 	fixtureDef.isSensor = bool_get_lua_table(L, 2, "sensor");
 
 	// Define the filter
-	lua_pushstring(L, "filter");
+	lua_pushliteral(L, "filter");
 	lua_gettable(L, 2);
 	if (lua_istable(L, -1)) {
 		int filter_table_idx = lua_gettop(L);
@@ -1623,7 +1623,7 @@ static int body_add_fixture(lua_State *L)
 	lua_pop(L, 1);
 
 	// Define the shape
-	lua_pushstring(L, "shape");
+	lua_pushliteral(L, "shape");
 	lua_gettable(L, 2);
 	if (!lua_istable(L, -1)) {
 		lua_pushstring(L, "enablePhysic needs a shape definition");

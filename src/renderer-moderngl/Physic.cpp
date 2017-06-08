@@ -168,27 +168,27 @@ void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, uint16 mas
 		lua_newtable(L);
 
 		DisplayObject *d = static_cast<DisplayObject*>(it.fixture->GetUserData());
-		lua_pushstring(L, "d");
+		lua_pushliteral(L, "d");
 		lua_rawgeti(L, -3, d->getWeakSelfRef());
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "x");
+		lua_pushliteral(L, "x");
 		lua_pushnumber(L, it.point.x * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "y");
+		lua_pushliteral(L, "y");
 		lua_pushnumber(L, -it.point.y * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "nx");
+		lua_pushliteral(L, "nx");
 		lua_pushnumber(L, it.normal.x * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "ny");
+		lua_pushliteral(L, "ny");
 		lua_pushnumber(L, -it.normal.y * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "dist");
+		lua_pushliteral(L, "dist");
 		lua_pushnumber(L, it.dist);
 		lua_rawset(L, -3);
 
@@ -271,27 +271,27 @@ void PhysicSimulator::circleCast(float x, float y, float radius, uint16 mask_bit
 	for (auto &it : callback.hits) {
 		lua_newtable(L);
 
-		lua_pushstring(L, "d");
+		lua_pushliteral(L, "d");
 		lua_rawgeti(L, -3, it.d->getWeakSelfRef());
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "x");
+		lua_pushliteral(L, "x");
 		lua_pushnumber(L, it.point.x * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "y");
+		lua_pushliteral(L, "y");
 		lua_pushnumber(L, -it.point.y * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "nx");
+		lua_pushliteral(L, "nx");
 		lua_pushnumber(L, it.normal.x * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "ny");
+		lua_pushliteral(L, "ny");
 		lua_pushnumber(L, -it.normal.y * unit_scale);
 		lua_rawset(L, -3);
 
-		lua_pushstring(L, "dist");
+		lua_pushliteral(L, "dist");
 		lua_pushnumber(L, it.dist * unit_scale);
 		lua_rawset(L, -3);
 
