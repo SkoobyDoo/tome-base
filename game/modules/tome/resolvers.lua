@@ -33,7 +33,7 @@ local Talents = require "engine.interface.ActorTalents"
 --	Objects are added to the game when resolved (affects uniques)
 -- Additional filter fields interpreted by this resolver:
 --		_use_object: object to use (skips random generation)
---		base_list: a specifier to load the entities list from a file, format: <classname>:<file path>
+--		base_list: list of entities or specifier to load the list from a file (format: <classname>:<file path>)
 --		defined: specific name (matching obj.DEFINE_AS) for an object
 --		replace_unique (requires defined): filter to replace specific object if it cannot be generated
 --			set true to use (most) fields from the main filter
@@ -67,13 +67,16 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 		--print("[resolveObject]", e.name, "filter:", filter) table.print(filter, "\t")
 		local base_list
 		if filter.base_list then -- load the base list defined for makeEntityByName
-			local _, _, class, file = filter.base_list:find("(.*):(.*)")
-			if class and file then
-				base_list = require(class):loadList(file)
-				if base_list then
-					base_list.__real_type = "object"
-				else
-					print("[resolveObject] COULD NOT LOAD base_list:", filter.base_list)
+			if type(filter.base_list) == "table" then base_list = filter.base_list
+			else
+				local _, _, class, file = filter.base_list:find("(.*):(.*)")
+				if class and file then
+					base_list = require(class):loadList(file)
+					if base_list then
+						base_list.__real_type = "object"
+					else
+						print("[resolveObject] COULD NOT LOAD base_list:", filter.base_list)
+					end
 				end
 			end
 			filter.base_list = nil
