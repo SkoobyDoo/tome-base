@@ -347,41 +347,17 @@ void DORText::parseText() {
 						g = lg;
 						b = lb;
 						a = la;
+						goto endcolor;
 					}
 
-					lua_getglobal(L, "colors");
-					lua_pushlstring(L, next+1, codestop - (next+1));
-					lua_rawget(L, -2);
-					if (lua_istable(L, -1)) {
-						lr = r;
-						lg = g;
-						lb = b;
-						la = a;
-
-						lua_pushliteral(L, "r");
-						lua_rawget(L, -2);
-						r = lua_tonumber(L, -1) / 255;
-						lua_pushliteral(L, "g");
-						lua_rawget(L, -3);
-						g = lua_tonumber(L, -1) / 255;
-						lua_pushliteral(L, "b");
-						lua_rawget(L, -4);
-						b = lua_tonumber(L, -1) / 255;
-						lua_pop(L, 3);
-						a = 1;
-					}
-					// DGDGDGDG fix & enable me
-					// string cname(next+1, (size_t)(codestop - (next+1)));
-					// Color *color = Color::find(cname);
-					// if (color) {
-					// 	vec4 rgba = color->get1();
-					// 	lr = r; lg = g; lb = b; la = a;
-					// 	r = rgba.r; g = rgba.g; b = rgba.b; a = rgba.a;
-					// 	printf("===== %s : %f %f %f %f\n", cname.c_str(), r,g,b,a);
-					// }
+					string cname(next+1, (size_t)(codestop - (next+1)));
+					Color *color = Color::find(cname);
+					if (color) {
+						vec4 rgba = color->get1();
+						lr = r; lg = g; lb = b; la = a;
+						r = rgba.r; g = rgba.g; b = rgba.b; a = rgba.a;
 					// Hexacolor
-					else if (codestop - (next+1) == 6)
-					{
+					} else if (codestop - (next+1) == 6){
 						lr = r;
 						lg = g;
 						lb = b;
@@ -415,8 +391,8 @@ void DORText::parseText() {
 						b = (float)bh / 255;
 						a = 1;
 					}
-					lua_pop(L, 2);
 				}
+endcolor:
 
 				char old = *codestop;
 				*codestop = '\0';
