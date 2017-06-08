@@ -26,6 +26,7 @@ module(..., package.seeall, class.make)
 
 _M.verts = {}
 _M.frags = {}
+_M.geoms = {}
 _M.progsperm = {}
 _M.progs = {}
 _M.progsreset = {}
@@ -138,7 +139,7 @@ function _M:getFragment(name, def)
 	-- print("====== FRAG")
 	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
 	-- print("======")
-	self.frags[name] = core.shader.newShader(code)
+	self.frags[name] = core.shader.newShader(code, 0)
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
 end
@@ -151,9 +152,23 @@ function _M:getVertex(name, def)
 	-- print("====== VERT")
 	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
 	-- print("======")
-	self.verts[name] = core.shader.newShader(code, true)
+	self.verts[name] = core.shader.newShader(code, 1)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]
+end
+
+function _M:getGeometry(name, def)
+	if not core.shader.supportsGeometry() then return end
+	if not name then name = "default/gl" end
+	if self.geoms[name] then print("[SHADER] reusing geometry shader from /data/gfx/shaders/"..name..".geom") return self.geoms[name] end
+	local code = self:loadFile("/data/gfx/shaders/"..name..".geom")
+	code = self:rewriteShaderGeom(code, def)
+	-- print("====== GEOM")
+	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- print("======")
+	self.geoms[name] = core.shader.newShader(code, 1)
+	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".geom")
+	return self.geoms[name]
 end
 
 function _M:createProgram(def)
@@ -162,6 +177,7 @@ function _M:createProgram(def)
 	def.vert = def.vert or "default/gl"
 	if def.vert then shad:attach(self:getVertex(def.vert, def)) end
 	if def.frag then shad:attach(self:getFragment(def.frag, def)) end
+	if def.geom and core.shader.supportsGeometry() then shad:attach(self:getGeometry(def.geom, def)) end
 	if not shad:compile() then return nil end
 	shad:setName(self.name)
 	return shad
@@ -373,5 +389,13 @@ function _M:rewriteShaderVert(code, def)
 	-- print("=====vert\n")
 	-- print(code)
 	-- print("=====vert+\n")
+	return code
+end
+
+function _M:rewriteShaderGeom(code, def)
+	code = self:preprocess(code, "geom", def)
+	-- print("=====geom\n")
+	-- print(code)
+	-- print("=====geom+\n")
 	return code
 end

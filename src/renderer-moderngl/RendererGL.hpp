@@ -44,13 +44,14 @@ class RendererGL;
 class DisplayList {
 public:
 	int used = 0;
-	GLuint vbo[3] = {0,0,0};
+	GLuint vbo[4] = {0,0,0};
 	array<GLuint, DO_MAX_TEX> tex{{0,0,0}};
 	shader_type *shader = NULL;
 	uint8_t data_kind = VERTEX_BASE;
 	vector<vertex> list;
 	vector<vertex_kind_info> list_kind_info;
 	vector<vertex_map_info> list_map_info;
+	vector<vertex_model_info> list_model_info;
 	SubRenderer *sub = NULL;
 	DisplayObject *tick = NULL;
 
@@ -70,7 +71,7 @@ extern DisplayList* getDisplayList(RendererGL *container);
 // GL sort will turn on depth test and let OpenGL handle it. Transparency will bork
 enum class SortMode { NO_SORT, FAST, FULL, GL }; 
 
-enum class RenderKind { QUADS, TRIANGLES }; 
+enum class RenderKind { QUADS, TRIANGLES, POINTS }; 
 
 class RendererGL : public SubRenderer {
 	friend class DORVertexes;

@@ -395,8 +395,9 @@ static int gl_renderer_new(lua_State *L)
 		const char *ms = lua_tostring(L, 2);
 		if (!strcmp(ms, "quads")) kind = RenderKind::QUADS;
 		else if (!strcmp(ms, "triangles")) kind = RenderKind::TRIANGLES;
+		else if (!strcmp(ms, "points")) kind = RenderKind::POINTS;
 		else {
-			lua_pushstring(L, "Parameter to renderer() must be either nil or quads/triangles");
+			lua_pushstring(L, "Parameter to renderer() must be either nil or quads/triangles/points");
 			lua_error(L);
 		}
 	}
@@ -949,6 +950,14 @@ static int gl_vertexes_quad(lua_State *L)
 		if (data_kinds & VERTEX_MAP_INFO) v->addQuadMapInfo(vm[0], vm[1], vm[2], vm[3]);
 		v->setDataKinds(data_kinds);
 	}
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vertexes_model_data(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	v->setDataKinds(VERTEX_BASE + VERTEX_MODEL_INFO);
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -1891,6 +1900,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 {
 	{"__gc", gl_vertexes_free},
 	{"reserve", gl_vertexes_reserve},
+	{"enableModelData", gl_vertexes_model_data},
 	{"quad", gl_vertexes_quad},
 	{"quadPie", gl_vertexes_quad_pie},
 	{"loadObj", gl_vertexes_load_obj},

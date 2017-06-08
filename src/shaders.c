@@ -151,12 +151,15 @@ static int shader_new(lua_State *L)
 {
 	if (!shaders_active) return 0;
 	const char *code = luaL_checkstring(L, 1);
-	bool vertex = lua_toboolean(L, 2);
+	int vertex_kind = lua_tonumber(L, 2);
 
 	GLuint *s = (GLuint*)lua_newuserdata(L, sizeof(GLuint));
 	auxiliar_setclass(L, "gl{shader}", -1);
 
-	*s = loadShader(code, vertex ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
+	GLuint kind;
+	if (vertex_kind == 0) kind = GL_FRAGMENT_SHADER;
+	else if (vertex_kind == 1) kind = GL_VERTEX_SHADER;
+	*s = loadShader(code, kind);
 
 	return 1;
 }
@@ -707,6 +710,7 @@ static int program_compile(lua_State *L)
 	p->texcoorddata_attrib = glGetAttribLocation(p->shader, "te4_texinfo");
 	p->mapcoord_attrib = glGetAttribLocation(p->shader, "te4_mapcoord");
 	p->kind_attrib = glGetAttribLocation(p->shader, "te4_kind");
+	p->model_attrib = glGetAttribLocation(p->shader, "te4_model");
 	// printf("Attri locations %d %d %d\n", p->vertex_attrib, p->texcoord_attrib, p->color_attrib);
 
 	lua_pushboolean(L, TRUE);
@@ -753,6 +757,13 @@ static int program_set_default(lua_State *L)
 	return 0;
 }
 
+static int shader_supports_geometry(lua_State *L)
+{
+	if (GLEW_VERSION_3_2) lua_pushboolean(L, TRUE);
+	else lua_pushboolean(L, FALSE);
+	return 1;
+}
+
 static int shader_is_active(lua_State *L)
 {
 	if (lua_isnumber(L, 1)) {
@@ -775,6 +786,7 @@ static const struct luaL_Reg shaderlib[] =
 	{"newShader", shader_new},
 	{"newProgram", program_new},
 	{"active", shader_is_active},
+	{"supportsGeometry", shader_supports_geometry},
 	{"disable", shader_disable},
 	{NULL, NULL},
 };

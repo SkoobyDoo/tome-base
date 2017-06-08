@@ -473,6 +473,8 @@ void DORVertexes::setTexture(GLuint tex, int lua_ref, int id) {
 
 void DORVertexes::clear() {
 	vertices.clear();
+	vertices_kind_info.clear();
+	vertices_map_info.clear();
 	setChanged();
 }
 
@@ -909,10 +911,23 @@ void DORVertexes::render(RendererGL *container, mat4& cur_model, vec4& cur_color
 	// DGDGDGDG: is it better to first copy it all and then alter it ? most likely not, change me
 	dl->list.insert(std::end(dl->list), std::begin(this->vertices), std::end(this->vertices));
 	vertex *dest = dl->list.data();
-	for (int di = startat; di < startat + nb; di++) {
-		dest[di].pos = vmodel * dest[di].pos;
-		dest[di].color = vcolor * dest[di].color;
+
+	if (data_kind & VERTEX_MODEL_INFO) {
+		// Make sure we do not have to reallocate each step
+		int nb = vertices.size();
+		int startat = dl->list_model_info.size();
+		dl->list_model_info.resize(startat + nb);
+		vertex_model_info vm;
+		vm.model = vmodel;
+		std::fill_n(std::begin(dl->list_model_info) + startat, nb, vm);
+	} else {
+		for (int di = startat; di < startat + nb; di++) {
+			dest[di].pos = vmodel * dest[di].pos;
+		}		
 	}
+	for (int di = startat; di < startat + nb; di++) {
+		dest[di].color = vcolor * dest[di].color;
+	}		
 
 	if (data_kind & VERTEX_KIND_INFO) {
 		// Make sure we do not have to reallocate each step

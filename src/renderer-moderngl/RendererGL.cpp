@@ -68,14 +68,15 @@ DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex
 	return dl;
 }
 void releaseDisplayList(DisplayList *dl) {
-	// printf("Releasing DL! %x with %d, %d, %x; used %d times\n", dl, dl->vbo, dl->tex, dl->shader, dl->used);
 	dl->used--;
+	// printf("Releasing DL! %x with %d, %d, %x; used %d times\n", dl, dl->vbo[0], dl->tex, dl->shader, dl->used);
 	if (dl->used <= 0) {
 		// Clear will nto release the memory, just "forget" about the data
 		// we keep the VBO allocated for later
 		dl->list.clear();
-		dl->list_map_info.clear();
 		dl->list_kind_info.clear();
+		dl->list_map_info.clear();
+		dl->list_model_info.clear();
 		dl->tex = {0,0,0};
 		dl->shader = NULL;
 		dl->sub = NULL;
@@ -90,14 +91,14 @@ void releaseDisplayList(DisplayList *dl) {
 }
 
 DisplayList::DisplayList() {
-	glGenBuffers(3, vbo);
+	glGenBuffers(4, vbo);
 	list.reserve(4096);
 	// printf("Making new DL! %x with vbo %d\n", this, vbo);
 }
 // This really should never be actually used
 DisplayList::~DisplayList() {
 	// printf("Deleteing DL! %x with vbo %d\n", this, vbo);
-	glDeleteBuffers(3, vbo);
+	glDeleteBuffers(4, vbo);
 }
 
 /***************************************************************************
@@ -217,7 +218,7 @@ void RendererGL::update() {
 			// If nothing that can alter sort order changed, we can just quickly recompute the DisplayLists just like in the no sort method
 			if (recompute_fast_sort) {
 				recompute_fast_sort = false;
-				printf("FST SORT\n");
+				// printf("FST SORT\n");
 				sorted_dos.clear();
 
 				// First we iterate over the DOs tree to "flatten" in
@@ -241,6 +242,7 @@ void RendererGL::update() {
 				}
 			}
 		} else if (zsort == SortMode::FULL) {
+			printf("[RendererGL] ERROR! SortMode::FULL CURRENTLY UNSUPPORTED\n");
 			// zvertices.clear();
 			// for (auto it = dos.begin() ; it != dos.end(); ++it) {
 			// 	DisplayObject *i = dynamic_cast<DisplayObject*>(*it);
@@ -276,6 +278,11 @@ void RendererGL::update() {
 				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[2]);
 				glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_map_info) * (*dl)->list_map_info.size(), NULL, (GLuint)mode);
 				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_map_info) * (*dl)->list_map_info.size(), (*dl)->list_map_info.data());				
+			}
+			if ((*dl)->data_kind & VERTEX_MODEL_INFO) {
+				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[3]);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_model_info) * (*dl)->list_model_info.size(), NULL, (GLuint)mode);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_model_info) * (*dl)->list_model_info.size(), (*dl)->list_model_info.data());				
 			}
 		}
 	}
@@ -457,6 +464,20 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				if (shader->mapcoord_attrib != -1) {
 					glEnableVertexAttribArray(shader->mapcoord_attrib);
 					glVertexAttribPointer(shader->mapcoord_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_map_info), (void*)offsetof(vertex_map_info, mapcoords));
+				}
+			}
+
+			if ((*dl)->data_kind & VERTEX_MODEL_INFO) {
+				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[3]);
+				if (shader->model_attrib != -1) {
+					glEnableVertexAttribArray(shader->model_attrib+0);
+					glVertexAttribPointer(shader->model_attrib+0, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model));
+					glEnableVertexAttribArray(shader->model_attrib+1);
+					glVertexAttribPointer(shader->model_attrib+1, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model) + sizeof(float) * 4);
+					glEnableVertexAttribArray(shader->model_attrib+2);
+					glVertexAttribPointer(shader->model_attrib+2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model) + sizeof(float) * 8);
+					glEnableVertexAttribArray(shader->model_attrib+3);
+					glVertexAttribPointer(shader->model_attrib+3, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model) + sizeof(float) * 12);
 				}
 			}
 
