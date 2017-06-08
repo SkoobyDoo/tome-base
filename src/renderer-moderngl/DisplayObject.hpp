@@ -29,6 +29,7 @@ extern lua_State *L;
 
 #include <vector>
 
+#define GLM_FORCE_INLINE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -257,6 +258,12 @@ public:
 	int addQuad(vertex v1, vertex v2, vertex v3, vertex v4);
 	int addQuadKindInfo(float v1, float v2, float v3, float v4);
 	int addQuadMapInfo(vertex_map_info v1, vertex_map_info v2, vertex_map_info v3, vertex_map_info v4);
+
+	int addPoint(
+		float x1, float y1, float z1, float u1, float v1, 
+		float r, float g, float b, float a
+	);
+
 	void loadObj(const string &filename);
 	GLuint getTexture(int id) { return tex[id]; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);

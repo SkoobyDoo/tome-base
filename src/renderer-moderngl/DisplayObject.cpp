@@ -704,6 +704,27 @@ int DORVertexes::addQuadPie(
 	return 0;
 }
 
+int DORVertexes::addPoint(
+		float x1, float y1, float z1, float u1, float v1, 
+		float r, float g, float b, float a
+	) {
+	int size = vertices.size();
+	if (size + 1 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
+
+	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
+	if (size && (z1 != zflat)) {
+		printf("Warning making non flat DORVertexes::addQuad!\n");
+		is_zflat = false;
+	}
+	if (!size) zflat = z1;
+
+	vertices.push_back({{x1, y1, z1, 1}, {u1, v1}, {r, g, b, a}});
+
+	setChanged();
+	return 0;
+}
+
+
 void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
 	float v10[3];
 	v10[0] = v1[0] - v0[0];
@@ -920,7 +941,9 @@ void DORVertexes::render(RendererGL *container, mat4& cur_model, vec4& cur_color
 		vertex_model_info vm;
 		vm.model = vmodel;
 		std::fill_n(std::begin(dl->list_model_info) + startat, nb, vm);
+		// printf("rendering with model info\n");
 	} else {
+		// printf("rendering withOUT model info\n");
 		for (int di = startat; di < startat + nb; di++) {
 			dest[di].pos = vmodel * dest[di].pos;
 		}		

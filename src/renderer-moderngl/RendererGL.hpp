@@ -138,11 +138,6 @@ public:
 	void resetDisplayLists();
 
 	void activateCutting(mat4 cur_model, bool v);
-
-	// This should be in DORTarget
-	// void enablePostProcessing(bool v);
-	// void clearPostProcessShaders();
-	// void addPostProcessShader(shader_type *s);
 };
 
 #endif

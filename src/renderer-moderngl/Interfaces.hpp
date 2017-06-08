@@ -28,6 +28,7 @@ extern "C" {
 
 #include <vector>
 
+#define GLM_FORCE_INLINE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"

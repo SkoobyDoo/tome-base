@@ -895,7 +895,21 @@ static int gl_vertexes_reserve(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
 	v->reserveQuads(lua_tonumber(L, 2));
-	return 0;
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vertexes_point(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float u1 = lua_tonumber(L, 4);  float v1 = lua_tonumber(L, 5); 
+	float r = lua_tonumber(L, 6); float g = lua_tonumber(L, 7); float b = lua_tonumber(L, 8); float a = lua_tonumber(L, 9);
+	v->addPoint(
+		x1, y1, 0, u1, v1, 
+		r, g, b, a
+	);
+	lua_pushvalue(L, 1);
+	return 1;
 }
 
 static int gl_vertexes_quad(lua_State *L)
@@ -1063,6 +1077,14 @@ static int gl_text_free(lua_State *L)
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
 	delete(v);
 	lua_pushnumber(L, 1);
+	return 1;
+}
+
+static int gl_text_model_data(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	v->setDataKinds(VERTEX_BASE + VERTEX_MODEL_INFO + VERTEX_KIND_INFO);
+	lua_pushvalue(L, 1);
 	return 1;
 }
 
@@ -1901,6 +1923,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"__gc", gl_vertexes_free},
 	{"reserve", gl_vertexes_reserve},
 	{"enableModelData", gl_vertexes_model_data},
+	{"point", gl_vertexes_point},
 	{"quad", gl_vertexes_quad},
 	{"quadPie", gl_vertexes_quad_pie},
 	{"loadObj", gl_vertexes_load_obj},
@@ -1942,6 +1965,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"getStats", gl_text_stats},
 	{"maxWidth", gl_text_max_width},
 	{"maxLines", gl_text_max_lines},
+	{"enableModelData", gl_text_model_data},
 	{"linefeed", gl_text_linefeed},
 	{"getLetterPosition", gl_text_get_letter_position},
 	{"center", gl_text_center},

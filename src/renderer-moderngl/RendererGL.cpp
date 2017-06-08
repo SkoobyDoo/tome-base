@@ -362,7 +362,7 @@ void RendererGL::activateCutting(mat4 cur_model, bool v) {
 bool ok =true;
 void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
-	if (changed_children) update();
+	if (changed_children||1) update();
 	if (displays.empty()) return;
 	// printf("Displaying renderer %s\n", getRendererName());
 
@@ -471,13 +471,13 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[3]);
 				if (shader->model_attrib != -1) {
 					glEnableVertexAttribArray(shader->model_attrib+0);
-					glVertexAttribPointer(shader->model_attrib+0, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model));
+					glVertexAttribPointer(shader->model_attrib+0, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)(offsetof(vertex_model_info, model)));
 					glEnableVertexAttribArray(shader->model_attrib+1);
-					glVertexAttribPointer(shader->model_attrib+1, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model) + sizeof(float) * 4);
+					glVertexAttribPointer(shader->model_attrib+1, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)(offsetof(vertex_model_info, model) + sizeof(float) * 4));
 					glEnableVertexAttribArray(shader->model_attrib+2);
-					glVertexAttribPointer(shader->model_attrib+2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model) + sizeof(float) * 8);
+					glVertexAttribPointer(shader->model_attrib+2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)(offsetof(vertex_model_info, model) + sizeof(float) * 8));
 					glEnableVertexAttribArray(shader->model_attrib+3);
-					glVertexAttribPointer(shader->model_attrib+3, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)offsetof(vertex_model_info, model) + sizeof(float) * 12);
+					glVertexAttribPointer(shader->model_attrib+3, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_model_info), (void*)(offsetof(vertex_model_info, model) + sizeof(float) * 12));
 				}
 			}
 
@@ -485,6 +485,8 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				glDrawElements(GL_TRIANGLES, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
 			} else if (kind == RenderKind::TRIANGLES) {
 				glDrawArrays(GL_TRIANGLES, 0, (*dl)->list.size());
+			} else if (kind == RenderKind::POINTS) {
+				glDrawArrays(GL_POINTS, 0, (*dl)->list.size());
 			}
 			nb_vert += (*dl)->list.size();
 		}
@@ -502,12 +504,12 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	}
 
 	if (count_vertexes) {
-		printf("RendererGL<%s> drew %d vertexes in %d calls\n", renderer_name, nb_vert, displays.size());
+		printf("RendererGL<%s> drew %d vertexes in %ld calls\n", renderer_name, nb_vert, displays.size());
 	}
 	if (count_draws) {
 		printf("RendererGL<%s> drew in %d calls\n", renderer_name, nb_draws);
 	}
 	if (count_time) {
-		printf("RendererGL<%s> drew in %d ms\n", renderer_name, SDL_GetTicks() - start_time);
+		printf("RendererGL<%s> drew in %ld ms\n", renderer_name, SDL_GetTicks() - start_time);
 	}
 }
