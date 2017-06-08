@@ -876,7 +876,7 @@ end
 
 function _M:changeLevelReal(lev, zone, params)
 	local oz, ol = self.zone, self.level
-	
+
 	-- Unlock first!
 	if not params.temporary_zone_shift_back and self.level and self.level.temp_shift_zone then
 		self:changeLevelReal(1, "useless", {temporary_zone_shift_back=true})
@@ -1059,7 +1059,7 @@ function _M:changeLevelReal(lev, zone, params)
 					list[#list+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack((rng.table(list))) end
 		elseif params.auto_level_stair then
 			-- Dirty but quick
 			local list = {}
@@ -1069,7 +1069,7 @@ function _M:changeLevelReal(lev, zone, params)
 					list[#list+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack((rng.table(list))) end
 		end
 
 		-- if self.level.exited then -- use the last location, if defined

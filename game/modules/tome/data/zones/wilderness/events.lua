@@ -17,7 +17,11 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local descriptor = table.get(game:getPlayer(true), "descriptor")
+
 return {
-	{name="noxious-caldera", percent=30, special=function() if game:getPlayer(true) and game:getPlayer(true).descriptor and game:getPlayer(true).descriptor.race == "Yeek" then return true end end},
-	{name="sludgenest", percent=30, special=function() if game:getPlayer(true) and game:getPlayer(true).descriptor and game:getPlayer(true).descriptor.subrace == "Thalore" then return true end end},
+	-- always spawn noxious-caldera for Yeeks (event file does additional tests)
+	{name="noxious-caldera", percent=(table.get(descriptor, "race") == "Yeek" and 100 or 30)},
+	 -- always spawn sludgenest for Thalore (event file does additional tests)
+	{name="sludgenest", percent=(table.get(descriptor, "subrace") == "Thalore" and 100 or 30)},
 }
