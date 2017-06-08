@@ -46,6 +46,8 @@ end
 
 --- Restock all stores
 function _M:storesRestock()
+	self.stores_restock_levels = self.stores_restock_levels or {}
+	self.stores_restock_levels[#self.stores_restock_levels+1] = game.player.level -- Store the level so shops using player_material_level know what levels to update stock
 	self.stores_restock = self.stores_restock + 1
 	game.log("#AQUAMARINE#Most stores should have new stock now.")
 	print("[STORES] restocking")
@@ -1278,7 +1280,7 @@ local drop_tables = {
 		},
 		[5] = {
 			uniques = 7,
-			double_greater = 50,
+			double_greater = 10,
 			greater_normal = 30,
 			greater = 25,
 			double_ego = 10,
