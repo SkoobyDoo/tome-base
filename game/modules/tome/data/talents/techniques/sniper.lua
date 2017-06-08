@@ -171,7 +171,7 @@ newTalent{
 	tactical = { ATTACK = { weapon = 2 }, DISABLE = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "bow") end,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1, 2.7)) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.1, 1.9) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.6, 1.0) end,
 	getSightLoss = function(self, t) return math.floor(self:combatTalentScale(t,1, 6, "log", 0, 4)) end, -- 1@1 6@5
 	getCooldownReduction = function(self, t) return math.min(10, math.floor(self:combatTalentScale(t, 2, 8))) end,
 	target = function(self, t)
@@ -202,7 +202,7 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local sight = t.getSightLoss(self,t)
 		local cooldown = t.getCooldownReduction(self,t)
-		return ([[Fire an arrow tipped with a smoke bomb inflicting %d%% damage and creating a radius %d cloud of thick, disorientating smoke. Those caught within will be confused (power 50%%) and have their vision range reduced by %d for 5 turns.
+		return ([[Fire an arrow tipped with a smoke bomb inflicting %d%% damage and creating a radius %d cloud of thick, disorientating smoke. Those caught within will have their vision range reduced by %d for 5 turns.
 The distraction caused by this effect reduces the cooldown of your Concealment by %d turns. If the cooldown is reduced to 0, you instantly activate Concealment regardless of whether foes are too close.
 The chance for the smoke bomb to affect your targets increases with your Accuracy.]]):
 		format(dam, radius, sight, cooldown)

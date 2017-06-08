@@ -2872,7 +2872,7 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 1,
 	combat = {
 		range = 9,
-		physspeed = 0.75,
+		physspeed = 0.95,
 	},
 	wielder = {
 		inc_damage={ [DamageType.PHYSICAL] = 5, },
@@ -3808,7 +3808,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 3,
 	combat = {
 		range = 9,
-		physspeed = 0.8,
 		travel_speed = 4,
 		talent_on_hit = { [Talents.T_ARCANE_EYE] = {level=4, chance=100} },
 	},
@@ -5463,7 +5462,7 @@ newEntity{ base = "BASE_SLING",
 	material_level = 5,
 	combat = {
 		range = 10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 	},
 	wielder = {
 		pin_immune = 0.3,

@@ -2030,9 +2030,18 @@ newEffect{
 		end
 
 		-- burst and spawn a worm mass
+		local t = eff.src:getTalentFromId(eff.src.T_WORM_ROT)
 		if eff.rot_timer == 0 then
 			DamageType:get(DamageType.BLIGHT).projector(eff.src, self.x, self.y, DamageType.BLIGHT, eff.burst, {from_disease=true})
-			local t = eff.src:getTalentFromId(eff.src.T_WORM_ROT)
+			t.spawn_carrion_worm(eff.src, self, t)
+			game.logSeen(self, "#LIGHT_RED#A carrion worm mass bursts out of %s!", self.name:capitalize())
+			self:removeEffect(self.EFF_WORM_ROT)
+		end
+	end,
+	deactivate = function(self, eff)
+		local t = eff.src:getTalentFromId(eff.src.T_WORM_ROT)
+		if rng.percent(t.getChance(eff.src,t)) then
+			DamageType:get(DamageType.BLIGHT).projector(eff.src, self.x, self.y, DamageType.BLIGHT, eff.burst, {from_disease=true})
 			t.spawn_carrion_worm(eff.src, self, t)
 			game.logSeen(self, "#LIGHT_RED#A carrion worm mass bursts out of %s!", self.name:capitalize())
 			self:removeEffect(self.EFF_WORM_ROT)

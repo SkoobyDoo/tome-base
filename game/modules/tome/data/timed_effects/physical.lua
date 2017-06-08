@@ -3947,7 +3947,7 @@ newEffect{
 newEffect{
 	name = "SHADOW_SMOKE", image = "talents/shadow_shot.png",
 	desc = "Shadow Smoke",
-	long_desc = function(self, eff) return ("The target is wrapped in disorientating smoke, confusing them and reducing vision range by %d."):format(eff.sight) end,
+	long_desc = function(self, eff) return ("The target is wrapped in disorientating smoke, reducing vision range by %d."):format(eff.sight) end,
 	type = "physical",
 	subtype = { sense=true },
 	status = "detrimental",
@@ -3962,9 +3962,6 @@ newEffect{
 	--		self:setTarget(nil) -- Loose target!
 			self:doFOV()
 		end
-		if self:canBe("confusion") then
-			eff.cid = self:addTemporaryValue("confused", 50)
-		end
 		if core.shader.active() then
 			self:effectParticles(eff, {type="shader_shield", args={size_factor=1.5, img="shadow_shot_debuff_tentacles"}, shader={type="tentacles", wobblingType=0, appearTime=0.8, time_factor=2000, noup=0.0}})
 		end
@@ -3973,9 +3970,6 @@ newEffect{
 		if eff.tmpid then 
 			self:removeTemporaryValue("sight", eff.tmpid)
 			self:doFOV()
-		end
-		if eff.cid then
-			self:removeTemporaryValue("confused", eff.cid)
 		end
 	end,
 }
@@ -4067,5 +4061,18 @@ newEffect{
 		else
 			self:removeEffect(eff.effect_id)
 		end
+	end,
+}
+
+newEffect{
+	name = "SWIFT_SHOT", image = "talents/skirmisher_swift_shot.png",
+	desc = "Swift Shot",
+	long_desc = function(self, eff) return ("Increases attack speed by %d%%."):format(eff.speed) end,
+	type = "physical",
+	subtype = { tactic=true },
+	status = "beneficial",
+	parameters = {speed=0.1},
+	activate = function(self, eff)
+		self:effectTemporaryValue(eff, "combat_physspeed", eff.speed)
 	end,
 }

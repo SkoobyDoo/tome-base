@@ -98,10 +98,10 @@ newTalent{
 	archery_onhit = function(self, t, target, x, y)
 		if self:knowTalent(self.T_MASTER_MARKSMAN) then
 			local chance = 15 + (self.mark_steady or 0)
+			if self:hasEffect(self.EFF_TRUESHOT) then chance = chance + (chance * self:callTalent(self.T_TRUESHOT, "getMarkChance")/100) end
 			if self:isTalentActive(self.T_AIM) then	
 				chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
 			end
-			if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
 			if target:hasEffect(target.EFF_PIN_DOWN) then 
 				local eff = target:hasEffect(target.EFF_PIN_DOWN)
 				chance = 100
@@ -199,7 +199,7 @@ newTalent{
 	getBonusMark = function(self,t) return 5 + math.floor(self:combatTalentScale(t, 2, 10)) end,
 	getChance = function(self,t) 
 		local chance = 15 + t.getBonusMark(self,t)
-		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance + (chance * self:callTalent(self.T_TRUESHOT, "getMarkChance")/100) end
 		if self:isTalentActive(self.T_AIM) then	
 			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
 		end
@@ -279,7 +279,7 @@ newTalent{
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	getChance = function(self,t) 
 		local chance = 20
-		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance + (chance * self:callTalent(self.T_TRUESHOT, "getMarkChance")/100) end
 		if self:isTalentActive(self.T_AIM) then	
 			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
 		end
@@ -337,7 +337,7 @@ newTalent{
 	getSpeedPenalty = function(self, t) return math.floor(self:combatTalentLimit(t, 50, 10, 40))/100 end,
 	getChance = function(self,t) 
 		local chance = 20
-		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance + (chance * self:callTalent(self.T_TRUESHOT, "getMarkChance")/100) end
 		if self:isTalentActive(self.T_AIM) then	
 			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
 		end
@@ -391,7 +391,7 @@ newTalent{
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 5)) end,
 	getChance = function(self,t) 
 		local chance = 20
-		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance * 2 end
+		if self:hasEffect(self.EFF_TRUESHOT) then chance = chance + (chance * self:callTalent(self.T_TRUESHOT, "getMarkChance")/100) end
 		if self:isTalentActive(self.T_AIM) then	
 			chance = chance + self:callTalent(self.T_AIM, "getMarkChance") 
 		end
@@ -481,7 +481,6 @@ newTalent{
 	getDamage = function(self, t)
 		return self:combatTalentWeaponDamage(t, 1.1, 2.3)
 	end,
-	getApr = function(self, t) return self:getDex(40,true) end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onreach = function(self, t, x, y, tg, target)
 		if not target then return end
@@ -524,17 +523,15 @@ newTalent{
 
 		if not targets then return end
 		local dam = t.getDamage(self,t)
-		self:archeryShoot(targets, t, {type = "hit", speed = 200}, {mult=dam, apr=t.getApr(self,t), atk=100})
+		self:archeryShoot(targets, t, {type = "hit", speed = 200}, {mult=dam, atk=100})
 		
 		return true
 	end,
 	info = function(self, t)
 		local dam = t.getDamage(self,t)*100
-		local apr = t.getApr(self,t)
-		return ([[Fire a precise shot dealing %d%% weapon damage, with %d increased armor penetration and 100 increased accuracy. This shot will bypass other enemies between you and your target.
-Only usable against marked targets, and consumes the mark on hit.
-The armor penetration increases with your Dexterity.]]):
-		format(dam, apr)
+		return ([[Fire a precise shot dealing %d%% weapon damage, with 100 increased accuracy. This shot will bypass other enemies between you and your target.
+Only usable against marked targets, and consumes the mark on hit.]]):
+		format(dam)
 	end,
 }
 
@@ -644,7 +641,7 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = { weapon = 2 } },
 	getDamage = function(self, t)
-		return self:combatTalentWeaponDamage(t, 0.7, 1.5)
+		return self:combatTalentWeaponDamage(t, 0.4, 1.0)
 	end,
 	no_npc_use = true,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,

@@ -172,6 +172,7 @@ newTalent{
 	tactical = { BUFF = 3 },
 	getSpeed = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
+	getMarkChance = function(self,t) return self:combatTalentLimit(t, 100, 10, 50) end,
 	action = function(self, t)
 		local dur = t.getDuration(self,t)
 		local speed = t.getSpeed(self,t)
@@ -181,7 +182,8 @@ newTalent{
 	info = function(self, t)
 		local dur = t.getDuration(self,t)
 		local speed = t.getSpeed(self,t)*100
-		return ([[Enter a state of heightened focus for %d turns. While in this state your ranged attack speed is increased by %d%%, your shots do not consume ammo, and all shots capable of marking have their chance to mark doubled.]]):
-		format(dur, speed)
+		local mark = t.getMarkChance(self,t)
+		return ([[Enter a state of heightened focus for %d turns. While in this state your ranged attack speed is increased by %d%%, your shots do not consume ammo, and all shots capable of marking have their chance to mark increased by %d%%.]]):
+		format(dur, speed, mark)
 	end,
 }
