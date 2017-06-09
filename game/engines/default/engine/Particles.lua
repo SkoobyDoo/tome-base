@@ -80,6 +80,7 @@ function _M:loaded()
 		if t.sub_particle then sub_particle = t.sub_particle end
 		if t.sub_particle_args then sub_particle_args = t.sub_particle_args end
 		if t.can_shift then self.can_shift = true end
+		if t.supports_death_anim then self.supports_death_anim = true end
 	else error("unsupported particle type: "..type(self.def))
 	end
 

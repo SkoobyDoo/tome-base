@@ -204,6 +204,8 @@ static int particles_new(lua_State *L)
 	ps->vertices = NULL;
 	ps->particles = NULL;
 	ps->init = FALSE;
+	ps->send_value = 0;
+	ps->send_value_pt = 0;
 	ps->trigger_old = 0;
 	ps->trigger = 0;
 	ps->trigger_pass = 0;
@@ -236,6 +238,14 @@ static int particles_trigger_cb(lua_State *L)
 	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
 	lua_pushvalue(L, 2);
 	ps->trigger_cb = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	return 0;
+}
+
+static int particles_send_value(lua_State *L) 
+{
+	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
+	ps->send_value = lua_tonumber(L, 2);
 
 	return 0;
 }
@@ -451,6 +461,8 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 	if (last)
 	{
 		ps->trigger = ps->trigger_pass;
+		ps->send_value_pt = ps->send_value;
+		ps->send_value = 0;
 
 		if (!no_update) ps->alive = alive || ps->no_stop;
 
@@ -874,6 +886,7 @@ static const struct luaL_Reg particles_reg[] =
 	{"shift", particles_shift},
 	{"die", particles_die},
 	{"trigger", particles_trigger_cb},
+	{"send", particles_send_value},
 	{"getDO", particles_get_do},
 	{NULL, NULL},
 };
@@ -953,7 +966,8 @@ void thread_particle_run(particle_thread *pt, plist *l)
 			lua_pop(L, 1);
 
 			if (run) {
-				if (lua_pcall(L, 1, 1, 0))
+				lua_pushnumber(L, ps->send_value_pt);
+				if (lua_pcall(L, 2, 1, 0))
 				{
 	//				printf("L(%x) Particle updater error %x (%d, %d): %s\n", (int)L, (int)l, l->updator_ref, l->emit_ref, lua_tostring(L, -1));
 	//				ps->i_want_to_die = TRUE;

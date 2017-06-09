@@ -98,6 +98,8 @@ struct s_particles_type {
 	bool allow_bloom;
 	bool fboalter;
 
+	float send_value, send_value_pt;
+
 	float trigger_pass, trigger, trigger_old;
 	int trigger_cb;
 
