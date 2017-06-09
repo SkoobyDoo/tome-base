@@ -2302,6 +2302,12 @@ function _M:onTakeHit(value, src, death_note)
 				game:delayedLogMessage(self, src, "reflection" ,"#CRIMSON##Source# reflects damage back to #Target#!#LAST#")
 			end
 		end
+
+		local eff = self:hasEffect(self.EFF_DAMAGE_SHIELD)
+		if adjusted_value > 0 and eff and eff.on_absorb then
+			eff.on_absorb(self, eff, src, adjusted_value)
+		end
+
 		-- If we are at the end of the capacity, release the time shield damage
 		if not self.damage_shield_absorb or self.damage_shield_absorb <= 0 then
 			game.logPlayer(self, "Your shield crumbles under the damage!")
