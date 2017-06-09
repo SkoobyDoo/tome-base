@@ -108,7 +108,7 @@ mat4 View::get() {
 		camera_point = camm.model * camera_point;
 		origin_point = orim.model * origin_point;
 
-		printf("View:recomputing camera %f x %f x %f\n", camera_point.x, camera_point.y, camera_point.z);
+		printf("View:recomputing camera %f x %f x %f, origin %f x %f x %f\n", camera_point.x, camera_point.y, camera_point.z, origin_point.x, origin_point.y, origin_point.z);
 
 		cam = glm::lookAt(
 			glm::vec3(camera_point),

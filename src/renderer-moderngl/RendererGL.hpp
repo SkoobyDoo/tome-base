@@ -79,6 +79,8 @@ protected:
 	VBOMode mode = VBOMode::DYNAMIC;
 	RenderKind kind = RenderKind::QUADS;
 
+	View *view = NULL;	
+
 	GLuint *vbo_elements_data = NULL;
 	GLuint vbo_elements = 0;
 	int vbo_elements_nb = 0;
@@ -136,6 +138,10 @@ public:
 
 	void setManualManagement(bool v) { manual_dl_management = v; };
 	void resetDisplayLists();
+
+	void setView(View *view) {
+		this->view = view;
+	}
 
 	void activateCutting(mat4 cur_model, bool v);
 };

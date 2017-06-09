@@ -945,6 +945,16 @@ static int sdl_free_texture(lua_State *L)
 	return 1;
 }
 
+static int sdl_texture_set_wrap(lua_State *L)
+{
+	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
+	tglBindTexture(GL_TEXTURE_2D, t->tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, !lua_toboolean(L, 2) ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, !lua_toboolean(L, 3) ? GL_CLAMP_TO_EDGE : GL_REPEAT);	
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_depth_test(lua_State *L)
 {
 	if (lua_toboolean(L, 1)) glEnable(GL_DEPTH_TEST);
@@ -1531,6 +1541,7 @@ static const struct luaL_Reg sdl_texture_reg[] =
 	{"bind", sdl_texture_bind},
 	{"getSize", sdl_texture_get_size},
 	{"getValue", sdl_texture_get_value},
+	{"wrap", sdl_texture_set_wrap},
 	{NULL, NULL},
 };
 

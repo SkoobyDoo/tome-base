@@ -373,7 +373,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	}
 
 	cur_model = cur_model * model; // This is .. undeeded ..??
-	mat4 mvp = View::getCurrent()->get() * cur_model;
+	mat4 mvp = (view ? view->get() : View::getCurrent()->get()) * cur_model;
 	cur_color = cur_color * color;
 
 	if (cutting) activateCutting(cur_model, true);

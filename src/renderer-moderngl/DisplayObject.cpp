@@ -211,7 +211,7 @@ void DORTweener::onKeyframe(float nb_keyframes) {
 			nb_tweening++;
 			t.cur += nb_keyframes / (float)NORMALIZED_FPS;
 			if (t.cur > t.time) t.cur = t.time;
-			float val = t.easing(t.from, t.to, t.cur / t.time);
+			GLfloat val = t.easing(t.from, t.to, t.cur / t.time);
 			// printf("=== %f => %f over %f / %f == %f\n", t.from, t.to, t.cur, t.time, val);
 			switch (slot) {
 				case TweenSlot::TX:
@@ -254,6 +254,33 @@ void DORTweener::onKeyframe(float nb_keyframes) {
 				case TweenSlot::A:
 					who->color.a = val; changed = true;
 					break;
+				case TweenSlot::UNI1: {
+					DORVertexes *v = dynamic_cast<DORVertexes*>(who);
+					if (v && v->shader) {
+						tglUseProgramObject(v->shader->shader);
+						glUniform1fv(v->tween_uni[0], 1, &val);
+						v->tween_uni_val[0] = val;
+					}
+					break;
+				}
+				case TweenSlot::UNI2: {
+					DORVertexes *v = dynamic_cast<DORVertexes*>(who);
+					if (v && v->shader) {
+						tglUseProgramObject(v->shader->shader);
+						glUniform1fv(v->tween_uni[1], 1, &val);
+						v->tween_uni_val[1] = val;
+					}
+					break;
+				}
+				case TweenSlot::UNI3: {
+					DORVertexes *v = dynamic_cast<DORVertexes*>(who);
+					if (v && v->shader) {
+						tglUseProgramObject(v->shader->shader);
+						glUniform1fv(v->tween_uni[2], 1, &val);
+						v->tween_uni_val[2] = val;
+					}
+					break;
+				}
 			}
 
 			if (t.on_change_ref != LUA_NOREF) {
@@ -305,7 +332,11 @@ float DisplayObject::getDefaultTweenSlotValue(TweenSlot slot) {
 		case TweenSlot::G: return color.g;
 		case TweenSlot::B: return color.b;
 		case TweenSlot::A: return color.a;
+		case TweenSlot::UNI1: { DORVertexes *v = dynamic_cast<DORVertexes*>(this); if (v && v->shader) return v->tween_uni_val[0]; }
+		case TweenSlot::UNI2: { DORVertexes *v = dynamic_cast<DORVertexes*>(this); if (v && v->shader) return v->tween_uni_val[1]; }
+		case TweenSlot::UNI3: { DORVertexes *v = dynamic_cast<DORVertexes*>(this); if (v && v->shader) return v->tween_uni_val[2]; }
 	}
+	return 0;
 }
 
 void DORTweener::setTween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref) {
@@ -469,6 +500,17 @@ void DORVertexes::setTexture(GLuint tex, int lua_ref, int id) {
 	for (int i = 0; i < DO_MAX_TEX; i++) {
 		if (this->tex[i]) tex_max = i + 1;
 	}
+}
+
+void DORVertexes::setShader(shader_type *s) {
+	shader = s ? s : default_shader;
+	tween_uni = {0, 0, 0};
+}
+
+void DORVertexes::getShaderUniformTween(const char *uniform, uint8_t pos, float default_val) {
+	if (!shader || pos < 0 || pos >= 3) return;
+	tween_uni[pos] = glGetUniformLocation(shader->shader, uniform);
+	tween_uni_val[pos] = default_val;
 }
 
 void DORVertexes::clear() {
@@ -770,21 +812,21 @@ void DORVertexes::loadObj(const string &filename) {
 	printf("# of materials = %d\n", (int)materials.size());
 	printf("# of shapes    = %d\n", (int)shapes.size());
 
-	vector<GLuint> materials_diffuses; materials_diffuses.resize(materials.size());
-	int i = 0;
-	for (auto &mat : materials) {
-		if (mat.diffuse_texname != "") {
-			mat.diffuse_texname = prefix + mat.diffuse_texname;
-			string extless = mat.diffuse_texname.substr(0, mat.diffuse_texname.find_last_of('.') + 1);
-			string file = extless + "png";
-			GLuint tex = load_image_texture(file.c_str());
-			materials_diffuses[i] = tex;
-			printf("mat.diffuse_texname '%s' : %d\n", mat.diffuse_texname.c_str(), tex);
-			// DGDGDGDG obviously this is all very wrong, it wont ever be GC'ed and all such kind of nasty
-			// THIS IS A TETS ONLY
-		}
-		i++;
-	}
+	// vector<GLuint> materials_diffuses; materials_diffuses.resize(materials.size());
+	// int i = 0;
+	// for (auto &mat : materials) {
+	// 	if (mat.diffuse_texname != "") {
+	// 		mat.diffuse_texname = prefix + mat.diffuse_texname;
+	// 		string extless = mat.diffuse_texname.substr(0, mat.diffuse_texname.find_last_of('.') + 1);
+	// 		string file = extless + "png";
+	// 		GLuint tex = load_image_texture(file.c_str());
+	// 		materials_diffuses[i] = tex;
+	// 		printf("mat.diffuse_texname '%s' : %d\n", mat.diffuse_texname.c_str(), tex);
+	// 		// DGDGDGDG obviously this is all very wrong, it wont ever be GC'ed and all such kind of nasty
+	// 		// THIS IS A TETS ONLY
+	// 	}
+	// 	i++;
+	// }
 
 	for (size_t s = 0; s < shapes.size(); s++) {
 		size_t index_offset = 0;
@@ -801,8 +843,8 @@ void DORVertexes::loadObj(const string &filename) {
 				if (idx.texcoord_index >= 0) {
 					texcoords.x = attrib.texcoords[2 * idx.texcoord_index + 0];
 					texcoords.y = attrib.texcoords[2 * idx.texcoord_index + 1];
-					tex[0] = materials_diffuses[mat_id];
-					// printf("SHAPE %d tex : %d\n", s, materials_diffuses[mat_id]);
+					// tex[0] = materials_diffuses[mat_id];
+					// printf("SHAPE %d tex : %d : %fx%f\n", s, materials_diffuses[mat_id], texcoords[0], texcoords[1]);
 				}
 
 				if (mat_id >= 0) {

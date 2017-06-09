@@ -304,6 +304,7 @@ local tweenslots = {
 	rot_x = 6, rot_y = 7, rot_z = 8, 
 	r = 9, g = 10, b = 11, a = 12,
 	wait = 13,
+	uni1 = 14, uni2 = 15, uni3 = 16, 
 }
 local easings = table.reverse{
 	"linear",

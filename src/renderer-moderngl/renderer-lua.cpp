@@ -418,6 +418,17 @@ static int gl_renderer_free(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_view(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	View *t = *(View**)auxiliar_checkclass(L, "gl{view}", 2);
+	lua_pushvalue(L, 2);
+	r->setView(t);//, luaL_ref(L, LUA_REGISTRYINDEX));
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_renderer_zsort(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
@@ -1046,6 +1057,14 @@ static int gl_vertexes_shader(lua_State *L)
 		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
 		v->setShader(shader);
 	}
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vertexes_uniform_tween(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	v->getShaderUniformTween(luaL_checkstring(L, 2), luaL_checknumber(L, 3) - 1, luaL_checknumber(L, 4));
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -1804,6 +1823,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 {
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
+	{"view", gl_renderer_view},
 	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},
@@ -1931,6 +1951,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"textureTarget", gl_vertexes_target_texture},
 	{"textureFontAtlas", gl_vertexes_font_atlas_texture},
 	{"shader", gl_vertexes_shader},
+	{"uniformTween", gl_vertexes_uniform_tween},
 	{"clear", gl_vertexes_clear},
 	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},

@@ -532,7 +532,7 @@ static vertex_index parseRawTriple(const char **token) {
 
 static const char *physfsreadline(PHYSFS_file *f) {
   if (PHYSFS_eof(f)) return "";
-  char buf[102400];
+  static char buf[102400];
   char *ptr = buf;
   int bufsize = 102400;
   int total = 0;
@@ -976,6 +976,7 @@ bool MaterialFileReader::operator()(const std::string &matId,
   }
 
   PHYSFS_file *f = PHYSFS_openRead(filepath.c_str());
+  printf("!!!!2: %s\n", PHYSFS_getLastError());
   if (!f) {
     std::stringstream ss;
     ss << "WARN: Material file [ " << filepath

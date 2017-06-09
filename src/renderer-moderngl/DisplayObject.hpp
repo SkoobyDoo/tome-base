@@ -82,7 +82,8 @@ enum TweenSlot : unsigned char {
 	RX = 6, RY = 7, RZ = 8, 
 	R = 9, G = 10, B = 11, A = 12,
 	WAIT = 13,
-	MAX = 14
+	UNI1 = 14, UNI2 = 15, UNI3 = 16, 
+	MAX = 17
 };
 
 typedef float (*easing_ptr)(float,float,float);
@@ -204,6 +205,8 @@ public:
  ** DO that has a vertex list
  ****************************************************************************/
 class DORVertexes : public DORFlatSortable{
+	friend class DisplayObject;
+	friend class DORTweener;
 protected:
 	uint8_t data_kind = VERTEX_BASE;
 	vector<vertex> vertices;
@@ -215,6 +218,9 @@ protected:
 	int tex_max = 1;
 	bool is_zflat = true;
 	float zflat = 0;
+
+	array<GLint, 3> tween_uni{{0, 0, 0}};
+	array<GLfloat, 3> tween_uni_val{{0, 0, 0}};
 
 	shader_type *shader;
 
@@ -268,7 +274,8 @@ public:
 	GLuint getTexture(int id) { return tex[id]; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
-	void setShader(shader_type *s) { shader = s ? s : default_shader; };
+	void setShader(shader_type *s);
+	void getShaderUniformTween(const char *uniform, uint8_t pos, float default_val);
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
