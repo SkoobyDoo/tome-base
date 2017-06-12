@@ -437,7 +437,6 @@ PhysicSimulator *PhysicSimulator::getCurrent() {
 	return current;
 }
 
-// DGDGDGDG: this could totaly run in a thread provided we make it it locks on DORPhysic::onKeyframe and on world alteration
 extern "C" void run_physic_simulation(float nb_keyframes);
 void run_physic_simulation(float nb_keyframes) {
 	if (!PhysicSimulator::current || PhysicSimulator::current->paused) return;

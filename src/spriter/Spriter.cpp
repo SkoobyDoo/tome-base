@@ -78,7 +78,7 @@ TriggerObjectInfo *TE4ObjectFactory::newTriggerObjectInfo(std::string triggerNam
  ** Spriter event trigger stuff
  ****************************************************************************/
 TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(std::string triggerName) : triggerName(triggerName) {
-	printf("[SPRITER] trigger defined %s\n", triggerName.c_str());
+	// printf("[SPRITER] trigger defined %s\n", triggerName.c_str());
 }
 void TE4SpriterTriggerObjectInfo::setTriggerCount(int newTriggerCount)
 {
