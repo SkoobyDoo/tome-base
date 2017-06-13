@@ -32,6 +32,85 @@ extern "C" {
 #include "renderer-moderngl/Physic.hpp"
 
 /*************************************************************************
+ ** Debug
+ *************************************************************************/
+extern int gl_tex_white;
+class WorldDebug : public b2Draw, public RendererGL {
+public:
+	WorldDebug() : RendererGL(VBOMode::STREAM) {
+		char *name = strdup("world debug renderer");
+		setRendererName(name, false);
+		setManualManagement(true);
+		SetFlags(e_shapeBit | e_jointBit | e_aabbBit | e_pairBit | e_centerOfMassBit);
+	}
+
+	void resetDebug() {
+		resetDisplayLists();
+		setChanged(true);
+	}
+
+	/// Draw a closed polygon provided in CCW order.
+	virtual void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
+		// for (int32 i = 1; i < vertexCount; ++) {
+		// 	b2Vec2 *p1 = vertices[i-1];
+		// 	b2Vec2 *p2 = vertices[i];
+
+		// 	float px = center.x * PhysicSimulator::unit_scale, py = -center.y * PhysicSimulator::unit_scale;
+		// 	radius *= PhysicSimulator::unit_scale;
+		// 	auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO);
+		// 	dl->list.push_back({{px - radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		// 	dl->list.push_back({{px + radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		// 	dl->list.push_back({{px + radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		// 	dl->list.push_back({{px - radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		// }
+	}
+
+	/// Draw a solid closed polygon provided in CCW order.
+	virtual void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
+
+	}
+
+	/// Draw a circle.
+	virtual void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) {
+		float px = center.x * PhysicSimulator::unit_scale, py = -center.y * PhysicSimulator::unit_scale;
+		radius *= PhysicSimulator::unit_scale;
+		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO);
+		dl->list.push_back({{px - radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		dl->list.push_back({{px + radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		dl->list.push_back({{px + radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		dl->list.push_back({{px - radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		// printf("circle: %fx%f radius %f :: %fx%fx%fx%f\n", px, py, radius, color.r, color.g, color.b, color.a);
+	}
+	
+	/// Draw a solid circle.
+	virtual void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) {
+
+	}
+	
+	/// Draw a line segment.
+	virtual void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
+
+	}
+
+	/// Draw a transform. Choose your own length scale.
+	/// @param xf a transform.
+	virtual void DrawTransform(const b2Transform& xf) {
+
+	}
+
+	/// Draw a point.
+	virtual void DrawPoint(const b2Vec2& p, float32 size, const b2Color& color) {
+		float px = p.x * PhysicSimulator::unit_scale, py = -p.y * PhysicSimulator::unit_scale;
+		size *= PhysicSimulator::unit_scale;
+		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO);
+		dl->list.push_back({{px - size/2, py - size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		dl->list.push_back({{px + size/2, py - size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		dl->list.push_back({{px + size/2, py + size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		dl->list.push_back({{px - size/2, py + size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+	}
+};
+
+/*************************************************************************
  ** DORPhysic
  *************************************************************************/
 static int physic_obj_count = 0;
@@ -389,6 +468,18 @@ void PhysicSimulator::sleepAll(bool v) {
 	}
 }
 
+void PhysicSimulator::drawDebug(float x, float y) {
+	if (!debug) {
+		debug = new WorldDebug();
+		world.SetDebugDraw(debug);
+	}
+	debug->resetDebug();
+	world.DrawDebugData();
+	glm::mat4 model = glm::mat4();
+	model = glm::translate(model, vec3(x, y, 0.f));
+	debug->toScreen(model, {1,1,1,1});
+}
+
 void PhysicSimulator::step(float nb_keyframes) {
 	// Grab weak DO registery
 	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
@@ -449,4 +540,3 @@ void reset_physic_simulation() {
 	if (!PhysicSimulator::current) return;
 	PhysicSimulator::current->setContactListener(LUA_NOREF);
 }
-
