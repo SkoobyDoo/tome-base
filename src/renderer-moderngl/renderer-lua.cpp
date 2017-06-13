@@ -380,7 +380,6 @@ static int gl_renderer_new(lua_State *L)
 	DisplayObject **r = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	auxiliar_setclass(L, "gl{renderer}", -1);
 	VBOMode mode = VBOMode::DYNAMIC;
-	RenderKind kind = RenderKind::QUADS;
 	if (lua_isstring(L, 1)) {
 		const char *ms = lua_tostring(L, 1);
 		if (!strcmp(ms, "static")) mode = VBOMode::STATIC;
@@ -391,19 +390,18 @@ static int gl_renderer_new(lua_State *L)
 			lua_error(L);
 		}		
 	}
-	if (lua_isstring(L, 2)) {
-		const char *ms = lua_tostring(L, 2);
-		if (!strcmp(ms, "quads")) kind = RenderKind::QUADS;
-		else if (!strcmp(ms, "triangles")) kind = RenderKind::TRIANGLES;
-		else if (!strcmp(ms, "points")) kind = RenderKind::POINTS;
-		else {
-			lua_pushstring(L, "Parameter to renderer() must be either nil or quads/triangles/points");
-			lua_error(L);
-		}
-	}
+	// if (lua_isstring(L, 2)) {
+	// 	const char *ms = lua_tostring(L, 2);
+	// 	if (!strcmp(ms, "quads")) kind = RenderKind::QUADS;
+	// 	else if (!strcmp(ms, "triangles")) kind = RenderKind::TRIANGLES;
+	// 	else if (!strcmp(ms, "points")) kind = RenderKind::POINTS;
+	// 	else {
+	// 		lua_pushstring(L, "Parameter to renderer() must be either nil or quads/triangles/points");
+	// 		lua_error(L);
+	// 	}
+	// }
 
 	RendererGL *rgl = new RendererGL(mode);
-	rgl->renderKind(kind);
 	*r = rgl;
 	setWeakSelfRef(L, -1, rgl);
 

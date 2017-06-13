@@ -148,7 +148,7 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 	DORSpriter *spriter = DORSpriter::currently_processing;
 
 	if (!spriter->render_z) {
-		auto dl = getDisplayList(spriter->render_container, {texture->tex.tex, 0, 0}, spriter->shader, VERTEX_BASE);
+		auto dl = getDisplayList(spriter->render_container, {texture->tex.tex, 0, 0}, spriter->shader, VERTEX_BASE, RenderKind::QUADS);
 
 		// Make the matrix corresponding to the shape
 		mat4 qm = mat4();

@@ -1340,7 +1340,7 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 			// }
 
 			// printf("MO using %dx%dx%d tex %d shader %s : %lx\n", (int)dx, (int)dy, z, dm->textures[0], shader->name, shader);
-			auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO);
+			auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
 		
 			// Make sure we do not have to reallocate each step
 			// DGDGDGDG: actually do it

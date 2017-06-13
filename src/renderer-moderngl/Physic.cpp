@@ -51,62 +51,150 @@ public:
 
 	/// Draw a closed polygon provided in CCW order.
 	virtual void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
-		// for (int32 i = 1; i < vertexCount; ++) {
-		// 	b2Vec2 *p1 = vertices[i-1];
-		// 	b2Vec2 *p2 = vertices[i];
+		for (int32 i = 1; i <= vertexCount; i++) {
+			const b2Vec2 *p1 = &vertices[i-1];
+			const b2Vec2 *p2 = &vertices[(i == vertexCount) ? 0 : i];
 
-		// 	float px = center.x * PhysicSimulator::unit_scale, py = -center.y * PhysicSimulator::unit_scale;
-		// 	radius *= PhysicSimulator::unit_scale;
-		// 	auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO);
-		// 	dl->list.push_back({{px - radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		// 	dl->list.push_back({{px + radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		// 	dl->list.push_back({{px + radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		// 	dl->list.push_back({{px - radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		// }
+			float p1x = p1->x * PhysicSimulator::unit_scale; float p1y = -p1->y * PhysicSimulator::unit_scale;
+			float p2x = p2->x * PhysicSimulator::unit_scale; float p2y = -p2->y * PhysicSimulator::unit_scale;
+
+			auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
+			dl->list.push_back({{p1x, p1y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+			dl->list.push_back({{p2x, p2y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		}
 	}
 
 	/// Draw a solid closed polygon provided in CCW order.
 	virtual void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
+		for (int32 i = 1; i < vertexCount - 1; ++i)
+		{
+			float p1x = vertices[0  ].x * PhysicSimulator::unit_scale; float p1y = -vertices[0  ].y * PhysicSimulator::unit_scale;
+			float p2x = vertices[i  ].x * PhysicSimulator::unit_scale; float p2y = -vertices[i  ].y * PhysicSimulator::unit_scale;
+			float p3x = vertices[i+1].x * PhysicSimulator::unit_scale; float p3y = -vertices[i+1].y * PhysicSimulator::unit_scale;
 
+			auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::TRIANGLES);
+			dl->list.push_back({{p1x, p1y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a * 0.7}});
+			dl->list.push_back({{p2x, p2y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a * 0.7}});
+			dl->list.push_back({{p3x, p3y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a * 0.7}});
+		}
+
+		for (int32 i = 1; i <= vertexCount; i++) {
+			const b2Vec2 *p1 = &vertices[i-1];
+			const b2Vec2 *p2 = &vertices[(i == vertexCount) ? 0 : i];
+
+			float p1x = p1->x * PhysicSimulator::unit_scale; float p1y = -p1->y * PhysicSimulator::unit_scale;
+			float p2x = p2->x * PhysicSimulator::unit_scale; float p2y = -p2->y * PhysicSimulator::unit_scale;
+
+			auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
+			dl->list.push_back({{p1x, p1y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+			dl->list.push_back({{p2x, p2y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		}
 	}
 
 	/// Draw a circle.
-	virtual void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) {
-		float px = center.x * PhysicSimulator::unit_scale, py = -center.y * PhysicSimulator::unit_scale;
+	virtual void DrawCircle(const b2Vec2& _center, float32 radius, const b2Color& color) {
+		b2Vec2 center(_center.x * PhysicSimulator::unit_scale, -_center.y * PhysicSimulator::unit_scale);
 		radius *= PhysicSimulator::unit_scale;
-		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO);
-		dl->list.push_back({{px - radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		dl->list.push_back({{px + radius/2, py - radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		dl->list.push_back({{px + radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		dl->list.push_back({{px - radius/2, py + radius/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		// printf("circle: %fx%f radius %f :: %fx%fx%fx%f\n", px, py, radius, color.r, color.g, color.b, color.a);
+		const float32 k_segments = 16.0f;
+		const float32 k_increment = 2.0f * b2_pi / k_segments;
+		float32 sinInc = sinf(k_increment);
+		float32 cosInc = cosf(k_increment);
+		b2Vec2 r1(1.0f, 0.0f);
+		b2Vec2 v1 = center + radius * r1;
+		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
+		for (int32 i = 0; i < k_segments; ++i)
+		{
+			// Perform rotation to avoid additional trigonometry.
+			b2Vec2 r2;
+			r2.x = cosInc * r1.x - sinInc * r1.y;
+			r2.y = sinInc * r1.x + cosInc * r1.y;
+			b2Vec2 v2 = center + radius * r2;
+			dl->list.push_back({{v1.x, v1.y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+			dl->list.push_back({{v2.x, v2.y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+			r1 = r2;
+			v1 = v2;
+		}
 	}
 	
 	/// Draw a solid circle.
-	virtual void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) {
+	virtual void DrawSolidCircle(const b2Vec2& _center, float32 radius, const b2Vec2& axis, const b2Color& color) {
+		b2Vec2 center(_center.x * PhysicSimulator::unit_scale, -_center.y * PhysicSimulator::unit_scale);
+		radius *= PhysicSimulator::unit_scale;
+		const float32 k_segments = 16.0f;
+		const float32 k_increment = 2.0f * b2_pi / k_segments;
+		float32 sinInc = sinf(k_increment);
+		float32 cosInc = cosf(k_increment);
+		b2Vec2 r1(1.0f, 0.0f);
+		b2Vec2 v1 = center + radius * r1;
+		b2Vec2 v0 = center;
 
+		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::TRIANGLES);
+		for (int32 i = 0; i < k_segments; ++i)
+		{
+			// Perform rotation to avoid additional trigonometry.
+			b2Vec2 r2;
+			r2.x = cosInc * r1.x - sinInc * r1.y;
+			r2.y = sinInc * r1.x + cosInc * r1.y;
+			b2Vec2 v2 = center + radius * r2;
+			dl->list.push_back({{v0.x, v0.y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a * 0.7}});
+			dl->list.push_back({{v1.x, v1.y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a * 0.7}});
+			dl->list.push_back({{v2.x, v2.y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a * 0.7}});
+			r1 = r2;
+			v1 = v2;
+		}
+
+		r1.Set(1.0f, 0.0f);
+		v1 = center + radius * r1;
+		dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
+		for (int32 i = 0; i < k_segments; ++i)
+		{
+			// Perform rotation to avoid additional trigonometry.
+			b2Vec2 r2;
+			r2.x = cosInc * r1.x - sinInc * r1.y;
+			r2.y = sinInc * r1.x + cosInc * r1.y;
+			b2Vec2 v2 = center + radius * r2;
+			dl->list.push_back({{v1.x, v1.y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+			dl->list.push_back({{v2.x, v2.y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+			r1 = r2;
+			v1 = v2;
+		}
 	}
 	
 	/// Draw a line segment.
 	virtual void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
+		float p1x = p1.x * PhysicSimulator::unit_scale; float p1y = -p1.y * PhysicSimulator::unit_scale;
+		float p2x = p2.x * PhysicSimulator::unit_scale; float p2y = -p2.y * PhysicSimulator::unit_scale;
 
+		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
+		dl->list.push_back({{p1x, p1y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		dl->list.push_back({{p2x, p2y, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
 	}
 
 	/// Draw a transform. Choose your own length scale.
 	/// @param xf a transform.
 	virtual void DrawTransform(const b2Transform& xf) {
+		const float32 k_axisScale = 0.4f * PhysicSimulator::unit_scale;
+		b2Color red(1.0f, 0.0f, 0.0f);
+		b2Color green(0.0f, 1.0f, 0.0f);
+		b2Vec2 p1(xf.p.x * PhysicSimulator::unit_scale, -xf.p.y * PhysicSimulator::unit_scale);
+		b2Vec2 p2;
 
+		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
+		dl->list.push_back({{p1.x, p1.y, 0, 1}, {0, 0}, {red.r, red.g, red.b, 1.0}});
+		p2 = p1 + k_axisScale * xf.q.GetXAxis();
+		dl->list.push_back({{p2.x, p2.y, 0, 1}, {0, 0}, {red.r, red.g, red.b, 1.0}});
+
+		dl->list.push_back({{p1.x, p1.y, 0, 1}, {0, 0}, {green.r, green.g, green.b, 1.0}});
+		p2 = p1 + k_axisScale * xf.q.GetYAxis();
+		dl->list.push_back({{p2.x, p2.y, 0, 1}, {0, 0}, {green.r, green.g, green.b, 1.0}});
 	}
 
 	/// Draw a point.
 	virtual void DrawPoint(const b2Vec2& p, float32 size, const b2Color& color) {
 		float px = p.x * PhysicSimulator::unit_scale, py = -p.y * PhysicSimulator::unit_scale;
 		size *= PhysicSimulator::unit_scale;
-		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO);
-		dl->list.push_back({{px - size/2, py - size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		dl->list.push_back({{px + size/2, py - size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		dl->list.push_back({{px + size/2, py + size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
-		dl->list.push_back({{px - size/2, py + size/2, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
+		auto dl = getDisplayList(this, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::POINTS);
+		dl->list.push_back({{px, py, 0, 1}, {0, 0}, {color.r, color.g, color.b, color.a}});
 	}
 };
 

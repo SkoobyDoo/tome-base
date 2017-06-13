@@ -27,6 +27,8 @@
 
 class RendererGL;
 
+enum class RenderKind { QUADS, TRIANGLES, POINTS, LINES }; 
+
 // struct sortable_vertex {
 // 	vertex v;
 // 	array<GLuint, DO_MAX_TEX> tex;
@@ -48,6 +50,7 @@ public:
 	array<GLuint, DO_MAX_TEX> tex{{0,0,0}};
 	shader_type *shader = NULL;
 	uint8_t data_kind = VERTEX_BASE;
+	RenderKind render_kind = RenderKind::QUADS;
 	vector<vertex> list;
 	vector<vertex_kind_info> list_kind_info;
 	vector<vertex_map_info> list_map_info;
@@ -60,7 +63,7 @@ public:
 };
 
 extern void stopDisplayList();
-extern DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader, uint8_t data_kind);
+extern DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader, uint8_t data_kind, RenderKind render_kind);
 extern DisplayList* getDisplayList(RendererGL *container);
 
 /****************************************************************************
@@ -71,13 +74,10 @@ extern DisplayList* getDisplayList(RendererGL *container);
 // GL sort will turn on depth test and let OpenGL handle it. Transparency will bork
 enum class SortMode { NO_SORT, FAST, FULL, GL }; 
 
-enum class RenderKind { QUADS, TRIANGLES, POINTS, LINES }; 
-
 class RendererGL : public SubRenderer {
 	friend class DORVertexes;
 protected:
 	VBOMode mode = VBOMode::DYNAMIC;
-	RenderKind kind = RenderKind::QUADS;
 
 	View *view = NULL;	
 
@@ -105,8 +105,6 @@ protected:
 
 	virtual void cloneInto(DisplayObject *into);
 
-	bool usesElementsVBO();
-
 public:
 	vector<DORFlatSortable*> sorted_dos;
 	// vector<sortable_vertex> zvertices;
@@ -123,7 +121,6 @@ public:
 	virtual void setSortingChanged() { recompute_fast_sort = true; }
 
 	void setShader(shader_type *s, int lua_ref);
-	void renderKind(RenderKind k) { kind = k; };
 	void cutoff(float x, float y, float w, float h) { cutting = true; cutpos1 = vec4(x, y, 0, 1); cutpos2 = vec4(x + w, y + h, 0, 1); };
 	void countVertexes(bool count) { count_vertexes = count; };
 	void countDraws(bool count) { count_draws = count; };

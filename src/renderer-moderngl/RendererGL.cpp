@@ -40,15 +40,15 @@ void stopDisplayList() {
 }
 
 DisplayList* getDisplayList(RendererGL *container) {
-	return getDisplayList(container, {0,0,0}, NULL, VERTEX_BASE);
+	return getDisplayList(container, {0,0,0}, NULL, VERTEX_BASE, RenderKind::QUADS);
 }
-DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader, uint8_t data_kind) {
+DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex, shader_type *shader, uint8_t data_kind, RenderKind render_kind) {
 	if (available_dls.empty()) {
 		available_dls.push(new DisplayList());
 	}
 
 	// printf("test::: %d ?? %d ::: %lx ?? %lx\n", current_used_dl ? current_used_dl->tex : 0 ,tex, current_used_dl ? current_used_dl->shader : 0 ,shader);
-	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader && current_used_dl_container == container && current_used_dl->data_kind == data_kind) {
+	if (current_used_dl && current_used_dl->tex == tex && current_used_dl->shader == shader && current_used_dl_container == container && current_used_dl->data_kind == data_kind && current_used_dl->render_kind == render_kind) {
 		// printf("Reussing current DL! %x with %d, %d, %x\n", current_used_dl, current_used_dl->vbo, current_used_dl->tex[0], current_used_dl->shader);
 		// current_used_dl->used++;
 		// container->addDisplayList(current_used_dl);
@@ -60,6 +60,7 @@ DisplayList* getDisplayList(RendererGL *container, array<GLuint, DO_MAX_TEX> tex
 	dl->tex = tex;
 	dl->shader = shader;
 	dl->data_kind = data_kind;
+	dl->render_kind = render_kind;
 	// printf("Getting DL! %x with %d, %d, %x\n", dl, dl->vbo, tex, shader);
 	dl->used++;
 	current_used_dl = dl;
@@ -124,7 +125,6 @@ void RendererGL::cloneInto(DisplayObject* _into) {
 	RendererGL *into = dynamic_cast<RendererGL*>(_into);
 
 	into->mode = mode;
-	into->kind = kind;
 
 	into->zsort = zsort;
 	into->cutting = cutting;
@@ -154,10 +154,6 @@ static bool sort_dos(DORFlatSortable *i, DORFlatSortable *j) {
 	} else {
 		return i->sort_z < j->sort_z;
 	}
-}
-
-bool RendererGL::usesElementsVBO() {
-	return kind == RenderKind::QUADS;
 }
 
 void RendererGL::sortedToDL() {
@@ -260,9 +256,12 @@ void RendererGL::update() {
 
 	// Upload each display list vertices data to the corresponding VBO on the GPU memory
 	int nb_quads = 0;
+	bool uses_elements_vbo = false;
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if (!(*dl)->sub && !(*dl)->tick) {
 			if ((*dl)->list.size() > nb_quads) nb_quads = (*dl)->list.size();
+
+			if ((*dl)->render_kind == RenderKind::QUADS) uses_elements_vbo = true;
 
 			// printf("REBUILDING THE VBO %d with %d elements of size %dko...\n", (*dl)->vbo, (*dl)->list.size(), sizeof(vertex) * (*dl)->list.size() / 1024);
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[0]);
@@ -288,7 +287,7 @@ void RendererGL::update() {
 	}
 
 	// Update the indices
-	if (usesElementsVBO()) {
+	if (uses_elements_vbo) {
 		nb_quads /= 4;
 		if (nb_quads > vbo_elements_nb) {
 			vbo_elements_data = (GLuint*)realloc((void*)vbo_elements_data, nb_quads * 6 * sizeof(GLuint));
@@ -383,21 +382,19 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!allow_blending) glDisable(GL_BLEND);
 	if (premultiplied_alpha) glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Bind the indices
-	if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
-
 	// Draw all display lists
 	int nb_vert = 0;
 	for (auto dl = displays.begin() ; dl != displays.end(); ++dl) {
 		if ((*dl)->sub) {
 			(*dl)->sub->toScreen(cur_model * (*dl)->sub->use_model, cur_color * (*dl)->sub->use_color);
-			if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 			if (cutting) activateCutting(cur_model, true);
 		} else if ((*dl)->tick) {
 			(*dl)->tick->tick();
-			if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
 			if (cutting) activateCutting(cur_model, true);
 		} else {
+			// Bind the indices
+			if ((*dl)->render_kind == RenderKind::QUADS) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_elements);
+
 			// Bind the vertices
 			glBindBuffer(GL_ARRAY_BUFFER, (*dl)->vbo[0]);
 	 		tglActiveTexture(GL_TEXTURE0);
@@ -481,20 +478,20 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				}
 			}
 
-			if (kind == RenderKind::QUADS) {
+			if ((*dl)->render_kind == RenderKind::QUADS) {
 				glDrawElements(GL_TRIANGLES, (*dl)->list.size() / 4 * 6, GL_UNSIGNED_INT, (void*)0);
-			} else if (kind == RenderKind::TRIANGLES) {
+			} else if ((*dl)->render_kind == RenderKind::TRIANGLES) {
 				glDrawArrays(GL_TRIANGLES, 0, (*dl)->list.size());
-			} else if (kind == RenderKind::POINTS) {
+			} else if ((*dl)->render_kind == RenderKind::POINTS) {
 				glDrawArrays(GL_POINTS, 0, (*dl)->list.size());
-			} else if (kind == RenderKind::LINES) {
+			} else if ((*dl)->render_kind == RenderKind::LINES) {
 				glDrawArrays(GL_LINES, 0, (*dl)->list.size());
 			}
 			nb_vert += (*dl)->list.size();
 		}
 	}
 
-	if (usesElementsVBO()) glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	if (zsort == SortMode::GL) glDisable(GL_DEPTH_TEST);
