@@ -63,6 +63,7 @@ public:
 /*************************************************************************
  ** PhysicSimulator
  *************************************************************************/
+class WorldDebug;
 class TE4ContactListener;
 class PhysicSimulator {
 private:
@@ -71,6 +72,7 @@ private:
 #endif
 	TE4ContactListener *contact_listener;
 	int contact_listener_ref = LUA_NOREF;
+	WorldDebug *debug = NULL;
 public:
 	bool paused = true;
 	b2World world;
@@ -89,6 +91,8 @@ public:
 
 	void rayCast(float x1, float y1, float x2, float y2, uint16 mask_bits);
 	void circleCast(float x, float y, float radius, uint16 mask_bits);
+
+	void drawDebug(float x, float y);
 
 	static void setUnitScale(float scale);
 	static PhysicSimulator *getCurrent();

@@ -1815,6 +1815,11 @@ static int physic_world_set_contact_listener(lua_State *L) {
 	return 0;
 }
 
+static int physic_world_debug_draw(lua_State *L) {
+	PhysicSimulator::current->drawDebug(lua_tonumber(L, 1), lua_tonumber(L, 2));
+	return 0;
+}
+
 /******************************************************************
  ** Lua declarations
  ******************************************************************/
@@ -2267,6 +2272,7 @@ const luaL_Reg physicslib[] = {
 	{"circleCast", physic_world_circlecast},
 	{"worldGravity", physic_world_gravity},
 	{"worldScale", physic_world_unit_to_pixel},
+	{"drawDebug", physic_world_debug_draw},
 	{NULL, NULL}
 };
 

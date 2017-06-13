@@ -71,7 +71,7 @@ extern DisplayList* getDisplayList(RendererGL *container);
 // GL sort will turn on depth test and let OpenGL handle it. Transparency will bork
 enum class SortMode { NO_SORT, FAST, FULL, GL }; 
 
-enum class RenderKind { QUADS, TRIANGLES, POINTS }; 
+enum class RenderKind { QUADS, TRIANGLES, POINTS, LINES }; 
 
 class RendererGL : public SubRenderer {
 	friend class DORVertexes;

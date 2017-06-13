@@ -487,6 +487,8 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 				glDrawArrays(GL_TRIANGLES, 0, (*dl)->list.size());
 			} else if (kind == RenderKind::POINTS) {
 				glDrawArrays(GL_POINTS, 0, (*dl)->list.size());
+			} else if (kind == RenderKind::LINES) {
+				glDrawArrays(GL_LINES, 0, (*dl)->list.size());
 			}
 			nb_vert += (*dl)->list.size();
 		}
