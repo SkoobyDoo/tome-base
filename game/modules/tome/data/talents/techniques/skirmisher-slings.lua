@@ -24,8 +24,8 @@ newTalent {
 	points = 5,
 	require = { stat = { dex=function(level) return 12 + level * 6 end }, },
 	mode = "passive",
-	getDamage = function(self, t) return self:getTalentLevel(t) * 10 end,
-	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 2 end,
+	getDamage = function(self, t) return 0 end,
+	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 1.5 end,
 	ammo_mastery_reload = function(self, t)
 		return math.floor(self:combatTalentScale(t, 0, 2.7, "log"))
 	end,
