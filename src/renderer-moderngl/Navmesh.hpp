@@ -23,9 +23,22 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/Physic.hpp"
+#include <cmath>
+#include "clipper/clipper.hpp"
 
 struct mesh_triangle {
 	vec2 p1, p2, p3;
+
+	float minX() { return fmin(fmin(p1.x, p2.x), p3.x); };
+	float maxX() { return fmax(fmax(p1.x, p2.x), p3.x); };
+	float minY() { return fmin(fmin(p1.y, p2.y), p3.y); };
+	float maxY() { return fmax(fmax(p1.y, p2.y), p3.y); };
+};
+
+struct mesh_polygon {
+	ClipperLib::Path list;
+	// vector<vec2> list;
+	bool is_wall;
 };
 
 /*************************************************************************
@@ -42,7 +55,11 @@ protected:
 	void extractShapeChain(b2Body *body, b2ChainShape *shape);
 	bool makeNavmesh();
 
+	vector<mesh_polygon> polymesh;
 	vector<mesh_triangle> mesh;
+
+	// class dtNavMesh* m_navMesh;
+	// class dtNavMeshQuery* m_navQuery;
 
 public:
 	Navmesh(b2World *world);

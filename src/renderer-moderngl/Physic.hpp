@@ -28,6 +28,8 @@
 #include "Box2D/Box2D.h"
 #endif
 
+enum class PhysicUserKind : uint8_t { NONE, USABLE_AREA, WALL };
+
 /*************************************************************************
  ** DORPhysic
  *************************************************************************/
@@ -36,6 +38,7 @@ private:
 	DisplayObject *me = NULL;
 	b2Body *body = NULL;
 	bool staticbodies = true;
+	PhysicUserKind userkind = PhysicUserKind::NONE;
 
 public:
 	DORPhysic(DisplayObject *d);
@@ -43,6 +46,9 @@ public:
 
 	void define(b2BodyDef &bodyDef);
 	b2Fixture *addFixture(b2FixtureDef &fixtureDef);
+	void setUserKind(PhysicUserKind kind) { userkind = kind; };
+	PhysicUserKind getUserKind() { return userkind; };
+	DisplayObject *getDO() { return me; };
 
 	void setPos(float x, float y);
 	void setAngle(float a);

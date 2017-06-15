@@ -242,6 +242,16 @@ static int gl_generic_physic_create(lua_State *L)
 		lua_error(L);
 	}		
 
+	const char *userkindstr = "";
+	string_get_lua_table(L, 2, "userkind", &userkindstr);
+	if (!strcmp(userkindstr, "none")) physic->setUserKind(PhysicUserKind::NONE);
+	else if (!strcmp(userkindstr, "usable_area")) physic->setUserKind(PhysicUserKind::USABLE_AREA);
+	else if (!strcmp(userkindstr, "wall")) physic->setUserKind(PhysicUserKind::WALL);
+	else if (userkindstr[0] != 0) {
+		lua_pushstring(L, "enablePhysic userkind must be one of none/usable_area/wall");
+		lua_error(L);
+	}		
+
 	// Define the body fixture.
 	if (float_get_lua_table(L, 2, "gravityScale", &tmp)) bodyDef.gravityScale = tmp;
 	if (float_get_lua_table(L, 2, "linearDamping", &tmp)) bodyDef.linearDamping = tmp;
