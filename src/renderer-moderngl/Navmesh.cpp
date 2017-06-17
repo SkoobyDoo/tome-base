@@ -79,40 +79,6 @@ void Navmesh::extractShapeChain(b2Body *body, b2ChainShape *shape) {
 	DORPhysic *physic = ((DisplayObject*)body->GetUserData())->getPhysic(0);
 	poly.is_wall = physic->getUserKind() == PhysicUserKind::WALL;
 	polymesh.push_back(poly);
-
-	// vector<p2t::Point*> vertices;
-	// vertices.reserve(shape->m_count);
-	// for (int i = 0; i < shape->m_count; i++) {
-	// 	if (i == shape->m_count-1 && shape->m_vertices[0].x == shape->m_vertices[i].x && shape->m_vertices[0].y == shape->m_vertices[i].y) {
-	// 		printf("Loop detected, ignoring last poing\n");
-	// 		break;
-	// 	}
-	// 	vec2 v = getCoords(shape->m_vertices[i]);
-	// 	vertices.push_back(new p2t::Point({v.x + center.x, v.y + center.y}));
-	// }
-	// p2t::CDT cdt(vertices);
-	// cdt.Triangulate();
-	// vector<p2t::Triangle*> triangles = cdt.GetTriangles();
-
-	// int nb = 1;
-	// for (auto &tri : triangles) {
-	// 	p2t::Point *p1 = tri->GetPoint(0);
-	// 	p2t::Point *p2 = tri->GetPoint(1);
-	// 	p2t::Point *p3 = tri->GetPoint(2);
-	// 	mesh.push_back({{p1->x, p1->y}, {p2->x, p2->y}, {p3->x, p3->y}});
-	// 	nb++;
-	// }
-
-	// FreeClear(vertices);
-	
-	// int nb = shape->m_count;
-	// int i = 0;
-	// vec2 v0 = getCoords(shape->m_vertices[i]);
-	// for (i = 1; i < nb - 1; i++) {
-	// 	vec2 v1 = getCoords(shape->m_vertices[i]);
-	// 	vec2 v2 = getCoords(shape->m_vertices[i+1]);
-	// 	printf(" * %fx%f  ;;  %fx%f  ;;  %fx%f\n", v0.x, v0.y, v1.x, v1.y, v2.x, v2.y);
-	// }
 }
 
 bool Navmesh::build() {
@@ -135,67 +101,194 @@ bool Navmesh::build() {
 
 	// With the triangles compute the navmesh
 	printf("Navmesh building...\n");
-	makeNavmesh();
+	makeNavmesh(46);
 	printf("Navmesh done\n");
 	return true;
 }
 
-bool Navmesh::makeNavmesh() {
+static inline int32_t sign(const mesh_point &p1, const mesh_point &p2, const mesh_point &p3) {
+	return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+}
+
+static inline bool point_in_triangle(const mesh_point &pt, const mesh_point &v1, const mesh_point &v2, const mesh_point &v3) {
+	bool b1, b2, b3;
+	b1 = sign(pt, v1, v2) < 0;
+	b2 = sign(pt, v2, v3) < 0;
+	b3 = sign(pt, v3, v1) < 0;
+	return ((b1 == b2) && (b2 == b3));
+}
+
+bool Navmesh::makeNavmesh(int radius) {
 	ClipperLib::Clipper clpr;
 
+	// Expand the polymesh based on actor size
 	vector<mesh_polygon> polymesh_expanded;
+	min_x = 999999; max_x = 0; min_y = 999999; max_y = 0;
 	for (auto &poly : polymesh) {
 		if (ClipperLib::Orientation(poly.list)) ClipperLib::ReversePath(poly.list);
 		ClipperLib::Paths solutions;
 		ClipperLib::ClipperOffset co;
 		co.AddPath(poly.list, ClipperLib::jtMiter, ClipperLib::etClosedPolygon);
-		co.Execute(solutions, poly.is_wall ? 46 : -46);
+		co.Execute(solutions, poly.is_wall ? radius : -radius);
 		for (auto &path : solutions) {
 			polymesh_expanded.push_back({path, poly.is_wall});
+			for (auto &it : path) {
+				if (it.X > max_x) max_x = it.X;
+				else if (it.X < min_x) min_x = it.X;
+				if (it.Y > max_y) max_y = it.Y;
+				else if (it.Y < min_y) min_y = it.Y;
+			}
 		}
 	}
+	printf("Navmesh bounds: %dx%d to %dx%d\n", min_x, min_y, max_x, max_y);
 
+	// vector<p2t::Point*> steiners;
+	// for (uint32_t x = min_x; x < max_x; x += 200) {
+	// 	for (uint32_t y = min_y; y < max_y; y += 200) {
+	// 		p2t::Point *p = new p2t::Point(x, y);
+	// 		steiners.push_back(p);
+	// 	}
+	// }
+
+	unordered_set<sp_mesh_edge> edges;
+
+	// For each area (!wall), extrude the walls from it and make triangles
+	// Add those triangles to the global list of triangles and find their common edges
 	for (auto &poly : polymesh_expanded) { if (!poly.is_wall) {
 		ClipperLib::Clipper clpr;
 		clpr.AddPath(poly.list, ClipperLib::ptSubject, true);
 		for (auto &poly : polymesh_expanded) { if (poly.is_wall) {
 			clpr.AddPath(poly.list, ClipperLib::ptClip , true);
 		} }
-
 		ClipperLib::Paths solution;
-		if (!clpr.Execute(ClipperLib::ctDifference, solution, ClipperLib::pftEvenOdd, ClipperLib::pftNonZero)) {
-			printf("Clipper failed\n");
-			continue;
-		}
+		if (!clpr.Execute(ClipperLib::ctDifference, solution, ClipperLib::pftEvenOdd, ClipperLib::pftNonZero))continue;
 
-		printf("Solution with %ld paths\n", solution.size());
+		// Convert clipper data format to poly2tri data format
 		vector<vector<p2t::Point*>> polylines;
 		for (auto &path : solution) {
-			printf(" - path with %ld vertexes\n", path.size());
-
 			vector<p2t::Point*> vertices;
 			vertices.reserve(path.size());
-			for (auto &point : path) {
-				printf("    - %lld x %lld\n", point.X, point.Y);
-				vertices.push_back(new p2t::Point({point.X, point.Y}));
-			}
+			for (auto &point : path) vertices.push_back(new p2t::Point({(double)point.X, (double)point.Y}));
 			polylines.push_back(vertices);
 		}
 
+		// Triangulate the polygon
 		p2t::CDT cdt(polylines[0]);
+		// Add the holes
 		for (int i = 1; i < polylines.size(); i++) cdt.AddHole(polylines[i]);
+		// Add steiner points to split up more equaly
+		// for (auto point : steiners) cdt.AddPoint(point);
+
 		cdt.Triangulate();
 		vector<p2t::Triangle*> triangles = cdt.GetTriangles();
 
+		// Store triangles and find edges
 		for (auto &tri : triangles) {
 			p2t::Point *p1 = tri->GetPoint(0);
 			p2t::Point *p2 = tri->GetPoint(1);
 			p2t::Point *p3 = tri->GetPoint(2);
-			mesh.push_back({{p1->x, p1->y}, {p2->x, p2->y}, {p3->x, p3->y}});
+			sp_mesh_triangle mtri = make_shared<mesh_triangle>((mesh_point){(uint32_t)p1->x, (uint32_t)p1->y}, (mesh_point){(uint32_t)p2->x, (uint32_t)p2->y}, (mesh_point){(uint32_t)p3->x, (uint32_t)p3->y}, mesh.size() + 1);
+			mesh.push_back(mtri);
+
+			mtri->print();
+
+			for (auto edge : mtri->edges) {
+				auto it = edges.find(edge);
+				if (it != edges.end()) {
+					// printf("  - Edge %dx%d :: %dx%d already existing, adding tri %d\n", edge->p1.x, edge->p1.y, edge->p2.x, edge->p2.y, mtri->id);
+					(*it)->links.push_back(mtri->id);
+				} else {
+					// printf("  - Edge %dx%d :: %dx%d is new, setting tri %d\n", edge->p1.x, edge->p1.y, edge->p2.x, edge->p2.y, mtri->id);
+					edges.insert(edge);
+					edge->links.push_back(mtri->id);
+				}
+			}
 		}
 		for (auto &vertices : polylines) FreeClear(vertices);
+		// FreeClear(triangles);
 	} }
+
+	for (auto edge : edges) {
+		// printf("Edge (%dx%d)x(%dx%d) has:\n", edge->p1.x, edge->p1.y, edge->p2.x, edge->p2.y);
+		// for (auto tid : edge->links) {
+		// 	printf("  - %d\n", tid);
+		// }
+		if (edge->links.size() == 2) {
+			sp_mesh_triangle tri1 = mesh[edge->links[0]-1];
+			sp_mesh_triangle tri2 = mesh[edge->links[1]-1];
+			tri1->links.push_back(edge->links[1]);
+			tri2->links.push_back(edge->links[0]);
+		} else if (edge->links.size() == 0) {
+			printf("[NAVMESH] ERROR: triangle edge with 0 neighbours!\n");
+		} else if (edge->links.size() > 2) {
+			printf("[NAVMESH] ERROR: triangle edge with more than 2 neighbours (%ld)!\n", edge->links.size());
+		}
+	}
+
+	// Now we have triangles, find neighbours
+	for (auto tri : mesh) {
+		printf("Triangle %d linked to\n", tri->id);
+		for (auto it : tri->links) printf(" - %d\n", it);
+	}
+	return true;
 }
+
+bool Navmesh::isInTriangle(uint32_t x, uint32_t y, int triid) {
+	if (triid > mesh.size() || triid < 1) return false;
+	sp_mesh_triangle tri = mesh[triid-1];
+	return point_in_triangle({x, y}, tri->p1, tri->p2, tri->p3);
+}
+
+int Navmesh::findTriangle(uint32_t x, uint32_t y) {
+	mesh_point p = {x, y};
+	// printf("TEST %dx%d\n", x, y);
+	for (auto tri : mesh) {
+		// point_in_triangle(p, tri->p1, tri->p2, tri->p3);
+		if (point_in_triangle(p, tri->p1, tri->p2, tri->p3)) return tri->id;
+	}
+	return 0;
+}
+
+extern int gl_tex_white;
+void Navmesh::drawDebug(float x, float y) {
+	if (!renderer) { 
+		renderer = new RendererGL(VBOMode::STREAM);
+		char *name = strdup("navmesh debug renderer");
+		renderer->setRendererName(name, false);
+		renderer->setManualManagement(true);
+	}
+
+	renderer->resetDisplayLists();
+	renderer->setChanged(true);
+
+	auto dl = getDisplayList(renderer, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::TRIANGLES);
+	for (auto tri : mesh) {
+		vertex v1{{tri->p1.x, tri->p1.y, 0, 1}, {0, 0}, {0, 1, 0.5, 0.5}};
+		vertex v2{{tri->p2.x, tri->p2.y, 0, 1}, {0, 0}, {0, 1, 0.5, 0.5}};
+		vertex v3{{tri->p3.x, tri->p3.y, 0, 1}, {0, 0}, {0, 1, 0.5, 0.5}};
+		dl->list.push_back(v1);
+		dl->list.push_back(v2);
+		dl->list.push_back(v3);
+	}
+
+	dl = getDisplayList(renderer, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
+	for (auto tri : mesh) {
+		vertex v1{{tri->p1.x, tri->p1.y, 0, 1}, {0, 0}, {0, 1, 1, 1}};
+		vertex v2{{tri->p2.x, tri->p2.y, 0, 1}, {0, 0}, {0, 1, 1, 1}};
+		vertex v3{{tri->p3.x, tri->p3.y, 0, 1}, {0, 0}, {0, 1, 1, 1}};
+		dl->list.push_back(v1); dl->list.push_back(v2);
+		dl->list.push_back(v2); dl->list.push_back(v3);
+		dl->list.push_back(v3); dl->list.push_back(v1);
+	}
+
+	glm::mat4 model = glm::mat4();
+	model = glm::translate(model, glm::vec3(x, y, 0.f));
+	renderer->toScreen(model, {1,1,1,1});
+}
+
+/////////////////////////////////////////////////////////////////////////
+// Non working recast/detour version
+/////////////////////////////////////////////////////////////////////////
 
 // bool Navmesh::makeNavmesh() {
 // 	rcHeightfield* m_solid;
@@ -559,40 +652,3 @@ bool Navmesh::makeNavmesh() {
 // 		return false;
 // 	}
 // }
-
-extern int gl_tex_white;
-void Navmesh::drawDebug(float x, float y) {
-	if (!renderer) { 
-		renderer = new RendererGL(VBOMode::STREAM);
-		char *name = strdup("navmesh debug renderer");
-		renderer->setRendererName(name, false);
-		renderer->setManualManagement(true);
-	}
-
-	renderer->resetDisplayLists();
-	renderer->setChanged(true);
-
-	auto dl = getDisplayList(renderer, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::TRIANGLES);
-	for (auto &tri : mesh) {
-		vertex v1{{tri.p1.x, tri.p1.y, 0, 1}, {0, 0}, {0, 1, 0.5, 0.5}};
-		vertex v2{{tri.p2.x, tri.p2.y, 0, 1}, {0, 0}, {0, 1, 0.5, 0.5}};
-		vertex v3{{tri.p3.x, tri.p3.y, 0, 1}, {0, 0}, {0, 1, 0.5, 0.5}};
-		dl->list.push_back(v1);
-		dl->list.push_back(v2);
-		dl->list.push_back(v3);
-	}
-
-	dl = getDisplayList(renderer, {(GLuint)gl_tex_white, 0, 0}, NULL, VERTEX_MAP_INFO, RenderKind::LINES);
-	for (auto &tri : mesh) {
-		vertex v1{{tri.p1.x, tri.p1.y, 0, 1}, {0, 0}, {0, 1, 1, 1}};
-		vertex v2{{tri.p2.x, tri.p2.y, 0, 1}, {0, 0}, {0, 1, 1, 1}};
-		vertex v3{{tri.p3.x, tri.p3.y, 0, 1}, {0, 0}, {0, 1, 1, 1}};
-		dl->list.push_back(v1); dl->list.push_back(v2);
-		dl->list.push_back(v2); dl->list.push_back(v3);
-		dl->list.push_back(v3); dl->list.push_back(v1);
-	}
-
-	glm::mat4 model = glm::mat4();
-	model = glm::translate(model, glm::vec3(x, y, 0.f));
-	renderer->toScreen(model, {1,1,1,1});
-}

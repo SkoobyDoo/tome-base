@@ -24,16 +24,61 @@
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/Physic.hpp"
 #include <cmath>
+#include <unordered_map>
+#include <unordered_set>
 #include "clipper/clipper.hpp"
 
-struct mesh_triangle {
-	vec2 p1, p2, p3;
-
-	float minX() { return fmin(fmin(p1.x, p2.x), p3.x); };
-	float maxX() { return fmax(fmax(p1.x, p2.x), p3.x); };
-	float minY() { return fmin(fmin(p1.y, p2.y), p3.y); };
-	float maxY() { return fmax(fmax(p1.y, p2.y), p3.y); };
+struct mesh_point {
+	uint32_t x, y;
+	inline bool operator==(const mesh_point &p2) const { return x == p2.x && y == p2.y; };
 };
+
+struct mesh_edge {
+	mesh_point p1, p2;
+	vector<int> links;
+	mesh_edge(mesh_point p1, mesh_point p2) : p1(p1), p2(p2) {};
+	inline bool operator==(const mesh_edge &e2) const { return (p1 == e2.p1 && p2 == e2.p2) || (p1 == e2.p2 && p2 == e2.p1); };
+};
+typedef shared_ptr<mesh_edge> sp_mesh_edge;
+
+// Overload hash & equal_to to make them work on the actual edge and not just smart pointer
+namespace std {
+	template <> struct hash<sp_mesh_edge> {
+		std::size_t operator()(const sp_mesh_edge& e) const {
+			size_t res = 17;
+			uint32_t c1 = e->p1.y * 65536 + e->p1.x;
+			uint32_t c2 = e->p2.y * 65536 + e->p2.x;
+			if (c2 < c1) std:swap(c1, c2);
+			res = res * 31 + hash<int>()( c1 );
+			res = res * 31 + hash<int>()( c2 );
+			return res;
+		}
+	};
+	template <> struct equal_to<sp_mesh_edge> {
+		bool operator()(const sp_mesh_edge& e1, const sp_mesh_edge& e2) const {
+			return (*e1) == (*e2);
+		}
+	};
+};
+
+struct mesh_triangle {
+	int id;
+	mesh_point p1, p2, p3;
+	array<sp_mesh_edge, 3> edges;
+	vector<int> links;
+
+	mesh_triangle(mesh_point p1, mesh_point p2, mesh_point p3, int id) : p1(p1), p2(p2), p3(p3), id(id) {
+		edges[0] = make_shared<mesh_edge>(p1, p2);
+		edges[1] = make_shared<mesh_edge>(p2, p3);
+		edges[2] = make_shared<mesh_edge>(p3, p1);
+	};
+	uint32_t minX() { return fmin(fmin(p1.x, p2.x), p3.x); };
+	uint32_t maxX() { return fmax(fmax(p1.x, p2.x), p3.x); };
+	uint32_t minY() { return fmin(fmin(p1.y, p2.y), p3.y); };
+	uint32_t maxY() { return fmax(fmax(p1.y, p2.y), p3.y); };
+	void print() { printf("_triangle_ %d : %dx%d, %dx%d, %dx%d\n", id, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y); };
+};
+typedef shared_ptr<mesh_triangle> sp_mesh_triangle;
 
 struct mesh_polygon {
 	ClipperLib::Path list;
@@ -53,10 +98,11 @@ protected:
 	vec2 getCoords(b2Vec2 bv) { return vec2(bv.x * PhysicSimulator::unit_scale, -bv.y * PhysicSimulator::unit_scale); };
 	void extractShapePolygon(b2Body *body, b2PolygonShape *shape);
 	void extractShapeChain(b2Body *body, b2ChainShape *shape);
-	bool makeNavmesh();
+	bool makeNavmesh(int radius);
 
 	vector<mesh_polygon> polymesh;
-	vector<mesh_triangle> mesh;
+	vector<sp_mesh_triangle> mesh;
+	uint32_t min_x, max_x, min_y, max_y;
 
 	// class dtNavMesh* m_navMesh;
 	// class dtNavMeshQuery* m_navQuery;
@@ -66,6 +112,8 @@ public:
 	virtual ~Navmesh();
 
 	bool build();
+	bool isInTriangle(uint32_t x, uint32_t y, int triid);
+	int findTriangle(uint32_t x, uint32_t y);
 
 	void drawDebug(float x, float y);
 };

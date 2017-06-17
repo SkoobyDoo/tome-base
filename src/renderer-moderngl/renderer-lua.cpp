@@ -1769,6 +1769,20 @@ static int navmesh_free(lua_State *L)
 	return 1;
 }
 
+static int navmesh_is_in_triangle(lua_State *L)
+{
+	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
+	lua_pushboolean(L, p->isInTriangle(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)));
+	return 1;
+}
+
+static int navmesh_find_triangle(lua_State *L)
+{
+	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
+	lua_pushnumber(L, p->findTriangle(lua_tonumber(L, 2), lua_tonumber(L, 3)));
+	return 1;
+}
+
 static int navmesh_debug_draw(lua_State *L)
 {
 	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
@@ -2274,6 +2288,8 @@ static const struct luaL_Reg gl_view_reg[] =
 static const struct luaL_Reg navmesh_reg[] =
 {
 	{"__gc", navmesh_free},
+	{"isInTriangle", navmesh_is_in_triangle},
+	{"findTriangle", navmesh_find_triangle},
 	{"drawDebug", navmesh_debug_draw},
 	{NULL, NULL},
 };
