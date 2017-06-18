@@ -49,6 +49,11 @@ newBirthDescriptor{
 	},
 }
 
+local shield_special = function(e) -- allows any object with shield combat
+	local combat = e.shield_normal_combat and e.combat or e.special_combat
+	return combat and combat.block
+end
+
 newBirthDescriptor{
 	type = "subclass",
 	name = "Sun Paladin",
@@ -91,6 +96,24 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 110,
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", special=function(e, filter) -- allow any weapon that doesn't forbid OFFHAND
+				if e.slot_forbid == "OFFHAND" then
+					local who = filter._equipping_entity
+					return who and not who:slotForbidCheck(e, who.INVEN_MAINHAND)
+				end
+				return true
+			end},
+			OFFHAND = {special=shield_special},
+			BODY = {type="armor", special=function(e, filter)
+				if e.subtype=="heavy" or e.subtype=="massive" then return true end
+				local who = filter._equipping_entity
+				if who then
+					local body = who:getInven(who.INVEN_BODY)
+					return not (body and body[1])
+				end
+			end},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="mace", name="iron mace", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000},
@@ -145,9 +168,20 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 90,
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", subtype="staff"},
+			OFFHAND = {special=function(e, filter) -- only allow if there is a 1H weapon in MAINHAND
+				local who = filter._equipping_entity
+				if who then
+					local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+					if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+				end
+				return false
+			end}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
-			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000}
+			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 		},
 	},
 }

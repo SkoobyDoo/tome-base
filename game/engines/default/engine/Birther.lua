@@ -360,14 +360,14 @@ function _M:apply()
 	self.actor.descriptor = {}
 	local stats, inc_stats = {}, {}
 	for i, d in ipairs(self.descriptors) do
-		print("[BIRTHER] Applying descriptor "..(d.name or "none"))
+		print("[BIRTHER] Applying descriptor "..(d.type or "untyped").."."..(d.name or "none"))
 		self.actor.descriptor[d.type or "none"] = (d.name or "none")
 
 		if d.copy then
 			local copy = table.clone(d.copy, true)
 			-- Append array part
 			while #copy > 0 do
-				local f = table.remove(copy)
+				local f = table.remove(copy, 1)
 				table.insert(self.actor, f)
 			end
 			-- Copy normal data
@@ -377,7 +377,7 @@ function _M:apply()
 			local copy = table.clone(d.copy_add, true)
 			-- Append array part
 			while #copy > 0 do
-				local f = table.remove(copy)
+				local f = table.remove(copy, 1)
 				table.insert(self.actor, f)
 			end
 			-- Copy normal data
@@ -410,6 +410,7 @@ function _M:apply()
 		end
 		if d.talents then
 			for tid, lev in pairs(d.talents) do
+				print("[BIRTHER} learning talent", tid, lev)
 				for i = 1, lev do
 					self.actor:learnTalent(tid, true)
 				end

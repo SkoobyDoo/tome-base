@@ -68,27 +68,46 @@ function _M:loadup(level, zone)
 	local old_minml = zone.min_material_level
 	local old_maxml = zone.max_material_level
 
-	if zone.store_levels_by_restock then
-		zone.base_level = zone.store_levels_by_restock[game.state.stores_restock] or zone.base_level
-	end
+	self.last_filled = self.last_filled or 0
 
-	if self.store.ignore_material_levels then
-		zone.min_material_level = 1
-		zone.max_material_level = 5
-	end
+	while self.last_filled < game.state.stores_restock do
+		local lev = (game.state.stores_restock_levels and game.state.stores_restock_levels[self.last_filled]) or 8
+		if zone.store_levels_by_restock then
+			zone.base_level = zone.store_levels_by_restock[self.last_filled] or zone.base_level
+		end
 
-	if Store.loadup(self, level, zone, self.store.nb_fill) then
-		self.last_filled = game.state.stores_restock
-	end
+		-- Increment material level every 10 levels with a special case at level 5
+		if self.store.player_material_level then
+			if lev == 5 then
+				zone.min_material_level = 1
+				zone.max_material_level = 2
+			else
+				zone.max_material_level = math.min(5, math.floor(lev / 10) + 1)
+				zone.min_material_level = math.max(1, zone.max_material_level - 1)
+			end
+		end
 
-	zone.min_material_level = old_minml
-	zone.max_material_level = old_maxml
-	zone.base_level = oldlev
+		-- ignore_material_levels gets priority over other systems
+		if self.store.ignore_material_levels then
+			zone.min_material_level = 1
+			zone.max_material_level = 5
+		end
 
-	-- clear chrono worlds and their various effects
-	if game._chronoworlds then
-		game.log("#CRIMSON#Your timetravel has no effect on pre-determined outcomes such as this.")
-		game._chronoworlds = nil
+		-- Engine.store.loadup sets last_filled to something silly so we have to save it
+		local old_last_filled = self.last_filled
+		if Store.loadup(self, level, zone, self.store.nb_fill) then
+			self.last_filled = old_last_filled + 1
+		end
+
+		zone.min_material_level = old_minml
+		zone.max_material_level = old_maxml
+		zone.base_level = oldlev
+
+		-- clear chrono worlds and their various effects
+		if game._chronoworlds then
+			game.log("#CRIMSON#Your timetravel has no effect on pre-determined outcomes such as this.")
+			game._chronoworlds = nil
+		end
 	end
 end
 

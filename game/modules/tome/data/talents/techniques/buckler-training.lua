@@ -35,8 +35,11 @@ newTalent {
 		return self:combatLimit(self:getTalentLevel(t)*10+self:getCun()*0.5, 50, 5, 15, 25, 100)
 	end,
 	-- called by _M:combatArmorHardiness
-	getHardiness = function(self, t)
-		return 0 --self:getTalentLevel(t) * 4;
+	getArmorHardiness = function(self, t)
+		return self:combatTalentLimit(t, 30, 10, 25)
+	end,
+	getArmour = function(self, t)
+		return self:combatTalentLimit(t, 20, 3, 15)
 	end,
 	-- called by Combat.attackTargetWith
 	shouldEvade = function(self, t)
@@ -56,11 +59,13 @@ newTalent {
 	end,
 	info = function(self, t)
 		local block = t.chance(self, t)
-		local armor = t.getHardiness(self, t)
+		local armour = t.getArmour(self,t)
+		local hardiness = t.getArmorHardiness(self, t)
 		return ([[Allows shields to be equipped, using Cunning instead of strength as a requirement.
 			When you are attacked in melee, you have a %d%% chance to deflect the attack with your shield, completely evading it.
+			In addition, as long as you are wearing armour no heavier than leather, you gain %d Armour and %d%% Armour hardiness.
 			The chance to deflect increases with your Cunning.]])
-			:format(block, armor)
+			:format(block, armour, hardiness)
 	end,
 }
 

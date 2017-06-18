@@ -20,16 +20,12 @@
 -- Unique
 if game.state:doneEvent(event_id) then return end
 
--- Find a random spot
-local x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-local tries = 0
-while not game.state:canEventGrid(level, x, y) and tries < 100 do
-	x, y = rng.range(1, level.map.w - 2), rng.range(1, level.map.h - 2)
-	tries = tries + 1
-end
-if tries >= 100 then return false end
+local x, y = game.state:findEventGrid(level)
+if not x then return false end
 
 local id = "rat-lich-"..game.turn
+
+print("[EVENT] Placing event", id, "at", x, y)
 
 local changer = function(id)
 	local npcs = mod.class.NPC:loadList{"/data/general/npcs/undead-rat.lua"}
@@ -37,7 +33,14 @@ local changer = function(id)
 	local terrains = mod.class.Grid:loadList("/data/general/grids/basic.lua")
 	terrains.UP_WILDERNESS.change_level_shift_back = true
 	terrains.UP_WILDERNESS.change_zone_auto_stairs = true
-
+	terrains.UP_WILDERNESS.name = "way up to "..game.zone.name
+	terrains.UP_WILDERNESS.change_zone = game.zone.short_name
+	terrains.UP_WILDERNESS.change_level = 1
+	terrains.UP_WILDERNESS.change_level_check = function(self)
+		game.log("#VIOLET# As you leave the crypt, the stairway collapses in upon itself.")
+		-- May delete old zone file here?
+		return
+	end
 	objects.RATLICH_SKULL = mod.class.Object.new{
 		define_as = "RATLICH_SKULL",
 		power_source = {arcane=true},
@@ -97,7 +100,9 @@ local changer = function(id)
 
 	local zone = mod.class.Zone.new(id, {
 		name = "Forsaken Crypt",
-		level_range = {game.zone:level_adjust_level(game.level, game.zone, "actor"), game.zone:level_adjust_level(game.level, game.zone, "actor")},
+		level_range = game.zone.actor_adjust_level and {math.floor(game.zone:actor_adjust_level(game.level, game.player)*1.05),
+			math.ceil(game.zone:actor_adjust_level(game.level, game.player)*1.15)} or {game.zone.base_level, game.zone.base_level}, -- 5-15% higher levels
+		__applied_difficulty = true, --Difficulty already applied to parent zone
 		level_scheme = "player",
 		max_level = 1,
 		actor_adjust_level = function(zone, level, e) return zone.base_level + e:getRankLevelAdjust() + level.level-1 + rng.range(-1,2) end,
@@ -105,8 +110,10 @@ local changer = function(id)
 		ambient_music = "Dark Secrets.ogg",
 		reload_lists = false,
 		persistent = "zone",
-		min_material_level = game.zone.min_material_level,
-		max_material_level = game.zone.max_material_level,
+		no_worldport = game.zone.no_worldport,
+		min_material_level = util.getval(game.zone.min_material_level),
+		max_material_level = util.getval(game.zone.max_material_level),
+		
 		generator =  {
 			map = {
 				class = "engine.generator.map.Roomer",
@@ -142,7 +149,10 @@ local changer = function(id)
 end
 
 local g = game.level.map(x, y, engine.Map.TERRAIN):cloneFull()
-g.name = "forsaken crypt"
+g.name = "stairway leading downwards"
+g.always_remember = true
+g.desc = [[Stairs seem to lead into some kind of crypt.]]
+g.show_tooltip = true
 g.display='>' g.color_r=0 g.color_g=0 g.color_b=255 g.notice = true
 g.change_level=1 g.change_zone=id g.glow=true
 g:removeAllMOs()
@@ -157,7 +167,11 @@ g.change_level_check = function(self)
 	game:changeLevel(1, self.real_change(self.change_zone), {temporary_zone_shift=true, direct_switch=true})
 	require("engine.ui.Dialog"):simplePopup("Forsaken Crypt", "You hear squeaks and the sounds of clicking bone echo around you... Pure death awaits. Flee!")
 	self.change_level_check = nil
-	self.real_change = nil
+	self.change_level = nil
+	self.name = "collapsed forsaken crypt"
+	self.desc = [[Stairs lead downwards into rubble.]]
+	self.autoexplore_ignore = true
+	self.special_minimap = colors.VIOLET
 	return true
 end
 game.zone:addEntity(game.level, g, "terrain", x, y)
@@ -172,4 +186,4 @@ for z = 1, 3 do
 	end
 end
 
-return true
+return x, y

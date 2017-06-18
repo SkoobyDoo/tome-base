@@ -230,6 +230,7 @@ newEntity{ define_as = "ALUIN",
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	resolvers.auto_equip_filters("Sun Paladin"),
 	resolvers.equip{
 		{type="weapon", subtype="waraxe", force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="shield", defined="SANGUINE_SHIELD", random_art_replace={chance=65}, autoreq=true},

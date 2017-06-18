@@ -1,5 +1,3 @@
-
-
 -- ToME - Tales of Maj'Eyal
 -- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
@@ -34,6 +32,7 @@ return {
 	no_worldport = true,
 	infinite_dungeon = true,
 	events_by_level = true,
+	special_level_faction = "enemies",
 	ambient_music = function() return rng.table{
 		"Battle Against Time.ogg",
 		"Breaking the siege.ogg",
@@ -211,6 +210,8 @@ return {
 		vgrid = vgrids[vgridN]
 		print("[Infinite Dungeon] using zone layout #", layoutN, layout.id_layout_name) table.print(layout, "\t")
 		print("[Infinite Dungeon] using variable grid set #", vgridN, vgrid.id_grids_name) table.print(vgrid, "\t")
+
+		if layout.rooms and game:isAddonActive("items-vault") then table.insert(layout.rooms, {"!items-vault",3}) end
 		
 		data.generator.map = layout
 		
@@ -245,6 +246,7 @@ return {
 		data.generator.map.down = data.alternate_exit[1].grids.down -- exit matches destination
 		data.generator.map.door = vgrid.door
 		data.generator.map["'"] = vgrid.door
+		data.generator.map.I = "ITEMS_VAULT"
 
 		data.width, data.height = vx, vy
 		data.generator.map.width, data.generator.map.height = vx, vy
@@ -329,7 +331,7 @@ return {
 		end
 		
 		-- Everything hates you in the infinite dungeon!
-		for uid, e in pairs(level.entities) do e.faction = e.hard_faction or "enemies" end
+		for uid, e in pairs(level.entities) do e.faction = e.hard_faction or zone.special_level_faction or "enemies" end
 		
 		-- Some lore
 		if level.level == 1 or level.level == 10 or level.level == 20 or level.level == 30 or level.level == 40 then
@@ -357,8 +359,6 @@ return {
 			level.data.effects = {effid}
 		end
 
-		game.state:infiniteDungeonChallengeFinish(zone, level)
-		
 		if config.settings.cheat then -- gather statistics
 			local block_count = 0
 			for i = 0, level.map.w - 1 do for j = 0, level.map.h - 1 do
@@ -367,6 +367,11 @@ return {
 			local closed = 100*block_count/(level.map.w*level.map.h) local open = 100-closed
 			print(("[Infinite Dungeon] Open space calculation: (%s, %s, %dw x %dh) space -- (open:%2.1f%%, closed:%2.1f%%)"):format(level.data.id_layout_name, level.data.id_grids_name, level.map.w, level.map.h, open, closed))
 		end
+	end,
+	post_process_end = function(level, zone)
+		-- We delay it because at "post_process" the map can STILL decide to regenerate
+		-- and if it does, it's a new level and challenge is considered auto failed (or auto success heh)
+		game.state:infiniteDungeonChallengeFinish(zone, level)
 	end,
 }
 

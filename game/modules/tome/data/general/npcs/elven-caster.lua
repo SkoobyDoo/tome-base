@@ -44,6 +44,7 @@ newEntity{
 
 	resolvers.racial(),
 	resolvers.talents{ [Talents.T_ARMOUR_TRAINING]=1, },
+	resolvers.auto_equip_filters("Archmage"),
 
 	autolevel = "caster",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=1, },

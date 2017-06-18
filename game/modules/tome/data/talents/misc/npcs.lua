@@ -40,36 +40,35 @@ newTalent{
 	cooldown = 3,
 	range = 10,
 	requires_target = true,
+	on_pre_use = function(self, t) return self.can_multiply and self.can_multiply > 0 end,
+	unlearn_on_clone = true,
 	tactical = { ATTACK = function(self, t, aitarget) return 2*(1.2 + self.level/50) end },
 	action = function(self, t)
+
 		if not self.can_multiply or self.can_multiply <= 0 then game.logPlayer(self, "You can not multiply anymore.") return nil end
 
-		-- Find space
+		-- Find a place for the clone
 		local x, y = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
-		if not x then print("no free space") return nil end
+		if not x then print("Multiply: no free space") return nil end
 
-		-- Find a place around to clone
 		self.can_multiply = self.can_multiply - 1
-		local a
-		if self.clone_base then a = self.clone_base:cloneFull() else a = self:cloneFull() end
-		a.can_multiply = a.can_multiply - 1
-		a.energy.value = 0
-		a.exp_worth = 0.1
-		a.inven = {}
-		a.x, a.y = nil, nil
-		a.faction = self.faction
-		a:removeAllMOs()
+		local a = self:cloneActor({can_multiply=self.can_multiply-1, exp_worth=0.1})
+		mod.class.NPC.castAs(a)
+
 		a:removeTimedEffectsOnClone()
-		if a.can_multiply <= 0 then a:unlearnTalent(t.id) end
+		a:unlearnTalentsOnClone()
+		 -- allow chain multiply for now (It's classic!)
+		if a.can_multiply > 0 then a:learnTalent(t.id, true, 1) end
 
 		print("[MULTIPLY]", x, y, "::", game.level.map(x,y,Map.ACTOR))
 		print("[MULTIPLY]", a.can_multiply, "uids", self.uid,"=>",a.uid, "::", self.player, a.player)
 		game.zone:addEntity(game.level, a, "actor", x, y)
 		a:check("on_multiply", self)
+		a:doFOV()
 		return true
 	end,
 	info = function(self, t)
-		return ([[Multiply yourself!]])
+		return ([[Multiply yourself! (up to %d times)]]):format(self.can_multiply or 0)
 	end,
 }
 
@@ -362,6 +361,7 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = 2 },
 	is_summon = true,
+	unlearn_on_clone = true,
 	action = function(self, t)
 		if not self:canBe("summon") then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
 

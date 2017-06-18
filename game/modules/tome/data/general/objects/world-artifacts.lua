@@ -255,6 +255,7 @@ newEntity{ base = "BASE_RING",
 	cost = 500,
 	material_level = 4,
 	special_desc = function(self) return "Will bring you back from death, but only once!" end,
+	special = true,
 	wielder = {
 		inc_stats = { [Stats.STAT_LCK] = 10, },
 		die_at = -100,
@@ -1223,10 +1224,10 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	unided_name = "massive, stained girdle",
 	desc = [[This girdle is enchanted with mighty wards against expanding girth. Whatever the source of its wondrous strength, it will prove of great aid in the transport of awkward burdens.]],
 	color = colors.LIGHT_RED,
-	level_range = {1, 25},
+	level_range = {5, 14},
 	rarity = 170,
 	cost = 150,
-	material_level = 2,
+	material_level = 1,
 	wielder = {
 		knockback_immune = 0.4,
 		max_encumber = 70,
@@ -1544,10 +1545,10 @@ newEntity{ base = "BASE_LEATHER_BELT",
 	unided_name = "golden belt",
 	desc = [[A belt rumoured to have been worn by the Conclave healers.]],
 	color = colors.GOLD,
-	level_range = {5, 14},
+	level_range = {1, 25},
 	rarity = 120,
-	cost = 75,
-	material_level = 1,
+	cost = 150,
+	material_level = 2,
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = 3,  },
 		resists = {
@@ -1573,19 +1574,19 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
 	cost = 250,
 	material_level = 2,
 	wielder = {
-		inc_stats = { [Stats.STAT_STR] = 2, [Stats.STAT_CON] = 2 },
+		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_CON] = 3 },
 
 		combat_armor = 6,
 		combat_def = 4,
 		combat_def_ranged = 8,
 
 		max_encumber = 20,
-		life_regen = 0.7,
-		stamina_regen = 0.7,
+		life_regen = 2,
+		stamina_regen = 1,
 		fatigue = 10,
-		max_stamina = 43,
+		max_stamina = 45,
 		max_life = 45,
-		knockback_immune = 0.1,
+		knockback_immune = 0.5,
 		size_category = 1,
 	},
 }
@@ -2929,7 +2930,7 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 1,
 	combat = {
 		range = 9,
-		physspeed = 0.75,
+		physspeed = 0.95,
 	},
 	wielder = {
 		inc_damage={ [DamageType.PHYSICAL] = 5, },
@@ -3605,6 +3606,7 @@ newEntity{ base = "BASE_GAUNTLETS",
 	name = "Spellhunt Remnants", color = colors.GREY, image = "object/artifact/spellhunt_remnants.png",
 	unided_name = "heavily corroded voratun gauntlets",
 	desc = [[These once brilliant voratun gauntlets have fallen into a deep decay. Originally used in the spellhunt, they were often used to destroy arcane artifacts, curing the world of their influence.]],
+	special_desc = function(self) return "Drains arcane resources while worn." end,
 --	material_level = 1, --Special: this artifact can appear anywhere and adjusts its material level to the zone
 	level_range = {1, nil}, 
 	rarity = 550, -- Extra rare to make it not ALWAYS appear.
@@ -3616,10 +3618,25 @@ newEntity{ base = "BASE_GAUNTLETS",
 			self.power_up(self, nil, mat_level)
 		end
 	end,
+	on_wear = function(self, who)
+		if who:attr("has_arcane_knowledge") then
+			game.logPlayer(who, "#ORCHID#The %s begin draining your arcane resources as they are worn!", self:getName({do_color=true}))
+		end
+	end,
 	on_preaddobject = function(self, who, inven) -- generated in an actor's inventory
 		if not self.material_level then self.addedToLevel(self, game.level) end
 	end,
 	cost = 1000,
+	callbackOnAct = function(self, who) -- Burn the wearer's arcane resources while worn
+		if who:attr("has_arcane_knowledge") then
+			local burn = who:burnArcaneResources(self.material_level*2)
+			if burn > 0 then
+				game.logSeen(who, "#ORCHID#%s's %s drain %s magic!", who.name:capitalize(), self:getName({do_color=true}), who:his_her())
+				who:restStop("Antimagic Drain")
+				who:runStop("Antimagic Drain")
+			end
+		end
+	end,
 	wielder = {
 		combat_mindpower=4,
 		combat_mindcrit=1,
@@ -3849,7 +3866,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 3,
 	combat = {
 		range = 9,
-		physspeed = 0.8,
 		travel_speed = 4,
 		talent_on_hit = { [Talents.T_ARCANE_EYE] = {level=4, chance=100} },
 	},
@@ -4091,10 +4107,18 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 	rarity = 200,
 	cost = 100,
 	material_level = 4,
+	callbackOnTeleport = function(self, who, teleported, ox, oy, x, y) game.level.map:particleEmitter(who.x, who.y, 2, "generic_sploom", {rm=150, rM=180, gm=20, gM=60, bm=180, bM=200, am=80, aM=150, radius=2, basenb=120})
+	local damage =  who:combatStatScale("mag", 50, 250) -- Generous because scaling Arcane is hard and its not exactly easy to proc this .. I think
+	who:project({type="ball", range=0, radius=3, friendlyfire=false}, who.x, who.y, engine.DamageType.ARCANE, who:spellCrit(damage))
+	end,
+	special_desc = function(self, who) return ("Creates an arcane explosion dealing %d arcane damage based on magic in a radius of 3 around the user after any teleport."):format(who:combatStatScale("mag", 50, 250)) end,
 	wielder = {
 		combat_def = 6,
 		fatigue = 1,
 		combat_spellpower=5,
+		resist_all_on_teleport = 20,
+		defense_on_teleport = 20,
+		effect_reduction_on_teleport = 20,
 		inc_stats = { [Stats.STAT_MAG] = 8, [Stats.STAT_CUN] = 8,},
 		resists={
 			[DamageType.ARCANE] = 12,
@@ -5496,7 +5520,7 @@ newEntity{ base = "BASE_SLING",
 	material_level = 5,
 	combat = {
 		range = 10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 	},
 	wielder = {
 		pin_immune = 0.3,
@@ -5579,7 +5603,10 @@ newEntity{ base = "BASE_LONGSWORD",
 		apr = 10,
 		physcrit = 18,
 		dammod = {str=1},
-		convert_damage={[DamageType.FIRE] = 50,},
+		damtype = DamageType.FIRE,
+		talent_on_hit = {
+				[Talents.T_FIRE_BREATH] = {level=4, chance=15},
+		},
 	},
 	wielder = {
 		resists = {
@@ -5590,12 +5617,10 @@ newEntity{ base = "BASE_LONGSWORD",
 			[DamageType.FIRE] = 20,
 		},
 		resists_pen = {
-			[DamageType.FIRE] = 15,
+			[DamageType.FIRE] = 15,	
 		},
 		inc_stats = { [Stats.STAT_STR] = 7, [Stats.STAT_WIL] = 7 },
 	},
-	max_power = 25, power_regen = 1,
-	use_talent = { id = Talents.T_FIRE_BREATH, level = 2, power = 25 },
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -6116,16 +6141,16 @@ newEntity{ base = "BASE_LONGSWORD",
 		dam = 33,
 		apr = 4,
 		physcrit = 10,
+		damtype = DamageType.ACID,
 		dammod = {str=1},
 		burst_on_crit = {
 			[DamageType.ACID_CORRODE] = 40,
 		},
-		melee_project={[DamageType.ACID] = 12},
 	},
 	wielder = {
-		inc_damage={ [DamageType.ACID] = 15,},
+		inc_damage={ [DamageType.ACID] = 20,},
 		resists={[DamageType.ACID] = 15,},
-		resists_pen={[DamageType.PHYSICAL] = 10,}, --Burns right through your pathetic physical resists
+		resists_pen={[DamageType.ACID] = 20,}, --Burns right through your pathetic ACID resists
 		combat_physcrit = 10,
 		combat_spellcrit = 10,
 	},
@@ -7694,25 +7719,42 @@ newEntity{ base = "BASE_WIZARD_HAT",
 	unique = true,
 	name = "Cloud Caller",
 	unided_name = "broad brimmed hat",
-	desc = [[This hat's broad brim protects you from harsh sunlight and sudden storms.]],
+	desc = [[This hat's broad brim protects you from biting colds and sudden storms.]],
 	color = colors.BLUE, image = "object/artifact/cloud_caller.png",
 	moddable_tile = "special/cloud_caller",
 	level_range = {1, 10},
 	rarity = 300,
 	cost = 30,
 	material_level = 1,
+	special_desc = function(self) return "A small storm cloud follows you, dealing 15 lightning damage to all enemies in a radius of 3 each turn." end,
 	wielder = {
 		resists = { 
-			[DamageType.LIGHT] 	= 10,
+			[DamageType.COLD]	= 10,
 			[DamageType.LIGHTNING]	= 10,
 		},
 		inc_damage={
-			[DamageType.LIGHT] 	= 10,
+			[DamageType.COLD]	= 10,
 			[DamageType.LIGHTNING]	= 10,
 		},
 	},
 	max_power = 30, power_regen = 1,
-	use_talent = { id = Talents.T_CALL_LIGHTNING, level=1, power = 20 },
+	use_talent = { id = Talents.T_CALL_LIGHTNING, level=1, power = 15 },
+	on_takeoff = function(self, who)
+		self.worn_by=nil
+	end,
+	on_wear = function(self, who)
+		self.worn_by=who
+	end,
+	act = function(self)
+		self:regenPower()
+		self:useEnergy()
+		if not self.worn_by then return end
+		if game.level and not game.level:hasEntity(self.worn_by) and not self.worn_by.player then self.worn_by=nil return end
+		if self.worn_by:attr("dead") then return end
+		local who = self.worn_by
+		local blast = {type="ball", range=0, radius=3, friendlyfire=false}
+		who:project(blast, who.x, who.y, engine.DamageType.LIGHTNING, 15)
+	end,
 }
 
 newEntity{ base = "BASE_TOOL_MISC",

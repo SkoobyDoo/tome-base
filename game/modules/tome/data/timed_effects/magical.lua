@@ -786,7 +786,7 @@ newEffect{
 				bc = table.clone(eff.color) bc[4] = 1
 				ac = table.clone(eff.color) ac[4] = 1
 			end
-			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.3, img="runicshield"}, {type="runicshield", shieldIntensity=0.14, ellipsoidalFactor=1.2, time_factor=5000, bubbleColor=bc, auraColor=ac}))
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.3, img=eff.aegis_image or "runicshield"}, {type="runicshield", shieldIntensity=0.14, ellipsoidalFactor=1.2, time_factor=5000, bubbleColor=bc, auraColor=ac}))
 		end		
 	end,
 	damage_feedback = function(self, eff, src, value)
@@ -807,7 +807,7 @@ newEffect{
 		self.damage_shield_absorb = eff.power
 		self.damage_shield_absorb_max = eff.power
 		if core.shader.active(4) then
-			eff.particle = self:addParticles(Particles.new("shader_shield", 1, nil, {type="shield", shieldIntensity=0.2, color=eff.color or {0.4, 0.7, 1.0}}))
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {img=eff.image or "shield7"}, {type="shield", shieldIntensity=0.2, color=eff.color or {0.4, 0.7, 1.0}}))
 		else
 			eff.particle = self:addParticles(Particles.new("damage_shield", 1))
 		end
@@ -2145,9 +2145,18 @@ newEffect{
 		end
 
 		-- burst and spawn a worm mass
+		local t = eff.src:getTalentFromId(eff.src.T_WORM_ROT)
 		if eff.rot_timer == 0 then
 			DamageType:get(DamageType.BLIGHT).projector(eff.src, self.x, self.y, DamageType.BLIGHT, eff.burst, {from_disease=true})
-			local t = eff.src:getTalentFromId(eff.src.T_WORM_ROT)
+			t.spawn_carrion_worm(eff.src, self, t)
+			game.logSeen(self, "#LIGHT_RED#A carrion worm mass bursts out of %s!", self.name:capitalize())
+			self:removeEffect(self.EFF_WORM_ROT)
+		end
+	end,
+	deactivate = function(self, eff)
+		local t = eff.src:getTalentFromId(eff.src.T_WORM_ROT)
+		if rng.percent(t.getChance(eff.src,t)) then
+			DamageType:get(DamageType.BLIGHT).projector(eff.src, self.x, self.y, DamageType.BLIGHT, eff.burst, {from_disease=true})
 			t.spawn_carrion_worm(eff.src, self, t)
 			game.logSeen(self, "#LIGHT_RED#A carrion worm mass bursts out of %s!", self.name:capitalize())
 			self:removeEffect(self.EFF_WORM_ROT)
@@ -4144,5 +4153,97 @@ newEffect{
 		self:effectTemporaryValue(eff, "esp_range", 5)
 	end,
 	deactivate = function(self, eff)
+	end,
+}
+
+
+newEffect{
+	name = "PACIFICATION_HEX", image = "talents/pacification_hex.png",
+	desc = "Pacification Hex",
+	long_desc = function(self, eff) return ("The target is hexed, granting it %d%% chance each turn to be dazed for 3 turns."):format(eff.chance) end,
+	type = "magical",
+	subtype = { hex=true, dominate=true },
+	status = "detrimental",
+	parameters = {chance=10, power=10},
+	on_gain = function(self, err) return "#Target# is hexed!", "+Pacification Hex" end,
+	on_lose = function(self, err) return "#Target# is free from the hex.", "-Pacification Hex" end,
+	-- Damage each turn
+	on_timeout = function(self, eff)
+		if not self:hasEffect(self.EFF_DAZED) and rng.percent(eff.chance) and self:canBe("stun") then
+			self:setEffect(self.EFF_DAZED, 3, {})
+			if not self:checkHit(eff.power, self:combatSpellResist(), 0, 95, 15) then eff.dur = 0 end
+		end
+	end,
+	activate = function(self, eff)
+		if self:canBe("stun") then
+			self:setEffect(self.EFF_DAZED, 3, {})
+		end
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, oversize=0.5, a=225, appear=8, speed=0, img="pacification_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
+		end
+	end,
+	deactivate = function(self, eff)
+		if eff.particle then self:removeParticles(eff.particle) end
+	end,
+}
+
+newEffect{
+	name = "BURNING_HEX", image = "talents/burning_hex.png",
+	desc = "Burning Hex",
+	long_desc = function(self, eff) return ("The target is hexed.  Each time it uses an ability it takes %0.2f fire damage, and talent cooldowns are increased by %s plus 1 turn."):
+		format(eff.dam, eff.power and ("%d%%"):format((eff.power-1)*100) or "")
+	end,
+	type = "magical",
+	subtype = { hex=true, fire=true },
+	status = "detrimental",
+	-- _M:getTalentCooldown(t) in mod.class.Actor.lua references this table to compute cooldowns
+	parameters = {dam=10, power = 1},
+	on_gain = function(self, err) return "#Target# is hexed!", "+Burning Hex" end,
+	on_lose = function(self, err) return "#Target# is free from the hex.", "-Burning Hex" end,
+}
+
+newEffect{
+	name = "EMPATHIC_HEX", image = "talents/empathic_hex.png",
+	desc = "Empathic Hex",
+	long_desc = function(self, eff) return ("The target is hexed, creating an empathic bond with its victims. It takes %d%% feedback damage from all damage done."):format(eff.power) end,
+	type = "magical",
+	subtype = { hex=true, dominate=true },
+	status = "detrimental",
+	parameters = { power=10 },
+	on_gain = function(self, err) return "#Target# is hexed.", "+Empathic Hex" end,
+	on_lose = function(self, err) return "#Target# is free from the hex.", "-Empathic hex" end,
+	activate = function(self, eff)
+		eff.tmpid = self:addTemporaryValue("martyrdom", eff.power)
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {toback=true, shader=true, oversize=0.5, a=225, appear=8, speed=0, img="empathic_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
+		end
+	end,
+	deactivate = function(self, eff)
+		if eff.particle then self:removeParticles(eff.particle) end
+		self:removeTemporaryValue("martyrdom", eff.tmpid)
+	end,
+}
+
+newEffect{
+	name = "DOMINATION_HEX", image = "talents/domination_hex.png",
+	desc = "Domination Hex",
+	long_desc = function(self, eff) return ("The target is hexed, temporarily changing its faction to %s."):format(engine.Faction.factions[eff.faction].name) end,
+	type = "magical",
+	subtype = { hex=true, dominate=true },
+	status = "detrimental",
+	parameters = {},
+	on_gain = function(self, err) return "#Target# is hexed.", "+Domination Hex" end,
+	on_lose = function(self, err) return "#Target# is free from the hex.", "-Domination hex" end,
+	activate = function(self, eff)
+		self:setTarget() -- clear ai target
+		eff.olf_faction = self.faction
+		self.faction = eff.src.faction
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then eff.particle = self:addParticles(Particles.new("circle", 1, {shader=true, oversize=1, a=225, appear=8, speed=0, img="domination_hex_debuff_aura", base_rot=0, radius=0, x=h1x, y=h1y})) end
+		end
+	end,
+	deactivate = function(self, eff)
+		if eff.particle then self:removeParticles(eff.particle) end
+		self.faction = eff.olf_faction
 	end,
 }

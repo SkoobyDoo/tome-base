@@ -918,7 +918,7 @@ end
 
 function _M:changeLevelReal(lev, zone, params)
 	local oz, ol = self.zone, self.level
-	
+
 	-- Unlock first!
 	if not params.temporary_zone_shift_back and self.level and self.level.temp_shift_zone then
 		self:changeLevelReal(1, "useless", {temporary_zone_shift_back=true})
@@ -944,7 +944,7 @@ function _M:changeLevelReal(lev, zone, params)
 	end
 
 	-- clear chrono worlds and their various effects
-	if self._chronoworlds then self._chronoworlds = nil end
+	if self._chronoworlds and not params.keep_chronoworlds then self._chronoworlds = nil end
 
 	local left_zone = self.zone
 	local old_lev = (self.level and not zone) and self.level.level or -1000
@@ -1101,7 +1101,7 @@ function _M:changeLevelReal(lev, zone, params)
 					list[#list+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack((rng.table(list))) end
 		elseif params.auto_level_stair then
 			-- Dirty but quick
 			local list = {}
@@ -1111,7 +1111,7 @@ function _M:changeLevelReal(lev, zone, params)
 					list[#list+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack((rng.table(list))) end
 		end
 
 		-- if self.level.exited then -- use the last location, if defined
@@ -1857,8 +1857,6 @@ do return end
 			print(f, err)
 			setfenv(f, setmetatable({level=self.level, zone=self.zone}, {__index=_G}))
 			print(pcall(f))
-do return end
-			self:registerDialog(require("mod.dialogs.DownloadCharball").new())
 		end end,
 		[{"_f","ctrl"}] = function() if config.settings.cheat then
 			self.player.quests["love-melinda"] = nil

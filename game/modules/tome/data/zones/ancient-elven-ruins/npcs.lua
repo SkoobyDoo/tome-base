@@ -27,6 +27,10 @@ load("/data/general/npcs/all.lua", rarity(4, 35))
 
 local Talents = require("engine.interface.ActorTalents")
 
+-- special object list for mummy-specific items (used when generating for other zones)
+local object_list = require("mod.class.Object"):loadList("/data/zones/ancient-elven-ruins/objects.lua")
+object_list.__ATOMIC = true
+
 -- The boss , no "rarity" field means it will not be randomly generated
 newEntity{ define_as = "GREATER_MUMMY_LORD",
 	allow_infinite_dungeon = true,
@@ -42,22 +46,28 @@ newEntity{ define_as = "GREATER_MUMMY_LORD",
 	mana_regen = 7;
 	stats = { str=25, dex=10, cun=8, mag=35, wil=20, con=20 },
 	rank = 4,
-	size_category = 2,
+	size_category = 3,
 	open_door = true,
 	move_others=true,
 	infravision = 10,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, },
-	equipment = resolvers.equip{
+	resolvers.auto_equip_filters{
+		MAINHAND = {type="weapon", not_properties={"twohanded"}},
+		OFFHAND = {special=shield_special},
+		BODY = {type="armor", special=function(e) return e.subtype=="mummy" or e.subtype=="heavy" or e.subtype=="massive" end},
+	},
+	resolvers.equip{
 		{type="weapon", subtype="longsword", defined="LONGSWORD_WINTERTIDE", random_art_replace={chance=75}, autoreq=true},
 		{type="armor", subtype="shield", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="mummy", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="head", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="mummy", ignore_material_restriction=true, force_drop=true, base_list=object_list, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="head", force_drop=true, ignore_material_restriction=true, base_list=object_list, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 	},
-	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
-	
+	resolvers.drops{{tome_drops="boss", type="armor", subtype="heavy", forbid_power_source={antimagic=true}, autoreq=true,}},
+	resolvers.drops{chance=100, nb=3, {base_list=object_list, tome_drops="boss"} },
+	resolvers.racial("shalore"),
 	resolvers.talents{
-		[Talents.T_ARMOUR_TRAINING]={base=2, every=10, max=5},
+		[Talents.T_ARMOUR_TRAINING]={base=3, every=10, max=5},
 		[Talents.T_SHIELD_PUMMEL]={base=5, every=5, max=8},
 		[Talents.T_ASSAULT]={base=4, every=5, max=7},
 		[Talents.T_OVERPOWER]={base=5, every=5, max=8},
@@ -72,19 +82,22 @@ newEntity{ define_as = "GREATER_MUMMY_LORD",
 		[Talents.T_ROTTING_DISEASE]={base=6, every=5, max=8},
 		[Talents.T_TRICKS_OF_THE_TRADE] = 1,
 	},
-
 	instakill_immune = 1,
 	blind_immune = 1,
+	cut_immune = 1,
 	see_invisible = 4,
 	undead = 1,
 
 	autolevel = "warriormage",
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
-	resolvers.inscriptions(3, "rune"),
-	resolvers.inscriptions(1, {"manasurge rune", "manasurge rune"}),
+	max_inscriptions = 5,
+	resolvers.inscriptions(1, {"manasurge rune"}),
+	resolvers.inscriptions(1, "rune", "attack"),
+	resolvers.inscriptions(1, "rune", "protect"),
+	resolvers.inscriptions(2, "rune"),
 }
 
--- Some mummy minions
+-- Some mummies
 newEntity{ base = "BASE_NPC_MUMMY",
 	allow_infinite_dungeon = true,
 	name = "ancient elven mummy", color=colors.ANTIQUE_WHITE,
@@ -94,11 +107,10 @@ newEntity{ base = "BASE_NPC_MUMMY",
 	max_life = resolvers.rngavg(120,140),
 	ai_state = { talent_in=4, },
 	stats = { mag=25, wil=20, },
-	infravision = 10,
-
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{
 		{type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="mummy", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="mummy", ignore_material_restriction=true, force_drop=true, base_list=object_list, forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	resolvers.talents{
 		[Talents.T_STUNNING_BLOW]={base=2, every=7, max=6},
@@ -118,10 +130,10 @@ newEntity{ base = "BASE_NPC_MUMMY",
 	max_life = resolvers.rngavg(20,40), life_rating=4,
 	ai_state = { talent_in=2, },
 	never_move = 1,
-	infravision = 10,
+	size_category = 2,
 
 	resolvers.equip{
-		{type="armor", subtype="mummy", force_drop=true, forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="mummy", ignore_material_restriction=true, force_drop=true, base_list=object_list, forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	autolevel = "caster",
 	resolvers.talents{
@@ -141,10 +153,9 @@ newEntity{ base = "BASE_NPC_MUMMY",
 	rarity = 2,
 	max_life = resolvers.rngavg(60,80), life_rating=7,
 	ai_state = { talent_in=4, },
-	infravision = 10,
 
 	resolvers.equip{
-		{type="armor", subtype="mummy", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="mummy", ignore_material_restriction=true, force_drop=true, base_list=object_list, forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	autolevel = "ghoul",
 	resolvers.talents{
@@ -156,3 +167,38 @@ newEntity{ base = "BASE_NPC_MUMMY",
 	combat = { dam=8, atk=10, apr=0, dammod={str=0.7} },
 }
 
+newEntity{ base = "BASE_NPC_MUMMY", define_as = "GREATER_MUMMY",
+	allow_infinite_dungeon = true,
+	name = "greater mummy", color=colors.YELLOW,
+	image = "npc/undead_mummy_ancient_elven_mummy.png",
+	desc = [[An animated corpse in mummy wrappings, both very well preserved.]],
+	level_range = {20, nil}, exp_worth = 1,
+	rank = 3,
+	rarity = 8,
+	max_life = resolvers.rngavg(150,180), life_rating=12,
+	autolevel = "warriormage",
+	ai = "tactical", ai_state = { talent_in=2, ai_move="move_astar", },
+	global_speed_base = 1,
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, },
+	stats = { str=20, dex=10, cun=8, mag=30, wil=20, con=20 },
+	move_others=true,
+	mana_regen = 1,
+	resolvers.auto_equip_filters("Berserker"),
+	resolvers.equip{
+		{type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="mummy", ignore_material_restriction=true, force_drop=true, base_list=object_list, forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="head", ignore_material_restriction=true, base_list=object_list, forbid_power_source={antimagic=true}, autoreq=true},
+	},
+	resolvers.inscriptions(1, "rune", "attack"),
+	resolvers.inscriptions(1, "rune"),
+	resolvers.drops{nb=2, {base_list=object_list, tome_drops="store"}, {tome={money=1}}},
+	resolvers.talents{
+		[Talents.T_WEAPONS_MASTERY]={base=3, every=10, max=5},
+		[Talents.T_WEAPON_COMBAT]={base=4, every=10, max=6},
+		[Talents.T_STUNNING_BLOW]={base=2, every=7, max=6},
+		[Talents.T_CRUSH]={base=3, every=7, max=7},
+		[Talents.T_RUSH]={base=2, every=5, max=5},
+		[Talents.T_FREEZE]={base=3, every=7, max=7},
+		[Talents.T_MANATHRUST]={base=3, every=7, max=7},
+	},
+}

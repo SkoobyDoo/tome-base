@@ -737,6 +737,7 @@ newTalent{
 	requires_target = true,
 	range = 0,
 	autolearn_talent = "T_NECROTIC_AURA",
+	unlearn_on_clone = true,
 	radius = function(self, t)
 		local aura = self:getTalentFromId(self.T_NECROTIC_AURA)
 		return aura.getRadius(self, aura)

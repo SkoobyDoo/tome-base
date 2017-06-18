@@ -78,6 +78,7 @@ newBirthDescriptor{
 	descriptor_choices = default_eyal_descriptors{},
 	game_state = {
 		campaign_name = "maj-eyal",
+		stores_restock_by_level = 1,
 		__allow_rod_recall = true,
 		__allow_transmo_chest = true,
 		grab_online_event_zone = function() return "wilderness-1" end,

@@ -174,7 +174,7 @@ newTalent{
 	requires_target = true,
 	no_npc_use = true,
 	fixed_cooldown = true, -- there's probably some sort of unexpected interaction that would let you chain this infinitely with cooldown reducers
-	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4.5)) end, --Limit < 100%
+	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3.5)) end, --Limit < 100%
 	getCooldown = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3.5)) end, --Limit < 100%
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)

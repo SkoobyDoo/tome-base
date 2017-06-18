@@ -33,6 +33,7 @@ function _M:init()
 	self:loadUI{
 		{left=0, top=0, ui=list},
 	}
+
 	self:setupUI(true, true)
 
 	self.key:addCommands{ __TEXTINPUT = function(c)
@@ -60,17 +61,47 @@ end
 
 function _M:use(item)
 	if not item then return end
-	game:unregisterDialog(self)
 
 	if item.action then
+		game:unregisterDialog(self)
 		item:action()
 	else
 		local m = game.zone:finishEntity(game.level, "actor", item.e)
+		
+		local plr = game.player
+		m = self:finishActor(m, plr.x, plr.y)
 		self:placeCreature(m)
 	end
 end
 
+-- finish generating the actor (without adding it to the game)
+function _M:finishActor(actor, x, y)
+	if actor and not actor._debug_finished then
+		actor._debug_finished = true
+		actor:resolveLevelTalents() -- make sure all talents have been learned
+		actor:resolve(); actor:resolve(nil, true) -- make sure all resolvers are complete
+		-- temporarily add the actor to the level then remove it
+		-- This triggers functions "addedToLevel", "on_added", "on_added_to_level" which includes spawning escorts, updating for game difficulty, etc.
+		local old_escort = actor.make_escort -- making escorts fails without a position
+		actor.make_escort = nil
+		game.zone:addEntity(game.level, actor, "actor", nil, nil, true)
+		game.level:removeEntity(actor, true) -- remove the actor from the level
+		actor.make_escort = old_escort
+		-- remove all inventory items from unique list
+		if actor.inven then
+			for _, inven in pairs(actor.inven) do
+				for i, o in ipairs(inven) do
+					o:removed()
+				end
+			end
+		end
+	end
+	return actor
+end
+
+--- Place the creature on the map
 function _M:placeCreature(m)
+	if not m then game.log("#LIGHT_BLUE# no actor to place.") return end
 	local p = game.player
 	local fx, fy = util.findFreeGrid(p.x, p.y, 20, true, {[engine.Map.ACTOR]=true})
 	if fx and fy then
@@ -79,6 +110,7 @@ function _M:placeCreature(m)
 		game.target.target.y = fy
 	end
 
+	game:unregisterDialog(self)
 	local tg = {type="hit", range=100, nolock=true, no_restrict=true, nowarning=true, no_start_scan=true, act_exclude={[p.uid]=true}}
 	local x, y, act
 	local co = coroutine.create(function()
@@ -86,13 +118,21 @@ function _M:placeCreature(m)
 			if x and y then
 				if act then
 					game.log("#LIGHT_BLUE#Actor [%s]%s already occupies (%d, %d)", act.uid, act.name, x, y)
-					return
+				else
+					game.zone:addEntity(game.level, m, "actor", x, y)
+					-- update uniques with inventory items
+					if m.inven then
+						for _, inven in pairs(m.inven) do
+							for i, o in ipairs(inven) do
+								o:added()
+							end
+						end
+					end
+					local Dstring = m.getDisplayString and m:getDisplayString() or ""
+					game.log("#LIGHT_BLUE#Added %s[%s]%s at (%d, %d)", Dstring, m.uid, m.name, x, y)
 				end
-				game.zone:addEntity(game.level, m, "actor", x, y)
-				local Dstring = m.getDisplayString and m:getDisplayString() or ""
-				game.log("#LIGHT_BLUE#Added %s[%s]%s at (%d, %d)", Dstring, m.uid, m.name, x, y)
-				return x, y, act
 			end
+			game:registerDialog(self)
 			return
 		end
 	)
@@ -111,7 +151,11 @@ function _M:generateList()
 		return a.name < b.name
 	end)
 
-	table.insert(list, 1, {name = " Test Dummy", action=function(item)
+	table.insert(list, 1, {name = "#YELLOW#Random Actor#LAST#", action=function(item)
+		game:registerDialog(require("mod.dialogs.debug.RandomActor").new())
+	end})
+
+	table.insert(list, 1, {name = "#PINK#Test Dummy#LAST#", action=function(item)
 		local m = mod.class.NPC.new{define_as="TRAINING_DUMMY",
 			type = "training", subtype = "dummy",
 			name = "Test Dummy", color=colors.GREY,
@@ -137,3 +181,4 @@ function _M:generateList()
 
 	self.list = list
 end
+

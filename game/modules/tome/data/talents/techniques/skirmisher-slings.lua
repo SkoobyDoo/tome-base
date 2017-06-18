@@ -65,6 +65,7 @@ newTalent {
 		end
 	end,
 	speed = function(self, t) return self:getSpeed('archery') * 0.5 end,
+	getAttackSpeed = function(self,t) return self:combatTalentLimit(t, 40, 10, 25) end,
 	display_speed = function(self, t)
 		return ("Double Archery (#LIGHT_GREEN#%d%%#LAST# of a turn)"):
 			format(self:getSpeed('archery') * 50)
@@ -82,11 +83,14 @@ newTalent {
 		if hurricane_cd then
 			self.talents_cd["T_SKIRMISHER_HURRICANE_SHOT"] = math.max(0, hurricane_cd - 1)
 		end
+		
+		self:setEffect(self.EFF_SWIFT_SHOT, 5, {src=self, speed=t.getAttackSpeed(self,t)/100})
 		return true
 	end,
 	info = function(self, t)
-		return ([[Fire off a quick sling bullet for %d%% damage, at double your normal attack speed. Moving lowers the cooldown by 1.]])
-			:format(t.getDamage(self, t) * 100)
+		return ([[Fire off a quick sling bullet for %d%% damage at double your normal attack speed, as well as increasing your attack speed by %d%% for 5 turns.
+		Each time you move, the cooldown of this talent is reduced by 1.]])
+			:format(t.getDamage(self, t) * 100, t.getAttackSpeed(self,t))
 	end,
 }
 
@@ -117,11 +121,11 @@ newTalent {
 	end,
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	damage_multiplier = function(self, t)
-		return self:combatTalentWeaponDamage(t, 0.2, 0.8)
+		return self:combatTalentWeaponDamage(t, 0.4, 1.2)
 	end,
 	-- Maximum number of shots fired.
 	limit_shots = function(self, t)
-		return math.floor(self:combatTalentScale(t, 6, 11, "log"))
+		return math.floor(self:combatTalentScale(t, 9, 16, "log"))
 	end,
 	action = function(self, t)
 		-- Get list of possible targets, possibly doubled.

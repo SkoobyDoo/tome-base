@@ -20,6 +20,9 @@
 load("/data/general/objects/objects-maj-eyal.lua")
 load("/data/general/objects/mummy-wrappings.lua")
 
+local Stats = require "engine.interface.ActorStats"
+--local Talents = require "engine.interface.ActorTalents"
+
 for i = 1, 3 do
 newEntity{ base = "BASE_LORE",
 	define_as = "NOTE"..i,
@@ -29,9 +32,6 @@ newEntity{ base = "BASE_LORE",
 }
 end
 
-local Stats = require "engine.interface.ActorStats"
-local Talents = require "engine.interface.ActorTalents"
-
 newEntity{ base = "BASE_MUMMY_WRAPPING", define_as = "BINDINGS_ETERNAL_NIGHT",
 	power_source = {arcane=true},
 	unique = true,
@@ -40,9 +40,9 @@ newEntity{ base = "BASE_MUMMY_WRAPPING", define_as = "BINDINGS_ETERNAL_NIGHT",
 	desc = [[Woven through with fell magics of undeath, these bindings suck the light and life out of everything they touch. Any who don them will find themselves suspended in a nightmarish limbo between life and death.]],
 	color = colors.DARK_GREY,
 	level_range = {1, 50},
-	rarity = 20,
+	rarity = 20, -- not particularly rare, to be loaded only with mummy NPCs
 	cost = 200,
-	material_level = 3,
+	material_level = 4,
 	wielder = {
 		combat_armor = 12,
 		combat_def = 12,
@@ -85,7 +85,7 @@ newEntity{ base = "BASE_LEATHER_CAP", define_as = "CROWN_ETERNAL_NIGHT",
 	color = colors.DARK_GREY,
 	level_range = {1, 50},
 	cost = 100,
-	rarity = 20,
+	rarity = 20, -- not particularly rare, to be loaded only with mummy NPCs
 	material_level = 3,
 	wielder = {
 		combat_armor = 3,
