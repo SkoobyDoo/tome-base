@@ -33,6 +33,18 @@ struct mesh_point {
 	inline bool operator==(const mesh_point &p2) const { return x == p2.x && y == p2.y; };
 };
 
+// Overload hash for points
+namespace std {
+	template <> struct hash<mesh_point> {
+		std::size_t operator()(const mesh_point& p) const {
+			size_t res = 17;
+			res = res * 31 + hash<int>()( p.x );
+			res = res * 31 + hash<int>()( p.y );
+			return res;
+		}
+	};
+};
+
 struct mesh_edge {
 	mesh_point p1, p2;
 	vector<int> links;
@@ -65,18 +77,21 @@ struct mesh_triangle {
 	int id;
 	mesh_point p1, p2, p3;
 	array<sp_mesh_edge, 3> edges;
-	vector<int> links;
+	unordered_map<int, uint32_t> links;
+	mesh_point center;
 
 	mesh_triangle(mesh_point p1, mesh_point p2, mesh_point p3, int id) : p1(p1), p2(p2), p3(p3), id(id) {
 		edges[0] = make_shared<mesh_edge>(p1, p2);
 		edges[1] = make_shared<mesh_edge>(p2, p3);
 		edges[2] = make_shared<mesh_edge>(p3, p1);
+		center.x = (p1.x + p2.x + p3.x) / 3;
+		center.y = (p1.y + p2.y + p3.y) / 3;
 	};
 	uint32_t minX() { return fmin(fmin(p1.x, p2.x), p3.x); };
 	uint32_t maxX() { return fmax(fmax(p1.x, p2.x), p3.x); };
 	uint32_t minY() { return fmin(fmin(p1.y, p2.y), p3.y); };
 	uint32_t maxY() { return fmax(fmax(p1.y, p2.y), p3.y); };
-	void print() { printf("_triangle_ %d : %dx%d, %dx%d, %dx%d\n", id, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y); };
+	void print() { printf("_triangle_ %d : %dx%d, %dx%d, %dx%d; center (%dx%d)\n", id, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, center.x, center.y); };
 };
 typedef shared_ptr<mesh_triangle> sp_mesh_triangle;
 
@@ -84,6 +99,11 @@ struct mesh_polygon {
 	ClipperLib::Path list;
 	// vector<vec2> list;
 	bool is_wall;
+};
+
+struct mesh_path_data {
+	sp_mesh_triangle parent;
+	uint32_t g_cost;
 };
 
 /*************************************************************************
@@ -99,13 +119,17 @@ protected:
 	void extractShapePolygon(b2Body *body, b2PolygonShape *shape);
 	void extractShapeChain(b2Body *body, b2ChainShape *shape);
 	bool makeNavmesh(int radius);
+	bool makeNavmeshRecast(int radius);
 
 	vector<mesh_polygon> polymesh;
 	vector<sp_mesh_triangle> mesh;
+	unordered_map<mesh_point, vector<mesh_point>> mesh_points_graph;
 	uint32_t min_x, max_x, min_y, max_y;
 
-	// class dtNavMesh* m_navMesh;
-	// class dtNavMeshQuery* m_navQuery;
+	vector<sp_mesh_triangle> last_path;
+
+	class dtNavMesh* m_navMesh;
+	class dtNavMeshQuery* m_navQuery;
 
 public:
 	Navmesh(b2World *world);
@@ -114,6 +138,7 @@ public:
 	bool build();
 	bool isInTriangle(uint32_t x, uint32_t y, int triid);
 	int findTriangle(uint32_t x, uint32_t y);
+	bool pathFind(vector<mesh_point> &path, mesh_point &start, mesh_point &end);
 
 	void drawDebug(float x, float y);
 };

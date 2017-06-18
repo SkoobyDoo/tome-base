@@ -102,7 +102,9 @@ bool Navmesh::build() {
 	// With the triangles compute the navmesh
 	printf("Navmesh building...\n");
 	makeNavmesh(46);
+	// makeNavmeshRecast(46);
 	printf("Navmesh done\n");
+	// exit(1);
 	return true;
 }
 
@@ -216,8 +218,10 @@ bool Navmesh::makeNavmesh(int radius) {
 		if (edge->links.size() == 2) {
 			sp_mesh_triangle tri1 = mesh[edge->links[0]-1];
 			sp_mesh_triangle tri2 = mesh[edge->links[1]-1];
-			tri1->links.push_back(edge->links[1]);
-			tri2->links.push_back(edge->links[0]);
+			float distance = sqrt(pow((float)tri1->center.x - (float)tri2->center.x, 2) + pow((float)tri1->center.y - (float)tri2->center.y, 2));
+			tri1->links.insert(make_pair<int, uint32_t>((int)edge->links[1], (float)distance));
+			tri2->links.insert(make_pair<int, uint32_t>((int)edge->links[0], (float)distance));
+			// printf("Linking tri %d to %d with distance %f\n", tri1->id, tri2->id, distance);
 		} else if (edge->links.size() == 0) {
 			printf("[NAVMESH] ERROR: triangle edge with 0 neighbours!\n");
 		} else if (edge->links.size() > 2) {
@@ -228,7 +232,7 @@ bool Navmesh::makeNavmesh(int radius) {
 	// Now we have triangles, find neighbours
 	for (auto tri : mesh) {
 		printf("Triangle %d linked to\n", tri->id);
-		for (auto it : tri->links) printf(" - %d\n", it);
+		for (auto it : tri->links) printf(" - %d (%d)\n", it.first, it.second);
 	}
 	return true;
 }
@@ -247,6 +251,76 @@ int Navmesh::findTriangle(uint32_t x, uint32_t y) {
 		if (point_in_triangle(p, tri->p1, tri->p2, tri->p3)) return tri->id;
 	}
 	return 0;
+}
+
+static inline uint32_t heuristic(mesh_point &start, mesh_point &end, mesh_point &from) {
+	// Chebyshev distance
+	int32_t h = fmax(fabs(from.x - end.x), fabs(from.y - end.y));
+
+	// tie-breaker rule for straighter paths
+	int32_t dx1 = end.x - from.x;
+	int32_t dy1 = end.y - from.y;
+	int32_t dx2 = start.x - from.x;
+	int32_t dy2 = start.y - from.y;
+	return h + 0.01 * fabs(dx1*dy2 - dx2*dy1);
+}
+
+bool Navmesh::pathFind(vector<mesh_point> &path, mesh_point &start, mesh_point &end) {
+	int tri_start_id = findTriangle(start.x, start.y);
+	int tri_end_id = findTriangle(end.x, end.y);
+	if (!tri_start_id || !tri_end_id) { printf("[NAVMESH] pathFind start or stop triangle is unfound: %d, %d\n", tri_start_id, tri_end_id); return false; }
+	printf("Starting pathfind from %dx%d (triangle %d) to %dx%d (triangle %d)\n", start.x, start.y, tri_start_id, end.x, end.y, tri_end_id);
+
+	sp_mesh_triangle tri_start = mesh[tri_start_id-1];
+	sp_mesh_triangle tri_end = mesh[tri_end_id-1];
+
+	// Woot, easy we are already in the same triangle
+	if (tri_start == tri_end) { path.push_back(end); return true; }
+
+	unordered_set<sp_mesh_triangle> closed;
+	unordered_map<sp_mesh_triangle, mesh_path_data> open;
+	unordered_map<sp_mesh_triangle, sp_mesh_triangle> came_from;
+
+	open.insert({tri_start, {tri_start, 0}});
+	came_from[tri_start] = tri_start;
+
+	while (true) {
+		uint32_t lowest = 999999;
+		sp_mesh_triangle node;
+		for (auto &it : open) {
+			if (it.second.g_cost < lowest) {
+				node = it.first;
+				lowest = it.second.g_cost;
+			}
+		}
+		printf("Using open : %d with cost %d\n", node->id, lowest);
+
+		if (node == tri_end) {
+			last_path.clear();
+			printf("Found route!\n");
+			while (node != tri_start) {
+				last_path.push_back(node);
+				node = came_from[node];
+			}
+			last_path.push_back(tri_start);
+			std::reverse(last_path.begin(), last_path.end());
+			return true;
+		}
+
+		closed.insert(node);
+		open.erase(node);
+
+		for (auto &link : node->links) {
+			sp_mesh_triangle ntest = mesh[link.first-1];
+			if (closed.find(ntest) == closed.end()) {
+				open.insert({ntest, {node, lowest + link.second}});
+				came_from[ntest] = node;
+			}
+		}
+
+		// break;
+	}
+	return false;
 }
 
 extern int gl_tex_white;
@@ -281,6 +355,16 @@ void Navmesh::drawDebug(float x, float y) {
 		dl->list.push_back(v3); dl->list.push_back(v1);
 	}
 
+	// Path
+	for (int i = 1; i < last_path.size(); i++) {
+		sp_mesh_triangle tri1 = last_path[i-1];
+		sp_mesh_triangle tri2 = last_path[i];
+
+		vertex v1{{tri1->center.x, tri1->center.y, 0, 1}, {0, 0}, {1, 0, 0, 1}};
+		vertex v2{{tri2->center.x, tri2->center.y, 0, 1}, {0, 0}, {1, 0, 0, 1}};
+		dl->list.push_back(v1); dl->list.push_back(v2);
+	}
+
 	glm::mat4 model = glm::mat4();
 	model = glm::translate(model, glm::vec3(x, y, 0.f));
 	renderer->toScreen(model, {1,1,1,1});
@@ -290,365 +374,378 @@ void Navmesh::drawDebug(float x, float y) {
 // Non working recast/detour version
 /////////////////////////////////////////////////////////////////////////
 
-// bool Navmesh::makeNavmesh() {
-// 	rcHeightfield* m_solid;
-// 	rcCompactHeightfield* m_chf;
-// 	rcContourSet* m_cset;
-// 	rcPolyMesh* m_pmesh;
-// 	rcConfig m_cfg;	
-// 	rcPolyMeshDetail* m_dmesh;
-// 	rcContext m_ctx(false);
+/// Recast build context.
+class BuildContext : public rcContext
+{
+public:
+	virtual void doLog(const rcLogCategory category, const char* msg, const int len) {
+		string s(msg, len);
+		printf("[RECAST] %s\n", s.c_str());
+	}
+};
 
-// 	// Find the minimums & maximums and export vertexes & triangles in a way recast understands
-// 	float bmin[3] = {999999, 999999, -1}, bmax[3] = {-999999, -999999, 1};
-// 	vector<float> rc_vertices; rc_vertices.reserve(mesh.size() * 3 * 3);
-// 	vector<int> rc_tris; rc_tris.reserve(mesh.size() * 3);
-// 	for (auto &tri : mesh) {
-// 		bmin[0] = fmin(bmin[0], tri.minX());
-// 		bmax[0] = fmin(bmax[0], tri.maxX());
-// 		bmin[1] = fmin(bmin[1], tri.minY());
-// 		bmax[1] = fmin(bmax[1], tri.maxY());
 
-// 		rc_tris.push_back(rc_vertices.size() / 3);
-// 		rc_vertices.push_back(tri.p1.x); rc_vertices.push_back(tri.p1.y); rc_vertices.push_back(0);
-// 		rc_tris.push_back(rc_vertices.size() / 3);
-// 		rc_vertices.push_back(tri.p2.x); rc_vertices.push_back(tri.p2.y); rc_vertices.push_back(0);
-// 		rc_tris.push_back(rc_vertices.size() / 3);
-// 		rc_vertices.push_back(tri.p3.x); rc_vertices.push_back(tri.p3.y); rc_vertices.push_back(0);
-// 	}
-// 	int ntris = rc_tris.size() / 3;
-// 	int nverts = rc_vertices.size() / 3;
-// 	float *verts = rc_vertices.data();
-// 	int *tris = rc_tris.data();
+bool Navmesh::makeNavmeshRecast(int radius) {
+	rcHeightfield* m_solid;
+	rcCompactHeightfield* m_chf;
+	rcContourSet* m_cset;
+	rcPolyMesh* m_pmesh;
+	rcConfig m_cfg;	
+	rcPolyMeshDetail* m_dmesh;
+	BuildContext m_ctx;
+	m_ctx.enableLog(true);
 
-// 	float m_cellSize = 9.0 ;//0.3;
-// 	float m_cellHeight = 6.0 ;//0.2;
-// 	float m_agentMaxSlope = 45;
-// 	float m_agentHeight = 64.0;
-// 	float m_agentMaxClimb = 16;
-// 	float m_agentRadius = 16;
-// 	float m_edgeMaxLen = 512;
-// 	float m_edgeMaxError = 1.3;
-// 	float m_regionMinSize = 50;
-// 	float m_regionMergeSize = 20;
-// 	float m_vertsPerPoly = 6;
-// 	float m_detailSampleDist = 6;
-// 	float m_detailSampleMaxError = 1;
-// 	float m_keepInterResults = false;
+	// Find the minimums & maximums and export vertexes & triangles in a way recast understands
+	float bmin[3] = {999999, 999999, -1}, bmax[3] = {-999999, -999999, 1};
+	vector<float> rc_vertices; rc_vertices.reserve(mesh.size() * 3 * 3);
+	vector<int> rc_tris; rc_tris.reserve(mesh.size() * 3);
+	for (auto &tri : mesh) {
+		bmin[0] = fmin(bmin[0], tri->minX());
+		bmax[0] = fmax(bmax[0], tri->maxX());
+		bmin[1] = fmin(bmin[1], tri->minY());
+		bmax[1] = fmax(bmax[1], tri->maxY());
 
-// 	// Init build configuration from GUI
-// 	memset(&m_cfg, 0, sizeof(m_cfg));
-// 	m_cfg.cs = m_cellSize;
-// 	m_cfg.ch = m_cellHeight;
-// 	m_cfg.walkableSlopeAngle = m_agentMaxSlope;
-// 	m_cfg.walkableHeight = (int)ceilf(m_agentHeight / m_cfg.ch);
-// 	m_cfg.walkableClimb = (int)floorf(m_agentMaxClimb / m_cfg.ch);
-// 	m_cfg.walkableRadius = (int)ceilf(m_agentRadius / m_cfg.cs);
-// 	m_cfg.maxEdgeLen = (int)(m_edgeMaxLen / m_cellSize);
-// 	m_cfg.maxSimplificationError = m_edgeMaxError;
-// 	m_cfg.minRegionArea = (int)rcSqr(m_regionMinSize);		// Note: area = size*size
-// 	m_cfg.mergeRegionArea = (int)rcSqr(m_regionMergeSize);	// Note: area = size*size
-// 	m_cfg.maxVertsPerPoly = (int)m_vertsPerPoly;
-// 	m_cfg.detailSampleDist = m_detailSampleDist < 0.9f ? 0 : m_cellSize * m_detailSampleDist;
-// 	m_cfg.detailSampleMaxError = m_cellHeight * m_detailSampleMaxError;
+		rc_tris.push_back(rc_vertices.size() / 3);
+		rc_vertices.push_back(tri->p1.x); rc_vertices.push_back(tri->p1.y); rc_vertices.push_back(0);
+		rc_tris.push_back(rc_vertices.size() / 3);
+		rc_vertices.push_back(tri->p2.x); rc_vertices.push_back(tri->p2.y); rc_vertices.push_back(0);
+		rc_tris.push_back(rc_vertices.size() / 3);
+		rc_vertices.push_back(tri->p3.x); rc_vertices.push_back(tri->p3.y); rc_vertices.push_back(0);
+	}
+	int ntris = rc_tris.size() / 3;
+	int nverts = rc_vertices.size() / 3;
+	float *verts = rc_vertices.data();
+	int *tris = rc_tris.data();
+	printf("Navmehs start: (%fx%f) x (%fx%f), ntris (%d), nverts (%d)\n", bmin[0], bmin[1], bmax[0], bmax[1], ntris, nverts);
+
+	float m_cellSize = 9.0 ;//0.3;
+	float m_cellHeight = 6.0 ;//0.2;
+	float m_agentMaxSlope = 45;
+	float m_agentHeight = 64.0;
+	float m_agentMaxClimb = 16;
+	float m_agentRadius = radius;
+	float m_edgeMaxLen = 512;
+	float m_edgeMaxError = 1.3;
+	float m_regionMinSize = 50;
+	float m_regionMergeSize = 20;
+	float m_vertsPerPoly = 6;
+	float m_detailSampleDist = 6;
+	float m_detailSampleMaxError = 1;
+	float m_keepInterResults = false;
+
+	// Init build configuration from GUI
+	memset(&m_cfg, 0, sizeof(m_cfg));
+	m_cfg.cs = m_cellSize;
+	m_cfg.ch = m_cellHeight;
+	m_cfg.walkableSlopeAngle = m_agentMaxSlope;
+	m_cfg.walkableHeight = (int)ceilf(m_agentHeight / m_cfg.ch);
+	m_cfg.walkableClimb = (int)floorf(m_agentMaxClimb / m_cfg.ch);
+	m_cfg.walkableRadius = (int)ceilf(m_agentRadius / m_cfg.cs);
+	m_cfg.maxEdgeLen = (int)(m_edgeMaxLen / m_cellSize);
+	m_cfg.maxSimplificationError = m_edgeMaxError;
+	m_cfg.minRegionArea = (int)rcSqr(m_regionMinSize);		// Note: area = size*size
+	m_cfg.mergeRegionArea = (int)rcSqr(m_regionMergeSize);	// Note: area = size*size
+	m_cfg.maxVertsPerPoly = (int)m_vertsPerPoly;
+	m_cfg.detailSampleDist = m_detailSampleDist < 0.9f ? 0 : m_cellSize * m_detailSampleDist;
+	m_cfg.detailSampleMaxError = m_cellHeight * m_detailSampleMaxError;
 	
-// 	// Set the area where the navigation will be build.
-// 	// Here the bounds of the input mesh are used, but the
-// 	// area could be specified by an user defined box, etc.
-// 	rcVcopy(m_cfg.bmin, bmin);
-// 	rcVcopy(m_cfg.bmax, bmax);
-// 	rcCalcGridSize(m_cfg.bmin, m_cfg.bmax, m_cfg.cs, &m_cfg.width, &m_cfg.height);
+	// Set the area where the navigation will be build.
+	// Here the bounds of the input mesh are used, but the
+	// area could be specified by an user defined box, etc.
+	rcVcopy(m_cfg.bmin, bmin);
+	rcVcopy(m_cfg.bmax, bmax);
+	rcCalcGridSize(m_cfg.bmin, m_cfg.bmax, m_cfg.cs, &m_cfg.width, &m_cfg.height);
 
-// 	// Allocate voxel heightfield where we rasterize our input data to.
-// 	m_solid = rcAllocHeightfield();
-// 	if (!rcCreateHeightfield(&m_ctx, *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
-// 	{
-// 		printf("buildNavigation: Could not create solid heightfield.\n");
-// 		return false;
-// 	}
+	// Allocate voxel heightfield where we rasterize our input data to.
+	m_solid = rcAllocHeightfield();
+	if (!rcCreateHeightfield(&m_ctx, *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
+	{
+		printf("buildNavigation: Could not create solid heightfield.\n");
+		return false;
+	}
 	
-// 	// Allocate array that can hold triangle area types.
-// 	// If you have multiple meshes you need to process, allocate
-// 	// and array which can hold the max number of triangles you need to process.
-// 	unsigned char *m_triareas = new unsigned char[ntris];
+	// Allocate array that can hold triangle area types.
+	// If you have multiple meshes you need to process, allocate
+	// and array which can hold the max number of triangles you need to process.
+	unsigned char *m_triareas = new unsigned char[ntris];
 	
-// 	// Find triangles which are walkable based on their slope and rasterize them.
-// 	// If your input data is multiple meshes, you can transform them here, calculate
-// 	// the are type for each of the meshes and rasterize them.
-// 	memset(m_triareas, 0, ntris*sizeof(unsigned char));
-// 	rcMarkWalkableTriangles(&m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
-// 	if (!rcRasterizeTriangles(&m_ctx, verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
-// 	{
-// 		printf("buildNavigation: Could not rasterize triangles.\n");
-// 		return false;
-// 	}
+	// Find triangles which are walkable based on their slope and rasterize them.
+	// If your input data is multiple meshes, you can transform them here, calculate
+	// the are type for each of the meshes and rasterize them.
+	memset(m_triareas, 0, ntris*sizeof(unsigned char));
+	rcMarkWalkableTriangles(&m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
+	if (!rcRasterizeTriangles(&m_ctx, verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
+	{
+		printf("buildNavigation: Could not rasterize triangles.\n");
+		return false;
+	}
 
-// 	if (!m_keepInterResults)
-// 	{
-// 		delete [] m_triareas;
-// 		m_triareas = 0;
-// 	}
+	if (!m_keepInterResults)
+	{
+		delete [] m_triareas;
+		m_triareas = 0;
+	}
 	
-// 	//
-// 	// Step 3. Filter walkables surfaces.
-// 	//
+	//
+	// Step 3. Filter walkables surfaces.
+	//
 	
-// 	// Once all geoemtry is rasterized, we do initial pass of filtering to
-// 	// remove unwanted overhangs caused by the conservative rasterization
-// 	// as well as filter spans where the character cannot possibly stand.
-// 	// if (m_filterLowHangingObstacles)
-// 	// 	rcFilterLowHangingWalkableObstacles(&m_ctx, m_cfg.walkableClimb, *m_solid);
-// 	// if (m_filterLedgeSpans)
-// 	// 	rcFilterLedgeSpans(&m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid);
-// 	// if (m_filterWalkableLowHeightSpans)
-// 	// 	rcFilterWalkableLowHeightSpans(&m_ctx, m_cfg.walkableHeight, *m_solid);
+	// Once all geoemtry is rasterized, we do initial pass of filtering to
+	// remove unwanted overhangs caused by the conservative rasterization
+	// as well as filter spans where the character cannot possibly stand.
+	// if (m_filterLowHangingObstacles)
+	// 	rcFilterLowHangingWalkableObstacles(&m_ctx, m_cfg.walkableClimb, *m_solid);
+	// if (m_filterLedgeSpans)
+	// 	rcFilterLedgeSpans(&m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid);
+	// if (m_filterWalkableLowHeightSpans)
+	// 	rcFilterWalkableLowHeightSpans(&m_ctx, m_cfg.walkableHeight, *m_solid);
 
 
-// 	//
-// 	// Step 4. Partition walkable surface to simple regions.
-// 	//
+	//
+	// Step 4. Partition walkable surface to simple regions.
+	//
 
-// 	// Compact the heightfield so that it is faster to handle from now on.
-// 	// This will result more cache coherent data as well as the neighbours
-// 	// between walkable cells will be calculated.
-// 	m_chf = rcAllocCompactHeightfield();
-// 	if (!rcBuildCompactHeightfield(&m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
-// 	{
-// 		printf("buildNavigation: Could not build compact data.\n");
-// 		return false;
-// 	}
+	// Compact the heightfield so that it is faster to handle from now on.
+	// This will result more cache coherent data as well as the neighbours
+	// between walkable cells will be calculated.
+	m_chf = rcAllocCompactHeightfield();
+	if (!rcBuildCompactHeightfield(&m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
+	{
+		printf("buildNavigation: Could not build compact data.\n");
+		return false;
+	}
 	
-// 	if (!m_keepInterResults)
-// 	{
-// 		rcFreeHeightField(m_solid);
-// 		m_solid = 0;
-// 	}
+	if (!m_keepInterResults)
+	{
+		rcFreeHeightField(m_solid);
+		m_solid = 0;
+	}
 		
-// 	// Erode the walkable area by agent radius.
-// 	if (!rcErodeWalkableArea(&m_ctx, m_cfg.walkableRadius, *m_chf))
-// 	{
-// 		printf("buildNavigation: Could not erode.\n");
-// 		return false;
-// 	}
+	// Erode the walkable area by agent radius.
+	if (!rcErodeWalkableArea(&m_ctx, m_cfg.walkableRadius, *m_chf))
+	{
+		printf("buildNavigation: Could not erode.\n");
+		return false;
+	}
 
-// 	// (Optional) Mark areas.
-// 	// const ConvexVolume* vols = m_geom->getConvexVolumes();
-// 	// for (int i  = 0; i < m_geom->getConvexVolumeCount(); ++i)
-// 	// 	rcMarkConvexPolyArea(&m_ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
+	// (Optional) Mark areas.
+	// const ConvexVolume* vols = m_geom->getConvexVolumes();
+	// for (int i  = 0; i < m_geom->getConvexVolumeCount(); ++i)
+	// 	rcMarkConvexPolyArea(&m_ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
 
 	
-// 	// Partition the heightfield so that we can use simple algorithm later to triangulate the walkable areas.
-// 	// There are 3 martitioning methods, each with some pros and cons:
-// 	// 1) Watershed partitioning
-// 	//   - the classic Recast partitioning
-// 	//   - creates the nicest tessellation
-// 	//   - usually slowest
-// 	//   - partitions the heightfield into nice regions without holes or overlaps
-// 	//   - the are some corner cases where this method creates produces holes and overlaps
-// 	//      - holes may appear when a small obstacles is close to large open area (triangulation can handle this)
-// 	//      - overlaps may occur if you have narrow spiral corridors (i.e stairs), this make triangulation to fail
-// 	//   * generally the best choice if you precompute the nacmesh, use this if you have large open areas
-// 	// 2) Monotone partioning
-// 	//   - fastest
-// 	//   - partitions the heightfield into regions without holes and overlaps (guaranteed)
-// 	//   - creates long thin polygons, which sometimes causes paths with detours
-// 	//   * use this if you want fast navmesh generation
-// 	// 3) Layer partitoining
-// 	//   - quite fast
-// 	//   - partitions the heighfield into non-overlapping regions
-// 	//   - relies on the triangulation code to cope with holes (thus slower than monotone partitioning)
-// 	//   - produces better triangles than monotone partitioning
-// 	//   - does not have the corner cases of watershed partitioning
-// 	//   - can be slow and create a bit ugly tessellation (still better than monotone)
-// 	//     if you have large open areas with small obstacles (not a problem if you use tiles)
-// 	//   * good choice to use for tiled navmesh with medium and small sized tiles
+	// Partition the heightfield so that we can use simple algorithm later to triangulate the walkable areas.
+	// There are 3 martitioning methods, each with some pros and cons:
+	// 1) Watershed partitioning
+	//   - the classic Recast partitioning
+	//   - creates the nicest tessellation
+	//   - usually slowest
+	//   - partitions the heightfield into nice regions without holes or overlaps
+	//   - the are some corner cases where this method creates produces holes and overlaps
+	//      - holes may appear when a small obstacles is close to large open area (triangulation can handle this)
+	//      - overlaps may occur if you have narrow spiral corridors (i.e stairs), this make triangulation to fail
+	//   * generally the best choice if you precompute the nacmesh, use this if you have large open areas
+	// 2) Monotone partioning
+	//   - fastest
+	//   - partitions the heightfield into regions without holes and overlaps (guaranteed)
+	//   - creates long thin polygons, which sometimes causes paths with detours
+	//   * use this if you want fast navmesh generation
+	// 3) Layer partitoining
+	//   - quite fast
+	//   - partitions the heighfield into non-overlapping regions
+	//   - relies on the triangulation code to cope with holes (thus slower than monotone partitioning)
+	//   - produces better triangles than monotone partitioning
+	//   - does not have the corner cases of watershed partitioning
+	//   - can be slow and create a bit ugly tessellation (still better than monotone)
+	//     if you have large open areas with small obstacles (not a problem if you use tiles)
+	//   * good choice to use for tiled navmesh with medium and small sized tiles
 	
-// 	// if (m_partitionType == SAMPLE_PARTITION_WATERSHED)
-// 	// {
-// 		// Prepare for region partitioning, by calculating distance field along the walkable surface.
-// 		if (!rcBuildDistanceField(&m_ctx, *m_chf))
-// 		{
-// 			printf("buildNavigation: Could not build distance field.\n");
-// 			return false;
-// 		}
+	// if (m_partitionType == SAMPLE_PARTITION_WATERSHED)
+	// {
+		// Prepare for region partitioning, by calculating distance field along the walkable surface.
+		if (!rcBuildDistanceField(&m_ctx, *m_chf))
+		{
+			printf("buildNavigation: Could not build distance field.\n");
+			return false;
+		}
 		
-// 		// Partition the walkable surface into simple regions without holes.
-// 		if (!rcBuildRegions(&m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
-// 		{
-// 			printf("buildNavigation: Could not build watershed regions.\n");
-// 			return false;
-// 		}
-// 	// }
-// 	// else if (m_partitionType == SAMPLE_PARTITION_MONOTONE)
-// 	// {
-// 	// 	// Partition the walkable surface into simple regions without holes.
-// 	// 	// Monotone partitioning does not need distancefield.
-// 	// 	if (!rcBuildRegionsMonotone(&m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
-// 	// 	{
-// 	// 		printf("buildNavigation: Could not build monotone regions.\n");
-// 	// 		return false;
-// 	// 	}
-// 	// }
-// 	// else // SAMPLE_PARTITION_LAYERS
-// 	// {
-// 	// 	// Partition the walkable surface into simple regions without holes.
-// 	// 	if (!rcBuildLayerRegions(&m_ctx, *m_chf, 0, m_cfg.minRegionArea))
-// 	// 	{
-// 	// 		printf("buildNavigation: Could not build layer regions.\n");
-// 	// 		return false;
-// 	// 	}
-// 	// }
+		// Partition the walkable surface into simple regions without holes.
+		if (!rcBuildRegions(&m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
+		{
+			printf("buildNavigation: Could not build watershed regions.\n");
+			return false;
+		}
+	// }
+	// else if (m_partitionType == SAMPLE_PARTITION_MONOTONE)
+	// {
+	// 	// Partition the walkable surface into simple regions without holes.
+	// 	// Monotone partitioning does not need distancefield.
+	// 	if (!rcBuildRegionsMonotone(&m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
+	// 	{
+	// 		printf("buildNavigation: Could not build monotone regions.\n");
+	// 		return false;
+	// 	}
+	// }
+	// else // SAMPLE_PARTITION_LAYERS
+	// {
+	// 	// Partition the walkable surface into simple regions without holes.
+	// 	if (!rcBuildLayerRegions(&m_ctx, *m_chf, 0, m_cfg.minRegionArea))
+	// 	{
+	// 		printf("buildNavigation: Could not build layer regions.\n");
+	// 		return false;
+	// 	}
+	// }
 	
-// 	//
-// 	// Step 5. Trace and simplify region contours.
-// 	//
+	//
+	// Step 5. Trace and simplify region contours.
+	//
 	
-// 	// Create contours.
-// 	m_cset = rcAllocContourSet();
-// 	if (!m_cset)
-// 	{
-// 		printf("buildNavigation: Out of memory 'cset'.\n");
-// 		return false;
-// 	}
-// 	if (!rcBuildContours(&m_ctx, *m_chf, m_cfg.maxSimplificationError, m_cfg.maxEdgeLen, *m_cset))
-// 	{
-// 		printf("buildNavigation: Could not create contours.\n");
-// 		return false;
-// 	}
+	// Create contours.
+	m_cset = rcAllocContourSet();
+	if (!m_cset)
+	{
+		printf("buildNavigation: Out of memory 'cset'.\n");
+		return false;
+	}
+	if (!rcBuildContours(&m_ctx, *m_chf, m_cfg.maxSimplificationError, m_cfg.maxEdgeLen, *m_cset))
+	{
+		printf("buildNavigation: Could not create contours.\n");
+		return false;
+	}
 	
-// 	//
-// 	// Step 6. Build polygons mesh from contours.
-// 	//
+	//
+	// Step 6. Build polygons mesh from contours.
+	//
 	
-// 	// Build polygon navmesh from the contours.
-// 	m_pmesh = rcAllocPolyMesh();
-// 	if (!m_pmesh)
-// 	{
-// 		printf("buildNavigation: Out of memory 'pmesh'.\n");
-// 		return false;
-// 	}
-// 	if (!rcBuildPolyMesh(&m_ctx, *m_cset, m_cfg.maxVertsPerPoly, *m_pmesh))
-// 	{
-// 		printf("buildNavigation: Could not triangulate contours.\n");
-// 		return false;
-// 	}
+	// Build polygon navmesh from the contours.
+	m_pmesh = rcAllocPolyMesh();
+	if (!m_pmesh)
+	{
+		printf("buildNavigation: Out of memory 'pmesh'.\n");
+		return false;
+	}
+	if (!rcBuildPolyMesh(&m_ctx, *m_cset, m_cfg.maxVertsPerPoly, *m_pmesh))
+	{
+		printf("buildNavigation: Could not triangulate contours.\n");
+		return false;
+	}
 	
-// 	//
-// 	// Step 7. Create detail mesh which allows to access approximate height on each polygon.
-// 	//
+	//
+	// Step 7. Create detail mesh which allows to access approximate height on each polygon.
+	//
 	
-// 	m_dmesh = rcAllocPolyMeshDetail();
-// 	if (!m_dmesh)
-// 	{
-// 		printf("buildNavigation: Out of memory 'pmdtl'.\n");
-// 		return false;
-// 	}
+	m_dmesh = rcAllocPolyMeshDetail();
+	if (!m_dmesh)
+	{
+		printf("buildNavigation: Out of memory 'pmdtl'.\n");
+		return false;
+	}
 
-// 	if (!rcBuildPolyMeshDetail(&m_ctx, *m_pmesh, *m_chf, m_cfg.detailSampleDist, m_cfg.detailSampleMaxError, *m_dmesh))
-// 	{
-// 		printf("buildNavigation: Could not build detail mesh.\n");
-// 		return false;
-// 	}
+	if (!rcBuildPolyMeshDetail(&m_ctx, *m_pmesh, *m_chf, m_cfg.detailSampleDist, m_cfg.detailSampleMaxError, *m_dmesh))
+	{
+		printf("buildNavigation: Could not build detail mesh.\n");
+		return false;
+	}
 
-// 	if (!m_keepInterResults)
-// 	{
-// 		rcFreeCompactHeightfield(m_chf);
-// 		m_chf = 0;
-// 		rcFreeContourSet(m_cset);
-// 		m_cset = 0;
-// 	}
+	if (!m_keepInterResults)
+	{
+		rcFreeCompactHeightfield(m_chf);
+		m_chf = 0;
+		rcFreeContourSet(m_cset);
+		m_cset = 0;
+	}
 
-// 	// At this point the navigation mesh data is ready, you can access it from m_pmesh.
-// 	// See duDebugDrawPolyMesh or dtCreateNavMeshData as examples how to access the data.
+	// At this point the navigation mesh data is ready, you can access it from m_pmesh.
+	// See duDebugDrawPolyMesh or dtCreateNavMeshData as examples how to access the data.
 	
-// 	//
-// 	// (Optional) Step 8. Create Detour data from Recast poly mesh.
-// 	//
+	//
+	// (Optional) Step 8. Create Detour data from Recast poly mesh.
+	//
 	
-// 	unsigned char* navData = 0;
-// 	int navDataSize = 0;
+	unsigned char* navData = 0;
+	int navDataSize = 0;
 
-// 	// // Update poly flags from areas.
-// 	// for (int i = 0; i < m_pmesh->npolys; ++i)
-// 	// {
-// 	// 	if (m_pmesh->areas[i] == RC_WALKABLE_AREA)
-// 	// 		m_pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;
+	// // Update poly flags from areas.
+	// for (int i = 0; i < m_pmesh->npolys; ++i)
+	// {
+	// 	if (m_pmesh->areas[i] == RC_WALKABLE_AREA)
+	// 		m_pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;
 			
-// 	// 	if (m_pmesh->areas[i] == SAMPLE_POLYAREA_GROUND ||
-// 	// 		m_pmesh->areas[i] == SAMPLE_POLYAREA_GRASS ||
-// 	// 		m_pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
-// 	// 	{
-// 	// 		m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
-// 	// 	}
-// 	// 	else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_WATER)
-// 	// 	{
-// 	// 		m_pmesh->flags[i] = SAMPLE_POLYFLAGS_SWIM;
-// 	// 	}
-// 	// 	else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_DOOR)
-// 	// 	{
-// 	// 		m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
-// 	// 	}
-// 	// }
+	// 	if (m_pmesh->areas[i] == SAMPLE_POLYAREA_GROUND ||
+	// 		m_pmesh->areas[i] == SAMPLE_POLYAREA_GRASS ||
+	// 		m_pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
+	// 	{
+	// 		m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
+	// 	}
+	// 	else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_WATER)
+	// 	{
+	// 		m_pmesh->flags[i] = SAMPLE_POLYFLAGS_SWIM;
+	// 	}
+	// 	else if (m_pmesh->areas[i] == SAMPLE_POLYAREA_DOOR)
+	// 	{
+	// 		m_pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
+	// 	}
+	// }
 
 
-// 	dtNavMeshCreateParams params;
-// 	memset(&params, 0, sizeof(params));
-// 	params.verts = m_pmesh->verts;
-// 	params.vertCount = m_pmesh->nverts;
-// 	params.polys = m_pmesh->polys;
-// 	params.polyAreas = m_pmesh->areas;
-// 	params.polyFlags = m_pmesh->flags;
-// 	params.polyCount = m_pmesh->npolys;
-// 	params.nvp = m_pmesh->nvp;
-// 	params.detailMeshes = m_dmesh->meshes;
-// 	params.detailVerts = m_dmesh->verts;
-// 	params.detailVertsCount = m_dmesh->nverts;
-// 	params.detailTris = m_dmesh->tris;
-// 	params.detailTriCount = m_dmesh->ntris;
-// 	// params.offMeshConVerts = m_geom->getOffMeshConnectionVerts();
-// 	// params.offMeshConRad = m_geom->getOffMeshConnectionRads();
-// 	// params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
-// 	// params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
-// 	// params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
-// 	// params.offMeshConUserID = m_geom->getOffMeshConnectionId();
-// 	// params.offMeshConCount = m_geom->getOffMeshConnectionCount();
-// 	params.walkableHeight = m_agentHeight;
-// 	params.walkableRadius = m_agentRadius;
-// 	params.walkableClimb = m_agentMaxClimb;
-// 	rcVcopy(params.bmin, m_pmesh->bmin);
-// 	rcVcopy(params.bmax, m_pmesh->bmax);
-// 	params.cs = m_cfg.cs;
-// 	params.ch = m_cfg.ch;
-// 	params.buildBvTree = true;
+	dtNavMeshCreateParams params;
+	memset(&params, 0, sizeof(params));
+	params.verts = m_pmesh->verts;
+	params.vertCount = m_pmesh->nverts;
+	params.polys = m_pmesh->polys;
+	params.polyAreas = m_pmesh->areas;
+	params.polyFlags = m_pmesh->flags;
+	params.polyCount = m_pmesh->npolys;
+	params.nvp = m_pmesh->nvp;
+	params.detailMeshes = m_dmesh->meshes;
+	params.detailVerts = m_dmesh->verts;
+	params.detailVertsCount = m_dmesh->nverts;
+	params.detailTris = m_dmesh->tris;
+	params.detailTriCount = m_dmesh->ntris;
+	// params.offMeshConVerts = m_geom->getOffMeshConnectionVerts();
+	// params.offMeshConRad = m_geom->getOffMeshConnectionRads();
+	// params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
+	// params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
+	// params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
+	// params.offMeshConUserID = m_geom->getOffMeshConnectionId();
+	// params.offMeshConCount = m_geom->getOffMeshConnectionCount();
+	params.walkableHeight = m_agentHeight;
+	params.walkableRadius = m_agentRadius;
+	params.walkableClimb = m_agentMaxClimb;
+	rcVcopy(params.bmin, m_pmesh->bmin);
+	rcVcopy(params.bmax, m_pmesh->bmax);
+	params.cs = m_cfg.cs;
+	params.ch = m_cfg.ch;
+	params.buildBvTree = true;
 	
-// 	if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
-// 	{
-// 		printf("Could not build Detour navmesh.\n");
-// 		return false;
-// 	}
+	if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
+	{
+		printf("Could not build Detour navmesh.\n");
+		return false;
+	}
 	
-// 	m_navMesh = dtAllocNavMesh();
-// 	if (!m_navMesh)
-// 	{
-// 		dtFree(navData);
-// 		printf("Could not create Detour navmesh\n");
-// 		return false;
-// 	}
+	m_navMesh = dtAllocNavMesh();
+	if (!m_navMesh)
+	{
+		dtFree(navData);
+		printf("Could not create Detour navmesh\n");
+		return false;
+	}
 	
-// 	dtStatus status;
+	dtStatus status;
 	
-// 	status = m_navMesh->init(navData, navDataSize, DT_TILE_FREE_DATA);
-// 	if (dtStatusFailed(status))
-// 	{
-// 		dtFree(navData);
-// 		printf("Could not init Detour navmesh\n");
-// 		return false;
-// 	}
+	status = m_navMesh->init(navData, navDataSize, DT_TILE_FREE_DATA);
+	if (dtStatusFailed(status))
+	{
+		dtFree(navData);
+		printf("Could not init Detour navmesh\n");
+		return false;
+	}
 	
-// 	status = m_navQuery->init(m_navMesh, 2048);
-// 	if (dtStatusFailed(status))
-// 	{
-// 		printf("Could not init Detour navmesh query\n");
-// 		return false;
-// 	}
-// }
+	status = m_navQuery->init(m_navMesh, 2048);
+	if (dtStatusFailed(status))
+	{
+		printf("Could not init Detour navmesh query\n");
+		return false;
+	}
+}

@@ -1783,6 +1783,16 @@ static int navmesh_find_triangle(lua_State *L)
 	return 1;
 }
 
+static int navmesh_find_path(lua_State *L)
+{
+	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
+	mesh_point start = {(uint32_t)lua_tonumber(L, 2), (uint32_t)lua_tonumber(L, 3)};
+	mesh_point end = {(uint32_t)lua_tonumber(L, 4), (uint32_t)lua_tonumber(L, 5)};
+	vector<mesh_point> path(100);
+	p->pathFind(path, start, end);
+	return 0;
+}
+
 static int navmesh_debug_draw(lua_State *L)
 {
 	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
@@ -2290,6 +2300,7 @@ static const struct luaL_Reg navmesh_reg[] =
 	{"__gc", navmesh_free},
 	{"isInTriangle", navmesh_is_in_triangle},
 	{"findTriangle", navmesh_find_triangle},
+	{"pathFind", navmesh_find_path},
 	{"drawDebug", navmesh_debug_draw},
 	{NULL, NULL},
 };
