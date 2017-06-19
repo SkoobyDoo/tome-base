@@ -37,7 +37,7 @@ project "TEngine"
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-spriter", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader", "te4-box2d-".._OPTIONS.box2d:lower(), "te4-poly2tri", "te4-clipper", "te4-recast" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-spriter", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader", "te4-box2d-".._OPTIONS.box2d:lower(), "te4-poly2tri", "te4-clipper" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-O3" }
@@ -640,15 +640,6 @@ project "te4-renderer"
 	buildoptions { "-std=c++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
-	-- For recast
-	includedirs {
-		"../src/recastdetour/DebugUtils/Include",
-		"../src/recastdetour/DetourCrowd/Include",
-		"../src/recastdetour/Detour/Include",
-		"../src/recastdetour/DetourTileCache/Include",
-		"../src/recastdetour/Recast/Include",
-	}
-
 	files { "../src/renderer-moderngl/*.cpp", "../src/displayobjects/*.cpp", }
 
 
@@ -691,22 +682,6 @@ project "te4-poly2tri"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/poly2tri/**.cc", }
-
-project "te4-recast"
-	kind "StaticLib"
-	language "C++"
-	targetname "te4-recast"
-	buildoptions { "-std=c++11" }
-	includedirs {
-		"../src/recastdetour/DebugUtils/Include",
-		"../src/recastdetour/DetourCrowd/Include",
-		"../src/recastdetour/Detour/Include",
-		"../src/recastdetour/DetourTileCache/Include",
-		"../src/recastdetour/Recast/Include",
-	}
-	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
-
-	files { "../src/recastdetour/**.cpp", }
 
 if _OPTIONS.box2d == "ST" then
 project "te4-box2d-st"

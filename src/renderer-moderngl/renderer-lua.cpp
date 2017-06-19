@@ -1789,7 +1789,7 @@ static int navmesh_find_path(lua_State *L)
 	mesh_point start = {(uint32_t)lua_tonumber(L, 2), (uint32_t)lua_tonumber(L, 3)};
 	mesh_point end = {(uint32_t)lua_tonumber(L, 4), (uint32_t)lua_tonumber(L, 5)};
 	vector<mesh_point> path(100);
-	p->pathFind(path, start, end);
+	p->pathFindByTriangle(path, start, end);
 	return 0;
 }
 
@@ -1872,7 +1872,7 @@ static int physic_world_debug_draw(lua_State *L) {
 }
 
 static int physic_world_build_navmesh(lua_State *L) {
-	Navmesh *mesh = new Navmesh(&PhysicSimulator::current->world);
+	Navmesh *mesh = new Navmesh(&PhysicSimulator::current->world, lua_tonumber(L, 1));
 	mesh->build();
 
 	Navmesh **r = (Navmesh**)lua_newuserdata(L, sizeof(Navmesh*));
