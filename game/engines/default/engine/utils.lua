@@ -131,6 +131,7 @@ function table.print(src, offset, ret)
 end
 
 function table.iprint(src, offset)
+	if type(src) ~= "table" then print("table.iprint has no table:", src) return end
 	offset = offset or ""
 	for k, e in ipairs(src) do
 		-- Deep copy subtables, but not objects!

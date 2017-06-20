@@ -64,7 +64,7 @@ void Navmesh::extractShapeChain(b2Body *body, b2ChainShape *shape) {
 	mesh_polygon poly; poly.list.reserve(nb);
 	for (int i = 0; i < nb; i++) {
 		if ((i == nb - 1) && (shape->m_vertices[0].x == shape->m_vertices[i].x) && (shape->m_vertices[0].y == shape->m_vertices[i].y)) {
-			printf("Loop detected, ignoring last poing\n");
+			printf("Loop detected, ignoring last point\n");
 			continue;
 		}
 		vec2 v = getCoords(shape->m_vertices[i]) + center;
@@ -165,7 +165,9 @@ bool Navmesh::makeNavmesh() {
 			clpr.AddPath(poly.list, ClipperLib::ptClip , true);
 		} }
 		ClipperLib::Paths solution;
-		if (!clpr.Execute(ClipperLib::ctDifference, solution, ClipperLib::pftEvenOdd, ClipperLib::pftNonZero))continue;
+		if (!clpr.Execute(ClipperLib::ctDifference, solution, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd)) continue;
+		printf("[NAVMESH] clipper solutions: %ld\n", solution.size());
+		if (!solution.size()) continue;
 
 		// Convert clipper data format to poly2tri data format
 		vector<vector<p2t::Point*>> polylines;
