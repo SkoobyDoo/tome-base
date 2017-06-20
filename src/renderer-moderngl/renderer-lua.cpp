@@ -25,7 +25,6 @@
 #include "renderer-moderngl/TileMap.hpp"
 #include "renderer-moderngl/Particles.hpp"
 #include "renderer-moderngl/Physic.hpp"
-#include "renderer-moderngl/Navmesh.hpp"
 #include "spriter/Spriter.hpp"
 
 extern "C" {
@@ -1759,62 +1758,6 @@ static int body_sleep(lua_State *L)
 }
 
 /******************************************************************
- ** Navmesh functions
- ******************************************************************/
-static int navmesh_free(lua_State *L)
-{
-	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
-	delete p;
-	lua_pushnumber(L, 1);
-	return 1;
-}
-
-static int navmesh_is_in_triangle(lua_State *L)
-{
-	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
-	lua_pushboolean(L, p->isInTriangle(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)));
-	return 1;
-}
-
-static int navmesh_find_triangle(lua_State *L)
-{
-	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
-	lua_pushnumber(L, p->findTriangle(lua_tonumber(L, 2), lua_tonumber(L, 3)));
-	return 1;
-}
-
-static int navmesh_find_path(lua_State *L)
-{
-	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
-	mesh_point start = {(uint32_t)lua_tonumber(L, 2), (uint32_t)lua_tonumber(L, 3)};
-	mesh_point end = {(uint32_t)lua_tonumber(L, 4), (uint32_t)lua_tonumber(L, 5)};
-	vector<mesh_point> path(100);
-	int tri_start_id, tri_end_id;
-	if (p->pathFindByTriangle(start, end, tri_start_id, tri_end_id, path)) {
-		lua_newtable(L);
-		int i = 1;
-		for (auto &point : path) {
-			lua_pushnumber(L, point.x);
-			lua_rawseti(L, -2, i++);
-			lua_pushnumber(L, point.y);
-			lua_rawseti(L, -2, i++);
-		}
-		lua_pushnumber(L, tri_start_id);
-		lua_pushnumber(L, tri_end_id);
-	} else {
-		lua_pushnil(L);
-	}
-	return 1;
-}
-
-static int navmesh_debug_draw(lua_State *L)
-{
-	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
-	p->drawDebug(lua_tonumber(L, 2), lua_tonumber(L, 3));
-	return 0;
-}
-
-/******************************************************************
  ** Generic non object functions
  ******************************************************************/
 static int gl_dos_count(lua_State *L) {
@@ -1883,16 +1826,6 @@ static int physic_world_set_contact_listener(lua_State *L) {
 static int physic_world_debug_draw(lua_State *L) {
 	PhysicSimulator::current->drawDebug(lua_tonumber(L, 1), lua_tonumber(L, 2));
 	return 0;
-}
-
-static int physic_world_build_navmesh(lua_State *L) {
-	Navmesh *mesh = new Navmesh(&PhysicSimulator::current->world, lua_tonumber(L, 1));
-	mesh->build();
-
-	Navmesh **r = (Navmesh**)lua_newuserdata(L, sizeof(Navmesh*));
-	auxiliar_setclass(L, "navmesh{map}", -1);
-	*r = mesh;
-	return 1;
 }
 
 /******************************************************************
@@ -2309,16 +2242,6 @@ static const struct luaL_Reg gl_view_reg[] =
 	{NULL, NULL},
 };
 
-static const struct luaL_Reg navmesh_reg[] =
-{
-	{"__gc", navmesh_free},
-	{"isInTriangle", navmesh_is_in_triangle},
-	{"findTriangle", navmesh_find_triangle},
-	{"pathFind", navmesh_find_path},
-	{"drawDebug", navmesh_debug_draw},
-	{NULL, NULL},
-};
-
 // Note the is no __gc because we dont actaully manage the object
 static const struct luaL_Reg physic_body_reg[] =
 {
@@ -2358,13 +2281,11 @@ const luaL_Reg physicslib[] = {
 	{"worldGravity", physic_world_gravity},
 	{"worldScale", physic_world_unit_to_pixel},
 	{"drawDebug", physic_world_debug_draw},
-	{"buildNavmesh", physic_world_build_navmesh},
 	{NULL, NULL}
 };
 
 int luaopen_renderer(lua_State *L)
 {
-	auxiliar_newclass(L, "navmesh{map}", navmesh_reg);
 	auxiliar_newclass(L, "physic{body}", physic_body_reg);
 	auxiliar_newclass(L, "gl{renderer}", gl_renderer_reg);
 	auxiliar_newclass(L, "gl{vertexes}", gl_vertexes_reg);

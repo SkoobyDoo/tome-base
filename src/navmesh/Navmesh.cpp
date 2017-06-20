@@ -30,7 +30,7 @@ extern "C" {
 }
 
 #include "poly2tri/poly2tri.h"
-#include "renderer-moderngl/Navmesh.hpp"
+#include "navmesh/Navmesh.hpp"
 
 Navmesh::Navmesh(b2World *world, int radius) : world(world), radius(radius) {
 }
@@ -200,8 +200,6 @@ bool Navmesh::makeNavmesh() {
 			sp_mesh_triangle mtri = make_shared<mesh_triangle>((mesh_point){(uint32_t)p1->x, (uint32_t)p1->y}, (mesh_point){(uint32_t)p2->x, (uint32_t)p2->y}, (mesh_point){(uint32_t)p3->x, (uint32_t)p3->y}, mesh.size() + 1);
 			mesh.push_back(mtri);
 
-			mtri->print();
-
 			for (auto edge : mtri->edges) {
 				auto it = edges.find(edge);
 				if (it != edges.end()) {
@@ -323,74 +321,74 @@ static inline uint32_t heuristic(mesh_point &from, mesh_point &to) {
 }
 
 // Mostly useless
-bool Navmesh::pathFindByEdge(vector<mesh_point> &path, mesh_point &start, mesh_point &end) {
-	int tri_start_id = findTriangle(start.x, start.y);
-	int tri_end_id = findTriangle(end.x, end.y);
-	if (!tri_start_id || !tri_end_id) { printf("[NAVMESH] pathFind start or stop triangle is unfound: %d, %d\n", tri_start_id, tri_end_id); return false; }
-	printf("Starting pathfind from %dx%d (triangle %d) to %dx%d (triangle %d)\n", start.x, start.y, tri_start_id, end.x, end.y, tri_end_id);
+// bool Navmesh::pathFindByEdge(vector<mesh_point> &path, mesh_point &start, mesh_point &end) {
+// 	int tri_start_id = findTriangle(start.x, start.y);
+// 	int tri_end_id = findTriangle(end.x, end.y);
+// 	if (!tri_start_id || !tri_end_id) { printf("[NAVMESH] pathFind start or stop triangle is unfound: %d, %d\n", tri_start_id, tri_end_id); return false; }
+// 	printf("Starting pathfind from %dx%d (triangle %d) to %dx%d (triangle %d)\n", start.x, start.y, tri_start_id, end.x, end.y, tri_end_id);
 
-	sp_mesh_triangle tri_start = mesh[tri_start_id-1];
-	sp_mesh_triangle tri_end = mesh[tri_end_id-1];
+// 	sp_mesh_triangle tri_start = mesh[tri_start_id-1];
+// 	sp_mesh_triangle tri_end = mesh[tri_end_id-1];
 
-	// Woot, easy we are already in the same triangle
-	if (tri_start == tri_end) { path.push_back(end); return true; }
+// 	// Woot, easy we are already in the same triangle
+// 	if (tri_start == tri_end) { path.push_back(end); return true; }
 
-	sp_mesh_point_unique pstart = make_shared<mesh_point_unique>(start, -1);
-	sp_mesh_point_unique pend = make_shared<mesh_point_unique>(end, -2);
+// 	sp_mesh_point_unique pstart = make_shared<mesh_point_unique>(start, -1);
+// 	sp_mesh_point_unique pend = make_shared<mesh_point_unique>(end, -2);
 
-	unordered_set<sp_mesh_point_unique> closed;
-	unordered_map<sp_mesh_point_unique, mesh_path_data> open;
-	unordered_map<sp_mesh_point_unique, sp_mesh_point_unique> came_from;
+// 	unordered_set<sp_mesh_point_unique> closed;
+// 	unordered_map<sp_mesh_point_unique, mesh_path_data> open;
+// 	unordered_map<sp_mesh_point_unique, sp_mesh_point_unique> came_from;
 
-	for (auto p : tri_start->points) {
-		float distance = sqrt(pow((float)p->x - (float)pstart->x, 2) + pow((float)p->y - (float)pstart->y, 2));
-		open.insert({p, {(uint32_t)distance}});
-		came_from[p] = pstart;
-	}
+// 	for (auto p : tri_start->points) {
+// 		float distance = sqrt(pow((float)p->x - (float)pstart->x, 2) + pow((float)p->y - (float)pstart->y, 2));
+// 		open.insert({p, {(uint32_t)distance}});
+// 		came_from[p] = pstart;
+// 	}
 
-	while (true) {
-		uint32_t lowest = 999999;
-		sp_mesh_point_unique node;
-		for (auto &it : open) {
-			if (it.second.g_cost < lowest) {
-				node = it.first;
-				lowest = it.second.g_cost;
-			}
-		}
-		printf("Using open : %d with cost %d\n", node->id, lowest);
+// 	while (true) {
+// 		uint32_t lowest = 999999;
+// 		sp_mesh_point_unique node;
+// 		for (auto &it : open) {
+// 			if (it.second.g_cost < lowest) {
+// 				node = it.first;
+// 				lowest = it.second.g_cost;
+// 			}
+// 		}
+// 		printf("Using open : %d with cost %d\n", node->id, lowest);
 
-		if (node->tri_ids.find(tri_end_id) != node->tri_ids.end()) {
-			last_path.clear();
-			printf("Found route!\n");
-			last_path.push_back(end);
-			while (node != pstart) {
-				last_path.push_back({node->x, node->y});
-				node = came_from[node];
-			}
-			last_path.push_back(start);
-			std::reverse(last_path.begin(), last_path.end());
-			return true;
-		}
+// 		if (node->tri_ids.find(tri_end_id) != node->tri_ids.end()) {
+// 			last_path.clear();
+// 			printf("Found route!\n");
+// 			last_path.push_back(end);
+// 			while (node != pstart) {
+// 				last_path.push_back({node->x, node->y});
+// 				node = came_from[node];
+// 			}
+// 			last_path.push_back(start);
+// 			std::reverse(last_path.begin(), last_path.end());
+// 			return true;
+// 		}
 
-		closed.insert(node);
-		open.erase(node);
+// 		closed.insert(node);
+// 		open.erase(node);
 
-		auto it  = points_neighbours.find(node);
-		if (it != points_neighbours.end()) {
-			for (auto ntest : *it->second) {
-				if (closed.find(ntest.first) == closed.end()) {
-					mesh_point np = node->get();
-					mesh_point p = ntest.first->get();
-					open.insert({ntest.first, {(uint32_t)lowest + heuristic(np, p)}});
-					came_from[ntest.first] = node;
-				}
-			}
-		}
+// 		auto it  = points_neighbours.find(node);
+// 		if (it != points_neighbours.end()) {
+// 			for (auto ntest : *it->second) {
+// 				if (closed.find(ntest.first) == closed.end()) {
+// 					mesh_point np = node->get();
+// 					mesh_point p = ntest.first->get();
+// 					open.insert({ntest.first, {(uint32_t)lowest + heuristic(np, p)}});
+// 					came_from[ntest.first] = node;
+// 				}
+// 			}
+// 		}
 
-		// break;
-	}
-	return false;
-}
+// 		// break;
+// 	}
+// 	return false;
+// }
 
 static inline int32_t get_winding(mesh_point &p1, mesh_point &p2, mesh_point &test) {
 	return (p2.x - p1.x) * (test.y - p1.y) - (p2.y - p1.y) * (test.x - p1.x);
@@ -400,7 +398,7 @@ bool Navmesh::pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_st
 	tri_start_id = findTriangle(start.x, start.y);
 	tri_end_id = findTriangle(end.x, end.y);
 	if (!tri_start_id || !tri_end_id) { printf("[NAVMESH] pathFind start or stop triangle is unfound: %d, %d\n", tri_start_id, tri_end_id); return false; }
-	printf("Starting pathfind from %dx%d (triangle %d) to %dx%d (triangle %d)\n", start.x, start.y, tri_start_id, end.x, end.y, tri_end_id);
+	// printf("Starting pathfind from %dx%d (triangle %d) to %dx%d (triangle %d)\n", start.x, start.y, tri_start_id, end.x, end.y, tri_end_id);
 
 	sp_mesh_triangle tri_start = mesh[tri_start_id-1];
 	sp_mesh_triangle tri_end = mesh[tri_end_id-1];
@@ -426,15 +424,15 @@ bool Navmesh::pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_st
 				lowest = it.second.g_cost;
 			}
 		}
-		printf("Using open : %d with cost %d\n", node->id, lowest);
+		// printf("Using open : %d with cost %d\n", node->id, lowest);
 
 		if (node == tri_end) {
 			sp_mesh_triangle rnode = node;
-			printf("Found route!\n");
+			// printf("Found route!\n");
 			portals.push_back(make_shared<mesh_edge>(end, end));
 			// portals.push_back(make_shared<mesh_edge>(tri_end->center, tri_end->center));
 			sp_mesh_triangle next = nullptr;
-			test_color.clear();
+			if (debug) test_color.clear();
 			while (node != tri_start) {
 				next = get<0>(came_from[node]);
 				// if (node != tri_end) {
@@ -442,8 +440,10 @@ bool Navmesh::pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_st
 					if (get_winding(next->center, node->center, edge->p1) < 0) edge = make_shared<mesh_edge>(edge->p2, edge->p1);
 					portals.push_back(edge);
 
-					test_color.push_back(make_tuple<uint32_t, uint32_t, uint32_t, uint32_t, vec4>((uint32_t)next->center.x, (uint32_t)next->center.y, (uint32_t)edge->p1.x, (uint32_t)edge->p1.y, vec4(0.5, 0.5, 1, 1)));
-					test_color.push_back(make_tuple<uint32_t, uint32_t, uint32_t, uint32_t, vec4>((uint32_t)next->center.x, (uint32_t)next->center.y, (uint32_t)edge->p2.x, (uint32_t)edge->p2.y, vec4(0.5, 1, 0.5, 1)));
+					if (debug) {
+						test_color.push_back(make_tuple<uint32_t, uint32_t, uint32_t, uint32_t, vec4>((uint32_t)next->center.x, (uint32_t)next->center.y, (uint32_t)edge->p1.x, (uint32_t)edge->p1.y, vec4(0.5, 0.5, 1, 1)));
+						test_color.push_back(make_tuple<uint32_t, uint32_t, uint32_t, uint32_t, vec4>((uint32_t)next->center.x, (uint32_t)next->center.y, (uint32_t)edge->p2.x, (uint32_t)edge->p2.y, vec4(0.5, 1, 0.5, 1)));
+					}
 				// }
 				node = next;
 			}
@@ -451,16 +451,18 @@ bool Navmesh::pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_st
 			portals.push_back(make_shared<mesh_edge>(start, start));
 			std::reverse(portals.begin(), portals.end());
 
-			// DEBUG	
-			node = rnode;		
-			last_apath.clear();
-			last_apath.push_back(end);
-			while (node != tri_start) {
-				if (node != tri_end) last_apath.push_back(node->center);
-				node = get<0>(came_from[node]);
+			// DEBUG
+			if (debug) {
+				node = rnode;		
+				last_apath.clear();
+				last_apath.push_back(end);
+				while (node != tri_start) {
+					if (node != tri_end) last_apath.push_back(node->center);
+					node = get<0>(came_from[node]);
+				}
+				last_apath.push_back(start);
+				std::reverse(last_apath.begin(), last_apath.end());
 			}
-			last_apath.push_back(start);
-			std::reverse(last_apath.begin(), last_apath.end());
 
 			// Smooth the path
 			simpleStupidFunnel(portals, path);
@@ -484,9 +486,8 @@ bool Navmesh::pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_st
 
 // Based on http://digestingduck.blogspot.fr/2010/03/simple-stupid-funnel-algorithm.html
 void Navmesh::simpleStupidFunnel(vector<sp_mesh_edge> &portals, vector<mesh_point> &path) {
-	// Find straight path.
-	path.clear();
 	// Init scan state
+	path.clear();
 	mesh_point portalApex, portalLeft, portalRight;
 	int apexIndex = 0, leftIndex = 0, rightIndex = 0;
 	portalApex = portals[0]->p1;
@@ -551,9 +552,11 @@ void Navmesh::simpleStupidFunnel(vector<sp_mesh_edge> &portals, vector<mesh_poin
 	path.push_back(portals[portals.size()-1]->p1);
 
 	// Debug draw
-	last_path.clear();
-	last_path.push_back(portals[0]->p1);
-	last_path.insert(last_path.end(), path.begin(), path.end());
+	if (debug) {
+		last_path.clear();
+		last_path.push_back(portals[0]->p1);
+		last_path.insert(last_path.end(), path.begin(), path.end());
+	}
 }
 
 extern int gl_tex_white;

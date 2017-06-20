@@ -33,6 +33,8 @@
  *************************************************************/
 struct mesh_point {
 	uint32_t x, y;
+	mesh_point() : x(0), y(0) {};
+	mesh_point(uint32_t x, uint32_t y) : x(x), y(y) {};
 	inline bool operator==(const mesh_point &p2) const { return x == p2.x && y == p2.y; };
 };
 
@@ -156,6 +158,7 @@ struct mesh_path_data {
 class Navmesh {
 protected:
 	RendererGL *renderer = NULL;
+	bool debug = false;
 
 	b2World *world;
 	int radius;
@@ -188,8 +191,9 @@ public:
 	bool isInTriangle(uint32_t x, uint32_t y, int triid);
 	int findTriangle(uint32_t x, uint32_t y);
 	bool pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_start_id, int &tri_end_id, vector<mesh_point> &path);
-	bool pathFindByEdge(vector<mesh_point> &path, mesh_point &start, mesh_point &end);
+	// bool pathFindByEdge(vector<mesh_point> &path, mesh_point &start, mesh_point &end);
 
+	void enableDebug(bool v) { debug = v; };
 	void drawDebug(float x, float y);
 };
 

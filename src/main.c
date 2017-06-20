@@ -1143,6 +1143,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_bit(L);
 		luaopen_wait(L);
 		luaopen_clipper(L);
+		luaopen_navmesh(L);
 
 		physfs_reset_dir_allowed(L);
 
