@@ -1789,7 +1789,8 @@ static int navmesh_find_path(lua_State *L)
 	mesh_point start = {(uint32_t)lua_tonumber(L, 2), (uint32_t)lua_tonumber(L, 3)};
 	mesh_point end = {(uint32_t)lua_tonumber(L, 4), (uint32_t)lua_tonumber(L, 5)};
 	vector<mesh_point> path(100);
-	if (p->pathFindByTriangle(path, start, end)) {
+	int tri_start_id, tri_end_id;
+	if (p->pathFindByTriangle(start, end, tri_start_id, tri_end_id, path)) {
 		lua_newtable(L);
 		int i = 1;
 		for (auto &point : path) {
@@ -1798,6 +1799,8 @@ static int navmesh_find_path(lua_State *L)
 			lua_pushnumber(L, point.y);
 			lua_rawseti(L, -2, i++);
 		}
+		lua_pushnumber(L, tri_start_id);
+		lua_pushnumber(L, tri_end_id);
 	} else {
 		lua_pushnil(L);
 	}

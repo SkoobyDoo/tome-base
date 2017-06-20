@@ -187,7 +187,7 @@ public:
 	bool build();
 	bool isInTriangle(uint32_t x, uint32_t y, int triid);
 	int findTriangle(uint32_t x, uint32_t y);
-	bool pathFindByTriangle(vector<mesh_point> &path, mesh_point &start, mesh_point &end);
+	bool pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_start_id, int &tri_end_id, vector<mesh_point> &path);
 	bool pathFindByEdge(vector<mesh_point> &path, mesh_point &start, mesh_point &end);
 
 	void drawDebug(float x, float y);

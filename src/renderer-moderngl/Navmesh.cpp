@@ -396,9 +396,9 @@ static inline int32_t get_winding(mesh_point &p1, mesh_point &p2, mesh_point &te
 	return (p2.x - p1.x) * (test.y - p1.y) - (p2.y - p1.y) * (test.x - p1.x);
 }
 
-bool Navmesh::pathFindByTriangle(vector<mesh_point> &path, mesh_point &start, mesh_point &end) {
-	int tri_start_id = findTriangle(start.x, start.y);
-	int tri_end_id = findTriangle(end.x, end.y);
+bool Navmesh::pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_start_id, int &tri_end_id, vector<mesh_point> &path) {
+	tri_start_id = findTriangle(start.x, start.y);
+	tri_end_id = findTriangle(end.x, end.y);
 	if (!tri_start_id || !tri_end_id) { printf("[NAVMESH] pathFind start or stop triangle is unfound: %d, %d\n", tri_start_id, tri_end_id); return false; }
 	printf("Starting pathfind from %dx%d (triangle %d) to %dx%d (triangle %d)\n", start.x, start.y, tri_start_id, end.x, end.y, tri_end_id);
 
@@ -494,7 +494,7 @@ void Navmesh::simpleStupidFunnel(vector<sp_mesh_edge> &portals, vector<mesh_poin
 	portalRight = portals[0]->p2;
 
 	// Add start point.
-	path.push_back(portalApex);
+	// path.push_back(portalApex);
 
 	for (int i = 1; i < portals.size(); ++i) {
 		mesh_point &left = portals[i]->p1;
@@ -549,7 +549,10 @@ void Navmesh::simpleStupidFunnel(vector<sp_mesh_edge> &portals, vector<mesh_poin
 	
 	// Append last point to path.
 	path.push_back(portals[portals.size()-1]->p1);
+
+	// Debug draw
 	last_path.clear();
+	last_path.push_back(portals[0]->p1);
 	last_path.insert(last_path.end(), path.begin(), path.end());
 }
 
