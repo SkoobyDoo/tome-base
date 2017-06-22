@@ -94,7 +94,7 @@ bool Navmesh::build() {
 	} }
 
 	// With the triangles compute the navmesh
-	printf("Navmesh building...\n");
+	printf("Navmesh building with agent size %d...\n", radius);
 	makeNavmesh();
 	printf("Navmesh done\n");
 	// exit(1);
@@ -237,8 +237,8 @@ bool Navmesh::makeNavmesh() {
 
 	// Now we have triangles, find neighbours
 	for (auto tri : mesh) {
-		printf("Triangle %d linked to\n", tri->id);
-		for (auto it : tri->links) printf(" - %d (%d) by edge (%dx%d) (%dx%d)\n", it.first, get<0>(it.second), get<1>(it.second)->p1.x, get<1>(it.second)->p1.y, get<1>(it.second)->p2.x, get<1>(it.second)->p2.y);
+		// printf("Triangle %d linked to\n", tri->id);
+		// for (auto it : tri->links) printf(" - %d (%d) by edge (%dx%d) (%dx%d)\n", it.first, get<0>(it.second), get<1>(it.second)->p1.x, get<1>(it.second)->p1.y, get<1>(it.second)->p2.x, get<1>(it.second)->p2.y);
 
 		// Make unique points
 		array<mesh_point, 3> points = {tri->p1, tri->p2, tri->p3};
@@ -276,15 +276,15 @@ bool Navmesh::makeNavmesh() {
 		}
 	}
 
-	for (auto up : all_points) {
-		printf("! point %d, (%dx%d)\n", up->id, up->x, up->y);
-		auto it = points_neighbours.find(up);
-		if (it != points_neighbours.end()) {
-			for (auto cp : *it->second) {
-				printf("  - connect to point %d, (%dx%d)\n", cp.first->id, cp.first->x, cp.first->y);
-			}
-		}
-	}
+	// for (auto up : all_points) {
+	// 	printf("! point %d, (%dx%d)\n", up->id, up->x, up->y);
+	// 	auto it = points_neighbours.find(up);
+	// 	if (it != points_neighbours.end()) {
+	// 		for (auto cp : *it->second) {
+	// 			printf("  - connect to point %d, (%dx%d)\n", cp.first->id, cp.first->x, cp.first->y);
+	// 		}
+	// 	}
+	// }
 
 	return true;
 }
