@@ -323,10 +323,11 @@ public:
 void PhysicSimulator::rayCast(float x1, float y1, float x2, float y2, uint16 mask_bits) {
 	b2Vec2 point1(x1 / unit_scale, -y1 / unit_scale);
 	b2Vec2 point2(x2 / unit_scale, -y2 / unit_scale);
-
+	b2Vec2 r = point2 - point1;
+	
 	// We are called with a table in the lua top stack to store the results
 	RayCastCallbackList callback(x1, y1, mask_bits);
-	world.RayCast(&callback, point1, point2);
+	if (r.LengthSquared() > 0.0f) world.RayCast(&callback, point1, point2);
 	sort(callback.hits.begin(), callback.hits.end(), sort_subhits);
 	
 	int i = 1;
