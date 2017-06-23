@@ -238,12 +238,6 @@ newEntity{
 		filters = {
 			{type="scroll", subtype="rune", id=true, ego_chance = 1000},
 		},
-		fixed = {
-			{id=true, defined="RUNE_PRISMATIC"},
-			{id=true, defined="TAINT_PURGING"},
-			{id=true, defined="RUNE_DISSIPATION"},
-
-		},
 	},
 }
 
