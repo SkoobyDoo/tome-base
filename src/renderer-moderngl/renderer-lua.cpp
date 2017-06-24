@@ -278,10 +278,10 @@ static int gl_generic_get_physic(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	DORPhysic *physic = c->getPhysic(lua_tonumber(L, 2));
-	if (!physic) {
-		lua_pushstring(L, "physic() called without previous call to enablePhysic");
-		lua_error(L);
-	}
+	// if (!physic) {
+	// 	lua_pushstring(L, "physic() called without previous call to enablePhysic");
+	// 	lua_error(L);
+	// }
 
 	DORPhysic **r = (DORPhysic**)lua_newuserdata(L, sizeof(DORPhysic*));
 	auxiliar_setclass(L, "physic{body}", -1);
@@ -1628,6 +1628,10 @@ static int gl_view_use(lua_State *L)
 static int body_add_fixture(lua_State *L)
 {
 	DORPhysic *physic = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	if (!physic) {
+		lua_pushvalue(L, 1);
+		return 1;
+	}
 
 	float tmp;
 
@@ -1705,55 +1709,71 @@ static int body_add_fixture(lua_State *L)
 	return 1;
 }
 
+static int body_remove_fixture(lua_State *L)
+{
+	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
+	if (p) p->removeFixture(lua_tonumber(L, 2));
+	return 0;
+}
+
 static int body_apply_force(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
-	if (lua_isnumber(L, 4)) p->applyForce(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	else p->applyForce(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	if (p) {
+		if (lua_isnumber(L, 4)) p->applyForce(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+		else p->applyForce(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int body_apply_linear_impulse(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
-	if (lua_isnumber(L, 4)) p->applyLinearImpulse(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
-	else p->applyLinearImpulse(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	if (p) {
+		if (lua_isnumber(L, 4)) p->applyLinearImpulse(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
+		else p->applyLinearImpulse(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int body_apply_set_linear_velocity(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
-	p->setLinearVelocity(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	if (p) p->setLinearVelocity(lua_tonumber(L, 2), lua_tonumber(L, 3));
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int body_apply_torque(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
-	p->applyTorque(lua_tonumber(L, 2));
+	if (p) p->applyTorque(lua_tonumber(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int body_apply_angular_impulse(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
-	p->applyAngularImpulse(lua_tonumber(L, 2));
+	if (p) p->applyAngularImpulse(lua_tonumber(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int body_get_linear_velocity(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
-	vec2 v = p->getLinearVelocity();
-	lua_pushnumber(L, v.x);
-	lua_pushnumber(L, v.y);
+	if (p) {
+		vec2 v = p->getLinearVelocity();
+		lua_pushnumber(L, v.x);
+		lua_pushnumber(L, v.y);
+	} else {
+		lua_pushnumber(L, 0);
+		lua_pushnumber(L, 0);
+	}
 	return 2;
 }
 static int body_sleep(lua_State *L)
 {
 	DORPhysic *p = *(DORPhysic**)auxiliar_checkclass(L, "physic{body}", 1);
-	p->sleep(lua_toboolean(L, 2));
+	if (p) p->sleep(lua_toboolean(L, 2));
 	return 0;
 }
 
@@ -1789,6 +1809,12 @@ static int physic_world_gravity(lua_State *L) {
 static int physic_world_raycast(lua_State *L) {
 	lua_newtable(L);
 	PhysicSimulator::current->rayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), (uint16)lua_tonumber(L, 5));
+	return 1;
+}
+
+static int physic_world_fatraycast(lua_State *L) {
+	lua_newtable(L);
+	PhysicSimulator::current->fatRayCast(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5), (uint16)lua_tonumber(L, 6));
 	return 1;
 }
 
@@ -2246,6 +2272,7 @@ static const struct luaL_Reg gl_view_reg[] =
 static const struct luaL_Reg physic_body_reg[] =
 {
 	{"addFixture", body_add_fixture},
+	{"removeFixture", body_remove_fixture},
 	{"applyForce", body_apply_force},
 	{"applyLinearImpulse", body_apply_linear_impulse},
 	{"setLinearVelocity", body_apply_set_linear_velocity},
@@ -2277,6 +2304,7 @@ const luaL_Reg physicslib[] = {
 	{"sleepAll", physic_world_sleep_all},
 	{"setContactListener", physic_world_set_contact_listener},
 	{"rayCast", physic_world_raycast},
+	{"fatRayCast", physic_world_fatraycast},
 	{"circleCast", physic_world_circlecast},
 	{"worldGravity", physic_world_gravity},
 	{"worldScale", physic_world_unit_to_pixel},

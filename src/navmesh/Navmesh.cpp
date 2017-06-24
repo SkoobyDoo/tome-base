@@ -76,6 +76,7 @@ void Navmesh::extractShapeChain(b2Body *body, b2ChainShape *shape) {
 }
 
 bool Navmesh::build() {
+	int nb_bodies = 0;
 	// Parse the static (only) bodies, extract shapes and extrapolate trinagles from them
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext()) { if (b->GetType() == b2_staticBody) {
 		for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext()) {
@@ -90,11 +91,12 @@ bool Navmesh::build() {
 					break;
 				}
 			}
+			nb_bodies++;
 		}
 	} }
 
 	// With the triangles compute the navmesh
-	printf("Navmesh building with agent size %d...\n", radius);
+	printf("Navmesh building with agent size %d from %d static bodies...\n", radius, nb_bodies);
 	makeNavmesh();
 	printf("Navmesh done\n");
 	// exit(1);

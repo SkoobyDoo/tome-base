@@ -147,6 +147,7 @@ int DisplayObject::enablePhysic() {
 }
 
 DORPhysic *DisplayObject::getPhysic(int pid) {
+	if (!physics.size()) return NULL;
 	if (pid < 0 or pid > physics.size()) pid = 0;
 	return physics[pid];
 }
@@ -154,7 +155,7 @@ DORPhysic *DisplayObject::getPhysic(int pid) {
 void DisplayObject::destroyPhysic(int pid) {
 	if (pid == -1) {
 		for (auto it : physics) delete it;
-			physics.clear();
+		physics.clear();
 	} else {
 		delete physics[pid];
 		physics.erase(physics.begin() + pid);

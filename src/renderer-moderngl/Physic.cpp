@@ -220,9 +220,20 @@ b2Fixture *DORPhysic::addFixture(b2FixtureDef &fixtureDef) {
 	return body->CreateFixture(&fixtureDef);
 }
 
+void DORPhysic::removeFixture(int id) {
+	int did = 0;
+	for (b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext(), did++) {
+		if (id == did) {
+			body->DestroyFixture(f);
+			return;
+		}
+	}
+}
+
 DORPhysic::~DORPhysic() {
 	if (body) {
 		PhysicSimulator::current->world.DestroyBody(body);
+		body = NULL;
 	}
 	physic_obj_count--;
 }
@@ -433,6 +444,148 @@ void PhysicSimulator::circleCast(float x, float y, float radius, uint16 mask_bit
 	aabb.upperBound = b2Vec2(x + radius, y + radius);
 	world.QueryAABB(&callback, aabb);
 	// sort(callback.hits.begin(), callback.hits.end(), sort_hits);
+	
+	int i = 1;
+	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+	for (auto &it : callback.hits) {
+		lua_newtable(L);
+
+		lua_pushliteral(L, "d");
+		lua_rawgeti(L, -3, it.d->getWeakSelfRef());
+		lua_rawset(L, -3);
+
+		lua_pushliteral(L, "x");
+		lua_pushnumber(L, it.point.x * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushliteral(L, "y");
+		lua_pushnumber(L, -it.point.y * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushliteral(L, "nx");
+		lua_pushnumber(L, it.normal.x * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushliteral(L, "ny");
+		lua_pushnumber(L, -it.normal.y * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_pushliteral(L, "dist");
+		lua_pushnumber(L, it.dist * unit_scale);
+		lua_rawset(L, -3);
+
+		lua_rawseti(L, -3, i++);
+	}
+	lua_pop(L, 1); // Pop the weak regisry table
+}
+
+/*************************************************************
+ ** Fat Raycast
+ *************************************************************/
+class FatRayCastCallbackList : public b2QueryCallback, public b2RayCastCallback
+{
+protected:
+	uint16 mask_bits;
+	b2Vec2 point1, point2;
+	b2Vec2 src;
+	float raysize, raysize2;
+	vector<Subhit> subhits;
+public:
+	FatRayCastCallbackList(b2Vec2 point1, b2Vec2 point2, float raysize, uint16 mask_bits) : point1(point1), point2(point2), raysize(raysize), mask_bits(mask_bits) {};
+	vector<Hit> hits;
+
+	inline b2Vec2 getPointOnLine(b2Vec2 p) {
+		b2Vec2 c = p - point1;	// Vector from a to Point
+		b2Vec2 pd = point2; pd -= point1;
+		b2Vec2 v = pd; v.Normalize();	// Unit Vector from a to b
+		float d = pd.Length();	// Length of the line segment
+		float t = b2Dot(v, c);	// Intersection point Distance from a
+
+		// Check to see if the point is on the line
+		if(t < 0) return b2Vec2(-1000, -1000);
+		if(t > d) return b2Vec2(-1000, -1000);
+
+		// get the distance to move from point a
+		v *= t;
+
+		// move from point a to the nearest point on the segment
+		return point1 + v;
+	}
+
+	// Callback for QueryAABB
+	// For each body found we make a raycast from the center to ensure that they are in LOS set by mask
+	bool ReportFixture(b2Fixture* fixture) {
+		b2Body *cur_body = fixture->GetBody();
+
+		src = getPointOnLine(cur_body->GetPosition());
+		if (src.x == -1000 and src.y == -1000) return true; // Whoops, out of the line entirely
+
+		// Simple!
+		if (fixture->TestPoint(src)) {
+			DisplayObject *d = static_cast<DisplayObject*>(fixture->GetUserData());
+			hits.push_back({
+				d,
+				{src.x, src.y},
+				{src.x, src.y},
+				0,
+			});
+			return true;
+		}
+
+		// Less simple
+		raysize2 = raysize * raysize;
+		b2Vec2 over = cur_body->GetPosition() - src;
+
+		subhits.clear();
+		PhysicSimulator::current->world.RayCast(this, src, cur_body->GetPosition());
+		sort(subhits.begin(), subhits.end(), sort_subhits);
+
+		for (auto &it : subhits) {
+			// Awww we hit a wall, too bad let's stop now
+			if (it.fixture->GetFilterData().categoryBits & mask_bits) break;
+			// We hit our body, yay
+			if (it.fixture->GetBody() == cur_body) {
+				DisplayObject *d = static_cast<DisplayObject*>(fixture->GetUserData());
+				hits.push_back({
+					d,
+					it.point,
+					it.normal,
+					sqrt(it.dist)
+				});
+				break;
+			}
+		}
+		return true;
+	}
+	// Callback for internal raycasting
+	float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) {
+		float x = point.x - src.x, y = point.y - src.y;
+		float dist2 = x*x + y*y;
+		if (dist2 <= raysize2) {
+			subhits.push_back({
+				fixture,
+				{point.x, point.y},
+				{normal.x, normal.y},
+				raysize2 // Just for sorting, no need to square it
+			});
+		}
+		return 1;
+	};
+};
+
+void PhysicSimulator::fatRayCast(float x1, float y1, float x2, float y2, float raysize, uint16 mask_bits) {
+	b2Vec2 point1(x1 / unit_scale, -y1 / unit_scale);
+	b2Vec2 point2(x2 / unit_scale, -y2 / unit_scale);
+	b2Vec2 r = point2 - point1;
+	
+	// We are called with a table in the lua top stack to store the results
+	FatRayCastCallbackList callback(point1, point2, raysize / unit_scale, mask_bits);
+	if (r.LengthSquared() > 0.0f) {
+		b2AABB aabb;
+		aabb.lowerBound = b2Vec2(fmin(point1.x, point2.x) - raysize / unit_scale, fmin(point1.y, point2.y) - raysize / unit_scale);
+		aabb.upperBound = b2Vec2(fmax(point1.x, point2.x) + raysize / unit_scale, fmax(point1.y, point2.y) + raysize / unit_scale);
+		world.QueryAABB(&callback, aabb);
+	}
 	
 	int i = 1;
 	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
