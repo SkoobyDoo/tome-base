@@ -637,27 +637,37 @@ public:
 		events.resize(nb_threads);
 	};
 
-	void BeginContact(b2Contact* contact) {};
-	void EndContact(b2Contact* contact) {};
-	void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) {
-		b2WorldManifold worldManifold;
-		contact->GetWorldManifold(&worldManifold);
-		b2PointState state1[2], state2[2];
-		b2GetPointStates(state1, state2, oldManifold, contact->GetManifold());
-		if (state2[0] == b2_addState)
-		{
+	void BeginContact(b2Contact* contact) {		
+		if (contact->IsTouching()) {
 			b2Body* bodyA = contact->GetFixtureA()->GetBody();
 			b2Body* bodyB = contact->GetFixtureB()->GetBody();
-			b2Vec2 point = worldManifold.points[0];
-			b2Vec2 vA = bodyA->GetLinearVelocityFromWorldPoint(point);
-			b2Vec2 vB = bodyB->GetLinearVelocityFromWorldPoint(point);
-			float32 approachVelocity = b2Dot(vB - vA, worldManifold.normal);
 #ifdef BOX2D_MT
-			events[b2GetThreadId()].push_back({bodyA, bodyB, approachVelocity});
+			events[b2GetThreadId()].push_back({bodyA, bodyB, 0});
 #else
-			events[0].push_back({bodyA, bodyB, approachVelocity});
+			events[0].push_back({bodyA, bodyB, 0});
 #endif
 		}
+	};
+	void EndContact(b2Contact* contact) {};
+	void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) {
+// 		b2WorldManifold worldManifold;
+// 		contact->GetWorldManifold(&worldManifold);
+// 		b2PointState state1[2], state2[2];
+// 		b2GetPointStates(state1, state2, oldManifold, contact->GetManifold());
+// 		if (state2[0] == b2_addState)
+// 		{
+// 			b2Body* bodyA = contact->GetFixtureA()->GetBody();
+// 			b2Body* bodyB = contact->GetFixtureB()->GetBody();
+// 			b2Vec2 point = worldManifold.points[0];
+// 			b2Vec2 vA = bodyA->GetLinearVelocityFromWorldPoint(point);
+// 			b2Vec2 vB = bodyB->GetLinearVelocityFromWorldPoint(point);
+// 			float32 approachVelocity = b2Dot(vB - vA, worldManifold.normal);
+// #ifdef BOX2D_MT
+// 			events[b2GetThreadId()].push_back({bodyA, bodyB, approachVelocity});
+// #else
+// 			events[0].push_back({bodyA, bodyB, approachVelocity});
+// #endif
+// 		}
 	};
 	void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) {};
 };
