@@ -86,7 +86,7 @@ newEntity{
 	use_no_blind = true,
 	use_no_silence = true,
 	fire_destroy = {{10,1}, {20,2}, {40,5}, {60,10}, {120,20}},
-	desc = [[Corrupted taints may be inscribed onto your body, granting you an on-demand ability.  Activating a taint is taxing, costing you 20%% of your maximum life.]],
+	desc = [[Corrupted taints may be inscribed onto your body, granting you an on-demand ability.]],
 	egos = "/data/general/objects/egos/infusions.lua", egos_chance = resolvers.mbonus(30, 5),
 
 	power_source = {arcane=true},
@@ -220,43 +220,6 @@ newEntity{ base = "BASE_INFUSION",
 	inscription_talent = "INFUSION:_HEROISM",
 }
 
---[[  AoE damage reduction?
-newEntity{ base = "BASE_INFUSION",
-	name = "tranquility infusion",
-	level_range = {20, 50},
-	rarity = 25,
-	cost = 40,
-
-	inscription_kind = "utility",
-	inscription_data = {
-		cooldown = resolvers.rngrange(20, 30),
-		dur = resolvers.mbonus_level(7, 7),
-		die_at = resolvers.mbonus_level(700, 100, function(e, v) return v * 0.2 end),
-		use_stat_mod = 0.14, -- 30x for die_at
-	},
-	inscription_talent = "INFUSION:_HEROISM",
-}
---]]
-
-
---[[ Terrain effect, reduces debuff durations, slows, heals allies too?
-newEntity{ base = "BASE_INFUSION",
-	name = "verdant growth infusion",
-	level_range = {20, 50},
-	rarity = 25,
-	cost = 40,
-
-	inscription_kind = "utility",
-	inscription_data = {
-		cooldown = resolvers.rngrange(20, 30),
-		dur = resolvers.mbonus_level(7, 7),
-		die_at = resolvers.mbonus_level(700, 100, function(e, v) return v * 0.2 end),
-		use_stat_mod = 0.14, -- 30x for die_at
-	},
-	inscription_talent = "INFUSION:_HEROISM",
-}
---]]
-
 -----------------------------------------------------------
 -- Runes - 9 types
 -----------------------------------------------------------
@@ -369,9 +332,9 @@ newEntity{ base = "BASE_RUNE",
 	inscription_kind = "protect",
 	inscription_data = {
 		cooldown = resolvers.rngrange(12, 17),
-		dur = 5,
+		dur = 4,
 		threshold = resolvers.mbonus_level(100, 0), -- Not strictly good or bad so we use a high variance
-		blocks = resolvers.mbonus_level(6, 2, function(e, v) return v * 0.06 end),
+		blocks = resolvers.mbonus_level(5, 1, function(e, v) return v * 0.06 end),
 		use_stat_mod = 0.03, -- +3 blocks at 100 stat
 	},
 	inscription_talent = "RUNE:_STORMSHIELD",
@@ -408,45 +371,6 @@ newEntity{ base = "BASE_RUNE",
 	},
 	inscription_talent = "RUNE:_ETHEREAL",
 }
-
-
---[[
-newEntity{ base = "BASE_RUNE",
-	name = "sanctuary rune",
-	level_range = {5, 50},
-	rarity = 15,
-	cost = 20,
-	material_level = 1,
-	inscription_kind = "protect",
-	inscription_data = {
-		cooldown = resolvers.rngrange(16, 20),
-		dur = resolvers.mbonus_level(5, 2),
-		inheritance = 100,
-		use_stat_mod = 0.2,
-	},
-	inscription_talent = "RUNE:_MIRROR_IMAGE",
-}
-]]
-
---[[
-newEntity{ base = "BASE_RUNE",
-	name = "enfeeble rune",
-	level_range = {10, 50},
-	rarity = 25,
-	cost = 20,
-	material_level = 2,
-
-	inscription_kind = "attack",
-	inscription_data = {
-		cooldown = resolvers.rngrange(15, 22),
-		power = resolvers.mbonus_level(100, 30, function(e, v) return v * 0.1 end),
-		apply = resolvers.mbonus_level(5, 20, function(e, v) return v * 0.1 end),
-		radius = 6,
-		use_stat_mod = 1.2,
-	},
-	inscription_talent = "RUNE:_BITING_GALE",
-}
---]]
 
 -----------------------------------------------------------
 -- Taints

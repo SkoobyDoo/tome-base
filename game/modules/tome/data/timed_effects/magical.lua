@@ -348,13 +348,14 @@ newEffect{
 }
 
 newEffect{
-	name = "STORMSHIELD", image = "talents/suncloak.png",
+	name = "STORMSHIELD", image = "talents/rune__lightning.png",
 	desc = "Stormshield",
 	long_desc = function(self, eff) return ("The target is protected a raging storm deflecting up to %d instances of damage over %d."):
 		format(eff.blocks, eff.threshold) end,
 	type = "magical",
-	subtype = { lightning=true, },
+	subtype = { lightning=true, shield=true },
 	status = "beneficial",
+	charges = function(self, eff) return eff.blocks end,
 	parameters = {threshold = 1, blocks = 1,},
 	on_gain = function(self, err) return "#Target# summons a storm to protect him!", "+Stormshield" end,
 	on_lose = function(self, err) return "#Target#'s storm dissipates.", "-Stormshield" end,
@@ -378,8 +379,14 @@ newEffect{
 newEffect{
 	name = "PRISMATIC_SHIELD", image = "talents/ward.png",
 	desc = "Prismatic Shield",
-	long_desc = function(self, eff) return ("The target is protected by a prismatic shield blocking many instances of damage"): -- add tooltip
-		format() end,
+	long_desc = function(self, eff)
+		local str = ""
+		for k,v in pairs(eff.wards) do
+			str = str .. ", " .. v .. " " .. k:lower()
+		end
+		str = string.sub(str, 2)
+		return ("The target is protected by a prismatic shield blocking many instances of damage.  Remaining:  %s"):format(str) -- add tooltip
+	end,
 	type = "magical",
 	subtype = { ward=true, },
 	status = "beneficial",
@@ -406,9 +413,9 @@ newEffect{
 }
 
 newEffect{
-	name = "PURGING", image = "talents/jumpgate.png",
+	name = "PURGING", image = "talents/willful_tormenter.png", -- re-used icon
 	desc = "PURGING",
-	long_desc = function(self, eff) return ("The target is protected by an arcane incantation cleansing 1 physical debuff each turn."):
+	long_desc = function(self, eff) return ("The target is being purged of 1 physical ailment each turn."):
 		format() end,
 	type = "magical",
 	subtype = { arcane=true, },

@@ -679,6 +679,7 @@ newInscription{
 -- New name for the merged Phase Doors
 newInscription{
 	name = "Rune: Blink",
+	image = "talents/rune__controlled_phase_door.png",
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
@@ -722,6 +723,7 @@ newInscription{
 -- Invisibility updated to have combat value and more escape potential
 newInscription{
 	name = "Rune: Ethereal",
+	image = "talents/rune__invisibility.png",
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
@@ -764,10 +766,11 @@ newInscription{
 -- Numbers on this must be done carefully
 newInscription{
 	name = "Rune: Stormshield",
+	image = "talents/rune__lightning.png",
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
-	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	tactical = { DEFEND = 3 },
 	getDur = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		return data.dur
@@ -799,10 +802,11 @@ newInscription{
 -- Fixedart generated with a random ward set
 newInscription{
 	name = "Rune: Prismatic",
+	image = "talents/ward.png", -- re-used icon
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
-	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	tactical = { DEFEND = 3,},
 	getDur = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		return data.dur
@@ -833,6 +837,7 @@ newInscription{
 newInscription{
 	name = "Rune: Mirror Image",
 	type = {"inscriptions/runes", 1},
+	image = "talents/phase_shift.png",  -- re-used icon
 	points = 1,
 	is_spell = true,
 	--tactical = { DEFEND = 3, ESCAPE = 2 },
@@ -930,6 +935,7 @@ newInscription{
 -- This is the counterpart to Wild but scales differently, acknowledging the fact that triple type cleanse becomes better as the game progresses
 newInscription{
 	name = "Rune: Shatter Afflictions",
+	image = "talents/warp_mine_away.png", -- re-used icon
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	tactical = { },
@@ -964,6 +970,7 @@ newInscription{
 
 newInscription{
 	name = "Rune: Dissipation",
+	image = "talents/disperse_magic.png",  -- re-used icon
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
@@ -1096,13 +1103,13 @@ newInscription{
 }
 
 -- Counter to mass minor physical debuff spam
--- Alchemist quest?
 newInscription{
 	name = "Taint: Purging",
+	image = "talents/willful_tormenter.png", -- re-used icon
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
-	--tactical = { DEFEND = 3, ESCAPE = 2 },
+	tactical = { CURE = 2 },
 	getDur = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		return data.dur + data.inc_stat
