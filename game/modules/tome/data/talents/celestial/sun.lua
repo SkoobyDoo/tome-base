@@ -27,31 +27,47 @@ newTalent{
 	cooldown = 9,
 	positive = -16,
 	range = 7,
-	tactical = { ATTACK = {LIGHT = 2} },
 	no_energy = function(self, t) return self:attr("amplify_sun_beam") and true or false end,
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
+	tactical = function(self, t, aitarget)
+		local tacs = { attack = {LIGHT = 2}} -- for base damage
+		if self:getTalentLevel(t) >= 3 then -- for blinding effect (to self tactics)
+			if config.settings.log_detail_ai > 1 then print("###_TACTICAL FUNCTION_### Calculating blinding tactics for", t.id) end
+			local blt = {disable = {blind = 2}, _no_tp_cache=true}
+			local blind_tacs = self:aiTalentTactics(t, aitarget, nil, blt, t.target2(self, t))
+			tacs.self = blind_tacs
+		end
+		return tacs
+	end,
 	getDamage = function(self, t)
 		local mult = 1
 		if self:attr("amplify_sun_beam") then mult = 1 + self:attr("amplify_sun_beam") / 100 end
 		return self:combatTalentSpellDamage(t, 20, 220) * mult
 	end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end, -- for LIGHT damage
+	target2 = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=2, selffire=false, talent=t} end, -- for blindness
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
-		local x, y = self:getTarget(tg)
+		local tg = self:getTalentTarget(t)
+		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
+		
+		local _, tx, ty = self:canProject(tg, x, y)
 
-		local particule = {type="light"}
+		local particles = {type="light"}
 		if core.shader.allow("adv") then
-			particule = {type="volumetric", args={kind="conic_cylinder", life=14, base_rotation=rng.range(160, 200), radius=4, y=1.8, density=40, shininess=20, growSpeed=0.006, img="sunray"}}
+			particles = {type="volumetric", args={kind="conic_cylinder", life=14, base_rotation=rng.range(160, 200), radius=4, y=1.8, density=40, shininess=20, growSpeed=0.006, img="sunray"}}
 		end
-		self:project(tg, x, y, DamageType.LIGHT, self:spellCrit(t.getDamage(self, t)), particule)
+		local blind_dur = self:getTalentLevel(t) >= 3 and t.getDuration(self, t) or 0
 
-		if self:getTalentLevel(t) >= 3 then
-			local _ _, x, y = self:canProject(tg, x, y)
-			self:project({type="ball", x=x, y=y, radius=2, selffire=false}, x, y, DamageType.BLIND, t.getDuration(self, t), {type="light"})
+		-- project light damage
+		self:project(tg, tx, ty, DamageType.LIGHT, self:spellCrit(t.getDamage(self, t)), particles)
+		-- project blindness
+		if blind_dur > 0 then
+			local tg2 = t.target2(self, t); tg2.x, tg2.y = tx, ty
+			self:project(tg2, tx, ty, DamageType.BLIND, blind_dur, {type="light"})
 		end
 
 		-- Delay removal of the effect so its still there when no_energy checks
@@ -78,7 +94,7 @@ newTalent{
 	points = 5,
 	cooldown = 15,
 	positive = -20,
-	tactical = { ATTACKAREA = {LIGHT = 2}, CLOSEIN = 2 },
+	tactical = { SELF = {POSITIVE = 0.5}, ATTACKAREA = {LIGHT = 1}, CLOSEIN = 2},
 	range = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 9)) end,
 	direct_hit = true,
 	target = function(self, t)
@@ -162,10 +178,13 @@ newTalent{
 	cooldown = 15, -- 20 was accounting for it buffing itself
 	fixed_cooldown = true,
 	positive = -15,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 2, DEFEND = 1, POSITIVE = 0.5 },
 	direct_hit = true,
-	no_npc_use = true,
-	requires_target = true,
+--	no_npc_use = true,
+--	requires_target = true,
+	on_pre_use_ai = function(self, t, fake, silent)
+		return self.ai_target.actor and self:hasLOS(self.ai_target.actor.x, self.ai_target.actor.y)
+	end,
 	range = 10,
 	getCap = function(self, t) return self:combatTalentLimit(t, 30, 90, 70) end,
 	getHaste = function(self, t) return math.min(0.5, self:combatTalentSpellDamage(t, 0.1, 0.4)) end,

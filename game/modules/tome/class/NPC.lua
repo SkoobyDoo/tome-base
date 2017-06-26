@@ -18,14 +18,14 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local ActorAI = require "engine.interface.ActorAI"
+local ActorAI = require "mod.class.interface.ActorAI"
 local Faction = require "engine.Faction"
 local Emote = require("engine.Emote")
 local Chat = require "engine.Chat"
 local Particles = require "engine.Particles"
 require "mod.class.Actor"
 
-module(..., package.seeall, class.inherit(mod.class.Actor, engine.interface.ActorAI))
+module(..., package.seeall, class.inherit(mod.class.Actor, mod.class.interface.ActorAI))
 
 function _M:init(t, no_default)
 	mod.class.Actor.init(self, t, no_default)
@@ -62,7 +62,9 @@ function _M:actBase()
 	return mod.class.Actor.actBase(self)
 end
 
+-- Entry point for NPC's to act, invoking the AI, called by engine.GameEnergyBased:tickLevel
 function _M:act()
+	if config.settings.log_detail_ai > 2 then print("[NPC:act] turn", game.turn, "pre act ENERGY for", self.uid, self.name) table.print(self.energy, "\t_energy_") end
 	while self:enoughEnergy() and not self.dead do
 		-- Do basic actor stuff
 		if not mod.class.Actor.act(self) then return end
@@ -82,8 +84,15 @@ function _M:act()
 			end
 		end
 
-		-- If AI did nothing, use energy anyway
-		if not self.energy.used then self:useEnergy() end
+		-- If AI did nothing, perform resting actions and then use energy anyway
+		if not self.energy.used then
+			local err, mrr = self:attr("equilibrium_regen_on_rest"), self:attr("mana_regen_on_rest")
+			if err then self:incEquilibrium(err) end
+			if mrr then self:incMana(mrr) end
+			self:waitTurn() -- includes reloading and throwing knives replenish, callbackOnRest
+			self:fireTalentCheck("callbackOnRest")
+		 end
+		if config.settings.log_detail_ai > 2 then print("[NPC:act] turn", game.turn, "post act ENERGY for", self.uid, self.name) table.print(self.energy, "\t_energy_") end
 		if old_energy == self.energy.value then break end -- Prevent infinite loops
 	end
 end
@@ -219,24 +228,27 @@ function _M:lineFOV(tx, ty, extra_block, block, sx, sy)
 	return core.fov.line(sx, sy, tx, ty, block)
 end
 
---- Give target to others
+--- Gather and share information about enemies from others
+--	applied each turn to every actor in LOS by self:computeFOV (or core.fov.calc_default_fov)
+-- @param who = actor acting (updating its FOV info), calling self:seen_by(who)
+-- @see ActorFOV:computeFOV, ActorAI:aiSeeTargetPos, NPC:doAI
 function _M:seen_by(who)
 	if self:hasEffect(self.EFF_VAULTED) and who and game.party:hasMember(who) then self:removeEffect(self.EFF_VAULTED, true, true) end
 
 	-- Check if we can pass target
 	if self.dont_pass_target then return end -- This means that ghosts can alert other NPC's but not vice versa ;)
-	if not who.ai_target then return end
-	if not who.ai_target.actor then return end
-	if not who.ai_target.actor.x then return end
-	-- Only receive targets from allies
-	if self:reactionToward(who) <= 0 then return end
+	local who_target = who.ai_target and who.ai_target.actor
+	if not (who_target and who_target.x) then return end
+	-- Only receive (usually) hostile targets from allies
+	if self:reactionToward(who) <= 0 or not who.ai_state._pass_friendly_target and who:reactionToward(who_target) > 0 then return end
+	
 	-- Check if we can actually see the ally (range and obstacles)
 	if not who.x or not self:hasLOS(who.x, who.y) then return end
 	-- Check if it's actually a being of cold machinery and not of blood and flesh
 	if not who.aiSeeTargetPos then return end
 	if self.ai_target.actor then
 		-- Pass last seen coordinates
-		if self.ai_target.actor == who.ai_target.actor then
+		if self.ai_target.actor == who_target then
 			-- Adding some type-safety checks, but this isn't fixing the source of the errors
 			local last_seen = {turn=0}
 			if self.ai_state.target_last_seen and type(self.ai_state.target_last_seen) == "table" then
@@ -254,11 +266,11 @@ function _M:seen_by(who)
 	end
 	
 	-- Only trust the ally if they can actually see the target
-	if not who:canSee(who.ai_target.actor) then return end
+	if not who:canSee(who_target) then return end
 	
 	if who.ai_state and who.ai_state.target_last_seen and type(who.ai_state.target_last_seen) == "table" then
-		-- Don't believe allies if they think the target is too far (away based on distance to ally plus ally to hostile estimate (1.3 * sight range, usually))
-		local tx, ty = who:aiSeeTargetPos(who.ai_target.actor)
+		-- Don't believe allies if they think the target is too far away (based on distance to ally plus ally to hostile estimate (1.3 * sight range, usually))
+		local tx, ty = who:aiSeeTargetPos(who_target)
 		local distallyhostile = core.fov.distance(who.x, who.y, tx, ty) or 100
 		local range_factor = 1.2 + (tonumber(game.difficulty) or 1)/20 -- NPC's pass targets more freely at higher difficulties
 		if distallyhostile + core.fov.distance(self.x, self.y, who.x, who.y) > math.min(10, math.max(self.sight, self.infravision or 0, self.heightened_senses or 0, self.sense_radius or 0))*range_factor then return end
@@ -267,8 +279,8 @@ function _M:seen_by(who)
 		if (game.turn - (who.ai_state.target_last_seen.turn or game.turn)) / (game.energy_to_act / game.energy_per_tick) > 10 then return end 
 	end
 
-	self:setTarget(who.ai_target.actor, who.ai_state.target_last_seen)
-	print("[TARGET] Passing target", self.name, "from", who.name, "to", who.ai_target.actor.name)
+	print("[NPC:seen_by] Passing target", who_target.name, "from", who.uid, who.name, "to", self.uid, self.name)
+	self:setTarget(who_target, who.ai_state.target_last_seen)
 end
 
 --- Check if we are angered
@@ -434,17 +446,18 @@ function _M:tooltip(x, y, seen_by)
 	return str
 end
 
+--- Get the current target
+-- @param typ <optional> targeting parameters
+-- @return x coordinate to target
+-- @return y coordinate to target
+-- @return target actor @ x, y
+--	returns the result of typ.talent.onAIGetTarget(self, typ.talent) (if defined)
 function _M:getTarget(typ)
 	-- Free ourselves
-	if self:attr("encased_in_ice") then
-		return self.x, self.y, self
-	-- Heal/buff/... ourselves
-	elseif type(typ) == "table" and typ.first_target == "friend" and typ.default_target == self then
-		return self.x, self.y, self
-	-- Hit our foes
-	else
-		return ActorAI.getTarget(self, typ)
-	end
+	if self:attr("encased_in_ice") then	return self.x, self.y, self end
+	
+	-- get our ai_target according to the targeting parameters (possibly talent-specific)
+	return ActorAI.getTarget(self, typ)
 end
 
 --- Make emotes appear in the log too
@@ -544,57 +557,13 @@ function _M:clearAITarget()
 	if self.ai_target.actor and self.ai_target.actor.dead then self.ai_target.actor = nil end
 end
 
-local shove_algorithm = function(self)
-	return 3 * self.rank + self.size_category * self.size_category
-end
-
-function _M:aiCanPass(x, y)
-	-- If there is a friendly actor, add shove_pressure to it
-	local target = game.level.map(x, y, engine.Map.ACTOR)
-	if target and target ~= game.player and self:reactionToward(target) > 0 and not target:attr("never_move") and target.x then
-		target.shove_pressure = (target.shove_pressure or 0) + shove_algorithm(self) + (self.shove_pressure or 0)
-		-- Shove the target?
-		if target.shove_pressure > shove_algorithm(target) * 1.7 then
-			local dir = util.getDir(target.x, target.y, self.x, self.y)
-			local sides = util.dirSides(dir, target.x, target.y)
-			local check_order = {}
-			if rng.percent(50) then
-				table.insert(check_order, "left")
-				table.insert(check_order, "right")
-			else
-				table.insert(check_order, "right")
-				table.insert(check_order, "left")
-			end
-			if rng.percent(50) then
-				table.insert(check_order, "hard_left")
-				table.insert(check_order, "hard_right")
-			else
-				table.insert(check_order, "hard_right")
-				table.insert(check_order, "hard_left")
-			end
-			for _, side in ipairs(check_order) do
-				local check_dir = sides[side]
-				local sx, sy = util.coordAddDir(target.x, target.y, check_dir)
-				if target:canMove(sx, sy) and target:move(sx, sy) then
-					self:logCombat(target, "#Source# shoves #Target# forward.")
-					target.shove_pressure = nil
-					target._last_shove_pressure = nil
-					break
-				end
-			end
-			return true
-		end
-	end
-	return engine.interface.ActorAI.aiCanPass(self, x, y)
-end
-
 --- Returns the seen coords of the target
 -- This will usually return the exact coords, but if the target is only partially visible (or not at all)
 -- it will return estimates, to throw the AI a bit off
 -- @param target the target we are tracking
 -- @return x, y coords to move/cast to
 function _M:aiSeeTargetPos(target)
-	if not target then return self.x, self.y end
+	if not (target and target.x) then return self.x, self.y end
 	local tx, ty = target.x, target.y
 
 	-- Special case, a boss that can pass walls can always home in on the target; otherwise it would get lost in the walls for a long while

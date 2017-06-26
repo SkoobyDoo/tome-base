@@ -546,7 +546,7 @@ newInscription{
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
-	tactical = { DEFEND = 3, ESCAPE = 2 },
+	tactical = { DEFEND = 3, ESCAPE = 2, BUFF = -2 },
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		self:setEffect(self.EFF_INVISIBILITY, data.dur, {power=data.power + data.inc_stat, penalty=0.4})
@@ -635,9 +635,9 @@ newInscription{
 	is_attack_rune = true,
 	no_energy = true,
 	is_spell = true,
-	tactical = { ATTACK = { FIRE = 1 }, CURE = function(self, t, target)
+	tactical = { ATTACK = { FIRE = 1 },
+		CURE = function(self, t, target)
 			local nb = 0
-			local data = self:getInscriptionData(t.short_name)
 			for eff_id, p in pairs(self.tmp) do
 				local e = self.tempeffect_def[eff_id]
 				if e.type == "physical" and e.status == "detrimental" then nb = nb + 1 end
@@ -684,9 +684,9 @@ newInscription{
 	is_attack_rune = true,
 	no_energy = true,
 	is_spell = true,
-	tactical = { ATTACK = { COLD = 1 }, DISABLE = { stun = 1 }, CURE = function(self, t, target)
+	tactical = { ATTACK = { COLD = 1 }, DISABLE = { stun = 1 },
+		CURE = function(self, t, target)
 			local nb = 0
-			local data = self:getInscriptionData(t.short_name)
 			for eff_id, p in pairs(self.tmp) do
 				local e = self.tempeffect_def[eff_id]
 				if e.type == "mental" and e.status == "detrimental" then nb = nb + 1 end
@@ -751,7 +751,6 @@ newInscription{
 		ATTACKAREA = { ACID = 1 },
 		CURE = function(self, t, target)
 			local nb = 0
-			local data = self:getInscriptionData(t.short_name)
 			for eff_id, p in pairs(self.tmp) do
 				local e = self.tempeffect_def[eff_id]
 				if e.type == "magical" and e.status == "detrimental" then nb = nb + 1 end
@@ -819,7 +818,7 @@ newInscription{
 	is_attack_rune = true,
 	no_energy = true,
 	is_spell = true,
-	tactical = { ATTACK = { LIGHTNING = 1 } },
+	tactical = { ATTACK = { LIGHTNING = 1 }, SELF = {defend = 1} },
 	requires_target = true,
 	direct_hit = true,
 	range = function(self, t)
@@ -861,7 +860,7 @@ newInscription{
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
-	tactical = { MANA = 1 },
+	tactical = { MANA = 2 },
 	on_pre_use = function(self, t)
 		return self:knowTalent(self.T_MANA_POOL) and not self:hasEffect(self.EFF_MANASURGE)
 	end,
@@ -903,9 +902,9 @@ newInscription{
 	is_attack_rune = true,
 	no_energy = true,
 	is_spell = true,
-	tactical = { ATTACK = { COLD = 1 }, DISABLE = { stun = 1 }, CURE = function(self, t, target)
+	tactical = { ATTACK = { COLD = 1 }, DISABLE = { stun = 1 },
+		CURE = function(self, t, target)
 			local nb = 0
-			local data = self:getInscriptionData(t.short_name)
 			for eff_id, p in pairs(self.tmp) do
 				local e = self.tempeffect_def[eff_id]
 				if e.type == "mental" and e.status == "detrimental" then nb = nb + 1 end

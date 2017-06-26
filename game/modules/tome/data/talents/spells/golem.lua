@@ -35,7 +35,7 @@ newTalent{
 	end,
 	is_melee = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.6) end,
-	tactical = { DEFEND = { knockback = 2 }, DISABLE = { knockback = 1 } },
+	tactical = { ATTACK = { weapon = 2 }, DISABLE = { knockback = 1 } },
 	action = function(self, t)
 		if self:attr("never_move") then game.logPlayer(self, "Your golem cannot do that currently.") return end
 
@@ -90,7 +90,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[Your golem rushes to the target, knocking it back and doing %d%% damage.
+		return ([[Your golem rushes to the target, dealing %d%% damage and knocking it back.
 		Knockback chance will increase with talent level.]]):format(100 * damage)
 	end,
 }
@@ -145,7 +145,7 @@ newTalent{
 	requires_target = true,
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.6) end,
 	getPinDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	tactical = { ATTACK = { PHYSICAL = 0.5 }, DISABLE = { pin = 2 } },
+	tactical = { ATTACK = { weapon = 2 }, DISABLE = { pin = 1 } },
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	action = function(self, t)
@@ -225,7 +225,7 @@ newTalent{
 		return self:combatTalentWeaponDamage(t, 0.4, 1.1)
 	end,
 	getDazeDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	tactical = { ATTACKAREA = { PHYSICAL = 0.5 }, DISABLE = { daze = 3 } },
+	tactical = { ATTACKAREA = { weapon = 1.5 }, DISABLE = { stun = 1 } },
 	action = function(self, t)
 		if self:attr("never_move") then game.logPlayer(self, "Your golem cannot do that currently.") return end
 
@@ -368,7 +368,7 @@ newTalent{
 	range = 10,
 	sustain_mana = 30,
 	requires_target = true,
-	tactical = { DEFEND = 1, SURROUNDED = 3, BUFF = 1 },
+	tactical = { SELF = {DEFEND = 1, BUFF = 1}, SURROUNDED = 3},
 	getReflect = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 12, 40), 100, 20, 0, 46.5, 26.5) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
@@ -403,9 +403,9 @@ newTalent{
 	mana = 20,
 	requires_target = true,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t}
+		return {type="ball", range=self:getTalentRange(t), friendlyfire=false, selffire=false, radius=self:getTalentRadius(t), talent=t}
 	end,
-	tactical = { ATTACKAREA = { ARCANE = 2 }, CLOSEIN = 1 },
+	tactical = { ATTACKAREA = { ARCANE = 1.5 }, CLOSEIN = {knockback = 1} },
 	getDamage = function(self, t)
 		return self:combatTalentSpellDamage(t, 12, 120)
 	end,
@@ -420,8 +420,10 @@ newTalent{
 		end)
 		table.sort(tgts, "sqdist")
 		for i, target in ipairs(tgts) do
-			target.actor:pull(self.x, self.y, tg.radius)
-			self:logCombat(target.actor, "#Target# is pulled toward #Source#!")
+			if target.actor:canBe("knockback") then
+				target.actor:pull(self.x, self.y, tg.radius) 
+				self:logCombat(target.actor, "#Target# is pulled toward #Source#!")
+			end
 			DamageType:get(DamageType.ARCANE).projector(self, target.actor.x, target.actor.y, DamageType.ARCANE, t.getDamage(self, t))
 		end
 		return true
@@ -536,7 +538,7 @@ newTalent{
 	mana = 25,
 	cooldown = 8,
 	message = "@Source@ breathes poison!",
-	tactical = { ATTACKAREA = { NATURE = 1, poison = 1 } },
+	tactical = { ATTACKAREA = { NATURE = {1, poison = 1 } }},
 	range = 0,
 	radius = 5,
 	requires_target = true,

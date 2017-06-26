@@ -26,7 +26,9 @@ newTalent{
 	cooldown = 9,
 	reflectable = true,
 	proj_speed = 15,
-	tactical = { ATTACK = {BLIGHT = 2}, VIM = 2 },
+	tactical = { ATTACK = {BLIGHT = 1.75},
+		VIM = {BLIGHT = function(self, t, target) return 2*target:getRankVimAdjust()^.5 end}
+	},
 	requires_target = true,
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	action = function(self, t)

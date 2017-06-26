@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+-- TODO: update tactical information for these talents
+
 -- Looks weaker than the other options, but extra life is a more universally useful stat and mind save is generally lower for celestial classes.
 newTalent{
 	name = "Chant of Fortitude",
@@ -29,7 +31,7 @@ newTalent{
 	sustain_positive = 20,
 	no_energy = true,
 	dont_provide_pool = true,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 2 },
 	range = 0,
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 60) end,
 	getLifePct = function(self, t) return self:combatTalentLimit(t, 1, 0.10, 0.20) end,
@@ -91,7 +93,7 @@ newTalent{
 	sustain_positive = 20,
 	no_energy = true,
 	dont_provide_pool = true,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 2 },
 	range = 0,
 	getPhysicalResistance = function(self, t) return math.floor(self:combatTalentSpellDamage(t, 8, 25)) end,
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 5, 60) end,
@@ -154,7 +156,7 @@ newTalent{
 	cooldown = 12,
 	sustain_positive = 20,
 	dont_provide_pool = true,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 2 },
 	no_energy = true,
 	range = 0,
 	getResists = function(self, t) return self:combatTalentSpellDamage(t, 10, 30) end,

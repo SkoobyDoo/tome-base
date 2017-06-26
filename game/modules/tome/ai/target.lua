@@ -17,54 +17,79 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Find an hostile target
+-- Find a hostile target
 -- this requires the ActorFOV interface, or an interface that provides self.fov.actors*
 -- This is ToME specific, overriding the engine default target_simple to account for lite, infravision, ...
+-- has a chance to keep the current target (90% if hostile, 50% if friendly, 0% if self)
+-- otherwise searches for a hostile target within sense range that can be seen and is not invulnerable
 newAI("target_simple", function(self)
 	if not self.x then return end
-
-	if self.ai_target.actor and (self.ai_target.actor.dead or not game.level:hasEntity(self.ai_target.actor)) and self.ai_target.actor.summoner then
-		self.ai_target.actor = self.ai_target.actor.summoner
+	local log_detail = config.settings.log_detail_ai or 0
+	if log_detail > 0 then print("[ActorAI] Invoking target_simple AI for", self.uid, self.name, self.x, self.y) end
+	local aitarget = self.ai_target.actor
+	if aitarget then
+		if log_detail > 1 then print("[target_simple AI] current target:", aitarget.uid, aitarget.name) end
+		if aitarget.summoner and (aitarget.dead or not game.level:hasEntity(aitarget)) then
+			if log_detail > 0 then print("[target_simple AI] targeting summoner of dead summon:",  aitarget.uid, aitarget.name) end
+			self:setTarget(aitarget.summoner)
+			aitarget = self.ai_target.actor
+		end
 	end
 
-	if self.ai_target.actor and not self.ai_target.actor.dead and game.level:hasEntity(self.ai_target.actor) and rng.percent(90) and not self.ai_target.actor:attr("invulnerable") then return true end
+	-- chance to keep same target, 90% if hostile, 50% if friendly, 0% if self
+	if aitarget then
+		if log_detail > 1 then print("[target_simple AI] testing validity of target:", aitarget.uid, aitarget.name) end
+--		clear_old_target = aitarget
+		if aitarget.dead or not game.level:hasEntity(aitarget) then
+			if log_detail > 1 then print("[target_simple AI] clearing target:", aitarget.uid, aitarget.name,  aitarget.dead and "(DEAD)" or "{NOT ON LEVEL}") end
+		else
+			if aitarget == self then -- allow self to be cleared
+			elseif self:reactionToward(aitarget) >= 0 then -- keep friendly 50%
+				if rng.percent(50) then return aitarget end
+			else
+				if rng.percent(90) and not aitarget:attr("invulnerable") then return aitarget end -- keep hostile 90% (never clear it)
+				aitarget = nil
+			end
+		end
+	end
 
-	-- Find closer enemy and target it
+	-- Find closest enemy and target it or set no target
 	-- Get list of actors ordered by distance
 	local arr = self.fov.actors_dist
 	local act
 	local sqsense = math.max(self.lite or 0, self.infravision or 0, self.heightened_senses or 0)
+	if log_detail > 1 then print("[target_simple AI]", self.uid, self.name, "at", self.x, self.y, "searching for new targets in range", sqsense) end
 	sqsense = sqsense * sqsense
 	for i = 1, #arr do
 		act = self.fov.actors_dist[i]
---		print("AI looking for target", self.uid, self.name, "::", act.uid, act.name, self.fov.actors[act].sqdist)
-		-- find the closest enemy
-		if act and self:reactionToward(act) < 0 and not act.dead and act.x and game.level.map:isBound(act.x, act.y) and
-			(
-				-- If it has lite we can always see it
-				((act.lite or 0) > 0)
-				or
-				-- Otherwise check if we can see it with our "senses"
+		if log_detail > 2 then print("\t checking target", act.x, act.y, act.uid, act.name) end
+		if act and act.x and not act.dead and self:reactionToward(act) < 0 and game.level.map:isBound(act.x, act.y) and
+			(((act.lite or 0) > 0) -- If it has lite we can always see it
+				or -- Otherwise check if we can see it with our "senses"
 				(self:canSee(act) and (self.fov.actors[act].sqdist <= sqsense) or game.level.map.lites(act.x, act.y))
 			) and not act:attr("invulnerable") then
 
+			print("[target_simple AI]", self.uid, self.name, "selecting NEW TARGET", act.x, act.y, act.uid, act.name)
 			self:setTarget(act)
-			self:check("on_acquire_target", act)
-			act:check("on_targeted", self)
-			print("AI took for target", self.uid, self.name, "::", act.uid, act.name, self.fov.actors[act].sqdist, "<", sqsense)
-			return true
+			return act
 		end
 	end
+	if aitarget then  -- clear old target if a new one wasn't found or kept
+		if log_detail > 0 then print("[target_simple AI] clearing old target (no replacement):", aitarget.uid, aitarget.name) end
+if config.settings.cheat then game.log("#RED# [%s]%s #ORANGE#CLEARING OLD TARGET#LAST#: [%s]%s", self.uid, self.name, aitarget.uid, aitarget.name) end -- debugging
+		self:setTarget()
+	end
+	return self.ai_target.actor
 end)
 
--- Target the player if within sense radius
+-- keep current target (90% chance) or target the player if within sense radius
 newAI("target_player_radius", function(self)
 	if not game.player.x then return end
-	if self.ai_target.actor and not self.ai_target.actor.dead and rng.percent(90) then return true end
+	local aitarget = self.ai_target.actor
+	if aitarget and not aitarget.dead and game.level:hasEntity(aitarget) and rng.percent(90) then return true end
 
 	if core.fov.distance(self.x, self.y, game.player.x, game.player.y) < self.ai_state.sense_radius then
 		self:setTarget(game.player)
-		self:check("on_acquire_target", game.player)
 		return true
 	end
 end)

@@ -29,6 +29,7 @@ local fast_cache = {}
 setmetatable(fast_cache, {__mode="v"})
 
 --- Defines an Actor resource
+-- Resources are numeric quantities that decrease in value as the resource is depleted (set params.invert_values to reverse this)
 -- Static!
 -- This defines for all actors the methods :getResource(), :incResource(), :getMinResource(), :incMinResource(), :getMaxResource(), and :incMaxResource()
 -- (where "Resource" = short_name:lower():capitalize())

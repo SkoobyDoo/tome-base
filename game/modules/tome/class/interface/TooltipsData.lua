@@ -433,16 +433,28 @@ TOOLTIP_STATUS_IMMUNE = [[#GOLD#Status resistance#LAST#
 Most bad status effects can be avoided by having an appropriate immunity, represented by a percent chance to completely avoid the effect in question.  This chance is applied in addition to any saving throws or other checks that may apply.
 ]]
 TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
-This represents your chance to completely avoid this specific effect.
+This represents your chance to completely resist this specific effect.
 ]]
 TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
 This represents your chance to completely avoid being stunned, dazed, or frozen.
+]]
+TOOLTIP_ANOMALY_IMMUNE = [[#GOLD#Anomaly immunity chance#LAST#
+This represents your chance to avoid most chronomatic anomaly effects.
 ]]
 TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
 This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
 ]]
 TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative effect immunity chance#LAST#
 This represents your chance to completely avoid ANY bad effects applied to you from others.
+]]
+TOOLTIP_NEGATIVE_MENTAL_STATUS_IMMUNE = [[#GOLD#Negative mental effect immunity chance#LAST#
+This represents your chance to completely avoid ANY bad mental effects applied to you from others.
+]]
+TOOLTIP_NEGATIVE_PHYSICAL_STATUS_IMMUNE = [[#GOLD#Negative physical effect immunity chance#LAST#
+This represents your chance to completely avoid ANY bad physical effects applied to you from others.
+]]
+TOOLTIP_NEGATIVE_SPELL_STATUS_IMMUNE = [[#GOLD#Negative magical effect immunity chance#LAST#
+This represents your chance to completely avoid ANY bad magical effects applied to you from others.
 ]]
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
 Each time a creature hits you with a melee attack, it will suffer damage or other effects.

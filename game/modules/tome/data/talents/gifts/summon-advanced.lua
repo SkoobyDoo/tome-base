@@ -105,7 +105,7 @@ newTalent{
 	equilibrium = 9,
 	cooldown = 25,
 	range = 10,
-	tactical = { BUFF = 5 },
+	tactical = { BUFF = 2 },
 	no_energy = true,
 	on_pre_use = function(self, t, silent)
 		return self:isTalentActive(self.T_MASTER_SUMMONER)

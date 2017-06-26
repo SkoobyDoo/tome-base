@@ -125,7 +125,16 @@ newTalent{
 	no_energy = true,
 	require = techs_req4,
 	range = 1,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 2},
+	on_pre_use_ai = function(self, t, silent, fake)
+		if self.ai_state._advanced_ai then return true end -- let the advanced AI decide to use
+		local is_active = self:isTalentActive(t.id)
+		if is_active then -- may turn off without a LOS target or if stamina is not enough for at least 2 turns
+			return not self.fov.actors[self.ai_target.actor] or self:getStamina() < -2*self.stamina_regen
+		else -- may only turn on with a LOS target and stamina for 5 turns
+			return self.fov.actors[self.ai_target.actor] and self:getStamina() >= -5*(self.stamina_regen-t.drain_stamina)
+		end
+	end,
 	getCrit = function(self, t) return self:combatTalentStatDamage(t, "dex", 10, 50) / 1.5 end,
 	getPen = function(self, t) return self:combatLimit(self:combatTalentStatDamage(t, "str", 10, 50), 100, 0, 0, 35.7, 35.7) end, -- Limit to <100%
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.20, 0.75) end,

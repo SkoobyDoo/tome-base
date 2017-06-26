@@ -601,6 +601,7 @@ function _M:actBase()
 	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
 end
 
+-- General entry point for Actors to act, called by NPC:act or Player:act
 function _M:act()
 	if not engine.Actor.act(self) then return end
 
@@ -669,7 +670,7 @@ function _M:act()
 	local equilibrium_level = game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "equilibrium_level")
 	if equilibrium_level then self:incEquilibrium(equilibrium_level) end
 
-	-- Do stuff to things standing in the fire
+	-- Trigger special terrain effects
 	game.level.map:checkEntity(self.x, self.y, Map.TERRAIN, "on_stand", self)
 
 	-- Still enough energy to act ?
@@ -1433,6 +1434,8 @@ function _M:move(x, y, force)
 
 	self:triggerHook{"Actor:move", moved=moved, force=force, ox=ox, oy=oy}
 
+	if moved then print("[Actor:move]", self.uid, self.name, (force and "(forced) " or "").."move from", ox, oy, "to", self.x, self.y) end
+
 	return moved
 end
 
@@ -2031,31 +2034,28 @@ function _M:tooltip(x, y, seen_by)
 end
 
 --- Regenerate life, call it from your actor class act() method
-function _M:regenLife()
-	if self.life_regen then
-		local regen = self.life_regen * util.bound((self.healing_factor or 1), 0, 2.5)
+-- @param [type=boolean] fake: set true to compute effective life/psi regen without applying them (for AIs)
+-- @return actual increases in life, psi
+-- accounts for healing_factor and Solipsism life/psi healing split, which includes psi_regen
+function _M:regenLife(fake)
+	if self.life_regen and not self:attr("no_life_regen") then
+		local regen, psi_increase = self.life_regen * util.bound((self.healing_factor or 1), 0, 2.5)
 
-		-- Solipsism
+		-- Solipsism: regeneration split between life and psi
 		if self:knowTalent(self.T_SOLIPSISM) then
-			local t = self:getTalentFromId(self.T_SOLIPSISM)
-			local ratio = t.getConversionRatio(self, t)
-			local psi_increase = regen * ratio
-			self:incPsi(psi_increase)
-			-- Quality of life hack, doesn't decrease life regen while resting..  was way to painful
-			if not self.resting then
+			local ratio = self:callTalent(self.T_SOLIPSISM, "getConversionRatio")
+			psi_increase = util.bound(regen * ratio, 0, self.max_psi - self.psi)
 				regen = regen - psi_increase
+			if not fake then self:incPsi(psi_increase) end
+			psi_increase = psi_increase + self.psi_regen
 			end
-		end
 
-		if not self:attr("no_life_regen") then
-			self.life = util.bound(self.life + regen, self.die_at, self.max_life)
-
-			-- Blood Lock
-			if self:attr("blood_lock") then
-				self.life = util.bound(self.life, self.die_at, self:attr("blood_lock"))
-			end
+		-- handles maximum life (including Blood Lock)
+		regen = util.bound(self.life + regen, self.die_at, self:attr("blood_lock") or self.max_life) - self.life
+		if not fake then self.life = self.life + regen end
+		return regen, psi_increase or self.psi_regen
 		end
-	end
+	return 0, 0
 end
 
 function _M:regenAmmo()
@@ -3547,6 +3547,21 @@ function _M:onTemporaryValueChange(prop, v, base)
 	elseif prop == "disarmed" then
 		self:updateModdableTile()
 	end
+	-- set up some values to allow the AI to detect changes in the actor's offensive or defensive abilities
+	if type(v) == "number" then -- use final value to update offensive/defensive hash values
+		local ActorAI = mod.class.interface.ActorAI
+		if base == self then
+			if ActorAI.aiDHashProps[prop] then -- Defense attributes
+				self.aiDHash = (self.aiDHash or 0) + v * ActorAI.aiDHashProps[prop] -- random value set at AI initialization
+			elseif ActorAI.aiOHashProps[prop] then -- Offense attributes
+				self.aiOHash = (self.aiOHash or 0) + v * ActorAI.aiOHashProps[prop] -- random value set at AI initialization
+			end
+		elseif base == self.inc_damage or base == self.resists_pen then -- Offensive properties
+			self.aiOHash = (self.aiOHash or 0) + v
+		elseif base == self.resists or base == self.resists_cap or base == self.damage_affinity then -- Defensive properties
+			self.aiDHash = (self.aiDHash or 0) + v
+		end
+	end
 end
 
 --- Actor attacks target
@@ -4908,6 +4923,12 @@ end
 -- @param ab the talent (not the id, the table)
 -- @return true to continue, false to stop
 function _M:preUseTalent(ab, silent, fake)
+
+	if ab._ai_parsed == nil then -- add some AI info to the talent if needed
+		print("[Actor:preUseTalent] PARSING TALENT for AI info", ab.id, self.name)
+		mod.class.interface.ActorAI.aiParseTalent(ab, self)
+	end
+	
 	if self.forbid_talents and self.forbid_talents[ab.id] then
 		if not silent then game.logSeen(self, self.forbid_talents[ab.id] or "%s can not use %s.", self.name:capitalize(), ab.name) end
 		return false
@@ -5120,7 +5141,7 @@ function _M:preUseTalent(ab, silent, fake)
 		end
 
 	end
-	-- Special checks
+	-- Special checks (can always turn off sustained)
 	if ab.on_pre_use and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) and not ab.on_pre_use(self, ab, silent, fake) then return false end
 
 	if self:attr("use_only_arcane") then
@@ -5133,9 +5154,6 @@ function _M:preUseTalent(ab, silent, fake)
 	if ab.is_teleport and self:attr("encased_in_ice") then return false end
 
 	end
-
-	-- Special checks -- AI
-	if not self.player and ab.on_pre_use_ai and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) and not ab.on_pre_use_ai(self, ab, silent, fake) then return false end
 
 	return true
 end
@@ -5394,15 +5412,15 @@ function _M:getTalentSpeed(t)
 	local speed_type = self:getTalentSpeedType(t)
 	local speed = self:getSpeed(speed_type)
 
+	if t.getEnergy then speed = speed * t.getEnergy(self, t) end
 	-- Quicken
 	local p = self:isTalentActive(self.T_QUICKEN)
 	if p and p.talent == t.id then
 		speed = math.max(0.1, speed - self:callTalent(self.T_QUICKEN, "getPower"))
 	end
-
 	local hd = {"Actor:getTalentSpeed", talent = t, speed_type = speed_type, speed = speed,}
 	if self:triggerHook(hd) then speed = hd.speed end
-
+	speed = math.max(0.1, speed) -- speed limit
 	return speed
 end
 
@@ -6483,29 +6501,74 @@ function _M:hasLOS(x, y, what, range, source_x, source_y)
 	return false, last_x, last_y
 end
 
---- Can the target be applied some effects
+--- list of actor status types and corresponding immunity attribute tags (inputs to newStatusType)
+--	boolean values in this table are updated below by newStatusType
+_M.StatusTypes = {poison=true,	disease=true, cut=true, confusion=true, blind=true,	silence=true,
+	disarm=true, stun=true, sleep=true, fear=true, stone=true, slow=true,
+	instakill=false, anomaly=false,
+	pin=function(self) return (self:attr("negative_status_effect_immune") or self:attr("levitation") or self:attr("fly")) and 100 or 100 * (self:attr("pin_immune") or 0) end,
+	knockback=function(self) return self:attr("never_move") and 100 or 100 * (self:attr("knockback_immune") or 0) end,
+	teleport=function(self) return self:attr("encased_in_ice") and 100 or 100 * (self:attr("teleport_immune") or 0) end,
+	worldport=function(self) return game.level and game.level.data and game.level.data.no_worldport and 100 or 0 end,
+	planechange=function(self) return game.level and game.level.data and game.level.data.no_planechange and 100 or 0 end,
+	summon=function(self) return self:attr("suppress_summon") and 100 or 0 end,
+}
+
+--- list of actor status types that are associated with temporary effects
+_M.StatusTypesIsEffect = {}
+
+--- define a new Status type
+-- @param what [string] the label to be used (i.e. actor:canBe("label"))
+-- @param[1] [type=boolean] method checks will be against the <what .. "_immune"> attribute
+--		if method == true then the status is treated as a general effect (general immunities apply)
+-- @param[2] [type=function] method is a function(self) returning % chance to resist the effect
+function _M.newStatusType(what, method)
+	if type(method) == "boolean" then
+		_M.StatusTypesIsEffect[what] = method
+		_M.StatusTypes[what] = what .. "_immune"
+	else _M.StatusTypes[what] = method
+	end
+end
+
+-- initialize all standard status types
+for what, method in pairs(_M.StatusTypes) do
+	_M.newStatusType(what, method)
+end
+
+--- Determine if a status effect can be applied
 -- @param what a string describing what is being tried
-function _M:canBe(what)
-	if what == "poison" and rng.percent(100 * (self:attr("poison_immune") or 0)) then return false end
-	if what == "disease" and rng.percent(100 * (self:attr("disease_immune") or 0)) then return false end
-	if what == "cut" and rng.percent(100 * (self:attr("cut_immune") or 0)) then return false end
-	if what == "confusion" and rng.percent(100 * (self:attr("confusion_immune") or 0)) then return false end
-	if what == "blind" and rng.percent(100 * (self:attr("blind_immune") or 0)) then return false end
-	if what == "silence" and rng.percent(100 * (self:attr("silence_immune") or 0)) then return false end
-	if what == "disarm" and rng.percent(100 * (self:attr("disarm_immune") or 0)) then return false end
-	if what == "pin" and (rng.percent(100 * (self:attr("pin_immune") or 0)) or self:attr("levitation") or self:attr("fly")) then return false end
-	if what == "stun" and rng.percent(100 * (self:attr("stun_immune") or 0)) then return false end
-	if what == "sleep" and rng.percent(100 * (self:attr("sleep_immune") or 0)) then return false end
-	if what == "fear" and rng.percent(100 * (self:attr("fear_immune") or 0)) then return false end
-	if what == "knockback" and (rng.percent(100 * (self:attr("knockback_immune") or 0)) or self:attr("never_move")) then return false end
-	if what == "stone" and rng.percent(100 * (self:attr("stone_immune") or 0)) then return false end
-	if what == "instakill" and rng.percent(100 * (self:attr("instakill_immune") or 0)) then return false end
-	if what == "anomaly" and rng.percent(100 * (self:attr("anomaly_immune") or 0)) then return false end
-	if what == "teleport" and (rng.percent(100 * (self:attr("teleport_immune") or 0)) or self:attr("encased_in_ice")) then return false end
-	if what == "worldport" and game.level and game.level.data and game.level.data.no_worldport then return false end
-	if what == "planechange" and game.level and game.level.data and game.level.data.no_planechange then return false end
-	if what == "summon" and self:attr("suppress_summon") then return false end
-	return true
+-- @param eid <optional, string> effect id possibly being applied, forces checking of general status immunities
+--		if what is undefined, the effect subtype field will be checked for status types
+-- By default, status effects not defined in self.StatusTypes may always be applied outside of general status immunities
+-- @return true or false
+-- @return percent chance to be affected
+function _M:canBe(what, eid)
+	local e = eid and self.tempeffect_def[eid]
+	-- check general status immunities
+	--print("testing with effect", eid, e) table.print(e)
+	if e and e.status == "detrimental" then
+		if e.type ~= "other" and self:attr("negative_status_effect_immune") then return false, 0 end
+		if not e.subtype["cross tier"] then
+			if e.type == "physical" and self:attr("physical_negative_status_effect_immune") then return false, 0 end
+			if e.type == "mental" and self:attr("mental_negative_status_effect_immune") then return false, 0 end
+			if e.type == "magical" and self:attr("spell_negative_status_effect_immune") then return false, 0 end
+		end
+		--Note e.subtype usually contains some status flags (but is not consistent)
+		if not what then -- determine immunity solely from effect definition
+			local chance = 100
+			for typ, _ in pairs(e.subtype) do
+				local _, t_chance = self:canBe(typ)
+				chance = chance*t_chance/100
+			end
+			return chance == 0 and false or rng.percent(chance), chance
+		end
+	elseif self.StatusTypesIsEffect[what] and self:attr("negative_status_effect_immune") then
+		return false, 0
+	end
+	local test = self.StatusTypes[what]
+	if not test then return true, 100 end
+	local resist = util.bound(type(test) == "function" and test(self) or 100*(self:attr(test) or 0), 0, 100)
+	return resist == 0 and true or rng.percent(100-resist), 100-resist
 end
 
 -- Tells on_set_temporary_effect() what save to use for a given effect type

@@ -102,11 +102,16 @@ newTalent{
 	points = 5,
 	vim = 30,
 	cooldown = 15,
-	tactical = { ATTACKAREA = {BLIGHT = 1}, DISABLE = 2, ESCAPE = 2 },
+	tactical = { ATTACKAREA = {BLIGHT = {disease = 1}}, DISABLE = {disease = 1},
+		SELF = {ESCAPE = 2} },
 	range = 7,
 	radius = 3,
+	requires_target = true,
+	target = function(self, t)
+		return {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), selffire=false, talent=t}
+	end,
 	action = function(self, t)
-		local tg = {type="ball", radius=self:getTalentRadius(t), range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local actors = {}

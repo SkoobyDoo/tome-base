@@ -29,6 +29,7 @@ uberTalent{
 	on_unlearn = function(self, t)
 		self:attr("bump_swap_speed_divide", -10)
 	end,
+	tactical = {DEFEND = 2, ESCAPE = 2, CLOSEIN = 2},
 	callbackOnAct = function(self, t)
 		local nb_friends = 0
 		local act
@@ -163,7 +164,8 @@ uberTalent{
 	radius = 1,
 	range = 10,
 	is_melee = true,
-	tactical = { CLOSEIN = 2, ATTACKAREA = { weapon = 2 }, DISABLE = { daze = 1 } },
+	requires_target = true,
+	tactical = { CLOSEIN = 2, ATTACKAREA = { weapon = 2 }, DISABLE = { stun = 1 } },
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
@@ -211,6 +213,7 @@ uberTalent{
 uberTalent{
 	name = "Crafty Hands",
 	mode = "passive",
+	no_npc_use = true,
 	require = { special={desc="Know Imbue Item to level 5", fct=function(self)
 		return self:getTalentLevelRaw(self.T_IMBUE_ITEM) >= 5
 	end} },
@@ -224,7 +227,11 @@ uberTalent{
 	name = "Roll With It",
 	mode = "sustained",
 	cooldown = 10,
-	tactical = { ESCAPE = 1 },
+	tactical = function(self, t, aitarget)
+		if self:attr("never_move") then return
+		else return {ESCAPE = 2, DEFEND = 2}
+		end
+	end,
 	require = { special={desc="Have been knocked around at least 50 times", fct=function(self) return self:attr("knockback_times") and self:attr("knockback_times") >= 50 end} },
 	-- Called by default projector in mod.data.damage_types.lua
 	getMult = function(self, t) return self:combatLimit(self:getDex(), 0.7, 0.9, 50, 0.85, 100) end, -- Limit > 70% damage taken
@@ -252,7 +259,7 @@ uberTalent{
 	cooldown = 10,
 	range = archery_range,
 	require = { special={desc="Have dealt over 50000 damage with ranged weapons", fct=function(self) return self.damage_log and self.damage_log.weapon.archery and self.damage_log.weapon.archery >= 50000 end} },
-	tactical = { ATTACK = { weapon = 3 }, DISABLE = 3 },
+	tactical = { ATTACK = { weapon = 3 }, DISABLE = {2, stun = 2}},
 	requires_target = true,
 	on_pre_use = function(self, t, silent) return Talents.archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)

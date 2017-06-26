@@ -200,17 +200,40 @@ Mouse: Hover over stat for info
 	self:updateKeys()
 end
 
--- Immunity types to display matching Actor:attr(<immunity>)
-_M.status_immunities = {poison_immune = "Poison     ",
-	disease_immune = "Disease    ", cut_immune = "Bleed      ", confusion_immune= "Confusion  ",
-	blind_immune = "Blind      ", silence_immune = "Silence    ", disarm_immune = "Disarm     ",
-	pin_immune = "Pinning    ", stun_immune = "Stun/Freeze", sleep_immune = "Sleep      ",
-	fear_immune = "Fear       ", knockback_immune = "Knockback  ", stone_immune = "Stoning    ",
-	instakill_immune = "Instadeath ", teleport_immune = "Teleport   ",
-	negative_status_effect_immune = "All        "}
--- Specific tooltips to use for certain immunity types
-_M.immunity_tooltips = {instakill_immune = "TOOLTIP_INSTAKILL_IMMUNE", negative_status_effect_immune = "TOOLTIP_NEGATIVE_STATUS_IMMUNE", stun_immune="TOOLTIP_STUN_IMMUNE"}
+--- immunity types to be displayed
+_M.immune_types = table.clone(mod.class.Actor.StatusTypes)
+table.merge(_M.immune_types, {negative_status_effect = "negative_status_effect_immune",
+	mental_negative_status_effect = "mental_negative_status_effect_immune",
+	physical_negative_status_effect = "physical_negative_status_effect_immune",
+	spell_negative_status_effect = "spell_negative_status_effect_immune",
+	worldport = table.NIL_MERGE,
+	planechange = table.NIL_MERGE})
 
+-- assign implied immunity attributes for functional immunity types
+for typ, tag in pairs(_M.immune_types) do
+	if type(tag) ~= "string" then _M.immune_types[typ] = typ.."_immune" end
+end
+
+--- specific labels to use for certain immunity types
+_M.immune_labels = {poison = "Poison     ",
+	disease = "Disease    ", cut = "Bleed      ", confusion= "Confusion  ",
+	blind = "Blind      ", silence = "Silence    ", disarm = "Disarm     ",
+	pin = "Pinning    ", stun = "Stun/Freeze", sleep = "Sleep      ",
+	fear = "Fear       ", knockback = "Knockback  ", stone = "Stoning    ",
+	instakill = "Instadeath ", teleport = "Teleport   ",
+	negative_status_effect = "#GOLD#All        ",
+	mental_negative_status_effect = "#ORANGE#Mental     ",
+	physical_negative_status_effect = "#ORANGE#Physical   ",
+	spell_negative_status_effect = "#ORANGE#Magical    ",
+}
+
+--- specific tooltips to use for certain immunity types
+_M.immunity_tooltips = {instakill_immune = "TOOLTIP_INSTAKILL_IMMUNE", stun_immune="TOOLTIP_STUN_IMMUNE", negative_status_effect_immune = "TOOLTIP_NEGATIVE_STATUS_IMMUNE", mental_negative_status_effect_immune = "TOOLTIP_NEGATIVE_MENTAL_STATUS_IMMUNE",
+	physical_negative_status_effect_immune = "TOOLTIP_NEGATIVE_PHYSICAL_STATUS_IMMUNE",
+	spell_negative_status_effect_immune = "TOOLTIP_NEGATIVE_SPELL_STATUS_IMMUNE",
+	anomaly_immune = "TOOLTIP_ANOMALY_IMMUNE",
+}
+	
 function _M:innerDisplay(x, y, nb_keyframes)
 	self.actor:toScreen(nil, x + self.iw - 128, y + 6, 128, 128)
 end
@@ -1335,6 +1358,26 @@ Ability to reduce opponent resistances to your damage]]
 		w = self.w * 0.52
 		self:mouseTooltip(self.TOOLTIP_STATUS_IMMUNE, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Effect resistances:", w, h, 255, 255, 255, true)) h = h + self.font_h
 
+		for immune_type, immune_attr in pairs(self.immune_types) do
+			local std = mod.class.Actor.StatusTypes[immune_type]
+			--print("character sheet checking immune_type", immune_type, immune_attr)
+			text = compare_fields(player, actor_to_compare, function(actor, ...)
+				local ok, chance
+				if std then
+					local ok, chance = actor:canBe(immune_type)
+					return util.bound(100-(chance or 100), 0, 100)
+				else
+					return util.bound((actor:attr(immune_attr) or 0) * 100, 0, 100)
+				end
+			end,
+			"%3d%%", "%+.0f%%", 1, false, false, self.immune_labels[immune_type] or immune_type:bookCapitalize())
+			if text ~= "  0%" then
+				self:mouseTooltip(self[self.immunity_tooltips[immune_attr] or "TOOLTIP_SPECIFIC_IMMUNE"], s:drawColorStringBlended(self.font, ("%-11s: #00ff00#%s"):format(self.immune_labels[immune_type] or immune_type:bookCapitalize(), text), w, h, 255, 255, 255, true))
+				h = h + self.font_h
+			end
+		end
+		
+--[[ -- debugging previous immunity display
 		for immune_type, immune_name in pairs(self.status_immunities) do
 			text = compare_fields(player, actor_to_compare, function(actor, ...) return util.bound((actor:attr(...) or 0) * 100, 0, 100) end, "%3d%%", "%+.0f%%", 1, false, false, immune_type)
 			if text ~= "  0%" then
@@ -1342,6 +1385,7 @@ Ability to reduce opponent resistances to your damage]]
 				h = h + self.font_h
 			end
 		end
+--]] -- end debugging
 
 		h = 0
 		w = self.w * 0.75

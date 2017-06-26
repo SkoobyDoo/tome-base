@@ -38,18 +38,19 @@ For these items:
 		name = constant or function(object, who), description of the power for the user
 		power = number, power points used when activated
 		use = function(object, who), called when the object is used, should include all effects and special log messages
-		target = table or function(object, who), targeting parameters (interpreted by engine.Target:getType and used by the AI when targeting the power
+		target = table or function(object, who), targeting parameters (interpreted by engine.Target:getType and used by the AI when targeting the power)
 		requires_target<optional> = boolean or function(object, who), if true, the ai will not use the power if it's target is out of range, should generally be false for powers that target the user
-		tactical = tactics table for interpretation by by the tactical AI (mod.ai.tactical.lua)
+		tactical = tactics table for interpretation by the tactical AI (mod.ai.tactical.lua)
 			(may be a function(object, who, aitarget) which returns a table), format:
 			{TACTIC1 = constant or function(who, t, aitarget),
 			TACTIC2 = constant or function(who, t, aitarget), ...}
 			each field uses the same format as talents, where t is the talent defined here
+			(See mod.class.interface.ActorAI "==== TALENT TACTICAL TABLES ====" for an explanation of how to construct tactical tables.)
 		range<optional> = number or function(object, who), should be defined here to allow the AI to determine the range of the power for targeting other Actors with the power, defaults to 1
 		radius<optional> = number or function(object, who), as range, defaults to 0
 		on_pre_use<optional> = function(object, who, silent, fake), optional function (similar to talent.on_pre_use, to test if the power is usable via the talents defined here (return true to allow use)
 		on_pre_use_ai<optional> = function(object, who, silent, fake), like on_pre_use, but only called by the AI, generally used to make the ai smarter by telling it when not to use the power
-		talent_level<optional> = number set the effective talent level of the power
+		talent_level<optional, integer or function(object, who)> = the effective talent level of the power
 	}
 	The raw talent level of the activation talent(defined here) equals the material level of the object or 1 by default.
 
@@ -60,7 +61,7 @@ Objects with a .use_talent field use a defined talent as their power.  They are 
 For these items:
 	use_talent = {
 		id = string, talent_id to use (i.e. Talents.T_ILLUMINATE)
-		level = number, raw talent level for the power (uses the user's mastery levels)
+		level = <integer or function(object, who)>, raw talent level for the power (uses the user's mastery levels)
 		power = number, power points used when activated
 		on_pre_use<optional> = function(who, t), override talent.on_pre_use function, t matches talent_id
 		on_pre_use_ai<optional> = function(who, t), override talent.on_pre_use_ai function, t matches talent_id
@@ -198,6 +199,8 @@ _M.useObjectBaseTalent ={
 	requires_target = function(self, t)
 		return self:callObjectTalent(t.id, "requires_target")
 	end,
+--	onAIGetTarget ? return self:callObjectTalent(t.id, "onAIGetTarget")
+--	getEnergy=function(self, t) -- speed function?
 	target = function(self, t)
 		return self:callObjectTalent(t.id, "target")
 	end,
@@ -214,7 +217,10 @@ _M.useObjectBaseTalent ={
 				t.message = nil
 				if msg then game.logSeen(self, "%s", msg) end
 			end
-			ret = obj:use(self, nil, data.inven_id, slot)
+
+			local old_energy = self.energy.value
+			ret = obj:use(self, nil, data.inven_id, data.slot)
+			self.energy.value = old_energy -- postUseTalent handles energy use
 			if ret and ret.used then
 				if ret.destroy then -- destroy the item after use
 					local _, item = self:findInInventoryByObject(self:getInven(data.inven_id), data.obj)
@@ -364,15 +370,6 @@ function _M:useObjectDisable(o, inven_id, slot, tid, base_name)
 	self:unlearnTalentFull(tid)
 end
 
-local lowerTacticals = function(tacticals) --convert tactical tables to lower case
-	local tacts = {}
-	for tact, val in pairs(tacticals) do
-		tact = tact:lower()
-		tacts[tact] = val
-	end
-	return tacts
-end
-
 --- forget settings and object references for objects no longer in the party
 function _M:objectTalentCleanup()
 	local data = self.object_talent_data
@@ -411,14 +408,15 @@ function _M:objectTalentCleanup()
 	data.cleanup = nil
 end
 
+-- debugging transitional this does not check for t.tactical_imp
 -- function to call base talent-defined tactical functions from the object talent (with overridden talent level)
-local AOUtactical_translate = function(self, t, aitarget, tactic) -- called by mod.ai.tactical
+local AOUtactical_translate = function(self, t, target, tactic) -- called by mod.ai.tactical
 	local data = self.object_talent_data[t.id]
 	local tal = self.talents_def[data.tid]
 	local tac = tal.tactical and tal.tactical[tactic]
 	if type(tac) == "function" then
 		data.old_talent_level = self.talents[tal.id]; self.talents[tal.id] = data.talent_level
-		local ok, ret = pcall(tac, self, tal, aitarget)
+		local ok, ret = pcall(tac, self, tal, target)
 		self.talents[tal.id] = data.old_talent_level; data.old_talent_level = nil
 		if ok then return ret
 		else
@@ -461,23 +459,23 @@ function _M:useObjectSetData(tid, o)
 	if o.use_power then -- power is a general power
 		power = o.use_power
 		if not util.getval(power.no_npc_use, o, self) then
-			talent_level = power.talent_level or o.material_level or 1
+			talent_level = util.getval(power.talent_level, o, self) or o.material_level or 1
 		end
 	elseif o.use_simple then -- Generally for consumables
 		power = o.use_simple
 		if power.tactical or util.getval(power.allow_npc_use, o, self) then
-			talent_level = o.material_level or power.talent_level or 1
+			talent_level = util.getval(power.talent_level, o, self) or o.material_level or 1
 		end
 	elseif o.use_talent then -- power is a talent
-		local t = self:getTalentFromId(o.use_talent.id)
 		local use_talent = o.use_talent
+		local t = self:getTalentFromId(use_talent.id)
 		if t and t.mode == "activated" and (not t.no_npc_use and not util.getval(use_talent.no_npc_use, o, self) or util.getval(use_talent.allow_npc_use, o, self)) then
-			data.tid = o.use_talent.id
-			data.talent_level = use_talent.level
+			data.tid = use_talent.id
+			data.talent_level = util.getval(use_talent.level, o, self)
 			data.message = use_talent.message
 			data.on_pre_use = use_talent.on_pre_use
 			data.on_pre_use_ai = use_talent.on_pre_use_ai
-			data.tactical = use_talent.tactical and lowerTacticals(use_talent.tactical) or table.clone(t.tactical)
+			data.tactical = Talents.aiLowerTacticals(use_talent.tactical or t.tactical) --this clones tables
 			if type(data.tactical) == "table" then
 				for tact, val in pairs(data.tactical) do
 					if type(val) == "function" then
@@ -503,7 +501,7 @@ function _M:useObjectSetData(tid, o)
 		data.requires_target = power.requires_target
 		if power.tactical then
 			if type(power.tactical) == "table" then
-				data.tactical = lowerTacticals(power.tactical)
+				data.tactical = Talents.aiLowerTacticals(power.tactical)
 			else -- allow tactical table to be a function for general powers
 				data.tactical = function(obj, who, ...)
 					return obj.use_power.tactical(obj, who, ...)

@@ -19,6 +19,7 @@
 
 load("/data/general/grids/basic.lua")
 load("/data/general/grids/lava.lua", function(e) if e.define_as == "LAVA_FLOOR" then
+	if game.level.plane_owner then e.faction = game.level.plane_owner end
 	e.on_stand = function(self, x, y, who)
 		if not game.level.allow_demon_plane_damage then return end
 		local DT = engine.DamageType

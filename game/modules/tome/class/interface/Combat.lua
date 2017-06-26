@@ -2227,7 +2227,7 @@ function _M:combatGetResist(type)
 
 	local a = math.min((self.resists.all or 0) / 100,1) -- Prevent large numbers from inverting the resist formulas
 	local b = math.min((self.resists[type] or 0) / 100,1)
-	local r = math.min(100 * (1 - (1 - a) * (1 - b)), (self.resists_cap.all or 0) + (self.resists_cap[type] or 0))
+	local r = util.bound(100 * (1 - (1 - a) * (1 - b)), -100, (self.resists_cap.all or 0) + (self.resists_cap[type] or 0))
 	return r * power / 100
 end
 
@@ -2236,6 +2236,12 @@ function _M:combatGetResistPen(type)
 	if not self.resists_pen then return 0 end
 	local pen = (self.resists_pen.all or 0) + (self.resists_pen[type] or 0)
 	return pen
+end
+
+--- Returns the damage affinity
+function _M:combatGetAffinity(type)
+	if not self.damage_affinity then return 0 end
+	return (self.damage_affinity.all or 0) + (self.damage_affinity[type] or 0)
 end
 
 --- Returns the damage increase

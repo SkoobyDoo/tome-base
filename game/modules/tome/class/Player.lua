@@ -369,6 +369,7 @@ function _M:actBase()
 	end
 end
 
+--- Entry point for Player actions
 function _M:act()
 	if not mod.class.Actor.act(self) then return end
 
@@ -794,7 +795,7 @@ function _M:onTalentCooledDown(tid)
 	game.log("#00ff00#%sTalent %s is ready to use.", (t.display_entity and t.display_entity:getDisplayString() or ""), t.name)
 end
 
---- Tries to get a target from the user
+--- Tries to get a target from the player
 function _M:getTarget(typ)
 	if self:attr("encased_in_ice") then
 		if type(typ) ~= "table" then
@@ -1557,7 +1558,7 @@ function _M:on_targeted(act)
 		if self:canSee(act) and game.level.map.seens(act.x, act.y) then
 			game.logPlayer(self, "#LIGHT_RED#%s briefly catches sight of you!", act.name:capitalize())
 		else
-			game.logPlayer(self, "#LIGHT_RED#Something briefly catches sight of you!")
+			game.logPlayer(self, "#LIGHT_RED#You sense that Something has taken notice of you ...")
 		end
 	end
 end

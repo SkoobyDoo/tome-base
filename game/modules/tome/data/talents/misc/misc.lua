@@ -45,7 +45,7 @@ newTalent{
 	no_break_stealth = true, -- stealth is broken in attackTarget
 	requires_target = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	tactical = { ATTACK = { PHYSICAL = 1 } },
+	tactical = { ATTACK = { weapon = 1}},
 	no_unlearn_last = true,
 	ignored_by_hotkeyautotalents = true,
 	alternate_attacks = {'T_DOUBLE_STRIKE'},
@@ -56,11 +56,23 @@ newTalent{
 		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "blade"))
 	
 		local tg = self:getTalentTarget(t)
-		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local ok, x, y = self:canProject(tg, self:getTarget(tg))
 		local target = game.level.map(x, y, game.level.map.ACTOR)
-		if not target then
+	
+		if not ok or not target then
 			if swap then doWardenWeaponSwap(self, t, "bow") end
-			return true -- Make sure this is done if an NPC attacks an empty grid.
+		--[[
+		if config.settings.cheat then
+			game.bignews:saySimple(60, "#GREY#___ [%s]%s (%d, %d) failed attack vs %s (%s, %s) ok:%s", self.uid, self.name, self.x, self.y, target and target.name, x, y, ok) -- debugging
+			game.log("#GREY#___[%s]%s (%d, %d) #AQUAMARINE#failed T_ATTACK#LAST# vs %s (%s, %s) ok:%s", self.uid, self.name, self.x, self.y, target and target.name, x, y, ok) -- debugging
+		end
+		--]]
+			if ok then -- talent is treated as used even if there is no target (prevents stealth scumming)
+				print("[T_ATTACK]", self.uid, self.name, "attacks empty space:", x, y)
+				self:logCombat(target, "#Source# attacks empty space.")
+				self:useEnergy(game.energy_to_act * self:getTalentSpeed(t))
+			end
+			return ok
 		end
 
 		local did_alternate = false
@@ -72,7 +84,7 @@ newTalent{
 			end
 		end
 
-		if not did_alternate then self:attackTarget(target) end
+		if not did_alternate then self:attackTarget(target) end -- this uses energy
 
 		if config.settings.tome.smooth_move > 0 and config.settings.tome.twitch_move then
 			self:setMoveAnim(self.x, self.y, config.settings.tome.smooth_move, blur, util.getDir(x, y, self.x, self.y), 0.2)

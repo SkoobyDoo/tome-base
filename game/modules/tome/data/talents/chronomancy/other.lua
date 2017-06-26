@@ -19,12 +19,14 @@
 -- darkgod@te4.org
 
 -- Misc. Paradox Talents
+
+-- update this for NPC use? (Need a formula to calculate desired paradox)
 newTalent{
 	name = "Spacetime Tuning",
 	type = {"chronomancy/other", 1},
 	points = 1,
 	tactical = { PARADOX = 2 },
-	no_npc_use = true,
+--	no_npc_use = true,
 	no_unlearn_last = true,
 	on_learn = function(self, t)
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
@@ -51,6 +53,7 @@ newTalent{
 	tuneParadox = function(self, t)
 		tuneParadox(self, t, t.getTuning(self, t))
 	end,
+	on_pre_use_ai = function(self, t, silent, fake) return false end, -- NPC's only use the passive effects
 	action = function(self, t)
 		local function getQuantity(title, prompt, default, min, max)
 			local result

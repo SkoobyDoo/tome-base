@@ -306,7 +306,7 @@ setDefaultProjector(function(src, x, y, type, dam, state)
 		-- affinity healing, we store it to apply it after damage is resolved
 		local affinity_heal = 0
 		if target.damage_affinity then
-			affinity_heal = math.max(0, dam * ((target.damage_affinity.all or 0) + (target.damage_affinity[type] or 0)) / 100)
+			affinity_heal = math.max(0, dam * target:combatGetAffinity(type) / 100)
 		end
 
 		-- reduce by resistance to entity type (Demon, Undead, etc)
@@ -694,6 +694,11 @@ newDamageType{
 	end,
 	death_message = {"cosmeticed"},
 }
+
+-- The base elemental damage types are:
+-- PHYSICAL, FIRE, COLD, ARCANE, LIGHTNING, ACID, NATURE, BLIGHT, LIGHT, DARKNESS, MIND, TEMPORAL
+
+-- Need a provision to allow for compound DamageTypes to work with damDesc, combatGetResist, combatGetDamageIncrease, combatGetResistPen, combatGetAffinity, etc.
 
 newDamageType{
 	name = "physical", type = "PHYSICAL",
@@ -1822,7 +1827,7 @@ newDamageType{
 	end,
 }
 
--- Physical damage + bleeding % of it
+-- Physical damage + bleeding (50% of base over 5 turns)
 newDamageType{
 	name = "physical bleed", type = "PHYSICALBLEED",
 	projector = function(src, x, y, type, dam, state)
@@ -2344,7 +2349,7 @@ newDamageType{
 
 ------------------------------------------------------------------------------------
 
--- gBlind
+-- Blind
 newDamageType{
 	name = "blinding", type = "RANDOM_BLIND",
 	projector = function(src, x, y, type, dam, state)
