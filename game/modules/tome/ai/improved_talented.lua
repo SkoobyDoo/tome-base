@@ -40,7 +40,7 @@ newAI("improved_talented_simple", function(self, t_filter, t_list)
 	local has_target, did_action, moved = self:runAI(self.ai_state.ai_target or "target_simple")
 	if log_detail > 0 then print("[ActorAI] Invoking improved_talented_simple AI for", self.uid, self.name, self.x, self.y, "with target", has_target and self.ai_target.actor.name)
 --game.log("#LIGHT_BLUE#__[talented]Invoking improved talented AI for %s[%s]", self.name, self.uid, "with target", has_target and self.ai_target.actor.name)
-if has_target and config.settings.cheat then game.log("%s__turn %d: Invoking improved_talented_simple AI for [%s]%s(%d,%d) target:[%s]%s %s", has_target and "#LIGHT_BLUE#" or "#GREY#", game.turn, self.uid, self.name, self.x, self.y, self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name, self.ai_target.actor and ("STP(%s,%s)"):format(ax, ay) or "") end -- debugging
+if has_target and log_detail > 1.4 and config.settings.cheat then game.log("%s__turn %d: Invoking improved_talented_simple AI for [%s]%s(%d,%d) target:[%s]%s %s", has_target and "#LIGHT_BLUE#" or "#GREY#", game.turn, self.uid, self.name, self.x, self.y, self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name, self.ai_target.actor and ("STP(%s,%s)"):format(ax, ay) or "") end -- debugging
 	end
 	t_list = t_list or table.clone(self.talents) -- clone to allow pruning of talents by aiGetAvailableTalents
 
@@ -50,7 +50,7 @@ if has_target and config.settings.cheat then game.log("%s__turn %d: Invoking imp
 			did_action = self:runAI("improved_talented", t_filter, t_list)
 			if log_detail > 2 then print("[Actor AI] improved_talented AI returned:", did_action) end
 		elseif not has_target then -- out of combat, manage sustains only
-			if log_detail > 1 then print("[improved_talented_simple AI] checking SUSTAINS for ", self.uid, self.name) end
+			if log_detail >= 2 then print("[improved_talented_simple AI] checking SUSTAINS for ", self.uid, self.name) end
 			local t_filter = t_filter and table.clone(t_filter) or {} t_filter.mode = "sustained"
 			did_action = self:runAI("improved_talented", t_filter, t_list)
 		end
@@ -62,13 +62,13 @@ if has_target and config.settings.cheat then game.log("%s__turn %d: Invoking imp
 			if log_detail > 2 then print("[Actor AI] improved_talented_simple -> maintenance AI returned:", did_action) end
 		end
 		if not self.energy.used then
-			if log_detail > 1 then print("[improved_talented_simple] std move for", self.name, self.uid, "at", self.x, self.y) end
+			if log_detail >= 2 then print("[improved_talented_simple] std move for", self.name, self.uid, "at", self.x, self.y) end
 			moved = self:runAI(self.ai_state.ai_move or "move_simple")
 		end
 	end
 	if did_action then self.energy.used = true end -- make sure NPC can take another action after doing something instant
 
-	if log_detail > 1 then print("[ActorAI]Improved_talented_simple AI completed for", self.uid, self.name, "with target:", self.ai_target.actor and self.ai_target.actor.name) end
+	if log_detail >= 2 then print("[ActorAI]Improved_talented_simple AI completed for", self.uid, self.name, "with target:", self.ai_target.actor and self.ai_target.actor.name) end
 	return did_action or moved
 end)
 

@@ -28,7 +28,7 @@ newAI("target_simple", function(self)
 	if log_detail > 0 then print("[ActorAI] Invoking target_simple AI for", self.uid, self.name, self.x, self.y) end
 	local aitarget = self.ai_target.actor
 	if aitarget then
-		if log_detail > 1 then print("[target_simple AI] current target:", aitarget.uid, aitarget.name) end
+		if log_detail >= 2 then print("[target_simple AI] current target:", aitarget.uid, aitarget.name) end
 		if aitarget.summoner and (aitarget.dead or not game.level:hasEntity(aitarget)) then
 			if log_detail > 0 then print("[target_simple AI] targeting summoner of dead summon:",  aitarget.uid, aitarget.name) end
 			self:setTarget(aitarget.summoner)
@@ -38,10 +38,9 @@ newAI("target_simple", function(self)
 
 	-- chance to keep same target, 90% if hostile, 50% if friendly, 0% if self
 	if aitarget then
-		if log_detail > 1 then print("[target_simple AI] testing validity of target:", aitarget.uid, aitarget.name) end
---		clear_old_target = aitarget
+		if log_detail >= 2 then print("[target_simple AI] testing validity of target:", aitarget.uid, aitarget.name) end
 		if aitarget.dead or not game.level:hasEntity(aitarget) then
-			if log_detail > 1 then print("[target_simple AI] clearing target:", aitarget.uid, aitarget.name,  aitarget.dead and "(DEAD)" or "{NOT ON LEVEL}") end
+			if log_detail >= 2 then print("[target_simple AI] clearing target:", aitarget.uid, aitarget.name,  aitarget.dead and "(DEAD)" or "{NOT ON LEVEL}") end
 		else
 			if aitarget == self then -- allow self to be cleared
 			elseif self:reactionToward(aitarget) >= 0 then -- keep friendly 50%
@@ -58,7 +57,7 @@ newAI("target_simple", function(self)
 	local arr = self.fov.actors_dist
 	local act
 	local sqsense = math.max(self.lite or 0, self.infravision or 0, self.heightened_senses or 0)
-	if log_detail > 1 then print("[target_simple AI]", self.uid, self.name, "at", self.x, self.y, "searching for new targets in range", sqsense) end
+	if log_detail >= 2 then print("[target_simple AI]", self.uid, self.name, "at", self.x, self.y, "searching for new targets in range", sqsense) end
 	sqsense = sqsense * sqsense
 	for i = 1, #arr do
 		act = self.fov.actors_dist[i]
@@ -76,7 +75,7 @@ newAI("target_simple", function(self)
 	end
 	if aitarget then  -- clear old target if a new one wasn't found or kept
 		if log_detail > 0 then print("[target_simple AI] clearing old target (no replacement):", aitarget.uid, aitarget.name) end
-if config.settings.cheat then game.log("#RED# [%s]%s #ORANGE#CLEARING OLD TARGET#LAST#: [%s]%s", self.uid, self.name, aitarget.uid, aitarget.name) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("#RED# [%s]%s #ORANGE#CLEARING OLD TARGET#LAST#: [%s]%s", self.uid, self.name, aitarget.uid, aitarget.name) end -- debugging
 		self:setTarget()
 	end
 	return self.ai_target.actor

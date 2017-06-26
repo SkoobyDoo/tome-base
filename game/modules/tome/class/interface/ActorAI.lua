@@ -731,7 +731,7 @@ function _M:aiFindSafeGrid(radius, dam_wt, air_wt, dist_weight, want_closer, ign
 
 	if log_detail > 0 then
 		print(("[aiFindSafeGrid]%s searching for safer grids [radius %s from (%s, %s), val = %s], dam_wt=%s, air_wt=%s, dist_weight=%s, want_closer=%s"):format(self.name, radius, self.x, self.y, grid.val, dam_wt, air_wt, dist_weight, want_closer))
-if config.settings.cheat then game.log("%s #PINK#searching for safer grids [radius %s from (%s, %s), val = %s], dam_wt=%s, air_wt=%s, dist_weight=%s, want_closer=%s", self.name:capitalize(), radius, self.x, self.y, grid.val, dam_wt, air_wt, dist_weight, want_closer) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("%s #PINK#searching for safer grids [radius %s from (%s, %s), val = %s], dam_wt=%s, air_wt=%s, dist_weight=%s, want_closer=%s", self.name:capitalize(), radius, self.x, self.y, grid.val, dam_wt, air_wt, dist_weight, want_closer) end -- debugging
 	 end
 	local grid_count = 0
 	core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, radius or 10,
@@ -778,7 +778,7 @@ if config.settings.cheat then game.log("%s #PINK#searching for safer grids [radi
 	nil)
 	if log_detail > 0 then
 		print("[aiFindSafeGrid] found best grid:", grid[1], grid[2], "val=", grid.val, grid_count, "grids searched")
-if config.settings.cheat then game.log("#PINK# --best reachable grid: (%d, %d) (dist: %s, val: %s(%s))", grid[1], grid[2], grid.dist, grid.val, grid.end_haz) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("#PINK# --best reachable grid: (%d, %d) (dist: %s, val: %s(%s))", grid[1], grid[2], grid.dist, grid.val, grid.end_haz) end -- debugging
 	end
 	return grid
 end
@@ -819,7 +819,7 @@ end
 ==== TALENT TACTICAL TABLES ==== (with examples)
 Tactical tables are the primary data structures used by the tactical AI (and some other AI's, like maintenance) to determine how useful individual talents are to a talent user.  This section describes their format and how they are interpreted (resolved), and provides guidelines and examples for their construction.  The tactical AI has detailed documentation on how it uses tactical tables to choose useful actions.
 
-In this documentation, terms in all caps refer to specific variables; e.g. "SELF" refers to the acting NPC running its AI.  Also, section labels with format "-== LABEL ==-" (e.g. "-== SUSTAINED TALENTS ==-") are tagged exactly in the relevant code for text searching.
+In this documentation, terms in ALL CAPS refer to specific variables; e.g. "SELF" refers to the acting NPC running its AI.  Also, section labels with format "-== LABEL ==-" (e.g. "-== SUSTAINED TALENTS ==-") are tagged exactly in the relevant code for text searching.
 
 Some examples are included in the "--==TACTICAL TABLE  EXAMPLES ==--" section below.  Also, the value of config.settings.log_detail_ai can be increased to increase the detail of AI information output to the log file.
 
@@ -1203,7 +1203,7 @@ function _M:aiTacticEffectValues(targets, effect_type, effect_wt, t, selffire, f
 			else
 				nb_allies_hit = nb_allies_hit + effect_wt
 			end
-			if log_detail > 1 then print("[aiTacticEffectValues] adjusted effect_wt ", effect_type, "against", act.uid, act.name, effect_wt) end
+			if log_detail >= 2 then print("[aiTacticEffectValues] adjusted effect_wt ", effect_type, "against", act.uid, act.name, effect_wt) end
 		end
 	until done or not i
 	return nb_foes_hit, nb_self_hit, nb_allies_hit
@@ -1314,7 +1314,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 
 			if tpid_cache.wt_mod == wt_mod then -- same inputs, use last computed tactics directly
 				tactics, has_tacs = tpid_cache.tactics, tpid_cache.has_tacs
-				if log_detail > 1 then print("[aiTalentTactics] ***TACTICS TABLE (RETRIEVED from cache)***", t.id) table.print(tactics, "\t_ctr_") end
+				if log_detail >= 2 then print("[aiTalentTactics] ***TACTICS TABLE (RETRIEVED from cache)***", t.id) table.print(tactics, "\t_ctr_") end
 			else -- different wt_mod, reconstruct last computed tactics from last base_tacs, implicit_tacs
 				tactical, tactics = tpid_cache.tactical, table.clone(tpid_cache.base_tacs)
 				has_tacs, implicit_tacs = tpid_cache.has_tacs, tpid_cache.implicit_tacs
@@ -1333,7 +1333,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 						tactics[tact] = (tactics[tact] or 0) + val*iwt_mod
 					end
 				end
-				if log_detail > 1 then print("[aiTalentTactics] ***TACTICS TABLE (RECONSTRUCTED from cache)***", t.id) table.print(tactics, "\t_ctR_") end
+				if log_detail >= 2 then print("[aiTalentTactics] ***TACTICS TABLE (RECONSTRUCTED from cache)***", t.id) table.print(tactics, "\t_ctR_") end
 			end
 			cache_tactics = tactics -- for possible comparison (force_cache_test)
 		end
@@ -1347,12 +1347,12 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 		else -- or get the tactical table from the talent
 			tactical = t.tactical
 			if self.ai_state._imp_tactical and t.tactical_imp then --(DEBUGGING transitional, try to get the "improved" tactical table for full tactical table support)
-			if log_detail > 1 then print("[aiTalentTactics] *** retrieving talent IMPROVED TACTICAL information ***") end
+			if log_detail >= 2 then print("[aiTalentTactics] *** retrieving talent IMPROVED TACTICAL information ***") end
 				tactical = t.tactical_imp
 			end --(DEBUGGING transitional)
 			if type(tactical) == "function" then tactical = tactical(self, t, aitarget) end
 		end
-		if log_detail > 1 then print("[aiTalentTactics]__ using talent tactical table for", t.id) table.print(tactical, "\t___") end
+		if log_detail >= 2 then print("[aiTalentTactics]__ using talent tactical table for", t.id) table.print(tactical, "\t___") end
 		if not tactical then return false end
 
 		if not tpid_cache then -- set up new turn_procs cache
@@ -1378,10 +1378,10 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 		if not targets then
 			if tpid_cache.targets and not force_cache_test then -- retrieve targets, selffire, friendlyfire, tg from cache
 				targets, selffire, friendlyfire, tg = tpid_cache.targets, tpid_cache.selffire, tpid_cache.friendlyfire, tpid_cache.tg
-				if log_detail > 1 then print("[aiTalentTactics] \t targets from turn_procs cache for", t.id, "SF=", selffire, "FF=", friendlyfire, "targets=", targets.__CLASSNAME and targets.name or targets, "tg=", tg) end
+				if log_detail >= 2 then print("[aiTalentTactics] \t targets from turn_procs cache for", t.id, "SF=", selffire, "FF=", friendlyfire, "targets=", targets.__CLASSNAME and targets.name or targets, "tg=", tg) end
 			else -- generate targets, selffire, friendlyfire
 				local SF, FF
-				if log_detail > 1 then print("[aiTalentTactics] extracting targets, selffire, friendlyfire from tg:", tg or "(from talent)") if tg then table.print(tg, "\t_tg_") end end
+				if log_detail >= 2 then print("[aiTalentTactics] extracting targets, selffire, friendlyfire from tg:", tg or "(from talent)") if tg then table.print(tg, "\t_tg_") end end
 				targets, SF, FF, tg = self:aiTalentTargets(t, aitarget, tg, true)
 				selffire, friendlyfire = SF/100, FF/100
 			end
@@ -1391,7 +1391,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 			else
 				tg = tg or self:getTalentTarget(t)
 				if tg then
-					if log_detail > 1 then print("[aiTalentTactics] extracting selffire, friendlyfire from", tg) table.print(tg, "\t_tg_") end
+					if log_detail >= 2 then print("[aiTalentTactics] extracting selffire, friendlyfire from", tg) table.print(tg, "\t_tg_") end
 					local typ = engine.Target:getType(tg)
 					selffire = typ.selffire and (type(typ.selffire) == "number" and typ.selffire/100 or 1) or 0
 					friendlyfire = typ.friendlyfire and (type(typ.friendlyfire) == "number" and typ.friendlyfire/100 or 1) or 0
@@ -1411,7 +1411,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 		-- compassion only affects harmful tactics (self.AI_TACTICS[tact] < 0, e.g. attack) used against self and allies
 		local self_compassion = (self.ai_state.self_compassion == false and 0) or self.ai_state.self_compassion or 5
 		local ally_compassion = (self.ai_state.ally_compassion == false and 0) or self.ai_state.ally_compassion or 1		
-		if log_detail > 1 then --summarize the list of targets for the talent
+		if log_detail >= 2 then --summarize the list of targets for the talent
 			print(("[aiTalentTactics]\ttargets for %s: RT:%s(hostile:%s%s) TG:%s SF(x%s)=%s, FF(x%s)=%s"):format(t.id, requires_target, hostile_target, t.onAIGetTarget and ",onAIGetTarget" or "", tg, self_compassion, selffire, ally_compassion, friendlyfire))
 			if targets.__CLASSNAME then
 				print("\t____", t.id, "may hit", targets.uid, targets.name, "at", targets.x, targets.y)
@@ -1432,7 +1432,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 			tact, val = next(tactical, tact)
 			if not val then
 				if self_tactics then -- compute self tactics last, don't cache tactical weights (recompute each time)
-					if log_detail > 1 then print("[aiTalentTactics] begin processing self_tactics:", self_tactics, "\t") table.print(self_tactics, "\t_st_") end
+					if log_detail >= 2 then print("[aiTalentTactics] begin processing self_tactics:", self_tactics, "\t") table.print(self_tactics, "\t_st_") end
 					tactical, self_tactics, cache_wt_values = self_tactics, nil, false
 					requires_target, hostile_target = true, false
 					targets, selffire, friendlyfire = self, 1, 1
@@ -1485,7 +1485,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 						end
 					end
 				end
-				if log_detail > 1 then print(("[aiTalentTactics] computing tactic %s(%s), val=%s, RT:%s, HT:%s, reaction weights (f=%s, s=%s, a=%s):"):format(tact, benefit, val, requires_target, hostile_target, f_mult, s_mult, a_mult)) end
+				if log_detail >= 2 then print(("[aiTalentTactics] computing tactic %s(%s), val=%s, RT:%s, HT:%s, reaction weights (f=%s, s=%s, a=%s):"):format(tact, benefit, val, requires_target, hostile_target, f_mult, s_mult, a_mult)) end
 				local last_act = false
 				local i, act--, use_cache
 				repeat -- FOR EACH TARGET: retrieve/compute the effectiveness of the tactic for each target
@@ -1602,7 +1602,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 								local color, msg if act == aitarget then color, msg = "#YELLOW#", "MAIN TARGET" else color, msg = "#ORANGE#", "off target" end
 								if math.abs(tgt_weight - cache_tgt_weight) > 1e-6 then -- cache mismatch
 									print(("\t***TACTICAL WEIGHT CACHE MISMATCH: [%d]%s %s (%s) on [%d]%s{%s}: %s vs %s(cache)"):format(self.uid, self.name, t.id, tact, act.uid, act.name, msg, tgt_weight, cache_tgt_weight))
-									if config.settings.cheat then game.log("_[%d]%s %s%s tactical weight CACHE MISMATCH (%s) vs %s[%d]{%s}: %s vs %s(cache)", self.uid, self.name, color, t.id, tact, act.name, act.uid, msg, tgt_weight, cache_tgt_weight) end -- debugging
+									if log_detail > 1.4 and config.settings.cheat then game.log("_[%d]%s %s%s tactical weight CACHE MISMATCH (%s) vs %s[%d]{%s}: %s vs %s(cache)", self.uid, self.name, color, t.id, tact, act.name, act.uid, msg, tgt_weight, cache_tgt_weight) end -- debugging
 								elseif log_detail > 3 then
 									print(("\t***TACTICAL WEIGHT CACHE MATCHES: [%d]%s %s (%s) on [%d]%s{%s}: %s vs %s(cache)"):format(self.uid, self.name, t.id, tact, act.uid, act.name, msg, tgt_weight, cache_tgt_weight))
 								end
@@ -1698,7 +1698,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 						if talid and self:isTalentActive(talid) then --calculate tactical table for talent that would be turned off
 							local tal = self:getTalentFromId(talid)
 							deac_tactics = self:aiTalentTactics(tal, aitarget, nil, nil, nil, 1) -- use full weight here (ignore cooldown and drain effects for deactivated talent)
-							if log_detail > 1 then print("[aiTalentTactics]", t.id, "**DEACTIVATES**", talid, "tactics:", string.fromTable(deac_tactics)) end
+							if log_detail >= 2 then print("[aiTalentTactics]", t.id, "**DEACTIVATES**", talid, "tactics:", string.fromTable(deac_tactics)) end
 							if deac_tactics then -- add to the tactics table
 								table.merge(tactics, deac_tactics, true, nil, nil, true) -- deep merge, add numbers
 								has_tacs = true
@@ -1707,7 +1707,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 					end
 				end
 			end
-			if log_detail > 1 then print("\t--- sustained weight modifier adjustment:", weight_mod, drain_time, "usable_turns, cooldown turns:", self:getTalentCooldown(t), is_active and "active" or "inactive") end
+			if log_detail >= 2 then print("\t--- sustained weight modifier adjustment:", weight_mod, drain_time, "usable_turns, cooldown turns:", self:getTalentCooldown(t), is_active and "active" or "inactive") end
 		end -- end sustained branch
 		
 		if tp_cache_tactics then -- cache computed tactical info to turn_procs to reconstruct the tactical table on later calls
@@ -1723,7 +1723,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 	end -- end tactics computation (no cache) branch
 	-- apply the weight_mod, negating weights for active sustains
 	weight_mod = (wt_mod or weight_mod)*(is_active and -1 or 1)
-	if log_detail > 1 then print("\t\tis_active=", is_active, "wt_mod=", wt_mod, "weight_mod=", weight_mod) end
+	if log_detail >= 2 then print("\t\tis_active=", is_active, "wt_mod=", wt_mod, "weight_mod=", weight_mod) end
 	if weight_mod ~= 1 then
 		for tact, val in pairs(tactics) do
 			tactics[tact] = val*weight_mod
@@ -1737,7 +1737,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 			tactics[tact] = (tactics[tact] or 0) + val*iwt_mod
 		end
 	end
-	if log_detail > 1 then print("[aiTalentTactics] ***COMPUTED TACTICS TABLE***", t.id, is_active and "active sustain", "wt_mod=", wt_mod, "weight_mod=", weight_mod, "tactics:") table.print(tactics, "\t_ft_") end
+	if log_detail >= 2 then print("[aiTalentTactics] ***COMPUTED TACTICS TABLE***", t.id, is_active and "active sustain", "wt_mod=", wt_mod, "weight_mod=", weight_mod, "tactics:") table.print(tactics, "\t_ft_") end
 	
 	-- if requested, compare results to the cache-reconstructed tactical table
 	if force_cache_test and cache_tactics and tp_cache_tactics then
@@ -1749,7 +1749,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 			print("____Cached tactics:", ctt)
 			local ntt = string.fromTable(tactics, nil, nil, nil, nil, true)
 			print("____Computed tactics:", ntt)
-			if config.settings.cheat then -- debugging
+			if log_detail > 1.4 and config.settings.cheat then -- debugging
 				game.log("_[%d]%s #YELLOW# TACTICAL turn_procs CACHE MISMATCH for %s", self.uid, self.name, t.id)
 				game.log("#YELLOW_GREEN#____Cached tactics: %s", ctt)
 				game.log("#YELLOW_GREEN#__Computed tactics: %s", ntt)

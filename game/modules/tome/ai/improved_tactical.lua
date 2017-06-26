@@ -29,7 +29,7 @@ config.settings.log_detail_ai = 1 -- debugging general output for AI messages
 IMPROVED TACTICAL AI:
 This AI determines when (or if) to use various actions available to an NPC.  It evaluates each action (which can be either using a talent or invoking another AI) according to how well it addresses various needs, where the needs are classified into various predefined TACTICs (described below).  The AI assigns a TACTICAL VALUE (a number representing overall usefulness) to each possible action and then attempts to execute the most useful action based on this value.
 
-In this description, terms in all caps refer to specific variables; e.g. "SELF" refers to the acting NPC invoking this AI.
+In this description, terms in ALL CAPS refer to specific variables; e.g. "SELF" refers to the acting NPC invoking this AI.
 
 For talents, the TACTICAL VALUE is primarily based on its TACTICAL TABLE such as:
 
@@ -41,7 +41,7 @@ Another possible computation for the TACTICAL VALUE might be summarized as:
 
 	TACTICs:			attack		closein		disable		interpretation
 	TACTIC WEIGHTs:		1			2			3			the action attacks, disables, and closes with target
-	WANTs:				2			-2.5		1.5			SELF wants to attack and disable, but avoid closing in
+	WANTs:   			2			-2.5		1.5			SELF wants to attack and disable, but avoid closing in
 	SELF.ai_tactic:		3			1			2			SELF has a bias towards the attack and disable TACTICs
 	---------------------------------------------------
 	(Column) Product:	6		+	-5		+	9		==	10	RAW TACTICAL VALUE
@@ -519,7 +519,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 			
 			local t_avail, is_active = false
 			local is_attack, tacts
-			if log_detail > 0 then print("[use_tactical AI] ##", self.name, "TESTING", t.mode, "talent", tid, t.name, t.is_object_use and t.getObject(self, t).name or "", "with target", aitarget and aitarget.name or "<none>", ax, ay) end
+			if log_detail > 1 then print("[use_tactical AI] ##", self.name, "TESTING", t.mode, "talent", tid, t.name, t.is_object_use and t.getObject(self, t).name or "", "with target", aitarget and aitarget.name or "<none>", ax, ay) end
 			
 			-- update talent statistics (all talents)
 			if update_stats then
@@ -590,7 +590,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 					local force_target
 					-- Compute the resolved table of TACTIC WEIGHTs (analyzes tactical tables, performs dummy projection, etc.)
 					tacts = self:aiTalentTactics(t, aitarget)
-					if log_detail > 1 then print("[use_tactical AI] COMPUTED TACTIC WEIGHTs for:", tid) table.print(tacts, "---") end
+					if log_detail >= 2 then print("[use_tactical AI] COMPUTED TACTIC WEIGHTs for:", tid) table.print(tacts, "---") end
 					if tacts then
 						local action
 						for tact, val in pairs(tacts) do -- TACTIC loop
@@ -600,7 +600,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 								-- Note: aiTalentTargets automatically selects self for untargeted talents
 								--beneficial tactics cause untargeted talents to target the talent user by default
 								--	force_target = force_target or benefit > 0 and not requires_target and self
-								if log_detail > 1 then print("[use_tactical AI]", self.uid, self.name, tid, "USEFUL TACTIC:", tact, val) end
+								if log_detail >= 2 then print("[use_tactical AI]", self.uid, self.name, tid, "USEFUL TACTIC:", tact, val) end
 								action = action or {tid=tid, lvl=lvl, tacts = tacts, speed=speed, is_attack=is_attack, mode=t.mode, is_active = is_active}
 								-- update the avail table
 								if val/speed > avail[tact].best then -- follows final speed adjustment
@@ -631,16 +631,16 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 							end
 							actions[#actions+1] = action
 							action.force_target = force_target
-							if log_detail > 0 then print("[use_tactical AI]", t.id, "ADDED to actions list TACTIC WEIGHTs:\n\t", (string.fromTable(action.tacts))) end
+							if log_detail > 1 then print("[use_tactical AI]", t.id, "ADDED to actions list TACTIC WEIGHTs:\n\t", (string.fromTable(action.tacts))) end
 						else
-							if log_detail > 0 then print("[use_tactical AI]", t.id, "NOT TACTICALLY USEFUL") end
+							if log_detail > 1 then print("[use_tactical AI]", t.id, "NOT TACTICALLY USEFUL") end
 						end
 					end
 				else
-					if log_detail > 0 then print("[use_tactical AI]", t.id, "NOT AVAILABLE") end
+					if log_detail > 1 then print("[use_tactical AI]", t.id, "NOT AVAILABLE") end
 				end
 			else
-				if log_detail > 0 then print("[use_tactical AI]", t.id, "NOT CONSIDERED (no required target)") end
+				if log_detail > 1 then print("[use_tactical AI]", t.id, "NOT CONSIDERED (no required target)") end
 			end
 		end
 	end end -- end talent loop
@@ -755,7 +755,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 
 		want.closein = 2.5*delta/(math.abs(delta) + 1.25) --vs delta range, 50% attacks out of range: 1.11@1, 1.54@2, 2.00@5, 2.22@10, 2.31@15
 
-		if log_detail > 1 then print("[use_tactical AI] --closein calculation: want.closein:", want.closein, "target_dist", target_dist, "delta_fact", delta, "range_avail", talent_stats.range_avail, "want.move", want.move, "safe_range", self.ai_tactic.safe_range) end
+		if log_detail >= 2 then print("[use_tactical AI] --closein calculation: want.closein:", want.closein, "target_dist", target_dist, "delta_fact", delta, "range_avail", talent_stats.range_avail, "want.move", want.move, "safe_range", self.ai_tactic.safe_range) end
 
 		--if we can closein by movement, add it to the action list, in case it's better than using a talent
 		if want.closein > 0.1 and target_dist > 1 and not self:attr("never_move") then
@@ -787,7 +787,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 
 		--== DEFEND ==--
 		want.defend = want.defend + 5*foes_near_strength/(foes_near_strength + 7) -- +1.5 if adjacent to player only at full health
-		if log_detail > 1 then print("[use_tactical AI] --defend/surrounded calculation: want.defend=", want.defend, "want.surrounded=", want.surrounded, "foes_near_strength=", foes_near_strength, "allies_near_strength=", allies_near_strength) end
+		if log_detail >= 2 then print("[use_tactical AI] --defend/surrounded calculation: want.defend=", want.defend, "want.surrounded=", want.surrounded, "foes_near_strength=", foes_near_strength, "allies_near_strength=", allies_near_strength) end
 
 		if avail.buff or avail.disable then -- buff and disable depend on target's condition and fight_data
 			-- note: effect_life, life_range, calculated above for want.life
@@ -798,7 +798,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 				aitarget_life = math.min(aitarget_life/(1 - ratio), aitarget_life + aitarget:getPsi())
 				aitarget_life_range = math.min(aitarget_life_range/(1 - ratio), aitarget_life_range + aitarget:getMaxPsi())
 			end
-			if log_detail > 1 then
+			if log_detail >= 2 then
 				print(" --- Want buff/disable calculations and effective life values):")
 				print(("\tself: effect_life/life_range = %0.1f/%0.1f vs. target: life/life_range = %0.1f/%0.1f"):format(effect_life, life_range, aitarget_life, aitarget_life_range))
 			end
@@ -814,7 +814,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 			want.disable = 10*disable_factor/(disable_factor + 6)
 			-- with full health/no detrimental effects against an "equal" opponent = ~2.72 initially and ~2.0 for a long-running 50% attack rate
 			--with want.heal = 10, want.cure = 10 against an "equal" opponent = ~5.47 initially and ~5.2 for a long-running 50% attack rate
-			if log_detail > 1 then print(" --- Want Disable updated calculation: WANT =", want.disable, ("disable_factor %0.2f(w.l=%0.2f, w.c=%0.2f, df=%0.2f)"):format(disable_factor, want.life, want.cure or 0, duration_factor)) end
+			if log_detail >= 2 then print(" --- Want Disable updated calculation: WANT =", want.disable, ("disable_factor %0.2f(w.l=%0.2f, w.c=%0.2f, df=%0.2f)"):format(disable_factor, want.life, want.cure or 0, duration_factor)) end
 
 			if avail.buff then
 				--== BUFF ==--
@@ -875,7 +875,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 
 			if grid and grid.dist > 0 then -- found a better grid
 				self.ai_state.safe_grid = grid
-				if log_detail > 1 then print("[use_tactical AI] found safe grid at:", grid[1], grid[2]) end
+				if log_detail >= 2 then print("[use_tactical AI] found safe grid at:", grid[1], grid[2]) end
 				-- increase want to start moving in time to prevent suffocating or dying to damage
 				if turns < 10 then -- running out of air soon (grid.move_cost includes global speed, which tracks air loss)
 					want.move = util.bound(want.air*grid.dist*grid.move_cost/math.max(turns-1, 0.5), want.move, 10)
@@ -922,7 +922,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 	if #actions == 0 then -- no useful actions available
 		if log_detail > 0 then
 			print("[use_tactical AI]", self.uid, self.name, "NO USEFUL ACTIONS available, NO ACTION TAKEN.")
-			if config.settings.cheat then game.log("#GREY#__%s[%d] tactical AI: NO USEFUL ACTIONS", self.name, self.uid) end -- debugging
+			if log_detail > 1.4 and config.settings.cheat then game.log("#GREY#__%s[%d] tactical AI: NO USEFUL ACTIONS", self.name, self.uid) end -- debugging
 		end
 		return
 	else  -- at least one useful action available, evaluate tactical "wants" corresponding to available actions
@@ -940,7 +940,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 		-- closein and escape are mutually exclusive tactics, subtract want.escape from want.closein to prevent closing with the enemy while wounded
 		if want.closein then
 			want.closein = util.bound(want.closein - want.escape, -10, 10)
-			if log_detail > 1 then print("--want.closein adjusted for want.escape:", want.closein) end
+			if log_detail >= 2 then print("--want.closein adjusted for want.escape:", want.closein) end
 		end
 
 --		if log_detail > 0 then print("[use_tactical AI] ### Final Wants (ai_tactic applied):") local tt = table.to_strings(want, "[%s]=%0.3f") table.sort(tt) print(table.concat(tt, ", ")) end
@@ -1068,8 +1068,8 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 					end -- end debugging
 				end
 				if log_detail > 0 then
-					print(("[use_tactical AI]### %s[%d] tactical AI picked action[att:%d, turn %s]: %s {%-+4.2f [%s:%s]}"):format(self.name, self.uid, action_attempt, game.turn, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_pick.value, action_pick.main_tactic, want[action_pick.main_tactic]))
-					if config.settings.cheat then game.log("%s__%s[%d] tactical AI picked action[att:%d, turn %s]: %s {%-+4.2f [%s:%s]}", action_pick.tid and "#ORCHID#" or "#ROYAL_BLUE#", self.name, self.uid, action_attempt, game.turn, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_pick.value, action_pick.main_tactic, want[action_pick.main_tactic]) end -- debugging
+					print(("[use_tactical AI]### %s[%d] tactical AI picked action (%s)%s [att:%d, turn %s: {val:%-+4.2f [%s]}"):format(self.name, self.uid, action_pick.main_tactic, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_attempt, game.turn, action_pick.value, action_pick.desc))
+					if log_detail > 1.4 and config.settings.cheat then game.log("%s__%s[%d] tactical AI picked action[att:%d, turn %s]: (%s)%s {%-+4.2f [%s]}", action_pick.tid and "#ORCHID#" or "#ROYAL_BLUE#", self.name, self.uid, action_attempt, game.turn, action_pick.main_tactic, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_pick.value, action_pick.desc) end -- debugging
 				end
 				
 				--if log_detail > 0 then print("[use_tactical AI] pre action energy for", self.uid, self.name) table.print(self.energy, "_energy\t") end -- debugging
@@ -1087,7 +1087,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 				if success then
 					if log_detail > 0 then
 						print("[use_tactical AI]", self.uid, self.name, "### SUCCESSFUL ACTION returned:", action_pick.tid or action_pick.ai, success)
-if config.settings.cheat then game.log("#GREY#__[%d]%s ACTION SUCCEEDED:  %s, tacs: %s, FT:%s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.desc, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end-- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("#GREY#__[%d]%s ACTION SUCCEEDED:  %s, tacs: %s, FT:%s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.desc, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end-- debugging
 					end
 
 					-- update fight_data for the action taken
@@ -1098,12 +1098,12 @@ if config.settings.cheat then game.log("#GREY#__[%d]%s ACTION SUCCEEDED:  %s, ta
 				else
 					action_pick.value = 0; self.ai_state.tactic = nil
 					print("[use_tactical AI]", self.uid, self.name, "### FAILED ACTION returned:", action_pick.tid or action_pick.ai, success)
-if log_detail > 0 and config.settings.cheat then game.log("__[%d]%s #ORANGE# ACTION FAILED:  %s, FT:%s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("__[%d]%s #ORANGE# ACTION FAILED:  %s, FT:%s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end -- debugging
 				end
 			else -- no suitable action to take
 				if log_detail > 0 then 
 					print("[use_tactical AI]", self.uid, self.name, "### NO ACTION Selected ###: best tactical value =", best_value, action_pick and action_pick.main_tactic, action_pick and want[action_pick.main_tactic])
-if config.settings.cheat then game.log("__[%d]%s #SLATE# tactical AI: NO ACTION, best: %s, %s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end-- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("__[%d]%s #SLATE# tactical AI: NO ACTION, best: %s, %s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end-- debugging
 					end
 				return
 			end
@@ -1120,7 +1120,7 @@ newAI("improved_tactical", function(self, t_filter, t_list)
 	local ax, ay = self:aiSeeTargetPos(self.ai_target.actor)
 	if log_detail > 0 then 
 		print("[tactical AI]", self.uid, self.name, "running improved_tactical AI with target", self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name) -- debugging
-		if config.settings.cheat then game.log("%s__turn %d: Invoking improved tactical AI for [%s]%s(%d,%d) target:[%s]%s %s", targeted and "#LIGHT_BLUE#" or "#ROYAL_BLUE#", game.turn, self.uid, self.name, self.x, self.y, self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name, self.ai_target.actor and ("STP(%s,%s)"):format(ax, ay) or "") end -- debugging
+		if log_detail > 1.4 and config.settings.cheat then game.log("%s__turn %d: Invoking improved tactical AI for [%s]%s(%d,%d) target:[%s]%s %s", targeted and "#LIGHT_BLUE#" or "#ROYAL_BLUE#", game.turn, self.uid, self.name, self.x, self.y, self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name, self.ai_target.actor and ("STP(%s,%s)"):format(ax, ay) or "") end -- debugging
 	end
 	
 	-- by default, will evaluate all talents each turn
@@ -1129,7 +1129,7 @@ newAI("improved_tactical", function(self, t_filter, t_list)
 	if talents and log_detail > 0 then
 		if log_detail > 0 then
 			print("[tactical AI] TALENTS DISABLED")
-			if config.settings.cheat then game.log("#ROYAL_BLUE#---talents disabled---") end-- debugging
+			if log_detail > 1.4 and config.settings.cheat then game.log("#ROYAL_BLUE#---talents disabled---") end-- debugging
 		end
 	end
 	
@@ -1167,7 +1167,7 @@ newAI("improved_tactical", function(self, t_filter, t_list)
 		if self.ai_state.maintenance_in and rng.chance(self.ai_state.maintenance_in) then
 			local done
 			done, action = self:runAI(self.ai_state.ai_maintenance or "maintenance", t_filter, t_list)
-			if log_detail > 1 then print("[Actor AI] improved_tactical -> maintenance AI returned:", done, action) end
+			if log_detail >= 2 then print("[Actor AI] improved_tactical -> maintenance AI returned:", done, action) end
 			if done then return done end
 		end
 		if self.ai_state.safe_grid then move_action = "move_safe_grid" -- continue seeking safe terrain
@@ -1175,7 +1175,7 @@ newAI("improved_tactical", function(self, t_filter, t_list)
 			move_action = self.ai_state.escape and "flee_dmap_keep_los" or self.ai_state.ai_move or "move_simple"
 		end
 	
-		if log_detail > 1 then print("[tactical AI] move_action check: used_talent=", used_talent, "used_ai=", used_ai, "tactic=", tactic, "action=", action, "safe_grid=", safe_grid, "escape flag:", self.ai_state.escape, "move_action=", move_action) end
+		if log_detail >= 2 then print("[tactical AI] move_action check: used_talent=", used_talent, "used_ai=", used_ai, "tactic=", tactic, "action=", action, "safe_grid=", safe_grid, "escape flag:", self.ai_state.escape, "move_action=", move_action) end
 		if move_action then return self:runAI(move_action) end -- perform the move action
 	end
 	return false -- nothing was done

@@ -59,13 +59,13 @@ newAI("maintenance", function(self, t_filter, t_list)
 		end
 	end
 	
-	if log_detail > 1 then print("[maintenance AI] actions available:") table.print(avail, "\t_maint_ ") end
+	if log_detail >= 2 then print("[maintenance AI] actions available:") table.print(avail, "\t_maint_ ") end
 	-- randomly pick an available action
 	local action
 	while #avail > 0 do
 		action = rng.tableRemove(avail)
 		print("[maintenance AI]", self.uid, self.name, "selected action:", action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid)
-if config.settings.cheat then game.log("#ORCHID#__%s[%d]maintenance AI picked action: %s (%s)", self.name, self.uid, action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("#ORCHID#__%s[%d]maintenance AI picked action: %s (%s)", self.name, self.uid, action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid) end -- debugging
 
 		if action.tid then
 			done = self:useTalent(action.tid, nil, nil, nil, action.force_target)
@@ -75,10 +75,10 @@ if config.settings.cheat then game.log("#ORCHID#__%s[%d]maintenance AI picked ac
 		if done then done = action.tid or action.ai break
 		else
 			print("maintenance AI ACTION FAILED:", action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid, unpack(action))
-if config.settings.cheat then game.log("__%s[%d] #ORANGE# maintenance ACTION FAILED:  %s", self.name, self.uid, action.tid or action.ai) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("__%s[%d] #ORANGE# maintenance ACTION FAILED:  %s", self.name, self.uid, action.tid or action.ai) end -- debugging
 		end
 	end
-	if log_detail > 1 then print("[maintenance AI] completed:", not (done and action) and "NO ACTION" or action.tid and "talent:"..action.tid or action.ai and "AI:"..action.ai, "for", self.name, self.uid, "with target", aitarget and aitarget.name) end
+	if log_detail >= 2 then print("[maintenance AI] completed:", not (done and action) and "NO ACTION" or action.tid and "talent:"..action.tid or action.ai and "AI:"..action.ai, "for", self.name, self.uid, "with target", aitarget and aitarget.name) end
 	return done, action
 end)
 

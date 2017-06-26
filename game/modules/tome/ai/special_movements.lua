@@ -19,9 +19,9 @@
 
 -- Some special movement AIs
 
-local Astar = require "engine.Astar"
+--local Astar = require "engine.Astar"
 
---- Try to move to a safer location, avoiding damaging and suffocating terrain, uses (aiFindSafeGrid -- Astar pathing)
+--- Try to move to a safer location, avoiding damaging and suffocating terrain, uses aiFindSafeGrid (Astar pathing)
 -- @param grid <table, optional> table of safe grid and path parameters (from previous calls to aiFindSafeGrid)
 -- @param ... <optional>, arguments for self:aiFindSafeGrid(...), to evaluate each grid
 -- @see mod.class.interface.ActorAI:aiFindSafeGrid(radius, dam_wt, air_wt, dist_weight, want_closer, ignore_blocked, grid_hazard)
@@ -31,7 +31,7 @@ newAI("move_safe_grid", function(self, grid, ...)
 	local log_detail = config.settings.log_detail_ai or 0
 	if log_detail > 0 then
 		print("[ActorAI] Invoking move_safe_grid AI for", self.uid, self.name)
-if config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to move to a safe grid", self.name, self.x, self.y) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to move to a safe grid", self.name, self.x, self.y) end -- debugging
 	end
 	local dam, air = self:aiGridDamage(lx, ly)
 	if dam == 0 and air + self.air_regen > 0 then -- already on a safe spot
@@ -44,9 +44,9 @@ if config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to move to a
 	if grid then -- try to use previously calculated grid information
 		path = grid.path
 		if path and #path > 0 then -- try to use previously calculated path
-			if log_detail > 1 then
+			if log_detail >= 2 then
 				print("[move_safe_grid AI]", self.uid, self.name, "Trying previous path to", path[1].x, path[1].y)
-	if config.settings.cheat then game.log("#GREY#___Trying existing path to (%s, %s)", path[1].x, path[1].y) end -- debugging
+	if log_detail > 1.4 and config.settings.cheat then game.log("#GREY#___Trying existing path to (%s, %s)", path[1].x, path[1].y) end -- debugging
 			end
 			if core.fov.distance(self.x, self.y, path[1].x, path[1].y) == 1 and self:canMove(path[1].x, path[1].y) then moved = self:move(path[1].x, path[1].y) end
 			if moved then
@@ -63,9 +63,9 @@ if config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to move to a
 			elseif grid.path and #grid.path > 0 then -- try to move closer to safe grid
 				self.ai_state.safe_grid = grid
 				path = grid.path
-				if log_detail > 1 then
+				if log_detail >= 2 then
 					print("[move_safe_grid AI]", self.uid, self.name, "Trying new path to", path[1].x, path[1].y)
-if config.settings.cheat then game.log("#GREY#___Using new path to (%s, %s)", path[1].x, path[1].y) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("#GREY#___Using new path to (%s, %s)", path[1].x, path[1].y) end -- debugging
 				end
 				if core.fov.distance(self.x, self.y, path[1].x, path[1].y) == 1 then moved = self:move(path[1].x, path[1].y) end
 				if moved then
@@ -83,14 +83,15 @@ end)
 newAI("flee_dmap_keep_los", function(self, fx, fy)
 	local can_flee = fx and fy
 	if not can_flee then can_flee, fx, fy = self:aiCanFleeDmapKeepLos() end
+	local log_detail = config.settings.log_detail_ai or 0
 	if can_flee then
 		self.ai_state.escape = true
-		if config.settings.log_detail_ai > 0 then
+		if log_detail > 0 then
 			print("[flee_dmap_keep_los AI]", self.uid, self.name, "attempting to flee to", fx, fy)
-if config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to flee_dmap_keep_los to (%d, %d)", self.name, self.x, self.y, fx, fy) end -- debugging
+if log_detail > 1.4 and config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to flee_dmap_keep_los to (%d, %d)", self.name, self.x, self.y, fx, fy) end -- debugging
 		end
 		return self:move(fx, fy)
 	end
 	self.ai_state.escape = nil
-	if config.settings.log_detail_ai > 0 then print("[flee_dmap_keep_los AI]", self.uid, self.name, "no move from", self.x, self.y) end
+	if log_detail > 0 then print("[flee_dmap_keep_los AI]", self.uid, self.name, "no move from", self.x, self.y) end
 end)
