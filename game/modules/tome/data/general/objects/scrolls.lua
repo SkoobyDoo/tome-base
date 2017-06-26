@@ -126,16 +126,15 @@ newEntity{
 }
 
 -----------------------------------------------------------
--- Infusions
+-- Infusions - 5 types
 -----------------------------------------------------------
 -- Pros:  Instant cast, clears 2 average/lesser debuff types, which makes other cleanses also more consistent
 -- Cons:  Significantly less healing outputper cast than Regeneration
 newEntity{ base = "BASE_INFUSION",
 	name = "healing infusion",
-	level_range = {7, 50},
-	rarity = 16,
+	level_range = {1, 50},
+	rarity = 15,
 	cost = 10,
-	material_level = 1,
 
 	inscription_kind = "heal",
 	inscription_data = {
@@ -151,7 +150,6 @@ newEntity{ base = "BASE_INFUSION",
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 10,
-	material_level = 1,
 
 	inscription_kind = "heal",
 	inscription_data = {
@@ -166,10 +164,9 @@ newEntity{ base = "BASE_INFUSION",
 newEntity{ base = "BASE_INFUSION",
 	name = "wild infusion",
 	level_range = {1, 50},
-	rarity = 13,
+	rarity = 15,
 	cost = 20,
-	material_level = 1,
-	chance = resolvers.rngrange(50, 1), -- increase chance of 2 cleanses with ilvl
+	chance = resolvers.mbonus_level(80, -20), -- No chance of 2 cleanses until higher ilvl to discourage rerolling the earliest shops
 	inscription_kind = "protect",
 	inscription_data = resolvers.generic(function(e)
 		local what = {}
@@ -195,14 +192,12 @@ newEntity{ base = "BASE_INFUSION",
 newEntity{ base = "BASE_INFUSION",
 	name = "movement infusion",
 	level_range = {10, 50},
-	rarity = 15,
+	rarity = 20,
 	cost = 30,
-	material_level = 2,
 
 	inscription_kind = "movement",
 	inscription_data = {
 		cooldown = resolvers.rngrange(13, 20),
-		dur = resolvers.mbonus_level(5, 4, function(e, v) return v * 1 end),
 		speed = resolvers.mbonus_level(500, 300, function(e, v) return v * 0.001 end),
 		use_stat_mod = 3,
 	},
@@ -211,31 +206,65 @@ newEntity{ base = "BASE_INFUSION",
 
 newEntity{ base = "BASE_INFUSION",
 	name = "heroism infusion",
-	level_range = {25, 50},
-	rarity = 16,
+	level_range = {20, 50},
+	rarity = 20,
 	cost = 40,
-	material_level = 3,
 
 	inscription_kind = "utility",
 	inscription_data = {
 		cooldown = resolvers.rngrange(20, 30),
 		dur = resolvers.mbonus_level(7, 7),
-		power = resolvers.mbonus_level(4, 4, function(e, v) return v * 3 end),
 		die_at = resolvers.mbonus_level(700, 100, function(e, v) return v * 0.2 end),
-		use_stat_mod = 0.14,
+		use_stat_mod = 0.14, -- 30x for die_at
 	},
 	inscription_talent = "INFUSION:_HEROISM",
 }
 
+--[[  AoE damage reduction?
+newEntity{ base = "BASE_INFUSION",
+	name = "tranquility infusion",
+	level_range = {20, 50},
+	rarity = 25,
+	cost = 40,
+
+	inscription_kind = "utility",
+	inscription_data = {
+		cooldown = resolvers.rngrange(20, 30),
+		dur = resolvers.mbonus_level(7, 7),
+		die_at = resolvers.mbonus_level(700, 100, function(e, v) return v * 0.2 end),
+		use_stat_mod = 0.14, -- 30x for die_at
+	},
+	inscription_talent = "INFUSION:_HEROISM",
+}
+--]]
+
+
+--[[ Terrain effect, reduces debuff durations, slows, heals allies too?
+newEntity{ base = "BASE_INFUSION",
+	name = "verdant growth infusion",
+	level_range = {20, 50},
+	rarity = 25,
+	cost = 40,
+
+	inscription_kind = "utility",
+	inscription_data = {
+		cooldown = resolvers.rngrange(20, 30),
+		dur = resolvers.mbonus_level(7, 7),
+		die_at = resolvers.mbonus_level(700, 100, function(e, v) return v * 0.2 end),
+		use_stat_mod = 0.14, -- 30x for die_at
+	},
+	inscription_talent = "INFUSION:_HEROISM",
+}
+--]]
+
 -----------------------------------------------------------
--- Runes
+-- Runes - 9 types
 -----------------------------------------------------------
 newEntity{ base = "BASE_RUNE",
 	name = "teleportation rune",
-	level_range = {10, 50},
-	rarity = 15,
+	level_range = {1, 50},
+	rarity = 35, -- Very rare because item quality has little impact on this 
 	cost = 10,
-	material_level = 2,
 
 	inscription_kind = "teleport",
 	inscription_data = {
@@ -248,14 +277,13 @@ newEntity{ base = "BASE_RUNE",
 
 newEntity{ base = "BASE_RUNE",
 	name = "shielding rune",
-	level_range = {5, 50},
+	level_range = {1, 50},
 	rarity = 15,
 	cost = 20,
-	material_level = 2,
 
 	inscription_kind = "protect",
 	inscription_data = {
-		cooldown = resolvers.rngrange(14, 20),
+		cooldown = resolvers.rngrange(14, 18),
 		dur = resolvers.mbonus_level(5, 3),
 		power = resolvers.mbonus_level(500, 50, function(e, v) return v * 0.06 end),
 		use_stat_mod = 3,
@@ -268,9 +296,8 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_RUNE",
 	name = "biting gale rune",
 	level_range = {10, 50},
-	rarity = 25,
+	rarity = 20,
 	cost = 20,
-	material_level = 2,
 
 	inscription_kind = "attack",
 	inscription_data = {
@@ -286,10 +313,9 @@ newEntity{ base = "BASE_RUNE",
 -- Weaker debuff, medium damage and scaling
 newEntity{ base = "BASE_RUNE",
 	name = "acid wave rune",
-	level_range = {25, 50},
-	rarity = 16,
+	level_range = {20, 50},
+	rarity = 20,
 	cost = 20,
-	material_level = 2,
 
 	inscription_kind = "attack",
 	inscription_data = {
@@ -306,9 +332,8 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_RUNE",
 	name = "manasurge rune",
 	level_range = {1, 50},
-	rarity = 22,
+	rarity = 25,
 	cost = 10,
-	material_level = 1,
 
 	inscription_kind = "utility",
 	inscription_data = {
@@ -322,7 +347,7 @@ newEntity{ base = "BASE_RUNE",
 
 newEntity{ base = "BASE_RUNE",
 	name = "blink rune",
-	level_range = {5, 50},
+	level_range = {1, 50},
 	rarity = 15,
 	cost = 20,
 	material_level = 1,
@@ -338,69 +363,52 @@ newEntity{ base = "BASE_RUNE",
 
 newEntity{ base = "BASE_RUNE",
 	name = "stormshield rune",
-	level_range = {5, 50},
-	rarity = 15,
+	level_range = {20, 50},
+	rarity = 25,
 	cost = 20,
-	material_level = 1,
 	inscription_kind = "protect",
 	inscription_data = {
 		cooldown = resolvers.rngrange(12, 17),
-		dur = 3,
+		dur = 5,
 		threshold = resolvers.mbonus_level(100, 0), -- Not strictly good or bad so we use a high variance
-		blocks = resolvers.mbonus_level(6, 4, function(e, v) return v * 0.06 end),
-		use_stat_mod = 0.03,
+		blocks = resolvers.mbonus_level(6, 2, function(e, v) return v * 0.06 end),
+		use_stat_mod = 0.03, -- +3 blocks at 100 stat
 	},
 	inscription_talent = "RUNE:_STORMSHIELD",
 }
 
 newEntity{ base = "BASE_RUNE",
-	name = "rune of shatter afflictions",
+	name = "shatter afflictions rune",
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 10,
-	material_level = 1,
 	inscription_kind = "protect",
 	inscription_data = {
-		cooldown = resolvers.rngrange(12, 17),
+		cooldown = resolvers.rngrange(14, 19),
 		shield = resolvers.mbonus_level(100, 50, function(e, v) return v * 0.06 end),
-		use_stat_mod = 1 
+		use_stat_mod = 1 -- 1x, applied up to 3 times
 	},
 	inscription_talent = "RUNE:_SHATTER_AFFLICTIONS",
 }
 
 newEntity{ base = "BASE_RUNE",
 	name = "ethereal rune",
-	level_range = {5, 50},
-	rarity = 15,
+	level_range = {20, 50},
+	rarity = 25,
 	cost = 20,
-	material_level = 1,
 	inscription_kind = "protect",
 	inscription_data = {
 		cooldown = resolvers.rngrange(16, 22),
 		dur = resolvers.mbonus_level(5, 3),
 		power = resolvers.mbonus_level(8, 7, function(e, v) return v * 1 end),
-		damage = resolvers.mbonus_level(40, 20),
+		resist = resolvers.mbonus_level(30, 10),
+		move = resolvers.mbonus_level(20, 10),
 		reduction = 0.5,
-		use_stat_mod = 0.08, -- divided by 4 for resist all
+		use_stat_mod = 0.08, -- 1x for movement, 2x for resist, 2x for power
 	},
 	inscription_talent = "RUNE:_ETHEREAL",
 }
 
-newEntity{ base = "BASE_RUNE",
-	name = "mirror image rune",
-	level_range = {5, 50},
-	rarity = 15,
-	cost = 20,
-	material_level = 1,
-	inscription_kind = "protect",
-	inscription_data = {
-		cooldown = resolvers.rngrange(16, 20),
-		dur = resolvers.mbonus_level(5, 2),
-		inheritance = 100, -- placeholder
-		use_stat_mod = 0.2,
-	},
-	inscription_talent = "RUNE:_MIRROR_IMAGE",
-}
 
 --[[
 newEntity{ base = "BASE_RUNE",
@@ -420,10 +428,29 @@ newEntity{ base = "BASE_RUNE",
 }
 ]]
 
+--[[
+newEntity{ base = "BASE_RUNE",
+	name = "enfeeble rune",
+	level_range = {10, 50},
+	rarity = 25,
+	cost = 20,
+	material_level = 2,
+
+	inscription_kind = "attack",
+	inscription_data = {
+		cooldown = resolvers.rngrange(15, 22),
+		power = resolvers.mbonus_level(100, 30, function(e, v) return v * 0.1 end),
+		apply = resolvers.mbonus_level(5, 20, function(e, v) return v * 0.1 end),
+		radius = 6,
+		use_stat_mod = 1.2,
+	},
+	inscription_talent = "RUNE:_BITING_GALE",
+}
+--]]
+
 -----------------------------------------------------------
 -- Taints
 -----------------------------------------------------------
-
 --[[
 newEntity{ base = "BASE_TAINT",
 	name = "taint of the devourer",
@@ -443,13 +470,13 @@ newEntity{ base = "BASE_TAINT",
 }
 ]]
 
+
 -----------------------------------------------------------
 -- Legacy/depreciated
 -----------------------------------------------------------
---[[newEntity{ base = "BASE_RUNE",
+newEntity{ base = "BASE_RUNE",
 	name = "lightning rune",
 	level_range = {25, 50},
-	rarity = 0,
 	cost = 20,
 	material_level = 3,
 
@@ -466,7 +493,6 @@ newEntity{ base = "BASE_TAINT",
 newEntity{ base = "BASE_RUNE",
 	name = "invisibility rune",
 	level_range = {18, 50},
-	rarity = 19,
 	cost = 40,
 	material_level = 3,
 
@@ -483,7 +509,6 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_RUNE",
 	name = "vision rune",
 	level_range = {15, 50},
-	rarity = 0,
 	cost = 30,
 	material_level = 2,
 
@@ -502,7 +527,6 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_RUNE",
 	name = "heat beam rune",
 	level_range = {25, 50},
-	rarity = 0,
 	cost = 20,
 	material_level = 2,
 
@@ -519,7 +543,6 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_RUNE",
 	name = "phase door rune",
 	level_range = {1, 50},
-	rarity = 0,
 	cost = 10,
 	material_level = 1,
 
@@ -537,7 +560,6 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_RUNE",
 	name = "controlled phase door rune",
 	level_range = {35, 50},
-	rarity = 0,
 	cost = 50,
 	material_level = 4,
 
@@ -553,7 +575,6 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_INFUSION",
 	name = "sun infusion",
 	level_range = {1, 50},
-	rarity = 0,
 	cost = 10,
 	material_level = 1,
 
@@ -567,13 +588,10 @@ newEntity{ base = "BASE_INFUSION",
 	},
 	inscription_talent = "INFUSION:_SUN",
 }
---]]
 
---[[
 newEntity{ base = "BASE_INFUSION",
 	name = "insidious poison infusion",
 	level_range = {10, 50},
-	rarity = 16,
 	cost = 20,
 	material_level = 2,
 
@@ -587,4 +605,3 @@ newEntity{ base = "BASE_INFUSION",
 	},
 	inscription_talent = "INFUSION:_INSIDIOUS_POISON",
 }
---]]

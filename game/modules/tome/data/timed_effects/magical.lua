@@ -312,18 +312,19 @@ newEffect{
 newEffect{
 	name = "ETHEREAL", image = "effects/invisibility.png",
 	desc = "Ethereal",
-	long_desc = function(self, eff) return ("Invisible (power %d), damage dealt reduced by %d%%, all resistances increased by %d%%, able to walk through walls."):format(eff.power, eff.reduction * 100, eff.damage) end,
+	long_desc = function(self, eff) return ("Invisible (power %d), damage dealt reduced by %d%%, all resistances increased by %d%%, movement speed increased by %d%%."):
+		format(eff.power, eff.reduction * 100, eff.resist, eff.move) end,
 	type = "magical",
 	subtype = { phantasm=true },
 	status = "beneficial",
-	parameters = { power=10, damage=0, reduction=0,},
-	on_gain = function(self, err) return "#Target# phases partially out of reality.", "+Ethereal" end,
+	parameters = { power=10, resist=0, reduction=0, move=0},
+	on_gain = function(self, err) return "#Target# becomes ethereal.", "+Ethereal" end,
 	on_lose = function(self, err) return "#Target# is no longer ethereal.", "-Ethereal" end,
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("invisible", eff.power)
 		eff.penaltyid = self:addTemporaryValue("invisible_damage_penalty", eff.reduction)
-		eff.damid = self:addTemporaryValue("resists", {all = eff.damage})
-		eff.wallid = self:addTemporaryValue("can_pass", {pass_wall=20})
+		eff.damid = self:addTemporaryValue("resists", {all = eff.resist})
+		eff.moveid = self:addTemporaryValue("movement_speed", eff.move / 100)
 		
 		if not self.shader then
 			eff.set_shader = true
@@ -341,7 +342,7 @@ newEffect{
 		self:removeTemporaryValue("invisible", eff.tmpid)
 		self:removeTemporaryValue("invisible_damage_penalty", eff.penaltyid)
 		self:removeTemporaryValue("resists", eff.damid)
-		self:removeTemporaryValue("can_pass", eff.wallid)
+		self:removeTemporaryValue("movement_speed", eff.moveid)
 		self:resetCanSeeCacheOf()
 	end,
 }

@@ -211,7 +211,6 @@ newInscription{
 		local what = table.concatNice(table.keys(data.what), ", ", " or ")
 
 		return ([[Activate the infusion to cure yourself of one random %s effect and increase affinity for all damage by %d%% (scales with Constitution) for %d turns.
-
 Also removes cross-tier effects of the affected types for free.]]):format(what, data.power+data.inc_stat, data.dur)
 	end,
 	short_info = function(self, t)
@@ -230,20 +229,19 @@ newInscription{
 	on_pre_use = function(self, t) return not self:attr("never_move") end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_FREE_ACTION, data.dur, {power=1})
 		game:onTickEnd(function() self:setEffect(self.EFF_WILD_SPEED, 1, {power=data.speed + data.inc_stat}) end)
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		return ([[Activate the infusion to increase movement speed by %d%% for 1 game turn.
+		You gain 100%% stun, daze, and pin immunity during the effect.
 		Any actions other than movement will cancel the effect.
-		Also prevent stuns, dazes and pinning effects for %d turns.
-		Note: since you will be moving very fast, game turns will pass very slowly.]]):format(data.speed + data.inc_stat, data.dur)
+		Note: since you will be moving very fast, game turns will pass very slowly.]]):format(data.speed + data.inc_stat)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[%d%% speed; %d turns]]):format(data.speed + data.inc_stat, data.dur)
+		return ([[%d%% speed]]):format(data.speed + data.inc_stat)
 	end,
 }
 
@@ -255,19 +253,18 @@ newInscription{
 	tactical = { BUFF = 1, DEFEND = 1 },
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_HEROISM, data.dur, {power=data.power + data.inc_stat, die_at=data.die_at + data.inc_stat * 30})
+		self:setEffect(self.EFF_HEROISM, data.dur, {die_at=data.die_at + data.inc_stat * 30})
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the infusion to increase three of your primary stats by %d for %d turns.
+		return ([[Activate the infusion to endure even the most grievous of wounds for %d turns.
 		While Heroism is active, you will only die when reaching -%d life.
-		It will always increase your three highest stats.
-		If your life is below 0 when this effect wears off it will be set to 1.]]):format(data.power + data.inc_stat, data.dur, data.die_at + data.inc_stat * 30)
+		If your life is below 0 when this effect wears off it will be set to 1.]]):format(data.dur, data.die_at + data.inc_stat * 30)
 	end,
 	short_info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[+%d for %d turns, die at -%d]]):format(data.power + data.inc_stat, data.dur, data.die_at + data.inc_stat * 30)
+		return ([[%d turns, die at -%d]]):format(data.dur, data.die_at + data.inc_stat * 30)
 	end,
 }
 
@@ -722,19 +719,18 @@ newInscription{
 	end,
 }
 
--- Invisibility updated to have combat value and more escape options
--- TODO:  Teleport back to entry space, move through trees
--- Possibly drop wall phase for movement speed
+-- Invisibility updated to have combat value and more escape potential
 newInscription{
 	name = "Rune: Ethereal",
 	type = {"inscriptions/runes", 1},
 	points = 1,
 	is_spell = true,
+	no_energy = true,
 	--tactical = { DEFEND = 3, ESCAPE = 2 },
 	getDur = function(self, t) return 5 end,
-	getDamageMod = function(self, t)
+	getResistance = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return data.damage + (data.inc_stat / 4)
+		return data.resist + data.inc_stat * 2
 	end,
 	getReduction = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
@@ -742,22 +738,25 @@ newInscription{
 	end,
 	getPower = function(self, t) 
 		local data = self:getInscriptionData(t.short_name)
-		return data.power + data.inc_stat
+		return data.power + data.inc_stat * 2
+	end,
+	getMove = function(self, t) 
+		local data = self:getInscriptionData(t.short_name)
+		return data.move + data.inc_stat
 	end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		self:setEffect(self.EFF_ETHEREAL, t.getDur(self, t), {power=t.getPower(self, t), reduction=t.getReduction(self, t), damage=t.getDamageMod(self, t)})
+		self:setEffect(self.EFF_ETHEREAL, t.getDur(self, t), {power=t.getPower(self, t), reduction=t.getReduction(self, t), resist=t.getResistance(self, t), move=t.getMove(self, t)})
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
 		return ([[Activate the rune to become ethereal for %d turns.
-		While ethereal all damage you deal is reduced by %d%%, you gain %d%% all resistance, and you are invisible (power %d), and you can move through most forms of obstruction.
-		If your turn ends while inside a wall or area you cannot walk out of you will be teleported back to the first obstructed space you entered.
-		]]):format(t.getDur(self, t),t.getReduction(self, t) * 100, t.getDamageMod(self, t), t.getPower(self, t))
+		While ethereal all damage you deal is reduced by %d%%, you gain %d%% all resistance, you move %d%% faster, and you are invisible (power %d).]]):
+			format(t.getDur(self, t),t.getReduction(self, t) * 100, t.getResistance(self, t), t.getMove(self, t), t.getPower(self, t))
 	end,
 	short_info = function(self, t)
-		return ([[power %d, damage %d%%, %d turns]]):format(t.getPower(self, t), t.getDamageMod(self, t), t.getDur(self, t))
+		return ([[power %d, resist %d%%, move %d%%, %d turns]]):format(t.getPower(self, t), t.getResistance(self, t), t.getMove(self, t), t.getDur(self, t))
 	end,
 }
 
@@ -830,9 +829,7 @@ newInscription{
 	end,
 }
 
--- Effective HP primarily, roughly the counterpart to Heroism
--- Stat snapshotting is intentionally allowed
--- All values placeholder, overpowered as fuck atm, inheritance mechanics unfinished
+-- Fixedart
 newInscription{
 	name = "Rune: Mirror Image",
 	type = {"inscriptions/runes", 1},
@@ -845,7 +842,7 @@ newInscription{
 	end,
 	getInheritance = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return data.inheritance + data.inc_stat
+		return data.inheritance
 	end,
 	getInheritedResist = function(self, t)
 		local res = {}
@@ -880,29 +877,31 @@ newInscription{
 							desc = "A blurred image.",
 							image = caster.image,
 							add_mos = caster.add_mos, -- this is horribly wrong isn't it?
-							rank = 1,
+							max_life = caster.max_life,
+							life = caster.max_life, -- We don't want to make this only useful before you take damage
 							combat_armor_hardiness = caster:combatArmorHardiness(),
-							combat_def = caster:combatArmor(),
-							--stats = caster.stats,
+							combat_def = caster:combatDefense(),
+							combat_armor = caster:combatArmor(),
 							size_category = caster.size_category,
 							resists = t.getInheritedResist(self, t),
-							no_breath = 1,
+							rank = 1,
+							life_rating = 0,
 							cant_be_moved = 1,
 							never_move = 1,
 							resolvers.talents{
 								[Talents.T_TAUNT]=1, -- Add the talent so the player can see it even though we cast it manually
 							},
 							on_act = function(self) -- avoid any interaction with .. uh, anything, for now
-								self:forceUseTalent(self.T_TAUNT, {})
+								self:forceUseTalent(self.T_TAUNT, {ignore_cd=true, ignore_energy=true})
 							end,
 							faction = caster.faction,
 							summoner = caster, summoner_gain_exp=true,
 							summon_time=t.getDur(self, t),
+							no_breath = 1,
+							remove_from_party_on_death = true
 						}
 
 						image:resolve()
-						image.remove_from_party_on_death = true
-						
 						game.zone:addEntity(game.level, image, "actor", tx, ty)
 						game.party:addMember(image, {
 							control=false,
@@ -914,17 +913,16 @@ newInscription{
 				end
 			end
 
-
 		return true
 	end,
 	info = function(self, t)
 		return ([[Activate the rune to create up to 3 images of yourself that taunt nearby enemies.
 			Only one image can be created per enemy in radius 10 with the first being created near the closest enemy.
-			Images inherit %d%% of your maximum life and resistances and all of your armor and armor hardiness.]])
-				:format(t.getInheritance(self, t) )
+			Images inherit all of your life, resistance, armor, defense, and armor hardiness.]])
+				:format(t.getInheritance(self, t)*100 )
 	end,
 	short_info = function(self, t)
-		return ([[%d turns, %d%% inheritance]]):format(t.getDur(self, t), t.getInheritance(self, t))
+		return ([[%d turns]]):format(t.getDur(self, t))
 	end
 }
 
@@ -972,28 +970,30 @@ newInscription{
 	tactical = {},
 	range = 10,
 	direct_hit = true,
-	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	action = function(self, t)
-		local tg = {type="hit", range=self:getTalentRange(t)}
+		local tg = {default_target=self, type="hit", nowarning=true, range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
 		if not (x and y) or not target or not self:canProject(tg, x, y) then return nil end
 
-		self:removeEffectsFilter({type="magical", status="detrimental"}, 10)
-		target:removeEffectsFilter({type="magical", status="beneficial"}, 10)
-
-		-- Go through all sustained spells
-		for tid, act in pairs(target.sustain_talents) do
-			if act then
-				local talent = target:getTalentFromId(tid)
-				if talent.is_spell then target:forceUseTalent(tid, {ignore_energy=true}) end
-			end
+		if self:reactionToward(target) < 0 then
+			target:removeEffectsSustainsFilter(function(o)
+				if o.type == "magical" or o.is_spell then
+					if o.status and o.status == "detrimental" then return false end
+					return true
+				end
+				return false
+			end,
+			999)
+		else
+			target:removeEffectsFilter({type="magical", status="detrimental"}, 999)
 		end
+
 		game:playSoundNear(self, "talents/spell_generic")
 		return true
 	end,
 	info = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
-		return ([[Activate the rune to remove all beneficial magical effects and sustains from the target and all magical debuffs from you.]]):
+		return ([[Activate the rune to remove all beneficial magical effects and sustains from an enemy target or all magical debuffs from you.]]):
 		format()
 	end,
 	short_info = function(self, t)
