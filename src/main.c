@@ -91,7 +91,7 @@ float gamma_correction = 1;
 int cur_frame_tick = 0;
 int frame_tick_paused_time = 0;
 /* The currently requested fps for the program */
-float ticks_per_frame = 1;
+int ticks_per_frame = 1;
 float current_fps = NORMALIZED_FPS;
 int requested_fps = NORMALIZED_FPS;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
@@ -1597,7 +1597,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		if (ticks) ticks_per_frame = ticks - SDL_GetTicks();
+		if (ticks) ticks_per_frame = SDL_GetTicks() - ticks;
 
 		/* draw the scene */
 		// Note: since realtime_timer_id is accessed, have to lock first
