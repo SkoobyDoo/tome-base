@@ -40,8 +40,7 @@ project "TEngine"
 	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-navmesh", "te4-spriter", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader", "te4-box2d-".._OPTIONS.box2d:lower(), "te4-poly2tri", "te4-clipper" }
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
-	buildoptions { "-O3" }
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then
 		defines { "TE4_PROFILING" }
 		buildoptions { "-fno-omit-frame-pointer" }
@@ -64,7 +63,7 @@ project "TEngine"
 	end
 
 	if _OPTIONS.wincross then
-		prelinkcommands { "i686-w64-mingw32-ranlib ../bin/Debug/*.a" }
+		prelinkcommands { "i686-w64-mingw32.shared-ranlib ../bin/Debug/*.a" }
 	end
 
 	configuration "macosx"
@@ -114,12 +113,12 @@ project "TEngine"
 		links { "mingw32", "freetype", "SDL2main", "SDL2", "SDL2_image", "OpenAL32", "vorbisfile", "opengl32", "glu32", "wsock32", "png" }
 		defines { [[TENGINE_HOME_PATH='"T-Engine"']], 'SELFEXE_WINDOWS'  }
 		if _OPTIONS.wincross then
-			prebuildcommands { "i686-w64-mingw32-windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
+			prebuildcommands { "i686-w64-mingw32.shared-windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
 		else
 			prebuildcommands { "windres ../src/windows/icon.rc -O coff -o ../src/windows/icon.res" }
 		end
 		linkoptions { "../src/windows/icon.res" }
-		linkoptions { "-mwindows" }
+		linkoptions { "-mwindows", "-static-libgcc", "-static-libstdc++" }
 		defines { [[TENGINE_HOME_PATH='"T-Engine"']], 'SELFEXE_WINDOWS' }
 
 	configuration "linux"
@@ -199,7 +198,7 @@ elseif _OPTIONS.lua == "jit2" then
 
 		local arch_test
 		if _OPTIONS.wincross then
-			arch_test = os.capture("i686-w64-mingw32-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			arch_test = os.capture("i686-w64-mingw32.shared-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		else
 			arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		end
@@ -234,12 +233,14 @@ elseif _OPTIONS.lua == "jit2" then
 
 		configuration {"Debug"}
 			if _OPTIONS.wincross then
-				postbuildcommands {
-					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/minilua/minilua.cross.o" -c "../src/luajit2/src/host/minilua.c"',
-					'gcc -o ../bin/Debug/minilua ../obj/Debug/minilua/minilua.cross.o  -m32 -L/Test/xcompile/local/lib   -lm',
-				}
+				-- postbuildcommands {
+				-- 	'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/minilua/minilua.cross.o" -c "../src/luajit2/src/host/minilua.c"',
+				-- 	'gcc -o ../bin/Debug/minilua ../obj/Debug/minilua/minilua.cross.o  -m32 -L/Test/xcompile/local/lib   -lm',
+				-- }
+				postbuildcommands { "cp ../bin/Debug/minilua.exe ../src/luajit2/src/host/", }
+			else
+				postbuildcommands { "cp ../bin/Debug/minilua ../src/luajit2/src/host/", }
 			end
-			postbuildcommands { "cp ../bin/Debug/minilua ../src/luajit2/src/host/", }
 		configuration {"Release"}
 			if _OPTIONS.wincross then
 				postbuildcommands {
@@ -258,7 +259,7 @@ elseif _OPTIONS.lua == "jit2" then
 		local dasm_flags = ""
 		local arch_test
 		if _OPTIONS.wincross then
-			arch_test = os.capture("i686-w64-mingw32-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			arch_test = os.capture("i686-w64-mingw32.shared-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		else
 			arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		end
@@ -336,16 +337,18 @@ elseif _OPTIONS.lua == "jit2" then
 
 		configuration {"Debug"}
 			if _OPTIONS.wincross then
-				postbuildcommands {
-					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_lib.cross.o" -c "../src/luajit2/src/host/buildvm_lib.c"',
-					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_asm.cross.o" -c "../src/luajit2/src/host/buildvm_asm.c"',
-					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_peobj.cross.o" -c "../src/luajit2/src/host/buildvm_peobj.c"',
-					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_fold.cross.o" -c "../src/luajit2/src/host/buildvm_fold.c"',
-					'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm.cross.o" -c "../src/luajit2/src/host/buildvm.c"',
-					'gcc -o ../bin/Debug/buildvm ../obj/Debug/buildvm/buildvm_lib.cross.o ../obj/Debug/buildvm/buildvm_asm.cross.o ../obj/Debug/buildvm/buildvm_peobj.cross.o ../obj/Debug/buildvm/buildvm_fold.cross.o ../obj/Debug/buildvm/buildvm.cross.o  -m32 -L/Test/xcompile/local/lib',
-				}
+				-- postbuildcommands {
+				-- 	'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_lib.cross.o" -c "../src/luajit2/src/host/buildvm_lib.c"',
+				-- 	'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_asm.cross.o" -c "../src/luajit2/src/host/buildvm_asm.c"',
+				-- 	'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_peobj.cross.o" -c "../src/luajit2/src/host/buildvm_peobj.c"',
+				-- 	'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm_fold.cross.o" -c "../src/luajit2/src/host/buildvm_fold.c"',
+				-- 	'gcc -MMD -MP -DGLEW_STATIC -DLUAJIT_TARGET=LUAJIT_ARCH_x86 -DLJ_ARCH_HASFPU=1 -DLJ_ABI_SOFTFP=0 -I../src -I../src/luasocket -I../src/fov -I../src/expat -I../src/lxp -I../src/libtcod_import -I../src/physfs -I../src/zlib -I../src/bzip2 -I../src/luajit2/src -I../src/luajit2/dynasm -g -m32 -ggdb -o "../obj/Debug/buildvm/buildvm.cross.o" -c "../src/luajit2/src/host/buildvm.c"',
+				-- 	'gcc -o ../bin/Debug/buildvm ../obj/Debug/buildvm/buildvm_lib.cross.o ../obj/Debug/buildvm/buildvm_asm.cross.o ../obj/Debug/buildvm/buildvm_peobj.cross.o ../obj/Debug/buildvm/buildvm_fold.cross.o ../obj/Debug/buildvm/buildvm.cross.o  -m32 -L/Test/xcompile/local/lib',
+				-- }
+				postbuildcommands { "cp ../bin/Debug/buildvm.exe ../src/luajit2/src/", }
+			else
+				postbuildcommands { "cp ../bin/Debug/buildvm ../src/luajit2/src/", }
 			end
-			postbuildcommands { "cp ../bin/Debug/buildvm ../src/luajit2/src/", }
 		configuration {"Release"}
 			if _OPTIONS.wincross then
 				postbuildcommands {
@@ -559,7 +562,7 @@ project "te4-freetype-gl"
 	targetname "te4-freetype-gl"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 	if _OPTIONS.wincross then
-		includedirs{'/opt/mxe/usr/i686-w64-mingw32/include/freetype2'}
+		includedirs{'/opt/mxe/usr/i686-w64-mingw32.shared/include/freetype2'}
 	end
 
 	files { "../src/freetype-gl/*.c", }
@@ -624,7 +627,7 @@ project "tinyxml2"
 	kind "StaticLib"
 	language "C++"
 	targetname "tinyxml2"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/tinyxml2/*.cpp", }
@@ -637,7 +640,7 @@ project "te4-renderer"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-renderer"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/renderer-moderngl/*.cpp", "../src/displayobjects/*.cpp", }
@@ -646,7 +649,7 @@ project "te4-navmesh"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-navmesh"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/navmesh/*.cpp" }
@@ -660,7 +663,7 @@ project "te4-spriter"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-spriter"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/spriterengine/animation/*.cpp", "../src/spriterengine/charactermap/*.cpp", "../src/spriterengine/entity/*.cpp", "../src/spriterengine/file/*.cpp", "../src/spriterengine/global/*.cpp", "../src/spriterengine/loading/*.cpp", "../src/spriterengine/model/*.cpp", "../src/spriterengine/objectinfo/*.cpp", "../src/spriterengine/objectref/*.cpp", "../src/spriterengine/override/*.cpp", "../src/spriterengine/timeinfo/*.cpp", "../src/spriterengine/timeline/*.cpp", "../src/spriterengine/variable/*.cpp", "../src/spriter/*.cpp", }
@@ -669,7 +672,7 @@ project "te4-tinyobjloader"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-tinyobjloader"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/tinyobjloader/*.cc", }
@@ -678,7 +681,7 @@ project "te4-clipper"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-clipper"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/clipper/**.cpp", }
@@ -687,7 +690,7 @@ project "te4-poly2tri"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-poly2tri"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/poly2tri/**.cc", }
@@ -697,7 +700,7 @@ project "te4-box2d-st"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-box2d-st"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/Box2D/**.h", "../src/Box2D/**.cpp", }
@@ -706,7 +709,7 @@ project "te4-box2d-mt"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-box2d-mt"
-	buildoptions { "-std=c++11" }
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	files { "../src/Box2D-MT/**.h", "../src/Box2D-MT/**.cpp", }

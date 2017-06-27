@@ -1175,7 +1175,7 @@ void DORContainer::sortZ(RendererGL *container, mat4& cur_model) {
 /***************************************************************************
  ** SubRenderer
  ***************************************************************************/
-
+#include <string.h>
 void SubRenderer::cloneInto(DisplayObject* _into) {
 	DORContainer::cloneInto(_into);
 	SubRenderer *into = dynamic_cast<SubRenderer*>(_into);

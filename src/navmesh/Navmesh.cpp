@@ -263,19 +263,19 @@ bool Navmesh::makeNavmesh() {
 		}
 
 		// Now that we have unicity, find neighbours
-		for (auto point : tri->points) {
-			auto it = points_neighbours.find(point);
-			if (it == points_neighbours.end()) {
-				points_neighbours.emplace(point, new unordered_map<sp_mesh_point_unique, uint32_t>);
-				it = points_neighbours.find(point);
-			}
-			for (auto op : tri->points) {
-				if (op != point) {
-					float distance = sqrt(pow((float)point->x - (float)op->x, 2) + pow((float)point->y - (float)op->y, 2));
-					it->second->insert({(sp_mesh_point_unique)op, (uint32_t)distance});
-				}
-			}
-		}
+		// for (auto point : tri->points) {
+		// 	auto it = points_neighbours.find(point);
+		// 	if (it == points_neighbours.end()) {
+		// 		points_neighbours.emplace(point, new unordered_map<sp_mesh_point_unique, uint32_t>);
+		// 		it = points_neighbours.find(point);
+		// 	}
+		// 	for (auto op : tri->points) {
+		// 		if (op != point) {
+		// 			float distance = sqrt(pow((float)point->x - (float)op->x, 2) + pow((float)point->y - (float)op->y, 2));
+		// 			it->second->insert({(sp_mesh_point_unique)op, (uint32_t)distance});
+		// 		}
+		// 	}
+		// }
 	}
 
 	// for (auto up : all_points) {

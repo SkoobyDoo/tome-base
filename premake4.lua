@@ -9,6 +9,8 @@ solution "TEngine"
 		if not _OPTIONS.wincross then libdirs{"/usr/lib32"} end
 	end
 
+	buildoptions { "-O3" }
+
 	includedirs {
 		"src",
 		"src/luasocket",

@@ -25,6 +25,7 @@
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
+#include "auxiliar.h"
 #include "display.h"
 #include "types.h"
 #include "physfs.h"
@@ -56,6 +57,25 @@ using namespace std;
 extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
 extern void releaseDisplayList(DisplayList *dl);
 
-template<class T=DisplayObject> extern T* userdata_to_DO(const char *caller, lua_State *L, int index, const char *auxclass = nullptr);
+template<class T=DisplayObject>T* userdata_to_DO(const char *caller, lua_State *L, int index, const char *auxclass=nullptr) {
+	DisplayObject **ptr;
+	if (auxclass) {
+		ptr = reinterpret_cast<DisplayObject**>(auxiliar_checkclass(L, auxclass, index));
+	} else {
+		ptr = reinterpret_cast<DisplayObject**>(lua_touserdata(L, index));
+		if (!ptr) {
+			printf("invalid display object passed ! %s expected\n", typeid(T).name());
+			traceback(L);
+			luaL_error(L, "invalid display object passed");
+		}
+	}
+	T* result = dynamic_cast<T*>(*ptr);
+	if (!result) {
+		printf("display object of wrong class! %s / %s (expected) !=! %s (actual) from %s\n", typeid(T).name(), auxclass ? auxclass : "", (*ptr)->getKind(), caller);
+		traceback(L);
+		luaL_error(L, "display object of wrong class");
+	}
+	return result;
+}
 
 #endif
