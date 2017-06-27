@@ -94,12 +94,12 @@ int frame_tick_paused_time = 0;
 int ticks_per_frame = 1;
 float current_fps = NORMALIZED_FPS;
 int requested_fps = NORMALIZED_FPS;
+int max_ms_per_frame = 33;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
 int requested_fps_idle = DEFAULT_IDLE_FPS;
 /* The currently "saved" fps, used for idle transitions. */
 int requested_fps_idle_saved = 0;
 
-SDL_TimerID display_timer_id = 0;
 SDL_TimerID realtime_timer_id = 0;
 
 /* OpenGL capabilities */
@@ -115,9 +115,7 @@ lua_err_type *last_lua_error_head = NULL, *last_lua_error_tail = NULL;
  * Locks for thread safety with respect to the rendering and realtime timers.
  * The locks are used to control access to each timer's respective id and flag.
  */
-SDL_mutex *renderingLock;
 SDL_mutex *realtimeLock;
-int redraw_pending = 0;
 int realtime_pending = 0;
 
 /*
@@ -728,35 +726,6 @@ void pass_command_args(int argc, char *argv[])
 	}
 }
 
-Uint32 redraw_timer(Uint32 interval, void *param)
-{
-	SDL_Event event;
-	SDL_UserEvent userevent;
-
-	/* In this example, our callback pushes an SDL_USEREVENT event
-	 into the queue, and causes ourself to be called again at the
-	 same interval: */
-
-	userevent.type = SDL_USEREVENT;
-	userevent.code = 0;
-	userevent.data1 = NULL;
-	userevent.data2 = NULL;
-
-	event.type = SDL_USEREVENT;
-	event.user = userevent;
-
-	// Grab the rendering lock and see if a redraw should be requested.
-	SDL_mutexP(renderingLock);
-	// If there is no redraw pending, request one.  Otherwise, ignore.
-	if (!redraw_pending && isActive) {
-		SDL_PushEvent(&event);
-		redraw_pending = 1;
-	}
-	SDL_mutexV(renderingLock);
-
-	return(interval);
-}
-
 Uint32 realtime_timer(Uint32 interval, void *param)
 {
 	SDL_Event event;
@@ -830,19 +799,13 @@ void setupRealtime(float freq)
 
 void setupDisplayTimer(int fps)
 {
-	SDL_mutexP(renderingLock);
-	
-	if (display_timer_id) SDL_RemoveTimer(display_timer_id);
 	requested_fps = fps;
 	if (requested_fps) {
-		display_timer_id = SDL_AddTimer(1000 / fps, redraw_timer, NULL);
+		max_ms_per_frame = 1000 / fps;
 		printf("[ENGINE] Setting requested FPS to %d (%d ms)\n", fps, 1000 / fps);
 	} else {
 		printf("[ENGINE] Setting requested FPS to unbound\n");
 	}
-	
-	SDL_mutexV(renderingLock);
-
 }
 
 
@@ -1283,30 +1246,27 @@ void cleanupTimerLock(SDL_mutex *lock, SDL_TimerID *timer
 /* Handles game idle transition.  See function declaration for more info. */
 void handleIdleTransition(int goIdle)
 {
-	/* Only allow if a display timer is already running. */
-	if (display_timer_id) {
-		if (goIdle) {
-			/* Make sure this isn't an idle->idle transition */
-			if (requested_fps != requested_fps_idle) {
-				requested_fps_idle_saved = requested_fps;
-				setupDisplayTimer(requested_fps_idle);
-			}
-
-		} else if (requested_fps_idle_saved && (requested_fps != requested_fps_idle_saved)) {
-			/* Made sure this wasn't a nonidle->nonidle */
-			setupDisplayTimer(requested_fps_idle_saved);
+	if (goIdle) {
+		/* Make sure this isn't an idle->idle transition */
+		if (requested_fps != requested_fps_idle) {
+			requested_fps_idle_saved = requested_fps;
+			setupDisplayTimer(requested_fps_idle);
 		}
 
-		if (current_game != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-			lua_pushliteral(L, "idling");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-			lua_pushboolean(L, !goIdle);
-			docall(L, 2, 0);
-		}
+	} else if (requested_fps_idle_saved && (requested_fps != requested_fps_idle_saved)) {
+		/* Made sure this wasn't a nonidle->nonidle */
+		setupDisplayTimer(requested_fps_idle_saved);
+	}
+
+	if (current_game != LUA_NOREF)
+	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
+		lua_pushliteral(L, "idling");
+		lua_gettable(L, -2);
+		lua_remove(L, -2);
+		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
+		lua_pushboolean(L, !goIdle);
+		docall(L, 2, 0);
 	}
 }
 
@@ -1382,7 +1342,6 @@ int main(int argc, char *argv[])
 	if (!no_web) te4_web_load();
 
 	// Initialize display lock for thread safety.
-	renderingLock = SDL_CreateMutex();
 	realtimeLock = SDL_CreateMutex();
 	
 	// Get cpu cores
@@ -1467,13 +1426,8 @@ int main(int argc, char *argv[])
 	SDL_Event event;
 	while (!exit_engine)
 	{
-		int ticks = 0;
-		if (!requested_fps) { // Unbound FPS mode
-			ticks = SDL_GetTicks();
-			on_redraw();
-		} else {
-			if (!isActive || tickPaused) SDL_WaitEvent(NULL);
-		}
+		int ticks = SDL_GetTicks();
+		on_redraw();
 
 #ifdef SELFEXE_WINDOWS
 		if (os_autoflush) _commit(_fileno(stdout));
@@ -1563,15 +1517,6 @@ int main(int argc, char *argv[])
 				/* TODO: Enumerate user event codes */
 				switch(event.user.code)
 				{
-				case 0:
-					if (isActive) {
-						on_redraw();
-						SDL_mutexP(renderingLock);
-						redraw_pending = 0;
-						SDL_mutexV(renderingLock);
-					}
-					break;
-
 				case 1:
 					on_music_stop();
 					break;
@@ -1597,7 +1542,10 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		if (ticks) ticks_per_frame = SDL_GetTicks() - ticks;
+		if (ticks) {
+			ticks_per_frame = SDL_GetTicks() - ticks;
+			if (ticks_per_frame < max_ms_per_frame) SDL_Delay(max_ms_per_frame - ticks_per_frame);
+		}
 
 		/* draw the scene */
 		// Note: since realtime_timer_id is accessed, have to lock first
@@ -1641,7 +1589,6 @@ int main(int argc, char *argv[])
 
 	// Clean up locks.
 	printf("Cleaning up!\n");
-	cleanupTimerLock(renderingLock, &display_timer_id, &redraw_pending);
 	cleanupTimerLock(realtimeLock, &realtime_timer_id, &realtime_pending);
 	
 	printf("Terminating!\n");
