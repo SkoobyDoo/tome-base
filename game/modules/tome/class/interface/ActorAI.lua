@@ -49,6 +49,9 @@ function _M:runAI(ai, ...)
 		return
 	end
 
+	-- allows Actor specific log detail level
+	local old_detail = config.settings.log_detail_ai
+	if self.log_detail_ai ~= nil then config.settings.log_detail_ai = self.log_detail_ai end
 if config.settings.ai_transition then
 	-- debugging: force use of "improved_tactical" in place of "tactical" and "improved_talented_simple" in place of "dumb_talented_simple" for all actors
 	if ai == "tactical" then ai = "improved_tactical"
@@ -62,7 +65,10 @@ if config.settings.ai_transition then
 	end
 end
 	if config.settings.log_detail_ai > 2.5 then print("[ActorAI:runAI(transitional)]", self.uid, self.name, "running AI:", ai, ...) end
-	return _M.ai_def[ai](self, ...)
+--	return _M.ai_def[ai](self, ...)
+	local ret1, ret2, ret3 = _M.ai_def[ai](self, ...)
+	config.settings.log_detail_ai = old_detail
+	return ret1, ret2, ret3
 end
 --- dgdgdgdgdg END TRANSITIONAL CODE section ---
 
@@ -1254,7 +1260,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 	self.turn_procs._ai_tactical = self.turn_procs._ai_tactical or {_new_tact_wt_cache = false}
 	local tp_cache = self.turn_procs._ai_tactical -- turn_procs tactical cache
 	local tpid_cache = tp_cache[t.id] -- turn_procs tactical cache (this talent)
-	local log_detail = self.log_detail_ai or config.settings.log_detail_ai or 0
+	local log_detail = config.settings.log_detail_ai or 0
 	
 	local force_cache_test = config.settings.tactical_cache_test
 	
