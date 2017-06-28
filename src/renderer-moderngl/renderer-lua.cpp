@@ -1177,6 +1177,16 @@ static int gl_text_style(lua_State *L)
 	return 0;
 }
 
+static int gl_text_from(lua_State *L)
+{
+	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *prev = userdata_to_DO<DORText>(__FUNCTION__, L, 2, "gl{text}");
+	v->setFrom(prev);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_text_text_color(lua_State *L)
 {
 	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
@@ -1999,6 +2009,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"text", gl_text_set},
 	{"shadow", gl_text_shadow},
 	{"outline", gl_text_outline},
+	{"setFrom", gl_text_from},
 	{"textColor", gl_text_text_color},
 	{"getStats", gl_text_stats},
 	{"maxWidth", gl_text_max_width},

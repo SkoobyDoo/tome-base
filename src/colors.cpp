@@ -53,7 +53,7 @@ void Color::define256(const char *name, int r, int g, int b, int a) {
 
 Color *Color::find(string &name) {
 	auto it = all_colors.find(name);
-	printf("[CCOLOR] finding %s : %s\n", name.c_str(), it == all_colors.end() ? "unfound" : "found");
+	// printf("[CCOLOR] finding %s : %s\n", name.c_str(), it == all_colors.end() ? "unfound" : "found");
 	if (it == all_colors.end()) return NULL;
 	return &it->second;
 }

@@ -33,7 +33,6 @@ private:
 
 	int font_lua_ref = LUA_NOREF;
 	font_type *font = NULL;
-	vec4 font_color;
 	bool centered = false;
 	char *text;
 	int line_max_width = 99999;
@@ -42,6 +41,11 @@ private:
 	vector<vec2> positions;
 	uint32_t last_glyph = 0;
 	font_style default_style = FONT_STYLE_NORMAL;
+	vec4 font_color;
+	vec4 font_last_color;
+
+	vec4 used_color, used_last_color;
+	font_style used_font_style;
 
 	float shadow_x = 0, shadow_y = 0;
 	vec4 shadow_color;
@@ -74,7 +78,8 @@ public:
 	void setMaxWidth(int width) { this->line_max_width = width; parseText(); };
 	void setMaxLines(int max) { this->max_lines = max; parseText(); };
 	void setTextStyle(font_style style) { default_style = style; };
-	void setTextColor(float r, float g, float b, float a) { font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a; parseText(); };
+	void setTextColor(float r, float g, float b, float a) { font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a; font_last_color.r = r; font_last_color.g = g; font_last_color.b = b; font_last_color.a = a; parseText(); };
+	void setFrom(DORText *prev);
 
 	vec2 getLetterPosition(int idx);
 

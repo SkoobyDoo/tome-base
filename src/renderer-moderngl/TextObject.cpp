@@ -54,6 +54,12 @@ void DORText::cloneInto(DisplayObject* _into) {
 	into->setText(text);
 }
 
+void DORText::setFrom(DORText *prev) {
+	font_color = prev->used_color;
+	font_last_color = prev->used_last_color;
+	default_style = prev->used_font_style;
+}
+
 ftgl::texture_glyph_t *DORText::getGlyph(uint32_t codepoint) {
 	auto glyph_map = font->glyph_map;
 	if (font->font->rendermode == ftgl::RENDER_OUTLINE_POSITIVE) glyph_map = font->glyph_map_outline;
@@ -203,7 +209,7 @@ void DORText::parseText() {
 	if (!len) return;
 	const char *str = text;
 	float r = font_color.r, g = font_color.g, b = font_color.b, a = font_color.a;
-	float lr = r, lg = g, lb = b, la = a;
+	float lr = font_last_color.r, lg = font_last_color.g, lb = font_last_color.b, la = font_last_color.a;
 	int max_width = line_max_width;
 	int bx = 0, by = 0;
 
@@ -408,6 +414,10 @@ endcolor:
 	}
 
 	if (size > max_size) max_size = size;
+
+	used_font_style = style;
+	used_color = vec4(r, g, b, a);
+	used_last_color = vec4(lr, lg, lb, la);
 
 	this->nb_lines = nb_lines;
 	this->w = max_size;

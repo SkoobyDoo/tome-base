@@ -69,13 +69,16 @@ function _M:generate()
 	local strs = self.text:splitLines(self.w, self.font)
 	local max_lines = #strs
 
+	local last_text = nil
 	for i, str in ipairs(strs) do
 		local textzone = core.renderer.text(self.font)
 		self:applyShadowOutline(textzone)
-		textzone:textColor(self.color.r / 255, self.color.g / 255, self.color.b / 255, 1)
+		if not last_text then textzone:textColor(self.color.r / 255, self.color.g / 255, self.color.b / 255, 1)
+		else textzone:setFrom(last_text) end
 		textzone:text(str)
 		textzone:translate(0, (i - 1) * self.font_h, 10)
 		self.text_container:add(textzone)
+		last_text = textzone
 	end
 	self.max = max_lines
 
