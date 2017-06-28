@@ -1051,7 +1051,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 			--don't do anything without a useful choice or if the best action doesn't address a significant want
 			--(eliminates choosing relatively useless actions due to scaling of tactical values with level)
 			if best_value > 0.1 and (action_pick.mode == "sustained" or math.abs(want[action_pick.main_tactic]) >= 0.1) then
-				if log_detail > 2 then -- debugging sort and summarize available actions
+				if log_detail > 1.5 then -- debugging sort and summarize available actions
 					if action_attempt < 2 then
 						table.sort(actions, function(a, b) return a.value > b.value end)
 						print("[use_tactical AI] === Tactical Action Summary (SORTED) === attempt:", action_attempt, self.uid, self.name)

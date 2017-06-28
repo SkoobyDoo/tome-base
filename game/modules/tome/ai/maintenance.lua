@@ -59,7 +59,7 @@ newAI("maintenance", function(self, t_filter, t_list)
 		end
 	end
 	
-	if log_detail >= 2 then print("[maintenance AI] actions available:") table.print(avail, "\t_maint_ ") end
+	if log_detail > 1 and #avail > 0 then print("[maintenance AI] actions available:") table.print(avail, "\t_maint_ ") end
 	-- randomly pick an available action
 	local action
 	while #avail > 0 do

@@ -61,7 +61,7 @@ if config.settings.ai_transition then
 	elseif self.rank >= 3 and ai == "dumb_talented_simple" then ai = "improved_talented_simple"
 	end
 end
-	if config.settings.log_detail_ai > 1 then print("[ActorAI:runAI(transitional)]", self.uid, self.name, "running AI:", ai, ...) end
+	if config.settings.log_detail_ai > 2.5 then print("[ActorAI:runAI(transitional)]", self.uid, self.name, "running AI:", ai, ...) end
 	return _M.ai_def[ai](self, ...)
 end
 --- dgdgdgdgdg END TRANSITIONAL CODE section ---
@@ -938,7 +938,7 @@ Some flags can be added to tactical tables as special instructions to aiTalentTa
 	__wt_cache_turns: specify the maximum number of game turns (not actions) to cache TACTIC values for other actors (default SELF.ai_state._tactical_cache_turns or SELF.AI_TACTICAL_CACHE_TURNS)
 		This is only needed (typically set to 1) for talents that affect actors other than SELF for which the TACTIC value is likely to change very frequently (e.g. CURE, which depends on temporary status effects, or HEAL, which depends on life levels).  Set to 0 to disable caching TACTIC values.
 	_no_tp_cache: set to true to prevent caching of the final TACTIC WEIGHTs in the SELF.turn_procs cache.
-		This is useful to prevent storing intermediate results when building complex TACTIC WEIGHT tables in stages.  (Such as when merging various TACTIC WEIGHTs into the tactics.self subtable.  See the cunning/poisons and psionic/projection talents for examples.)
+		This is useful to prevent storing intermediate results when building complex TACTIC WEIGHT tables in stages.  (Such as when merging various TACTIC WEIGHTs into the tactics.self subtable.  See T_SUN_BEAM and the cunning/poisons and psionic/projection talents for examples.)
 
 -== TACTICS CACHING STRUCTURE ==-
 For each talent, the aiTalentTactics function caches a list of targets affected (within SELF.turn_procs) and tactical data for each target.  This allows previously computed TACTIC values for a talent vs possible targets to be remembered, so that they don't need to be recomputed unnecessarily.  The main variables used and their structure are as follows:
@@ -1254,7 +1254,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 	self.turn_procs._ai_tactical = self.turn_procs._ai_tactical or {_new_tact_wt_cache = false}
 	local tp_cache = self.turn_procs._ai_tactical -- turn_procs tactical cache
 	local tpid_cache = tp_cache[t.id] -- turn_procs tactical cache (this talent)
-	local log_detail = config.settings.log_detail_ai or 0
+	local log_detail = self.log_detail_ai or config.settings.log_detail_ai or 0
 	
 	local force_cache_test = config.settings.tactical_cache_test
 	

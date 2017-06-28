@@ -62,7 +62,7 @@ newAI("dumb_talented", function(self, filter)
 	
 	local tid = false
 	if #avail > 0 then
-		if log_detail >= 2 then print("[dumb_talented AI] available talents for", self.uid, self.name) table.print(avail, "\t") end
+		if log_detail > 1 then print("[dumb_talented AI] available talents for", self.uid, self.name) table.print(avail, "\t") end
 		tid = avail[rng.range(1, #avail)]
 		print("[dumb_talented AI] chooses for", self.uid, self.name, tid)
 		if not self:useTalent(tid) then
@@ -83,9 +83,9 @@ newAI("improved_talented", function(self, t_filter, t_list)
 	local log_detail = config.settings.log_detail_ai or 0
 	-- Find available talents
 	local aitarget = self.ai_target.actor
-	if log_detail > 0 then print("[ActorAI]Invoking improved_talented AI for", self.uid, self.name, t_filter, t_list, "target", aitarget and aitarget.uid, aitarget and aitarget.name) end
+	if log_detail > 0 then print("[ActorAI] Invoking improved_talented AI for", self.uid, self.name, t_filter, t_list, "target", aitarget and aitarget.uid, aitarget and aitarget.name) end
 	local avail = self:aiGetAvailableTalents(aitarget, t_filter, t_list)
-	if log_detail >= 2 then print("improved talented ai available talents:") table.print(avail, "\t_ ") end
+	if log_detail > 1 and #avail > 0 then print("[improved_talented AI] available talents:") table.print(avail, "\t_ ") end
 	local tid, attempt = false, 1
 	while #avail > 0 and attempt < 5 do
 		tid = rng.tableRemove(avail)

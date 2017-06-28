@@ -355,24 +355,38 @@ function _M:aiGetAvailableTalents(aitarget, t_filter, t_list)
 			prune = false
 			if (not t.no_dumb_use or allow_dumb_use) and (ignore_cd or not self:isTalentCoolingDown(t)) and (not t_filter or self:filterTalent(t, t_filter)) then
 				if self:preUseTalent(t, true, true) and self:aiPreUseTalent(t, true, true) then
-					if t.mode == "activated" then -- make sure targeted talent can reach the target (if needed)
-						local tx, ty, aitarget = tx, ty, aitarget
-						if t.onAIGetTarget then -- handle special targeting (for heals and other friendly effects)
-							tx, ty, aitarget = t.onAIGetTarget(self, t)
-							if not (tx and ty) then
-								tx, ty = self:aiSeeTargetPos(aitarget)
+					local tx, ty, aitarget = tx, ty, aitarget
+					if t.onAIGetTarget then -- handle special targeting (for heals and other friendly effects)
+						tx, ty, aitarget = t.onAIGetTarget(self, t)
+						if not (tx and ty) then
+							tx, ty = self:aiSeeTargetPos(aitarget)
+						end
+					end
+					local requires_target = t.requires_target ~= nil and self:getTalentRequiresTarget(t)
+					local tg
+					if requires_target then
+						tg = self:getTalentTarget(t)
+						if tg then -- modify targeting
+							if tg == t.target then tg = table.clone(tg) end
+							if tg.type ~= "hit" and tg.type ~= "bolt" then
+								tg.type = not tg.stop_block and util.getval(t.direct_hit, self, t) and "hit" or "bolt"
+							end
+						else -- default targeting
+							tg = {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt"}	
+						end
+						tg.range = (self:getTalentRange(t) or 0) + (self:getTalentRadius(t) or 0)
+					end
+					
+					if not tg or aitarget and self:canProject(tg, tx, ty) then
+						avail[#avail+1] = tid
+						if log_detail > 2 then
+							if t.mode == "sustained" then
+								print(self.name, self.uid, "::ai may "..(self.sustain_talents[tid] and "de-activate" or "activate").." talent", tid, t.name)
+							else
+								print(self.name, self.uid, "::ai may use talent", tid, t.name)
 							end
 						end
-						local requires_target = self:getTalentRequiresTarget(t)
-						local tg = requires_target and (self:getTalentTarget(t) or {type=util.getval(t.direct_hit, self, t) and "hit" or "bolt", range=(self:getTalentRange(t) or 1) + (self:getTalentRadius(t) or 0)})
-						if not tg or aitarget and self:canProject(tg, tx, ty) then
-							avail[#avail+1] = tid
-							if log_detail > 2 then print(self.name, self.uid, "::ai may use talent", tid, t.name) end
-						else prune = true
-						end
-					elseif t.mode == "sustained" then
-							avail[#avail+1] = tid
-						if log_detail > 2 then print(self.name, self.uid, "::ai may "..(self.sustain_talents[tid] and "de-activate" or "activate").." talent", tid, t.name) end
+					else prune = true
 					end
 				else -- remove unusable talents from t_list (for additional calls with the same list)
 					prune = true

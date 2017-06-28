@@ -58,6 +58,14 @@ local function aura_target(self, t)
 	end
 end
 
+local function aura_requires_target(self, t)
+	if self:isTalentActive(t.id) and self:getPsi() >= t.getSpikeCost(self, t) then -- Spiked ability
+		return true
+	else -- Normal ability
+		return false
+	end
+end
+
 --- will the aura trigger each turn?
 local function aura_should_proc(self, t)
 	local psiweapon = self:getInven("PSIONIC_FOCUS") and self:getInven("PSIONIC_FOCUS")[1]
@@ -73,7 +81,12 @@ local aura_tactical = function(self, t, aitarget)
 end
 
 local aura_on_pre_use_ai = function(self, t, silent, fake)
-	return self.ai_target.actor or not self:isTalentActive(t)
+	if self.ai_state._advanced_ai then return true end -- let the AI decide when to use
+	local aitarget = self.ai_target.actor
+	if not aitarget or self:reactionToward(aitarget) >= 0 then -- no hostile target, keep activated
+		return not self:isTalentActive(t.id)
+	end
+	return true -- requires_target controls if active
 end
 
 --(DEBUGGING transitional until reassignment)
@@ -144,6 +157,7 @@ newTalent{
 		return true
 	end,
 	on_pre_use_ai = aura_on_pre_use_ai,
+	requires_target = aura_requires_target,
 	range = aura_range,
 	radius = aura_radius,
 	target = aura_target,
@@ -163,15 +177,6 @@ newTalent{
 	end,
 	getNormalTarget = function(self, t)
 		return {type="ball", range=t.getNormalRange(self, t), radius=t.getNormalRadius(self, t), selffire=false, friendlyfire=false}
-	end,
-	requires_target = function(self, t)
-		-- Spiked ability
-		if self:isTalentActive(t.id) and self:getPsi() > t.getSpikeCost(self, t) then
-			return true
-		-- Normal ability
-		else
-			return false
-		end
 	end,
 	getSpikeCost = function(self, t)
 		return t.sustain_psi*2/3
@@ -275,6 +280,7 @@ newTalent{
 		return true
 	end,
 	on_pre_use_ai = aura_on_pre_use_ai,
+	requires_target = aura_requires_target,
 	range = aura_range,
 	radius = aura_radius,
 	target = aura_target,
@@ -294,15 +300,6 @@ newTalent{
 	end,
 	getNormalTarget = function(self, t)
 		return {type="ball", range=t.getNormalRange(self, t), radius=t.getNormalRadius(self, t), selffire=false, friendlyfire=false}
-	end,
-	requires_target = function(self, t)
-		-- Spiked ability
-		if self:isTalentActive(t.id) and self:getPsi() > t.getSpikeCost(self, t) then
-			return true
-		-- Normal ability
-		else
-			return false
-		end
 	end,
 	getAuraStrength = function(self, t)
 		return aura_strength(self, t)
@@ -403,6 +400,7 @@ newTalent{
 		return true
 	end,
 	on_pre_use_ai = aura_on_pre_use_ai,
+	requires_target = aura_requires_target,
 	range = aura_range,
 	radius = aura_radius,
 	target = aura_target,
@@ -422,15 +420,6 @@ newTalent{
 	end,
 	getNormalTarget = function(self, t)
 		return {type="ball", range=t.getNormalRange(self, t), radius=t.getNormalRadius(self, t), selffire=false, friendlyfire=false}
-	end,
-	requires_target = function(self, t)
-		-- Spiked ability
-		if self:isTalentActive(t.id) and self:getPsi() > t.getSpikeCost(self, t) then
-			return true
-		-- Normal ability
-		else
-			return false
-		end
 	end,
 	getSpikeCost = function(self, t)
 		return t.sustain_psi*2/3
@@ -495,17 +484,17 @@ newTalent{
 		local first = nil
 		--Here's the part where deactivating the aura fires off a huge chain lightning
 		self:project(tg, fx, fy, function(dx, dy)
-			print("[Chain lightning] targetting", fx, fy, "from", self.x, self.y)
+			print("[Charged Aura(Chain lightning)] targetting", fx, fy, "from", self.x, self.y)
 			local actor = game.level.map(dx, dy, Map.ACTOR)
 			if actor and not affected[actor] then
 				affected[actor] = true
 				first = actor
 
-				print("[Chain lightning] looking for more targets", nb, " at ", dx, dy, "radius ", 10, "from", actor.name)
+				print("[Charged Aura(Chain lightning)] looking for more targets", nb, " at ", dx, dy, "radius ", 10, "from", actor.name)
 				self:project({type="ball", friendlyfire=false, x=dx, y=dy, radius=self:getTalentRange(t), range=0}, dx, dy, function(bx, by)
 					local actor = game.level.map(bx, by, Map.ACTOR)
 					if actor and not affected[actor] and self:reactionToward(actor) < 0 then
-						print("[Chain lightning] found possible actor", actor.name, bx, by, "distance", core.fov.distance(dx, dy, bx, by))
+						print("[Charged Aura(Chain lightning)] found possible actor", actor.name, bx, by, "distance", core.fov.distance(dx, dy, bx, by))
 						affected[actor] = true
 					end
 				end)
@@ -517,7 +506,7 @@ newTalent{
 		local targets = { first }
 		affected[first] = nil
 		local possible_targets = table.listify(affected)
-		print("[Chain lightning] Found targets:", #possible_targets)
+		print("[Charged Aura(Chain lightning)] Found targets:", #possible_targets)
 		for i = 2, nb do
 			if #possible_targets == 0 then break end
 			local act = rng.tableRemove(possible_targets)
@@ -527,7 +516,7 @@ newTalent{
 		local sx, sy = self.x, self.y
 		for i, actor in ipairs(targets) do
 			local tgr = {type="beam", range=self:getTalentRange(t), friendlyfire=false, talent=t, x=sx, y=sy}
-			print("[Chain lightning] jumping from", sx, sy, "to", actor.x, actor.y)
+			print("[Charged Aura(Chain lightning)] jumping from", sx, sy, "to", actor.x, actor.y)
 			self:project(tgr, actor.x, actor.y, DamageType.LIGHTNING_DAZE, {power_check=self:combatMindpower(), dam=self:mindCrit(rng.avg(0.8*dam, dam)), daze=50})
 			game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "lightning", {tx=actor.x-sx, ty=actor.y-sy, nb_particles=150, life=6})
 			sx, sy = actor.x, actor.y
