@@ -576,9 +576,10 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 					end
 					-- These checks replace those performed in aiCheckSustainedTalent for simpler AIs
 					-- don't turn on sustains that cannot be sustained indefinitely
+					-- active draining sustains may eventually be deactivated (std tactical evaluation)
 					if t.mode == "sustained" and t._may_drain_resources and not is_active then
 						local res_def, r_invert
-						for i, res in ipairs(t._may_drain_resources) do
+						for res, _ in pairs(t._may_drain_resources) do
 							res_def = self.resources_def[res]; r_invert = res_def.invert_values and -1 or 1
 							if ((self[res_def.regen_prop] or 0) - (util.getval(t[res_def.drain_prop], self, t) or 0)*r_invert)*r_invert <= 0 then
 								t_avail = false break

@@ -78,7 +78,8 @@ end)
 --- Randomly use a talent, trying alternate talents if one fails (up to 5 total)
 -- @param t_filter <optional> = filter passed to self:aiGetAvailableTalents to restrict talent choices
 -- @param t_list, <optional, default self.talents> list of talent id's to pick from, passed to self:aiGetAvailableTalents
--- @return talent id used or false, table of remaining available talents
+-- @return talent id used or false
+-- @return table of remaining available talents
 newAI("improved_talented", function(self, t_filter, t_list)
 	local log_detail = config.settings.log_detail_ai or 0
 	-- Find available talents
