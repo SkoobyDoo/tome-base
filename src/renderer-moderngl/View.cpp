@@ -29,8 +29,8 @@ extern "C"{
 static stack<View*> views_stack;
 
 View::View() {
-	from_screen_size = true;
 	setOrthoView(screen->w / screen_zoom, screen->h / screen_zoom);
+	from_screen_size = true;
 }
 
 View::View(int w, int h) {
@@ -43,9 +43,11 @@ View::~View() {
 	if (origin_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, origin_lua_ref);
 }
 
-void View::setOrthoView(int w, int h) {
+void View::setOrthoView(int w, int h, bool reverse_height) {
+	from_screen_size = false;
 	mode = ViewMode::ORTHO;
-	view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+	if (reverse_height) view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
+	else view = glm::ortho(0.f, (float)w, 0.f, (float)h, -1001.f, 1001.f);
 	printf("[RendererGL] View set %dx%d\n", w, h);
 }
 
@@ -53,6 +55,7 @@ void View::setProjectView(
 	float fov_angle, int w, int h, float near_clip, float far_clip,
 	DisplayObject *camera, int camera_ref, DisplayObject *origin, int origin_ref
 ) {
+	from_screen_size = false;
 	if (camera_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, camera_lua_ref);
 	if (origin_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, origin_lua_ref);
 

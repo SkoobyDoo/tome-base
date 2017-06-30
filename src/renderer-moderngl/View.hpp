@@ -47,7 +47,7 @@ public:
 	View(int w, int h);
 	virtual ~View();
 
-	void setOrthoView(int w, int h);
+	void setOrthoView(int w, int h, bool reverse_height=true);
 	void setProjectView(
 		float fov_angle, int w, int h, float near_clip, float far_clip,
 		DisplayObject *camera, int camera_ref, DisplayObject *origin, int origin_ref

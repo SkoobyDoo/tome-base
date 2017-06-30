@@ -277,9 +277,9 @@ function core.renderer.line(t, x1, y1, x2, y2, width)
 	return v
 end
 
-function core.renderer.targetDisplay(target, tid, did)
+function core.renderer.targetDisplay(target, tid, did, w, h)
 	local v = core.renderer.vertexes()
-	local w, h = target:displaySize()
+	if not w or not h then w, h = target:displaySize() end
 	local x1, x2 = 0, w
 	local y1, y2 = 0, h
 	local u1, u2 = 0, 1

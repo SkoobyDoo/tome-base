@@ -60,12 +60,14 @@ protected:
 	shader_type *blur = NULL;
 	int blur_ref = LUA_NOREF;
 	GLint blur_horizontal_uniform = 0;
+	float renderscale = 1;
 	int blur_passes;
 	Fbo fbo_blur;
+	View view;
 
 	VBO vbo;
 public:
-	TargetBlur(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref);
+	TargetBlur(DORTarget *t, int blur_passes, float renderscale, shader_type *blur, int blur_ref);
 	virtual ~TargetBlur();
 	virtual void renderMode();
 };

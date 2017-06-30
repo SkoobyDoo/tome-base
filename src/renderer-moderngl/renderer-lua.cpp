@@ -751,13 +751,15 @@ static int gl_target_mode_blur(lua_State *L)
 	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
 
 	int blur_passes = lua_tonumber(L, 2);
+	float renderscale = lua_tonumber(L, 3);
 
-	shader_type *blur = (shader_type*)lua_touserdata(L, 3);
-	lua_pushvalue(L, 3); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	shader_type *blur = (shader_type*)lua_touserdata(L, 4);
+	lua_pushvalue(L, 4); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	TargetBlur *mode = new TargetBlur(
 		v,
 		blur_passes,
+		renderscale,
 		blur, blur_ref
 	);
 	v->setSpecialMode(mode);
@@ -1578,7 +1580,9 @@ static int gl_view_free(lua_State *L)
 static int gl_view_ortho(lua_State *L)
 {
 	View *v = *(View**)auxiliar_checkclass(L, "gl{view}", 1);
-	v->setOrthoView(luaL_checknumber(L, 2), luaL_checknumber(L, 3));
+	bool reverse = true;
+	if (!lua_isnil(L, 4)) reverse = lua_toboolean(L, 4);
+	v->setOrthoView(luaL_checknumber(L, 2), luaL_checknumber(L, 3), reverse);
 	lua_pushvalue(L, 1);
 	return 1;
 }

@@ -526,18 +526,20 @@ void TargetPostProcess::renderMode() {
 /*************************************************************************
  ** TargetBlur
  *************************************************************************/
-TargetBlur::TargetBlur(DORTarget *t, int blur_passes, shader_type *blur, int blur_ref)
+TargetBlur::TargetBlur(DORTarget *t, int blur_passes, float renderscale, shader_type *blur, int blur_ref)
 	: TargetSpecialMode(t), vbo(VBOMode::STATIC)
 {
 	this->blur = blur;
 	this->blur_ref = blur_ref;
 
 	this->blur_passes = blur_passes;
+	this->renderscale = renderscale;
 
 	useShaderSimple(blur);
 	blur_horizontal_uniform = glGetUniformLocation(blur->shader, "horizontal");
 
 	target->makeFramebuffer(target->w, target->h, 1, true, false, &fbo_blur);
+	view.setOrthoView(target->w, target->h, false);
 
 	vbo.addQuad(
 		0, 0, 0, 1,
@@ -555,11 +557,14 @@ TargetBlur::~TargetBlur() {
 
 void TargetBlur::renderMode() {
 	mat4 model = mat4();
+	model = glm::scale(model, glm::vec3(1.f/renderscale, 1.f/renderscale, 1));
+
 	vbo.resetTexture();
 	glDisable(GL_BLEND);
 	// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // DGDGDGDG: probably betetr to use premultipled alpha, work on me!
 
 	// Draw all passes
+	view.use(true);
 	vbo.setShader(blur);
 	Fbo *use_fbo_prev = &target->fbo;
 	Fbo *use_fbo = &fbo_blur;
@@ -583,6 +588,7 @@ void TargetBlur::renderMode() {
 		vbo.setShader(NULL);
 		vbo.toScreen(model);
 	}
+	view.use(false);
 
 	// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
