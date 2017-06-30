@@ -89,6 +89,18 @@ static int particles_lua_panic_handler(lua_State *L)
 }
 /********************************************/
 
+static shader_type *lua_get_shader(lua_State *L, int idx) {
+	if (lua_istable(L, idx)) {
+		lua_pushliteral(L, "shad");
+		lua_gettable(L, idx);
+		shader_type *s = (shader_type*)lua_touserdata(L, -1);
+		lua_pop(L, 1);
+		return s;
+	} else {
+		return (shader_type*)lua_touserdata(L, idx);
+	}
+}
+
 static void getinitfield(lua_State *L, const char *key, int *min, int *max)
 {
 	lua_pushstring(L, key);
@@ -186,7 +198,7 @@ static int particles_new(lua_State *L)
 	int density = luaL_checknumber(L, 4);
 	texture_type *texture = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 5);
 	shader_type *s = NULL;
-	if (lua_isuserdata(L, 6)) s = (shader_type*)lua_touserdata(L, 6);
+	if (lua_isuserdata(L, 6)) s = lua_get_shader(L, 6);
 	bool fboalter = lua_toboolean(L, 7);
 	bool allow_bloom = lua_toboolean(L, 8);
 
@@ -685,7 +697,7 @@ static int particles_set_default_shader(lua_State *L)
 	if (lua_isnil(L, 1)) {
 		default_particles_shader = NULL;
 	} else {
-		default_particles_shader = (shader_type*)lua_touserdata(L, 1);
+		default_particles_shader = lua_get_shader(L, 1);
 	}
 	return 0;
 }

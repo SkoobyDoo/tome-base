@@ -425,7 +425,7 @@ end
 -- Alter the DOs metatables to add the new methods
 -----------------------------------------------------------------------------------
 for _, DO in pairs(DOAll) do
-	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
+	-- if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
 	if DO.add then DO._add, DO.add = DO.add, doContainerAdd end
 
 	DO.physicEnable = doPhysicEnable

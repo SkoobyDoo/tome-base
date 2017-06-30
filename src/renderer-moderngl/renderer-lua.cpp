@@ -35,6 +35,18 @@ extern "C" {
 /******************************************************************
  ** Generic
  ******************************************************************/
+static shader_type *lua_get_shader(lua_State *L, int idx) {
+	if (lua_istable(L, idx)) {
+		lua_pushliteral(L, "shad");
+		lua_gettable(L, idx);
+		shader_type *s = (shader_type*)lua_touserdata(L, -1);
+		lua_pop(L, 1);
+		return s;
+	} else {
+		return (shader_type*)lua_touserdata(L, idx);
+	}
+}
+
 static void setWeakSelfRef(lua_State *L, int idx, DisplayObject *c) {
 	// Get the weak self storage
 	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
@@ -467,7 +479,7 @@ static int gl_renderer_shader(lua_State *L)
 	if (lua_isnil(L, 2)) {
 		r->setShader(NULL, LUA_NOREF);
 	} else {
-		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		shader_type *shader = lua_get_shader(L, 2);
 		lua_pushvalue(L, 2);
 		r->setShader(shader, luaL_ref(L, LUA_REGISTRYINDEX));
 	}
@@ -686,66 +698,6 @@ static int gl_target_target_texture(lua_State *L)
 	return 1;
 }
 
-static int gl_target_mode_bloom(lua_State *L)
-{
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
-
-	int blur_passes = lua_tonumber(L, 2);
-
-	shader_type *bloom = (shader_type*)lua_touserdata(L, 3);
-	lua_pushvalue(L, 3); int bloom_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	shader_type *hblur = (shader_type*)lua_touserdata(L, 4);
-	lua_pushvalue(L, 4); int hblur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	shader_type *vblur = (shader_type*)lua_touserdata(L, 5);
-	lua_pushvalue(L, 5); int vblur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	shader_type *combine = (shader_type*)lua_touserdata(L, 6);
-	lua_pushvalue(L, 6); int combine_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	
-	TargetBloom *mode = new TargetBloom(
-		v,
-		blur_passes,
-		bloom, bloom_ref,
-		hblur, hblur_ref,
-		vblur, vblur_ref,
-		combine, combine_ref
-	);
-	v->setSpecialMode(mode);
-
-	lua_pushvalue(L, 1);
-	return 1;
-}
-
-static int gl_target_mode_bloom2(lua_State *L)
-{
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
-
-	int blur_passes = lua_tonumber(L, 2);
-
-	shader_type *bloom = (shader_type*)lua_touserdata(L, 3);
-	lua_pushvalue(L, 3); int bloom_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	shader_type *blur = (shader_type*)lua_touserdata(L, 4);
-	lua_pushvalue(L, 4); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	shader_type *combine = (shader_type*)lua_touserdata(L, 5);
-	lua_pushvalue(L, 5); int combine_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	
-	TargetBloom2 *mode = new TargetBloom2(
-		v,
-		blur_passes,
-		bloom, bloom_ref,
-		blur, blur_ref,
-		combine, combine_ref
-	);
-	v->setSpecialMode(mode);
-
-	lua_pushvalue(L, 1);
-	return 1;
-}
-
 static int gl_target_mode_blur(lua_State *L)
 {
 	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
@@ -753,7 +705,7 @@ static int gl_target_mode_blur(lua_State *L)
 	int blur_passes = lua_tonumber(L, 2);
 	float renderscale = lua_tonumber(L, 3);
 
-	shader_type *blur = (shader_type*)lua_touserdata(L, 4);
+	shader_type *blur = lua_get_shader(L, 4);
 	lua_pushvalue(L, 4); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	TargetBlur *mode = new TargetBlur(
@@ -774,7 +726,7 @@ static int gl_target_mode_blur_downsampling(lua_State *L)
 
 	int blur_passes = lua_tonumber(L, 2);
 
-	shader_type *blur = (shader_type*)lua_touserdata(L, 3);
+	shader_type *blur = lua_get_shader(L, 3);
 	lua_pushvalue(L, 3); int blur_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	TargetBlurDownsampling *mode = new TargetBlurDownsampling(
@@ -818,7 +770,7 @@ static int gl_target_mode_posteffects(lua_State *L)
 		if (string_get_lua_table(L, idx, 1, &name)) {
 			lua_pushnumber(L, 2);
 			lua_gettable(L, idx);
-			shader_type *shad = (shader_type*)lua_touserdata(L, -1);
+			shader_type *shad = lua_get_shader(L, -1);
 			lua_pushvalue(L, -1); int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 			lua_pop(L, 1);
 			mode->add(name, shad, ref);
@@ -838,7 +790,7 @@ static int gl_target_shader(lua_State *L)
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
-		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		shader_type *shader = lua_get_shader(L, 2);
 		v->setShader(shader);
 	}
 	lua_pushvalue(L, 1);
@@ -1042,7 +994,7 @@ static int gl_vertexes_shader(lua_State *L)
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
-		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		shader_type *shader = lua_get_shader(L, 2);
 		v->setShader(shader);
 	}
 	lua_pushvalue(L, 1);
@@ -1243,7 +1195,7 @@ static int gl_text_shader(lua_State *L)
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
-		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		shader_type *shader = lua_get_shader(L, 2);
 		v->setShader(shader);
 	}
 	lua_pushvalue(L, 1);
@@ -1409,7 +1361,7 @@ static int gl_spriter_shader(lua_State *L)
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
-		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		shader_type *shader = lua_get_shader(L, 2);
 		v->setShader(shader);
 	}
 	lua_pushvalue(L, 1);
@@ -1493,7 +1445,7 @@ static int gl_vbo_shader(lua_State *L)
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
-		shader_type *shader = (shader_type*)lua_touserdata(L, 2);
+		shader_type *shader = lua_get_shader(L, 2);
 		v->setShader(shader);
 	}
 	lua_pushvalue(L, 1);
@@ -1783,7 +1735,7 @@ static int gl_set_pixel_perfect(lua_State *L) {
 }
 
 static int gl_set_default_text_shader(lua_State *L) {
-	shader_type *shader = (shader_type*)lua_touserdata(L, 1);
+	shader_type *shader = lua_get_shader(L, 1);
 	DORText::defaultShader(shader);
 	return 0;
 }
@@ -1909,8 +1861,6 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"view", gl_target_view},
 	{"texture", gl_target_texture},
 	{"textureTarget", gl_target_target_texture},
-	{"bloomMode", gl_target_mode_bloom},
-	{"bloomMode2", gl_target_mode_bloom2},
 	{"blurMode", gl_target_mode_blur},
 	{"blurModeDownsampling", gl_target_mode_blur_downsampling},
 	{"postEffectsMode", gl_target_mode_posteffects},
