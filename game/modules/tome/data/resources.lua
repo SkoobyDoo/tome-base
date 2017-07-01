@@ -46,6 +46,7 @@ ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in yo
 	color = "#LIGHT_STEEL_BLUE#",
 	ai = {-- if drowning/suffocating due to terrain, try to move to a safe tile (simple AIs)
 		aiResourceAction = function(actor, res_def)
+			if actor.air >= actor.max_air then return end
 			local dam, air = actor:aiGridDamage()
 			local air_rate = air + actor.air_regen
 			if air_rate <= 0 then

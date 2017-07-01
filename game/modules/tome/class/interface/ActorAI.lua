@@ -64,8 +64,7 @@ if config.settings.ai_transition then
 	elseif self.rank >= 3 and ai == "dumb_talented_simple" then ai = "improved_talented_simple"
 	end
 end
-	if config.settings.log_detail_ai > 2.5 then print("[ActorAI:runAI(transitional)]", self.uid, self.name, "running AI:", ai, ...) end
---	return _M.ai_def[ai](self, ...)
+	if config.settings.log_detail_ai > 2.5 then print("[ActorAI:runAI(transitional)] turn:", game.turn, self.uid, self.name, "running AI:", ai, ...) end
 	local ret1, ret2, ret3 = _M.ai_def[ai](self, ...)
 	config.settings.log_detail_ai = old_detail
 	return ret1, ret2, ret3

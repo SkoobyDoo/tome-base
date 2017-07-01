@@ -2380,7 +2380,7 @@ newEffect{
 newEffect{
 	name = "SPACETIME_TUNING", image = "talents/spacetime_tuning.png",
 	desc = "Spacetime Tuning",
-	long_desc = function(self, eff) return ("Tuning Paradox at a rate of %d per turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Tuning Paradox at a rate of %+d per turn."):format(eff.power) end,
 	type = "other",
 	subtype = { time=true },
 	status = "beneficial",

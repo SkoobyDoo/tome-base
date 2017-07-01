@@ -280,6 +280,7 @@ newTalent{
 	require = divi_req1,
 	points = 5,
 	mode = "passive",
+	positive = 0, -- forces learning of Positive pool
 	passives = function(self, t)
 		self:setTalentTypeMastery("celestial/chants-chants", self:getTalentMastery(t))
 	end,
@@ -403,7 +404,7 @@ newTalent{
 	getBonusRegen = function(self, t) return self:combatTalentScale(t, 0.7, 4.0, 0.75) / 10 end,
 	callbackOnRest = function(self, t)
 		if not self:knowTalent(self.T_POSITIVE_POOL) then return false end
-		if self.positive_regen > 0.1 and self.positive < self.max_positive then return true end
+		if self.positive_regen > 0 and self.positive < self.max_positive then return true end
 		return false
 	end,
 	info = function(self, t)

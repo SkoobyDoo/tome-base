@@ -65,7 +65,8 @@ newTalent{
 	require = psi_wil_req2,
 	psi = 15,
 	cooldown = function(self, t) return math.max(10, 20 - self:getTalentLevelRaw(t) * 2) end,
-	tactical = { BUFF = 1, CURE = function(self, t, target)
+	no_energy = true,
+	tactical = { DEFEND = 0, CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
 			local e = self.tempeffect_def[eff_id]
@@ -75,7 +76,9 @@ newTalent{
 		end
 		return nb
 	end,},
-	no_energy = true,
+	on_pre_use_ai = function(self, t)
+		return not self:hasEffect(self.EFF_CLEAR_MIND)
+	end,
 	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	action = function(self, t)
 		local effs = {}

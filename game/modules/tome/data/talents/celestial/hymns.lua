@@ -371,6 +371,7 @@ newTalent{
 	require = divi_req1,
 	points = 5,
 	mode = "passive",
+	negative = 0, -- forces learning of Negative pool
 	passives = function(self, t)
 		self:setTalentTypeMastery("celestial/hymns-hymns", self:getTalentMastery(t))
 	end,
@@ -476,7 +477,7 @@ newTalent{
 	getBonusRegen = function(self, t) return self:combatTalentScale(t, 0.7, 4.0, 0.75) / 10 end,
 	callbackOnRest = function(self, t)
 		if not self:knowTalent(self.T_NEGATIVE_POOL) then return false end
-		if self.negative_regen > 0.1 and self.negative < self.max_negative then return true end
+		if self.negative_regen > 0 and self.negative < self.max_negative then return true end
 		return false
 	end,
 	do_beams = function(self, t)
@@ -535,7 +536,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your passion for singing the praises of the Moons reaches its zenith, increasing your negative energy regeneration by %0.2f per turn.
+		return ([[Your passion for singing the praises of the Moons reaches its zenith; your hymns increase your negative energy regeneration by %0.2f per turn.
 		Your Hymns now fire shadowy beams that will hit up to %d of your foes within radius 5 for 1 to %0.2f damage, with a 20%% chance of blinding.
 		This powerful effect will drain %0.1f negative energy for each beam; no beam will fire if your negative energy is too low.
 		These values scale with your Spellpower.]]):format(t.getBonusRegen(self, t), t.getTargetCount(self, t), damDesc(self, DamageType.DARKNESS, t.getDamage(self, t)), t.getNegativeDrain(self, t))

@@ -223,7 +223,7 @@ newInscription{
 	type = {"inscriptions/infusions", 1},
 	points = 1,
 	no_energy = true,
-	tactical = { DEFEND = 1, ESCAPE = 1, CLOSEIN = 1 },
+	tactical = { DEFEND = 0.5, ESCAPE = 1, CLOSEIN = 1 },
 	on_pre_use = function(self, t) return not self:attr("never_move") end,
 	action = function(self, t)
 		local data = self:getInscriptionData(t.short_name)

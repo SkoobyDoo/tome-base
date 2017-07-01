@@ -89,8 +89,7 @@ function _M:act()
 			local err, mrr = self:attr("equilibrium_regen_on_rest"), self:attr("mana_regen_on_rest")
 			if err then self:incEquilibrium(err) end
 			if mrr then self:incMana(mrr) end
-			self:waitTurn() -- includes reloading and throwing knives replenish, callbackOnRest
-			self:fireTalentCheck("callbackOnRest")
+			self:waitTurn() -- This triggers "callbackOnWait" effects
 		 end
 		if config.settings.log_detail_ai > 2 then print("[NPC:act] turn", game.turn, "post act ENERGY for", self.uid, self.name) table.print(self.energy, "\t_energy_") end
 		if old_energy == self.energy.value then break end -- Prevent infinite loops

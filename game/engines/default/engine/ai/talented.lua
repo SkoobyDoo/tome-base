@@ -26,7 +26,7 @@
 -- @return table of available talents
 newAI("dumb_talented", function(self, filter)
 	local log_detail = config.settings.log_detail_ai or 0
-	if log_detail > 0 then print("[ActorAI]Invoking dumb_talented AI for", self.uid, self.name) end
+	if log_detail > 0 then print("[ActorAI]Invoking dumb_talented AI turn", game.turn, self.uid, self.name) end
 	-- Find available talents
 	local avail = {}
 	local aitarget = self.ai_target.actor
@@ -84,7 +84,7 @@ newAI("improved_talented", function(self, t_filter, t_list)
 	local log_detail = config.settings.log_detail_ai or 0
 	-- Find available talents
 	local aitarget = self.ai_target.actor
-	if log_detail > 0 then print("[ActorAI] Invoking improved_talented AI for", self.uid, self.name, t_filter, t_list, "target", aitarget and aitarget.uid, aitarget and aitarget.name) end
+	if log_detail > 0 then print("[ActorAI] Invoking improved_talented AI turn", game.turn, self.uid, self.name, "target", aitarget and aitarget.uid, aitarget and aitarget.name, t_filter, t_list) end
 	local avail = self:aiGetAvailableTalents(aitarget, t_filter, t_list)
 	if log_detail > 1 and #avail > 0 then print("[improved_talented AI] available talents:") table.print(avail, "\t_ ") end
 	local tid, attempt = false, 1
@@ -115,7 +115,7 @@ end)
 --- Attempts to use a talent (chance in self.ai_state.talent_in <default 6) or move if a hostile target is acquired
 -- @return true if an action was performed
 newAI("dumb_talented_simple", function(self)
-	if config.settings.log_detail_ai > 0 then print("[ActorAI]Invoking dumb_talented_simple AI for", self.uid, self.name) end
+	if config.settings.log_detail_ai > 0 then print("[ActorAI]Invoking dumb_talented_simple AI turn", game.turn, self.uid, self.name) end
 	if self:runAI(self.ai_state.ai_target or "target_simple") then
 		-- One in "talent_in" chance of using a talent
 		local used_talent

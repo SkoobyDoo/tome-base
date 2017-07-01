@@ -32,7 +32,7 @@
 newAI("maintenance", function(self, t_filter, t_list)
 	local log_detail = config.settings.log_detail_ai or 0
 	local aitarget = self.ai_target.actor
-	if log_detail > 0 then print("[ActorAI] turn", game.turn, "Invoking maintenance AI for", self.uid, self.name, "with target", aitarget and aitarget.uid, aitarget and aitarget.name) end
+	if log_detail > 0 then print("[ActorAI] turn", game.turn, "Invoking maintenance AI for", self.uid, self.name, "with target", aitarget and aitarget.uid, aitarget and aitarget.name, t_filter, t_list) end
 	local done
 	local avail = {}
 
@@ -64,7 +64,7 @@ newAI("maintenance", function(self, t_filter, t_list)
 	local action
 	while #avail > 0 do
 		action = rng.tableRemove(avail)
-		print("[maintenance AI]", self.uid, self.name, "selected action:", action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid)
+		print("[maintenance AI] turn", game.turn, self.uid, self.name, "selected action:", action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid)
 if log_detail > 1.4 and config.settings.cheat then game.log("#ORCHID#__%s[%d]maintenance AI picked action: %s (%s)", self.name, self.uid, action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid) end -- debugging
 
 		if action.tid then
@@ -74,7 +74,7 @@ if log_detail > 1.4 and config.settings.cheat then game.log("#ORCHID#__%s[%d]mai
 		end
 		if done then done = action.tid or action.ai break
 		else
-			print("maintenance AI ACTION FAILED:", action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid, unpack(action))
+			print("[maintenance AI] ACTION FAILED:", action.name, action.ai and "ai:"..action.ai or action.tid and "tid:"..action.tid, unpack(action))
 if log_detail > 1.4 and config.settings.cheat then game.log("__%s[%d] #ORANGE# maintenance ACTION FAILED:  %s", self.name, self.uid, action.tid or action.ai) end -- debugging
 		end
 	end

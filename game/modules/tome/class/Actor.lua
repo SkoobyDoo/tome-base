@@ -1440,6 +1440,7 @@ function _M:move(x, y, force)
 end
 
 --- Just wait a turn
+-- Uses energy, triggers various effects triggered by taking no action ("callbackOnWait")
 function _M:waitTurn()
 	if self.reload then
 		local reloaded = self:reload()
@@ -1448,18 +1449,8 @@ function _M:waitTurn()
 		end
 	end
 
-	-- Tune paradox up or down
-	if not self:hasEffect(self.EFF_SPACETIME_TUNING) and self:knowTalent(self.T_SPACETIME_TUNING) then
-		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
-	end
-	
-	if self:knowTalent(self.T_THROWING_KNIVES) then
-		local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
-		local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
-		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
-	end
-
 	self:useEnergy()
+	self:fireTalentCheck("callbackOnWait")
 end
 
 --- Knock back the actor
@@ -5186,6 +5177,7 @@ local sustainCallbackCheck = {
 	callbackOnActBase = "talents_on_act_base",
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
+	callbackOnWait = "talents_on_wait",
 	callbackOnRun = "talents_on_run",
 	callbackOnLevelup = "talents_on_levelup",
 	callbackOnDeath = "talents_on_death",
@@ -5257,7 +5249,7 @@ end
 
 --- Register an object's callbacks to be invoked later with _M:fireTalentCheck or _M:iterCallbacks
 --	@param objdef -- an "object" definition (ActorTalent, ActorTemporaryEffects, Object) containing callback functions
---		Allowable callback types are stored in the _MsustainCallbackCheck table
+--		Allowable callback types are stored in the _M.sustainCallbackCheck table
 --  @param[string] -- the object id
 --  @param objtyp[string, default="talent"] -- the object type ("talent", "effect", "object", ...)
 function _M:registerCallbacks(objdef, objid, objtype)
@@ -5287,7 +5279,7 @@ end
 
 --- Unregister an object's callbacks
 --	@param objdef -- an object definition (ActorTalent, ActorTemporaryEffects, Object) containing callback functions
---		indexed in the sustainCallbackCheck table
+--		indexed in the _M.sustainCallbackCheck table
 --  @param objid -- the object id
 function _M:unregisterCallbacks(objdef, objid)
 	for event, store in pairs(sustainCallbackCheck) do
@@ -5309,7 +5301,7 @@ function _M:unregisterCallbacks(objdef, objid)
 end
 
 --- Trigger all registered callbacks for an event
---  @param event[string] = event name (index in the _M.sustainCallbackCheck table)
+--  @param event[string] = event name (indexed in the _M.sustainCallbackCheck table)
 --  @return ret[table or false] returned from the last callback to return a value[table]
 --  callbacks are called as follows:
 --  effects:  self:callEffect(effect_id, event, ...)
@@ -5429,6 +5421,7 @@ end
 -- @param ab the talent (not the id, the table)
 -- @param ret the return of the talent action
 -- @return true to continue, false to stop
+--	uses energy as appropriate
 function _M:postUseTalent(ab, ret, silent)
 	if not ret then return end
 

@@ -379,7 +379,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 	local aitarget = self.ai_target.actor
 	local ax, ay = self:aiSeeTargetPos(aitarget)
 	local foes_near_strength, allies_near_strength = 0, 0
-	if log_detail > 0 then print("[use_tactical AI]==##== RUNNING turn", game.turn, self.name, self.uid, self.x, self.y, "with target", aitarget and aitarget.name, aitarget and aitarget.uid, ax, ay, "==##==") end
+	if log_detail > 0 then print("[use_tactical AI]==##== RUNNING turn", game.turn, self.uid, self.name, self.x, self.y, "with target", aitarget and aitarget.name, aitarget and aitarget.uid, ax, ay, "==##==") end
 	local target_dist = aitarget and core.fov.distance(self.x, self.y, ax, ay)
 	-- affects how random action selection is; 0.5 --> FINAL TACTICAL VALUE of each action randomly increased by up to 50%
 	local ai_weight_range = self.ai_state.tactical_random_range or self.AI_TACTICAL_RANDOM_RANGE
@@ -1087,7 +1087,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 				--if log_detail > 0 then print("[use_tactical AI] post action energy for", self.uid, self.name) table.print(self.energy, "_energy\t") end-- debugging
 				if success then
 					if log_detail > 0 then
-						print("[use_tactical AI]", self.uid, self.name, "### SUCCESSFUL ACTION returned:", action_pick.tid or action_pick.ai, success)
+						print("[use_tactical AI] turn", game.turn, self.uid, self.name, "### SUCCESSFUL ACTION returned:", action_pick.tid or action_pick.ai, success)
 if log_detail > 1.4 and config.settings.cheat then game.log("#GREY#__[%d]%s ACTION SUCCEEDED:  %s, tacs: %s, FT:%s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.desc, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end-- debugging
 					end
 
@@ -1098,12 +1098,12 @@ if log_detail > 1.4 and config.settings.cheat then game.log("#GREY#__[%d]%s ACTI
 					return action_pick.tid, action_pick.ai, action_pick.main_tactic, action_pick
 				else
 					action_pick.value = 0; self.ai_state.tactic = nil
-					print("[use_tactical AI]", self.uid, self.name, "### FAILED ACTION returned:", action_pick.tid or action_pick.ai, success)
+					print("[use_tactical AI] turn", game.turn, self.uid, self.name, "### FAILED ACTION returned:", action_pick.tid or action_pick.ai, success)
 if log_detail > 1.4 and config.settings.cheat then game.log("__[%d]%s #ORANGE# ACTION FAILED:  %s, FT:%s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end -- debugging
 				end
 			else -- no suitable action to take
 				if log_detail > 0 then 
-					print("[use_tactical AI]", self.uid, self.name, "### NO ACTION Selected ###: best tactical value =", best_value, action_pick and action_pick.main_tactic, action_pick and want[action_pick.main_tactic])
+					print("[use_tactical AI] turn", game.turn, self.uid, self.name, "### NO ACTION Selected ###: best tactical value =", best_value, action_pick and action_pick.main_tactic, action_pick and want[action_pick.main_tactic])
 if log_detail > 1.4 and config.settings.cheat then game.log("__[%d]%s #SLATE# tactical AI: NO ACTION, best: %s, %s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end-- debugging
 					end
 				return
@@ -1120,7 +1120,7 @@ newAI("improved_tactical", function(self, t_filter, t_list)
 	local targeted = self:runAI(self.ai_state.ai_target or "target_simple")
 	local ax, ay = self:aiSeeTargetPos(self.ai_target.actor)
 	if log_detail > 0 then 
-		print("[tactical AI]", self.uid, self.name, "running improved_tactical AI with target", self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name) -- debugging
+		print("[tactical AI] turn", game.turn, self.uid, self.name, "running improved_tactical AI with target", self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name, t_filter, t_list)
 		if log_detail > 1.4 and config.settings.cheat then game.log("%s__turn %d: Invoking improved tactical AI for [%s]%s(%d,%d) target:[%s]%s %s", targeted and "#LIGHT_BLUE#" or "#ROYAL_BLUE#", game.turn, self.uid, self.name, self.x, self.y, self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name, self.ai_target.actor and ("STP(%s,%s)"):format(ax, ay) or "") end -- debugging
 	end
 	

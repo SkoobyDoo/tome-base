@@ -944,9 +944,6 @@ function _M:onRestStart()
 		self:attr("mana_regen", self:attr("mana_regen_on_rest"))
 		self.resting.mana_regen = self:attr("mana_regen_on_rest")
 	end
-	if self:knowTalent(self.T_SPACETIME_TUNING) then
-		self:callTalent(self.T_SPACETIME_TUNING, "startTuning")
-	end
 	self:fireTalentCheck("callbackOnRest", "start")
 end
 
@@ -965,6 +962,7 @@ end
 
 --- Can we continue resting ?
 -- We can rest if no hostiles are in sight, and if we need life/mana/stamina/psi (and their regen rates allows them to fully regen)
+-- The "callbackOnRest" callback for any talent that defines it must return true to allow further resting
 function _M:restCheck()
 	if game:hasDialogUp(1) then return false, "dialog is displayed" end
 
@@ -992,12 +990,6 @@ function _M:restCheck()
 	-- Reload
 	local ammo = self:hasAmmo()
 	if ammo and ammo.combat.shots_left < ammo.combat.capacity then return true end
-	-- Spacetime Tuning handles Paradox regen
-	if self:hasEffect(self.EFF_SPACETIME_TUNING) then return true end
-	if self:knowTalent(self.T_THROWING_KNIVES) then
-		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
-		if not eff or (eff and eff.stacks < eff.max_stacks) then return true end
-	end
 	
 	-- Check resources, make sure they CAN go up, otherwise we will never stop
 	if not self.resting.rest_turns then
@@ -1028,7 +1020,8 @@ function _M:restCheck()
 				return true
 			end
 		end
-
+		
+		-- Check for any talents that prevent resting
 		if self:fireTalentCheck("callbackOnRest", "check") then return true end
 	else
 		return true
@@ -1098,6 +1091,27 @@ function _M:restCheck()
 	self.resting.rested_fully = true
 
 	return false, "all resources and life at maximum"
+end
+
+--- The Player rests a turn
+-- For a turn based game you want to call this in your player's act() method:
+-- @usage if not self:restStep() then game.paused = true end
+-- @return[1] true if we can continue to rest (This uses energy and triggers callbackOnWait effects)
+-- @return[2] false if we can't continue
+function _M:restStep()
+	if not self.resting then return false end
+
+	local ret, msg = self:restCheck()
+	if ret and self.resting and self.resting.rest_turns and self.resting.cnt > self.resting.rest_turns then ret = false msg = nil end
+	if not ret then
+		self:restStop(msg)
+		return false
+	else
+		self:useEnergy()
+		self.resting.cnt = self.resting.cnt + 1
+		self:fireTalentCheck("callbackOnWait")
+		return true
+	end
 end
 
 --- Can we continue running?

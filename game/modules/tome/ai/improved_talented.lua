@@ -38,7 +38,7 @@
 newAI("improved_talented_simple", function(self, t_filter, t_list)
 	local log_detail = config.settings.log_detail_ai or 0
 	local has_target, did_action, moved = self:runAI(self.ai_state.ai_target or "target_simple")
-	if log_detail > 0 then print("[ActorAI] Invoking improved_talented_simple AI for", self.uid, self.name, self.x, self.y, "with target", has_target and self.ai_target.actor.name)
+	if log_detail > 0 then print("[ActorAI] Invoking improved_talented_simple AI turn", game.turn, self.uid, self.name, self.x, self.y, "with target", has_target and self.ai_target.actor.name)
 --game.log("#LIGHT_BLUE#__[talented]Invoking improved talented AI for %s[%s]", self.name, self.uid, "with target", has_target and self.ai_target.actor.name)
 if has_target and log_detail > 1.4 and config.settings.cheat then game.log("%s__turn %d: Invoking improved_talented_simple AI for [%s]%s(%d,%d) target:[%s]%s %s", has_target and "#LIGHT_BLUE#" or "#GREY#", game.turn, self.uid, self.name, self.x, self.y, self.ai_target.actor and self.ai_target.actor.uid, self.ai_target.actor and self.ai_target.actor.name, self.ai_target.actor and ("STP(%s,%s)"):format(ax, ay) or "") end -- debugging
 	end
@@ -68,7 +68,7 @@ if has_target and log_detail > 1.4 and config.settings.cheat then game.log("%s__
 	end
 	if did_action then self.energy.used = true end -- make sure NPC can take another action after doing something instant
 
-	if log_detail >= 2 then print("[ActorAI]Improved_talented_simple AI completed for", self.uid, self.name, "with target:", self.ai_target.actor and self.ai_target.actor.name) end
+	if log_detail >= 2 then print("[ActorAI] improved_talented_simple AI completed for", self.uid, self.name, "with target:", self.ai_target.actor and self.ai_target.actor.name) end
 	return did_action or moved
 end)
 

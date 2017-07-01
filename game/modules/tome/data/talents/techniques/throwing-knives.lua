@@ -129,19 +129,29 @@ newTalent{
 		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
 		if eff and eff.stacks > 0 then return true end
 	end,
-	callbackOnActBase = function(self, t)
-		if self.resting or not self.player and not table.get(self, "ai_target","actor") then -- bit kludgy, npc's don't rest
-			local reload = self:callTalent(self.T_THROWING_KNIVES, "getReload")
-			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
-			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
-		end
-	end,
 	getBaseDamage = function(self, t) return self:combatTalentLimit(t, 72, 9, 35) end, -- Scale as dagger damage by material tier (~voratun dagger @ TL 6.5), limit base damage < voratun greatmaul
 	getBaseApr = function(self, t) return self:combatTalentScale(t, 2, 10) end,
 	getReload = function(self, t) return 2 end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 6, 9.5, 0.25)) end,
 	getBaseCrit = function(self, t) return self:combatTalentScale(t, 2, 5) end,
 	getKnives = function(self, t) return knives(self) end, -- To prevent upvalue issues
+	callbackOnWait = function(self, t)
+		local reload, max = t.getReload(self, t), t.getNb(self, t)
+		self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
+	end,
+	callbackOnRest = function(self, t)
+		local eff = self:hasEffect(self.EFF_THROWING_KNIVES)
+		if not eff or (eff and eff.stacks < eff.max_stacks) then return true end
+	end,
+	callbackOnMove = function(self, t, moved, force, ox, oy)
+		if moved and not force and ox and oy and (ox ~= self.x or oy ~= self.y) then
+			if self.turn_procs.tkreload then return end
+			local reload = math.ceil(self:callTalent(self.T_THROWING_KNIVES, "getReload")/2)
+			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
+			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
+			self.turn_procs.tkreload = true
+		end
+	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
@@ -152,15 +162,6 @@ newTalent{
 		proj.name = "Throwing Knife"
 
 		return true
-	end,
-	callbackOnMove = function(self, t, moved, force, ox, oy)
-		if moved and not force and ox and oy and (ox ~= self.x or oy ~= self.y) then
-			if self.turn_procs.tkreload then return end
-			local reload = math.ceil(self:callTalent(self.T_THROWING_KNIVES, "getReload")/2)
-			local max = self:callTalent(self.T_THROWING_KNIVES, "getNb")
-			self:setEffect(self.EFF_THROWING_KNIVES, 1, {stacks=reload, max_stacks=max })
-			self.turn_procs.tkreload = true
-		end
 	end,
 	knivesInfo = function(self, t)
 		local combat = knives(self)

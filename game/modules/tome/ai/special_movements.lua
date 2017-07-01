@@ -30,7 +30,7 @@ newAI("move_safe_grid", function(self, grid, ...)
 	if self:attr("never_move") then return false end
 	local log_detail = config.settings.log_detail_ai or 0
 	if log_detail > 0 then
-		print("[ActorAI] Invoking move_safe_grid AI for", self.uid, self.name)
+		print("[ActorAI] Invoking move_safe_grid AI turn", game.turn, self.uid, self.name)
 if log_detail > 1.4 and config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to move to a safe grid", self.name, self.x, self.y) end -- debugging
 	end
 	local dam, air = self:aiGridDamage(lx, ly)
@@ -87,7 +87,7 @@ newAI("flee_dmap_keep_los", function(self, fx, fy)
 	if can_flee then
 		self.ai_state.escape = true
 		if log_detail > 0 then
-			print("[flee_dmap_keep_los AI]", self.uid, self.name, "attempting to flee to", fx, fy)
+			print("[flee_dmap_keep_los AI] turn", game.turn, self.uid, self.name, "attempting to flee to", fx, fy)
 if log_detail > 1.4 and config.settings.cheat then game.log("__%s #GREY# (%d, %d) trying to flee_dmap_keep_los to (%d, %d)", self.name, self.x, self.y, fx, fy) end -- debugging
 		end
 		return self:move(fx, fy)
