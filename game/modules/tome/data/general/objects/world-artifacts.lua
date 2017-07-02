@@ -65,30 +65,26 @@ newEntity{ base = "BASE_GEM",
 	},
 }
 
--- Low base values because you can stack affinity and resist
--- The 3rd type is pretty meaningless balance-wise.  Magic debuffs hardly matter.  The real advantage is the affinity.
 newEntity{ base = "BASE_INFUSION",
 	name = "Primal Infusion", unique=true, image = "object/artifact/primal_infusion.png",
 	desc = [[This wild infusion has evolved.]],
 	unided_name = "pulsing infusion",
-	level_range = {15, 40},
+	level_range = {15, 50},
 	rarity = 300,
-	cost = 300,
-	material_level = 3,
+	cost = 500,
 
 	inscription_kind = "protect",
 	inscription_data = {
 		cooldown = 18,
-		dur = 6,
+		dur = 5,
+		reduce = 1,
 		power = 10,
-		use_stat_mod = 0.1, 
-		use_stat = "con",
-		what = {physical=true, mental=true, magical=true},
+		use_stat_mod = 0.02, -- +2 duration reduction and +20% affinity at 100 stat
+		use_stat = "wil",
 	},
 	inscription_talent = "INFUSION:_PRIMAL",
 }
 
--- Unique but generated randomly without any link to tier/level
 newEntity{ base = "BASE_RUNE",
 	name = "Prismatic Rune", unique=true, define_as="RUNE_PRISMATIC",
 	level_range = {5, 50},
@@ -102,7 +98,7 @@ newEntity{ base = "BASE_RUNE",
 		num_types = resolvers.rngrange(3, 5),
 		wards = {},
 		resolvers.genericlast(function(e)
-			e.inscription_data.wards["PHYSICAL"] = resolvers.rngrange(3, 5) -- guarantee physical wards
+			e.inscription_data.wards["PHYSICAL"] = resolvers.rngrange(2, 4) -- guarantee physical wards
 			for _ = 1,e.inscription_data.num_types do
 				local pick = rng.tableRemove(e.types)
 				e.inscription_data.wards[pick] = resolvers.rngrange(3, 5)
@@ -112,7 +108,6 @@ newEntity{ base = "BASE_RUNE",
 	inscription_talent = "RUNE:_PRISMATIC",
 }
 
--- Unique but generated randomly without any link to tier/level
 newEntity{ base = "BASE_RUNE",
 	name = "Mirror Image Rune", unique=true, define_as="RUNE_MIRROR_IMAGE",
 	level_range = {5, 50},
@@ -120,7 +115,7 @@ newEntity{ base = "BASE_RUNE",
 	cost = 500,
 	inscription_kind = "protect",
 	inscription_data = {
-		cooldown = 18,
+		cooldown = 24,
 		dur = 6,
 		inheritance = 1,
 	},

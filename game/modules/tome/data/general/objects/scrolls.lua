@@ -138,9 +138,9 @@ newEntity{ base = "BASE_INFUSION",
 
 	inscription_kind = "heal",
 	inscription_data = {
-		cooldown = resolvers.rngrange(7, 13),
-		heal = resolvers.mbonus_level(80, 20, function(e, v) return v * 0.06 end),
-		use_stat_mod = 2.4,
+		cooldown = resolvers.rngrange(9, 13),
+		heal = resolvers.mbonus_level(80, 40, function(e, v) return v * 0.06 end),
+		use_stat_mod = 2,
 	},
 	inscription_talent = "INFUSION:_HEALING",
 }
@@ -167,7 +167,7 @@ newEntity{ base = "BASE_INFUSION",
 	rarity = 15,
 	cost = 20,
 	chance = resolvers.mbonus_level(80, -20), -- No chance of 2 cleanses until higher ilvl to discourage rerolling the earliest shops
-	inscription_kind = "protect",
+	inscription_kind = "utility",
 	inscription_data = resolvers.generic(function(e)
 		local what = {}
 		local effects = {physical=true, mental=true, magical=true}
@@ -179,10 +179,10 @@ newEntity{ base = "BASE_INFUSION",
 			what[eff2] = true
 		end
 		return {
-			cooldown = rng.range(12, 17),
-			dur = rng.mbonus(4, resolvers.current_level, resolvers.mbonus_max_level) + 4,
-			power = rng.mbonus(20, resolvers.current_level, resolvers.mbonus_max_level) + 10,
-			use_stat_mod = 0.1,
+			cooldown = rng.range(12, 16),
+			dur = rng.range(2, 4),
+			power = resolvers.mbonus_level(10, 15),  -- Low variance because duration and chance for second debuff type is enough randomness
+			use_stat_mod = 0.2,  -- +20% resist all at 100 stat
 			what=what,
 		}
 	end),
@@ -197,7 +197,7 @@ newEntity{ base = "BASE_INFUSION",
 
 	inscription_kind = "movement",
 	inscription_data = {
-		cooldown = resolvers.rngrange(13, 20),
+		cooldown = resolvers.rngrange(13, 20),  -- High variance because this is the only really important stat
 		speed = resolvers.mbonus_level(500, 300, function(e, v) return v * 0.001 end),
 		use_stat_mod = 3,
 	},
@@ -226,12 +226,12 @@ newEntity{ base = "BASE_INFUSION",
 newEntity{ base = "BASE_RUNE",
 	name = "teleportation rune",
 	level_range = {1, 50},
-	rarity = 35, -- Very rare because item quality has little impact on this 
+	rarity = 50, -- Very rare because item quality has little impact on this
 	cost = 10,
 
 	inscription_kind = "teleport",
 	inscription_data = {
-		cooldown = resolvers.rngrange(14, 19),
+		cooldown = resolvers.rngrange(10, 20),  -- High variance because this is the only really important stat
 		range = resolvers.mbonus_level(100, 20, function(e, v) return v * 0.03 end),
 		use_stat_mod = 1,
 	},
@@ -254,26 +254,22 @@ newEntity{ base = "BASE_RUNE",
 	inscription_talent = "RUNE:_SHIELDING",
 }
 
--- Very strong debuff, very low damage and scaling
--- This is mostly aimed at classes that want a decent way to land their stuns more reliably
 newEntity{ base = "BASE_RUNE",
 	name = "biting gale rune",
-	level_range = {10, 50},
+	level_range = {20, 50},
 	rarity = 20,
 	cost = 20,
 
 	inscription_kind = "attack",
 	inscription_data = {
-		cooldown = resolvers.rngrange(15, 22),
-		power = resolvers.mbonus_level(100, 30, function(e, v) return v * 0.1 end),
-		apply = resolvers.mbonus_level(5, 20, function(e, v) return v * 0.1 end),
-		radius = 6,
-		use_stat_mod = 1.2,
+		cooldown = resolvers.rngrange(15, 19),
+		power = resolvers.mbonus_level(200, 30, function(e, v) return v * 0.1 end),
+		dur = 5,
+		use_stat_mod = 2.2,
 	},
 	inscription_talent = "RUNE:_BITING_GALE",
 }
 
--- Weaker debuff, medium damage and scaling
 newEntity{ base = "BASE_RUNE",
 	name = "acid wave rune",
 	level_range = {20, 50},
@@ -282,11 +278,9 @@ newEntity{ base = "BASE_RUNE",
 
 	inscription_kind = "attack",
 	inscription_data = {
-		cooldown = resolvers.rngrange(15, 25),
-		radius = 6,
-		power = resolvers.mbonus_level(250, 40, function(e, v) return v * 0.1 end),
-		apply = resolvers.mbonus_level(5, 20, function(e, v) return v * 0.1 end),
-		use_stat_mod = 1.2,
+		cooldown = resolvers.rngrange(15, 19),
+		power = resolvers.mbonus_level(200, 30, function(e, v) return v * 0.1 end),
+		use_stat_mod = 2.2,
 		dur = 5,
 	},
 	inscription_talent = "RUNE:_ACID_WAVE",
@@ -295,7 +289,7 @@ newEntity{ base = "BASE_RUNE",
 newEntity{ base = "BASE_RUNE",
 	name = "manasurge rune",
 	level_range = {1, 50},
-	rarity = 25,
+	rarity = 50,  -- Very rare because only a limited number of classes have any use for this
 	cost = 10,
 
 	inscription_kind = "utility",
@@ -326,7 +320,7 @@ newEntity{ base = "BASE_RUNE",
 
 newEntity{ base = "BASE_RUNE",
 	name = "stormshield rune",
-	level_range = {20, 50},
+	level_range = {30, 50},
 	rarity = 25,
 	cost = 20,
 	inscription_kind = "protect",
@@ -345,10 +339,10 @@ newEntity{ base = "BASE_RUNE",
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 10,
-	inscription_kind = "protect",
+	inscription_kind = "utility",
 	inscription_data = {
-		cooldown = resolvers.rngrange(14, 19),
-		shield = resolvers.mbonus_level(100, 50, function(e, v) return v * 0.06 end),
+		cooldown = resolvers.rngrange(16, 20),
+		shield = resolvers.mbonus_level(100, 20, function(e, v) return v * 0.06 end),
 		use_stat_mod = 1 -- 1x, applied up to 3 times
 	},
 	inscription_talent = "RUNE:_SHATTER_AFFLICTIONS",
@@ -362,8 +356,8 @@ newEntity{ base = "BASE_RUNE",
 	inscription_kind = "protect",
 	inscription_data = {
 		cooldown = resolvers.rngrange(16, 22),
-		dur = resolvers.mbonus_level(5, 3),
-		power = resolvers.mbonus_level(8, 7, function(e, v) return v * 1 end),
+		dur = 5,
+		power = resolvers.mbonus_level(20, 7, function(e, v) return v * 1 end),
 		resist = resolvers.mbonus_level(30, 10),
 		move = resolvers.mbonus_level(20, 10),
 		reduction = 0.5,

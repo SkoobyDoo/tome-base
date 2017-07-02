@@ -854,15 +854,14 @@ newEffect{
 	end,
 }
 
--- artifact wild infusion
 newEffect{
 	name = "PRIMAL_ATTUNEMENT", image = "talents/infusion__wild.png",
 	desc = "Primal Attunement",
-	long_desc = function(self, eff) return ("The target is attuned to the wild, increasing all damage affinity by %d%%."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is attuned to the wild, increasing all damage affinity by %d%% and reducing a random debuff duration by %d%%."):format(eff.power, eff.reduce) end,
 	type = "physical",
 	subtype = { nature=true },
 	status = "beneficial",
-	parameters = { power=20 },
+	parameters = { power=20, reduce = 3 },
 	on_gain = function(self, err) return "#Target# attunes to the wild.", "+Primal" end,
 	on_lose = function(self, err) return "#Target# is no longer one with nature.", "-Primal" end,
 	activate = function(self, eff)
@@ -870,6 +869,14 @@ newEffect{
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("damage_affinity", eff.pid)
+	end,
+	on_timeout = function(self, eff)
+		local effs = self:effectsFilter({status = "detrimental", ignore_crosstier = true}, 1)
+		local eff2 = self:hasEffect(effs[1])
+		if eff2 then 
+			eff2.dur = eff2.dur - eff.reduce
+			if eff2.dur <= 0 then self:removeEffect(eff2) end
+		end
 	end,
 }
 
