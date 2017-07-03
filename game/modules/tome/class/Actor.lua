@@ -4707,17 +4707,17 @@ function _M:paradoxDoAnomaly(chance, paradox, def)
 				end
 			end
 
-			-- Be sure we found an anomly first
+			-- Be sure we found an anomaly first
 			if ts[1] then
 				local anom = rng.table(ts)
-				
+				game.logSeen(self, "%s #LIGHT_STEEL_BLUE#Triggers an Anomaly! (%s).", self.name:capitalize(), self:getTalentDisplayName(self:getTalentFromId(anom)))
 				if anomaly_type ~= "major" then
 					if self:attr("no_minor_anomalies") then
 						anomaly_triggered = false
 					elseif def.allow_target then
 						anom = self:getTalentFromId(anom)
-						-- make it real obvious for the player
-						game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
+						-- make it really obvious for the player
+						game.logPlayer(self, "#STEEL_BLUE#Casting %s.", anom.name)
 						if self == game.player then
 							game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", anom.name)
 						end
@@ -5613,7 +5613,7 @@ function _M:postUseTalent(ab, ret, silent)
 		if ab.id ~= self.T_GATHER_THE_THREADS and ab.is_spell then self:breakChronoSpells() end
 		if not ab.no_reload_break then self:breakReloading() end
 		self:breakStepUp()
-		self:breakSpacetimeTuning()
+		if not ab.no_breakSpacetimeTuning then self:breakSpacetimeTuning() end
 		--if not (util.getval(ab.no_energy, self, ab) or ab.no_break_channel) and not (ab.mode == "sustained" and self:isTalentActive(ab.id)) then self:breakPsionicChannel(ab.id) end
 
 		for tid, _ in pairs(self.sustain_talents) do

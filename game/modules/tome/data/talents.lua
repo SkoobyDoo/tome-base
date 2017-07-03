@@ -187,7 +187,7 @@ function aiSummonGridMelee(self, t)
 --print("Projection result:", ok, nx, ny)
 		local x, y = util.findFreeGrid(nx, ny, 1, true, {[Map.ACTOR]=true})
 		if config.settings.log_detail_ai > 1 then print("[aiSummonGridMelee] Find Free Grid result:", x, y) end
-		if core.fov.distance(path[0].x, path[0].y, x, y) > max_dist then return false end
+		if not (x and y) or core.fov.distance(path[0].x, path[0].y, x, y) > max_dist then return false end
 		self.turn_procs.summoning[t.id] = {nx, ny}
 		return nx, ny
 	end

@@ -168,7 +168,7 @@ ActorResource:defineResource("Hate", "hate", ActorTalents.T_HATE_POOL, "hate_reg
 })
 ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, "paradox_regen", "Paradox represents how much damage you've done to the space-time continuum. A high Paradox score makes Chronomancy less reliable and more dangerous to use but also amplifies its effects.", 0, false, {
 	color = "#4198dc#", invert_values = true,
-	randomboss_enhanced = true,
+--	randomboss_enhanced = true,
 	status_text = function(act)
 		local chance = act:paradoxFailChance()
 		return ("%d/%d (%d%%%%)"):format(act:getModifiedParadox(), act:getParadox(), chance), chance
@@ -184,7 +184,7 @@ ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, 
 		-- find a talent to reduce paradox if it is above preferred_paradox (simple AIs)
 		aiResourceAction = function(act, res_def, t_filter, t_list)
 			local val, min = act:getParadox(), act:getMinParadox()
-			if val - math.max(act.preferred_paradox, min) > 0 then
+			if val - math.max(act.preferred_paradox or 300, min) > 0 then
 				local tid = act:aiGetResourceTalent(res_def, t_filter, t_list)
 				if tid then
 					if config.settings.log_detail_ai > 1 then print("[aiResourceAction:paradox]:", act.name, act.uid, "picked talent", tid, "to replenish", res_def.name) end

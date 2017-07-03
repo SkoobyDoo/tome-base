@@ -2387,7 +2387,7 @@ newEffect{
 	parameters = { power=10},
 	on_gain = function(self, err) return "#Target# retunes the fabric of spacetime.", "+Spacetime Tuning" end,
 	on_timeout = function(self, eff)
-		self:callTalent(self.T_SPACETIME_TUNING, "tuneParadox")
+		self:callTalent(self.T_SPACETIME_TUNING, "tuneParadox") -- adjusts paradox level
 	end,
 	activate = function(self, eff)
 		if core.shader.active(4) then
