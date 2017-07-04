@@ -159,6 +159,7 @@ static int shader_new(lua_State *L)
 	GLuint kind;
 	if (vertex_kind == 0) kind = GL_FRAGMENT_SHADER;
 	else if (vertex_kind == 1) kind = GL_VERTEX_SHADER;
+	else if (GLEW_VERSION_3_2 && vertex_kind == 2) kind = GL_GEOMETRY_SHADER;
 	*s = loadShader(code, kind);
 
 	return 1;
@@ -707,6 +708,7 @@ static int program_compile(lua_State *L)
 	p->vertex_attrib = glGetAttribLocation(p->shader, "te4_position");
 	p->texcoord_attrib = glGetAttribLocation(p->shader, "te4_texcoord");
 	p->color_attrib = glGetAttribLocation(p->shader, "te4_color");
+	p->shape_vertex_attrib = glGetAttribLocation(p->shader, "te4_shape_vertex");
 	p->texcoorddata_attrib = glGetAttribLocation(p->shader, "te4_texinfo");
 	p->mapcoord_attrib = glGetAttribLocation(p->shader, "te4_mapcoord");
 	p->kind_attrib = glGetAttribLocation(p->shader, "te4_kind");

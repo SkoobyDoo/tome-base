@@ -968,6 +968,8 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 		is_fullscreen = fullscreen;
 		is_borderless = borderless;
 		screen = SDL_GetWindowSurface(window);
+		// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+		// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 		maincontext = SDL_GL_CreateContext(window);
 		SDL_GL_MakeCurrent(window, maincontext);
 		glewInit();
@@ -1096,6 +1098,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_renderer(L);
 		luaopen_map(L);
 		luaopen_particles(L);
+		luaopen_particles_system(L);
 		luaopen_sound(L);
 		luaopen_noise(L);
 		luaopen_diamond_square(L);
