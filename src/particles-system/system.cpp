@@ -83,6 +83,7 @@ void System::addEmitter(Emitter *emit) {
 
 void System::addUpdater(Updater *updater) {
 	updaters.emplace_back(updater);
+	updater->useSlots(list);
 }
 
 void System::setShader(shader_type *shader) {

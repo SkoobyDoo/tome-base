@@ -25,16 +25,19 @@ enum class UpdatersList : uint8_t { LinearColorUpdater, BasicTimeUpdater, EulerP
 
 class Updater {
 public:
+	virtual void useSlots(ParticlesData &p) {};
 	virtual void update(ParticlesData &p, float dt) = 0;
 };
 
 class LinearColorUpdater : public Updater {
 public:
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
 	virtual void update(ParticlesData &p, float dt);
 };
 
 class BasicTimeUpdater : public Updater {
 public:
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); };
 	virtual void update(ParticlesData &p, float dt);
 };
 
@@ -43,5 +46,6 @@ private:
 	vec2 global_acc = vec2(0.0, 0.0);
 public:
 	EulerPosUpdater(vec2 global_acc = vec2(0, 0)) : global_acc(global_acc) {};
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void update(ParticlesData &p, float dt);
 };
