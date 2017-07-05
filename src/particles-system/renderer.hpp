@@ -27,6 +27,8 @@ struct renderer_vertex {
 	vec4 color;
 };
 
+enum class RendererBlend : uint8_t { DefaultBlend, AdditiveBlend, MixedBlend, ShinyBlend };
+
 class Renderer {
 protected:
 	static GLuint vbo_shape;
@@ -35,10 +37,12 @@ protected:
 	shader_type *shader = nullptr;
 	texture_type *tex = nullptr;
 	vector<renderer_vertex> vertexes;
+	RendererBlend blend = RendererBlend::DefaultBlend;
 	
 public:
 	static void init();
 
+	void setBlend(RendererBlend blend);
 	void setShader(shader_type *shader);
 	void setTexture(texture_type *tex);
 	void setup(ParticlesData &p);

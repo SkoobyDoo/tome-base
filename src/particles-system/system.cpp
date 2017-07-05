@@ -73,8 +73,9 @@ void ParticlesData::print() {
 	}
 }
 
-System::System(uint32_t max) {
+System::System(uint32_t max, RendererBlend blend) {
 	list.max = max;
+	renderer.setBlend(blend);
 }
 
 void System::addEmitter(Emitter *emit) {
@@ -94,6 +95,7 @@ void System::setTexture(texture_type *tex) {
 }
 
 void System::finish() {
+	shift(0, 0, true);
 	renderer.setup(list);
 }
 
@@ -112,14 +114,6 @@ void System::print() {
 }
 
 void System::draw(float x, float y) {
-
-	static int toot = 0;
-	toot++;
-	if (toot > 300) {
-		toot=0;
-		printf("=== %d\n", list.count);
-	}
-
 	renderer.update(list);
 	renderer.draw(list, x, y);
 }

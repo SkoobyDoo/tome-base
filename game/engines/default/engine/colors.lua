@@ -26,6 +26,7 @@ colors = {}
 colors_simple = {}
 colors_simple1 = {}
 colors_alphaf = {}
+colors_alphafs = {}
 
 --- Define Color
 -- @string name
@@ -40,7 +41,8 @@ function defineColor(name, r, g, b, br, bg, bb)
 	colors_simple[name] = {r, g, b}
 	local r1, g1, b1 = r/255, g/255, b/255
 	colors_simple1[name] = {r1, g1, b1, 1}
-	colors_alphaf[name] = function(a) return r1, g1, b1, a end
+	colors_alphaf[name] = function(a) return {r1, g1, b1, a} end
+	colors_alphafs[name] = function(a) return r1, g1, b1, a end
 	if core.colors then core.colors.define256(name, r, g, b, 255) end
 end
 

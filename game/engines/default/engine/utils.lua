@@ -933,6 +933,7 @@ local hex_to_dec = {
 	["e"] = 14,
 	["f"] = 15,
 }
+string.hex_digits = hex_to_dec
 local hexcache = {}
 function string.parseHex(str)
 	if hexcache[str] then return hexcache[str] end

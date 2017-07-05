@@ -978,7 +978,7 @@ function _M:toScreen(x, y, nb_keyframes)
 	end
 
 	-- DGDGDGDG
-	-- self:innerDisplay(x, y, nb_keyframes, tx, ty)
+	self:innerDisplay(x, y, nb_keyframes)
 
 	-- DGDGDGDG
 	-- if self.first_display then self:firstDisplay() self.first_display = false end

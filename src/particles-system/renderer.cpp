@@ -60,6 +60,10 @@ void Renderer::setup(ParticlesData &p) {
 	delete[] vbo_elements_data;
 }
 
+void Renderer::setBlend(RendererBlend blend) {
+	this->blend = blend;
+}
+
 void Renderer::setShader(shader_type *shader) {
 	this->shader = shader;
 }
@@ -84,6 +88,13 @@ void Renderer::draw(ParticlesData &p, float x, float y) {
 	mat4 model = mat4();
 	model = glm::translate(model, glm::vec3(x, y, 0));
 	mat4 mvp = View::getCurrent()->get() * model;
+
+	switch (blend) {
+		case RendererBlend::DefaultBlend: break;
+		case RendererBlend::AdditiveBlend: glBlendFunc(GL_ONE, GL_ONE); break;
+		case RendererBlend::MixedBlend: glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+		case RendererBlend::ShinyBlend: glBlendFunc(GL_SRC_ALPHA,GL_ONE); break;
+	}
 
 	if (tex) {
 		tglActiveTexture(GL_TEXTURE0);
@@ -115,6 +126,11 @@ void Renderer::draw(ParticlesData &p, float x, float y) {
 	glDrawElements(GL_TRIANGLES, p.count * 6, GL_UNSIGNED_INT, (void*)0);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	switch (blend) {
+		case RendererBlend::DefaultBlend: break;
+		default: glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); break;
+	}
 }
 //*/
 /* Instancing version

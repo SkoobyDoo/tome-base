@@ -66,7 +66,7 @@ static int p_shift(lua_State *L)
 static int p_toscreen(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
-	(*ee)->update(0.5);
+	(*ee)->update(lua_tonumber(L, 4));
 	(*ee)->draw(lua_tonumber(L, 2), lua_tonumber(L, 3));
 	return 0;
 }
@@ -117,6 +117,7 @@ static inline vec4 lua_vec4(lua_State *L, int table_idx, const char *field, vec4
 		ret.g = lua_tonumber(L, -3);
 		ret.b = lua_tonumber(L, -2);
 		ret.a = lua_tonumber(L, -1);
+		printf("read color %f : %f : %f : %f\n", ret.r, ret.g, ret.b, ret.a);
 		lua_pop(L, 4);
 	}
 	lua_pop(L, 1);
@@ -128,8 +129,7 @@ static int p_new(lua_State *L) {
 	int nb_systems = lua_objlen(L, 1);
 	for (int i = 1; i <= nb_systems; i++) {		
 		lua_rawgeti(L, 1, i);
-		System *sys = new System(lua_float(L, -1, "max_particles", 10));
-		printf("!!sys %d\n", (int)lua_float(L, -1, "max_particles", 10));
+		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
 
 		texture_type *tex = new texture_type;
 		loader_png("/data/gfx/particle.png", tex, false, false, true);
@@ -171,9 +171,11 @@ static int p_new(lua_State *L) {
 						break;
 					case GeneratorsList::DiskPosGenerator:
 						g = new DiskPosGenerator(lua_float(L, -1, "radius", 100));
+						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
 						break;
 					case GeneratorsList::CirclePosGenerator:
 						g = new CirclePosGenerator(lua_float(L, -1, "radius", 100), lua_float(L, -1, "width", 10));
+						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
 						break;
 					case GeneratorsList::DiskVelGenerator:
 						g = new DiskVelGenerator(lua_float(L, -1, "min_vel", 5), lua_float(L, -1, "max_vel", 10));
@@ -222,7 +224,7 @@ static int p_new(lua_State *L) {
 					u = new BasicTimeUpdater();
 					break;
 				case UpdatersList::EulerPosUpdater:
-					u = new EulerPosUpdater(lua_vec2(L, -1, "global_acc", vec2(0, 0)));
+					u = new EulerPosUpdater(lua_vec2(L, -1, "global_vel", vec2(0, 0)), lua_vec2(L, -1, "global_acc", vec2(0, 0)));
 					break;
 				default:
 					lua_pushliteral(L, "Unknown particles updater"); lua_error(L);
@@ -245,18 +247,18 @@ static int p_new(lua_State *L) {
 }
 
 static int p_test(lua_State *L) {
-	System *sys = new System(100000);
-	LinearEmitter *emit = new LinearEmitter();
-	emit->addGenerator(sys, new LifeGenerator());
-	emit->addGenerator(sys, new CirclePosGenerator());
-	emit->addGenerator(sys, new DiskVelGenerator());
-	emit->addGenerator(sys, new BasicSizeGenerator());
-	emit->addGenerator(sys, new BasicRotationGenerator());
-	emit->addGenerator(sys, new StartStopColorGenerator());
+	System *sys = new System(10000, RendererBlend::AdditiveBlend);
+	LinearEmitter *emit = new LinearEmitter(0.3, 3);
+	emit->addGenerator(sys, new LifeGenerator(1, 5));
+	emit->addGenerator(sys, new CirclePosGenerator(100, 10));
+	emit->addGenerator(sys, new DiskVelGenerator(12, 15));
+	emit->addGenerator(sys, new BasicSizeGenerator(2, 9));
+	emit->addGenerator(sys, new BasicRotationGenerator(0, M_PI*2));
+	emit->addGenerator(sys, new FixedColorGenerator(vec4(1, 1, 0, 1), vec4(0, 0, 0, 1)));
 	sys->addEmitter(emit);
 	sys->addUpdater(new BasicTimeUpdater());
 	sys->addUpdater(new LinearColorUpdater());
-	sys->addUpdater(new EulerPosUpdater());
+	sys->addUpdater(new EulerPosUpdater(vec2(0, 0), vec2(0, 0)));
 
 	texture_type *tex = new texture_type;
 	loader_png("/data/gfx/particle.png", tex, false, false, true);
@@ -291,6 +293,11 @@ static const struct luaL_Reg plib[] =
 extern "C" int luaopen_particles_system(lua_State *L) {
 	auxiliar_newclass(L, "particles{compose}", pcompose);
 	luaL_openlib(L, "core.particlescompose", plib, 0);
+
+	lua_pushliteral(L, "DefaultBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::DefaultBlend)); lua_rawset(L, -3);
+	lua_pushliteral(L, "AdditiveBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::AdditiveBlend)); lua_rawset(L, -3);
+	lua_pushliteral(L, "MixedBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::MixedBlend)); lua_rawset(L, -3);
+	lua_pushliteral(L, "ShinyBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::ShinyBlend)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "LinearEmitter"); lua_pushnumber(L, static_cast<uint8_t>(EmittersList::LinearEmitter)); lua_rawset(L, -3);
 

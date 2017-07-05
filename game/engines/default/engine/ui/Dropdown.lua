@@ -37,6 +37,7 @@ function _M:init(t)
 	self.on_select = t.on_select
 	self.display_prop = t.display_prop or "name"
 	self.scrollbar = t.scrollbar
+	self.default = t.default
 
 	Base.init(self, t)
 end
@@ -79,9 +80,26 @@ function _M:positioned(x, y, sx, sy)
 		self.textinput:setText(self.c_list:getCurrentText())
 	end)
 	self.textinput:setText(self.c_list:getCurrentText())
+
+	if self.default then
+		if type(self.default) == "table" then self:selectEntryBy(unpack(self.default))
+		else self:selectEntry(self.default) end
+	end
 end
 
 function _M:showSelect()
 	self.previous = self.c_list.sel
 	game:registerDialog(self.popup)
+end
+
+function _M:selectEntry(i)
+	self.c_list.sel = i
+	self.textinput:setText(self.c_list:getCurrentText())
+end
+
+function _M:selectEntryBy(k, v)
+	for i, t in ipairs(self.list) do if t[k] == v then
+		self.c_list.sel = i
+		self.textinput:setText(self.c_list:getCurrentText())
+	end end
 end

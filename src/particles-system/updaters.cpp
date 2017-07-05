@@ -55,7 +55,7 @@ void EulerPosUpdater::update(ParticlesData &p, float dt) {
 	vec2* acc = p.getSlot2(ACC);
 	for (uint32_t i = 0; i < p.count; i++) {
 		acc[i] += global_acc * dt;
-		vel[i] += acc[i] * dt;
+		vel[i] += (acc[i] + global_vel) * dt;
 		pos[i].x += vel[i].x * dt;
 		pos[i].y += vel[i].y * dt;
 	}

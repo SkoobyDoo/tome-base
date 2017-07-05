@@ -32,10 +32,12 @@ enum class GeneratorsList : uint8_t {
 };
 
 class Generator {
-protected: 
-	float bx = 0, by = 0;
+protected:
+	vec2 base_pos = vec2(0, 0), shift_pos = vec2(0, 0), final_pos = vec2(0, 0);
+
 public:
-	void shift(float x, float y, bool absolute) { if (absolute) { bx = x; by = y; } else { bx += x; by += y; } };
+	void shift(float x, float y, bool absolute);
+	void basePos(float x, float y) { base_pos = vec2(x, y); };
 	virtual void useSlots(ParticlesData &p) {};
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) = 0;
 };
@@ -46,7 +48,7 @@ public:
 class LifeGenerator : public Generator {
 	float min, max;
 public:
-	LifeGenerator(float min = 0.3, float max = 3) : min(min), max(max) {};
+	LifeGenerator(float min, float max) : min(min), max(max) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -64,9 +66,9 @@ public:
  ** Positions
  ********************************************************************/
 class DiskPosGenerator : public Generator {
-	float radius = 20;
+	float radius;
 public:
-	DiskPosGenerator(float radius = 20) : radius(radius) {};
+	DiskPosGenerator(float radius) : radius(radius) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -75,7 +77,7 @@ class CirclePosGenerator : public Generator {
 	float radius;
 	float width;
 public:
-	CirclePosGenerator(float radius = 100, float width = 10) : radius(radius), width(width) {};
+	CirclePosGenerator(float radius, float width) : radius(radius), width(width) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -83,7 +85,7 @@ public:
 class DiskVelGenerator : public Generator {
 	float min_vel, max_vel;
 public:
-	DiskVelGenerator(float min_vel = 10, float max_vel = 50) : min_vel(min_vel), max_vel(max_vel) {};
+	DiskVelGenerator(float min_vel, float max_vel) : min_vel(min_vel), max_vel(max_vel) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot2(VEL); p.initSlot2(ACC); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -91,7 +93,7 @@ public:
 class BasicSizeGenerator : public Generator {
 	float min_size, max_size;
 public:
-	BasicSizeGenerator(float min_size = 10, float max_size = 50) : min_size(min_size), max_size(max_size) {};
+	BasicSizeGenerator(float min_size, float max_size) : min_size(min_size), max_size(max_size) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -99,7 +101,7 @@ public:
 class BasicRotationGenerator : public Generator {
 	float min_rot, max_rot;
 public:
-	BasicRotationGenerator(float min_rot = 0, float max_rot = M_PI * 2) : min_rot(min_rot), max_rot(max_rot) {};
+	BasicRotationGenerator(float min_rot, float max_rot) : min_rot(min_rot), max_rot(max_rot) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -111,7 +113,7 @@ class StartStopColorGenerator : public Generator {
 	vec4 min_color_start, min_color_stop; 
 	vec4 max_color_start, max_color_stop; 
 public:
-	StartStopColorGenerator(vec4 min_color_start = vec4(0.5, 0, 0, 1), vec4 max_color_start = vec4(1, 0, 0, 1), vec4 min_color_stop = vec4(0, 0.5, 0, 0), vec4 max_color_stop = vec4(0, 1, 0, 0)) : min_color_start(min_color_start), max_color_start(max_color_start), min_color_stop(min_color_stop), max_color_stop(max_color_stop)  {};
+	StartStopColorGenerator(vec4 min_color_start, vec4 max_color_start, vec4 min_color_stop, vec4 max_color_stop) : min_color_start(min_color_start), max_color_start(max_color_start), min_color_stop(min_color_stop), max_color_stop(max_color_stop)  {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -120,7 +122,7 @@ class FixedColorGenerator : public Generator {
 	vec4 color_start;
 	vec4 color_stop;
 public:
-	FixedColorGenerator(vec4 color_start = vec4(0, 0, 1, 1), vec4 color_stop = vec4(0, 0, 0, 0)) : color_start(color_start), color_stop(color_stop) {};
+	FixedColorGenerator(vec4 color_start, vec4 color_stop) : color_start(color_start), color_stop(color_stop) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };

@@ -40,6 +40,7 @@ function _M:init(t)
 	self.has_box = t.has_box
 	self.has_box_alpha = t.has_box_alpha
 	self.fct = t.fct
+	self.center_w = t.center_w
 
 	self.dest_area = t.dest_area and t.dest_area or { h = self.h }
 	
@@ -76,7 +77,9 @@ function _M:generate()
 		if not last_text then textzone:textColor(self.color.r / 255, self.color.g / 255, self.color.b / 255, 1)
 		else textzone:setFrom(last_text) end
 		textzone:text(str)
-		textzone:translate(0, (i - 1) * self.font_h, 10)
+		local x = 0
+		if self.center_w then x = (self.w - textzone:getStats()) / 2 end
+		textzone:translate(x, (i - 1) * self.font_h, 10)
 		self.text_container:add(textzone)
 		last_text = textzone
 	end

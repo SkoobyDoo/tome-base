@@ -95,7 +95,7 @@ private:
 	Renderer renderer;
 
 public:
-	System(uint32_t max);
+	System(uint32_t max, RendererBlend blend);
 	inline bool isDead() { return list.count == 0; }
 
 	void addEmitter(Emitter *emit);

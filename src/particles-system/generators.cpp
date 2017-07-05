@@ -26,6 +26,12 @@ extern "C" {
 
 namespace particles {
 
+void Generator::shift(float x, float y, bool absolute) {
+	if (absolute) shift_pos = vec2(x, y);
+	else shift_pos += vec2(x, y);
+	final_pos = base_pos + shift_pos;
+};
+
 void LifeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* life = p.getSlot4(LIFE);
 	for (uint32_t i = start; i < end; i++) {
@@ -43,8 +49,8 @@ void DiskPosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) 
 	for (uint32_t i = start; i < end; i++) {
 		float a = genrand_real(0.0, M_PI * 2.0);
 		float r = genrand_real(0, radius);
-		pos[i].x = bx + cos(a) * r;
-		pos[i].y = by + sin(a) * r;
+		pos[i].x = final_pos.x + cos(a) * r;
+		pos[i].y = final_pos.y + sin(a) * r;
 	}
 }
 
@@ -53,8 +59,8 @@ void CirclePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end
 	for (uint32_t i = start; i < end; i++) {
 		float a = genrand_real(0.0, M_PI * 2.0);
 		float r = genrand_real(radius - width, radius + width);
-		pos[i].x = bx + cos(a) * r;
-		pos[i].y = by + sin(a) * r;
+		pos[i].x = final_pos.x + cos(a) * r;
+		pos[i].y = final_pos.y + sin(a) * r;
 	}
 }
 
