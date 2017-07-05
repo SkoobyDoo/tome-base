@@ -74,12 +74,13 @@ void Renderer::setTexture(texture_type *tex) {
 void Renderer::update(ParticlesData &p) {
 	vertexes.clear();
 	vec4* pos = p.getSlot4(POS);
+	vec4* tex = p.getSlot4(TEXTURE);
 	vec4* color = p.getSlot4(COLOR);
 	for (uint32_t i = 0; i < p.count; i++) {
-		vertexes.push_back({ {pos[i].x - pos[i].z, pos[i].y - pos[i].z, }, {0.0, 0.0}, color[i] });
-		vertexes.push_back({ {pos[i].x + pos[i].z, pos[i].y - pos[i].z, }, {1.0, 0.0}, color[i] });
-		vertexes.push_back({ {pos[i].x + pos[i].z, pos[i].y + pos[i].z, }, {1.0, 1.0}, color[i] });
-		vertexes.push_back({ {pos[i].x - pos[i].z, pos[i].y + pos[i].z, }, {0.0, 1.0}, color[i] });
+		vertexes.push_back({ {pos[i].x - pos[i].z, pos[i].y - pos[i].z, }, {tex[i].s, tex[i].t}, color[i] });
+		vertexes.push_back({ {pos[i].x + pos[i].z, pos[i].y - pos[i].z, }, {tex[i].p, tex[i].t}, color[i] });
+		vertexes.push_back({ {pos[i].x + pos[i].z, pos[i].y + pos[i].z, }, {tex[i].p, tex[i].q}, color[i] });
+		vertexes.push_back({ {pos[i].x - pos[i].z, pos[i].y + pos[i].z, }, {tex[i].s, tex[i].q}, color[i] });
 	}
 }
 
@@ -101,7 +102,7 @@ void Renderer::draw(ParticlesData &p, float x, float y) {
 		tglBindTexture(GL_TEXTURE_2D, tex->tex);
 	}
 
-	shader_type *shader = shader ? shader : default_particlescompose_shader;
+	shader_type *shader = shader ? shader : (default_particlescompose_shader ? default_particlescompose_shader : default_shader);
 	useShaderSimple(shader);
 
 	glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));

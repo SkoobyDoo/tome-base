@@ -24,7 +24,7 @@ using namespace glm;
 enum class GeneratorsList : uint8_t {
 	LifeGenerator,
 	BasicTextureGenerator,
-	DiskPosGenerator, CirclePosGenerator,
+	DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator,
 	DiskVelGenerator,
 	BasicSizeGenerator,
 	BasicRotationGenerator,
@@ -58,7 +58,7 @@ public:
  ********************************************************************/
 class BasicTextureGenerator : public Generator {
 public:
-	virtual void useSlots(ParticlesData &p) { p.initSlot2(TEX); };
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(TEXTURE); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
 
@@ -78,6 +78,14 @@ class CirclePosGenerator : public Generator {
 	float width;
 public:
 	CirclePosGenerator(float radius, float width) : radius(radius), width(width) {};
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+};
+
+class TrianglePosGenerator : public Generator {
+	vec2 u, v, start_pos;
+public:
+	TrianglePosGenerator(vec2 p1, vec2 p2, vec2 p3);
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };

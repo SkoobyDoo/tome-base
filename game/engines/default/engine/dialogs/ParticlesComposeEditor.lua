@@ -33,27 +33,54 @@ local PC = core.particlescompose
 -- @classmod engine.dialogs.ParticlesComposeEditor
 module(..., package.seeall, class.inherit(Dialog))
 
+local texp1 = core.loader.png("/data/gfx/particle.png")
+local texboom = core.loader.png("/data/gfx/particle_boom_anim.png")
 local pdef = {
 	{
-		max_particles = 2000, blend = PC.AdditiveBlend,
-		tex = texp1,
+		max_particles = 1, blend = PC.AdditiveBlend,
+		texture = texboom,
 		emitters = {
 			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
 				{PC.LifeGenerator, min=0.3, max=3},
-				{PC.CirclePosGenerator, radius=300, width=50},
-				{PC.DiskVelGenerator, min_vel=30, max_vel=100},
-				{PC.BasicSizeGenerator, min_size=10, max_size=50},
+				{PC.DiskPosGenerator, radius=0},
+				{PC.BasicSizeGenerator, min_size=64, max_size=64},
 				{PC.BasicRotationGenerator, min_rot=0, max_rot=math.pi*2},
-				{PC.StartStopColorGenerator, min_color_start=colors_alphaf.GOLD(1), max_color_start=colors_alphaf.ORANGE(1), min_color_stop=colors_alphaf.GREEN(0), max_color_stop=colors_alphaf.LIGHT_GREEN(0)},
+				{PC.FixedColorGenerator, color_start=colors_alphaf.WHITE(1), color_stop=colors_alphaf.WHITE(1)},
 			}, rate=1/30, nb=20},
 		},
 		updaters = {
 			{PC.BasicTimeUpdater},
 			{PC.LinearColorUpdater},
-			{PC.EulerPosUpdater, global_vel={30, -120}},
+			{PC.AnimatedTextureUpdater, repeat_over_life=2, splitx=5, splity=5, firstframe=0, lastframe=22},
+			-- {PC.EulerPosUpdater}--, global_vel={30, -120}},
 		},
 	},
 }
+-- local pdef = {
+-- 	{
+-- 		max_particles = 2000, blend = PC.AdditiveBlend,
+-- 		texture = texp1,
+-- 		emitters = {
+-- 			{PC.LinearEmitter, {
+-- 				{PC.BasicTextureGenerator},
+-- 				{PC.LifeGenerator, min=0.3, max=3},
+-- 				{PC.TrianglePosGenerator, p1={-200, 100}, p2={200, 100}, p3={0, -100}},
+-- 				-- {PC.CirclePosGenerator, radius=300, width=50},
+-- 				{PC.DiskVelGenerator, min_vel=30, max_vel=100},
+-- 				{PC.BasicSizeGenerator, min_size=10, max_size=50},
+-- 				{PC.BasicRotationGenerator, min_rot=0, max_rot=math.pi*2},
+-- 				{PC.StartStopColorGenerator, min_color_start=colors_alphaf.GOLD(1), max_color_start=colors_alphaf.ORANGE(1), min_color_stop=colors_alphaf.GREEN(0), max_color_stop=colors_alphaf.LIGHT_GREEN(0)},
+-- 			}, rate=1/30, nb=20},
+-- 		},
+-- 		updaters = {
+-- 			{PC.BasicTimeUpdater},
+-- 			{PC.LinearColorUpdater},
+-- 			-- {PC.AnimatedTextureUpdater, repeat_over_life=1, splitx=5, splity=5, firstframe=0, lastframe=22},
+-- 			{PC.EulerPosUpdater}--, global_vel={30, -120}},
+-- 		},
+-- 	},
+-- }
 
 local blendmodes = {
 	{name="DefaultBlend", blend=PC.DefaultBlend},
@@ -67,15 +94,18 @@ local specific_uis = {
 		{type="number", id="min", text="Min seconds: ", min=0.00001, max=600, default=1},
 		{type="number", id="max", text="Max seconds: ", min=0.00001, max=600, default=3},
 	}},
-	[PC.BasicTextureGenerator] = {name="BasicTextureGenerator", fields={
-
-	}},
+	[PC.BasicTextureGenerator] = {name="BasicTextureGenerator", fields={}},
 	[PC.DiskPosGenerator] = {name="DiskPosGenerator", fields={
 		{type="number", id="radius", text="Radius: ", min=0, max=10000, default=1},
 	}},
 	[PC.CirclePosGenerator] = {name="CirclePosGenerator", fields={
 		{type="number", id="radius", text="Radius: ", min=0, max=10000, default=1},
 		{type="number", id="width", text="Width: ", min=0, max=10000, default=3},
+	}},
+	[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", fields={
+		{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
+		{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={0, 0}},
+		{type="point", id="p3", text="P3: ", min=-10000, max=10000, default={0, 0}},
 	}},
 	[PC.DiskVelGenerator] = {name="DiskVelGenerator", fields={
 		{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=1},
@@ -101,17 +131,19 @@ local specific_uis = {
 	}},
 }
 
-function _M:processSpecificUI(ui, add, spe)
+function _M:processSpecificUI(ui, add, spe, delete)
 	local spe_def = specific_uis[spe[1]]
 	if not spe_def then error("unknown def for: "..tostring(spe[1])) end
-	add(Textzone.new{text="#{bold}##GOLD#"..spe_def.name, auto_width=1, auto_height=1})
+	add(Checkbox.new{title="#{bold}##GOLD#"..spe_def.name, default=true, fct=function()end, on_change=delete})
 	local adds = {}
 	for i, field in ipairs(spe_def.fields) do
 		field.from = field.from or function(v) return v end
 		field.to = field.to or function(v) return v end
 		if field.type == "number" then
-			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
-			adds[#adds+1] = Numberbox.new{number=field.to(spe[field.id]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
+		elseif field.type == "point" then
+			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id][1]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = Numberbox.new{title="x", number=field.to(spe[field.id][2]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "color" then
 			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
 			adds[#adds+1] = ColorPicker.new{color=spe[field.id], width=20, height=20, fct=function(p) spe[field.id] = p self:regenParticle() end}
@@ -138,13 +170,13 @@ function _M:makeUI()
 		return max_h
 	end
 	for id_system, system in ipairs(def) do
-		add(Textzone.new{text="System "..id_system, auto_width=1, auto_height=1})
+		add(Textzone.new{text="#{bold}##OLIVE_DRAB#----------======System "..id_system.."======----------", width=self.iw, center_w=true, auto_height=1})
 		add(Textzone.new{text="Max: ", auto_width=1, auto_height=1}, Numberbox.new{number=system.max_particles, min=1, max=100000, chars=6, on_change=function(p) system.max_particles = p self:regenParticle() end, fct=function()end})
 		add(Textzone.new{text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes})
 		
 		for id_emitter, emitter in ipairs(system.emitters) do
 			y = y + 20 y = y - add(Separator.new{dir="vertical", size=self.iw})
-			add(Textzone.new{text="#{bold}#----== Emitter "..id_emitter.." ==----", center_w=true, width=self.iw, auto_height=1}) y = y + 10
+			add(Textzone.new{text="#{bold}##CRIMSON#----== Emitter "..id_emitter.." ==----", center_w=true, width=self.iw, auto_height=1}) y = y + 10
 			add(
 				Textzone.new{text="Emit triggers/second: ", auto_width=1, auto_height=1}, Numberbox.new{number=(1/emitter.rate), min=0.00001, max=60, chars=6, on_change=function(p) emitter.rate = 1/p self:regenParticle() end, fct=function()end},
 				Textzone.new{text="Particles per trigger: ", auto_width=1, auto_height=1}, Numberbox.new{number=emitter.nb, min=0, max=100000, chars=6, on_change=function(p) emitter.nb = p self:regenParticle() end, fct=function()end}
@@ -152,12 +184,13 @@ function _M:makeUI()
 			add(Separator.new{dir="vertical", size=self.iw * 0.5})
 
 			for id_generator, generator in ipairs(emitter[2]) do
-				self:processSpecificUI(ui, add, generator)
+				local id = id_generator
+				self:processSpecificUI(ui, add, generator, function() table.remove(emitter[2], id) self:makeUI() self:regenParticle() end)
 			end
 		end
 		
 		y = y + 20 y = y - add(Separator.new{dir="vertical", size=self.iw})
-		add(Textzone.new{text="#{bold}#----== Updaters ==----", center_w=true, width=self.iw, auto_height=1}) y = y + 10
+		add(Textzone.new{text="#{bold}##AQUAMARINE#----== Updaters ==----", center_w=true, width=self.iw, auto_height=1}) y = y + 10
 	end
 	self:loadUI(ui)
 	self:setupUI(false, false)

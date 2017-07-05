@@ -89,6 +89,24 @@ static inline float lua_float(lua_State *L, int table_idx, const char *field, fl
 	return ret;
 }
 
+static inline texture_type* lua_texture(lua_State *L, int table_idx, const char *field) {
+	texture_type *ret = NULL;
+	lua_pushstring(L, field);
+	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
+	if (lua_isuserdata(L, -1)) ret = (texture_type*)auxiliar_checkclass(L, "gl{texture}", -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
+static inline shader_type* lua_shader(lua_State *L, int table_idx, const char *field) {
+	shader_type *ret = NULL;
+	lua_pushstring(L, field);
+	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
+	if (lua_isuserdata(L, -1) || lua_istable(L, -1)) ret = lua_get_shader(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
 static inline vec2 lua_vec2(lua_State *L, int table_idx, const char *field, vec2 def) {
 	vec2 ret = def;
 	lua_pushstring(L, field);
@@ -131,10 +149,11 @@ static int p_new(lua_State *L) {
 		lua_rawgeti(L, 1, i);
 		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
 
-		texture_type *tex = new texture_type;
-		loader_png("/data/gfx/particle.png", tex, false, false, true);
-		sys->setTexture(tex);
+		texture_type *tex = lua_texture(L, -1, "texture");
+		if (tex) sys->setTexture(tex);
 
+		shader_type *shader = lua_shader(L, -1, "shader");
+		if (shader) sys->setShader(shader);
 
 		/** Emitters **/
 		lua_pushliteral(L, "emitters");
@@ -175,6 +194,10 @@ static int p_new(lua_State *L) {
 						break;
 					case GeneratorsList::CirclePosGenerator:
 						g = new CirclePosGenerator(lua_float(L, -1, "radius", 100), lua_float(L, -1, "width", 10));
+						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
+						break;
+					case GeneratorsList::TrianglePosGenerator:
+						g = new TrianglePosGenerator(lua_vec2(L, -1, "p1", vec2(0, 0)), lua_vec2(L, -1, "p2", vec2(0, 0)), lua_vec2(L, -1, "p3", vec2(0, 0)));
 						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
 						break;
 					case GeneratorsList::DiskVelGenerator:
@@ -222,6 +245,9 @@ static int p_new(lua_State *L) {
 					break;
 				case UpdatersList::BasicTimeUpdater:
 					u = new BasicTimeUpdater();
+					break;
+				case UpdatersList::AnimatedTextureUpdater:
+					u = new AnimatedTextureUpdater(lua_float(L, -1, "splitx", 1), lua_float(L, -1, "splity", 1), lua_float(L, -1, "firstframe", 0), lua_float(L, -1, "lastframe", 0), lua_float(L, -1, "repeat_over_life", 1));
 					break;
 				case UpdatersList::EulerPosUpdater:
 					u = new EulerPosUpdater(lua_vec2(L, -1, "global_vel", vec2(0, 0)), lua_vec2(L, -1, "global_acc", vec2(0, 0)));
@@ -303,12 +329,14 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 
 	lua_pushliteral(L, "LinearColorUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::LinearColorUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicTimeUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::BasicTimeUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "AnimatedTextureUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::AnimatedTextureUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EulerPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EulerPosUpdater)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "LifeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::LifeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicTextureGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicTextureGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskPosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskPosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "CirclePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::CirclePosGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "TrianglePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::TrianglePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicRotationGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationGenerator)); lua_rawset(L, -3);

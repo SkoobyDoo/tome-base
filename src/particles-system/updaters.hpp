@@ -21,7 +21,7 @@
 using namespace std;
 using namespace glm;
 
-enum class UpdatersList : uint8_t { LinearColorUpdater, BasicTimeUpdater, EulerPosUpdater };
+enum class UpdatersList : uint8_t { LinearColorUpdater, BasicTimeUpdater, AnimatedTextureUpdater, EulerPosUpdater };
 
 class Updater {
 public:
@@ -31,13 +31,24 @@ public:
 
 class LinearColorUpdater : public Updater {
 public:
-	virtual void useSlots(ParticlesData &p) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
 	virtual void update(ParticlesData &p, float dt);
 };
 
 class BasicTimeUpdater : public Updater {
 public:
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); };
+	virtual void update(ParticlesData &p, float dt);
+};
+
+class AnimatedTextureUpdater : public Updater {
+private:
+	float repeat_over_life;
+	uint16_t max;
+	vector<vec4> frames;
+public:
+	AnimatedTextureUpdater(uint8_t splitx, uint8_t splity, uint8_t firstframe, uint8_t lastframe, float repeat_over_life);
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); p.initSlot4(TEXTURE); };
 	virtual void update(ParticlesData &p, float dt);
 };
 

@@ -26,11 +26,11 @@ namespace particles {
 unordered_map<ParticlesSlots2, string> particles_slots2_names({
 	{VEL, "vel"},
 	{ACC, "acc"},
-	{TEX, "tex"},
 	{SIZE, "size"},
 });
 unordered_map<ParticlesSlots4, string> particles_slots4_names({
 	{POS, "pos"},
+	{TEXTURE, "texture"},
 	{LIFE, "life"},
 	{COLOR, "color"},
 	{COLOR_START, "color_start"},

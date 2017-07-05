@@ -46,8 +46,8 @@ namespace particles {
 
 extern shader_type *default_particlescompose_shader;
 
-enum ParticlesSlots2 : uint8_t { VEL, ACC, TEX, SIZE, MAX2 };
-enum ParticlesSlots4 : uint8_t { POS, LIFE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
+enum ParticlesSlots2 : uint8_t { VEL, ACC, SIZE, MAX2 };
+enum ParticlesSlots4 : uint8_t { POS, LIFE, TEXTURE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
 
 class ParticlesData {
 public:

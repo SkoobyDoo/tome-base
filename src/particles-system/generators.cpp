@@ -42,6 +42,13 @@ void LifeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 }
 
 void BasicTextureGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec4* tex = p.getSlot4(TEXTURE);
+	for (uint32_t i = start; i < end; i++) {
+		tex[i].s = 0;
+		tex[i].t = 0;
+		tex[i].p = 1;
+		tex[i].q = 1;
+	}
 }
 
 void DiskPosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
@@ -61,6 +68,24 @@ void CirclePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end
 		float r = genrand_real(radius - width, radius + width);
 		pos[i].x = final_pos.x + cos(a) * r;
 		pos[i].y = final_pos.y + sin(a) * r;
+	}
+}
+
+TrianglePosGenerator::TrianglePosGenerator(vec2 p1, vec2 p2, vec2 p3) {
+	start_pos = p1;
+	u = vec2(p2.x - p1.x, p2.y - p1.y);
+	v = vec2(p3.x - p1.x, p3.y - p1.y);
+}
+void TrianglePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec4* pos = p.getSlot4(POS);
+	for (uint32_t i = start; i < end; i++) {
+		// Find a random point in the *rectangle* of this coord system
+		vec2 p(genrand_real(0, 1), genrand_real(0, 1));
+		// But make sure we fall in the first half of it: AKA our triangle
+		while (p.x + p.y > 1) { p.x=genrand_real(0, 1); p.y=genrand_real(0, 1); }
+		// Matrix * vector compute: we return to the normal coords
+		pos[i].x = final_pos.x + start_pos.x + p.x*u.x + p.y*v.x;
+		pos[i].y = final_pos.y + start_pos.y + p.x*u.y + p.y*v.y;
 	}
 }
 
