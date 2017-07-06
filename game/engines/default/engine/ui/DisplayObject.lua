@@ -29,6 +29,7 @@ function _M:init(t)
 	self.DO = assert(t.DO, "no do DO")
 	self.w = assert(t.width, "no do width")
 	self.h = assert(t.height, "no do height")
+	self.fct = t.fct
 	Base.init(self, t)
 end
 
@@ -38,4 +39,8 @@ function _M:generate()
 	self.do_container:clear()
 
 	self.do_container:add(self.DO)
+
+	self.mouse:registerZone(0, 0, self.w, self.h, function(button) if button == "left" then
+		if self.fct then self.fct() end
+	end end)
 end

@@ -50,6 +50,8 @@ void BasicTimeUpdater::update(ParticlesData &p, float dt) {
 }
 
 AnimatedTextureUpdater::AnimatedTextureUpdater(uint8_t splitx, uint8_t splity, uint8_t firstframe, uint8_t lastframe, float repeat_over_life) : repeat_over_life(repeat_over_life) {
+	if (!splitx) splitx = 1;
+	if (!splity) splity = 1;
 	float p = 1.0 / (float)splitx;
 	float q = 1.0 / (float)splity;
 	frames.reserve(lastframe - firstframe + 1);
@@ -60,14 +62,15 @@ AnimatedTextureUpdater::AnimatedTextureUpdater(uint8_t splitx, uint8_t splity, u
 		float t = (float)y / (float)splity;
 		frames.emplace_back(s, t, s+p, t+q);
 	}
-	max = frames.size() - 1;
+	max = frames.size();
 };
 
 void AnimatedTextureUpdater::update(ParticlesData &p, float dt) {
+	if (!max) return;
 	vec4* life = p.getSlot4(LIFE);
 	vec4* tex = p.getSlot4(TEXTURE);
 	for (uint32_t i = 0; i < p.count; i++) {
-		int frame_id = life[i].z * repeat_over_life * max;
+		int frame_id = floorf(life[i].z * repeat_over_life * max);
 		tex[i] = frames[frame_id % max];
 	}
 }

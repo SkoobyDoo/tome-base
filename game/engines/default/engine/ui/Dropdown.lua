@@ -61,14 +61,26 @@ function _M:generate()
 	self.key:addBind("ACCEPT", function() self:showSelect() end)
 end
 
-function _M:positioned(x, y, sx, sy)
-	self.c_list = List.new{width=self.w, list=self.list, select=self.on_select, display_prop=self.display_prop, scrollbar=self.scrollbar, nb_items=self.nb_items, fct=function()
+function _M:positioned(x, y, sx, sy, dialog)
+	self.base_x, self.base_y = sx, sy
+	self.dialog = dialog:weakSelf()
+
+	self.c_list = List.new{width=self.w, list=table.clone(self.list, true), select=self.on_select, display_prop=self.display_prop, scrollbar=self.scrollbar, nb_items=self.nb_items, fct=function()
 		game:unregisterDialog(self.popup)
 		self:sound("button")
 		self.fct(self.c_list.list[self.c_list.sel])
 		self.textinput:setText(self.c_list:getCurrentText())
 	end}
-	self.popup = Dialog.new(nil, self.w, self.c_list.h, sx, sy + self.h, nil, nil, false, "simple")
+	self.textinput:setText(self.c_list:getCurrentText())
+end
+
+function _M:showSelect()
+	local sx, sy = self.base_x, self.base_y + self.h
+	if self.dialog.__getstrong and self.dialog.__getstrong.scrollbar then sy = sy - self.dialog.__getstrong.scrollbar.pos  end
+
+	self.previous = self.c_list and self.c_list.sel or 1
+
+	self.popup = Dialog.new(nil, self.w, self.c_list.h, sx, sy, nil, nil, false, "simple")
 	self.popup.frame.a = 0.7
 	self.popup:loadUI{{left=0, top=0, ui=self.c_list}}
 	self.popup:setupUI(true, true)
@@ -79,16 +91,12 @@ function _M:positioned(x, y, sx, sy)
 		self.fct(self.c_list.list[self.c_list.sel])
 		self.textinput:setText(self.c_list:getCurrentText())
 	end)
-	self.textinput:setText(self.c_list:getCurrentText())
 
 	if self.default then
 		if type(self.default) == "table" then self:selectEntryBy(unpack(self.default))
 		else self:selectEntry(self.default) end
 	end
-end
 
-function _M:showSelect()
-	self.previous = self.c_list.sel
 	game:registerDialog(self.popup)
 end
 

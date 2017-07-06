@@ -58,6 +58,6 @@ private:
 	vec2 global_acc = vec2(0.0, 0.0);
 public:
 	EulerPosUpdater(vec2 global_vel = vec2(0, 0), vec2 global_acc = vec2(0, 0)) : global_vel(global_vel), global_acc(global_acc) {};
-	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(VEL); p.initSlot2(ACC); };
 	virtual void update(ParticlesData &p, float dt);
 };

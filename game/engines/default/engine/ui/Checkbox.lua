@@ -59,7 +59,7 @@ function _M:generate()
 
 	self.do_container:add(core.renderer.fromTextureTable(check, tick_x, (check.h - h) / 2))
 
-	self.tickvo = core.renderer.fromTextureTable(tick, tick_x, (check.h - h) / 2)
+	self.tickvo = core.renderer.fromTextureTable(tick, tick_x, (check.h - h) / 2):translate(0, 0, 1)
 	self.tickvo:color(1, 1, 1, self.checked and 1 or 0)
 	self.do_container:add(self.tickvo)
 
@@ -67,7 +67,7 @@ function _M:generate()
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
-		if event == "button" then
+		if event == "button" and button == "left" or button == "right" then
 			self:select()
 		end
 	end)

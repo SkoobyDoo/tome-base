@@ -80,6 +80,20 @@ public:
 	void print();
 };
 
+class TextureHolder {
+public:
+	texture_type *tex;
+	TextureHolder(texture_type *tex) : tex(tex) {
+		printf("Creating particle texture %d\n", tex->tex);
+	};
+	~TextureHolder() {
+		printf("Freeing particle texture %d\n", tex->tex);
+		glDeleteTextures(1, &tex->tex);
+		free((void*)tex);
+	};
+};
+typedef shared_ptr<TextureHolder> spTextureHolder;
+
 #include "particles-system/generators.hpp"
 #include "particles-system/updaters.hpp"
 #include "particles-system/emitters.hpp"
@@ -103,7 +117,7 @@ public:
 	void finish();
 
 	void setShader(shader_type *shader);
-	void setTexture(texture_type *tex);
+	void setTexture(spTextureHolder &tex);
 
 	void shift(float x, float y, bool absolute);
 	void update(float nb_keyframes);
@@ -111,7 +125,14 @@ public:
 	void print();
 };
 
+
 class Ensemble {
+private:
+	static unordered_map<string, spTextureHolder> stored_textures;
+public:
+	static spTextureHolder getTexture(const char *tex_str);
+	static void gcTextures();
+
 private:
 	bool dead = false;
 	vector<unique_ptr<System>> systems;

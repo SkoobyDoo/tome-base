@@ -32,6 +32,7 @@ function _M:init(t)
 	self.fct = assert(t.fct, "no button fct")
 	self.on_select = t.on_select
 	self.force_w = t.width
+	self.use_frame = t.use_frame
 	if t.can_focus ~= nil then self.can_focus = t.can_focus end
 	if t.can_focus_mouse ~= nil then self.can_focus_mouse = t.can_focus_mouse end
 	self.alpha_unfocus = t.alpha_unfocus or 1
@@ -51,7 +52,7 @@ function _M:generate()
 	self.font:setStyle("normal")
 
 	local w, h = text:getStats()
-	local f = self:makeFrameDO("ui/button", self.force_w, nil, w, h)
+	local f = self:makeFrameDO(self.use_frame or "ui/button", self.force_w, nil, w, h)
 	self.frame_do = f
 	w = f.w - f.b4.w - f.b6.w
 	self.iw, self.ih = w, h
@@ -62,7 +63,7 @@ function _M:generate()
 	text:translate(f.b4.w, f.b8.h, 10)
 	self.do_container:add(text)
 
-	self.frame_sel_do = self:makeFrameDO("ui/button_sel", f.w, f.h)
+	self.frame_sel_do = self:makeFrameDO(self.use_frame or "ui/button_sel", f.w, f.h)
 	self.frame_sel_do.container:translate(0, 0, 1)
 	self.frame_sel_do.container:color(1, 1, 1, 0)
 	self.do_container:add(self.frame_do.container)

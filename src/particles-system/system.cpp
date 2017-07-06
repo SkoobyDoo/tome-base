@@ -19,9 +19,13 @@
     darkgod@te4.org
 */
 #include "particles-system/system.hpp"
+#include "core_loader.hpp"
 
 namespace particles {
 
+/********************************************************************
+ ** ParticlesData
+ ********************************************************************/
 
 unordered_map<ParticlesSlots2, string> particles_slots2_names({
 	{VEL, "vel"},
@@ -73,6 +77,10 @@ void ParticlesData::print() {
 	}
 }
 
+/********************************************************************
+ ** System
+ ********************************************************************/
+
 System::System(uint32_t max, RendererBlend blend) {
 	list.max = max;
 	renderer.setBlend(blend);
@@ -90,11 +98,14 @@ void System::addUpdater(Updater *updater) {
 void System::setShader(shader_type *shader) {
 	renderer.setShader(shader);
 }
-void System::setTexture(texture_type *tex) {
+void System::setTexture(spTextureHolder &tex) {
 	renderer.setTexture(tex);
 }
 
 void System::finish() {
+	list.initSlot4(POS);
+	list.initSlot4(TEXTURE);
+	list.initSlot4(COLOR);
 	shift(0, 0, true);
 	renderer.setup(list);
 }
@@ -116,6 +127,29 @@ void System::print() {
 void System::draw(float x, float y) {
 	renderer.update(list);
 	renderer.draw(list, x, y);
+}
+
+/********************************************************************
+ ** Ensemble
+ ********************************************************************/
+unordered_map<string, spTextureHolder> Ensemble::stored_textures;
+
+spTextureHolder Ensemble::getTexture(const char *tex_str) {
+	auto it = stored_textures.find(tex_str);
+	if (it != stored_textures.end()) {
+		printf("Reusing texture %s : %d\n", tex_str, it->second->tex->tex);
+		return it->second;
+	}
+
+	texture_type *tex = new texture_type;
+	loader_png(tex_str, tex, false, false, true);
+	spTextureHolder th = make_shared<TextureHolder>(tex);
+	stored_textures.insert({tex_str, th});
+	return th;
+}
+
+void Ensemble::gcTextures() {
+	stored_textures.clear();
 }
 
 void Ensemble::add(System *system) {

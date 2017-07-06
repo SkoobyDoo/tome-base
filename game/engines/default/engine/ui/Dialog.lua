@@ -21,6 +21,7 @@ require "engine.class"
 local KeyBind = require "engine.KeyBind"
 local Base = require "engine.ui.Base"
 local Particles = require "engine.Particles"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI Dialog
 -- @classmod engine.ui.Dialog
@@ -459,7 +460,11 @@ function _M:generate()
 	self.full_container = core.renderer.container()
 	self.renderer:add(self.full_container)
 	self.renderer:zSort(true)
-	self.do_container = core.renderer.container()
+	if self.allow_scroll then
+		self.do_container = core.renderer.renderer():zSort(true)
+	else
+		self.do_container = core.renderer.container()
+	end
 	self.do_container:translate(self.display_x, self.display_y, -100)
 	self.full_container:add(self.do_container)
 
@@ -646,7 +651,15 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 	self:resize(nw, nh)
 
 	self.do_container:clear()
+	local actual_container = self.do_container
+	if self.allow_scroll then
+		actual_container = core.renderer.container()
+		self.do_container:add(actual_container)
+		self.scroll_container = actual_container
+	end
 
+
+	local full_h = 0
 	for i, ui in ipairs(self.uis) do
 		local ux, uy
 
@@ -739,12 +752,13 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		ui.y = uy
 		ui.ui.mouse.delegate_offset_x = ux
 		ui.ui.mouse.delegate_offset_y = uy
-		ui.ui:positioned(ux, uy, self.display_x + ux, self.display_y + uy)
+		ui.ui:positioned(ux, uy, self.display_x + ux, self.display_y + uy, self)
 		if ui.ui.do_container then
 			ui.ui.do_container:translate(ui.x, ui.y, 0)
 			ui.ui.do_container:removeFromParent()
-			self.do_container:add(ui.ui.do_container)
+			actual_container:add(ui.ui.do_container)
 		end
+		full_h = math.max(full_h, uy + ui.ui.h)
 	end
 
 
@@ -756,6 +770,14 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 	if self.__showup then
 		self.renderer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup)
+	end
+
+	if self.allow_scroll and full_h	> self.ih then
+		self.do_container:cutoff(0, 0, self.iw, self.ih)
+		self.scrollbar = Scrollbar.new(nil, self.ih, full_h - self.ih)
+		self.scroll_inertia = 0
+		local sx, sy = self.do_container:getTranslate()
+		self.full_container:add(self.scrollbar:get():translate(sx + self.iw, sy))
 	end
 
 	self.setuped = true
@@ -840,7 +862,23 @@ end
 function _M:no_focus()
 end
 
+function _M:setScroll(pos)
+	self.scrollbar:setPos(pos)
+	self.scroll_container:translate(0, -self.scrollbar.pos)
+end
+
 function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
+	if self.allow_scroll and self.scrollbar then
+		y = y + self.scrollbar.pos
+		by = by + self.scrollbar.pos
+
+		if event == "button" and button == "wheelup" then
+			self.scroll_inertia = math.min(self.scroll_inertia, 0) - 5
+		elseif event == "button" and button == "wheeldown" then
+			self.scroll_inertia = math.max(self.scroll_inertia, 0) + 5
+		end
+	end
+
 	-- Look for focus
 	for i = 1, #self.uis do
 		local ui = self.uis[i]
@@ -963,6 +1001,15 @@ end
 
 function _M:toScreen(x, y, nb_keyframes)
 	if self.__hidden then return end
+
+	if self.scrollbar then
+		local oldpos = self.scrollbar.pos
+		if self.scroll_inertia ~= 0 then self:setScroll(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max)) end
+		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
+		end
+		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
+	end
 
 	-- local shader = self.shadow_shader
 

@@ -35,7 +35,7 @@ protected:
 	GLuint vbo_pos, vbo_color;
 	GLuint vbos[2];
 	shader_type *shader = nullptr;
-	texture_type *tex = nullptr;
+	spTextureHolder tex;
 	vector<renderer_vertex> vertexes;
 	RendererBlend blend = RendererBlend::DefaultBlend;
 	
@@ -44,7 +44,7 @@ public:
 
 	void setBlend(RendererBlend blend);
 	void setShader(shader_type *shader);
-	void setTexture(texture_type *tex);
+	void setTexture(spTextureHolder &tex);
 	void setup(ParticlesData &p);
 	void update(ParticlesData &p);
 	void draw(ParticlesData &p, float x, float y);

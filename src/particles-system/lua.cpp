@@ -48,6 +48,12 @@ static int p_default_shader(lua_State *L)
 	return 0;
 }
 
+static int p_gc_textures(lua_State *L)
+{
+	Ensemble::gcTextures();
+	return 0;
+}
+
 static int p_free(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
@@ -85,6 +91,15 @@ static inline float lua_float(lua_State *L, int table_idx, const char *field, fl
 	lua_pushstring(L, field);
 	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
 	if (lua_isnumber(L, -1)) ret = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
+static inline const char* lua_string(lua_State *L, int table_idx, const char *field, const char* def) {
+	const char* ret = def;
+	lua_pushstring(L, field);
+	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
+	if (lua_isstring(L, -1)) ret = lua_tostring(L, -1);
 	lua_pop(L, 1);
 	return ret;
 }
@@ -135,7 +150,6 @@ static inline vec4 lua_vec4(lua_State *L, int table_idx, const char *field, vec4
 		ret.g = lua_tonumber(L, -3);
 		ret.b = lua_tonumber(L, -2);
 		ret.a = lua_tonumber(L, -1);
-		printf("read color %f : %f : %f : %f\n", ret.r, ret.g, ret.b, ret.a);
 		lua_pop(L, 4);
 	}
 	lua_pop(L, 1);
@@ -149,8 +163,11 @@ static int p_new(lua_State *L) {
 		lua_rawgeti(L, 1, i);
 		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
 
-		texture_type *tex = lua_texture(L, -1, "texture");
-		if (tex) sys->setTexture(tex);
+		const char *tex_str = lua_string(L, -1, "texture", NULL);
+		if (tex_str){
+			spTextureHolder th = Ensemble::getTexture(tex_str);
+			sys->setTexture(th);
+		}
 
 		shader_type *shader = lua_shader(L, -1, "shader");
 		if (shader) sys->setShader(shader);
@@ -286,9 +303,9 @@ static int p_test(lua_State *L) {
 	sys->addUpdater(new LinearColorUpdater());
 	sys->addUpdater(new EulerPosUpdater(vec2(0, 0), vec2(0, 0)));
 
-	texture_type *tex = new texture_type;
-	loader_png("/data/gfx/particle.png", tex, false, false, true);
-	sys->setTexture(tex);
+	// texture_type *tex = new texture_type;
+	// loader_png("/data/gfx/particle.png", tex, false, false, true);
+	// sys->setTexture(tex);
 
 	sys->finish();
 	Ensemble *e = new Ensemble();
@@ -310,6 +327,7 @@ static const struct luaL_Reg pcompose[] =
 
 static const struct luaL_Reg plib[] =
 {
+	{"gcTextures", p_gc_textures},
 	{"defaultShader", p_default_shader},
 	{"new", p_new},
 	{"test", p_test},

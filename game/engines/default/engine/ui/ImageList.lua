@@ -39,6 +39,7 @@ function _M:init(t)
 	self.scrollbar = t.scrollbar
 	self.selection = t.selection
 	self.on_select = t.on_select
+	self.root_loader = t.root_loader
 
 	self.nb_w = math.floor(self.w / (self.tile_w + self.padding))
 	self.nb_h = math.floor(self.h / (self.tile_h + self.padding))
@@ -71,15 +72,28 @@ function _M:generate()
 	for i, data in ipairs(self.list) do
 		local f = data
 		if type(data) == "table" then f = f.image end
-		local s = Tiles:loadImage(f)
-		if s then
-			local d, w, h = core.renderer.fromSurface(s, 0, 0, self.force_size and self.tile_w or nil, self.force_size and self.tile_h or nil)
-			local item = {d=d, w=w, h=h, data=data}
-			row[#row+1] = item
-			self.items[item] = true
-			if #row + 1 > self.nb_w then
-				self.dlist[#self.dlist+1] = row
-				row = {}
+		if self.root_loader then
+			if fs.exists(f) then
+				local d, w, h = core.renderer.image(f, 0, 0, self.force_size and self.tile_w or nil, self.force_size and self.tile_h or nil)
+				local item = {d=d, w=w, h=h, data=data}
+				row[#row+1] = item
+				self.items[item] = true
+				if #row + 1 > self.nb_w then
+					self.dlist[#self.dlist+1] = row
+					row = {}
+				end
+			end
+		else
+			local s = Tiles:loadImage(f)
+			if s then
+				local d, w, h = core.renderer.fromSurface(s, 0, 0, self.force_size and self.tile_w or nil, self.force_size and self.tile_h or nil)
+				local item = {d=d, w=w, h=h, data=data}
+				row[#row+1] = item
+				self.items[item] = true
+				if #row + 1 > self.nb_w then
+					self.dlist[#self.dlist+1] = row
+					row = {}
+				end
 			end
 		end
 	end

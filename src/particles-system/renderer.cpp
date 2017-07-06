@@ -67,7 +67,7 @@ void Renderer::setBlend(RendererBlend blend) {
 void Renderer::setShader(shader_type *shader) {
 	this->shader = shader;
 }
-void Renderer::setTexture(texture_type *tex) {
+void Renderer::setTexture(spTextureHolder &tex) {
 	this->tex = tex;
 }
 
@@ -76,6 +76,7 @@ void Renderer::update(ParticlesData &p) {
 	vec4* pos = p.getSlot4(POS);
 	vec4* tex = p.getSlot4(TEXTURE);
 	vec4* color = p.getSlot4(COLOR);
+	if (!pos || !tex || !color) return;
 	for (uint32_t i = 0; i < p.count; i++) {
 		vertexes.push_back({ {pos[i].x - pos[i].z, pos[i].y - pos[i].z, }, {tex[i].s, tex[i].t}, color[i] });
 		vertexes.push_back({ {pos[i].x + pos[i].z, pos[i].y - pos[i].z, }, {tex[i].p, tex[i].t}, color[i] });
@@ -97,9 +98,9 @@ void Renderer::draw(ParticlesData &p, float x, float y) {
 		case RendererBlend::ShinyBlend: glBlendFunc(GL_SRC_ALPHA,GL_ONE); break;
 	}
 
-	if (tex) {
+	if (tex.get()) {
 		tglActiveTexture(GL_TEXTURE0);
-		tglBindTexture(GL_TEXTURE_2D, tex->tex);
+		tglBindTexture(GL_TEXTURE_2D, tex->tex->tex);
 	}
 
 	shader_type *shader = shader ? shader : (default_particlescompose_shader ? default_particlescompose_shader : default_shader);
