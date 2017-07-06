@@ -31,6 +31,7 @@ unordered_map<ParticlesSlots2, string> particles_slots2_names({
 	{VEL, "vel"},
 	{ACC, "acc"},
 	{SIZE, "size"},
+	{ORIGIN_POS, "origin pos"},
 });
 unordered_map<ParticlesSlots4, string> particles_slots4_names({
 	{POS, "pos"},
@@ -116,7 +117,11 @@ void System::shift(float x, float y, bool absolute) {
 
 void System::update(float nb_keyframes) {
 	float dt = nb_keyframes / 30.0f;
-	for (auto &e : emitters) e->emit(list, dt);
+	for (auto e = emitters.begin(); e != emitters.end(); ) {
+		(*e)->emit(list, dt);
+		if (!(*e)->isActive()) e = emitters.erase(e);
+		else e++;
+	}
 	for (auto &up : updaters) up->update(list, dt);
 }
 
@@ -159,7 +164,11 @@ void Ensemble::shift(float x, float y, bool absolute) {
 	for (auto &s : systems) s->shift(x, y, absolute);
 }
 void Ensemble::update(float nb_keyframes) {
-	for (auto &s : systems) s->update(nb_keyframes);
+	dead = true;
+	for (auto &s : systems) {
+		s->update(nb_keyframes);
+		if (!s->isDead()) dead = false;
+	}
 }
 void Ensemble::draw(float x, float y) {
 	for (auto &s : systems) s->draw(x, y);

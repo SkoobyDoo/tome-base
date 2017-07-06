@@ -24,8 +24,8 @@ using namespace glm;
 enum class GeneratorsList : uint8_t {
 	LifeGenerator,
 	BasicTextureGenerator,
-	DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator,
-	DiskVelGenerator,
+	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator,
+	DiskVelGenerator, DirectionVelGenerator,
 	BasicSizeGenerator,
 	BasicRotationGenerator,
 	StartStopColorGenerator, FixedColorGenerator,
@@ -36,6 +36,7 @@ protected:
 	vec2 base_pos = vec2(0, 0), shift_pos = vec2(0, 0), final_pos = vec2(0, 0);
 
 public:
+	virtual uint32_t weight() { return 100; };
 	void shift(float x, float y, bool absolute);
 	void basePos(float x, float y) { base_pos = vec2(x, y); };
 	virtual void useSlots(ParticlesData &p) {};
@@ -65,6 +66,13 @@ public:
 /********************************************************************
  ** Positions
  ********************************************************************/
+class OriginPosGenerator : public Generator {
+public:
+	virtual uint32_t weight() { return 100000; };
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(ORIGIN_POS); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+};
+
 class DiskPosGenerator : public Generator {
 	float radius;
 public:
@@ -95,6 +103,16 @@ class DiskVelGenerator : public Generator {
 public:
 	DiskVelGenerator(float min_vel, float max_vel) : min_vel(min_vel), max_vel(max_vel) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot2(VEL); p.initSlot2(ACC); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+};
+
+class DirectionVelGenerator : public Generator {
+	float min_vel, max_vel;
+	vec2 from;
+public:
+	DirectionVelGenerator(vec2 from, float min_vel, float max_vel) : from(from), min_vel(min_vel), max_vel(max_vel) {};
+	virtual uint32_t weight() { return 10000; };
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(VEL); p.initSlot2(ACC); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
 

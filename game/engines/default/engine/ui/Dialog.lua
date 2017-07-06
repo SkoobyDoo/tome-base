@@ -772,7 +772,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		self.renderer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup)
 	end
 
-	if self.allow_scroll and full_h	> self.ih then
+	if self.allow_scroll then
 		self.do_container:cutoff(0, 0, self.iw, self.ih)
 		self.scrollbar = Scrollbar.new(nil, self.ih, full_h - self.ih)
 		self.scroll_inertia = 0

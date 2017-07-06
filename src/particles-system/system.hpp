@@ -46,7 +46,7 @@ namespace particles {
 
 extern shader_type *default_particlescompose_shader;
 
-enum ParticlesSlots2 : uint8_t { VEL, ACC, SIZE, MAX2 };
+enum ParticlesSlots2 : uint8_t { ORIGIN_POS, VEL, ACC, SIZE, MAX2 };
 enum ParticlesSlots4 : uint8_t { POS, LIFE, TEXTURE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
 
 class ParticlesData {
@@ -110,7 +110,7 @@ private:
 
 public:
 	System(uint32_t max, RendererBlend blend);
-	inline bool isDead() { return list.count == 0; }
+	inline bool isDead() { return list.count == 0 && emitters.size() == 0; }
 
 	void addEmitter(Emitter *emit);
 	void addUpdater(Updater *updater);

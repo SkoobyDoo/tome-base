@@ -32,6 +32,19 @@ void LinearColorUpdater::update(ParticlesData &p, float dt) {
 	}
 }
 
+void EasingColorUpdater::update(ParticlesData &p, float dt) {
+	vec4* color = p.getSlot4(COLOR);
+	vec4* color_start = p.getSlot4(COLOR_START);
+	vec4* color_stop = p.getSlot4(COLOR_STOP);
+	vec4* life = p.getSlot4(LIFE);
+	for (uint32_t i = 0; i < p.count; i++) {
+		color[i].r = easing(color_start[i].r, color_stop[i].r, life[i].z);
+		color[i].g = easing(color_start[i].g, color_stop[i].g, life[i].z);
+		color[i].b = easing(color_start[i].b, color_stop[i].b, life[i].z);
+		color[i].a = easing(color_start[i].a, color_stop[i].a, life[i].z);
+	}
+}
+
 void BasicTimeUpdater::update(ParticlesData &p, float dt) {
 	uint32_t end = p.count;
 	vec4* life = p.getSlot4(LIFE);
@@ -81,9 +94,21 @@ void EulerPosUpdater::update(ParticlesData &p, float dt) {
 	vec2* acc = p.getSlot2(ACC);
 	for (uint32_t i = 0; i < p.count; i++) {
 		acc[i] += global_acc * dt;
-		vel[i] += (acc[i] + global_vel) * dt;
-		pos[i].x += vel[i].x * dt;
-		pos[i].y += vel[i].y * dt;
+		vel[i] += acc[i] * dt;
+		pos[i].x += vel[i].x * dt + global_vel.x * dt;
+		pos[i].y += vel[i].y * dt + global_vel.y * dt;
+	}
+}
+
+void EasingPosUpdater::update(ParticlesData &p, float dt) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* vel = p.getSlot2(VEL);
+	vec2* origin = p.getSlot2(ORIGIN_POS);
+	vec4* life = p.getSlot4(LIFE);
+	for (uint32_t i = 0; i < p.count; i++) {
+		vec2 dist = vel[i] * life[i].y;
+		pos[i].x = origin[i].x + easing(0, dist.x, life[i].z);
+		pos[i].y = origin[i].y + easing(0, dist.y, life[i].z);
 	}
 }
 

@@ -279,7 +279,41 @@ static int gl_generic_get_physic(lua_State *L)
 	return 1;
 }
 
-#include "renderer-moderngl/easing.hpp" // This imports the code... yeah I know
+#include "renderer-moderngl/easing.hpp"
+static easing_ptr easings_table[] = {
+	easing::linear,
+	easing::quadraticIn,
+	easing::quadraticOut,
+	easing::quadraticInOut,
+	easing::cubicIn,
+	easing::cubicOut,
+	easing::cubicInOut,
+	easing::quarticIn,
+	easing::quarticOut,
+	easing::quarticInOut,
+	easing::quinticIn,
+	easing::quinticOut,
+	easing::quinticInOut,
+	easing::sinusoidalIn,
+	easing::sinusoidalOut,
+	easing::sinusoidalInOut,
+	easing::exponentialIn,
+	easing::exponentialOut,
+	easing::exponentialInOut,
+	easing::circularIn,
+	easing::circularOut,
+	easing::circularInOut,
+	easing::bounceOut,
+	easing::bounceIn,
+	easing::bounceInOut,
+	easing::elasticIn,
+	easing::elasticOut,
+	easing::elasticInOut,
+	easing::backIn,
+	easing::backOut,
+	easing::backInOut,
+};
+
 static int gl_generic_tween(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);

@@ -71,12 +71,20 @@ function _M:positioned(x, y, sx, sy, dialog)
 		self.fct(self.c_list.list[self.c_list.sel])
 		self.textinput:setText(self.c_list:getCurrentText())
 	end}
+
+	if self.default then
+		if type(self.default) == "table" then self:selectEntryBy(unpack(self.default))
+		else self:selectEntry(self.default) end
+	end
+
 	self.textinput:setText(self.c_list:getCurrentText())
 end
 
 function _M:showSelect()
 	local sx, sy = self.base_x, self.base_y + self.h
 	if self.dialog.__getstrong and self.dialog.__getstrong.scrollbar then sy = sy - self.dialog.__getstrong.scrollbar.pos  end
+
+	if sy + self.h + self.c_list.h > game.h then sy = game.h - self.c_list.h - self.h end
 
 	self.previous = self.c_list and self.c_list.sel or 1
 
@@ -91,11 +99,6 @@ function _M:showSelect()
 		self.fct(self.c_list.list[self.c_list.sel])
 		self.textinput:setText(self.c_list:getCurrentText())
 	end)
-
-	if self.default then
-		if type(self.default) == "table" then self:selectEntryBy(unpack(self.default))
-		else self:selectEntry(self.default) end
-	end
 
 	game:registerDialog(self.popup)
 end

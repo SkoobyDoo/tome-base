@@ -26,9 +26,11 @@ enum class EmittersList : uint8_t { LinearEmitter };
 class System;
 class Emitter {
 protected:
+	bool active = true;
 	vector<unique_ptr<Generator>> generators;
 	void generate(ParticlesData &p, uint32_t nb);
 public:
+	inline bool isActive() { return active; };
 	void shift(float x, float y, bool absolute);
 	void addGenerator(System *sys, Generator *gen);
 	virtual void emit(ParticlesData &p, float dt) = 0;
@@ -38,8 +40,9 @@ class LinearEmitter : public Emitter {
 private:
 	uint32_t nb;
 	float rate;
+	float duration;
 	float accumulator = 0;
 public:
-	LinearEmitter(float rate = 1.0 / 30.0, uint32_t nb = 10) : rate(rate), nb(nb) {};
+	LinearEmitter(float duration, float rate, uint32_t nb) : duration(duration), rate(rate), nb(nb) { if (!rate) rate = 1.0 / 60.0; };
 	virtual void emit(ParticlesData &p, float dt);
 };

@@ -27,6 +27,7 @@ local Dropdown = require "engine.ui.Dropdown"
 local Separator = require "engine.ui.Separator"
 local ColorPicker = require "engine.ui.ColorPicker"
 local DisplayObject = require "engine.ui.DisplayObject"
+local ImageList = require "engine.ui.ImageList"
 local List = require "engine.ui.List"
 local Button = require "engine.ui.Button"
 local PC = core.particlescompose
@@ -39,32 +40,12 @@ local UIDialog
 
 local pdef = {
 	{
-		max_particles = 100, blend = PC.AdditiveBlend,
-		texture = "/data/gfx/particle_boom_anim.png",
-		emitters = {
-			{PC.LinearEmitter, {
-				{PC.BasicTextureGenerator},
-				{PC.LifeGenerator, min=0.3, max=1.2},
-				{PC.DiskPosGenerator, radius=100},
-				{PC.BasicSizeGenerator, min_size=8, max_size=32},
-				{PC.BasicRotationGenerator, min_rot=0, max_rot=math.pi*2},
-				{PC.FixedColorGenerator, color_start=colors_alphaf.WHITE(1), color_stop=colors_alphaf.WHITE(1)},
-			}, rate=1/30, nb=20},
-		},
-		updaters = {
-			{PC.BasicTimeUpdater},
-			{PC.LinearColorUpdater},
-			{PC.AnimatedTextureUpdater, repeat_over_life=1, splitx=5, splity=5, firstframe=0, lastframe=22},
-			{PC.EulerPosUpdater}--, global_vel={-20, 70}},
-		},
-	},
-	{
 		max_particles = 2000, blend = PC.AdditiveBlend,
 		texture = "/data/gfx/particle.png",
 		emitters = {
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
-				{PC.LifeGenerator, min=0.3, max=3},
+				{PC.LifeGenerator, duration=10, min=0.3, max=3},
 				-- {PC.TrianglePosGenerator, p1={-200, 100}, p2={200, 100}, p3={0, -100}},
 				{PC.CirclePosGenerator, radius=300, width=20},
 				{PC.DiskVelGenerator, min_vel=30, max_vel=100},
@@ -88,11 +69,46 @@ local blendmodes = {
 	{name="ShinyBlend", blend=PC.ShinyBlend},
 }
 
+local easings = {
+	{name="linear"},
+	{name="inQuad"},
+	{name="outQuad"},
+	{name="inOutQuad"},
+	{name="inCubic"},
+	{name="outCubic"},
+	{name="inOutCubic"},
+	{name="inQuart"},
+	{name="outQuart"},
+	{name="inOutQuart"},
+	{name="inQuint"},
+	{name="outQuint"},
+	{name="inOutQuint"},
+	{name="inSine"},
+	{name="outSine"},
+	{name="inOutSine"},
+	{name="inExpo"},
+	{name="outExpo"},
+	{name="inOutExpo"},
+	{name="inCirc"},
+	{name="outCirc"},
+	{name="inOutCirc"},
+	{name="inElastic"},
+	{name="outElastic"},
+	{name="inOutElastic"},
+	{name="inBack"},
+	{name="outBack"},
+	{name="inOutBack"},
+	{name="inBounce"},
+	{name="outBounce"},
+	{name="inOutBounce"},
+}
+
 local specific_uis = {
 	emitters = {
 		[PC.LinearEmitter] = {name="LinearEmitter", fields={
-			{type="number", id="rate", text="Emit events triggers/second: ", min=0.00001, max=60, default=30},
-			{type="number", id="rate", text="Emit events triggers/second: ", min=0.00001, max=60, default=30},
+			{type="number", id="rate", text="Triggers every seconds: ", min=0.016, max=600, default=0.033},
+			{type="number", id="nb", text="Particles per trigger: ", min=0, max=100000, default=30, line=true},
+			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1},
 			{type="invisible", id=2, default={}},
 		}},
 	},
@@ -102,21 +118,27 @@ local specific_uis = {
 			{type="number", id="max", text="Max seconds: ", min=0.00001, max=600, default=3},
 		}},
 		[PC.BasicTextureGenerator] = {name="BasicTextureGenerator", fields={}},
+		[PC.OriginPosGenerator] = {name="OriginPosGenerator", fields={}},
 		[PC.DiskPosGenerator] = {name="DiskPosGenerator", fields={
-			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=1},
+			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
 		}},
 		[PC.CirclePosGenerator] = {name="CirclePosGenerator", fields={
-			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=1},
-			{type="number", id="width", text="Width: ", min=0, max=10000, default=3},
+			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
+			{type="number", id="width", text="Width: ", min=0, max=10000, default=20},
 		}},
 		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", fields={
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
-			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={0, 0}},
-			{type="point", id="p3", text="P3: ", min=-10000, max=10000, default={0, 0}},
+			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}},
+			{type="point", id="p3", text="P3: ", min=-10000, max=10000, default={-100, 100}},
 		}},
 		[PC.DiskVelGenerator] = {name="DiskVelGenerator", fields={
-			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=1},
-			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=3},
+			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
+			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
+		}},
+		[PC.DirectionVelGenerator] = {name="DirectionVelGenerator", fields={
+			{type="point", id="from", text="From: ", min=-10000, max=10000, default={0, 0}},
+			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
+			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
 		}},
 		[PC.BasicSizeGenerator] = {name="BasicSizeGenerator", fields={
 			{type="number", id="min_size", text="Min size: ", min=0.00001, max=1000, default=10},
@@ -151,12 +173,19 @@ local specific_uis = {
 			{type="point", id="global_vel", text="Global Velocity: ", min=-10000, max=10000, default={0, 0}},
 			{type="point", id="global_acc", text="Global Acceleration: ", min=-10000, max=10000, default={0, 0}},
 		}},
+		[PC.EasingPosUpdater] = {name="EasingPosUpdater", fields={
+			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
+		}},
+		[PC.EasingColorUpdater] = {name="EasingColorUpdater", fields={
+			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
+		}},
 	},
 	systems = {
 		[1] = {name="System", fields={
 			{id=1, default=nil},
 			{id="max_particles", default=100},
 			{id="blend", default=PC.AdditiveBlend},
+			{id="texture", default="/data/gfx/particle.png"},
 			{id="emitters", default={}},
 			{id="updaters", default={}},
 		}},
@@ -167,11 +196,13 @@ function _M:addNew(kind, into)
 	PC.gcTextures()
 	local list = {}
 	for id, t in pairs(specific_uis[kind]) do
+		local t = table.clone(t, true)
 		t.id = id
 		list[#list+1] = t
 	end
 	table.sort(list, "name")
-	self:listPopup("New "..kind, "Select:", list, 400, 500, function(item) if item then
+
+	local function exec(item) if item then
 		local f = {[1]=item.id}
 		for _, field in ipairs(item.fields) do
 			if type(field.default) == "table" then f[field.id] = table.clone(field.default, true)
@@ -180,7 +211,13 @@ function _M:addNew(kind, into)
 		table.insert(into, f)
 		self:makeUI()
 		self:regenParticle()
-	end end)
+	end end
+
+	if #list == 1 then
+		exec(list[1])
+	else
+		self:listPopup("New "..kind, "Select:", list, 400, 500, exec)
+	end
 end
 
 function _M:processSpecificUI(ui, add, kind, spe, delete)
@@ -191,15 +228,21 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 	for i, field in ipairs(spe_def.fields) do
 		field.from = field.from or function(v) return v end
 		field.to = field.to or function(v) return v end
-		if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
 		if field.type == "number" then
+			if not spe[field.id] then spe[field.id] = field.default end
 			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "point" then
+			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
 			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id][1]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
 			adds[#adds+1] = Numberbox.new{title="x", number=field.to(spe[field.id][2]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "color" then
+			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
 			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
 			adds[#adds+1] = ColorPicker.new{color=spe[field.id], width=20, height=20, fct=function(p) spe[field.id] = p self:regenParticle() end}
+		elseif field.type == "select" then
+			if not spe[field.id] then spe[field.id] = field.default end
+			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
+			adds[#adds+1] = Dropdown.new{width=200, default={"name", spe[field.id]}, fct=function(item) spe[field.id] = item.name self:regenParticle() self:makeUI() end, on_select=function(item)end, list=easings, nb_items=math.min(#easings, 30)}
 		end
 		if field.line then add(unpack(adds)) adds={} end
 	end
@@ -247,7 +290,7 @@ function _M:makeUI()
 			Textzone.new{text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes}
 		)
 		add(0)
-		add(Textzone.new{text="Texture: ", auto_width=1, auto_height=1}, Dropdown.new{width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes})
+		add(Textzone.new{text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
 		
 		for id_emitter, emitter in ipairs(system.emitters) do
 			local id = id_emitter
@@ -261,10 +304,10 @@ function _M:makeUI()
 				local id = id_generator
 				self:processSpecificUI(ui, add, "generators", generator, function() table.remove(emitter[2], id) self:makeUI() self:regenParticle() end)
 			end
-			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text=" add generator", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", emitter[2]) end})
+			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add generator", auto_width=1, auto_height=1, fct=function() self:addNew("generators", emitter[2]) end})
 		end
 		tab = 20
-		add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("emitters", system.emitters) end}, Textzone.new{text=" add emitter", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", system.emitters) end})
+		add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("emitters", system.emitters) end}, Textzone.new{text="add emitter", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", system.emitters) end})
 		
 		self:makeTitle(add, tab, "#{bold}##AQUAMARINE#----== Updaters ==----", false)
 		tab = 40
@@ -272,9 +315,11 @@ function _M:makeUI()
 			local id = id_updater
 			self:processSpecificUI(ui, add, "updaters", updater, function() table.remove(system.updaters, id) self:makeUI() self:regenParticle() end)
 		end
-		add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("updaters", system.updaters) end}, Textzone.new{text=" add updater", auto_width=1, auto_height=1, fct=function() self:addNew("updaters", system.updaters) end})
+		add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("updaters", system.updaters) end}, Textzone.new{text="add updater", auto_width=1, auto_height=1, fct=function() self:addNew("updaters", system.updaters) end})
 	end
-	add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("systems", def) end}, Textzone.new{text=" add system", auto_width=1, auto_height=1, fct=function() self:addNew("systems", def) end})
+	tab = 0
+	add(8)
+	add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("systems", def) end}, Textzone.new{text="add system", auto_width=1, auto_height=1, fct=function() self:addNew("systems", def) end})
 	
 	self:loadUI(ui)
 	self:setupUI(false, false)
@@ -288,6 +333,30 @@ function _M:makeUI()
 
 		return false
 	end)
+end
+
+function _M:selectTexture(system)
+	local d = Dialog.new("Select Texture", game.w * 0.6, game.h * 0.6)
+
+	local list = {}
+
+	for i, file in ipairs(fs.list("/data/gfx/particles_textures/")) do if file:find("%.png$") then
+		list[#list+1] = "/data/gfx/particles_textures/"..file
+	end end 
+
+	local clist = ImageList.new{width=self.iw, height=self.ih, tile_w=128, tile_h=128, force_size=true, padding=10, scrollbar=true, root_loader=true, list=list, fct=function(item)
+		game:unregisterDialog(d)
+		system.texture = item.data
+		self:makeUI()
+		self:regenParticle()
+	end}
+
+	d:loadUI{
+		{left=0, top=0, ui=clist}
+	}
+	d:setupUI(false, false)
+	d.key:addBinds{EXIT = function() game:unregisterDialog(d) end}
+	game:registerDialog(d)
 end
 
 function _M:setBG(kind)
@@ -329,6 +398,7 @@ function _M:init()
 end
 
 function _M:regenParticle()
+	table.print(pdef)
 	self.p = PC.new(pdef)
 	self.p:shift((game.w - 550) / 2, game.h / 2)
 	collectgarbage("collect")
@@ -336,6 +406,9 @@ end
 
 function _M:toScreen(x, y, nb_keyframes)
 	self.bg:toScreen()
+
+	if self.p:dead() then self:regenParticle() end
+
 	self.p:toScreen(0, 0, nb_keyframes)
 
 	self.uidialog:toScreen(0, 0, nb_keyframes)
@@ -364,12 +437,20 @@ function UIDialog:init(master)
 
 	local cp =ColorPicker.new{color={0, 0, 0, 1}, width=20, height=20, fct=function(p) master:setBG(p) end}
 
+	local new = Button.new{text="New", fct=function() Dialog:yesnoPopup("Clear particles?", "All data will be lost.", function(ret) if ret then pdef={} master:makeUI() master:regenParticle() end end) end}
+	local load = Button.new{text="Load", fct=function() self:load(master) end}
+	local merge = Button.new{text="Merge", fct=function() self:merge(master) end}
+
 	local bgt = Button.new{text="Transparent background", fct=function() master:setBG("transparent") end}
 	local bgb = Button.new{text="Color background", fct=function() cp:popup() end}
 	local bg1 = Button.new{text="Background1", fct=function() master:setBG("tome1") end}
 	local bg2 = Button.new{text="Background2", fct=function() master:setBG("tome2") end}
 	local bg3 = Button.new{text="Background3", fct=function() master:setBG("tome3") end}
 	self:loadUI{
+		{absolute=true, left=0, top=0, ui=new},
+		{absolute=true, left=new.w, top=0, ui=load},
+		{absolute=true, left=new.w+load.w, top=0, ui=merge},
+
 		{absolute=true, left=0, bottom=0, ui=bgt},
 		{absolute=true, left=bgt.w, bottom=0, ui=bgb},
 		{absolute=true, left=bgt.w+bgb.w, bottom=0, ui=bg1},
@@ -379,3 +460,58 @@ function UIDialog:init(master)
 	self:setupUI(false, false)
 end
 
+function UIDialog:load(master)
+	local d = Dialog.new("Load particle effects from /data/gfx/particles/", game.w * 0.6, game.h * 0.6)
+
+	local list = {}
+	for i, file in ipairs(fs.list("/data/gfx/particles/")) do if file:find("%.pc$") then
+		list[#list+1] = {name=file, path="/data/gfx/particles/"..file}
+	end end 
+
+	local clist = List.new{scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
+		game:unregisterDialog(d)
+		local ok, f = pcall(loadfile, item.path)
+		if not ok then Dialog:simplePopup("Error loading particle file", f) return end
+		setfenv(f, {math=math, colors_alphaf=colors_alphaf, PC=PC})
+		local ok, data = pcall(f)
+		if not ok then Dialog:simplePopup("Error loading particle file", data) return end
+		pdef = data
+		master:makeUI()
+		master:regenParticle()
+	end}
+
+	d:loadUI{
+		{left=0, top=0, ui=clist}
+	}
+	d:setupUI(false, false)
+	d.key:addBinds{EXIT = function() game:unregisterDialog(d) end}
+	game:registerDialog(d)
+end
+
+function UIDialog:merge(master)
+	local d = Dialog.new("Load particle effects from /data/gfx/particles/", game.w * 0.6, game.h * 0.6)
+
+	local list = {}
+	for i, file in ipairs(fs.list("/data/gfx/particles/")) do if file:find("%.pc$") then
+		list[#list+1] = {name=file, path="/data/gfx/particles/"..file}
+	end end 
+
+	local clist = List.new{scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
+		game:unregisterDialog(d)
+		local ok, f = pcall(loadfile, item.path)
+		if not ok then Dialog:simplePopup("Error loading particle file", f) return end
+		setfenv(f, {math=math, colors_alphaf=colors_alphaf, PC=PC})
+		local ok, data = pcall(f)
+		if not ok then Dialog:simplePopup("Error loading particle file", data) return end
+		table.append(pdef, data)
+		master:makeUI()
+		master:regenParticle()
+	end}
+
+	d:loadUI{
+		{left=0, top=0, ui=clist}
+	}
+	d:setupUI(false, false)
+	d.key:addBinds{EXIT = function() game:unregisterDialog(d) end}
+	game:registerDialog(d)
+end

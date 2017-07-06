@@ -24,7 +24,44 @@ extern "C" {
 #include "auxiliar.h"
 }
 #include "core_loader.hpp"
+#include "renderer-moderngl/easing.hpp" // This imports the code... yeah I know
+
 using namespace particles;
+
+static unordered_map<string, easing_ptr> easings_map({
+	{"linear", easing::linear},
+	{"inQuad", easing::quadraticIn},
+	{"outQuad", easing::quadraticOut},
+	{"inOutQuad", easing::quadraticInOut},
+	{"inCubic", easing::cubicIn},
+	{"outCubic", easing::cubicOut},
+	{"inOutCubic", easing::cubicInOut},
+	{"inQuart", easing::quarticIn},
+	{"outQuart", easing::quarticOut},
+	{"inOutQuart", easing::quarticInOut},
+	{"inQuint", easing::quinticIn},
+	{"outQuint", easing::quinticOut},
+	{"inOutQuint", easing::quinticInOut},
+	{"inSine", easing::sinusoidalIn},
+	{"outSine", easing::sinusoidalOut},
+	{"inOutSine", easing::sinusoidalInOut},
+	{"inExpo", easing::exponentialIn},
+	{"outExpo", easing::exponentialOut},
+	{"inOutExpo", easing::exponentialInOut},
+	{"inCirc", easing::circularIn},
+	{"outCirc", easing::circularOut},
+	{"inOutCirc", easing::circularInOut},
+	{"inElastic", easing::elasticIn},
+	{"outElastic", easing::elasticOut},
+	{"inOutElastic", easing::elasticInOut},
+	{"inBack", easing::backIn},
+	{"outBack", easing::backOut},
+	{"inOutBack", easing::backInOut},
+	{"inBounce", easing::bounceIn},
+	{"outBounce", easing::bounceOut},
+	{"inOutBounce", easing::bounceInOut},
+});
+
 
 static shader_type *lua_get_shader(lua_State *L, int idx) {
 	if (lua_istable(L, idx)) {
@@ -67,6 +104,13 @@ static int p_shift(lua_State *L)
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
 	(*ee)->shift(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_toboolean(L, 4));
 	return 0;
+}
+
+static int p_is_dead(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	lua_pushboolean(L, (*ee)->isDead());
+	return 1;
 }
 
 static int p_toscreen(lua_State *L)
@@ -182,7 +226,7 @@ static int p_new(lua_State *L) {
 			Emitter *em;
 			switch (e_id) {
 				case EmittersList::LinearEmitter:
-					em = new LinearEmitter(lua_float(L, -1, "rate", 0.1), lua_float(L, -1, "nb", 10));
+					em = new LinearEmitter(lua_float(L, -1, "duration", -1), lua_float(L, -1, "rate", 0.1), lua_float(L, -1, "nb", 10));
 					break;
 				default:
 					lua_pushliteral(L, "Unknown particles emitter"); lua_error(L);
@@ -205,6 +249,9 @@ static int p_new(lua_State *L) {
 					case GeneratorsList::BasicTextureGenerator:
 						g = new BasicTextureGenerator();
 						break;
+					case GeneratorsList::OriginPosGenerator:
+						g = new OriginPosGenerator();
+						break;
 					case GeneratorsList::DiskPosGenerator:
 						g = new DiskPosGenerator(lua_float(L, -1, "radius", 100));
 						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
@@ -219,6 +266,10 @@ static int p_new(lua_State *L) {
 						break;
 					case GeneratorsList::DiskVelGenerator:
 						g = new DiskVelGenerator(lua_float(L, -1, "min_vel", 5), lua_float(L, -1, "max_vel", 10));
+						break;
+					case GeneratorsList::DirectionVelGenerator:
+						g = new DirectionVelGenerator(lua_vec2(L, -1, "from", {0, 0}), lua_float(L, -1, "min_vel", 5), lua_float(L, -1, "max_vel", 10));
+						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
 						break;
 					case GeneratorsList::BasicSizeGenerator:
 						g = new BasicSizeGenerator(lua_float(L, -1, "min_size", 10), lua_float(L, -1, "max_size", 30));
@@ -260,6 +311,17 @@ static int p_new(lua_State *L) {
 				case UpdatersList::LinearColorUpdater:
 					u = new LinearColorUpdater();
 					break;
+				case UpdatersList::EasingColorUpdater: {
+					easing_ptr easing = easing::linear;
+					const char *easing_str = lua_string(L, -1, "easing", NULL);
+					if (easing_str) {
+						auto it = easings_map.find(easing_str);
+						if (it != easings_map.end()) {
+							easing = it->second;
+						}
+					}
+					u = new EasingColorUpdater(easing);
+					break;}
 				case UpdatersList::BasicTimeUpdater:
 					u = new BasicTimeUpdater();
 					break;
@@ -269,6 +331,17 @@ static int p_new(lua_State *L) {
 				case UpdatersList::EulerPosUpdater:
 					u = new EulerPosUpdater(lua_vec2(L, -1, "global_vel", vec2(0, 0)), lua_vec2(L, -1, "global_acc", vec2(0, 0)));
 					break;
+				case UpdatersList::EasingPosUpdater: {
+					easing_ptr easing = easing::linear;
+					const char *easing_str = lua_string(L, -1, "easing", NULL);
+					if (easing_str) {
+						auto it = easings_map.find(easing_str);
+						if (it != easings_map.end()) {
+							easing = it->second;
+						}
+					}
+					u = new EasingPosUpdater(easing);
+					break;}
 				default:
 					lua_pushliteral(L, "Unknown particles updater"); lua_error(L);
 					break;
@@ -289,38 +362,11 @@ static int p_new(lua_State *L) {
 	return 1;
 }
 
-static int p_test(lua_State *L) {
-	System *sys = new System(10000, RendererBlend::AdditiveBlend);
-	LinearEmitter *emit = new LinearEmitter(0.3, 3);
-	emit->addGenerator(sys, new LifeGenerator(1, 5));
-	emit->addGenerator(sys, new CirclePosGenerator(100, 10));
-	emit->addGenerator(sys, new DiskVelGenerator(12, 15));
-	emit->addGenerator(sys, new BasicSizeGenerator(2, 9));
-	emit->addGenerator(sys, new BasicRotationGenerator(0, M_PI*2));
-	emit->addGenerator(sys, new FixedColorGenerator(vec4(1, 1, 0, 1), vec4(0, 0, 0, 1)));
-	sys->addEmitter(emit);
-	sys->addUpdater(new BasicTimeUpdater());
-	sys->addUpdater(new LinearColorUpdater());
-	sys->addUpdater(new EulerPosUpdater(vec2(0, 0), vec2(0, 0)));
-
-	// texture_type *tex = new texture_type;
-	// loader_png("/data/gfx/particle.png", tex, false, false, true);
-	// sys->setTexture(tex);
-
-	sys->finish();
-	Ensemble *e = new Ensemble();
-	e->add(sys);
-
-	Ensemble **ee = (Ensemble**)lua_newuserdata(L, sizeof(Ensemble*));
-	auxiliar_setclass(L, "particles{compose}", -1);
-	*ee = e;
-	return 1;
-}
-
 static const struct luaL_Reg pcompose[] =
 {
 	{"__gc", p_free},
 	{"shift", p_shift},
+	{"dead", p_is_dead},
 	{"toScreen", p_toscreen},
 	{NULL, NULL},
 };
@@ -330,7 +376,6 @@ static const struct luaL_Reg plib[] =
 	{"gcTextures", p_gc_textures},
 	{"defaultShader", p_default_shader},
 	{"new", p_new},
-	{"test", p_test},
 	{NULL, NULL},
 };
 
@@ -346,16 +391,20 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "LinearEmitter"); lua_pushnumber(L, static_cast<uint8_t>(EmittersList::LinearEmitter)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "LinearColorUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::LinearColorUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "EasingColorUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingColorUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicTimeUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::BasicTimeUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "AnimatedTextureUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::AnimatedTextureUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EulerPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EulerPosUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "EasingPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingPosUpdater)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "LifeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::LifeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicTextureGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicTextureGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "OriginPosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::OriginPosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskPosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskPosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "CirclePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::CirclePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "TrianglePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::TrianglePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskVelGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "DirectionVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DirectionVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicRotationGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopColorGenerator)); lua_rawset(L, -3);

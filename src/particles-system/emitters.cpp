@@ -39,7 +39,6 @@ void Emitter::shift(float x, float y, bool absolute) {
 void Emitter::generate(ParticlesData &p, uint32_t nb) {
 	uint32_t start = p.count;
 	uint32_t end = std::min(start + nb, p.max);
-	// printf("Emitter::generate %d : %d : %d\n", nb, start, end);
 	for (auto &gen : generators) {
 		gen->generate(p, start, end);
 	}
@@ -47,7 +46,10 @@ void Emitter::generate(ParticlesData &p, uint32_t nb) {
 }
 
 void LinearEmitter::emit(ParticlesData &p, float dt) {
-	// printf("LinearEmitter::emit %f with rate %f, accumulator %f\n", dt, rate, accumulator);
+	if (duration > -1) {
+		duration -= dt;
+		if (duration < 0) active = false;
+	}
 	accumulator += dt;
 	while (accumulator >= rate) {
 		accumulator -= rate;

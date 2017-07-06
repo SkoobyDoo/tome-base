@@ -51,6 +51,15 @@ void BasicTextureGenerator::generate(ParticlesData &p, uint32_t start, uint32_t 
 	}
 }
 
+void OriginPosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec2* origin = p.getSlot2(ORIGIN_POS);
+	vec4* pos = p.getSlot4(POS);
+	for (uint32_t i = start; i < end; i++) {
+		origin[i].x = pos[i].x;
+		origin[i].y = pos[i].y;
+	}
+}
+
 void DiskPosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
@@ -93,6 +102,18 @@ void DiskVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) 
 	vec2* vel = p.getSlot2(VEL);
 	for (uint32_t i = start; i < end; i++) {
 		float a = genrand_real(0.0, M_PI * 2.0);
+		float r = genrand_real(min_vel, max_vel);
+		vel[i].x = cos(a) * r;
+		vel[i].y = sin(a) * r;
+	}
+}
+
+void DirectionVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec4* pos = p.getSlot4(POS);
+	vec4* life = p.getSlot4(LIFE);
+	vec2* vel = p.getSlot2(VEL);
+	for (uint32_t i = start; i < end; i++) {
+		float a = atan2f(pos[i].y - from.y - final_pos.y, pos[i].x - from.x - final_pos.x);
 		float r = genrand_real(min_vel, max_vel);
 		vel[i].x = cos(a) * r;
 		vel[i].y = sin(a) * r;
