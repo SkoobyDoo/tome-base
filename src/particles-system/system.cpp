@@ -104,6 +104,13 @@ void System::setTexture(spTextureHolder &tex) {
 }
 
 void System::finish() {
+	// Make sure the generators that need to go last, do go last
+	for (auto &e : emitters) {
+		std::stable_sort(e->generators.begin(), e->generators.end(), [](const uGenerator &a, const uGenerator &b) -> bool { 
+			return a->weight() < b->weight(); 
+		});
+	}
+
 	list.initSlot4(POS);
 	list.initSlot4(TEXTURE);
 	list.initSlot4(COLOR);
@@ -130,6 +137,7 @@ void System::print() {
 }
 
 void System::draw(mat4 &model) {
+	glm::scale(model, glm::vec3(zoom, zoom, zoom));
 	renderer.update(list);
 	renderer.draw(list, model);
 }
@@ -213,6 +221,7 @@ void Ensemble::shift(float x, float y, bool absolute) {
 	for (auto &s : systems) s->shift(x, y, absolute);
 }
 void Ensemble::update(float nb_keyframes) {
+	nb_keyframes *= speed;
 	dead = true;
 	for (auto &s : systems) {
 		s->update(nb_keyframes);

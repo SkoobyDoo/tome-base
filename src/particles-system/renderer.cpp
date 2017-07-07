@@ -78,10 +78,27 @@ void Renderer::update(ParticlesData &p) {
 	vec4* color = p.getSlot4(COLOR);
 	if (!pos || !tex || !color) return;
 	for (uint32_t i = 0; i < p.count; i++) {
-		vertexes.push_back({ {pos[i].x - pos[i].z, pos[i].y - pos[i].z, }, {tex[i].s, tex[i].t}, color[i] });
-		vertexes.push_back({ {pos[i].x + pos[i].z, pos[i].y - pos[i].z, }, {tex[i].p, tex[i].t}, color[i] });
-		vertexes.push_back({ {pos[i].x + pos[i].z, pos[i].y + pos[i].z, }, {tex[i].p, tex[i].q}, color[i] });
-		vertexes.push_back({ {pos[i].x - pos[i].z, pos[i].y + pos[i].z, }, {tex[i].s, tex[i].q}, color[i] });
+		vec4 p = pos[i];
+		if (!p.w) { // Not rotated, easy case
+			vertexes.push_back({ {p.x - p.z, p.y - p.z, }, {tex[i].s, tex[i].t}, color[i] });
+			vertexes.push_back({ {p.x + p.z, p.y - p.z, }, {tex[i].p, tex[i].t}, color[i] });
+			vertexes.push_back({ {p.x + p.z, p.y + p.z, }, {tex[i].p, tex[i].q}, color[i] });
+			vertexes.push_back({ {p.x - p.z, p.y + p.z, }, {tex[i].s, tex[i].q}, color[i] });
+		} else {
+			float s = sin(p.w);
+			float c = cos(p.w);
+			mat2 rot(c, -s, s, c);
+
+			vec2 p1(-p.z, -p.z);
+			vec2 p2( p.z, -p.z);
+			vec2 p3( p.z,  p.z);
+			vec2 p4(-p.z,  p.z);
+			vec2 bp(p.x, p.y);
+			vertexes.push_back({ bp + p1 * rot, {tex[i].s, tex[i].t}, color[i] });
+			vertexes.push_back({ bp + p2 * rot, {tex[i].p, tex[i].t}, color[i] });
+			vertexes.push_back({ bp + p3 * rot, {tex[i].p, tex[i].q}, color[i] });
+			vertexes.push_back({ bp + p4 * rot, {tex[i].s, tex[i].q}, color[i] });
+		}
 	}
 }
 

@@ -48,7 +48,7 @@ namespace particles {
 
 extern shader_type *default_particlescompose_shader;
 
-enum ParticlesSlots2 : uint8_t { ORIGIN_POS, VEL, ACC, SIZE, MAX2 };
+enum ParticlesSlots2 : uint8_t { ORIGIN_POS, ROT_VEL, VEL, ACC, SIZE, MAX2 };
 enum ParticlesSlots4 : uint8_t { POS, LIFE, TEXTURE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
 
 class ParticlesData {
@@ -124,6 +124,7 @@ private:
 	vector<unique_ptr<Emitter>> emitters;
 	vector<unique_ptr<Updater>> updaters;
 	Renderer renderer;
+	float zoom = 1.0;
 
 public:
 	System(uint32_t max, RendererBlend blend);
@@ -135,6 +136,7 @@ public:
 
 	void setShader(spShaderHolder &shader);
 	void setTexture(spTextureHolder &tex);
+	void setZoom(float zoom) { this->zoom = zoom; };
 
 	void shift(float x, float y, bool absolute);
 	void update(float nb_keyframes);
@@ -154,10 +156,12 @@ public:
 
 private:
 	bool dead = false;
+	float speed = 1.0;
 	vector<unique_ptr<System>> systems;
 public:
 	inline bool isDead() { return dead; };
 	uint32_t countAlive();
+	void setSpeed(float speed) { this->speed = speed; };
 	void add(System *system);
 	void shift(float x, float y, bool absolute);
 	void update(float nb_keyframes);

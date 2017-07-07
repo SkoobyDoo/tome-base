@@ -146,6 +146,15 @@ void BasicRotationGenerator::generate(ParticlesData &p, uint32_t start, uint32_t
 	}
 }
 
+void BasicRotationVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* rot_vel = p.getSlot2(ROT_VEL);
+	for (uint32_t i = start; i < end; i++) {
+		rot_vel[i].x = genrand_real(min_rot, max_rot);
+		rot_vel[i].y = pos[i].w; // Store initial rotation
+	}
+}
+
 void StartStopColorGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* color = p.getSlot4(COLOR);
 	vec4* cstart = p.getSlot4(COLOR_START);

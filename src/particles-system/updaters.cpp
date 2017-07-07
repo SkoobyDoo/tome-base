@@ -27,8 +27,16 @@ void LinearColorUpdater::update(ParticlesData &p, float dt) {
 	vec4* color_start = p.getSlot4(COLOR_START);
 	vec4* color_stop = p.getSlot4(COLOR_STOP);
 	vec4* life = p.getSlot4(LIFE);
-	for (uint32_t i = 0; i < p.count; i++) {
-		color[i] = glm::mix(color_start[i], color_stop[i], life[i].z);
+	if (bilinear) {
+		for (uint32_t i = 0; i < p.count; i++) {
+			float t = life[i].z;
+			if (t < 0.5) color[i] = glm::mix(color_stop[i], color_start[i], t * 2.0);
+			else color[i] = glm::mix(color_stop[i], color_start[i], 1.0 - (t - 0.5) * 2.0);
+		}
+	} else {
+		for (uint32_t i = 0; i < p.count; i++) {
+			color[i] = glm::mix(color_start[i], color_stop[i], life[i].z);
+		}
 	}
 }
 
@@ -37,11 +45,30 @@ void EasingColorUpdater::update(ParticlesData &p, float dt) {
 	vec4* color_start = p.getSlot4(COLOR_START);
 	vec4* color_stop = p.getSlot4(COLOR_STOP);
 	vec4* life = p.getSlot4(LIFE);
-	for (uint32_t i = 0; i < p.count; i++) {
-		color[i].r = easing(color_start[i].r, color_stop[i].r, life[i].z);
-		color[i].g = easing(color_start[i].g, color_stop[i].g, life[i].z);
-		color[i].b = easing(color_start[i].b, color_stop[i].b, life[i].z);
-		color[i].a = easing(color_start[i].a, color_stop[i].a, life[i].z);
+	if (bilinear) {
+		for (uint32_t i = 0; i < p.count; i++) {
+			float t = life[i].z;
+			if (t < 0.5) {
+				t = t * 2.0;
+				color[i].r = easing(color_stop[i].r, color_start[i].r, t);
+				color[i].g = easing(color_stop[i].g, color_start[i].g, t);
+				color[i].b = easing(color_stop[i].b, color_start[i].b, t);
+				color[i].a = easing(color_stop[i].a, color_start[i].a, t);
+			} else {
+				t = 1.0 - (t - 0.5) * 2.0;
+				color[i].r = easing(color_stop[i].r, color_start[i].r, t);
+				color[i].g = easing(color_stop[i].g, color_start[i].g, t);
+				color[i].b = easing(color_stop[i].b, color_start[i].b, t);
+				color[i].a = easing(color_stop[i].a, color_start[i].a, t);
+			}
+		}
+	} else {
+		for (uint32_t i = 0; i < p.count; i++) {
+			color[i].r = easing(color_start[i].r, color_stop[i].r, life[i].z);
+			color[i].g = easing(color_start[i].g, color_stop[i].g, life[i].z);
+			color[i].b = easing(color_start[i].b, color_stop[i].b, life[i].z);
+			color[i].a = easing(color_start[i].a, color_stop[i].a, life[i].z);
+		}
 	}
 }
 
@@ -127,6 +154,24 @@ void EasingSizeUpdater::update(ParticlesData &p, float dt) {
 	vec4* life = p.getSlot4(LIFE);
 	for (uint32_t i = 0; i < p.count; i++) {
 		pos[i].z = easing(size[i].x, size[i].y, life[i].z);
+	}
+}
+
+void LinearRotationUpdater::update(ParticlesData &p, float dt) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* rot_vel = p.getSlot2(ROT_VEL);
+	for (uint32_t i = 0; i < p.count; i++) {
+		pos[i].w += rot_vel[i].x * dt;
+	}
+}
+
+void EasingRotationUpdater::update(ParticlesData &p, float dt) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* rot_vel = p.getSlot2(VEL);
+	vec4* life = p.getSlot4(LIFE);
+	for (uint32_t i = 0; i < p.count; i++) {
+		float dist = rot_vel[i].x * life[i].y;
+		pos[i].w = rot_vel[i].y + easing(0, dist, life[i].z);
 	}
 }
 

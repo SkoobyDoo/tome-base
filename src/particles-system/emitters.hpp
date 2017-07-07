@@ -25,9 +25,10 @@ enum class EmittersList : uint8_t { LinearEmitter };
 
 class System;
 class Emitter {
+	friend class System;
 protected:
 	bool active = true;
-	vector<unique_ptr<Generator>> generators;
+	vector<uGenerator> generators;
 	void generate(ParticlesData &p, uint32_t nb);
 public:
 	inline bool isActive() { return active; };

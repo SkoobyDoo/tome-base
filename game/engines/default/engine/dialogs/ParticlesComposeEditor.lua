@@ -27,6 +27,7 @@ local Textbox = require "engine.ui.Textbox"
 local Numberbox = require "engine.ui.Numberbox"
 local Textzone = require "engine.ui.Textzone"
 local Dropdown = require "engine.ui.Dropdown"
+local NumberSlider = require "engine.ui.NumberSlider"
 local Separator = require "engine.ui.Separator"
 local ColorPicker = require "engine.ui.ColorPicker"
 local DisplayObject = require "engine.ui.DisplayObject"
@@ -64,6 +65,7 @@ local new_default_system = {
 
 local pdef_history = {}
 local pdef_history_pos = 0
+local particle_speed = 1
 
 local pdef = {
 	{
@@ -183,6 +185,10 @@ local specific_uis = {
 			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
+		[PC.BasicRotationVelGenerator] = {name="BasicRotationVelGenerator", category="rotation", fields={
+			{type="number", id="min_rot", text="Min rotation velocity: ", min=0, max=36000, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=36000, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+		}},
 		[PC.StartStopColorGenerator] = {name="StartStopColorGenerator", category="color", fields={
 			{type="color", id="min_color_start", text="Min start color: ", default=colors_alphaf.GOLD(1)},
 			{type="color", id="max_color_start", text="Max start color: ", default=colors_alphaf.ORANGE(1)},
@@ -210,12 +216,19 @@ local specific_uis = {
 		[PC.EasingPosUpdater] = {name="EasingPosUpdater", category="position & movement", fields={
 			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
 		}},
-		[PC.LinearColorUpdater] = {name="LinearColorUpdater", category="color", fields={}},
+		[PC.LinearColorUpdater] = {name="LinearColorUpdater", category="color", fields={
+			{type="bool", id="bilinear", text="Bilinear (from start to stop to start): ", default=false},
+		}},
 		[PC.EasingColorUpdater] = {name="EasingColorUpdater", category="color", fields={
+			{type="bool", id="bilinear", text="Bilinear (from start to stop to start): ", default=false, line=true},
 			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
 		}},
 		[PC.LinearSizeUpdater] = {name="LinearSizeUpdater", category="size", fields={}},
 		[PC.EasingSizeUpdater] = {name="EasingSizeUpdater", category="size", fields={
+			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
+		}},
+		[PC.LinearRotationUpdater] = {name="LinearRotationUpdater", category="rotation", fields={}},
+		[PC.EasingRotationUpdater] = {name="EasingRotationUpdater", category="rotation", fields={
 			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
 		}},
 	},
@@ -265,11 +278,13 @@ function _M:addNew(kind, into)
 		exec(list[1])
 	else
 		local last_cat = nil
-		for i = 1, #list do
+		local i = 1
+		while i < #list do
 			local t = list[i]
-			if t.category ~= last_cat then
+			if t.category ~= last_cat and not t.fake then
 				table.insert(list, i, {name="#LIGHT_BLUE#-------- "..t.category, fake=true})
 			end
+			i = i + 1
 			last_cat = t.category
 		end
 
@@ -288,6 +303,9 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 		if field.type == "number" then
 			if not spe[field.id] then spe[field.id] = field.default end
 			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
+		elseif field.type == "bool" then
+			if not spe[field.id] then spe[field.id] = field.default end
+			adds[#adds+1] = Checkbox.new{title=field.text, default=field.to(spe[field.id]), on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "point" then
 			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
 			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id][1]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
@@ -385,8 +403,8 @@ function _M:makeUI()
 	self:setScroll(old_scroll)
 
 	self.mouse:registerZone(0, 0, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
-		if mx < game.w - 550 then self.p.ps:shift(mx, my, true)
-		else self.p.ps:shift((game.w - 550) / 2, game.h / 2, true) end
+		if mx < game.w - 550 then self:shift(mx, my)
+		else self:shift((game.w - 550) / 2, game.h / 2) end
 
 		self.uidialog:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)
 
@@ -463,6 +481,7 @@ function _M:init()
 	Dialog.init(self, _t"Particles Editor", 500, game.h * 0.9, game.w - 550)
 	self.__showup = false
 	self.absolute = true
+	self.old_shift_x, self.old_shift_y = (game.w - 550) / 2, game.h / 2
 
 	self.bignews = BigNews.new(FontPackage:getFont("bignews"))
 	self.bignews:setTextOutline(0.7)
@@ -524,6 +543,7 @@ function _M:init()
 end
 
 function _M:regenParticle(nosave)
+	if not self.particle_renderer then return end
 	if not nosave then
 		for i = pdef_history_pos + 1, #pdef_history do pdef_history[i] = nil end
 		table.insert(pdef_history, table.clone(pdef, true))
@@ -531,14 +551,19 @@ function _M:regenParticle(nosave)
 	end
 
 	-- table.print(pdef)
-	self.p = {ps=PC.new(pdef)}
+	self.p = {ps=PC.new(pdef, particle_speed, 1)}
 	self.pdo = self.p.ps:getDO(self.p)
-	self.p.ps:shift((game.w - 550) / 2, game.h / 2)
+	self:shift(self.old_shift_x, self.old_shift_y)
 	self.p_date = core.game.getTime()
 
 	self.particle_renderer:clear():add(self.bg):add(self.pdo)
 
 	collectgarbage("collect")
+end
+
+function _M:shift(x, y)
+	self.old_shift_x, self.old_shift_y = x, y
+	self.p.ps:shift(x, y, true)
 end
 
 function _M:toScreen(x, y, nb_keyframes)
@@ -598,8 +623,10 @@ function UIDialog:init(master)
 	local bg2 = Button.new{text="Background2", fct=function() master:setBG("tome2") end}
 	local bg3 = Button.new{text="Background3", fct=function() master:setBG("tome3") end}
 
+	local speed = NumberSlider.new{title="Play at speed: ", step=5, min=10, max=1000, value=100, size=300, on_change=function(v) particle_speed = util.bound(v / 100, 0.1, 10) master:regenParticle(false) end}
+
 	self.master = master
-	self.particles_count = core.renderer.text(self.font_mono):translate(700, game.h - self.font:height()):outline(1)
+	self.particles_count = core.renderer.text(self.font_mono):translate(700, 0):outline(1)
 	self.particles_count_renderer = core.renderer.renderer():add(self.particles_count)
 
 	self:loadUI{
@@ -613,6 +640,8 @@ function UIDialog:init(master)
 		{absolute=true, left=bgt.w+bgb.w, bottom=0, ui=bg1},
 		{absolute=true, left=bgt.w+bgb.w+bg1.w, bottom=0, ui=bg2},
 		{absolute=true, left=bgt.w+bgb.w+bg1.w+bg2.w, bottom=0, ui=bg3},
+		
+		{absolute=true, left=bgt.w+bgb.w+bg1.w+bg2.w+bg3.w+10, bottom=0, ui=speed},
 	}
 	self:setupUI(false, false)
 end
@@ -681,6 +710,8 @@ function UIDialog:saveDef(w)
 		for k, v in pairs(up) do if type(k) == "string" then
 			if type(v) == "number" then
 				data[#data+1] = ("%s=%f"):format(k, v)
+			elseif type(v) == "boolean" then
+				data[#data+1] = ("%s=%s"):format(k, v and "true" or "false")
 			elseif type(v) == "string" then
 				data[#data+1] = ("%s=%q"):format(k, v)
 			elseif type(v) == "table" and #v == 2 then

@@ -147,6 +147,15 @@ static inline float lua_float(lua_State *L, int table_idx, const char *field, fl
 	return ret;
 }
 
+static inline bool lua_bool(lua_State *L, int table_idx, const char *field, bool def) {
+	bool ret = def;
+	lua_pushstring(L, field);
+	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
+	if (lua_isboolean(L, -1)) ret = lua_toboolean(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
 static inline const char* lua_string(lua_State *L, int table_idx, const char *field, const char* def) {
 	const char* ret = def;
 	lua_pushstring(L, field);
@@ -209,11 +218,17 @@ static inline vec4 lua_vec4(lua_State *L, int table_idx, const char *field, vec4
 }
 
 static int p_new(lua_State *L) {
+	float speed = 1, zoom = 1;
+	if (lua_isnumber(L, 2)) speed = lua_tonumber(L, 2);
+	if (lua_isnumber(L, 3)) zoom = lua_tonumber(L, 3);
+
 	Ensemble *e = new Ensemble();
+	e->setSpeed(speed);
 	int nb_systems = lua_objlen(L, 1);
 	for (int i = 1; i <= nb_systems; i++) {		
 		lua_rawgeti(L, 1, i);
 		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
+		sys->setZoom(zoom);
 
 		const char *tex_str = lua_string(L, -1, "texture", NULL);
 		if (tex_str){
@@ -226,9 +241,6 @@ static int p_new(lua_State *L) {
 			spShaderHolder sh = Ensemble::getShader(L, shader_str);
 			sys->setShader(sh);
 		}
-
-		// shader_type *shader = lua_shader(L, -1, "shader");
-		// if (shader) sys->setShader(shader);
 
 		/** Emitters **/
 		lua_pushliteral(L, "emitters");
@@ -294,6 +306,9 @@ static int p_new(lua_State *L) {
 					case GeneratorsList::BasicRotationGenerator:
 						g = new BasicRotationGenerator(lua_float(L, -1, "min_rot", 0), lua_float(L, -1, "max_rot", M_PI*2));
 						break;
+					case GeneratorsList::BasicRotationVelGenerator:
+						g = new BasicRotationVelGenerator(lua_float(L, -1, "min_rot", 0), lua_float(L, -1, "max_rot", M_PI*2));
+						break;
 					case GeneratorsList::StartStopColorGenerator:
 						g = new StartStopColorGenerator(lua_vec4(L, -1, "min_color_start", vec4(1, 0, 0, 1)), lua_vec4(L, -1, "max_color_start", vec4(0, 1, 0, 1)), lua_vec4(L, -1, "min_color_stop", vec4(1, 0, 0, 0)), lua_vec4(L, -1, "max_color_stop", vec4(0, 1, 0, 0)));
 						break;
@@ -326,7 +341,7 @@ static int p_new(lua_State *L) {
 			Updater *u;
 			switch (u_id) {
 				case UpdatersList::LinearColorUpdater:
-					u = new LinearColorUpdater();
+					u = new LinearColorUpdater(lua_bool(L, -1, "bilinear", false));
 					break;
 				case UpdatersList::EasingColorUpdater: {
 					easing_ptr easing = easing::linear;
@@ -337,7 +352,7 @@ static int p_new(lua_State *L) {
 							easing = it->second;
 						}
 					}
-					u = new EasingColorUpdater(easing);
+					u = new EasingColorUpdater(lua_bool(L, -1, "bilinear", false), easing);
 					break;}
 				case UpdatersList::LinearSizeUpdater:
 					u = new LinearSizeUpdater();
@@ -372,6 +387,20 @@ static int p_new(lua_State *L) {
 						}
 					}
 					u = new EasingPosUpdater(easing);
+					break;}
+				case UpdatersList::LinearRotationUpdater:
+					u = new LinearRotationUpdater();
+					break;
+				case UpdatersList::EasingRotationUpdater: {
+					easing_ptr easing = easing::linear;
+					const char *easing_str = lua_string(L, -1, "easing", NULL);
+					if (easing_str) {
+						auto it = easings_map.find(easing_str);
+						if (it != easings_map.end()) {
+							easing = it->second;
+						}
+					}
+					u = new EasingRotationUpdater(easing);
 					break;}
 				default:
 					lua_pushliteral(L, "Unknown particles updater"); lua_error(L);
@@ -450,6 +479,8 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "AnimatedTextureUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::AnimatedTextureUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EulerPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EulerPosUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EasingPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingPosUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "LinearRotationUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::LinearRotationUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "EasingRotationUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingRotationUpdater)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "LifeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::LifeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicTextureGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicTextureGenerator)); lua_rawset(L, -3);
@@ -462,6 +493,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicRotationGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "BasicRotationVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "FixedColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::FixedColorGenerator)); lua_rawset(L, -3);
 

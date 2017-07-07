@@ -27,7 +27,7 @@ enum class GeneratorsList : uint8_t {
 	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator,
 	DiskVelGenerator, DirectionVelGenerator,
 	BasicSizeGenerator, StartStopSizeGenerator,
-	BasicRotationGenerator,
+	BasicRotationGenerator, BasicRotationVelGenerator,
 	StartStopColorGenerator, FixedColorGenerator,
 };
 
@@ -36,12 +36,13 @@ protected:
 	vec2 base_pos = vec2(0, 0), shift_pos = vec2(0, 0), final_pos = vec2(0, 0);
 
 public:
-	virtual uint32_t weight() { return 100; };
+	virtual uint32_t weight() const { return 100; };
 	void shift(float x, float y, bool absolute);
 	void basePos(float x, float y) { base_pos = vec2(x, y); };
 	virtual void useSlots(ParticlesData &p) {};
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) = 0;
 };
+typedef unique_ptr<Generator> uGenerator;
 
 /********************************************************************
  ** Life
@@ -68,7 +69,7 @@ public:
  ********************************************************************/
 class OriginPosGenerator : public Generator {
 public:
-	virtual uint32_t weight() { return 100000; };
+	virtual uint32_t weight() const { return 100000; };
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(ORIGIN_POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -111,7 +112,7 @@ class DirectionVelGenerator : public Generator {
 	vec2 from;
 public:
 	DirectionVelGenerator(vec2 from, float min_vel, float max_vel) : from(from), min_vel(min_vel), max_vel(max_vel) {};
-	virtual uint32_t weight() { return 10000; };
+	virtual uint32_t weight() const { return 10000; };
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(VEL); p.initSlot2(ACC); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -140,6 +141,16 @@ public:
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
+
+class BasicRotationVelGenerator : public Generator {
+	float min_rot, max_rot;
+public:
+	virtual uint32_t weight() const { return 10000; };
+	BasicRotationVelGenerator(float min_rot, float max_rot) : min_rot(min_rot), max_rot(max_rot) {};
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(ROT_VEL); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+};
+
 
 /********************************************************************
  ** Colors

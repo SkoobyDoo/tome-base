@@ -22,11 +22,12 @@ using namespace std;
 using namespace glm;
 
 enum class UpdatersList : uint8_t {
-	LinearColorUpdater, EasingColorUpdater,
+	LinearColorUpdater, BiLinearColorUpdater, EasingColorUpdater,
 	BasicTimeUpdater,
 	AnimatedTextureUpdater,
 	EulerPosUpdater, EasingPosUpdater,
 	LinearSizeUpdater, EasingSizeUpdater,
+	LinearRotationUpdater, EasingRotationUpdater,
 };
 
 typedef float (*easing_ptr)(float,float,float);
@@ -38,17 +39,35 @@ public:
 };
 
 class LinearColorUpdater : public Updater {
+	bool bilinear = false;
 public:
+	LinearColorUpdater(bool bilinear) : bilinear(bilinear) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
 	virtual void update(ParticlesData &p, float dt);
 };
 
 class EasingColorUpdater : public Updater {
 private:
+	bool bilinear = false;
 	easing_ptr easing;
 public:
-	EasingColorUpdater(easing_ptr easing) : easing(easing) {};
+	EasingColorUpdater(bool bilinear, easing_ptr easing) : bilinear(bilinear), easing(easing) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); p.initSlot4(LIFE); };
+	virtual void update(ParticlesData &p, float dt);
+};
+
+class LinearRotationUpdater : public Updater {
+public:
+	virtual void useSlots(ParticlesData &p) {p.initSlot4(POS); p.initSlot2(ROT_VEL); };
+	virtual void update(ParticlesData &p, float dt);
+};
+
+class EasingRotationUpdater : public Updater {
+private:
+	easing_ptr easing;
+public:
+	EasingRotationUpdater(easing_ptr easing) : easing(easing) {};
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); p.initSlot4(POS); p.initSlot2(ROT_VEL); };
 	virtual void update(ParticlesData &p, float dt);
 };
 
