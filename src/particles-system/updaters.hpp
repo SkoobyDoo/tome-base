@@ -26,6 +26,7 @@ enum class UpdatersList : uint8_t {
 	BasicTimeUpdater,
 	AnimatedTextureUpdater,
 	EulerPosUpdater, EasingPosUpdater,
+	LinearSizeUpdater, EasingSizeUpdater,
 };
 
 typedef float (*easing_ptr)(float,float,float);
@@ -65,6 +66,21 @@ private:
 public:
 	AnimatedTextureUpdater(uint8_t splitx, uint8_t splity, uint8_t firstframe, uint8_t lastframe, float repeat_over_life);
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(LIFE); p.initSlot4(TEXTURE); };
+	virtual void update(ParticlesData &p, float dt);
+};
+
+class LinearSizeUpdater : public Updater {
+public:
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(SIZE); };
+	virtual void update(ParticlesData &p, float dt);
+};
+
+class EasingSizeUpdater : public Updater {
+private:
+	easing_ptr easing;
+public:
+	EasingSizeUpdater(easing_ptr easing) : easing(easing) {};
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(SIZE); };
 	virtual void update(ParticlesData &p, float dt);
 };
 

@@ -112,4 +112,22 @@ void EasingPosUpdater::update(ParticlesData &p, float dt) {
 	}
 }
 
+void LinearSizeUpdater::update(ParticlesData &p, float dt) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* size = p.getSlot2(SIZE);
+	vec4* life = p.getSlot4(LIFE);
+	for (uint32_t i = 0; i < p.count; i++) {
+		pos[i].z = glm::mix(size[i].x, size[i].y, life[i].z);
+	}
+}
+
+void EasingSizeUpdater::update(ParticlesData &p, float dt) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* size = p.getSlot2(SIZE);
+	vec4* life = p.getSlot4(LIFE);
+	for (uint32_t i = 0; i < p.count; i++) {
+		pos[i].z = easing(size[i].x, size[i].y, life[i].z);
+	}
+}
+
 }

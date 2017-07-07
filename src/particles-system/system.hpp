@@ -24,6 +24,7 @@
 extern "C" {
 #include "tgl.h"
 #include "lua.h"
+#include "auxiliar.h"
 #include "useshader.h"
 }
 
@@ -38,6 +39,7 @@ extern "C" {
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/ext.hpp"
+extern lua_State *L;
 
 using namespace std;
 using namespace glm;
@@ -94,6 +96,20 @@ public:
 };
 typedef shared_ptr<TextureHolder> spTextureHolder;
 
+class ShaderHolder {
+public:
+	shader_type *shader;
+	int lua_shader_ref = LUA_NOREF;
+	ShaderHolder(shader_type *shader, int ref) : shader(shader), lua_shader_ref(ref) {
+		printf("Creating shader %d\n", shader->shader);
+	};
+	~ShaderHolder() {
+		printf("Freeing shader %d\n", shader->shader);
+		if (lua_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, lua_shader_ref);
+	};
+};
+typedef shared_ptr<ShaderHolder> spShaderHolder;
+
 #include "particles-system/generators.hpp"
 #include "particles-system/updaters.hpp"
 #include "particles-system/emitters.hpp"
@@ -101,6 +117,7 @@ typedef shared_ptr<TextureHolder> spTextureHolder;
 
 class System {
 	friend class Emitter;
+	friend class Ensemble;
 private:
 	ParticlesData list;
 
@@ -116,12 +133,12 @@ public:
 	void addUpdater(Updater *updater);
 	void finish();
 
-	void setShader(shader_type *shader);
+	void setShader(spShaderHolder &shader);
 	void setTexture(spTextureHolder &tex);
 
 	void shift(float x, float y, bool absolute);
 	void update(float nb_keyframes);
-	void draw(float x, float y);
+	void draw(mat4 &model);
 	void print();
 };
 
@@ -129,8 +146,10 @@ public:
 class Ensemble {
 private:
 	static unordered_map<string, spTextureHolder> stored_textures;
+	static unordered_map<string, spShaderHolder> stored_shaders;
 public:
 	static spTextureHolder getTexture(const char *tex_str);
+	static spShaderHolder getShader(lua_State *L, const char *shader_str);
 	static void gcTextures();
 
 private:
@@ -138,9 +157,11 @@ private:
 	vector<unique_ptr<System>> systems;
 public:
 	inline bool isDead() { return dead; };
+	uint32_t countAlive();
 	void add(System *system);
 	void shift(float x, float y, bool absolute);
 	void update(float nb_keyframes);
+	void draw(mat4 model);
 	void draw(float x, float y);
 };
 

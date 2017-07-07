@@ -24,11 +24,13 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 #include "../particles.hpp"
+#include "../particles-system/system.hpp"
 
 // This one is a little strange, it is not the master of particles_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around particle code
-class DORParticles : public SubRenderer{
+class DORParticles : public SubRenderer, public IRealtime {
 private:
+	particles::Ensemble *e = NULL;
 	particles_type *ps = NULL;
 	int ps_lua_ref = LUA_NOREF;
 
@@ -46,7 +48,14 @@ public:
 		this->ps = ps;
 	};
 
+	void setParticles(particles::Ensemble *e, int ref) {
+		if (ps_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, ps_lua_ref);
+		ps_lua_ref = ref;
+		this->e = e;
+	};
+
 	virtual void toScreen(mat4 cur_model, vec4 color);
+	virtual void onKeyframe(float nb_keyframes);
 };
 
 #endif

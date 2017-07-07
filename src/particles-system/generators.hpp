@@ -26,7 +26,7 @@ enum class GeneratorsList : uint8_t {
 	BasicTextureGenerator,
 	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator,
 	DiskVelGenerator, DirectionVelGenerator,
-	BasicSizeGenerator,
+	BasicSizeGenerator, StartStopSizeGenerator,
 	BasicRotationGenerator,
 	StartStopColorGenerator, FixedColorGenerator,
 };
@@ -121,6 +121,15 @@ class BasicSizeGenerator : public Generator {
 public:
 	BasicSizeGenerator(float min_size, float max_size) : min_size(min_size), max_size(max_size) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+};
+
+class StartStopSizeGenerator : public Generator {
+	float min_start_size, max_start_size;
+	float min_stop_size, max_stop_size;
+public:
+	StartStopSizeGenerator(float min_start_size, float max_start_size, float min_stop_size, float max_stop_size) : min_start_size(min_start_size), max_start_size(max_start_size), min_stop_size(min_stop_size), max_stop_size(max_stop_size) {};
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(SIZE); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
 

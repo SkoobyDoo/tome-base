@@ -96,7 +96,7 @@ void System::addUpdater(Updater *updater) {
 	updater->useSlots(list);
 }
 
-void System::setShader(shader_type *shader) {
+void System::setShader(spShaderHolder &shader) {
 	renderer.setShader(shader);
 }
 void System::setTexture(spTextureHolder &tex) {
@@ -129,15 +129,16 @@ void System::print() {
 	list.print();
 }
 
-void System::draw(float x, float y) {
+void System::draw(mat4 &model) {
 	renderer.update(list);
-	renderer.draw(list, x, y);
+	renderer.draw(list, model);
 }
 
 /********************************************************************
  ** Ensemble
  ********************************************************************/
 unordered_map<string, spTextureHolder> Ensemble::stored_textures;
+unordered_map<string, spShaderHolder> Ensemble::stored_shaders;
 
 spTextureHolder Ensemble::getTexture(const char *tex_str) {
 	auto it = stored_textures.find(tex_str);
@@ -153,8 +154,56 @@ spTextureHolder Ensemble::getTexture(const char *tex_str) {
 	return th;
 }
 
+spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
+	auto it = stored_shaders.find(shader_str);
+	if (it != stored_shaders.end()) {
+		printf("Reusing shader %s : %d\n", shader_str, it->second->shader->shader);
+		return it->second;
+	}
+
+	int ref = LUA_NOREF;
+	shader_type *shader = NULL;
+	spShaderHolder sh;
+
+	// Get Shader.new
+	lua_getglobal(L, "engine");
+	lua_pushliteral(L, "Shader");
+	lua_gettable(L, -2);
+	lua_pushliteral(L, "new");
+	lua_gettable(L, -2);
+	
+	// Pass parameters
+	lua_pushstring(L, shader_str);
+	if (!lua_pcall(L, 1, 1, 0)) {
+		// Get shader.shad
+		lua_pushliteral(L, "shad");
+		lua_gettable(L, -2);
+		if (lua_isuserdata(L, -1)) shader = (shader_type*)lua_touserdata(L, -1);
+		lua_pop(L, 1);
+
+		if (shader) {
+			lua_pushvalue(L, -1);
+			ref = luaL_ref(L, LUA_REGISTRYINDEX);
+			sh = make_shared<ShaderHolder>(shader, ref);
+		}
+	} else {
+		printf("PartcilesComposer shader get error: %s\n", lua_tostring(L, -1));
+	}
+	lua_pop(L, 1 + 1); // Engine table & result
+
+	stored_shaders.insert({shader_str, sh});
+	return sh;
+}
+
 void Ensemble::gcTextures() {
 	stored_textures.clear();
+	stored_shaders.clear();
+}
+
+uint32_t Ensemble::countAlive() {
+	uint32_t nb = 0;
+	for (auto &s : systems) nb += s->list.count;
+	return nb;	
 }
 
 void Ensemble::add(System *system) {
@@ -170,8 +219,13 @@ void Ensemble::update(float nb_keyframes) {
 		if (!s->isDead()) dead = false;
 	}
 }
+void Ensemble::draw(mat4 model) {
+	for (auto &s : systems) s->draw(model);
+}
 void Ensemble::draw(float x, float y) {
-	for (auto &s : systems) s->draw(x, y);
+	mat4 model = mat4();
+	model = glm::translate(model, glm::vec3(x, y, 0));
+	draw(model);
 }
 
 }

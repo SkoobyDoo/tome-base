@@ -18,6 +18,9 @@
 -- darkgod@te4.org
 
 require "engine.class"
+local KeyBind = require "engine.KeyBind"
+local FontPackage = require "engine.FontPackage"
+local BigNews = require "engine.BigNews"
 local Dialog = require "engine.ui.Dialog"
 local Checkbox = require "engine.ui.Checkbox"
 local Textbox = require "engine.ui.Textbox"
@@ -30,6 +33,7 @@ local DisplayObject = require "engine.ui.DisplayObject"
 local ImageList = require "engine.ui.ImageList"
 local List = require "engine.ui.List"
 local Button = require "engine.ui.Button"
+local Shader = require "engine.Shader"
 local PC = core.particlescompose
 
 --- Particles editor
@@ -38,10 +42,33 @@ module(..., package.seeall, class.inherit(Dialog))
 
 local UIDialog
 
+local new_default_emitter = {PC.LinearEmitter, {
+	{PC.BasicTextureGenerator},
+	{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
+	{PC.DiskPosGenerator, radius=50.000000},
+	{PC.BasicSizeGenerator, max_size=30.000000, min_size=10.000000},
+	{PC.DiskVelGenerator, max_vel=150.000000, min_vel=50.000000},
+	{PC.LifeGenerator, min=1.000000, max=3.000000},
+}, duration=-1.000000, startat=0.000000, nb=10.000000, rate=0.030000 }
+
+local new_default_system = {
+	max_particles = 100, blend=PC.DefaultBlend,
+	texture = "/data/gfx/particle.png",
+	emitters = { new_default_emitter },
+	updaters = {
+		{PC.BasicTimeUpdater},
+		{PC.LinearColorUpdater},
+		{PC.EulerPosUpdater, global_acc={0.000000, 0.000000}, global_vel={0.000000, 0.000000}},
+	},
+}
+
+local pdef_history = {}
+local pdef_history_pos = 0
+
 local pdef = {
 	{
-		max_particles = 2000, blend = PC.AdditiveBlend,
-		texture = "/data/gfx/particle.png",
+		max_particles = 2000, blend = PC.ShinyBlend,
+		texture = "/data/gfx/particle.png", shader = "particles/glow",
 		emitters = {
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
@@ -52,7 +79,7 @@ local pdef = {
 				{PC.BasicSizeGenerator, min_size=10, max_size=50},
 				{PC.BasicRotationGenerator, min_rot=0, max_rot=math.pi*2},
 				{PC.StartStopColorGenerator, min_color_start=colors_alphaf.GOLD(1), max_color_start=colors_alphaf.ORANGE(1), min_color_stop=colors_alphaf.GREEN(0), max_color_stop=colors_alphaf.LIGHT_GREEN(0)},
-			}, rate=1/30, nb=20},
+			}, rate=0.03, nb=20},
 		},
 		updaters = {
 			{PC.BasicTimeUpdater},
@@ -68,6 +95,7 @@ local blendmodes = {
 	{name="MixedBlend", blend=PC.MixedBlend},
 	{name="ShinyBlend", blend=PC.ShinyBlend},
 }
+local blend_by_id = table.map(function(k, v) return v.blend, v.name end, blendmodes)
 
 local easings = {
 	{name="linear"},
@@ -105,83 +133,94 @@ local easings = {
 
 local specific_uis = {
 	emitters = {
-		[PC.LinearEmitter] = {name="LinearEmitter", fields={
+		[PC.LinearEmitter] = {name="LinearEmitter", category="emitter", addnew=new_default_emitter, fields={
 			{type="number", id="rate", text="Triggers every seconds: ", min=0.016, max=600, default=0.033},
 			{type="number", id="nb", text="Particles per trigger: ", min=0, max=100000, default=30, line=true},
+			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
 			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1},
 			{type="invisible", id=2, default={}},
 		}},
 	},
 	generators = {
-		[PC.LifeGenerator] = {name="LifeGenerator", fields={
+		[PC.LifeGenerator] = {name="LifeGenerator", category="life", fields={
 			{type="number", id="min", text="Min seconds: ", min=0.00001, max=600, default=1},
 			{type="number", id="max", text="Max seconds: ", min=0.00001, max=600, default=3},
 		}},
-		[PC.BasicTextureGenerator] = {name="BasicTextureGenerator", fields={}},
-		[PC.OriginPosGenerator] = {name="OriginPosGenerator", fields={}},
-		[PC.DiskPosGenerator] = {name="DiskPosGenerator", fields={
+		[PC.BasicTextureGenerator] = {name="BasicTextureGenerator", category="texture", fields={}},
+		[PC.OriginPosGenerator] = {name="OriginPosGenerator", category="position", fields={}},
+		[PC.DiskPosGenerator] = {name="DiskPosGenerator", category="position", fields={
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
 		}},
-		[PC.CirclePosGenerator] = {name="CirclePosGenerator", fields={
+		[PC.CirclePosGenerator] = {name="CirclePosGenerator", category="position", fields={
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
 			{type="number", id="width", text="Width: ", min=0, max=10000, default=20},
 		}},
-		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", fields={
+		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", category="position", fields={
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
 			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}},
 			{type="point", id="p3", text="P3: ", min=-10000, max=10000, default={-100, 100}},
 		}},
-		[PC.DiskVelGenerator] = {name="DiskVelGenerator", fields={
+		[PC.DiskVelGenerator] = {name="DiskVelGenerator", category="movement", fields={
 			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
 			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
 		}},
-		[PC.DirectionVelGenerator] = {name="DirectionVelGenerator", fields={
+		[PC.DirectionVelGenerator] = {name="DirectionVelGenerator", category="movement", fields={
 			{type="point", id="from", text="From: ", min=-10000, max=10000, default={0, 0}},
 			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
 			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
 		}},
-		[PC.BasicSizeGenerator] = {name="BasicSizeGenerator", fields={
+		[PC.BasicSizeGenerator] = {name="BasicSizeGenerator", category="size", fields={
 			{type="number", id="min_size", text="Min size: ", min=0.00001, max=1000, default=10},
 			{type="number", id="max_size", text="Max size: ", min=0.00001, max=1000, default=30},
 		}},
-		[PC.BasicRotationGenerator] = {name="BasicRotationGenerator", fields={
+		[PC.StartStopSizeGenerator] = {name="StartStopSizeGenerator", category="size", fields={
+			{type="number", id="min_start_size", text="Min start: ", min=0.00001, max=1000, default=10},
+			{type="number", id="max_start_size", text="Max start: ", min=0.00001, max=1000, default=30},
+			{type="number", id="min_stop_size", text="Min stop: ", min=0.00001, max=1000, default=1},
+			{type="number", id="max_stop_size", text="Max stop: ", min=0.00001, max=1000, default=3},
+		}},
+		[PC.BasicRotationGenerator] = {name="BasicRotationGenerator", category="rotation", fields={
 			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
-		[PC.StartStopColorGenerator] = {name="StartStopColorGenerator", fields={
+		[PC.StartStopColorGenerator] = {name="StartStopColorGenerator", category="color", fields={
 			{type="color", id="min_color_start", text="Min start color: ", default=colors_alphaf.GOLD(1)},
 			{type="color", id="max_color_start", text="Max start color: ", default=colors_alphaf.ORANGE(1)},
 			{type="color", id="min_color_stop", text="Min stop color: ", default=colors_alphaf.GREEN(0)},
 			{type="color", id="max_color_stop", text="Max stop color: ", default=colors_alphaf.LIGHT_GREEN(0)},
 		}},
-		[PC.FixedColorGenerator	] = {name="FixedColorGenerator", fields={
+		[PC.FixedColorGenerator	] = {name="FixedColorGenerator", category="color", fields={
 			{type="color", id="color_start", text="Start color: ", default=colors_alphaf.GOLD(1)},
 			{type="color", id="color_stop", text="Stop color: ", default=colors_alphaf.LIGHT_GREEN(0)},
 		}},
 	},
 	updaters = {
-		[PC.LinearColorUpdater] = {name="LinearColorUpdater", fields={}},
-		[PC.BasicTimeUpdater] = {name="BasicTimeUpdater", fields={}},
-		[PC.AnimatedTextureUpdater] = {name="AnimatedTextureUpdater", fields={
+		[PC.BasicTimeUpdater] = {name="BasicTimeUpdater", category="life", fields={}},
+		[PC.AnimatedTextureUpdater] = {name="AnimatedTextureUpdater", category="texture", fields={
 			{type="number", id="splitx", text="Texture Columns: ", min=1, max=100, default=1},
 			{type="number", id="splity", text="Texture Lines: ", min=1, max=100, default=1, line=true},
 			{type="number", id="firstframe", text="First frame: ", min=0, max=10000, default=0},
 			{type="number", id="lastframe", text="Last frame: ", min=0, max=10000, default=0, line=true},
 			{type="number", id="repeat_over_life", text="Repeat over lifetime: ", min=0, max=10000, default=1},
 		}},
-		[PC.EulerPosUpdater] = {name="EulerPosUpdater", fields={
+		[PC.EulerPosUpdater] = {name="EulerPosUpdater", category="position & movement", fields={
 			{type="point", id="global_vel", text="Global Velocity: ", min=-10000, max=10000, default={0, 0}},
 			{type="point", id="global_acc", text="Global Acceleration: ", min=-10000, max=10000, default={0, 0}},
 		}},
-		[PC.EasingPosUpdater] = {name="EasingPosUpdater", fields={
+		[PC.EasingPosUpdater] = {name="EasingPosUpdater", category="position & movement", fields={
 			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
 		}},
-		[PC.EasingColorUpdater] = {name="EasingColorUpdater", fields={
+		[PC.LinearColorUpdater] = {name="LinearColorUpdater", category="color", fields={}},
+		[PC.EasingColorUpdater] = {name="EasingColorUpdater", category="color", fields={
+			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
+		}},
+		[PC.LinearSizeUpdater] = {name="LinearSizeUpdater", category="size", fields={}},
+		[PC.EasingSizeUpdater] = {name="EasingSizeUpdater", category="size", fields={
 			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
 		}},
 	},
 	systems = {
-		[1] = {name="System", fields={
+		[1] = {name="System", category="system", addnew=new_default_system, fields={
 			{id=1, default=nil},
 			{id="max_particles", default=100},
 			{id="blend", default=PC.AdditiveBlend},
@@ -192,6 +231,11 @@ local specific_uis = {
 	}
 }
 
+local emitters_by_id = table.map(function(k, v) return k, v.name end, specific_uis.emitters)
+local generators_by_id = table.map(function(k, v) return k, v.name end, specific_uis.generators)
+local updaters_by_id = table.map(function(k, v) return k, v.name end, specific_uis.updaters)
+
+
 function _M:addNew(kind, into)
 	PC.gcTextures()
 	local list = {}
@@ -200,13 +244,17 @@ function _M:addNew(kind, into)
 		t.id = id
 		list[#list+1] = t
 	end
-	table.sort(list, "name")
+	table.sort(list, function(a, b) if a.category == b.category then return a.name < b.name else return a.category < b.category end end)
 
-	local function exec(item) if item then
+	local function exec(item) if item and not item.fake then
 		local f = {[1]=item.id}
-		for _, field in ipairs(item.fields) do
-			if type(field.default) == "table" then f[field.id] = table.clone(field.default, true)
-			else f[field.id] = field.default end
+		if not item.addnew then
+			for _, field in ipairs(item.fields) do
+				if type(field.default) == "table" then f[field.id] = table.clone(field.default, true)
+				else f[field.id] = field.default end
+			end
+		else
+			f = table.clone(item.addnew, true)
 		end
 		table.insert(into, f)
 		self:makeUI()
@@ -216,6 +264,15 @@ function _M:addNew(kind, into)
 	if #list == 1 then
 		exec(list[1])
 	else
+		local last_cat = nil
+		for i = 1, #list do
+			local t = list[i]
+			if t.category ~= last_cat then
+				table.insert(list, i, {name="#LIGHT_BLUE#-------- "..t.category, fake=true})
+			end
+			last_cat = t.category
+		end
+
 		self:listPopup("New "..kind, "Select:", list, 400, 500, exec)
 	end
 end
@@ -291,6 +348,8 @@ function _M:makeUI()
 		)
 		add(0)
 		add(Textzone.new{text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
+		add(Textzone.new{text="Shader: "..(system.shader or "--"), auto_width=1, auto_height=1, fct=function() self:selectShader(system) end})
+		add(8)
 		
 		for id_emitter, emitter in ipairs(system.emitters) do
 			local id = id_emitter
@@ -326,8 +385,8 @@ function _M:makeUI()
 	self:setScroll(old_scroll)
 
 	self.mouse:registerZone(0, 0, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
-		if mx < game.w - 550 then self.p:shift(mx, my, true)
-		else self.p:shift((game.w - 550) / 2, game.h / 2, true) end
+		if mx < game.w - 550 then self.p.ps:shift(mx, my, true)
+		else self.p.ps:shift((game.w - 550) / 2, game.h / 2, true) end
 
 		self.uidialog:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)
 
@@ -359,19 +418,43 @@ function _M:selectTexture(system)
 	game:registerDialog(d)
 end
 
+function _M:selectShader(system)
+	local d = Dialog.new("Select Shader", game.w * 0.6, game.h * 0.6)
+
+	local list = {{name = "--", path=nil}}
+
+	for i, file in ipairs(fs.list("/data/gfx/shaders/particles/")) do if file:find("%.lua$") then
+		list[#list+1] = {name=file, path="particles/"..file:gsub("%.lua$", "")}
+	end end 
+
+	local clist = List.new{width=self.iw, height=self.ih, scrollbar=true, list=list, fct=function(item)
+		game:unregisterDialog(d)
+		system.shader = item.path
+		self:makeUI()
+		self:regenParticle()
+	end}
+
+	d:loadUI{
+		{left=0, top=0, ui=clist}
+	}
+	d:setupUI(false, false)
+	d.key:addBinds{EXIT = function() game:unregisterDialog(d) end}
+	game:registerDialog(d)
+end
+
 function _M:setBG(kind)
 	local w, h = game.w, game.h
 	self.bg:clear()
 	if kind == "transparent" then
 		-- nothing
 	elseif kind == "tome1" then
-		self.bg:add(core.renderer.image("/data/gfx/background/tome.png"))
+		self.bg:add(core.renderer.image("/data/gfx/background/tome.png"):shader(self.normal_shader))
 	elseif kind == "tome2" then
-		self.bg:add(core.renderer.image("/data/gfx/background/tome2.png"))
+		self.bg:add(core.renderer.image("/data/gfx/background/tome2.png"):shader(self.normal_shader))
 	elseif kind == "tome3" then
-		self.bg:add(core.renderer.image("/data/gfx/background/tome3.png"))
+		self.bg:add(core.renderer.image("/data/gfx/background/tome3.png"):shader(self.normal_shader))
 	elseif type(kind) == "table" then
-		self.bg:add(core.renderer.colorQuad(0, 0, w, h, unpack(kind)))
+		self.bg:add(core.renderer.colorQuad(0, 0, w, h, unpack(kind)):shader(self.normal_shader))
 	end
 end
 
@@ -381,12 +464,21 @@ function _M:init()
 	self.__showup = false
 	self.absolute = true
 
+	self.bignews = BigNews.new(FontPackage:getFont("bignews"))
+	self.bignews:setTextOutline(0.7)
+
 	self.uidialog = UIDialog.new(self)
 
-	self.p = PC.new(pdef)
-	self.p:shift((game.w - 550) / 2, game.h / 2, true)
+	-- fs.setWritePath("/home/cvs/t-engine4/game/modules/demo/data/gfx/particles/")
+	-- local f = fs.open("/test.pc", "w")
+	-- self.uidialog:saveDef(function(indent, str) f:write(string.rep("\t", indent)..str) end)
+	-- f:close()
+	-- os.crash()
 
 	self.plus_t = self:getAtlasTexture("ui/plus.png")
+
+	self.normal_shader = Shader.new("particles/normal")
+	PC.defaultShader(self.normal_shader)
 	self.bg = core.renderer.renderer()
 
 	self:makeUI(pdef)
@@ -394,33 +486,91 @@ function _M:init()
 	self.key:setupRebootKeys()
 	self.key:addBinds{
 		EXIT = function() end,
+		FILE_NEW = function() print("FILE_NEW") pdef = {} pdef_history={} pdef_history_pos=0 self:makeUI() self:regenParticle(true) end,
+		FILE_LOAD = function() print("FILE_LOAD") self.uidialog:load(self) end,
+		FILE_MERGE = function() print("FILE_MERGE") self.uidialog:merge(self) end,
+		FILE_SAVE = function() print("FILE_SAVE") self.uidialog:save() end,		
+		EDITOR_UNDO = function() print("EDITOR_UNDO") self:undo() end,
+		EDITOR_REDO = function() print("EDITOR_REDO") self:redo() end,
 	}
+
+
+	-- self.glow_shader = Shader.new("rendering/glow")
+	-- PC.defaultShader(self.glow_shader)
+	self.particle_renderer = core.renderer.renderer()
+
+	local w, h = game.w, game.h
+	self.fbomain = core.renderer.target(nil, nil, 2, true)
+	self.fbomain:setAutoRender(self.particle_renderer)
+
+	local blur_shader = Shader.new("rendering/blur") blur_shader:setUniform("texSize", {w, h})
+	local main_shader = Shader.new("rendering/main_fbo") main_shader:setUniform("texSize", {w, h})
+	local finalquad = core.renderer.targetDisplay(self.fbomain, 0, 0)
+	local downsampling = 4
+	local bloomquad = core.renderer.targetDisplay(self.fbomain, 1, 0, w/downsampling/downsampling, h/downsampling/downsampling)
+	local bloomr = core.renderer.renderer("static"):setRendererName("game.bloomr"):add(bloomquad):premultipliedAlpha(true)
+	local fbobloomview = core.renderer.view():ortho(w/downsampling, h/downsampling, false)
+	self.fbobloom = core.renderer.target(w/downsampling, h/downsampling, 1, true):setAutoRender(bloomr):view(fbobloomview)--:translate(0,-h)
+	self.fbobloom:blurMode(14, downsampling, blur_shader)
+	if false then -- true to see only the bloom texture
+		-- finalquad:textureTarget(self.fbobloom, 0, 0):shader(main_shader)
+		self.fborenderer = core.renderer.renderer("static"):setRendererName("game.fborenderer"):add(self.fbobloom)--:premultipliedAlpha(true)
+	else
+		finalquad:textureTarget(self.fbobloom, 0, 1):shader(main_shader)
+		self.fborenderer = core.renderer.renderer("static"):setRendererName("game.fborenderer"):add(finalquad)--:premultipliedAlpha(true)
+	end
+
+	self:regenParticle()
 end
 
-function _M:regenParticle()
-	table.print(pdef)
-	self.p = PC.new(pdef)
-	self.p:shift((game.w - 550) / 2, game.h / 2)
+function _M:regenParticle(nosave)
+	if not nosave then
+		for i = pdef_history_pos + 1, #pdef_history do pdef_history[i] = nil end
+		table.insert(pdef_history, table.clone(pdef, true))
+		pdef_history_pos = #pdef_history
+	end
+
+	-- table.print(pdef)
+	self.p = {ps=PC.new(pdef)}
+	self.pdo = self.p.ps:getDO(self.p)
+	self.p.ps:shift((game.w - 550) / 2, game.h / 2)
+	self.p_date = core.game.getTime()
+
+	self.particle_renderer:clear():add(self.bg):add(self.pdo)
+
 	collectgarbage("collect")
 end
 
 function _M:toScreen(x, y, nb_keyframes)
+	if self.p.ps:dead() then self:regenParticle(true) end
+
 	self.bg:toScreen()
-
-	if self.p:dead() then self:regenParticle() end
-
-	self.p:toScreen(0, 0, nb_keyframes)
+	if self.fbobloom then
+		self.fbomain:compute()
+		self.fbobloom:compute()
+	end
+	self.fborenderer:toScreen()
+	-- self.p:toScreen(0, 0, nb_keyframes)
 
 	self.uidialog:toScreen(0, 0, nb_keyframes)
 
 	Dialog.toScreen(self, x, y, nb_keyframes)
+
+	self.bignews:display(nb_keyframes)
 end
 
-function _M:use(item)
-	item.fct()
+function _M:keyEvent(...)
+	self.uidialog:keyEvent(...)
+	Dialog.keyEvent(self, ...)
 end
 
-
+function _M:undo()
+	if pdef_history_pos == 0 then return end
+	pdef = table.clone(pdef_history[pdef_history_pos], true)
+	pdef_history_pos = pdef_history_pos - 1
+	self:makeUI()
+	self:regenParticle(true)
+end
 
 
 
@@ -437,19 +587,26 @@ function UIDialog:init(master)
 
 	local cp =ColorPicker.new{color={0, 0, 0, 1}, width=20, height=20, fct=function(p) master:setBG(p) end}
 
-	local new = Button.new{text="New", fct=function() Dialog:yesnoPopup("Clear particles?", "All data will be lost.", function(ret) if ret then pdef={} master:makeUI() master:regenParticle() end end) end}
+	local new = Button.new{text="New", fct=function() Dialog:yesnoPopup("Clear particles?", "All data will be lost.", function(ret) if ret then pdef={} PC.gcTextures() master:makeUI() master:regenParticle() end end) end}
 	local load = Button.new{text="Load", fct=function() self:load(master) end}
 	local merge = Button.new{text="Merge", fct=function() self:merge(master) end}
+	local save = Button.new{text="Save", fct=function() self:save() end}
 
 	local bgt = Button.new{text="Transparent background", fct=function() master:setBG("transparent") end}
 	local bgb = Button.new{text="Color background", fct=function() cp:popup() end}
 	local bg1 = Button.new{text="Background1", fct=function() master:setBG("tome1") end}
 	local bg2 = Button.new{text="Background2", fct=function() master:setBG("tome2") end}
 	local bg3 = Button.new{text="Background3", fct=function() master:setBG("tome3") end}
+
+	self.master = master
+	self.particles_count = core.renderer.text(self.font_mono):translate(700, game.h - self.font:height()):outline(1)
+	self.particles_count_renderer = core.renderer.renderer():add(self.particles_count)
+
 	self:loadUI{
 		{absolute=true, left=0, top=0, ui=new},
 		{absolute=true, left=new.w, top=0, ui=load},
 		{absolute=true, left=new.w+load.w, top=0, ui=merge},
+		{absolute=true, left=new.w+load.w+merge.w, top=0, ui=save},
 
 		{absolute=true, left=0, bottom=0, ui=bgt},
 		{absolute=true, left=bgt.w, bottom=0, ui=bgb},
@@ -470,6 +627,8 @@ function UIDialog:load(master)
 
 	local clist = List.new{scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
 		game:unregisterDialog(d)
+		PC.gcTextures()
+		pdef_history={} pdef_history_pos=0
 		local ok, f = pcall(loadfile, item.path)
 		if not ok then Dialog:simplePopup("Error loading particle file", f) return end
 		setfenv(f, {math=math, colors_alphaf=colors_alphaf, PC=PC})
@@ -514,4 +673,99 @@ function UIDialog:merge(master)
 	d:setupUI(false, false)
 	d.key:addBinds{EXIT = function() game:unregisterDialog(d) end}
 	game:registerDialog(d)
+end
+
+function UIDialog:saveDef(w)
+	local function getData(up)
+		local data = {}
+		for k, v in pairs(up) do if type(k) == "string" then
+			if type(v) == "number" then
+				data[#data+1] = ("%s=%f"):format(k, v)
+			elseif type(v) == "string" then
+				data[#data+1] = ("%s=%q"):format(k, v)
+			elseif type(v) == "table" and #v == 2 then
+				data[#data+1] = ("%s={%f, %f}"):format(k, v[1], v[2])
+			elseif type(v) == "table" and #v == 3 then
+				data[#data+1] = ("%s={%f, %f, %f}"):format(k, v[1], v[2], v[3])
+			elseif type(v) == "table" and #v == 4 then
+				data[#data+1] = ("%s={%f, %f, %f, %f}"):format(k, v[1], v[2], v[3], v[4])
+			else
+				error("Unsupported save parameter: "..tostring(v))
+			end
+		end end
+		if #data > 0 then data = ", "..table.concat(data, ", ") else data = "" end
+		return data
+	end
+
+	w(0, "return {\n")
+	for _, system in ipairs(pdef) do
+		w(1, "{\n")
+		w(2, ("max_particles = %d, blend=PC.%s,\n"):format(system.max_particles, blend_by_id[system.blend]))
+		w(2, ("texture = %q,\n"):format(system.texture))
+		if system.shader then w(2, ("shader = %q,\n"):format(system.shader)) end
+		w(2, "emitters = {\n")
+		for _, em in ipairs(system.emitters) do
+			local data = getData(em)
+			w(3, ("{PC.%s, {\n"):format(emitters_by_id[em[1]]))
+			for _, g in ipairs(em[2]) do
+				local data = getData(g)
+				w(4, ("{PC.%s%s},\n"):format(generators_by_id[g[1]], data))
+			end
+			w(3, ("}%s },\n"):format(data))
+		end
+		w(2, "},\n")
+		w(2, "updaters = {\n")
+		for _, up in ipairs(system.updaters) do
+			local data = getData(up)
+			w(3, ("{PC.%s%s},\n"):format(updaters_by_id[up[1]], data))
+		end
+		w(2, "},\n")
+		w(1, "},\n")
+	end
+	w(0, "}\n")
+end
+
+function UIDialog:save()
+	local d = Dialog.new("Save particle effects to /data/gfx/particles/", 1, 1)
+
+	local function exec(txt)
+		local mod = game.__mod_info
+		game:unregisterDialog(d)
+
+		local basedir = "/data/gfx/particles/"
+		local path
+		if mod.team then
+			basedir = "/save/"
+			path = fs.getRealPath(basedir)
+		else
+			path = mod.real_path..basedir
+		end
+		if not path then return end
+		local restore = fs.getWritePath()
+		fs.setWritePath(path)
+		local f = fs.open("/"..txt..".pc", "w")
+		self:saveDef(function(indent, str) f:write(string.rep("\t", indent)..str) end)
+		f:close()
+		fs.setWritePath(restore)
+		self.master.bignews:saySimple(60, "#GOLD#Saved to "..tostring(fs.getRealPath(basedir..txt..".pc")))
+	end
+
+	local box = Textbox.new{title="Filename (without .pc extension): ", chars=80, text="", fct=function(txt) if #txt > 0 then
+		if fs.exists("/data/gfx/particles/"..txt..".pc") then
+			Dialog:yesnoPopup("Override", "File already exists, override it?", function(ret) if ret then exec(txt) end end)
+		else exec(txt) end
+	end end}
+
+	d:loadUI{
+		{left=0, top=0, ui=box}
+	}
+	d:setupUI(true, true)
+	d.key:addBinds{EXIT = function() game:unregisterDialog(d) end}
+	game:registerDialog(d)
+end
+
+function UIDialog:toScreen(x, y, nb_keyframes)
+	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / Active particles: %d"):format((core.game.getTime() - self.master.p_date) / 1000, core.display.getFPS(), self.master.p.ps:countAlive()), true)
+	self.particles_count_renderer:toScreen()
+	Dialog.toScreen(self, x, y, nb_keyframes)
 end

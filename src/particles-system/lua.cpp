@@ -18,6 +18,7 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+#include "renderer-moderngl/Particles.hpp"
 #include "particles-system/system.hpp"
 
 extern "C" {
@@ -110,6 +111,13 @@ static int p_is_dead(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
 	lua_pushboolean(L, (*ee)->isDead());
+	return 1;
+}
+
+static int p_count_alive(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	lua_pushnumber(L, (*ee)->countAlive());
 	return 1;
 }
 
@@ -213,8 +221,14 @@ static int p_new(lua_State *L) {
 			sys->setTexture(th);
 		}
 
-		shader_type *shader = lua_shader(L, -1, "shader");
-		if (shader) sys->setShader(shader);
+		const char *shader_str = lua_string(L, -1, "shader", NULL);
+		if (shader_str){
+			spShaderHolder sh = Ensemble::getShader(L, shader_str);
+			sys->setShader(sh);
+		}
+
+		// shader_type *shader = lua_shader(L, -1, "shader");
+		// if (shader) sys->setShader(shader);
 
 		/** Emitters **/
 		lua_pushliteral(L, "emitters");
@@ -226,7 +240,7 @@ static int p_new(lua_State *L) {
 			Emitter *em;
 			switch (e_id) {
 				case EmittersList::LinearEmitter:
-					em = new LinearEmitter(lua_float(L, -1, "duration", -1), lua_float(L, -1, "rate", 0.1), lua_float(L, -1, "nb", 10));
+					em = new LinearEmitter(lua_float(L, -1, "startat", -1), lua_float(L, -1, "duration", -1), lua_float(L, -1, "rate", 0.1), lua_float(L, -1, "nb", 10));
 					break;
 				default:
 					lua_pushliteral(L, "Unknown particles emitter"); lua_error(L);
@@ -273,6 +287,9 @@ static int p_new(lua_State *L) {
 						break;
 					case GeneratorsList::BasicSizeGenerator:
 						g = new BasicSizeGenerator(lua_float(L, -1, "min_size", 10), lua_float(L, -1, "max_size", 30));
+						break;
+					case GeneratorsList::StartStopSizeGenerator:
+						g = new StartStopSizeGenerator(lua_float(L, -1, "min_start_size", 10), lua_float(L, -1, "max_start_size", 30), lua_float(L, -1, "min_stop_size", 1), lua_float(L, -1, "max_stop_size", 3));
 						break;
 					case GeneratorsList::BasicRotationGenerator:
 						g = new BasicRotationGenerator(lua_float(L, -1, "min_rot", 0), lua_float(L, -1, "max_rot", M_PI*2));
@@ -322,6 +339,20 @@ static int p_new(lua_State *L) {
 					}
 					u = new EasingColorUpdater(easing);
 					break;}
+				case UpdatersList::LinearSizeUpdater:
+					u = new LinearSizeUpdater();
+					break;
+				case UpdatersList::EasingSizeUpdater: {
+					easing_ptr easing = easing::linear;
+					const char *easing_str = lua_string(L, -1, "easing", NULL);
+					if (easing_str) {
+						auto it = easings_map.find(easing_str);
+						if (it != easings_map.end()) {
+							easing = it->second;
+						}
+					}
+					u = new EasingSizeUpdater(easing);
+					break;}
 				case UpdatersList::BasicTimeUpdater:
 					u = new BasicTimeUpdater();
 					break;
@@ -362,11 +393,32 @@ static int p_new(lua_State *L) {
 	return 1;
 }
 
+static int p_get_do(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	if (!lua_istable(L, 2)) {
+		lua_pushliteral(L, "2nd argument is not an engine.Particles");
+		lua_error(L);
+		return 0;
+	}
+
+	DORParticles *pdo = new DORParticles();
+	lua_pushvalue(L, 2);
+	pdo->setParticles(*ee, luaL_ref(L, LUA_REGISTRYINDEX));
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	*v = pdo;
+	auxiliar_setclass(L, "gl{particles}", -1);
+	return 1;
+}
+
 static const struct luaL_Reg pcompose[] =
 {
 	{"__gc", p_free},
 	{"shift", p_shift},
 	{"dead", p_is_dead},
+	{"countAlive", p_count_alive},
+	{"getDO", p_get_do},
 	{"toScreen", p_toscreen},
 	{NULL, NULL},
 };
@@ -392,6 +444,8 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 
 	lua_pushliteral(L, "LinearColorUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::LinearColorUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EasingColorUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingColorUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "LinearSizeUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::LinearSizeUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "EasingSizeUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingSizeUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicTimeUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::BasicTimeUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "AnimatedTextureUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::AnimatedTextureUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EulerPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EulerPosUpdater)); lua_rawset(L, -3);
@@ -406,6 +460,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "DiskVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DirectionVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DirectionVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "StartStopSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicRotationGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "FixedColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::FixedColorGenerator)); lua_rawset(L, -3);
@@ -414,3 +469,6 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	return 1;
 }
 
+extern "C" void lua_particles_system_clean() {
+	Ensemble::gcTextures();
+}

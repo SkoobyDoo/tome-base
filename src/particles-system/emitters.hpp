@@ -41,8 +41,9 @@ private:
 	uint32_t nb;
 	float rate;
 	float duration;
+	float startat;
 	float accumulator = 0;
 public:
-	LinearEmitter(float duration, float rate, uint32_t nb) : duration(duration), rate(rate), nb(nb) { if (!rate) rate = 1.0 / 60.0; };
+	LinearEmitter(float startat, float duration, float rate, uint32_t nb) : startat(startat), duration(duration), rate(rate), nb(nb) { if (!this->rate) this->rate = 1.0 / 60.0; accumulator = rate; };
 	virtual void emit(ParticlesData &p, float dt);
 };

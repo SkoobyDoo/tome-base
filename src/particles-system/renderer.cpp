@@ -64,7 +64,7 @@ void Renderer::setBlend(RendererBlend blend) {
 	this->blend = blend;
 }
 
-void Renderer::setShader(shader_type *shader) {
+void Renderer::setShader(spShaderHolder &shader) {
 	this->shader = shader;
 }
 void Renderer::setTexture(spTextureHolder &tex) {
@@ -86,10 +86,9 @@ void Renderer::update(ParticlesData &p) {
 }
 
 //*
-void Renderer::draw(ParticlesData &p, float x, float y) {
-	mat4 model = mat4();
-	model = glm::translate(model, glm::vec3(x, y, 0));
+void Renderer::draw(ParticlesData &p, mat4 &model) {
 	mat4 mvp = View::getCurrent()->get() * model;
+	vec4 color(1, 1, 1, 1);
 
 	switch (blend) {
 		case RendererBlend::DefaultBlend: break;
@@ -103,10 +102,11 @@ void Renderer::draw(ParticlesData &p, float x, float y) {
 		tglBindTexture(GL_TEXTURE_2D, tex->tex->tex);
 	}
 
-	shader_type *shader = shader ? shader : (default_particlescompose_shader ? default_particlescompose_shader : default_shader);
+	shader_type *shader = this->shader.get() ? this->shader->shader : (default_particlescompose_shader ? default_particlescompose_shader : default_shader);
 	useShaderSimple(shader);
 
 	glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+	if (shader->p_color != -1) { glUniform4fv(shader->p_color, 1, glm::value_ptr(color)); }
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbos[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(renderer_vertex) * vertexes.size(), NULL, GL_STREAM_DRAW);

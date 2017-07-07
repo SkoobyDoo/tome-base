@@ -28,13 +28,23 @@ void DORParticles::cloneInto(DisplayObject *_into) {
 }
 
 void DORParticles::toScreen(mat4 cur_model, vec4 color) {
-	if (!ps) return;
-
-	// If we are dead, our parent has no more uses for us
-	if (!ps->alive) {
-		removeFromParent();
-		return;
+	if (ps) {
+		// If we are dead, our parent has no more uses for us
+		if (!ps->alive) {
+			removeFromParent();
+			return;
+		}
+		particles_to_screen(ps, cur_model * model);
+	} else if (e) {
+		if (e->isDead()) {
+			removeFromParent();
+			return;
+		}
+		e->draw(cur_model * model);
 	}
+}
 
-	particles_to_screen(ps, cur_model * model);
+// MAKE THE PC MULTITHREAD BY HOOKING IN EXISTING THREAD AND REMOVE THAT
+void DORParticles::onKeyframe(float nb_keyframes) {
+	if (e) e->update(nb_keyframes);
 }

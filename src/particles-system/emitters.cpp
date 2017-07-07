@@ -46,6 +46,12 @@ void Emitter::generate(ParticlesData &p, uint32_t nb) {
 }
 
 void LinearEmitter::emit(ParticlesData &p, float dt) {
+	if (!dt) return;
+	if (startat > 0) {
+		startat -= dt;
+		return;
+	}
+
 	if (duration > -1) {
 		duration -= dt;
 		if (duration < 0) active = false;

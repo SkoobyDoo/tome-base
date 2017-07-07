@@ -133,6 +133,7 @@ function _M:loadDefinition(dir, team, incompatible)
 				core.display.setWindowTitle(mod.long_name)
 				self:setupWrite(mod)
 				if not team then
+					mod.real_path = fs.getRealPath(dir)
 					fs.mount(fs.getRealPath(dir), "/mod", false)
 					fs.mount(fs.getRealPath(dir).."/data/", "/data", false)
 					if fs.exists(dir.."/engine") then fs.mount(fs.getRealPath(dir).."/engine/", "/engine", false) end

@@ -34,7 +34,7 @@ protected:
 	static GLuint vbo_shape;
 	GLuint vbo_pos, vbo_color;
 	GLuint vbos[2];
-	shader_type *shader = nullptr;
+	spShaderHolder shader;
 	spTextureHolder tex;
 	vector<renderer_vertex> vertexes;
 	RendererBlend blend = RendererBlend::DefaultBlend;
@@ -43,9 +43,9 @@ public:
 	static void init();
 
 	void setBlend(RendererBlend blend);
-	void setShader(shader_type *shader);
+	void setShader(spShaderHolder &shader);
 	void setTexture(spTextureHolder &tex);
 	void setup(ParticlesData &p);
 	void update(ParticlesData &p);
-	void draw(ParticlesData &p, float x, float y);
+	void draw(ParticlesData &p, mat4 &model);
 };

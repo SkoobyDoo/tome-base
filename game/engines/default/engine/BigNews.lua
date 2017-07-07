@@ -48,8 +48,10 @@ end
 function _M:easingSimple(time, easing, txt, ...)
 	txt = txt:format(...)
 
-	if game.player.stopRun then game.player:stopRun("important news") end
-	if game.player.stopRest then game.player:stopRest("important news") end
+	if game.player then
+		if game.player.stopRun then game.player:stopRun("important news") end
+		if game.player.stopRest then game.player:stopRest("important news") end
+	end
 	self:triggerHook{"BigNews:talk", text=txt}	
 
 	local text = core.renderer.text(self.font):maxWidth(math.floor(game.w * 0.8))

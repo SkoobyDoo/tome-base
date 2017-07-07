@@ -55,7 +55,6 @@ fs.setPathAllowed(engine.homepath)
 fs.setPathAllowed(fs.getRealPath("/addons/"))
 if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/")) end
 fs.setPathAllowed(fs.getRealPath("/modules/"))
-fs.doneSettingPathAllowed()
 fs.setWritePath(engine.homepath)
 
 -- Loads default config & user config
@@ -90,6 +89,8 @@ for i, file in ipairs(fs.list("/settings/")) do
 		config.load("/settings/"..file)
 	end
 end
+
+if not config.settings.cheat then fs.doneSettingPathAllowed() end
 
 if config.settings.force_safeboot then
 	util.removeForceSafeBoot()

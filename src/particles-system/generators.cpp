@@ -127,6 +127,18 @@ void BasicSizeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end
 	}
 }
 
+void StartStopSizeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* size = p.getSlot2(SIZE);
+	for (uint32_t i = start; i < end; i++) {
+		float size_start = genrand_real(min_start_size, max_start_size);
+		float size_stop = genrand_real(min_stop_size, max_stop_size);
+		pos[i].z = size_start;
+		size[i].x = size_start;
+		size[i].y = size_stop;
+	}
+}
+
 void BasicRotationGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
