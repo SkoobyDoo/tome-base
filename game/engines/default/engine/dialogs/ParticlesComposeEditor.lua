@@ -66,6 +66,7 @@ local new_default_system = {
 local pdef_history = {}
 local pdef_history_pos = 0
 local particle_speed = 1
+local particle_zoom = 1
 
 local pdef = {
 	{
@@ -185,6 +186,10 @@ local specific_uis = {
 			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
+		[PC.RotationByVelGenerator] = {name="RotationByVelGenerator", category="rotation", fields={
+			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+		}},
 		[PC.BasicRotationVelGenerator] = {name="BasicRotationVelGenerator", category="rotation", fields={
 			{type="number", id="min_rot", text="Min rotation velocity: ", min=0, max=36000, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=36000, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
@@ -222,7 +227,7 @@ local specific_uis = {
 			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
 		}},
 		[PC.NoisePosUpdater] = {name="NoisePosUpdater", category="position & movement", fields={
-			{type="file", id="noise", text="Noise: ", dir="/data/gfx/particles_textures/noises/", filter="%.png$", default="/data/gfx/particles_textures/noises/turbulent.png"},
+			{type="file", id="noise", text="Noise: ", dir="/data/gfx/particles_textures/noises/", filter="%.png$", default="/data/gfx/particles_textures/noises/turbulent.png", line=true},
 			{type="point", id="amplitude", text="Movement amplitude: ", min=-10000, max=10000, default={500, 500}},
 			{type="number", id="traversal_speed", text="Noise traversal speed: ", min=0, max=10000, default=1},
 		}},
@@ -328,6 +333,9 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 			if not spe[field.id] then spe[field.id] = field.default end
 			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
 			adds[#adds+1] = Dropdown.new{width=200, default={"name", spe[field.id]}, fct=function(item) spe[field.id] = item.name self:regenParticle() self:makeUI() end, on_select=function(item)end, list=easings, nb_items=math.min(#easings, 30)}
+		elseif field.type == "file" then
+			if not spe[field.id] then spe[field.id] = field.default end
+			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text..tostring(spe[field.id]), auto_width=1, auto_height=1, fct=function() self:selectFile(spe, field) end}
 		end
 		if field.line then add(unpack(adds)) adds={} end
 	end
@@ -413,6 +421,25 @@ function _M:makeUI()
 	self:setScroll(old_scroll)
 
 	self.mouse:registerZone(0, 0, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
+		if mx < game.w - 550 then
+			if event == "button" and button == "wheelup" then
+				particle_zoom = util.bound(particle_zoom + 0.05, 0.1, 10)
+				self.p.ps:zoom(particle_zoom)
+				self:shift(mx, my)
+				return true
+			elseif event == "button" and button == "wheeldown" then
+				particle_zoom = util.bound(particle_zoom - 0.05, 0.1, 10)
+				self.p.ps:zoom(particle_zoom)
+				self:shift(mx, my)
+				return true
+			elseif event == "button" and button == "middle" then
+				particle_zoom = 1
+				self.p.ps:zoom(particle_zoom)
+				self:shift(mx, my)
+				return true
+			end
+		end
+
 		if mx < game.w - 550 then self:shift(mx, my)
 		else self:shift((game.w - 550) / 2, game.h / 2) end
 
@@ -458,6 +485,30 @@ function _M:selectShader(system)
 	local clist = List.new{width=self.iw, height=self.ih, scrollbar=true, list=list, fct=function(item)
 		game:unregisterDialog(d)
 		system.shader = item.path
+		self:makeUI()
+		self:regenParticle()
+	end}
+
+	d:loadUI{
+		{left=0, top=0, ui=clist}
+	}
+	d:setupUI(false, false)
+	d.key:addBinds{EXIT = function() game:unregisterDialog(d) end}
+	game:registerDialog(d)
+end
+
+function _M:selectFile(spe, field)
+	local d = Dialog.new("Select "..field.id, game.w * 0.6, game.h * 0.6)
+
+	local list = {{name = "--", path=nil}}
+
+	for i, file in ipairs(fs.list(field.dir)) do if file:find(field.filter) then
+		list[#list+1] = {name=file, path=field.dir..file}
+	end end 
+
+	local clist = List.new{width=self.iw, height=self.ih, scrollbar=true, list=list, fct=function(item)
+		game:unregisterDialog(d)
+		spe[field.id] = item.path
 		self:makeUI()
 		self:regenParticle()
 	end}
@@ -561,7 +612,7 @@ function _M:regenParticle(nosave)
 	end
 
 	-- table.print(pdef)
-	self.p = {ps=PC.new(pdef, particle_speed, 1)}
+	self.p = {ps=PC.new(pdef, particle_speed, particle_zoom)}
 	self.pdo = self.p.ps:getDO(self.p)
 	self:shift(self.old_shift_x, self.old_shift_y)
 	self.p_date = core.game.getTime()
@@ -633,7 +684,10 @@ function UIDialog:init(master)
 	local bg2 = Button.new{text="Background2", fct=function() master:setBG("tome2") end}
 	local bg3 = Button.new{text="Background3", fct=function() master:setBG("tome3") end}
 
-	local speed = NumberSlider.new{title="Play at speed: ", step=5, min=10, max=1000, value=100, size=300, on_change=function(v) particle_speed = util.bound(v / 100, 0.1, 10) master:regenParticle(false) end}
+	local speed = NumberSlider.new{title="Play at speed: ", step=10, min=10, max=1000, value=100, size=300, on_change=function(v)
+		particle_speed = util.bound(v / 100, 0.1, 10)
+		if master.p then master.p.ps:speed(particle_speed) end
+	end}
 
 	self.master = master
 	self.particles_count = core.renderer.text(self.font_mono):translate(700, 0):outline(1)
@@ -806,7 +860,7 @@ function UIDialog:save()
 end
 
 function UIDialog:toScreen(x, y, nb_keyframes)
-	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / Active particles: %d"):format((core.game.getTime() - self.master.p_date) / 1000, core.display.getFPS(), self.master.p.ps:countAlive()), true)
+	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / Active particles: %d / Zoom: %d%%"):format((core.game.getTime() - self.master.p_date) / 1000, core.display.getFPS(), self.master.p.ps:countAlive(), particle_zoom * 100), true)
 	self.particles_count_renderer:toScreen()
 	Dialog.toScreen(self, x, y, nb_keyframes)
 end

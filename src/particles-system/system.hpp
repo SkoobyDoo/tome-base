@@ -141,7 +141,6 @@ private:
 	vector<unique_ptr<Emitter>> emitters;
 	vector<unique_ptr<Updater>> updaters;
 	Renderer renderer;
-	float zoom = 1.0;
 
 public:
 	System(uint32_t max, RendererBlend blend);
@@ -155,7 +154,6 @@ public:
 
 	void setShader(spShaderHolder &shader);
 	void setTexture(spTextureHolder &tex);
-	void setZoom(float zoom) { this->zoom = zoom; };
 
 	void shift(float x, float y, bool absolute);
 	void update(float nb_keyframes);
@@ -178,11 +176,13 @@ public:
 private:
 	bool dead = false;
 	float speed = 1.0;
+	float zoom = 1.0;
 	vector<unique_ptr<System>> systems;
 public:
 	inline bool isDead() { return dead; };
 	uint32_t countAlive();
 	System *getRawSystem(uint8_t id) { if (id < 0 || id >= systems.size()) return nullptr; else return systems[id].get(); };
+	void setZoom(float zoom) { this->zoom = zoom; };
 	void setSpeed(float speed) { this->speed = speed; };
 	void add(System *system);
 	void shift(float x, float y, bool absolute);

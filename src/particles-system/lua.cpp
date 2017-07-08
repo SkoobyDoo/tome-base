@@ -107,6 +107,20 @@ static int p_shift(lua_State *L)
 	return 0;
 }
 
+static int p_zoom(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	(*ee)->setZoom(lua_tonumber(L, 2));
+	return 0;
+}
+
+static int p_speed(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	(*ee)->setSpeed(lua_tonumber(L, 2));
+	return 0;
+}
+
 static int p_is_dead(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
@@ -224,11 +238,11 @@ static int p_new(lua_State *L) {
 
 	Ensemble *e = new Ensemble();
 	e->setSpeed(speed);
+	e->setZoom(zoom);
 	int nb_systems = lua_objlen(L, 1);
 	for (int i = 1; i <= nb_systems; i++) {		
 		lua_rawgeti(L, 1, i);
 		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
-		sys->setZoom(zoom);
 
 		const char *tex_str = lua_string(L, -1, "texture", NULL);
 		if (tex_str){
@@ -305,6 +319,9 @@ static int p_new(lua_State *L) {
 						break;
 					case GeneratorsList::BasicRotationGenerator:
 						g = new BasicRotationGenerator(lua_float(L, -1, "min_rot", 0), lua_float(L, -1, "max_rot", M_PI*2));
+						break;
+					case GeneratorsList::RotationByVelGenerator:
+						g = new RotationByVelGenerator(lua_float(L, -1, "min_rot", 0), lua_float(L, -1, "max_rot", 0));
 						break;
 					case GeneratorsList::BasicRotationVelGenerator:
 						g = new BasicRotationVelGenerator(lua_float(L, -1, "min_rot", 0), lua_float(L, -1, "max_rot", M_PI*2));
@@ -455,6 +472,8 @@ static const struct luaL_Reg pcompose[] =
 	{"__gc", p_free},
 	{"shift", p_shift},
 	{"dead", p_is_dead},
+	{"zoom", p_zoom},
+	{"speed", p_speed},
 	{"countAlive", p_count_alive},
 	{"getDO", p_get_do},
 	{"toScreen", p_toscreen},
@@ -503,6 +522,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicRotationGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "RotationByVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::RotationByVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicRotationVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "FixedColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::FixedColorGenerator)); lua_rawset(L, -3);

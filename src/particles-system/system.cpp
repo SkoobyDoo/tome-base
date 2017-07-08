@@ -137,7 +137,6 @@ void System::print() {
 }
 
 void System::draw(mat4 &model) {
-	glm::scale(model, glm::vec3(zoom, zoom, zoom));
 	renderer.update(list);
 	renderer.draw(list, model);
 }
@@ -233,7 +232,7 @@ void Ensemble::add(System *system) {
 	systems.emplace_back(system);
 }
 void Ensemble::shift(float x, float y, bool absolute) {
-	for (auto &s : systems) s->shift(x, y, absolute);
+	for (auto &s : systems) s->shift(x / zoom, y / zoom, absolute);
 }
 void Ensemble::update(float nb_keyframes) {
 	nb_keyframes *= speed;
@@ -244,6 +243,7 @@ void Ensemble::update(float nb_keyframes) {
 	}
 }
 void Ensemble::draw(mat4 model) {
+	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
 	for (auto &s : systems) s->draw(model);
 }
 void Ensemble::draw(float x, float y) {

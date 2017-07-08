@@ -146,6 +146,15 @@ void BasicRotationGenerator::generate(ParticlesData &p, uint32_t start, uint32_t
 	}
 }
 
+void RotationByVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec4* pos = p.getSlot4(POS);
+	vec2* vel = p.getSlot2(VEL);
+	for (uint32_t i = start; i < end; i++) {
+		float a = atan2f(vel[i].y, vel[i].x);
+		pos[i].w = a + genrand_real(min_rot, max_rot);
+	}
+}
+
 void BasicRotationVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	vec2* rot_vel = p.getSlot2(ROT_VEL);
