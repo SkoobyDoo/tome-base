@@ -710,7 +710,7 @@ function UIDialog:init(master)
 	self.c_speed = speed
 
 	self.master = master
-	self.particles_count = core.renderer.text(self.font_mono):translate(700, 0):outline(1)
+	self.particles_count = core.renderer.text(self.font_mono):translate(600, 0):outline(1)
 	self.particles_count_renderer = core.renderer.renderer():add(self.particles_count)
 
 	self:loadUI{
@@ -896,7 +896,8 @@ function UIDialog:save()
 end
 
 function UIDialog:toScreen(x, y, nb_keyframes)
-	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / Active particles: %d / Zoom: %d%%"):format((core.game.getTime() - self.master.p_date) / 1000, core.display.getFPS(), self.master.p.ps:countAlive(), particle_zoom * 100), true)
+	local fps, msframe = core.display.getFPS()
+	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / %d ms/frame / Active particles: %d / Zoom: %d%%"):format((core.game.getTime() - self.master.p_date) / 1000, fps, msframe, self.master.p.ps:countAlive(), particle_zoom * 100), true)
 	self.particles_count_renderer:toScreen()
 	Dialog.toScreen(self, x, y, nb_keyframes)
 end

@@ -37,6 +37,7 @@ void Emitter::shift(float x, float y, bool absolute) {
 }
 
 void Emitter::generate(ParticlesData &p, uint32_t nb) {
+	// DGDGDGDG : make a particles density setting here as a divider (use ceil ! )
 	uint32_t start = p.count;
 	uint32_t end = std::min(start + nb, p.max);
 	for (auto &gen : generators) {
