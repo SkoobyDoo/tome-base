@@ -422,21 +422,40 @@ function _M:makeUI()
 
 	self.mouse:registerZone(0, 0, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
 		if mx < game.w - 550 then
-			if event == "button" and button == "wheelup" then
-				particle_zoom = util.bound(particle_zoom + 0.05, 0.1, 10)
-				self.p.ps:zoom(particle_zoom)
-				self:shift(mx, my)
-				return true
-			elseif event == "button" and button == "wheeldown" then
-				particle_zoom = util.bound(particle_zoom - 0.05, 0.1, 10)
-				self.p.ps:zoom(particle_zoom)
-				self:shift(mx, my)
-				return true
-			elseif event == "button" and button == "middle" then
-				particle_zoom = 1
-				self.p.ps:zoom(particle_zoom)
-				self:shift(mx, my)
-				return true
+			if core.key.modState("ctrl") then
+				if event == "button" and button == "wheelup" then
+					particle_speed = util.bound(particle_speed + 0.05, 0.1, 10)
+					self.p.ps:speed(particle_speed)
+					self.uidialog.c_speed:setValue(math.floor(particle_speed * 100))
+					return true
+				elseif event == "button" and button == "wheeldown" then
+					particle_speed = util.bound(particle_speed - 0.05, 0.1, 10)
+					self.p.ps:speed(particle_speed)
+					self.uidialog.c_speed:setValue(math.floor(particle_speed * 100))
+					return true
+				elseif event == "button" and button == "middle" then
+					particle_speed = 1
+					self.p.ps:speed(particle_speed)
+					self.uidialog.c_speed:setValue(math.floor(particle_speed * 100))
+					return true
+				end
+			else
+				if event == "button" and button == "wheelup" then
+					particle_zoom = util.bound(particle_zoom + 0.05, 0.1, 10)
+					self.p.ps:zoom(particle_zoom)
+					self:shift(mx, my)
+					return true
+				elseif event == "button" and button == "wheeldown" then
+					particle_zoom = util.bound(particle_zoom - 0.05, 0.1, 10)
+					self.p.ps:zoom(particle_zoom)
+					self:shift(mx, my)
+					return true
+				elseif event == "button" and button == "middle" then
+					particle_zoom = 1
+					self.p.ps:zoom(particle_zoom)
+					self:shift(mx, my)
+					return true
+				end
 			end
 		end
 
@@ -688,6 +707,7 @@ function UIDialog:init(master)
 		particle_speed = util.bound(v / 100, 0.1, 10)
 		if master.p then master.p.ps:speed(particle_speed) end
 	end}
+	self.c_speed = speed
 
 	self.master = master
 	self.particles_count = core.renderer.text(self.font_mono):translate(700, 0):outline(1)

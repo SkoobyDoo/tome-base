@@ -173,6 +173,12 @@ function _M:onChange()
 	self.nbox.do_container:translate(self.range[1], offsety)
 end
 
+function _M:setValue(v)
+	self.nbox.number = v
+	self.nbox:updateText(0)
+	self:onChange()
+end
+
 function _M:display(x, y, nb_keyframes)
 end
 
