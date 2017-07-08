@@ -89,6 +89,51 @@ public:
 	}
 };
 
+void noise_data::define(int32_t w, int32_t h) {
+	this->w = w; this->h = h;
+	data = new float[w * h];
+	for (int32_t i = 0; i < w * h; i++) data[i] = 0;
+}
+void noise_data::set(SDL_Surface *s) {
+	int nOfColors = s->format->BytesPerPixel;
+	if (nOfColors != 1) printf("[LOADER] LoaderNoise ERROR, surface has %d colors\n", nOfColors);
+	double tot = 0;
+	for (int32_t i = 0; i < w * h; i++) {
+		unsigned char b = ((unsigned char*)s->pixels)[i];
+		tot += (float)b / (float)255.0;
+	}
+	float avg = tot / (w * h);
+	for (int32_t i = 0; i < w * h; i++) {
+		unsigned char b = ((unsigned char*)s->pixels)[i];
+		data[i] = ((float)b / (float)255.0) - avg;
+	}
+	printf("==== %f avg\n", avg);
+}
+
+class LoaderNoise : public Loader {
+private:
+	string filename;
+	noise_data *noise;
+	PHYSFS_file *file;
+	SDL_Surface *s;
+public:
+	LoaderNoise(const char *filename, PHYSFS_file *file, noise_data *noise) : file(file), noise(noise), filename(filename) {};
+	virtual ~LoaderNoise() { };
+	virtual bool load() {
+		s = IMG_Load_RW(PHYSFSRWOPS_makeRWops(file), TRUE);
+		if (!s) printf("ERROR : LoaderNoise : %s\n",SDL_GetError());
+		file = NULL;
+		done();		
+	}
+	virtual bool finish() {
+		if (s) {
+			noise->set(s);
+			SDL_FreeSurface(s);
+			printf("[LOADER] done loading noise %s!\n", filename.c_str());
+		}
+	}
+};
+
 static int thread_loader(void *data) {
 	while (true) {
 		SDL_SemWait(loader_sem);
@@ -200,6 +245,28 @@ bool loader_png(const char *filename, texture_type *t, bool nearest, bool norepe
 
 	SDL_mutexP(loader_mutex);
 	loader_queue.push(new LoaderPNG(filename, file, t));
+	loader_running++;
+	SDL_mutexV(loader_mutex);
+	SDL_SemPost(loader_sem);
+	return true;
+}
+
+
+bool loader_noise(const char *filename, noise_data *noise) {
+	if (!PHYSFS_exists(filename)) return false;
+
+	// This is a bit fugly, we go and peek inside the fiel to know the size of the png
+	unsigned char buffer[29];
+	PHYSFS_file *file = PHYSFS_openRead(filename);
+	PHYSFS_read(file, buffer, 1, 29);
+	PHYSFS_seek(file, 0);
+	int sw = MAKE_DWORD_PTR(buffer + 16);
+	int sh = MAKE_DWORD_PTR(buffer + 20);
+
+	noise->define(sw, sh);
+
+	SDL_mutexP(loader_mutex);
+	loader_queue.push(new LoaderNoise(filename, file, noise));
 	loader_running++;
 	SDL_mutexV(loader_mutex);
 	SDL_SemPost(loader_sem);

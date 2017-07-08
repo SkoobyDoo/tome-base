@@ -315,6 +315,10 @@ static int p_new(lua_State *L) {
 					case GeneratorsList::FixedColorGenerator:
 						g = new FixedColorGenerator(lua_vec4(L, -1, "color_start", vec4(1, 0, 0, 1)), lua_vec4(L, -1, "color_stop", vec4(0, 1, 0, 1)));
 						break;
+					case GeneratorsList::CopyGenerator: {
+						System *source_system = e->getRawSystem(lua_float(L, -1, "source_system", 1) - 1);
+						g = new CopyGenerator(source_system, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true));
+						break; }
 					default:
 						lua_pushliteral(L, "Unknown particles Generator"); lua_error(L);
 						break;
@@ -387,6 +391,11 @@ static int p_new(lua_State *L) {
 						}
 					}
 					u = new EasingPosUpdater(easing);
+					break;}
+				case UpdatersList::NoisePosUpdater: {
+					const char * noise_str = lua_string(L, -1, "noise", NULL);
+					spNoiseHolder nh = Ensemble::getNoise(noise_str);
+					u = new NoisePosUpdater(nh, lua_vec2(L, -1, "amplitude", vec2(5, 5)), lua_float(L, -1, "traversal_speed", 400));
 					break;}
 				case UpdatersList::LinearRotationUpdater:
 					u = new LinearRotationUpdater();
@@ -479,6 +488,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "AnimatedTextureUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::AnimatedTextureUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EulerPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EulerPosUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EasingPosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingPosUpdater)); lua_rawset(L, -3);
+	lua_pushliteral(L, "NoisePosUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::NoisePosUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "LinearRotationUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::LinearRotationUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EasingRotationUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingRotationUpdater)); lua_rawset(L, -3);
 
@@ -496,6 +506,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "BasicRotationVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "FixedColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::FixedColorGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "CopyGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::CopyGenerator)); lua_rawset(L, -3);
 
 	lua_settop(L, 0);
 	return 1;

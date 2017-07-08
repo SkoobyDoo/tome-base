@@ -176,5 +176,34 @@ void FixedColorGenerator::generate(ParticlesData &p, uint32_t start, uint32_t en
 		color[i] = color_start;
 		cstart[i] = color_start;
 		cstop[i] = color_stop;
-	}}
+	}
+}
+
+void CopyGenerator::useSlots(ParticlesData &p) {
+	if (copy_pos) p.initSlot4(POS);
+	if (copy_color) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); }
+}
+uint32_t CopyGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
+	ParticlesData &sp = source_system->getList();
+
+	vec4* spos = sp.getSlot4(POS);
+	vec4* scolor = sp.getSlot4(COLOR);
+	vec4* scstart = sp.getSlot4(COLOR_START);
+	vec4* scstop = sp.getSlot4(COLOR_STOP);
+
+	vec4* pos = p.getSlot4(POS);
+	vec4* color = p.getSlot4(COLOR);
+	vec4* cstart = p.getSlot4(COLOR_START);
+	vec4* cstop = p.getSlot4(COLOR_STOP);
+	
+	uint32_t si, i;
+	for (si = 0, i = start; i < end && si < sp.count; i++, si++) {
+		pos[i] = spos[si];
+		color[i] = scolor[si];
+		cstart[i] = scstart[si];
+		cstop[i] = scstop[si];
+	}
+	return i;
+}
+
 }

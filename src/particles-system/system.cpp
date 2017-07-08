@@ -146,6 +146,7 @@ void System::draw(mat4 &model) {
  ** Ensemble
  ********************************************************************/
 unordered_map<string, spTextureHolder> Ensemble::stored_textures;
+unordered_map<string, spNoiseHolder> Ensemble::stored_noises;
 unordered_map<string, spShaderHolder> Ensemble::stored_shaders;
 
 spTextureHolder Ensemble::getTexture(const char *tex_str) {
@@ -160,6 +161,20 @@ spTextureHolder Ensemble::getTexture(const char *tex_str) {
 	spTextureHolder th = make_shared<TextureHolder>(tex);
 	stored_textures.insert({tex_str, th});
 	return th;
+}
+
+spNoiseHolder Ensemble::getNoise(const char *noise_str) {
+	auto it = stored_noises.find(noise_str);
+	if (it != stored_noises.end()) {
+		printf("Reusing noise %s\n", noise_str);
+		return it->second;
+	}
+
+	noise_data *noise = new noise_data();
+	loader_noise(noise_str, noise);
+	spNoiseHolder nh = make_shared<NoiseHolder>(noise);
+	stored_noises.insert({noise_str, nh});
+	return nh;
 }
 
 spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {

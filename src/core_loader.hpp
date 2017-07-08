@@ -24,6 +24,20 @@
 #include "tgl.h"
 #include "tSDL.h"
 
+struct noise_data {
+	float *data;
+	int32_t w, h;
+	~noise_data() { delete[] data; };
+	void define(int32_t w, int32_t h);
+	void set(SDL_Surface *s);
+	inline float get(int32_t x, int32_t y) {
+		x = abs(x % w);
+		y = abs(y % h);
+		return data[y * w + x];
+	};
+};
+
 extern bool loader_png(const char *filename, texture_type *t, bool nearest, bool norepeat, bool exact_size);
+extern bool loader_noise(const char *filename, noise_data *noise);
 
 #endif

@@ -139,6 +139,19 @@ void EasingPosUpdater::update(ParticlesData &p, float dt) {
 	}
 }
 
+void NoisePosUpdater::update(ParticlesData &p, float dt) {
+	vec4* pos = p.getSlot4(POS);
+	vec4* life = p.getSlot4(LIFE);
+	vec2* origin = p.getSlot2(ORIGIN_POS);
+	noise_data *n = noise->noise;
+	for (uint32_t i = 0; i < p.count; i++) {
+		vec2 op(origin[i].x * n->w, origin[i].y * n->h);
+		// printf("===life[i].z * n->w : %f\n", life[i].z * n->w);
+		pos[i].x += n->get(op.x + life[i].z * n->w, op.y) * dt * amplitude.x;
+		pos[i].y += n->get(op.x, op.y + life[i].z * n->h) * dt * amplitude.y;
+	}
+}
+
 void LinearSizeUpdater::update(ParticlesData &p, float dt) {
 	vec4* pos = p.getSlot4(POS);
 	vec2* size = p.getSlot2(SIZE);

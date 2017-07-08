@@ -199,6 +199,11 @@ local specific_uis = {
 			{type="color", id="color_start", text="Start color: ", default=colors_alphaf.GOLD(1)},
 			{type="color", id="color_stop", text="Stop color: ", default=colors_alphaf.LIGHT_GREEN(0)},
 		}},
+		[PC.CopyGenerator] = {name="CopyGenerator", category="special", fields={
+			{type="number", id="source_system", text="Source system ID: ", min=1, max=100, default=1},
+			{type="bool", id="copy_pos", text="Copy position: ", default=true},
+			{type="bool", id="copy_color", text="Copy color: ", default=true},
+		}},
 	},
 	updaters = {
 		[PC.BasicTimeUpdater] = {name="BasicTimeUpdater", category="life", fields={}},
@@ -215,6 +220,11 @@ local specific_uis = {
 		}},
 		[PC.EasingPosUpdater] = {name="EasingPosUpdater", category="position & movement", fields={
 			{type="select", id="easing", text="Easing method: ", list=easings, default="outQuad"},
+		}},
+		[PC.NoisePosUpdater] = {name="NoisePosUpdater", category="position & movement", fields={
+			{type="file", id="noise", text="Noise: ", dir="/data/gfx/particles_textures/noises/", filter="%.png$", default="/data/gfx/particles_textures/noises/turbulent.png"},
+			{type="point", id="amplitude", text="Movement amplitude: ", min=-10000, max=10000, default={500, 500}},
+			{type="number", id="traversal_speed", text="Noise traversal speed: ", min=0, max=10000, default=1},
 		}},
 		[PC.LinearColorUpdater] = {name="LinearColorUpdater", category="color", fields={
 			{type="bool", id="bilinear", text="Bilinear (from start to stop to start): ", default=false},
@@ -250,7 +260,7 @@ local updaters_by_id = table.map(function(k, v) return k, v.name end, specific_u
 
 
 function _M:addNew(kind, into)
-	PC.gcTextures()
+	-- PC.gcTextures()
 	local list = {}
 	for id, t in pairs(specific_uis[kind]) do
 		local t = table.clone(t, true)
@@ -656,7 +666,7 @@ function UIDialog:load(master)
 
 	local clist = List.new{scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
 		game:unregisterDialog(d)
-		PC.gcTextures()
+		-- PC.gcTextures()
 		pdef_history={} pdef_history_pos=0
 		local ok, f = pcall(loadfile, item.path)
 		if not ok then Dialog:simplePopup("Error loading particle file", f) return end

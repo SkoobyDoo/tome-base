@@ -29,6 +29,7 @@ enum class GeneratorsList : uint8_t {
 	BasicSizeGenerator, StartStopSizeGenerator,
 	BasicRotationGenerator, BasicRotationVelGenerator,
 	StartStopColorGenerator, FixedColorGenerator,
+	CopyGenerator,
 };
 
 class Generator {
@@ -36,11 +37,13 @@ protected:
 	vec2 base_pos = vec2(0, 0), shift_pos = vec2(0, 0), final_pos = vec2(0, 0);
 
 public:
+	bool use_limiter = false;
 	virtual uint32_t weight() const { return 100; };
 	void shift(float x, float y, bool absolute);
 	void basePos(float x, float y) { base_pos = vec2(x, y); };
 	virtual void useSlots(ParticlesData &p) {};
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) = 0;
+	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {};
 };
 typedef unique_ptr<Generator> uGenerator;
 
@@ -171,4 +174,20 @@ public:
 	FixedColorGenerator(vec4 color_start, vec4 color_stop) : color_start(color_start), color_stop(color_stop) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+};
+
+
+/********************************************************************
+ ** Complex & Strange ones
+ ********************************************************************/
+class CopyGenerator : public Generator {
+	System *source_system; // Nasty, not a shared_ptr because systems are stored as unique_ptr, but the way things are guaranties it wont be destroyed under us so ... meh
+	bool copy_pos;
+	bool copy_color;
+public:
+	CopyGenerator(System *source_system, bool copy_pos, bool copy_color) : source_system(source_system), copy_pos(copy_pos), copy_color(copy_color) { use_limiter = true; };
+	virtual uint32_t weight() const { return 0; };
+	virtual void useSlots(ParticlesData &p);
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {};
+	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end);
 };

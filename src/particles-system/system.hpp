@@ -39,6 +39,9 @@ extern "C" {
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/ext.hpp"
+
+#include "core_loader.hpp"
+
 extern lua_State *L;
 
 using namespace std;
@@ -51,6 +54,7 @@ extern shader_type *default_particlescompose_shader;
 enum ParticlesSlots2 : uint8_t { ORIGIN_POS, ROT_VEL, VEL, ACC, SIZE, MAX2 };
 enum ParticlesSlots4 : uint8_t { POS, LIFE, TEXTURE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
 
+class System;
 class ParticlesData {
 public:
 	uint32_t count = 0, max = 0;
@@ -96,6 +100,19 @@ public:
 };
 typedef shared_ptr<TextureHolder> spTextureHolder;
 
+class NoiseHolder {
+public:
+	noise_data *noise;
+	NoiseHolder(noise_data *noise) : noise(noise) {
+		printf("Creating noise\n");
+	};
+	~NoiseHolder() {
+		printf("Freeing noise\n");
+		delete noise;
+	};
+};
+typedef shared_ptr<NoiseHolder> spNoiseHolder;
+
 class ShaderHolder {
 public:
 	shader_type *shader;
@@ -130,6 +147,8 @@ public:
 	System(uint32_t max, RendererBlend blend);
 	inline bool isDead() { return list.count == 0 && emitters.size() == 0; }
 
+	inline ParticlesData& getList() { return list; };
+
 	void addEmitter(Emitter *emit);
 	void addUpdater(Updater *updater);
 	void finish();
@@ -148,9 +167,11 @@ public:
 class Ensemble {
 private:
 	static unordered_map<string, spTextureHolder> stored_textures;
+	static unordered_map<string, spNoiseHolder> stored_noises;
 	static unordered_map<string, spShaderHolder> stored_shaders;
 public:
 	static spTextureHolder getTexture(const char *tex_str);
+	static spNoiseHolder getNoise(const char *noise_str);
 	static spShaderHolder getShader(lua_State *L, const char *shader_str);
 	static void gcTextures();
 
@@ -161,6 +182,7 @@ private:
 public:
 	inline bool isDead() { return dead; };
 	uint32_t countAlive();
+	System *getRawSystem(uint8_t id) { if (id < 0 || id >= systems.size()) return nullptr; else return systems[id].get(); };
 	void setSpeed(float speed) { this->speed = speed; };
 	void add(System *system);
 	void shift(float x, float y, bool absolute);

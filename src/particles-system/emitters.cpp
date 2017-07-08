@@ -40,7 +40,8 @@ void Emitter::generate(ParticlesData &p, uint32_t nb) {
 	uint32_t start = p.count;
 	uint32_t end = std::min(start + nb, p.max);
 	for (auto &gen : generators) {
-		gen->generate(p, start, end);
+		if (gen->use_limiter) end = gen->generateLimit(p, start, end);
+		else gen->generate(p, start, end);
 	}
 	p.count = end;
 }

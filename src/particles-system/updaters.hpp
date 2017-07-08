@@ -25,7 +25,7 @@ enum class UpdatersList : uint8_t {
 	LinearColorUpdater, BiLinearColorUpdater, EasingColorUpdater,
 	BasicTimeUpdater,
 	AnimatedTextureUpdater,
-	EulerPosUpdater, EasingPosUpdater,
+	EulerPosUpdater, EasingPosUpdater, NoisePosUpdater,
 	LinearSizeUpdater, EasingSizeUpdater,
 	LinearRotationUpdater, EasingRotationUpdater,
 };
@@ -119,5 +119,16 @@ private:
 public:
 	EasingPosUpdater(easing_ptr easing) : easing(easing) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(VEL); p.initSlot2(ORIGIN_POS); };
+	virtual void update(ParticlesData &p, float dt);
+};
+
+class NoisePosUpdater : public Updater {
+private:
+	spNoiseHolder noise;
+	vec2 amplitude;
+	float traversal_speed;
+public:
+	NoisePosUpdater(spNoiseHolder noise, vec2 amplitude, float traversal_speed) : noise(noise), amplitude(amplitude), traversal_speed(traversal_speed) {};
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(ORIGIN_POS); };
 	virtual void update(ParticlesData &p, float dt);
 };
