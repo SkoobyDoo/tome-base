@@ -3382,7 +3382,7 @@ function _M:levelup()
 		end
 		if self.level == 30 or self.level == 42 then
 			self.unused_prodigies = self.unused_prodigies + 1
-			if self.player and not self.silent_levelup then
+			if self.player and not config.settings.cheat and not self.silent_levelup then
 				Dialog:simpleLongPopup("Prodigy!", "You have achieved #LIGHT_GREEN#level 30#WHITE# and gained a #LIGHT_GREEN#prodigy point#LAST#!\n\nProdigies are powerful talents with unique requirements that cannot be unlearned.", 400)
 			end
 		end
