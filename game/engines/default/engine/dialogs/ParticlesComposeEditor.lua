@@ -566,7 +566,7 @@ function _M:init()
 	self.key:setupRebootKeys()
 	self.key:addBinds{
 		EXIT = function() end,
-		FILE_NEW = function() print("FILE_NEW") pdef = {} pdef_history={} pdef_history_pos=0 self:makeUI() self:regenParticle(true) end,
+		FILE_NEW = function() print("FILE_NEW") self.uidialog:reset() end,
 		FILE_LOAD = function() print("FILE_LOAD") self.uidialog:load(self) end,
 		FILE_MERGE = function() print("FILE_MERGE") self.uidialog:merge(self) end,
 		FILE_SAVE = function() print("FILE_SAVE") self.uidialog:save() end,		
@@ -673,7 +673,7 @@ function UIDialog:init(master)
 
 	local cp =ColorPicker.new{color={0, 0, 0, 1}, width=20, height=20, fct=function(p) master:setBG(p) end}
 
-	local new = Button.new{text="New", fct=function() Dialog:yesnoPopup("Clear particles?", "All data will be lost.", function(ret) if ret then pdef={} PC.gcTextures() master:makeUI() master:regenParticle() end end) end}
+	local new = Button.new{text="New", fct=function() self:reset() end}
 	local load = Button.new{text="Load", fct=function() self:load(master) end}
 	local merge = Button.new{text="Merge", fct=function() self:merge(master) end}
 	local save = Button.new{text="Save", fct=function() self:save() end}
@@ -710,6 +710,18 @@ function UIDialog:init(master)
 	self:setupUI(false, false)
 end
 
+function UIDialog:reset()
+	Dialog:yesnoPopup("Clear particles?", "All data will be lost.", function(ret) if ret then
+		pdef={}
+		pdef_history_pos = 0
+		pdef_history = {}
+		PC.gcTextures()
+		self.master.current_filename = ""
+		self.master:makeUI()
+		self.master:regenParticle(true)
+	end end)
+end
+
 function UIDialog:load(master)
 	local d = Dialog.new("Load particle effects from /data/gfx/particles/", game.w * 0.6, game.h * 0.6)
 
@@ -730,6 +742,8 @@ function UIDialog:load(master)
 		pdef = data
 		master:makeUI()
 		master:regenParticle()
+		core.display.setWindowTitle("Particles Editor: "..item.name)
+		master.current_filename = item.name:gsub("%.pc$", "")
 	end}
 
 	d:loadUI{
@@ -843,9 +857,11 @@ function UIDialog:save()
 		f:close()
 		fs.setWritePath(restore)
 		self.master.bignews:saySimple(60, "#GOLD#Saved to "..tostring(fs.getRealPath(basedir..txt..".pc")))
+		core.display.setWindowTitle("Particles Editor: "..txt)
+		self.master.current_filename = txt
 	end
 
-	local box = Textbox.new{title="Filename (without .pc extension): ", chars=80, text="", fct=function(txt) if #txt > 0 then
+	local box = Textbox.new{title="Filename (without .pc extension): ", chars=80, text=self.master.current_filename or "", fct=function(txt) if #txt > 0 then
 		if fs.exists("/data/gfx/particles/"..txt..".pc") then
 			Dialog:yesnoPopup("Override", "File already exists, override it?", function(ret) if ret then exec(txt) end end)
 		else exec(txt) end
