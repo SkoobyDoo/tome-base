@@ -110,10 +110,12 @@ newTalent{
 	cooldown = 10,
 	range = function(self,t) return math.floor(self:combatTalentScale(t, 3, 5)) end,
 	radius = function(self,t) return math.floor(self:combatTalentScale(t, 2, 3)) end,
-	tactical = { DISABLE = 2, ATTACKAREA = { LIGHTNING = 2 } },
+	tactical = { DISABLE = 1, ATTACKAREA = { LIGHTNING = 2 } },
+	requires_target=true,
+	target = function(self, t) return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t} end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 20, 290) end,
 	action = function(self, t)		
-		local tg = {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		
