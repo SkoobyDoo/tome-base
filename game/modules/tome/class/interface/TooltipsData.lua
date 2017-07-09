@@ -444,17 +444,17 @@ This represents your chance to avoid most chronomatic anomaly effects.
 TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
 This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
 ]]
-TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative effect immunity chance#LAST#
-This represents your chance to completely avoid ANY bad effects applied to you from others.
+TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative status effect immunity chance#LAST#
+This represents your chance to completely avoid ANY persistent bad effects applied to you from others.
 ]]
 TOOLTIP_NEGATIVE_MENTAL_STATUS_IMMUNE = [[#GOLD#Negative mental effect immunity chance#LAST#
-This represents your chance to completely avoid ANY bad mental effects applied to you from others.
+This represents your chance to completely avoid ANY persistent bad mental effects applied to you from others.
 ]]
 TOOLTIP_NEGATIVE_PHYSICAL_STATUS_IMMUNE = [[#GOLD#Negative physical effect immunity chance#LAST#
-This represents your chance to completely avoid ANY bad physical effects applied to you from others.
+This represents your chance to completely avoid ANY persistent bad physical effects applied to you from others.
 ]]
 TOOLTIP_NEGATIVE_SPELL_STATUS_IMMUNE = [[#GOLD#Negative magical effect immunity chance#LAST#
-This represents your chance to completely avoid ANY bad magical effects applied to you from others.
+This represents your chance to completely avoid ANY persistent bad magical effects applied to you from others.
 ]]
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
 Each time a creature hits you with a melee attack, it will suffer damage or other effects.

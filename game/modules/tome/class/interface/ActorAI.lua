@@ -154,6 +154,7 @@ end
 
 --- parse a talent, adding some values for later AI use
 -- @param t a talent definition
+-- @param who (optional) target actor
 -- adds the tables:
 -- _may_restore_resources if the talent has (possible) negative resource costs
 -- _may_drain_resources if the talent is sustainable and has (possible) resource drains defined
