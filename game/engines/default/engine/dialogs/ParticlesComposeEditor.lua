@@ -82,7 +82,7 @@ local pdef = {
 				{PC.BasicSizeGenerator, min_size=10, max_size=50},
 				{PC.BasicRotationGenerator, min_rot=0, max_rot=math.pi*2},
 				{PC.StartStopColorGenerator, min_color_start=colors_alphaf.GOLD(1), max_color_start=colors_alphaf.ORANGE(1), min_color_stop=colors_alphaf.GREEN(0), max_color_stop=colors_alphaf.LIGHT_GREEN(0)},
-			}, rate=0.03, nb=20},
+			}, rate=0.03, nb=20, triggers={ die=PC.TriggerFORCE } },
 		},
 		updaters = {
 			{PC.BasicTimeUpdater},
@@ -99,6 +99,13 @@ local blendmodes = {
 	{name="ShinyBlend", blend=PC.ShinyBlend},
 }
 local blend_by_id = table.map(function(k, v) return v.blend, v.name end, blendmodes)
+
+local triggermodes = {
+	{name="Delete", trigger=PC.TriggerDELETE},
+	{name="Wakeup", trigger=PC.TriggerWAKEUP},
+	{name="Force emit", trigger=PC.TriggerFORCE},
+}
+local trigger_by_id = table.map(function(k, v) return v.trigger, v.name end, triggermodes)
 
 local easings = {
 	{name="linear"},
@@ -137,7 +144,7 @@ local easings = {
 local specific_uis = {
 	emitters = {
 		[PC.LinearEmitter] = {name="LinearEmitter", category="emitter", addnew=new_default_emitter, fields={
-			{type="number", id="rate", text="Triggers every seconds: ", min=0.016, max=600, default=0.033},
+			{type="number", id="rate", text="Triggers every seconds: ", min=0, max=600, default=0.033},
 			{type="number", id="nb", text="Particles per trigger: ", min=0, max=100000, default=30, line=true},
 			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
 			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1},
@@ -263,6 +270,24 @@ local emitters_by_id = table.map(function(k, v) return k, v.name end, specific_u
 local generators_by_id = table.map(function(k, v) return k, v.name end, specific_uis.generators)
 local updaters_by_id = table.map(function(k, v) return k, v.name end, specific_uis.updaters)
 
+function _M:showTriggers()
+	local triggers = {}
+	local list = {}
+
+	for id_system, system in ipairs(pdef) do
+		for id_emitter, emitter in ipairs(system.emitters) do
+			for name, kind in pairs(emitter.triggers or {}) do
+				triggers[name] = true
+			end
+		end
+	end
+
+	for name, _ in pairs(triggers) do table.insert(list, {name=name, id=name}) end
+	Dialog:listPopup("Trigger", "Select trigger name:", list, 200, 400, function(item) if item then
+		self.p.ps:trigger(item.id)
+		self.last_trigger = item.id
+	end end)
+end
 
 function _M:addNew(kind, into)
 	-- PC.gcTextures()
@@ -490,6 +515,10 @@ function _M:makeUI()
 					self.p.ps:zoom(particle_zoom)
 					self:shift(mx, my)
 					return true
+				elseif event == "button" and button == "right" and self.last_trigger then
+					self.p.ps:trigger(self.last_trigger)
+				elseif event == "button" and (button == "left" or button == "right") then
+					self:showTriggers()
 				end
 			end
 		end
@@ -709,7 +738,10 @@ function _M:shift(x, y)
 end
 
 function _M:toScreen(x, y, nb_keyframes)
-	if self.p.ps:dead() then self:regenParticle(true) end
+	if self.p.ps:dead() then
+		self.bignews:saySimple(15, "#AQUAMARINE#--END--")
+		self:regenParticle(true)
+	end
 
 	if self.fbobloom then
 		self.fbomain:compute()

@@ -78,7 +78,6 @@ static int p_gc_textures(lua_State *L)
 
 static int p_free(lua_State *L)
 {
-	printf("====??WTF!\n");
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
 	delete *ee;
 	lua_pushnumber(L, 1);
@@ -118,6 +117,14 @@ static int p_count_alive(lua_State *L)
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
 	lua_pushnumber(L, (*ee)->countAlive());
 	return 1;
+}
+
+static int p_trigger(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	string name((const char*)lua_tostring(L, 2));
+	(*ee)->fireTrigger(name);
+	return 0;
 }
 
 static int p_toscreen(lua_State *L)
@@ -239,6 +246,21 @@ static int p_new(lua_State *L) {
 					lua_pushliteral(L, "Unknown particles emitter"); lua_error(L);
 					break;
 			}
+
+			
+			/** Triggers **/
+			lua_pushliteral(L, "triggers");
+			lua_rawget(L, -2);
+			if (lua_istable(L, -1)) {
+				lua_pushnil(L);
+				while (lua_next(L, -2) != 0) {
+					string name(lua_tostring(L, -2));
+					TriggerableKind kind = (TriggerableKind)((uint8_t)lua_tonumber(L, -1));
+					em->triggerOnName(name, kind);
+					lua_pop(L, 1);
+				}
+			}
+			lua_pop(L, 1);
 
 
 			/** Generators **/
@@ -441,6 +463,7 @@ static const struct luaL_Reg pcompose[] =
 	{"dead", p_is_dead},
 	{"zoom", p_zoom},
 	{"speed", p_speed},
+	{"trigger", p_trigger},
 	{"countAlive", p_count_alive},
 	{"getDO", p_get_do},
 	{"toScreen", p_toscreen},
@@ -494,6 +517,10 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "StartStopColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "FixedColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::FixedColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "CopyGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::CopyGenerator)); lua_rawset(L, -3);
+
+	lua_pushliteral(L, "TriggerDELETE"); lua_pushnumber(L, static_cast<uint8_t>(TriggerableKind::DELETE)); lua_rawset(L, -3);
+	lua_pushliteral(L, "TriggerWAKEUP"); lua_pushnumber(L, static_cast<uint8_t>(TriggerableKind::WAKEUP)); lua_rawset(L, -3);
+	lua_pushliteral(L, "TriggerFORCE"); lua_pushnumber(L, static_cast<uint8_t>(TriggerableKind::FORCE)); lua_rawset(L, -3);
 
 	lua_settop(L, 0);
 	return 1;

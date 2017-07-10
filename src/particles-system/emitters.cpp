@@ -25,6 +25,19 @@ extern "C" {
 
 namespace particles {
 
+void Emitter::triggered(TriggerableKind kind) {
+	switch (kind) {
+		case TriggerableKind::DELETE:
+			active = false;
+			break;
+		case TriggerableKind::WAKEUP:
+			break;
+		case TriggerableKind::FORCE:
+			next_tick_force_generate++;
+			break;
+	}
+}
+
 void Emitter::addGenerator(System *sys, Generator *gen) {
 	generators.emplace_back(gen);
 	gen->useSlots(sys->list);
@@ -48,16 +61,25 @@ void Emitter::generate(ParticlesData &p, uint32_t nb) {
 }
 
 void LinearEmitter::emit(ParticlesData &p, float dt) {
-	if (!dt) return;
-	if (startat > 0) {
-		startat -= dt;
-		return;
-	}
+	// We are not at start yet
+	if (startat > 0) { startat -= dt; return; }
 
+	// A trigger forced use to fire
+	if (next_tick_force_generate) { for (uint16_t i = 0; i < next_tick_force_generate; i++) generate(p, nb); next_tick_force_generate = 0; return; }
+
+	// No time passed
+	if (!dt) return;
+
+	// Are we done yet ?
 	if (duration > -1) {
 		duration -= dt;
 		if (duration < 0) active = false;
 	}
+
+	// Are we fully triggers controlled?
+	if (!rate) return;
+
+	// Accumulate time and if needed call our generators
 	accumulator += dt;
 	while (accumulator >= rate) {
 		accumulator -= rate;

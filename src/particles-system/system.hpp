@@ -154,6 +154,8 @@ public:
 	void addUpdater(Updater *updater);
 	void finish();
 
+	void fireTrigger(string &name);
+
 	void setShader(spShaderHolder &shader);
 	void setTexture(spTextureHolder &tex);
 
@@ -184,10 +186,15 @@ public:
 	inline bool isDead() { return dead; };
 	uint32_t countAlive();
 	System *getRawSystem(uint8_t id) { if (id < 0 || id >= systems.size()) return nullptr; else return systems[id].get(); };
+
 	void setZoom(float zoom) { this->zoom = zoom; };
 	void setSpeed(float speed) { this->speed = speed; };
+
+	void fireTrigger(string &name);
+
 	void add(System *system);
 	void shift(float x, float y, bool absolute);
+
 	void update(float nb_keyframes);
 	void draw(mat4 model);
 	void draw(float x, float y);

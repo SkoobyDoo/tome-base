@@ -24,10 +24,12 @@ using namespace glm;
 enum class EmittersList : uint8_t { LinearEmitter };
 
 class System;
-class Emitter {
+class Emitter : public Triggerable {
 	friend class System;
 protected:
+	bool dormant = false;
 	bool active = true;
+	uint16_t next_tick_force_generate = false;
 	vector<uGenerator> generators;
 	void generate(ParticlesData &p, uint32_t nb);
 public:
@@ -35,6 +37,7 @@ public:
 	void shift(float x, float y, bool absolute);
 	void addGenerator(System *sys, Generator *gen);
 	virtual void emit(ParticlesData &p, float dt) = 0;
+	virtual void triggered(TriggerableKind kind);
 };
 
 class LinearEmitter : public Emitter {
@@ -45,6 +48,6 @@ private:
 	float startat;
 	float accumulator = 0;
 public:
-	LinearEmitter(float startat, float duration, float rate, uint32_t nb) : startat(startat), duration(duration), rate(rate), nb(nb) { if (!this->rate) this->rate = 1.0 / 60.0; accumulator = rate; };
+	LinearEmitter(float startat, float duration, float rate, uint32_t nb) : startat(startat), duration(duration), rate(rate), nb(nb) { accumulator = rate; };
 	virtual void emit(ParticlesData &p, float dt);
 };

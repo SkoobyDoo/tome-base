@@ -130,7 +130,11 @@ void System::finish() {
 }
 
 void System::shift(float x, float y, bool absolute) {
-	for (auto &s : emitters) s->shift(x, y, absolute);
+	for (auto &e : emitters) e->shift(x, y, absolute);
+}
+
+void System::fireTrigger(string &name) {
+	for (auto &e : emitters) e->fireTrigger(name);
 }
 
 void System::update(float nb_keyframes) {
@@ -242,6 +246,10 @@ uint32_t Ensemble::countAlive() {
 	uint32_t nb = 0;
 	for (auto &s : systems) nb += s->list.count;
 	return nb;	
+}
+
+void Ensemble::fireTrigger(string &name) {
+	for (auto &s : systems) s->fireTrigger(name);
 }
 
 void Ensemble::add(System *system) {
