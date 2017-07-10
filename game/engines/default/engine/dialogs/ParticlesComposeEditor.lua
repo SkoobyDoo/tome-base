@@ -426,17 +426,14 @@ function _M:makeUI()
 				if event == "button" and button == "wheelup" then
 					particle_speed = util.bound(particle_speed + 0.05, 0.1, 10)
 					self.p.ps:speed(particle_speed)
-					self.uidialog.c_speed:setValue(math.floor(particle_speed * 100))
 					return true
 				elseif event == "button" and button == "wheeldown" then
 					particle_speed = util.bound(particle_speed - 0.05, 0.1, 10)
 					self.p.ps:speed(particle_speed)
-					self.uidialog.c_speed:setValue(math.floor(particle_speed * 100))
 					return true
 				elseif event == "button" and button == "middle" then
 					particle_speed = 1
 					self.p.ps:speed(particle_speed)
-					self.uidialog.c_speed:setValue(math.floor(particle_speed * 100))
 					return true
 				end
 			else
@@ -546,11 +543,11 @@ function _M:setBG(kind)
 	if kind == "transparent" then
 		-- nothing
 	elseif kind == "tome1" then
-		self.bg:add(core.renderer.image("/data/gfx/background/tome.png"):shader(self.normal_shader))
+		self.bg:add(core.renderer.image("/data/gfx/background/tome.png"):shader(self.bg_shader))
 	elseif kind == "tome2" then
-		self.bg:add(core.renderer.image("/data/gfx/background/tome2.png"):shader(self.normal_shader))
+		self.bg:add(core.renderer.image("/data/gfx/background/tome2.png"):shader(self.bg_shader))
 	elseif kind == "tome3" then
-		self.bg:add(core.renderer.image("/data/gfx/background/tome3.png"):shader(self.normal_shader))
+		self.bg:add(core.renderer.image("/data/gfx/background/tome3.png"):shader(self.bg_shader))
 	elseif type(kind) == "table" then
 		self.bg:add(core.renderer.colorQuad(0, 0, w, h, unpack(kind)):shader(self.normal_shader))
 	end
@@ -576,8 +573,9 @@ function _M:init()
 
 	self.plus_t = self:getAtlasTexture("ui/plus.png")
 
-	self.normal_shader = Shader.new("particles/normal")
-	PC.defaultShader(self.normal_shader)
+	self.bg_shader = Shader.new("particles/normal", nil, true, "gl2")
+
+	PC.defaultShader("particles/normal")
 	self.bg = core.renderer.renderer()
 
 	self:makeUI(pdef)
@@ -594,8 +592,6 @@ function _M:init()
 	}
 
 
-	-- self.glow_shader = Shader.new("rendering/glow")
-	-- PC.defaultShader(self.glow_shader)
 	self.particle_renderer = core.renderer.renderer()
 
 	local w, h = game.w, game.h
@@ -649,7 +645,6 @@ end
 function _M:toScreen(x, y, nb_keyframes)
 	if self.p.ps:dead() then self:regenParticle(true) end
 
-	self.bg:toScreen()
 	if self.fbobloom then
 		self.fbomain:compute()
 		self.fbobloom:compute()
@@ -703,12 +698,6 @@ function UIDialog:init(master)
 	local bg2 = Button.new{text="Background2", fct=function() master:setBG("tome2") end}
 	local bg3 = Button.new{text="Background3", fct=function() master:setBG("tome3") end}
 
-	local speed = NumberSlider.new{title="Play at speed: ", step=10, min=10, max=1000, value=100, size=300, on_change=function(v)
-		particle_speed = util.bound(v / 100, 0.1, 10)
-		if master.p then master.p.ps:speed(particle_speed) end
-	end}
-	self.c_speed = speed
-
 	self.master = master
 	self.particles_count = core.renderer.text(self.font_mono):translate(600, 0):outline(1)
 	self.particles_count_renderer = core.renderer.renderer():add(self.particles_count)
@@ -724,8 +713,6 @@ function UIDialog:init(master)
 		{absolute=true, left=bgt.w+bgb.w, bottom=0, ui=bg1},
 		{absolute=true, left=bgt.w+bgb.w+bg1.w, bottom=0, ui=bg2},
 		{absolute=true, left=bgt.w+bgb.w+bg1.w+bg2.w, bottom=0, ui=bg3},
-		
-		{absolute=true, left=bgt.w+bgb.w+bg1.w+bg2.w+bg3.w+10, bottom=0, ui=speed},
 	}
 	self:setupUI(false, false)
 end
@@ -897,7 +884,7 @@ end
 
 function UIDialog:toScreen(x, y, nb_keyframes)
 	local fps, msframe = core.display.getFPS()
-	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / %d ms/frame / Active particles: %d / Zoom: %d%%"):format((core.game.getTime() - self.master.p_date) / 1000, fps, msframe, self.master.p.ps:countAlive(), particle_zoom * 100), true)
+	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / %d ms/frame / Active particles: %d / Zoom: %d%% / Speed: %d%%"):format((core.game.getTime() - self.master.p_date) / 1000, fps, msframe, self.master.p.ps:countAlive(), particle_zoom * 100, particle_speed * 100), true)
 	self.particles_count_renderer:toScreen()
 	Dialog.toScreen(self, x, y, nb_keyframes)
 end

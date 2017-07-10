@@ -51,8 +51,9 @@ function _M:cleanup()
 end
 
 --- Make a shader
-function _M:init(name, args, unique)
+function _M:init(name, args, unique, gl_specific)
 	self.args = args or {}
+	self.gl_specific = gl_specific
 	if type(name) == "table" then
 		self.name = name[1]
 		self.shader_def = name[2]
@@ -133,9 +134,10 @@ end
 
 function _M:getFragment(name, def)
 	if not name then return nil end
+	if self.gl_specific then name = name:gsub("#GL_SPECIFIC#", self.gl_specific) end
 	if self.frags[name] then return self.frags[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".frag")
-	if not def.nopreprocess then code = self:rewriteShaderFrag(code, def) end
+	if not def.nopreprocess_frag then code = self:rewriteShaderFrag(code, def) end
 	-- print("====== FRAG")
 	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
 	-- print("======")
@@ -146,9 +148,10 @@ end
 
 function _M:getVertex(name, def)
 	if not name then name = "default/gl" end
+	if self.gl_specific then name = name:gsub("#GL_SPECIFIC#", self.gl_specific) end
 	if self.verts[name] then print("[SHADER] reusing vertex shader from /data/gfx/shaders/"..name..".vert") return self.verts[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".vert")
-	if not def.nopreprocess then code = self:rewriteShaderVert(code, def) end
+	if not def.nopreprocess_vert then code = self:rewriteShaderVert(code, def) end
 	-- print("====== VERT")
 	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
 	-- print("======")
@@ -160,9 +163,10 @@ end
 function _M:getGeometry(name, def)
 	if not core.shader.supportsGeometry() then return end
 	if not name then name = "default/gl" end
+	if self.gl_specific then name = name:gsub("#GL_SPECIFIC#", self.gl_specific) end
 	if self.geoms[name] then print("[SHADER] reusing geometry shader from /data/gfx/shaders/"..name..".geom") return self.geoms[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".geom")
-	if not def.nopreprocess then code = self:rewriteShaderGeom(code, def) end
+	if not def.nopreprocess_geom then code = self:rewriteShaderGeom(code, def) end
 	-- print("====== GEOM")
 	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
 	-- print("======")

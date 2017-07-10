@@ -31,21 +31,44 @@ enum class RendererBlend : uint8_t { DefaultBlend, AdditiveBlend, MixedBlend, Sh
 
 class Renderer {
 protected:
-	static GLuint vbo_shape;
-	GLuint vbo_pos, vbo_color;
-	GLuint vbos[2];
 	spShaderHolder shader;
 	spTextureHolder tex;
-	vector<renderer_vertex> vertexes;
 	RendererBlend blend = RendererBlend::DefaultBlend;
 	
 public:
-	static void init();
-
+	virtual ~Renderer() {};
 	void setBlend(RendererBlend blend);
 	void setShader(spShaderHolder &shader);
 	void setTexture(spTextureHolder &tex);
-	void setup(ParticlesData &p);
-	void update(ParticlesData &p);
-	void draw(ParticlesData &p, mat4 &model);
+	virtual void setup(ParticlesData &p) = 0;
+	virtual void update(ParticlesData &p) = 0;
+	virtual void draw(ParticlesData &p, mat4 &model) = 0;
+};
+
+class RendererGL2 : public Renderer {
+protected:
+	GLuint vbos[2];
+	vector<renderer_vertex> vertexes;
+	
+public:
+	virtual void setup(ParticlesData &p);
+	virtual ~RendererGL2();
+	virtual void update(ParticlesData &p);
+	virtual void draw(ParticlesData &p, mat4 &model);
+};
+
+class RendererGL3 : public Renderer {
+protected:
+	static GLuint vbo_shape;
+	GLuint vbo_pos, vbo_color, vbo_texture;
+	GLuint vao;
+	vector<renderer_vertex> vertexes;
+
+public:
+	static void init();
+
+	virtual void setup(ParticlesData &p);
+	virtual ~RendererGL3();
+	virtual void update(ParticlesData &p);
+	virtual void draw(ParticlesData &p, mat4 &model);
 };

@@ -49,7 +49,6 @@ using namespace glm;
 
 namespace particles {
 
-extern shader_type *default_particlescompose_shader;
 
 enum ParticlesSlots2 : uint8_t { ORIGIN_POS, ROT_VEL, VEL, ACC, SIZE, MAX2 };
 enum ParticlesSlots4 : uint8_t { POS, LIFE, TEXTURE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
@@ -127,6 +126,8 @@ public:
 };
 typedef shared_ptr<ShaderHolder> spShaderHolder;
 
+extern spShaderHolder default_particlescompose_shader;
+
 #include "particles-system/generators.hpp"
 #include "particles-system/updaters.hpp"
 #include "particles-system/emitters.hpp"
@@ -140,7 +141,7 @@ private:
 
 	vector<unique_ptr<Emitter>> emitters;
 	vector<unique_ptr<Updater>> updaters;
-	Renderer renderer;
+	unique_ptr<Renderer> renderer;
 
 public:
 	System(uint32_t max, RendererBlend blend);

@@ -18,6 +18,9 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+extern "C" {
+#include "display_sdl.h"
+}
 #include "particles-system/system.hpp"
 #include "core_loader.hpp"
 
@@ -84,7 +87,14 @@ void ParticlesData::print() {
 
 System::System(uint32_t max, RendererBlend blend) {
 	list.max = max;
-	renderer.setBlend(blend);
+	if (GLEW_VERSION_3_3) {
+		renderer.reset(new RendererGL3());
+		printf("[ParticlesCompose] System using RendererGL3\n");
+	} else {
+		renderer.reset(new RendererGL2());
+		printf("[ParticlesCompose] System using RendererGL2\n");
+	}
+	renderer->setBlend(blend);
 }
 
 void System::addEmitter(Emitter *emit) {
@@ -97,10 +107,10 @@ void System::addUpdater(Updater *updater) {
 }
 
 void System::setShader(spShaderHolder &shader) {
-	renderer.setShader(shader);
+	renderer->setShader(shader);
 }
 void System::setTexture(spTextureHolder &tex) {
-	renderer.setTexture(tex);
+	renderer->setTexture(tex);
 }
 
 void System::finish() {
@@ -115,7 +125,7 @@ void System::finish() {
 	list.initSlot4(TEXTURE);
 	list.initSlot4(COLOR);
 	shift(0, 0, true);
-	renderer.setup(list);
+	renderer->setup(list);
 }
 
 void System::shift(float x, float y, bool absolute) {
@@ -137,8 +147,8 @@ void System::print() {
 }
 
 void System::draw(mat4 &model) {
-	renderer.update(list);
-	renderer.draw(list, model);
+	renderer->update(list);
+	renderer->draw(list, model);
 }
 
 /********************************************************************
@@ -196,7 +206,12 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	
 	// Pass parameters
 	lua_pushstring(L, shader_str);
-	if (!lua_pcall(L, 1, 1, 0)) {
+	lua_pushnil(L);
+	lua_pushboolean(L, true);
+	if (GLEW_VERSION_3_3) lua_pushstring(L, "gl3");
+	else lua_pushstring(L, "gl2");
+
+	if (!lua_pcall(L, 4, 1, 0)) {
 		// Get shader.shad
 		lua_pushliteral(L, "shad");
 		lua_gettable(L, -2);

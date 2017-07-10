@@ -23,25 +23,20 @@
 
 namespace particles {
 
-shader_type *default_particlescompose_shader = NULL;
+spShaderHolder default_particlescompose_shader;
 
-GLuint Renderer::vbo_shape = 0;
-void Renderer::init() {
-	const GLfloat shape[] = {
-		-0.5f, -0.5f,
-		0.5f, -0.5f,
-		-0.5f, 0.5f,
-		0.5f, 0.5f,
-	};
-	glGenBuffers(1, &vbo_shape);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_shape);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 8, shape, GL_STATIC_DRAW);
+void Renderer::setBlend(RendererBlend blend) {
+	this->blend = blend;
 }
 
-void Renderer::setup(ParticlesData &p) {
-	if (!vbo_shape) init();
-	glGenBuffers(1, &vbo_pos);
-	glGenBuffers(1, &vbo_color);
+void Renderer::setShader(spShaderHolder &shader) {
+	this->shader = shader;
+}
+void Renderer::setTexture(spTextureHolder &tex) {
+	this->tex = tex;
+}
+
+void RendererGL2::setup(ParticlesData &p) {
 	vertexes.reserve(4 * p.max);
 
 	glGenBuffers(2, vbos);
@@ -60,18 +55,11 @@ void Renderer::setup(ParticlesData &p) {
 	delete[] vbo_elements_data;
 }
 
-void Renderer::setBlend(RendererBlend blend) {
-	this->blend = blend;
+RendererGL2::~RendererGL2() {
+	glDeleteBuffers(2, vbos);
 }
 
-void Renderer::setShader(spShaderHolder &shader) {
-	this->shader = shader;
-}
-void Renderer::setTexture(spTextureHolder &tex) {
-	this->tex = tex;
-}
-
-void Renderer::update(ParticlesData &p) {
+void RendererGL2::update(ParticlesData &p) {
 	vertexes.clear();
 	vec4* pos = p.getSlot4(POS);
 	vec4* tex = p.getSlot4(TEXTURE);
@@ -102,8 +90,7 @@ void Renderer::update(ParticlesData &p) {
 	}
 }
 
-//*
-void Renderer::draw(ParticlesData &p, mat4 &model) {
+void RendererGL2::draw(ParticlesData &p, mat4 &model) {
 	mat4 mvp = View::getCurrent()->get() * model;
 	vec4 color(1, 1, 1, 1);
 
@@ -119,7 +106,7 @@ void Renderer::draw(ParticlesData &p, mat4 &model) {
 		tglBindTexture(GL_TEXTURE_2D, tex->tex->tex);
 	}
 
-	shader_type *shader = this->shader.get() ? this->shader->shader : (default_particlescompose_shader ? default_particlescompose_shader : default_shader);
+	shader_type *shader = this->shader.get() ? this->shader->shader : default_particlescompose_shader->shader;
 	useShaderSimple(shader);
 
 	glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
@@ -151,43 +138,5 @@ void Renderer::draw(ParticlesData &p, mat4 &model) {
 		default: glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); break;
 	}
 }
-//*/
-/* Instancing version
-void Renderer::draw(ParticlesData &p, float x, float y) {
-	mat4 model = mat4();
-	model = glm::translate(model, glm::vec3(x, y, 0));
-	mat4 mvp = View::getCurrent()->get() * model;
 
-	if (tex) {
-		tglActiveTexture(GL_TEXTURE0);
-		tglBindTexture(GL_TEXTURE_2D, tex->tex);
-	}
-
-	shader_type *shader = shader ? shader : default_particlescompose_shader;
-	useShaderSimple(shader);
-
-	glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_shape);
-	glEnableVertexAttribArray(shader->shape_vertex_attrib);
-	glVertexAttribPointer(shader->shape_vertex_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, (void*)0);
-	glVertexAttribDivisor(shader->shape_vertex_attrib, 0);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(POS));
-	glEnableVertexAttribArray(shader->vertex_attrib);
-	glVertexAttribPointer(shader->vertex_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
-	glVertexAttribDivisor(shader->vertex_attrib, 1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(COLOR));
-	glEnableVertexAttribArray(shader->color_attrib);
-	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
-	glVertexAttribDivisor(shader->color_attrib, 1);
-
-	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, p.count);
-}
-//*/
 }

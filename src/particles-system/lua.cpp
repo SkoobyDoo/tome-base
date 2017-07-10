@@ -63,26 +63,10 @@ static unordered_map<string, easing_ptr> easings_map({
 	{"inOutBounce", easing::bounceInOut},
 });
 
-
-static shader_type *lua_get_shader(lua_State *L, int idx) {
-	if (lua_istable(L, idx)) {
-		lua_pushliteral(L, "shad");
-		lua_gettable(L, idx);
-		shader_type *s = (shader_type*)lua_touserdata(L, -1);
-		lua_pop(L, 1);
-		return s;
-	} else {
-		return (shader_type*)lua_touserdata(L, idx);
-	}
-}
-
 static int p_default_shader(lua_State *L)
 {
-	if (lua_isnil(L, 1)) {
-		default_particlescompose_shader = NULL;
-	} else {
-		default_particlescompose_shader = lua_get_shader(L, 1);
-	}
+	const char *shader_str = lua_tostring(L, 1);
+	default_particlescompose_shader = Ensemble::getShader(L, shader_str);
 	return 0;
 }
 
@@ -175,24 +159,6 @@ static inline const char* lua_string(lua_State *L, int table_idx, const char *fi
 	lua_pushstring(L, field);
 	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
 	if (lua_isstring(L, -1)) ret = lua_tostring(L, -1);
-	lua_pop(L, 1);
-	return ret;
-}
-
-static inline texture_type* lua_texture(lua_State *L, int table_idx, const char *field) {
-	texture_type *ret = NULL;
-	lua_pushstring(L, field);
-	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
-	if (lua_isuserdata(L, -1)) ret = (texture_type*)auxiliar_checkclass(L, "gl{texture}", -1);
-	lua_pop(L, 1);
-	return ret;
-}
-
-static inline shader_type* lua_shader(lua_State *L, int table_idx, const char *field) {
-	shader_type *ret = NULL;
-	lua_pushstring(L, field);
-	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
-	if (lua_isuserdata(L, -1) || lua_istable(L, -1)) ret = lua_get_shader(L, -1);
 	lua_pop(L, 1);
 	return ret;
 }
