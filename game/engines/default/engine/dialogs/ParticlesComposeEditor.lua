@@ -593,6 +593,7 @@ function _M:init()
 			local menu = require("engine.dialogs.GameMenu").new(list)
 			game:registerDialog(menu)
 		end,
+		-- LUA_CONSOLE = function() game:registerDialog(require("engine.DebugConsole").new()) end,
 		FILE_NEW = function() print("FILE_NEW") self.uidialog:reset() end,
 		FILE_LOAD = function() print("FILE_LOAD") self.uidialog:load(self) end,
 		FILE_MERGE = function() print("FILE_MERGE") self.uidialog:merge(self) end,

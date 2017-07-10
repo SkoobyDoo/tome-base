@@ -21,6 +21,10 @@
 
 #include "renderer-moderngl/Particles.hpp"
 
+DORParticles::~DORParticles() {
+	if (ps_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, ps_lua_ref);
+};
+
 void DORParticles::cloneInto(DisplayObject *_into) {
 	DisplayObject::cloneInto(_into);
 	DORParticles *into = dynamic_cast<DORParticles*>(_into);

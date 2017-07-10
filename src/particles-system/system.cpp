@@ -86,6 +86,7 @@ void ParticlesData::print() {
  ********************************************************************/
 
 System::System(uint32_t max, RendererBlend blend) {
+	if (max > 1000000) max = 1000000;
 	list.max = max;
 	if (GLEW_VERSION_3_3) {
 		renderer.reset(new RendererGL3());

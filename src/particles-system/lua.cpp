@@ -78,6 +78,7 @@ static int p_gc_textures(lua_State *L)
 
 static int p_free(lua_State *L)
 {
+	printf("====??WTF!\n");
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
 	delete *ee;
 	lua_pushnumber(L, 1);
