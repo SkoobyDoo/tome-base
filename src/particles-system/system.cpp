@@ -138,13 +138,17 @@ void System::fireTrigger(string &name) {
 }
 
 void System::update(float nb_keyframes) {
+	uint8_t emitters_active_not_dormant = 0;
 	float dt = nb_keyframes / 30.0f;
 	for (auto e = emitters.begin(); e != emitters.end(); ) {
 		(*e)->emit(list, dt);
+		if ((*e)->isActiveNotDormant()) emitters_active_not_dormant++;
 		if (!(*e)->isActive()) e = emitters.erase(e);
 		else e++;
 	}
 	for (auto &up : updaters) up->update(list, dt);
+
+	dead = list.count == 0 && emitters_active_not_dormant == 0;
 }
 
 void System::print() {

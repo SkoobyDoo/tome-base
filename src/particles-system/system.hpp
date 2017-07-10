@@ -138,6 +138,7 @@ class System {
 	friend class Emitter;
 	friend class Ensemble;
 private:
+	bool dead = false;
 	ParticlesData list;
 
 	vector<unique_ptr<Emitter>> emitters;
@@ -146,7 +147,7 @@ private:
 
 public:
 	System(uint32_t max, RendererBlend blend);
-	inline bool isDead() { return list.count == 0 && emitters.size() == 0; }
+	inline bool isDead() { return dead; }
 
 	inline ParticlesData& getList() { return list; };
 

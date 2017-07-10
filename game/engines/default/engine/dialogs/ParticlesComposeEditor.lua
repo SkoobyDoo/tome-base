@@ -70,24 +70,34 @@ local particle_zoom = 1
 
 local pdef = {
 	{
-		max_particles = 2000, blend = PC.ShinyBlend,
-		texture = "/data/gfx/particle.png", shader = "particles/glow",
+		max_particles = 2000, blend=PC.ShinyBlend,
+		texture = "/data/gfx/particle.png",
+		shader = "particles/glow",
 		emitters = {
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
-				{PC.LifeGenerator, duration=10, min=0.3, max=3},
-				-- {PC.TrianglePosGenerator, p1={-200, 100}, p2={200, 100}, p3={0, -100}},
-				{PC.CirclePosGenerator, radius=300, width=20},
-				{PC.DiskVelGenerator, min_vel=30, max_vel=100},
-				{PC.BasicSizeGenerator, min_size=10, max_size=50},
-				{PC.BasicRotationGenerator, min_rot=0, max_rot=math.pi*2},
-				{PC.StartStopColorGenerator, min_color_start=colors_alphaf.GOLD(1), max_color_start=colors_alphaf.ORANGE(1), min_color_stop=colors_alphaf.GREEN(0), max_color_stop=colors_alphaf.LIGHT_GREEN(0)},
-			}, rate=0.03, nb=20, triggers={ die=PC.TriggerFORCE } },
+				{PC.LifeGenerator, max=3.000000, duration=10.000000, min=0.300000},
+				{PC.CirclePosGenerator, radius=300.000000, width=20.000000},
+				{PC.DiskVelGenerator, max_vel=100.000000, min_vel=30.000000},
+				{PC.BasicSizeGenerator, max_size=50.000000, min_size=10.000000},
+				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
+				{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
+			}, dormant=false, duration=-1.000000, rate=0.030000, startat=0.000000, display_name="active", nb=20.000000, triggers = { die = PC.TriggerDELETE } },
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, max=3.000000, duration=10.000000, min=0.300000},
+				{PC.CirclePosGenerator, radius=300.000000, width=20.000000},
+				{PC.BasicSizeGenerator, max_size=70.000000, min_size=25.000000},
+				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
+				{PC.StartStopColorGenerator, min_color_start={0.000000, 0.000000, 0.890196, 1.000000}, max_color_start={0.498039, 1.000000, 0.831373, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
+				{PC.OriginPosGenerator},
+				{PC.DirectionVelGenerator, max_vel=-300.000000, from={0.000000, 0.000000}, min_vel=-150.000000},
+			}, startat=0.000000, duration=0.000000, rate=0.010000, dormant=true, display_name="dying", nb=500.000000, triggers = { die = PC.TriggerWAKEUP } },
 		},
 		updaters = {
 			{PC.BasicTimeUpdater},
-			{PC.LinearColorUpdater},
-			{PC.EulerPosUpdater, global_vel={30, -120}},
+			{PC.LinearColorUpdater, bilinear=true},
+			{PC.EulerPosUpdater, global_vel={30.000000, -120.000000}, global_acc={0.000000, 0.000000}},
 		},
 	},
 }
@@ -101,11 +111,12 @@ local blendmodes = {
 local blend_by_id = table.map(function(k, v) return v.blend, v.name end, blendmodes)
 
 local triggermodes = {
-	{name="Delete", trigger=PC.TriggerDELETE},
-	{name="Wakeup", trigger=PC.TriggerWAKEUP},
-	{name="Force emit", trigger=PC.TriggerFORCE},
+	{name="Delete", trigger=PC.TriggerDELETE, kind="TriggerDELETE"},
+	{name="Wakeup", trigger=PC.TriggerWAKEUP, kind="TriggerWAKEUP"},
+	{name="Force emit", trigger=PC.TriggerFORCE, kind="TriggerFORCE"},
 }
 local trigger_by_id = table.map(function(k, v) return v.trigger, v.name end, triggermodes)
+local triggerkind_by_id = table.map(function(k, v) return v.trigger, v.kind end, triggermodes)
 
 local easings = {
 	{name="linear"},
@@ -147,7 +158,8 @@ local specific_uis = {
 			{type="number", id="rate", text="Triggers every seconds: ", min=0, max=600, default=0.033},
 			{type="number", id="nb", text="Particles per trigger: ", min=0, max=100000, default=30, line=true},
 			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
-			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1},
+			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1, line=true},
+			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup): ", default=false},
 			{type="invisible", id=2, default={}},
 		}},
 	},
@@ -507,7 +519,7 @@ function _M:makeUI()
 	self:setScroll(old_scroll)
 
 	self.mouse:registerZone(0, 0, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
-		if mx < game.w - 550 then
+		if mx < game.w - 550 and my >= self.uidialog.margin_top and my <= game.h - self.uidialog.margin_bottom then
 			if core.key.modState("ctrl") then
 				if event == "button" and button == "wheelup" then
 					particle_speed = util.bound(particle_speed + 0.05, 0.1, 10)
@@ -819,6 +831,9 @@ function UIDialog:init(master)
 	local bg2 = Button.new{text="Background2", fct=function() master:setBG("tome2") end}
 	local bg3 = Button.new{text="Background3", fct=function() master:setBG("tome3") end}
 
+	self.margin_top = new.h + 5
+	self.margin_bottom = bgt.h + 5
+
 	self.master = master
 	self.particles_count = core.renderer.text(self.font_mono):translate(600, 0):outline(1)
 	self.particles_count_renderer = core.renderer.renderer():add(self.particles_count)
@@ -913,23 +928,31 @@ end
 function UIDialog:saveDef(w)
 	local function getData(up)
 		local data = {}
-		for k, v in pairs(up) do if type(k) == "string" then
-			if type(v) == "number" then
-				data[#data+1] = ("%s=%f"):format(k, v)
-			elseif type(v) == "boolean" then
-				data[#data+1] = ("%s=%s"):format(k, v and "true" or "false")
-			elseif type(v) == "string" then
-				data[#data+1] = ("%s=%q"):format(k, v)
-			elseif type(v) == "table" and #v == 2 then
-				data[#data+1] = ("%s={%f, %f}"):format(k, v[1], v[2])
-			elseif type(v) == "table" and #v == 3 then
-				data[#data+1] = ("%s={%f, %f, %f}"):format(k, v[1], v[2], v[3])
-			elseif type(v) == "table" and #v == 4 then
-				data[#data+1] = ("%s={%f, %f, %f, %f}"):format(k, v[1], v[2], v[3], v[4])
-			else
-				error("Unsupported save parameter: "..tostring(v))
+		for k, v in pairs(up) do
+			if type(k) == "string" and k ~= "triggers" then
+				if type(v) == "number" then
+					data[#data+1] = ("%s=%f"):format(k, v)
+				elseif type(v) == "boolean" then
+					data[#data+1] = ("%s=%s"):format(k, v and "true" or "false")
+				elseif type(v) == "string" then
+					data[#data+1] = ("%s=%q"):format(k, v)
+				elseif type(v) == "table" and #v == 2 then
+					data[#data+1] = ("%s={%f, %f}"):format(k, v[1], v[2])
+				elseif type(v) == "table" and #v == 3 then
+					data[#data+1] = ("%s={%f, %f, %f}"):format(k, v[1], v[2], v[3])
+				elseif type(v) == "table" and #v == 4 then
+					data[#data+1] = ("%s={%f, %f, %f, %f}"):format(k, v[1], v[2], v[3], v[4])
+				else
+					error("Unsupported save parameter: "..tostring(v))
+				end
+			elseif k == "triggers" and next(v) then
+				local tgs = {}
+				for name, id in pairs(v) do
+					tgs[#tgs+1] = ("%s = PC.%s"):format(name, triggerkind_by_id[id])
+				end
+				data[#data+1] = "triggers = { "..table.concat(tgs, ", ").." }"
 			end
-		end end
+		end
 		if #data > 0 then data = ", "..table.concat(data, ", ") else data = "" end
 		return data
 	end

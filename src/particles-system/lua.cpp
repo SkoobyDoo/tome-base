@@ -247,6 +247,10 @@ static int p_new(lua_State *L) {
 					break;
 			}
 
+			if (lua_bool(L, -1, "dormant", false)) {
+				em->setDormant(true);
+			}
+
 			
 			/** Triggers **/
 			lua_pushliteral(L, "triggers");

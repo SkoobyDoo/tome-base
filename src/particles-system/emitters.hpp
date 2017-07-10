@@ -34,6 +34,8 @@ protected:
 	void generate(ParticlesData &p, uint32_t nb);
 public:
 	inline bool isActive() { return active; };
+	inline bool isActiveNotDormant() { return active && !dormant; };
+	void setDormant(bool d) { dormant = d; };
 	void shift(float x, float y, bool absolute);
 	void addGenerator(System *sys, Generator *gen);
 	virtual void emit(ParticlesData &p, float dt) = 0;

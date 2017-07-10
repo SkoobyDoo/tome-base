@@ -31,6 +31,7 @@ void Emitter::triggered(TriggerableKind kind) {
 			active = false;
 			break;
 		case TriggerableKind::WAKEUP:
+			dormant = false;
 			break;
 		case TriggerableKind::FORCE:
 			next_tick_force_generate++;
@@ -61,6 +62,9 @@ void Emitter::generate(ParticlesData &p, uint32_t nb) {
 }
 
 void LinearEmitter::emit(ParticlesData &p, float dt) {
+	// We are not dead, but very sleepy
+	if (dormant) return;
+
 	// We are not at start yet
 	if (startat > 0) { startat -= dt; return; }
 
