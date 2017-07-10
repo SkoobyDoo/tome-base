@@ -582,7 +582,17 @@ function _M:init()
 
 	self.key:setupRebootKeys()
 	self.key:addBinds{
-		EXIT = function() end,
+		EXIT = function()
+			local list = {
+				"resume",
+				"keybinds_all",
+				"video",
+				"sound",
+				"exit",
+			}
+			local menu = require("engine.dialogs.GameMenu").new(list)
+			game:registerDialog(menu)
+		end,
 		FILE_NEW = function() print("FILE_NEW") self.uidialog:reset() end,
 		FILE_LOAD = function() print("FILE_LOAD") self.uidialog:load(self) end,
 		FILE_MERGE = function() print("FILE_MERGE") self.uidialog:merge(self) end,
