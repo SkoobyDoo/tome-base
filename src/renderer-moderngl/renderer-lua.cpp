@@ -732,6 +732,16 @@ static int gl_target_target_texture(lua_State *L)
 	return 1;
 }
 
+static int gl_target_mode_none(lua_State *L)
+{
+	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+
+	v->setSpecialMode(nullptr);
+
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_target_mode_blur(lua_State *L)
 {
 	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
@@ -1895,6 +1905,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"view", gl_target_view},
 	{"texture", gl_target_texture},
 	{"textureTarget", gl_target_target_texture},
+	{"removeMode", gl_target_mode_none},
 	{"blurMode", gl_target_mode_blur},
 	{"blurModeDownsampling", gl_target_mode_blur_downsampling},
 	{"postEffectsMode", gl_target_mode_posteffects},

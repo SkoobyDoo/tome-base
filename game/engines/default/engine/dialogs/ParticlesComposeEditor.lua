@@ -601,7 +601,9 @@ function _M:init()
 		EDITOR_UNDO = function() print("EDITOR_UNDO") self:undo() end,
 		EDITOR_REDO = function() print("EDITOR_REDO") self:redo() end,
 	}
-
+	self.key:addCommands{
+		_b = function() self:toggleBloom() end,
+	}
 
 	self.particle_renderer = core.renderer.renderer()
 
@@ -609,15 +611,17 @@ function _M:init()
 	self.fbomain = core.renderer.target(nil, nil, 2, true)
 	self.fbomain:setAutoRender(self.particle_renderer)
 
-	local blur_shader = Shader.new("rendering/blur") blur_shader:setUniform("texSize", {w, h})
+	self.blur_shader = Shader.new("rendering/blur") self.blur_shader:setUniform("texSize", {w, h})
 	local main_shader = Shader.new("rendering/main_fbo") main_shader:setUniform("texSize", {w, h})
 	local finalquad = core.renderer.targetDisplay(self.fbomain, 0, 0)
-	local downsampling = 4
-	local bloomquad = core.renderer.targetDisplay(self.fbomain, 1, 0, w/downsampling/downsampling, h/downsampling/downsampling)
+	self.downsampling = 4
+	local bloomquad = core.renderer.targetDisplay(self.fbomain, 1, 0, w/self.downsampling/self.downsampling, h/self.downsampling/self.downsampling)
 	local bloomr = core.renderer.renderer("static"):setRendererName("game.bloomr"):add(bloomquad):premultipliedAlpha(true)
-	local fbobloomview = core.renderer.view():ortho(w/downsampling, h/downsampling, false)
-	self.fbobloom = core.renderer.target(w/downsampling, h/downsampling, 1, true):setAutoRender(bloomr):view(fbobloomview)--:translate(0,-h)
-	self.fbobloom:blurMode(14, downsampling, blur_shader)
+	local fbobloomview = core.renderer.view():ortho(w/self.downsampling, h/self.downsampling, false)
+	self.fbobloom = core.renderer.target(w/self.downsampling, h/self.downsampling, 1, true):setAutoRender(bloomr):view(fbobloomview)--:translate(0,-h)
+	self.initial_blooming = true
+	self:toggleBloom()
+	self.initial_blooming = false
 	if false then -- true to see only the bloom texture
 		-- finalquad:textureTarget(self.fbobloom, 0, 0):shader(main_shader)
 		self.fborenderer = core.renderer.renderer("static"):setRendererName("game.fborenderer"):add(self.fbobloom)--:premultipliedAlpha(true)
@@ -627,6 +631,19 @@ function _M:init()
 	end
 
 	self:regenParticle()
+end
+
+function _M:toggleBloom()
+	if not self.blooming then
+		self.fbobloom:blurMode(14, self.downsampling, self.blur_shader)
+		self.blooming = true
+	else
+		self.fbobloom:removeMode()
+		self.blooming = false
+	end
+	if not self.initial_blooming then
+		self.bignews:saySimple(60, "Bloom effect: "..(self.blooming and "#LIGHT_GREEN#Enabled" or "#LIGHT_RED#Disabled"))
+	end
 end
 
 function _M:regenParticle(nosave)

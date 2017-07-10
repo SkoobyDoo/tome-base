@@ -249,6 +249,9 @@ void DORTarget::onScreenResize(int w, int h) {
 }
 
 void DORTarget::setSpecialMode(TargetSpecialMode *mode) {
+	if (this->mode) {
+		delete this->mode;
+	}
 	this->mode = mode;
 }
 
