@@ -289,6 +289,17 @@ function _M:showTriggers()
 	end end)
 end
 
+function _M:addTrigger(spe)
+	Dialog:textboxPopup("Trigger", "Name:", 1, 50, function(name) if name then
+		Dialog:listPopup("Trigger", "Effect:", table.clone(triggermodes, true), 150, 250, function(item) if item then
+			spe.triggers = spe.triggers or {}
+			spe.triggers[name] = item.trigger
+			self:makeUI()
+			self:regenParticle()
+		end end)
+	end end)
+end
+
 function _M:addNew(kind, into)
 	-- PC.gcTextures()
 	local list = {}
@@ -461,10 +472,21 @@ function _M:makeUI()
 						self:processSpecificUI(ui, add, "generators", generator, function() table.remove(emitter[2], id) self:makeUI() self:regenParticle() end)
 					end
 					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add generator", auto_width=1, auto_height=1, fct=function() self:addNew("generators", emitter[2]) end})
+
+					if emitter.triggers then
+						tab = 60
+						self:makeTitle(add, tab, "#{bold}##OLIVE_DRAB#----== Triggers ==----", false)
+						for name, kind in pairs(emitter.triggers) do
+							add(Checkbox.new{title="#OLIVE_DRAB#"..name.."#LAST# => #{italic}#"..trigger_by_id[kind], default=true, on_change=function(p) emitter.triggers[name] = nil if not next(emitter.triggers) then emitter.triggers = nil end self:makeUI() self:regenParticle() end, fct=function()end})
+						end
+					end					
+					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add trigger", auto_width=1, auto_height=1, fct=function() self:addTrigger(emitter) end})
 				end
 			end
 			tab = 20
+			add(5)
 			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("emitters", system.emitters) end}, Textzone.new{text="add emitter", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", system.emitters) end})
+			add(5)
 			
 			self:makeTitle(add, tab, "#{bold}##AQUAMARINE#----== Updaters ==----", false)
 			tab = 40
@@ -474,6 +496,7 @@ function _M:makeUI()
 			end
 			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("updaters", system.updaters) end}, Textzone.new{text="add updater", auto_width=1, auto_height=1, fct=function() self:addNew("updaters", system.updaters) end})
 		end
+		add(8)
 	end
 	tab = 0
 	add(8)
