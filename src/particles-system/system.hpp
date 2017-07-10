@@ -128,6 +128,7 @@ typedef shared_ptr<ShaderHolder> spShaderHolder;
 
 extern spShaderHolder default_particlescompose_shader;
 
+#include "particles-system/triggers.hpp"
 #include "particles-system/generators.hpp"
 #include "particles-system/updaters.hpp"
 #include "particles-system/emitters.hpp"

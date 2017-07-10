@@ -343,13 +343,47 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 	add(8)
 end
 
-function _M:makeTitle(add, tab, text, important)
-	local b = Button.new{text=text, fct=function()end, width=self.iw - tab - 10, use_frame=important and "ui/heading" or "ui/selector"}
+function _M:makeTitle(add, tab, text, important, on_click)
+	local b = Button.new{text=text, all_buttons_fct=true, fct=function(button) if on_click then on_click(button) end end, width=self.iw - tab - 10, use_frame=important and "ui/heading" or "ui/selector"}
 
 	if important then
 		add(Checkbox.new{title="", default=true, fct=function()end, on_change=function(v) if not v then important() end end}, b)
 	else
 		add(b)
+	end
+end
+
+function _M:titleMenu(spe, parent)
+	return function(button)
+		if button == "left" then
+			spe.hide = not spe.hide self:makeUI()
+		elseif button == "right" then
+			Dialog:listPopup("Options", "", {
+				{name="Rename", id="rename"},
+				{name="Move up", id="up"},
+				{name="Move down", id="down"},
+			}, 100, 200, function(item) if item then
+				if item.id == "rename" then
+					Dialog:textboxPopup("Name for this addon's release", "Name", 1, 50, function(name) if name then
+						spe.display_name = name self:makeUI()
+					end end)
+				elseif item.id == "up" then
+					for i, s in ipairs(parent) do if s == spe and i > 1 then
+						table.remove(parent, i)
+						table.insert(parent, i - 1, s)
+						self:makeUI()
+						break
+					end end
+				elseif item.id == "down" then
+					for i, s in ipairs(parent) do if s == spe and i < #parent then
+						table.remove(parent, i)
+						table.insert(parent, i + 1, s)
+						self:makeUI()
+						break
+					end end
+				end
+			end end)
+		end
 	end
 end
 
@@ -376,41 +410,45 @@ function _M:makeUI()
 	for id_system, system in ipairs(def) do
 		local id = id_system
 		tab = 0
-		self:makeTitle(add, tab, "#{bold}##OLIVE_DRAB#----------======System "..id_system.."======----------", 	function() table.remove(def, id) self:makeUI() self:regenParticle() end)
-		tab = 20
-		add(
-			Textzone.new{text="Max: ", auto_width=1, auto_height=1}, Numberbox.new{number=system.max_particles, min=1, max=100000, chars=6, on_change=function(p) system.max_particles = p self:regenParticle() end, fct=function()end},
-			Textzone.new{text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes}
-		)
-		add(0)
-		add(Textzone.new{text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
-		add(Textzone.new{text="Shader: "..(system.shader or "--"), auto_width=1, auto_height=1, fct=function() self:selectShader(system) end})
-		add(8)
-		
-		for id_emitter, emitter in ipairs(system.emitters) do
-			local id = id_emitter
+		self:makeTitle(add, tab, "#{bold}##OLIVE_DRAB#----------====== System "..id_system..": #ANTIQUE_WHITE#"..(system.display_name or "unnamed").."#LAST# ======----------", 	function() table.remove(def, id) self:makeUI() self:regenParticle() end, self:titleMenu(system, def))
+		if not system.hide then
 			tab = 20
-			self:makeTitle(add, tab, "#{bold}##CRIMSON#----== Emitter "..id.." ==----", false)
-			tab = 40
-			self:processSpecificUI(ui, add, "emitters", emitter, function() table.remove(system.emitters, id) self:makeUI() self:regenParticle() end)
-			add(Separator.new{dir="vertical", size=self.iw * 0.5})
+			add(
+				Textzone.new{text="Max: ", auto_width=1, auto_height=1}, Numberbox.new{number=system.max_particles, min=1, max=100000, chars=6, on_change=function(p) system.max_particles = p self:regenParticle() end, fct=function()end},
+				Textzone.new{text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes}
+			)
+			add(0)
+			add(Textzone.new{text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
+			add(Textzone.new{text="Shader: "..(system.shader or "--"), auto_width=1, auto_height=1, fct=function() self:selectShader(system) end})
+			add(8)
+			
+			for id_emitter, emitter in ipairs(system.emitters) do
+				local id = id_emitter
+				tab = 20
+				self:makeTitle(add, tab, "#{bold}##CRIMSON#----== Emitter "..id..": #ANTIQUE_WHITE#"..(emitter.display_name or "unnamed").."#LAST# ==----", false, self:titleMenu(emitter, system.emitters))
+				if not emitter.hide then
+					tab = 40
+					self:processSpecificUI(ui, add, "emitters", emitter, function() table.remove(system.emitters, id) self:makeUI() self:regenParticle() end)
+					add(Separator.new{dir="vertical", size=self.iw * 0.5})
 
-			for id_generator, generator in ipairs(emitter[2]) do
-				local id = id_generator
-				self:processSpecificUI(ui, add, "generators", generator, function() table.remove(emitter[2], id) self:makeUI() self:regenParticle() end)
+					for id_generator, generator in ipairs(emitter[2]) do
+						local id = id_generator
+						self:processSpecificUI(ui, add, "generators", generator, function() table.remove(emitter[2], id) self:makeUI() self:regenParticle() end)
+					end
+					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add generator", auto_width=1, auto_height=1, fct=function() self:addNew("generators", emitter[2]) end})
+				end
 			end
-			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add generator", auto_width=1, auto_height=1, fct=function() self:addNew("generators", emitter[2]) end})
+			tab = 20
+			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("emitters", system.emitters) end}, Textzone.new{text="add emitter", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", system.emitters) end})
+			
+			self:makeTitle(add, tab, "#{bold}##AQUAMARINE#----== Updaters ==----", false)
+			tab = 40
+			for id_updater, updater in ipairs(system.updaters) do
+				local id = id_updater
+				self:processSpecificUI(ui, add, "updaters", updater, function() table.remove(system.updaters, id) self:makeUI() self:regenParticle() end)
+			end
+			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("updaters", system.updaters) end}, Textzone.new{text="add updater", auto_width=1, auto_height=1, fct=function() self:addNew("updaters", system.updaters) end})
 		end
-		tab = 20
-		add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("emitters", system.emitters) end}, Textzone.new{text="add emitter", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", system.emitters) end})
-		
-		self:makeTitle(add, tab, "#{bold}##AQUAMARINE#----== Updaters ==----", false)
-		tab = 40
-		for id_updater, updater in ipairs(system.updaters) do
-			local id = id_updater
-			self:processSpecificUI(ui, add, "updaters", updater, function() table.remove(system.updaters, id) self:makeUI() self:regenParticle() end)
-		end
-		add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("updaters", system.updaters) end}, Textzone.new{text="add updater", auto_width=1, auto_height=1, fct=function() self:addNew("updaters", system.updaters) end})
 	end
 	tab = 0
 	add(8)
@@ -844,6 +882,7 @@ function UIDialog:saveDef(w)
 	w(0, "return {\n")
 	for _, system in ipairs(pdef) do
 		w(1, "{\n")
+		if system.display_name then w(2, ("display_name = %q,\n"):format(system.display_name)) end
 		w(2, ("max_particles = %d, blend=PC.%s,\n"):format(system.max_particles, blend_by_id[system.blend]))
 		w(2, ("texture = %q,\n"):format(system.texture))
 		if system.shader then w(2, ("shader = %q,\n"):format(system.shader)) end

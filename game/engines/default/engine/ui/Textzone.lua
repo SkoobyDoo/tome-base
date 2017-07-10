@@ -40,6 +40,7 @@ function _M:init(t)
 	self.has_box = t.has_box
 	self.has_box_alpha = t.has_box_alpha
 	self.fct = t.fct
+	self.all_buttons_fct = t.all_buttons_fct
 	self.center_w = t.center_w
 
 	self.dest_area = t.dest_area and t.dest_area or { h = self.h }
@@ -119,7 +120,7 @@ function _M:generate()
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
-		if self.fct and button == "left" and event == "button" then self.fct() end
+		if self.fct and (button == "left" or self.all_buttons_fct) and event == "button" then self.fct(button) end
 		if button == "wheelup" and event == "button" then self.key:triggerVirtual("MOVE_UP")
 		elseif button == "wheeldown" and event == "button" then self.key:triggerVirtual("MOVE_DOWN")
 		end

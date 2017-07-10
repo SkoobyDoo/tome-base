@@ -30,6 +30,7 @@ function _M:init(t)
 
 	self.text = assert(t.text, "no button text")
 	self.fct = assert(t.fct, "no button fct")
+	self.all_buttons_fct = t.all_buttons_fct
 	self.on_select = t.on_select
 	self.force_w = t.width
 	self.use_frame = t.use_frame
@@ -74,7 +75,7 @@ function _M:generate()
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if self.hide then return end
 		if self.on_select then self.on_select() end
-		if button == "left" and event == "button" then self:sound("button") self.fct() end
+		if (button == "left" or self.all_buttons_fct) and event == "button" then self:sound("button") self.fct(button) end
 	end)
 	self.key:addBind("ACCEPT", function() self:sound("button") self.fct() end)
 

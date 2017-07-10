@@ -89,6 +89,13 @@ function _M:simpleWaiterTip(title, text, tip, width, count, max)
 	return d
 end
 
+--- Requests a simple text prompt
+function _M:textboxPopup(title, text, min, max, action, cancel, absolute)
+	local d = require("engine.dialogs.GetText").new(title, text, min, max, action, cancel, absolute)
+	game:registerDialog(d)
+	return d
+end
+
 --- Requests a simple, press any key, dialog
 function _M:listPopup(title, text, list, w, h, fct)
 	local d = new(title, 1, 1)
