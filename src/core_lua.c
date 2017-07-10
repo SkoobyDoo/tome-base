@@ -1484,33 +1484,9 @@ static int gl_counts_draws(lua_State *L) {
 	return 1;
 }
 
-static int parseLine(char* line){
-    // This assumes that a digit will be found and the line ends in " Kb".
-    int i = strlen(line);
-    const char* p = line;
-    while (*p <'0' || *p > '9') p++;
-    line[i-3] = '\0';
-    i = atoi(p);
-    return i;
-}
-static int getValue(){ //Note: this value is in KB!
-    FILE* file = fopen("/proc/self/status", "r");
-    int result = -1;
-    char line[128];
-
-    while (fgets(line, 128, file) != NULL){
-        if (strncmp(line, "VmRSS:", 6) == 0){
-            result = parseLine(line);
-            break;
-        }
-    }
-    fclose(file);
-    return result;
-}
-
 static int gl_get_fps(lua_State *L) {
 	lua_pushnumber(L, current_fps);
-	lua_pushnumber(L, getValue()/1024);
+	lua_pushnumber(L, ticks_per_frame);
 	return 2;
 }
 
