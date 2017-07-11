@@ -793,6 +793,7 @@ function _M:regenParticle(nosave)
 
 	self.p.ps:onEvents(function(name, times)
 		self.bignews:saySimple(30, "Event #GOLD#"..name.."#LAST# triggered #LIGHT_GREEN#"..times.."#LAST# times")
+		print("Particle Event", name, times)
 	end)
 
 	self.particle_renderer:clear():add(self.bg):add(self.pdo)
