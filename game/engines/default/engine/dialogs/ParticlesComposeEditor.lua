@@ -82,7 +82,7 @@ local pdef = {
 				{PC.BasicSizeGenerator, max_size=50.000000, min_size=10.000000},
 				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
 				{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
-			}, dormant=false, duration=-1.000000, rate=0.030000, startat=0.000000, display_name="active", nb=20.000000, triggers = { die = PC.TriggerDELETE } },
+			}, dormant=false, duration=-1.000000, rate=0.030000, startat=0.000000, display_name="active", nb=20.000000, triggers = { die = PC.TriggerDELETE }, events = { stopping=PC.EventSTOP } },
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
 				{PC.LifeGenerator, max=3.000000, duration=10.000000, min=0.300000},
@@ -92,7 +92,7 @@ local pdef = {
 				{PC.StartStopColorGenerator, min_color_start={0.000000, 0.000000, 0.890196, 1.000000}, max_color_start={0.498039, 1.000000, 0.831373, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
 				{PC.OriginPosGenerator},
 				{PC.DirectionVelGenerator, max_vel=-300.000000, from={0.000000, 0.000000}, min_vel=-150.000000},
-			}, startat=0.000000, duration=0.000000, rate=0.010000, dormant=true, display_name="dying", nb=500.000000, triggers = { die = PC.TriggerWAKEUP } },
+			}, startat=0.000000, duration=0.000000, rate=0.010000, dormant=true, display_name="dying", nb=500.000000, triggers = { die = PC.TriggerWAKEUP }, events = { dying=PC.EventSTART } },
 		},
 		updaters = {
 			{PC.BasicTimeUpdater},
@@ -117,6 +117,15 @@ local triggermodes = {
 }
 local trigger_by_id = table.map(function(k, v) return v.trigger, v.name end, triggermodes)
 local triggerkind_by_id = table.map(function(k, v) return v.trigger, v.kind end, triggermodes)
+
+
+local eventmodes = {
+	{name="On Start", event=PC.EventSTART, kind="EventSTART"},
+	{name="On Emit", event=PC.EventEMIT, kind="EventEMIT"},
+	{name="On Stop", event=PC.EventSTOP, kind="EventSTOP"},
+}
+local event_by_id = table.map(function(k, v) return v.event, v.name end, eventmodes)
+local eventkind_by_id = table.map(function(k, v) return v.event, v.kind end, eventmodes)
 
 local easings = {
 	{name="linear"},
@@ -312,6 +321,17 @@ function _M:addTrigger(spe)
 	end end)
 end
 
+function _M:addEvent(spe)
+	Dialog:textboxPopup("Event", "Name:", 1, 50, function(name) if name then
+		Dialog:listPopup("Event", "When:", table.clone(eventmodes, true), 150, 250, function(item) if item then
+			spe.events = spe.events or {}
+			spe.events[name] = item.event
+			self:makeUI()
+			self:regenParticle()
+		end end)
+	end end)
+end
+
 function _M:addNew(kind, into)
 	-- PC.gcTextures()
 	local list = {}
@@ -493,6 +513,15 @@ function _M:makeUI()
 						end
 					end					
 					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add trigger", auto_width=1, auto_height=1, fct=function() self:addTrigger(emitter) end})
+
+					if emitter.events then
+						tab = 60
+						self:makeTitle(add, tab, "#{bold}##DARK_ORCHID#----== Events ==----", false)
+						for name, kind in pairs(emitter.events) do
+							add(Checkbox.new{title="#DARK_ORCHID#"..name.."#LAST# => #{italic}#"..event_by_id[kind], default=true, on_change=function(p) emitter.events[name] = nil if not next(emitter.events) then emitter.events = nil end self:makeUI() self:regenParticle() end, fct=function()end})
+						end
+					end					
+					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add event", auto_width=1, auto_height=1, fct=function() self:addEvent(emitter) end})
 				end
 			end
 			tab = 20
@@ -761,6 +790,10 @@ function _M:regenParticle(nosave)
 	self.pdo = self.p.ps:getDO(self.p)
 	self:shift(self.old_shift_x, self.old_shift_y)
 	self.p_date = core.game.getTime()
+
+	self.p.ps:onEvents(function(name, times)
+		self.bignews:saySimple(30, "Event #GOLD#"..name.."#LAST# triggered #LIGHT_GREEN#"..times.."#LAST# times")
+	end)
 
 	self.particle_renderer:clear():add(self.bg):add(self.pdo)
 

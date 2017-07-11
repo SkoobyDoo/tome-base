@@ -29,6 +29,7 @@ void Emitter::triggered(TriggerableKind kind) {
 	switch (kind) {
 		case TriggerableKind::DELETE:
 			active = false;
+			triggerEvent(EventKind::STOP);
 			break;
 		case TriggerableKind::WAKEUP:
 			dormant = false;
@@ -59,6 +60,7 @@ void Emitter::generate(ParticlesData &p, uint32_t nb) {
 		else gen->generate(p, start, end);
 	}
 	p.count = end;
+	triggerEvent(EventKind::EMIT);
 }
 
 void LinearEmitter::emit(ParticlesData &p, float dt) {
@@ -77,11 +79,16 @@ void LinearEmitter::emit(ParticlesData &p, float dt) {
 	// Are we done yet ?
 	if (duration > -1) {
 		duration -= dt;
-		if (duration < 0) active = false;
+		if (duration < 0) {
+			active = false;
+			triggerEvent(EventKind::STOP);
+		}
 	}
 
 	// Are we fully triggers controlled?
 	if (!rate) return;
+
+	if (first_tick) { first_tick = false; triggerEvent(EventKind::START); }
 
 	// Accumulate time and if needed call our generators
 	accumulator += dt;

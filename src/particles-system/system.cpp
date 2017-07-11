@@ -233,7 +233,7 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 			sh = make_shared<ShaderHolder>(shader, ref);
 		}
 	} else {
-		printf("PartcilesComposer shader get error: %s\n", lua_tostring(L, -1));
+		printf("ParticlesComposer shader get error: %s\n", lua_tostring(L, -1));
 	}
 	lua_pop(L, 1 + 1); // Engine table & result
 
@@ -241,9 +241,18 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	return sh;
 }
 
+Ensemble::~Ensemble() {
+	printf("===Ensemble destroyed\n");
+	if (event_cb_ref != LUA_NOREF) {
+		luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
+	}
+}
+
 void Ensemble::gcTextures() {
 	stored_textures.clear();
+	stored_noises.clear();
 	stored_shaders.clear();
+	default_particlescompose_shader.reset();
 }
 
 uint32_t Ensemble::countAlive() {
@@ -270,9 +279,32 @@ void Ensemble::update(float nb_keyframes) {
 		if (!s->isDead()) dead = false;
 	}
 }
+
+void Ensemble::setEventsCallback(int ref) {
+	if (event_cb_ref != LUA_NOREF) {
+		luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
+	}
+	event_cb_ref = ref;
+}
+
 void Ensemble::draw(mat4 model) {
 	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
-	for (auto &s : systems) s->draw(model);
+	for (auto &s : systems) {
+		s->draw(model);
+	}
+	if (event_cb_ref != LUA_NOREF && events_triggers.size()) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, event_cb_ref);
+		for (auto &it : events_triggers) {
+			lua_pushvalue(L, -1);
+			lua_pushstring(L, it.first.c_str());
+			lua_pushnumber(L, it.second);
+			if (lua_pcall(L, 2, 0, 0)) {
+				printf("Ensemble::events callback error: %s\n", lua_tostring(L, -1));
+				lua_pop(L, 1);
+			}
+		}
+		events_triggers.clear();
+	}
 }
 void Ensemble::draw(float x, float y) {
 	mat4 model = mat4();
@@ -281,5 +313,3 @@ void Ensemble::draw(float x, float y) {
 }
 
 }
-
-

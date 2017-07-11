@@ -54,6 +54,8 @@ enum ParticlesSlots2 : uint8_t { ORIGIN_POS, ROT_VEL, VEL, ACC, SIZE, MAX2 };
 enum ParticlesSlots4 : uint8_t { POS, LIFE, TEXTURE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
 
 class System;
+class Ensemble;
+
 class ParticlesData {
 public:
 	uint32_t count = 0, max = 0;
@@ -129,6 +131,7 @@ typedef shared_ptr<ShaderHolder> spShaderHolder;
 extern spShaderHolder default_particlescompose_shader;
 
 #include "particles-system/triggers.hpp"
+#include "particles-system/events.hpp"
 #include "particles-system/generators.hpp"
 #include "particles-system/updaters.hpp"
 #include "particles-system/emitters.hpp"
@@ -179,11 +182,16 @@ public:
 	static void gcTextures();
 
 private:
+	int event_cb_ref = LUA_NOREF;
+	unordered_map<string, uint32_t> events_triggers;
+
 	bool dead = false;
 	float speed = 1.0;
 	float zoom = 1.0;
 	vector<unique_ptr<System>> systems;
 public:
+	~Ensemble();
+
 	inline bool isDead() { return dead; };
 	uint32_t countAlive();
 	System *getRawSystem(uint8_t id) { if (id < 0 || id >= systems.size()) return nullptr; else return systems[id].get(); };
@@ -192,6 +200,13 @@ public:
 	void setSpeed(float speed) { this->speed = speed; };
 
 	void fireTrigger(string &name);
+	inline void fireEvent(string *name) {
+		auto it = events_triggers.find(*name);
+		if (it != events_triggers.end()) it->second++;
+		else events_triggers.emplace(*name, 1);
+	}
+
+	void setEventsCallback(int ref);
 
 	void add(System *system);
 	void shift(float x, float y, bool absolute);

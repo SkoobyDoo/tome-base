@@ -24,11 +24,12 @@ using namespace glm;
 enum class EmittersList : uint8_t { LinearEmitter };
 
 class System;
-class Emitter : public Triggerable {
+class Emitter : public Triggerable, public Event {
 	friend class System;
 protected:
 	bool dormant = false;
 	bool active = true;
+	bool first_tick = true;
 	uint16_t next_tick_force_generate = false;
 	vector<uGenerator> generators;
 	void generate(ParticlesData &p, uint32_t nb);
