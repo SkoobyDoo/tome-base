@@ -27,7 +27,7 @@ namespace particles {
 
 void Emitter::triggered(TriggerableKind kind) {
 	switch (kind) {
-		case TriggerableKind::DELETE:
+		case TriggerableKind::DESTROY:
 			active = false;
 			triggerEvent(EventKind::STOP);
 			break;

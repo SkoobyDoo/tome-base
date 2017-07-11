@@ -21,7 +21,7 @@
 using namespace std;
 using namespace glm;
 
-enum class TriggerableKind { DELETE, WAKEUP, FORCE };
+enum class TriggerableKind { DESTROY, WAKEUP, FORCE };
 
 class Triggerable {
 private:

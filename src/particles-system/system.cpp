@@ -30,20 +30,20 @@ namespace particles {
  ** ParticlesData
  ********************************************************************/
 
-unordered_map<ParticlesSlots2, string> particles_slots2_names({
-	{VEL, "vel"},
-	{ACC, "acc"},
-	{SIZE, "size"},
-	{ORIGIN_POS, "origin pos"},
-});
-unordered_map<ParticlesSlots4, string> particles_slots4_names({
-	{POS, "pos"},
-	{TEXTURE, "texture"},
-	{LIFE, "life"},
-	{COLOR, "color"},
-	{COLOR_START, "color_start"},
-	{COLOR_STOP, "color_stop"},
-});
+// unordered_map<ParticlesSlots2, string> particles_slots2_names({
+// 	{VEL, "vel"},
+// 	{ACC, "acc"},
+// 	{SIZE, "size"},
+// 	{ORIGIN_POS, "origin pos"},
+// });
+// unordered_map<ParticlesSlots4, string> particles_slots4_names({
+// 	{POS, "pos"},
+// 	{TEXTURE, "texture"},
+// 	{LIFE, "life"},
+// 	{COLOR, "color"},
+// 	{COLOR_START, "color_start"},
+// 	{COLOR_STOP, "color_stop"},
+// });
 
 
 ParticlesData::ParticlesData() {
@@ -61,24 +61,24 @@ void ParticlesData::initSlot4(ParticlesSlots4 slot) {
 }
 
 void ParticlesData::print() {
-	printf("ParticlesData:\n");
-	for (uint32_t i = 0; i < max; i++) {
-		printf(" - p%d\n", i);
-		uint8_t slotid = 0; for (auto &slot : slots2) {
-			if (slot) {
-				vec2 v = slot[i];
-				printf("   * %s : %f x %f\n", particles_slots2_names[(ParticlesSlots2)slotid].c_str(), v.x, v.y);
-			}
-			slotid++;
-		}
-		slotid = 0; for (auto &slot : slots4) {
-			if (slot) {
-				vec4 v = slot[i];
-				printf("   * %s : %f x %f x %f x %f\n", particles_slots4_names[(ParticlesSlots4)slotid].c_str(), v.x, v.y, v.z, v.w);
-			}
-			slotid++;
-		}
-	}
+	// printf("ParticlesData:\n");
+	// for (uint32_t i = 0; i < max; i++) {
+	// 	printf(" - p%d\n", i);
+	// 	uint8_t slotid = 0; for (auto &slot : slots2) {
+	// 		if (slot) {
+	// 			vec2 v = slot[i];
+	// 			printf("   * %s : %f x %f\n", particles_slots2_names[(ParticlesSlots2)slotid].c_str(), v.x, v.y);
+	// 		}
+	// 		slotid++;
+	// 	}
+	// 	slotid = 0; for (auto &slot : slots4) {
+	// 		if (slot) {
+	// 			vec4 v = slot[i];
+	// 			printf("   * %s : %f x %f x %f x %f\n", particles_slots4_names[(ParticlesSlots4)slotid].c_str(), v.x, v.y, v.z, v.w);
+	// 		}
+	// 		slotid++;
+	// 	}
+	// }
 }
 
 /********************************************************************
