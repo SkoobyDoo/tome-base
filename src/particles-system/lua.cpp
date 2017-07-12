@@ -325,6 +325,10 @@ static int p_new(lua_State *L) {
 						g = new TrianglePosGenerator(lua_vec2(L, -1, "p1", vec2(0, 0)), lua_vec2(L, -1, "p2", vec2(0, 0)), lua_vec2(L, -1, "p3", vec2(0, 0)));
 						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
 						break;
+					case GeneratorsList::LinePosGenerator:
+						g = new LinePosGenerator(lua_vec2(L, -1, "p1", vec2(0, 0)), lua_vec2(L, -1, "p2", vec2(0, 0)));
+						g->basePos(lua_float(L, -1, "sx", 0), lua_float(L, -1, "sy", 0));
+						break;
 					case GeneratorsList::DiskVelGenerator:
 						g = new DiskVelGenerator(lua_float(L, -1, "min_vel", 5), lua_float(L, -1, "max_vel", 10));
 						break;
@@ -540,6 +544,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "DiskPosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskPosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "CirclePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::CirclePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "TrianglePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::TrianglePosGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "LinePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::LinePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DirectionVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DirectionVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
