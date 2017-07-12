@@ -181,10 +181,14 @@ local specific_uis = {
 		[PC.OriginPosGenerator] = {name="OriginPosGenerator", category="position", fields={}},
 		[PC.DiskPosGenerator] = {name="DiskPosGenerator", category="position", fields={
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
+			{type="number", id="min_angle", text="Min angle: ", min=0, max=360, default=-math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_angle", text="Max angle: ", min=0, max=360, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.CirclePosGenerator] = {name="CirclePosGenerator", category="position", fields={
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
 			{type="number", id="width", text="Width: ", min=0, max=10000, default=20},
+			{type="number", id="min_angle", text="Min angle: ", min=0, max=360, default=-math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_angle", text="Max angle: ", min=0, max=360, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", category="position", fields={
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
@@ -216,7 +220,7 @@ local specific_uis = {
 		}},
 		[PC.BasicRotationGenerator] = {name="BasicRotationGenerator", category="rotation", fields={
 			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.RotationByVelGenerator] = {name="RotationByVelGenerator", category="rotation", fields={
 			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
@@ -224,7 +228,7 @@ local specific_uis = {
 		}},
 		[PC.BasicRotationVelGenerator] = {name="BasicRotationVelGenerator", category="rotation", fields={
 			{type="number", id="min_rot", text="Min rotation velocity: ", min=0, max=36000, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=36000, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=36000, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.StartStopColorGenerator] = {name="StartStopColorGenerator", category="color", fields={
 			{type="color", id="min_color_start", text="Min start color: ", default=colors_alphaf.GOLD(1)},
