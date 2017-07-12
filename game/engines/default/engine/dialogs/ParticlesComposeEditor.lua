@@ -181,14 +181,14 @@ local specific_uis = {
 		[PC.OriginPosGenerator] = {name="OriginPosGenerator", category="position", fields={}},
 		[PC.DiskPosGenerator] = {name="DiskPosGenerator", category="position", fields={
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
-			{type="number", id="min_angle", text="Min angle: ", min=0, max=360, default=-math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_angle", text="Max angle: ", min=0, max=360, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_angle", text="Min angle: ", min=-360, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_angle", text="Max angle: ", min=-360, max=360, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.CirclePosGenerator] = {name="CirclePosGenerator", category="position", fields={
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
 			{type="number", id="width", text="Width: ", min=0, max=10000, default=20},
-			{type="number", id="min_angle", text="Min angle: ", min=0, max=360, default=-math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_angle", text="Max angle: ", min=0, max=360, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_angle", text="Min angle: ", min=-360, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_angle", text="Max angle: ", min=-360, max=360, default=math.pi*2, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", category="position", fields={
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
