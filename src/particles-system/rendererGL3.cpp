@@ -104,17 +104,20 @@ void RendererGL3::draw(ParticlesData &p, mat4 &model) {
 	if (shader->p_color != -1) { glUniform4fv(shader->p_color, 1, glm::value_ptr(color)); }
 
 	// Upload data
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(POS));
+	{
+		lock_guard<mutex> guard(p.mux);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(POS));
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(COLOR));
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(COLOR));
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_texture);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(TEXTURE));
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_texture);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * p.count, NULL, GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4) * p.count, p.getSlot4(TEXTURE));
+	}
 
 	// Draw!!!!
 	glBindVertexArray(vao);

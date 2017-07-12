@@ -79,6 +79,7 @@ static int p_gc_textures(lua_State *L)
 static int p_free(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	// (*ee)->prepareDeath();
 	delete *ee;
 	lua_pushnumber(L, 1);
 	return 1;
@@ -142,7 +143,6 @@ static int p_events_cb(lua_State *L)
 static int p_toscreen(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
-	(*ee)->update(lua_tonumber(L, 4));
 	(*ee)->draw(lua_tonumber(L, 2), lua_tonumber(L, 3));
 	return 0;
 }

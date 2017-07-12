@@ -33,12 +33,18 @@ extern "C" {
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 #define GLM_FORCE_INLINE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/ext.hpp"
+
+#include "renderer-moderngl/Interfaces.hpp"
 
 #include "core_loader.hpp"
 
@@ -61,6 +67,7 @@ public:
 	uint32_t count = 0, max = 0;
 	array<unique_ptr<vec2[]>, ParticlesSlots2::MAX2> slots2;
 	array<unique_ptr<vec4[]>, ParticlesSlots4::MAX4> slots4;
+	mutex mux;
 
 	ParticlesData();
 
@@ -141,6 +148,8 @@ class System {
 	friend class Emitter;
 	friend class Ensemble;
 private:
+	mutex mux;
+
 	bool dead = false;
 	ParticlesData list;
 
@@ -169,13 +178,15 @@ public:
 	void print();
 };
 
-
+class ThreadedRunner;
 class Ensemble {
-private:
+	friend ThreadedRunner;
+protected:
 	static unordered_map<string, spTextureHolder> stored_textures;
 	static unordered_map<string, spNoiseHolder> stored_noises;
 	static unordered_map<string, spShaderHolder> stored_shaders;
 public:
+	static unordered_set<Ensemble*> all_ensembles;
 	static spTextureHolder getTexture(const char *tex_str);
 	static spNoiseHolder getNoise(const char *noise_str);
 	static spShaderHolder getShader(lua_State *L, const char *shader_str);
@@ -190,6 +201,7 @@ private:
 	float zoom = 1.0;
 	vector<unique_ptr<System>> systems;
 public:
+	Ensemble();
 	~Ensemble();
 
 	inline bool isDead() { return dead; };

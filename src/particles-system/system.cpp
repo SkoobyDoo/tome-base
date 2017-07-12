@@ -23,8 +23,50 @@ extern "C" {
 }
 #include "particles-system/system.hpp"
 #include "core_loader.hpp"
+#include <condition_variable>
 
 namespace particles {
+
+/********************************************************************
+ ** ThreadedRunner
+ ********************************************************************/
+class ThreadedRunner : public IRealtime {
+public:
+	mutex mux;
+	thread th;
+	condition_variable cv;
+	float keyframes_accumulator = 0;
+
+	ThreadedRunner();
+	virtual void onKeyframe(float nb_keyframes);
+};
+
+static ThreadedRunner th_runner_singleton;
+static inline bool check_frames() { return th_runner_singleton.keyframes_accumulator > 0; }
+
+static void threaded_runner_thread() {
+	while (true) {
+		unique_lock<mutex> lock(th_runner_singleton.mux);
+		th_runner_singleton.cv.wait(lock, check_frames);
+		float kf = th_runner_singleton.keyframes_accumulator;
+		th_runner_singleton.keyframes_accumulator = 0;
+		
+		for (auto e : Ensemble::all_ensembles) {
+			e->update(kf);
+		}
+		lock.unlock();
+	}
+}
+
+ThreadedRunner::ThreadedRunner() : th(threaded_runner_thread) {
+	printf("[ParticlesCompose] started updater thread\n");
+}
+
+void ThreadedRunner::onKeyframe(float nb_keyframes) {
+	lock_guard<mutex> guard(mux);
+	keyframes_accumulator += nb_keyframes;
+	cv.notify_all();
+}
 
 /********************************************************************
  ** ParticlesData
@@ -130,14 +172,21 @@ void System::finish() {
 }
 
 void System::shift(float x, float y, bool absolute) {
+	lock_guard<mutex> guard(mux);
+
 	for (auto &e : emitters) e->shift(x, y, absolute);
 }
 
 void System::fireTrigger(string &name) {
+	lock_guard<mutex> guard(mux);
+
 	for (auto &e : emitters) e->fireTrigger(name);
 }
 
 void System::update(float nb_keyframes) {
+	lock_guard<mutex> lguard(list.mux);
+	lock_guard<mutex> guard(mux);
+
 	uint8_t emitters_active_not_dormant = 0;
 	float dt = nb_keyframes / 30.0f;
 	for (auto e = emitters.begin(); e != emitters.end(); ) {
@@ -166,6 +215,7 @@ void System::draw(mat4 &model) {
 unordered_map<string, spTextureHolder> Ensemble::stored_textures;
 unordered_map<string, spNoiseHolder> Ensemble::stored_noises;
 unordered_map<string, spShaderHolder> Ensemble::stored_shaders;
+unordered_set<Ensemble*> Ensemble::all_ensembles;
 
 spTextureHolder Ensemble::getTexture(const char *tex_str) {
 	auto it = stored_textures.find(tex_str);
@@ -241,11 +291,17 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	return sh;
 }
 
+Ensemble::Ensemble() {
+	printf("===Ensemble created, %lx\n", this);
+	lock_guard<mutex> lock(th_runner_singleton.mux);
+	all_ensembles.insert(this);
+}
+
 Ensemble::~Ensemble() {
-	printf("===Ensemble destroyed\n");
-	if (event_cb_ref != LUA_NOREF) {
-		luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
-	}
+	printf("===Ensemble destroyed, %lx\n", this);
+	if (event_cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
+	lock_guard<mutex> lock(th_runner_singleton.mux);
+	all_ensembles.erase(this);
 }
 
 void Ensemble::gcTextures() {
@@ -273,10 +329,8 @@ void Ensemble::shift(float x, float y, bool absolute) {
 }
 void Ensemble::update(float nb_keyframes) {
 	nb_keyframes *= speed;
-	dead = true;
 	for (auto &s : systems) {
 		s->update(nb_keyframes);
-		if (!s->isDead()) dead = false;
 	}
 }
 
@@ -288,9 +342,12 @@ void Ensemble::setEventsCallback(int ref) {
 }
 
 void Ensemble::draw(mat4 model) {
+	dead = true;
+
 	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
 	for (auto &s : systems) {
 		s->draw(model);
+		if (!s->isDead()) dead = false;
 	}
 	if (event_cb_ref != LUA_NOREF && events_triggers.size()) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, event_cb_ref);
