@@ -34,6 +34,7 @@ extern void create_particles_thread();
 extern void free_particles_thread();
 extern void free_profile_thread();
 extern void lua_particles_system_clean();
+extern void threaded_runner_keyframe(float nb_keyframes);
 
 extern void copy_surface_to_texture(SDL_Surface *s);
 extern GLenum sdl_gl_texture_format(SDL_Surface *s);

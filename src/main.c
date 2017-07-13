@@ -656,6 +656,7 @@ static void call_draw(float nb_keyframes)
 	// We do it at the END so they have all the time until next frame to compute
 	if (!anims_paused) {
 		thread_particle_new_keyframes(nb_keyframes);
+		threaded_runner_keyframe(nb_keyframes);
 	}
 	interface_realtime(nb_keyframes);
 }

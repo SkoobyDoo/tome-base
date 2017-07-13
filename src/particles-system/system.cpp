@@ -24,6 +24,9 @@ extern "C" {
 #include "particles-system/system.hpp"
 #include "core_loader.hpp"
 #include <condition_variable>
+#ifdef MINGW_WIN_THREAD_COMPAT
+#include "mingw.condition_variable.h"
+#endif
 
 namespace particles {
 
@@ -33,7 +36,7 @@ int math_mt_lua_ref = LUA_NOREF;
 /********************************************************************
  ** ThreadedRunner
  ********************************************************************/
-class ThreadedRunner : public IRealtime {
+class ThreadedRunner{
 public:
 	mutex mux;
 	thread th;
@@ -41,7 +44,7 @@ public:
 	float keyframes_accumulator = 0;
 
 	ThreadedRunner();
-	virtual void onKeyframe(float nb_keyframes);
+	void onKeyframe(float nb_keyframes);
 };
 
 static ThreadedRunner th_runner_singleton;
@@ -69,6 +72,10 @@ void ThreadedRunner::onKeyframe(float nb_keyframes) {
 	lock_guard<mutex> guard(mux);
 	keyframes_accumulator += nb_keyframes;
 	cv.notify_all();
+}
+
+extern "C" void threaded_runner_keyframe(float nb_keyframes) {
+	th_runner_singleton.onKeyframe(nb_keyframes);
 }
 
 /********************************************************************

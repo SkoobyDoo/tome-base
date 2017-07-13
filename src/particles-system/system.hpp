@@ -36,6 +36,10 @@ extern "C" {
 #include <unordered_set>
 #include <thread>
 #include <mutex>
+#ifdef MINGW_WIN_THREAD_COMPAT
+#include "mingw.thread.h"
+#include "mingw.mutex.h"
+#endif
 #include <atomic>
 
 #define GLM_FORCE_INLINE
