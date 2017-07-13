@@ -135,6 +135,19 @@ public:
 };
 typedef shared_ptr<ShaderHolder> spShaderHolder;
 
+class DefHolder {
+public:
+	int ref = LUA_NOREF;
+	DefHolder(int ref) : ref(ref) {
+		printf("Creating def\n");
+	};
+	~DefHolder() {
+		printf("Freeing def\n");
+		if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+	};
+};
+typedef shared_ptr<DefHolder> spDefHolder;
+
 extern spShaderHolder default_particlescompose_shader;
 
 #include "particles-system/triggers.hpp"
@@ -185,11 +198,14 @@ protected:
 	static unordered_map<string, spTextureHolder> stored_textures;
 	static unordered_map<string, spNoiseHolder> stored_noises;
 	static unordered_map<string, spShaderHolder> stored_shaders;
+	static unordered_map<string, spDefHolder> stored_defs;
 public:
 	static unordered_set<Ensemble*> all_ensembles;
 	static spTextureHolder getTexture(const char *tex_str);
 	static spNoiseHolder getNoise(const char *noise_str);
 	static spShaderHolder getShader(lua_State *L, const char *shader_str);
+	static int getDefinition(lua_State *L, const char *def_str);
+	static float getExpression(lua_State *L, const char *expr_str, int env_id);
 	static void gcTextures();
 
 private:
@@ -227,6 +243,9 @@ public:
 	void draw(mat4 model);
 	void draw(float x, float y);
 };
+
+extern int PC_lua_ref;
+extern int math_mt_lua_ref;
 
 }
 

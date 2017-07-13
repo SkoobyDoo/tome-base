@@ -27,6 +27,9 @@ extern "C" {
 
 namespace particles {
 
+int PC_lua_ref = LUA_NOREF;
+int math_mt_lua_ref = LUA_NOREF;
+
 /********************************************************************
  ** ThreadedRunner
  ********************************************************************/
@@ -215,12 +218,13 @@ void System::draw(mat4 &model) {
 unordered_map<string, spTextureHolder> Ensemble::stored_textures;
 unordered_map<string, spNoiseHolder> Ensemble::stored_noises;
 unordered_map<string, spShaderHolder> Ensemble::stored_shaders;
+unordered_map<string, spDefHolder> Ensemble::stored_defs;
 unordered_set<Ensemble*> Ensemble::all_ensembles;
 
 spTextureHolder Ensemble::getTexture(const char *tex_str) {
 	auto it = stored_textures.find(tex_str);
 	if (it != stored_textures.end()) {
-		printf("Reusing texture %s : %d\n", tex_str, it->second->tex->tex);
+		// printf("Reusing texture %s : %d\n", tex_str, it->second->tex->tex);
 		return it->second;
 	}
 
@@ -234,7 +238,7 @@ spTextureHolder Ensemble::getTexture(const char *tex_str) {
 spNoiseHolder Ensemble::getNoise(const char *noise_str) {
 	auto it = stored_noises.find(noise_str);
 	if (it != stored_noises.end()) {
-		printf("Reusing noise %s\n", noise_str);
+		// printf("Reusing noise %s\n", noise_str);
 		return it->second;
 	}
 
@@ -248,7 +252,7 @@ spNoiseHolder Ensemble::getNoise(const char *noise_str) {
 spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	auto it = stored_shaders.find(shader_str);
 	if (it != stored_shaders.end()) {
-		printf("Reusing shader %s : %d\n", shader_str, it->second->shader->shader);
+		// printf("Reusing shader %s : %d\n", shader_str, it->second->shader->shader);
 		return it->second;
 	}
 
@@ -291,6 +295,70 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	return sh;
 }
 
+int Ensemble::getDefinition(lua_State *L, const char *def_str) {
+	auto it = stored_defs.find(def_str);
+	if (it != stored_defs.end()) {
+		// printf("Reusing def %s : %d\n", def_str, it->second->ref);
+		return it->second->ref;
+	}
+
+	luaL_loadfile(L, def_str); // Load file
+	lua_newtable(L); // Make new env table
+	lua_pushliteral(L, "PC"); // Push particle composer table into the env
+	lua_rawgeti(L, LUA_REGISTRYINDEX, PC_lua_ref);
+	lua_rawset(L, -3);
+	lua_setfenv(L, -2); // Set the env
+
+	// Get the data
+	if (lua_pcall(L, 0, 1, 0)) {
+		printf("ParticlesComposer def get error: %s\n", lua_tostring(L, -1));
+		lua_pop(L, 1);
+		lua_newtable(L);
+	}
+
+	// Get a ref on it
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	spDefHolder dh = make_shared<DefHolder>(ref);
+
+	stored_defs.insert({def_str, dh});
+	return ref;
+}
+
+float Ensemble::getExpression(lua_State *L, const char *expr_str, int env_id) {
+	float ret = 0;
+	auto it = stored_defs.find(expr_str);
+	if (it != stored_defs.end()) {
+		// printf("Reusing expr %s : %d\n", expr_str, it->second->ref);
+		lua_rawgeti(L, LUA_REGISTRYINDEX, it->second->ref);
+		lua_pushvalue(L, env_id);
+		lua_setfenv(L, -2); // Set the env
+		if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
+		ret = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		return ret;
+	}
+
+	string expr("return ");
+	expr += expr_str;
+	luaL_loadstring(L, expr.c_str()); // Load expression
+	lua_pushvalue(L, env_id);
+	lua_setfenv(L, -2); // Set the env
+
+	// Get a ref on it
+	lua_pushvalue(L, -1);
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	spDefHolder dh = make_shared<DefHolder>(ref);
+
+	stored_defs.insert({expr_str, dh});
+
+	// Call it
+	if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
+	ret = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+
+	return ret;
+}
+
 Ensemble::Ensemble() {
 	printf("===Ensemble created, %lx\n", this);
 	lock_guard<mutex> lock(th_runner_singleton.mux);
@@ -308,6 +376,7 @@ void Ensemble::gcTextures() {
 	stored_textures.clear();
 	stored_noises.clear();
 	stored_shaders.clear();
+	stored_defs.clear();
 	default_particlescompose_shader.reset();
 }
 

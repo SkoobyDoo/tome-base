@@ -170,6 +170,6 @@ function _M:updateText()
 	self.textinput:setText(text)
 	self.textinput:setPos(self.cursor - self.scroll + 1)
 
-	if self.on_change and self.old_text ~= self.text then self.on_change(self.text) end
+	if self.on_change and self.old_text ~= self.text then self.on_change(self.text, self) end
 	self.old_text = self.text
 end

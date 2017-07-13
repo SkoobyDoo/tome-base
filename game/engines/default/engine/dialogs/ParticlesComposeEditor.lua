@@ -69,6 +69,7 @@ local particle_speed = 1
 local particle_zoom = 1
 
 local pdef = {
+	parameters = { ring_size=300.000000 },
 	{
 		max_particles = 2000, blend=PC.ShinyBlend,
 		texture = "/data/gfx/particle.png",
@@ -76,23 +77,23 @@ local pdef = {
 		emitters = {
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
-				{PC.LifeGenerator, max=3.000000, duration=10.000000, min=0.300000},
-				{PC.CirclePosGenerator, radius=300.000000, width=20.000000},
+				{PC.LifeGenerator, max=1.000000, duration=10.000000, min=0.300000},
+				{PC.CirclePosGenerator, radius="ring_size", width="ring_size/10"},
 				{PC.DiskVelGenerator, max_vel=100.000000, min_vel=30.000000},
-				{PC.BasicSizeGenerator, max_size=50.000000, min_size=10.000000},
+				{PC.BasicSizeGenerator, max_size="sqrt(ring_size)*4", min_size="sqrt(ring_size)"},
 				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
 				{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
-			}, dormant=false, duration=-1.000000, rate=0.030000, startat=0.000000, display_name="active", nb=20.000000, triggers = { die = PC.TriggerDELETE }, events = { stopping=PC.EventSTOP } },
+			}, startat=0.000000, dormant=false, duration=-1.000000, rate=0.030000, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=20.000000, events = { stopping = PC.EventSTOP } },
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
 				{PC.LifeGenerator, max=3.000000, duration=10.000000, min=0.300000},
-				{PC.CirclePosGenerator, radius=300.000000, width=20.000000},
+				{PC.CirclePosGenerator, radius="ring_size+200", width=20.000000},
 				{PC.BasicSizeGenerator, max_size=70.000000, min_size=25.000000},
 				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
 				{PC.StartStopColorGenerator, min_color_start={0.000000, 0.000000, 0.890196, 1.000000}, max_color_start={0.498039, 1.000000, 0.831373, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
 				{PC.OriginPosGenerator},
 				{PC.DirectionVelGenerator, max_vel=-300.000000, from={0.000000, 0.000000}, min_vel=-150.000000},
-			}, startat=0.000000, duration=0.000000, rate=0.010000, dormant=true, display_name="dying", nb=500.000000, triggers = { die = PC.TriggerWAKEUP }, events = { dying=PC.EventSTART } },
+			}, dormant=true, startat=0.000000, duration=0.000000, rate=0.010000, triggers = { die = PC.TriggerWAKEUP }, display_name="dying", nb=500.000000, events = { dying = PC.EventSTART } },
 		},
 		updaters = {
 			{PC.BasicTimeUpdater},
@@ -187,8 +188,8 @@ local specific_uis = {
 			{type="number", id="width", text="Width: ", min=0, max=10000, default=20},
 		}},
 		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", category="position", fields={
-			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
-			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}},
+			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}, line=true},
+			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}, line=true},
 			{type="point", id="p3", text="P3: ", min=-10000, max=10000, default={-100, 100}},
 		}},
 		[PC.LinePosGenerator] = {name="LinePosGenerator", category="position", fields={
@@ -336,6 +337,31 @@ function _M:addEvent(spe)
 	end end)
 end
 
+function _M:addParameter()
+	Dialog:listPopup("Parameter", "Type:", {{name="Number"}, {name="Point"}}, 150, 250, function(item) if item then
+		Dialog:textboxPopup("Parameter", "Name:", 1, 50, function(name) if name then
+			name = name:gsub("[A-Z]", function(c) return c:lower() end)
+			if not name:find("^[a-z_][a-z_0-9]*$") then Dialog:simplePopup("Parameter Error", "Name invalid, only letters, numbers and _ allowed and can not being with number.") return end
+			Dialog:textboxPopup("Parameter", item.name=="Number" and "Default Value:" or "Default Value (format as '<number>x<number>'): ", 1, 50, function(value) if value then
+				if item.name == "Number" then
+					value = tonumber(value)
+				elseif item.name == "Point" then
+					local s = value
+					value = nil
+					local _, _, x, y = s:find("^([0-9.]+)x([0-9.]+)$")
+					if tonumber(x) and tonumber(y) then value = {tonumber(x), tonumber(y)} end
+				end
+				if value then
+					pdef.parameters = pdef.parameters or {}
+					pdef.parameters[name] = value
+					self:makeUI()
+					self:regenParticle()
+				end
+			end end)
+		end end)
+	end end)
+end
+
 function _M:addNew(kind, into)
 	-- PC.gcTextures()
 	local list = {}
@@ -379,6 +405,46 @@ function _M:addNew(kind, into)
 	end
 end
 
+local function getParametrizedColor(p)
+	local f, err = loadstring("return "..p)
+	if not f then print("Param error", err) return "LIGHT_RED" end
+	local env = table.clone(pdef.parameters or {}, true)
+	setmetatable(env, {__index=math})
+	setfenv(f, env)
+	local ok, err = pcall(f)
+	if not ok then print("Param error", err) return "LIGHT_RED" end
+	if type(err) ~= "number" then print("Param return error: not a number") return "YELLOW" end
+	return "SALMON"
+end
+
+local function parametrizedBox(t)
+	local on_change = t.on_change
+	t.orig_title = t.title
+	t.text = tostring(t.number)
+	t.on_change = function(v, box)
+		-- Number, bound it
+		if tonumber(v) then
+			v = util.bound(tonumber(v), t.min, t.max)
+			t.is_parametrized = false
+		-- String parameter
+		else
+			t.is_parametrized = true
+		end
+		on_change(v)
+
+		if t.is_parametrized then box.title_do:color(colors_alphafs[getParametrizedColor(v)](1))
+		else box.title_do:color(1, 1, 1, 1)
+		end
+	end
+	t.chars = 12
+	if not tonumber(t.number) then
+		t.is_parametrized = true
+	end
+	local b = Textbox.new(t)
+	if t.is_parametrized then b.title_do:color(colors_alphafs[getParametrizedColor(t.number)](1)) end
+	return b
+end
+
 function _M:processSpecificUI(ui, add, kind, spe, delete)
 	local spe_def = specific_uis[kind][spe[1]]
 	if not spe_def then error("unknown def for: "..tostring(spe[1])) end
@@ -389,14 +455,14 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 		field.to = field.to or function(v) return v end
 		if field.type == "number" then
 			if not spe[field.id] then spe[field.id] = field.default end
-			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "bool" then
 			if not spe[field.id] then spe[field.id] = field.default end
 			adds[#adds+1] = Checkbox.new{title=field.text, default=field.to(spe[field.id]), on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "point" then
 			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
-			adds[#adds+1] = Numberbox.new{title=field.text, number=field.to(spe[field.id][1]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
-			adds[#adds+1] = Numberbox.new{title="x", number=field.to(spe[field.id][2]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id][1]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = parametrizedBox{title="x", number=field.to(spe[field.id][2]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "color" then
 			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
 			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
@@ -410,6 +476,18 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text..tostring(spe[field.id]), auto_width=1, auto_height=1, fct=function() self:selectFile(spe, field) end}
 		end
 		if field.line then add(unpack(adds)) adds={} end
+	end
+	add(unpack(adds))
+	add(8)
+end
+
+function _M:displayParameter(add, name, value)
+	local adds = {Checkbox.new{title="", default=true, fct=function()end, on_change=function(v) if not v then pdef.parameters[name] = nil if not next(pdef.parameters) then pdef.parameters = nil end self:regenParticle() self:makeUI() end end}}
+	if type(value) == "number" then
+		adds[#adds+1] = Numberbox.new{title="#{bold}##SALMON#"..name..": ", number=value, min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name] = p self:regenParticle() end, fct=function()end}
+	elseif type(value) == "table" and #value == 2 then
+		adds[#adds+1] = Numberbox.new{title="#{bold}##SALMON#"..name..": ", number=value[1], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][1] = p self:regenParticle() end, fct=function()end}
+		adds[#adds+1] = Numberbox.new{title="x", number=value[2], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][2] = p self:regenParticle() end, fct=function()end}
 	end
 	add(unpack(adds))
 	add(8)
@@ -432,6 +510,7 @@ function _M:titleMenu(spe, parent)
 		elseif button == "right" then
 			Dialog:listPopup("Options", "", {
 				{name="Rename", id="rename"},
+				{name="Duplicate", id="clone"},
 				{name="Move up", id="up"},
 				{name="Move down", id="down"},
 			}, 100, 200, function(item) if item then
@@ -439,6 +518,14 @@ function _M:titleMenu(spe, parent)
 					Dialog:textboxPopup("Name for this addon's release", "Name", 1, 50, function(name) if name then
 						spe.display_name = name self:makeUI()
 					end end)
+				elseif item.id == "clone" then
+					for i, s in ipairs(parent) do if s == spe then
+						local c = table.clone(s, true)
+						c.display_name = (c.display_name or "unnamed").." (duplicated)"
+						table.insert(parent, i + 1, c)
+						self:makeUI()
+						break
+					end end
 				elseif item.id == "up" then
 					for i, s in ipairs(parent) do if s == spe and i > 1 then
 						table.remove(parent, i)
@@ -479,6 +566,18 @@ function _M:makeUI()
 		y = y + max_h
 		return max_h
 	end
+
+	if def.parameters then
+		tab = 0
+		self:makeTitle(add, tab, "#{bold}##SALMON#----== Parameters ==----", false)
+		for name, value in pairs(def.parameters) do
+			self:displayParameter(add, name, value)
+		end
+	end					
+	add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add parameter", auto_width=1, auto_height=1, fct=function() self:addParameter() end})
+	add(Separator.new{dir="vertical", size=self.iw})
+	add(10)
+
 	for id_system, system in ipairs(def) do
 		local id = id_system
 		tab = 0
@@ -790,7 +889,8 @@ function _M:regenParticle(nosave)
 	end
 
 	-- table.print(pdef)
-	self.pdo = PC.new(pdef, particle_speed, particle_zoom, true)
+	-- self.pdo = PC.new("/data/gfx/particles/fireflash.pc", {}, particle_speed, particle_zoom, true)
+	self.pdo = PC.new(pdef, nil, particle_speed, particle_zoom, true)
 	self:shift(self.old_shift_x, self.old_shift_y)
 	self.p_date = core.game.getTime()
 
@@ -895,7 +995,7 @@ function UIDialog:reset()
 		pdef={}
 		pdef_history_pos = 0
 		pdef_history = {}
-		PC.gcTextures()
+		-- PC.gcTextures()
 		self.master.current_filename = ""
 		self.master:makeUI()
 		self.master:regenParticle(true)
@@ -963,7 +1063,13 @@ function UIDialog:merge(master)
 end
 
 function UIDialog:saveDef(w)
-	local function getData(up)
+	local function getFormat(v)
+		if type(v) == "number" then return "%f"
+		elseif type(v) == "string" then return "%q"
+		else error("Unsupported format: "..tostring(v))
+		end
+	end
+	local function getData(up, simple)
 		local data = {}
 		for k, v in pairs(up) do
 			if type(k) == "string" and k ~= "triggers" and k ~= "events" then
@@ -974,11 +1080,13 @@ function UIDialog:saveDef(w)
 				elseif type(v) == "string" then
 					data[#data+1] = ("%s=%q"):format(k, v)
 				elseif type(v) == "table" and #v == 2 then
-					data[#data+1] = ("%s={%f, %f}"):format(k, v[1], v[2])
+					data[#data+1] = (("%%s={%s, %s}"):format(getFormat(v[1]), getFormat(v[2]))):format(k, v[1], v[2])
 				elseif type(v) == "table" and #v == 3 then
-					data[#data+1] = ("%s={%f, %f, %f}"):format(k, v[1], v[2], v[3])
+					data[#data+1] = (("%%s={%s, %s, %s}"):format(getFormat(v[1]), getFormat(v[2]), getFormat(v[3]))):format(k, v[1], v[2], v[3])
 				elseif type(v) == "table" and #v == 4 then
-					data[#data+1] = ("%s={%f, %f, %f, %f}"):format(k, v[1], v[2], v[3], v[4])
+					data[#data+1] = (("%%s={%s, %s, %s, %s}"):format(getFormat(v[1]), getFormat(v[2]), getFormat(v[3]), getFormat(v[4]))):format(k, v[1], v[2], v[3], v[4])
+				elseif type(v) == "table" and #v == 0 and next(v) then
+					data[#data+1] = ("%s={%s}"):format(k, getData(v, true))
 				else
 					error("Unsupported save parameter: "..tostring(v).." for key "..k)
 				end
@@ -996,11 +1104,14 @@ function UIDialog:saveDef(w)
 				data[#data+1] = "events = { "..table.concat(tgs, ", ").." }"
 			end
 		end
-		if #data > 0 then data = ", "..table.concat(data, ", ") else data = "" end
+		if #data > 0 then data = (not simple and ", " or "")..table.concat(data, ", ") else data = "" end
 		return data
 	end
 
 	w(0, "return {\n")
+	if pdef.parameters then
+		w(1, ("parameters = { %s },\n"):format(getData(pdef.parameters, true)))
+	end
 	for _, system in ipairs(pdef) do
 		w(1, "{\n")
 		if system.display_name then w(2, ("display_name = %q,\n"):format(system.display_name)) end
