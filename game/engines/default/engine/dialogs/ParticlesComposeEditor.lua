@@ -201,7 +201,7 @@ local specific_uis = {
 			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
 		}},
 		[PC.DirectionVelGenerator] = {name="DirectionVelGenerator", category="movement", fields={
-			{type="point", id="from", text="From: ", min=-10000, max=10000, default={0, 0}},
+			{type="point", id="from", text="From: ", min=-10000, max=10000, default={0, 0}, line=true},
 			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
 			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
 		}},
@@ -211,7 +211,7 @@ local specific_uis = {
 		}},
 		[PC.StartStopSizeGenerator] = {name="StartStopSizeGenerator", category="size", fields={
 			{type="number", id="min_start_size", text="Min start: ", min=0.00001, max=1000, default=10},
-			{type="number", id="max_start_size", text="Max start: ", min=0.00001, max=1000, default=30},
+			{type="number", id="max_start_size", text="Max start: ", min=0.00001, max=1000, default=30, line=true},
 			{type="number", id="min_stop_size", text="Min stop: ", min=0.00001, max=1000, default=1},
 			{type="number", id="max_stop_size", text="Max stop: ", min=0.00001, max=1000, default=3},
 		}},
