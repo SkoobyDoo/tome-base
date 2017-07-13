@@ -46,7 +46,7 @@ enum class RenderKind { QUADS, TRIANGLES, POINTS, LINES };
 class DisplayList {
 public:
 	int used = 0;
-	GLuint vbo[4] = {0,0,0};
+	GLuint vbo[4] = {0,0,0,0};
 	array<GLuint, DO_MAX_TEX> tex{{0,0,0}};
 	shader_type *shader = NULL;
 	uint8_t data_kind = VERTEX_BASE;

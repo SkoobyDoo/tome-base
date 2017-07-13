@@ -191,6 +191,10 @@ local specific_uis = {
 			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}},
 			{type="point", id="p3", text="P3: ", min=-10000, max=10000, default={-100, 100}},
 		}},
+		[PC.LinePosGenerator] = {name="LinePosGenerator", category="position", fields={
+			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
+			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}},
+		}},
 		[PC.DiskVelGenerator] = {name="DiskVelGenerator", category="movement", fields={
 			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
 			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
