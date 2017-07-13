@@ -23,6 +23,9 @@
 
 DORParticles::~DORParticles() {
 	if (ps_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, ps_lua_ref);
+	if (e && owned) {
+		delete e;
+	}
 };
 
 void DORParticles::cloneInto(DisplayObject *_into) {
@@ -46,9 +49,4 @@ void DORParticles::toScreen(mat4 cur_model, vec4 color) {
 		}
 		e->draw(cur_model * model);
 	}
-}
-
-// MAKE THE PC MULTITHREAD BY HOOKING IN EXISTING THREAD AND REMOVE THAT
-void DORParticles::onKeyframe(float nb_keyframes) {
-	if (e) e->update(nb_keyframes);
 }

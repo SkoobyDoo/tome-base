@@ -1321,6 +1321,59 @@ static int gl_particles_free(lua_State *L)
 	lua_pushnumber(L, 1);
 	return 1;
 }
+static int gl_particles_shift(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	v->shift(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_toboolean(L, 4));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int gl_particles_zoom(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	v->setZoom(lua_tonumber(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int gl_particles_speed(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	v->setSpeed(lua_tonumber(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int gl_particles_is_dead(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	lua_pushboolean(L, v->isDead());
+	return 1;
+}
+static int gl_particles_count_alive(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	lua_pushnumber(L, v->countAlive());
+	return 1;
+}
+static int gl_particles_trigger(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	string name((const char*)lua_tostring(L, 2));
+	v->fireTrigger(name);
+	lua_pushvalue(L, 1);
+	return 1;
+}
+static int gl_particles_on_events(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	if (lua_isfunction(L, 2)) {
+		lua_pushvalue(L, 2);
+		v->setEventsCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+	} else {
+		v->setEventsCallback(LUA_NOREF);		
+	}
+	lua_pushvalue(L, 1);
+	return 1;
+}
 
 /******************************************************************
  ** TileMap -- no constructor, this is in map.cpp
@@ -2155,6 +2208,13 @@ static const struct luaL_Reg gl_tileminimap_reg[] =
 static const struct luaL_Reg gl_particles_reg[] =
 {
 	{"__gc", gl_particles_free},
+	{"shift", gl_particles_shift},
+	{"dead", gl_particles_is_dead},
+	{"zoom", gl_particles_zoom},
+	{"speed", gl_particles_speed},
+	{"trigger", gl_particles_trigger},
+	{"onEvents", gl_particles_on_events},
+	{"countAlive", gl_particles_count_alive},
 	{"getKind", gl_generic_getkind},
 	{"getColor", gl_generic_color_get},
 	{"getTranslate", gl_generic_translate_get},

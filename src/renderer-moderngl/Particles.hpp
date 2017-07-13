@@ -28,11 +28,12 @@
 
 // This one is a little strange, it is not the master of particles_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around particle code
-class DORParticles : public SubRenderer, public IRealtime {
+class DORParticles : public SubRenderer {
 private:
 	particles::Ensemble *e = NULL;
 	particles_type *ps = NULL;
 	int ps_lua_ref = LUA_NOREF;
+	bool owned = false;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -54,8 +55,22 @@ public:
 		this->e = e;
 	};
 
+	void setParticlesOwn(particles::Ensemble *e) {
+		if (ps_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, ps_lua_ref);
+		ps_lua_ref = LUA_NOREF;
+		this->e = e;
+		owned = true;
+	};
+
+	inline void shift(float sx, float sy, bool absolute) { if (e) e->shift(sx, sy, absolute); }
+	inline bool isDead() { if (e) return e->isDead(); else if (ps) return !ps->alive; return true; }
+	inline uint32_t countAlive() { if (e) return e->countAlive(); else if (ps) return ps->nb; return true; }
+	inline void setZoom(float zoom) { if (e) e->setZoom(zoom); }
+	inline void setSpeed(float speed) { if (e) e->setSpeed(speed); }
+	inline void fireTrigger(string &name) { if (e) e->fireTrigger(name); }
+	inline void setEventsCallback(int lua_ref) { if (e) e->setEventsCallback(lua_ref); }
+
 	virtual void toScreen(mat4 cur_model, vec4 color);
-	virtual void onKeyframe(float nb_keyframes);
 };
 
 #endif

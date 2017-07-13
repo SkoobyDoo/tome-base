@@ -221,6 +221,7 @@ static int p_new(lua_State *L) {
 	float speed = 1, zoom = 1;
 	if (lua_isnumber(L, 2)) speed = lua_tonumber(L, 2);
 	if (lua_isnumber(L, 3)) zoom = lua_tonumber(L, 3);
+	bool morph = lua_toboolean(L, 4);
 
 	Ensemble *e = new Ensemble();
 	e->setSpeed(speed);
@@ -463,9 +464,18 @@ static int p_new(lua_State *L) {
 		lua_pop(L, 1);
 	}
 
-	Ensemble **ee = (Ensemble**)lua_newuserdata(L, sizeof(Ensemble*));
-	auxiliar_setclass(L, "particles{compose}", -1);
-	*ee = e;
+	if (!morph) {
+		Ensemble **ee = (Ensemble**)lua_newuserdata(L, sizeof(Ensemble*));
+		auxiliar_setclass(L, "particles{compose}", -1);
+		*ee = e;
+	} else {
+		DORParticles *pdo = new DORParticles();
+		pdo->setParticlesOwn(e);
+
+		DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+		*v = pdo;
+		auxiliar_setclass(L, "gl{particles}", -1);
+	}
 	return 1;
 }
 

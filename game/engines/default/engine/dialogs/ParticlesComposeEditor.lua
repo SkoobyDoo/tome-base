@@ -305,7 +305,7 @@ function _M:showTriggers()
 
 	for name, _ in pairs(triggers) do table.insert(list, {name=name, id=name}) end
 	Dialog:listPopup("Trigger", "Select trigger name:", list, 200, 400, function(item) if item then
-		self.p.ps:trigger(item.id)
+		self.pdo:trigger(item.id)
 		self.last_trigger = item.id
 	end end)
 end
@@ -552,35 +552,35 @@ function _M:makeUI()
 			if core.key.modState("ctrl") then
 				if event == "button" and button == "wheelup" then
 					particle_speed = util.bound(particle_speed + 0.05, 0.1, 10)
-					self.p.ps:speed(particle_speed)
+					self.pdo:speed(particle_speed)
 					return true
 				elseif event == "button" and button == "wheeldown" then
 					particle_speed = util.bound(particle_speed - 0.05, 0.1, 10)
-					self.p.ps:speed(particle_speed)
+					self.pdo:speed(particle_speed)
 					return true
 				elseif event == "button" and button == "middle" then
 					particle_speed = 1
-					self.p.ps:speed(particle_speed)
+					self.pdo:speed(particle_speed)
 					return true
 				end
 			else
 				if event == "button" and button == "wheelup" then
 					particle_zoom = util.bound(particle_zoom + 0.05, 0.1, 10)
-					self.p.ps:zoom(particle_zoom)
+					self.pdo:zoom(particle_zoom)
 					self:shift(mx, my)
 					return true
 				elseif event == "button" and button == "wheeldown" then
 					particle_zoom = util.bound(particle_zoom - 0.05, 0.1, 10)
-					self.p.ps:zoom(particle_zoom)
+					self.pdo:zoom(particle_zoom)
 					self:shift(mx, my)
 					return true
 				elseif event == "button" and button == "middle" then
 					particle_zoom = 1
-					self.p.ps:zoom(particle_zoom)
+					self.pdo:zoom(particle_zoom)
 					self:shift(mx, my)
 					return true
 				elseif event == "button" and button == "right" and self.last_trigger then
-					self.p.ps:trigger(self.last_trigger)
+					self.pdo:trigger(self.last_trigger)
 				elseif event == "button" and (button == "left" or button == "right") then
 					self:showTriggers()
 				end
@@ -786,12 +786,11 @@ function _M:regenParticle(nosave)
 	end
 
 	-- table.print(pdef)
-	self.p = {ps=PC.new(pdef, particle_speed, particle_zoom)}
-	self.pdo = self.p.ps:getDO(self.p)
+	self.pdo = PC.new(pdef, particle_speed, particle_zoom, true)
 	self:shift(self.old_shift_x, self.old_shift_y)
 	self.p_date = core.game.getTime()
 
-	self.p.ps:onEvents(function(name, times)
+	self.pdo:onEvents(function(name, times)
 		self.bignews:saySimple(30, "Event #GOLD#"..name.."#LAST# triggered #LIGHT_GREEN#"..times.."#LAST# times")
 		print("Particle Event", name, times)
 	end)
@@ -803,11 +802,11 @@ end
 
 function _M:shift(x, y)
 	self.old_shift_x, self.old_shift_y = x, y
-	self.p.ps:shift(x, y, true)
+	self.pdo:shift(x, y, true)
 end
 
 function _M:toScreen(x, y, nb_keyframes)
-	if self.p.ps:dead() then
+	if self.pdo:dead() then
 		self.bignews:saySimple(15, "#AQUAMARINE#--END--")
 		self:regenParticle(true)
 	end
@@ -963,7 +962,7 @@ function UIDialog:saveDef(w)
 	local function getData(up)
 		local data = {}
 		for k, v in pairs(up) do
-			if type(k) == "string" and k ~= "triggers" then
+			if type(k) == "string" and k ~= "triggers" and k ~= "events" then
 				if type(v) == "number" then
 					data[#data+1] = ("%s=%f"):format(k, v)
 				elseif type(v) == "boolean" then
@@ -977,7 +976,7 @@ function UIDialog:saveDef(w)
 				elseif type(v) == "table" and #v == 4 then
 					data[#data+1] = ("%s={%f, %f, %f, %f}"):format(k, v[1], v[2], v[3], v[4])
 				else
-					error("Unsupported save parameter: "..tostring(v))
+					error("Unsupported save parameter: "..tostring(v).." for key "..k)
 				end
 			elseif k == "triggers" and next(v) then
 				local tgs = {}
@@ -985,6 +984,12 @@ function UIDialog:saveDef(w)
 					tgs[#tgs+1] = ("%s = PC.%s"):format(name, triggerkind_by_id[id])
 				end
 				data[#data+1] = "triggers = { "..table.concat(tgs, ", ").." }"
+			elseif k == "events" and next(v) then
+				local tgs = {}
+				for name, id in pairs(v) do
+					tgs[#tgs+1] = ("%s = PC.%s"):format(name, eventkind_by_id[id])
+				end
+				data[#data+1] = "events = { "..table.concat(tgs, ", ").." }"
 			end
 		end
 		if #data > 0 then data = ", "..table.concat(data, ", ") else data = "" end
@@ -1063,7 +1068,7 @@ end
 
 function UIDialog:toScreen(x, y, nb_keyframes)
 	local fps, msframe = core.display.getFPS()
-	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / %d ms/frame / Active particles: %d / Zoom: %d%% / Speed: %d%%"):format((core.game.getTime() - self.master.p_date) / 1000, fps, msframe, self.master.p.ps:countAlive(), particle_zoom * 100, particle_speed * 100), true)
+	self.particles_count:text(("Elapsed Time %0.2fs / FPS: %0.1f / %d ms/frame / Active particles: %d / Zoom: %d%% / Speed: %d%%"):format((core.game.getTime() - self.master.p_date) / 1000, fps, msframe, self.master.pdo:countAlive(), particle_zoom * 100, particle_speed * 100), true)
 	self.particles_count_renderer:toScreen()
 	Dialog.toScreen(self, x, y, nb_keyframes)
 end
