@@ -22,45 +22,42 @@
 --local ActorAI = require "engine.interface.ActorAI"
 --local ActorAI = require "mod.class.interface.ActorAI"
 
---config.settings.log_detail_ai = 4 -- debugging force output of all AI messages
-config.settings.log_detail_ai = 1 -- debugging general output for AI messages
-
 --[[
 IMPROVED TACTICAL AI:
-This AI determines when (or if) to use various actions available to an NPC.  It evaluates each action (which can be either using a talent or invoking another AI) according to how well it addresses various needs, where the needs are classified into various predefined TACTICs (described below).  The AI assigns a TACTICAL VALUE (a number representing overall usefulness) to each possible action and then attempts to execute the most useful action based on this value.
+This AI determines when (or if) to use various actions available to an NPC.  It evaluates each action (which can be either using a talent or invoking another AI) according to how well it addresses various needs, where the needs are classified into various predefined TACTICs (described below).  The AI assigns a TACTICAL SCORE (a number representing overall usefulness) to each possible action and then attempts to execute the most useful action based on this value.
 
 In this description, terms in ALL CAPS refer to specific variables; e.g. "SELF" refers to the acting NPC invoking this AI.
 
-For talents, the TACTICAL VALUE is primarily based on its TACTICAL TABLE such as:
+For talents, the TACTICAL SCORE is primarily based on its TACTICAL TABLE such as:
 
 		t.tactical = {attack = {LIGHTNING = 2}}
 
 (This talent fulfils the "attack" TACTIC with average effectiveness, modified by the LIGHTNING DamageType.)
 
-Another possible computation for the TACTICAL VALUE might be summarized as:
+Another possible computation for the TACTICAL SCORE might be summarized as:
 
 	TACTICs:			attack		closein		disable		interpretation
 	TACTIC WEIGHTs:		1			2			3			the action attacks, disables, and closes with target
 	WANTs:   			2			-2.5		1.5			SELF wants to attack and disable, but avoid closing in
-	SELF.ai_tactic:		3			1			2			SELF has a bias towards the attack and disable TACTICs
+	SELF.ai_tactic:		3			1			2			SELF (optionally) favors the attack and disable TACTICs
 	---------------------------------------------------
-	(Column) Product:	6		+	-5		+	9		==	10	RAW TACTICAL VALUE
+	(Column) Product:	6		+	-5		+	9		==	10	RAW TACTICAL SCORE
 
-The last value is modified to get the FINAL TACTICAL VALUE for comparison with other available actions.
+The last value is modified to get the FINAL TACTICAL SCORE for comparison with other available actions.
 	
 METHOD:
-Evaluating the TACTICAL VALUE for each talent (or other action) requires 3 steps, not necessarily performed in order:
+Evaluating the TACTICAL SCORE for each talent (or other action) requires 3 steps, not necessarily performed in order:
 
 	1.	Calculate the TACTIC WEIGHTs (a table for each talent/action) for each TACTIC the talent supports.
-	This is a complex procedure, performed (for talents) by ActorAI:aiTalentTactics, that uses the tactical parameters for the talent (contained in t.tactical, usually a table).  It takes into account the actors that may be affected by the talent/action and various attributes, including resistances, immunities, other known talents, etc.  (The section "==== TALENT TACTICAL TABLES ==== (with examples)" in mod.class.interface.ActorAI contains a detailed explanation of how to construct tactical tables and how they are interpreted for each talent.)
+	This is a complex procedure, performed (for talents) by ActorAI:aiTalentTactics, that uses the tactical parameters for the talent (contained in t.tactical, usually a table).  It takes into account the actors that may be affected by the talent/action and various attributes, including resistances, immunities, other known talents, etc.  (The section "==== TALENT TACTICAL TABLES ==== (with examples)" in mod.class.interface.ActorAI.lua contains a detailed explanation of how to construct tactical tables and how they are interpreted for each talent.)
 	
 	2.	Calculate the WANT VALUEs (a table for SELF) for all TACTICs.
-	This calculation is performed by this AI (see "--== SUPPORTED TACTICS ==--" below).  A WANT VALUE is a numeric value reflecting how desirable a TACTIC is to SELF, usually ranging from -10 to +10.  It increases as the TACTIC becomes more useful.  0 represents no tactical value, while +2 is typical for a TACTIC the AI considers useful, and +10 reflects an urgent need, giving a large priority boost to the action.  Negative values correspond to undesirable TACTICs, that the AI considers harmful to SELF.
+	This calculation is performed by this AI (see "--== SUPPORTED TACTICS ==--" below).  A WANT VALUE is number reflecting how desirable a TACTIC is to SELF, usually ranging from -10 to +10.  It increases as the TACTIC becomes more useful.  0 represents no tactical value, while +2 is typical for a TACTIC the AI considers useful, and +10 reflects an urgent need, giving a large priority boost to the action.  Negative values correspond to undesirable TACTICs that the AI considers harmful to SELF.
 
-	3.	Calculate the FINAL TACTICAL VALUE (a number) for the talent/action.
-	The RAW TACTICAL VALUE is computed as a sum, of each TACTIC WEIGHT (for each supported TACTIC) times its corresponding WANT VALUE.  This is then adjusted for other factors, like effective talent level and action speed to get the FINAL TACTICAL VALUE.  Only actions for which this value is > 0.1 are considered worth performing.
+	3.	Calculate the FINAL TACTICAL SCORE (a number) for the talent/action.
+	The RAW TACTICAL SCORE is computed as the sum of each TACTIC WEIGHT (for each supported TACTIC) times its corresponding WANT VALUE.  This is then adjusted for other factors, like effective talent level and action speed to get the FINAL TACTICAL SCORE.  Only actions for which this value is > 0.1 are considered worth performing.
 
-The AI will attempt to perform the action with the highest (positive) FINAL TACTICAL VALUE.  SELF.ai_state.tactic is assigned the TACTIC label corresponding the highest TACTIC WEIGHT for the action before it is performed, and can be used as an additional input within talent and AI code where an NPC may need to make choices.
+The AI will attempt to perform the action with the highest (positive) FINAL TACTICAL SCORE.  SELF.ai_state.tactic is assigned the TACTIC label corresponding the highest TACTIC WEIGHT for the action before it is performed, and can be used as an additional input within talent and AI code where an NPC may need to make choices.
 
 TALENT INPUTS:
 In order to use talents, this AI uses certain talent fields, which must be defined appropriately within the root of the talent definition:
@@ -75,7 +72,7 @@ In order to use talents, this AI uses certain talent fields, which must be defin
 -	onAIGetTarget: <optional> a function(self, talent) returning x, y, target called to get the talent target
 		(usually used to target something other than SELF's primary target).
 -	ai_level: <optional, defaults to raw talent level> a number or function(self, talent)
-		the talent level to use when calculating the FINAL TACTICAL VALUE
+		the talent level to use when calculating the FINAL TACTICAL SCORE
 
 Targeted talents are those with a defined talent.target field or for which SELF:getTalentRequiresTarget(t) returns true.
 
@@ -83,20 +80,20 @@ ACTOR INPUTS:
 NPC AI parameters from mod.class.interface.ActorAI and engine.interface.ActorAI:
 SELF.AI_TACTICS holds benefit coefficients, indexed by TACTIC name, representing how beneficial each tactic is (to SELF) when applied to itself or allies, typically +1 (beneficial) or -1 (harmful).
 SELF.AI_TACTICAL_TALENT_LEVEL_BONUS (default 0.2) = level adjustment for talents (as raw talent level)
-SELF.AI_TACTICAL_AI_ACTION_BONUS (default 0.02) = level adjustment to AI (non-talent) actions when computing the FINAL TACTICAL VALUE
+SELF.AI_TACTICAL_AI_ACTION_BONUS (default 0.02) = level adjustment to AI (non-talent) actions when computing the FINAL TACTICAL SCORE
 SELF.AI_RESOURCE_LEVEL_TRIGGER = minimum resource level (fraction of maximum) before the AI will consider replenishing a resource
 
 SELF.ai_state parameters:
-SELF.ai_state.tactical_random_range = random range applied to the RAW TACTICAL VALUE (default SELF.AI_TACTICAL_RANDOM_RANGE, 0.5) Increasing this makes talent choices more random.
-SELF.ai_state.self_compassion = tactical value multiplier when affecting SELF (default 5, for harmful tactics)
-SELF.ai_state.ally_compassion = tactical value multiplier when affecting an ally (default 1, for harmful tactics)
+SELF.ai_state.tactical_random_range = random range applied to the RAW TACTICAL SCORE (default SELF.AI_TACTICAL_RANDOM_RANGE, 0.5) Increasing this makes talent choices more random.
+SELF.ai_state.self_compassion = tactic value multiplier when affecting SELF (default 5, for harmful tactics)
+SELF.ai_state.ally_compassion = tactic value multiplier when affecting an ally (default 1, for harmful tactics)
 
 SELF.ai_tactic table:
 This is a table of multipliers (see mod.resolvers.tactic) for each tactic:
 
 	{TACTIC1 = multiplier1, TACTIC2 = multiplier2, ...} (each tactic is lower case)
 
-The want values for each tactic are multiplied by these values (Undefined multipliers default to 1.) before the final RAW TACTICAL VALUE calculation.  This table may include the .safe_range field, specifying a minimum range that SELF will try to maintain to its target; want.escape (described below) will be increased if the range goes below this value.  (Note: if SELF has no talents that can reach the safe range, it will usually not fight effectively.)
+The want values for each tactic are multiplied by these values (Undefined multipliers default to 1.) before the final RAW TACTICAL SCORE calculation.  This table may include the .safe_range field, specifying a minimum range that SELF will try to maintain to its target; want.escape (described below) will be increased if the range goes below this value.  (Note: if SELF has no talents that can reach the safe range, it will usually not fight effectively.)
 
 For example:
 
@@ -147,24 +144,24 @@ For each possible action, a table of TACTIC WEIGHTs is created, representing how
 
 	tactical = {TACTIC WEIGHT1 = value1, TACTIC WEIGHT2 = value2, ...}
 	
-TACTIC WEIGHTs may be positive or negative, and are not typically bounded, but usually lie within the range [-5, +5].  For talents, they are generated from the talent.tactical field by the SELF:aiTalentTactics function.  The largest TACTIC WEIGHT for a useful action will typically be around +2 in most cases.  An active sustained talent that may be turned off has the sign of its tactical values reversed.
+TACTIC WEIGHTs may be positive or negative, and are not typically bounded, but usually lie within the range [-5, +5].  For talents, they are generated from the talent.tactical field by the SELF:aiTalentTactics function.  The largest TACTIC WEIGHT for a useful action will typically be around +2 in most cases.  An active sustained talent that may be turned off has the sign of its tactic values reversed.
 
 SELF:aiTalentTactics automatically generates a list of potentially affected targets (if required, calling self:aiTalentTargets) and uses the talent's targeting parameters to determine how to apply the talent tactical parameters to each target.  (See the notes section labelled "--BENEFICIAL VS. HARMFUL TACTICS and HOSTILE VS. FRIENDLY TARGETS--" in mod.class.interface.ActorAI:aiTalentTactics for a detailed explanation of how the weights of different targets are determined.)
 
 If the action has at least one positive TACTIC WEIGHT, is considered useful, and an entry is added to the actions table and the avail table is updated.
 
-After the TACTIC WEIGHTs of all available actions have been computed, the RAW TACTICAL VALUE of each action, representing its overall usefulness, is computed as the sum of the products of the matching want and TACTIC WEIGHT fields (an inner product of two vectors, weighted by the SELF.ai_tactic table):
+After the TACTIC WEIGHTs of all available actions have been computed, the RAW TACTICAL SCORE of each action, representing its overall usefulness, is computed as the sum of the products of the matching want and TACTIC WEIGHT fields (an inner product of two vectors, weighted by the SELF.ai_tactic table):
 
-	RAW TACTICAL VALUE = want[matching TACTIC1]*tactical[matching TACTIC1]*(SELF.ai_tactic[matching TACTIC1] or 1
+	RAW TACTICAL SCORE = want[matching TACTIC1]*tactical[matching TACTIC1]*(SELF.ai_tactic[matching TACTIC1] or 1
 				+ want[matching TACTIC2]*tactical[matching TACTIC2]*(SELF.ai_tactic[matching TACTIC2] or 1)
 				+ ...
 
 The action's primary TACTIC is designated according to the largest (positive) contribution to this sum.
-Special Note:  The CLOSEIN and ESCAPE TACTICs are mutually exclusive; only the one contributing the most to the RAW TACTICAL VALUE is used.
+Special Note:  The CLOSEIN and ESCAPE TACTICs are mutually exclusive; only the one contributing the most to the RAW TACTICAL SCORE is used.
 
-The FINAL TACTICAL VALUE is computed by adjusting the RAW TACTICAL VALUE for action speed, effective level and a random bonus (used to provide both randomness and to break ties):
+The FINAL TACTICAL SCORE is computed by adjusting the RAW TACTICAL SCORE for action speed, effective level and a random bonus (used to provide both randomness and to break ties):
 
-	FINAL TACTICAL VALUE = RAW TACTICAL VALUE*level_adjustment*random_range/speed
+	FINAL TACTICAL SCORE = RAW TACTICAL SCORE*level_adjustment*random_range/speed
 
 where:
 
@@ -173,7 +170,7 @@ where:
 	level_adjustment (for AIs) = 1 + SELF.level*SELF.AI_TACTICAL_AI_ACTION_BONUS
 	random_range = 1 + (SELF.ai_state.tactical_random_range or SELF.AI_TACTICAL_RANDOM_RANGE)
 
-The action with the highest FINAL TACTICAL VALUE (> 0.1), is selected to be performed, as long as the WANT VALUE for its primary TACTIC is >= 0.1.
+The action with the highest FINAL TACTICAL SCORE (> 0.1), is selected to be performed, as long as the WANT VALUE for its primary TACTIC is >= 0.1.
 
 During its processing, the AI gathers some statistics about SELF's talents and the tactical situation:
 
@@ -308,8 +305,8 @@ At full health and with no detrimental effects, against an apparently "equal" fo
 --== BUFF ==--
 description: action improves the effectiveness of SELF's attacks, often applying beneficial status effects
 typical tactical table entry: {BUFF = 2}
-want range: [0.1, ~ want.attack*best attack tactical value/best buff tactical value)
-The want computation is performed for each individual talent during the RAW TACTICAL VALUE calculation step after all other WANT VALUEs have been computed.  It uses similar assumptions to the want.disable calculation regarding expected fight duration (except for sustained talents), but adjusts for multiple hostile targets, range to target, and the number of currently available attacks that can reach the target.
+want range: [0.1, ~ want.attack*best attack tactic value/best buff tactic value)
+The want computation is performed for each individual talent during the RAW TACTICAL SCORE calculation step after all other WANT VALUEs have been computed.  It uses similar assumptions to the want.disable calculation regarding expected fight duration (except for sustained talents), but adjusts for multiple hostile targets, range to target, and the number of currently available attacks that can reach the target.
 The WANT VALUE scales with the best attack TACTIC WEIGHT so that the best buff TACTIC WEIGHT is close to (within the random range of) the best attack TACTIC WEIGHT.  This ensures that buffs always have a chance to be used before the attacks that they augment but are not used to the exclusion of those attacks. (See the actual code below for more details.)
 In addition, the WANT VALUE is penalized while fleeing (want.escape > want.attack, typically), and decreases (possibly to negative values) as the range to the target exceeds the desired range for SELF's attacks.  This prevents the AI from wasting buff actions when it can't follow-up with attacks.
 With a TACTIC WEIGHT of 2, the WANT VALUE approaches +2 against an "equal" opponent.
@@ -319,7 +316,7 @@ description: custom tactic
 typical tactical table entry (T_SHOOT_DOWN): {SPECIAL = 10} or {SPECIAL = function(self, t, aitarget) ...}
 want: always 1
 
-The tactical value should account for a fixed WANT VALUE of 1, so a useful tactic should generally have a tactical value in the range of 4 (2x2) to 9 (3x3).  Unlike other TACTICs, the tactical value is not adjusted by reaction to the targets affected.
+The tactic value should account for a fixed WANT VALUE of 1, so a useful tactic should generally have a tactic value in the range of 4 (2x2) to 9 (3x3).  Unlike other TACTICs, the tactic value is not adjusted by reaction to the targets affected.
 
 --==ADDITIONAL TACTICS ==--
 Additional TACTICs can be defined for this AI.  ActorAI.AI_TACTICS must have a numerical benefit coefficient (usually -1 or +1, default -1) and ActorAI.AI_TACTICS_WANTS must include a function to compute the corresponding WANT VALUE.
@@ -381,7 +378,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 	local foes_near_strength, allies_near_strength = 0, 0
 	if log_detail > 0 then print("[use_tactical AI]==##== RUNNING turn", game.turn, self.uid, self.name, self.x, self.y, "with target", aitarget and aitarget.name, aitarget and aitarget.uid, ax, ay, "==##==") end
 	local target_dist = aitarget and core.fov.distance(self.x, self.y, ax, ay)
-	-- affects how random action selection is; 0.5 --> FINAL TACTICAL VALUE of each action randomly increased by up to 50%
+	-- affects how random action selection is; 0.5 --> FINAL TACTICAL SCORE of each action randomly increased by up to 50%
 	local ai_weight_range = self.ai_state.tactical_random_range or self.AI_TACTICAL_RANDOM_RANGE
 	local self_compassion = (self.ai_state.self_compassion == false and 0) or self.ai_state.self_compassion or 5
 	local ally_compassion = (self.ai_state.ally_compassion == false and 0) or self.ai_state.ally_compassion or 1
@@ -623,7 +620,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 							-- t.is_spell: spell_failure, forbid_arcane(automatic failure) handled by preUseTalent
 							-- t.is_nature: nature_failure, forbid_nature(automatic failure) handled by preUseTalent
 
-							--factor talent tactical values by any general adjustments (for later implementation)
+							--factor talent tactic values by any general adjustments (for later implementation)
 							local wt_adj = 1
 							if wt_adj ~= 1 then
 								for tact, val in pairs(tacts) do
@@ -732,7 +729,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 				can_flee, fx, fy = self:aiCanFleeDmapKeepLos()
 				if log_detail > 2 then print("[use_tactical AI] fleeDmapKeepLos calculation:", can_flee, fx, fy) end
 				if can_flee then  -- make escape by movement available
-					local val = 1/math.max(1, target_dist + 1 - math.min(self.sight, talent_stats.attack_max_range)) -- narrow tactical value range, <= weight of move_safe_grid, if present, don't flee beyond best attack range
+					local val = 1/math.max(1, target_dist + 1 - math.min(self.sight, talent_stats.attack_max_range)) -- narrow tactic value range, <= weight of move_safe_grid, if present, don't flee beyond best attack range
 					avail.escape.best = math.max(avail.escape.best, val/movement_speed)
 					avail.escape.num = avail.escape.num + 1
 					actions[#actions+1]={ai="flee_dmap_keep_los", fx, fy, tacts = {escape=val, ammo=ammo and 1 or nil}, speed = movement_speed}
@@ -760,7 +757,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 
 		--if we can closein by movement, add it to the action list, in case it's better than using a talent
 		if want.closein > 0.1 and target_dist > 1 and not self:attr("never_move") then
-			-- decrease tactical value of movement at higher ranges to defer to other available actions
+			-- decrease tactic value of movement at higher ranges to defer to other available actions
 			actions[#actions+1]={ai=self.ai_state.ai_move or "move_simple", false, ax, ay, tacts = {closein=0.5*(1+2/target_dist)}, speed = movement_speed}
 		end
 
@@ -953,23 +950,23 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 			local offense = math.max(want.attack, want.attackarea, want.closein or 0)  -- includes ai_tactic adjustments
 			if want.escape > offense then buff_escape_coefficient = math.min(1, offense/want.escape) end
 		end
-		local sel, best_value
+		local sel, best_score
 		local action_pick, success
 		local action_attempt = 0
 		repeat -- final actions evaluation
 			action_attempt = action_attempt + 1
 			if log_detail > 0 then -- Tactical Summary
 				print("[use_tactical AI] === Tactical Action Summary === attempt:", action_attempt, self.uid, self.name)
-				print("  #:type:tid/ai name                          value  [xmLVL xmSPD  xmRNG] (tact=want*value, ...)")
+				print("  #:type:tid/ai name                          score  [xmLVL xmSPD  xmRNG] (tact=want*value, ...)")
 			end
 			local mult, lvl_adjust
-			sel, best_value = 0, - math.huge
+			sel, best_score = 0, - math.huge
 			for k, action in ipairs(actions) do
 				action.speed = action.speed or 1
 				local speed = action.speed
-				if not action.value then -- compute the FINAL TACTICAL VALUE for the action
+				if not action.score then -- compute the FINAL TACTICAL SCORE for the action
 					local escape_val, closein_val
-					action.value, action.high_value = 0, -math.huge
+					action.score, action.high_value = 0, -math.huge
 					-- Apply any player set ai_talents weights
 					mult = self.ai_talents and action.tid and self.ai_talents[action.tid] or 1
 					
@@ -981,7 +978,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 					end
 
 					local desc = ""
-					-- compute the RAW TACTICAL VALUE from the resolved TACTIC WEIGHTs and WANT VALUEs
+					-- compute the RAW TACTICAL SCORE from the resolved TACTIC WEIGHTs and WANT VALUEs
 					for tact, val in pairs(action.tacts) do
 						local mult = mult
 						--== BUFF ==-- buffs are scaled (within the random range) to match the best attack
@@ -1016,7 +1013,7 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 							escape_val = val
 						end
 						
-						action.value = action.value + val
+						action.score = action.score + val
 						if val > action.high_value then -- update main tactic
 							action.high_value, action.main_tactic = val, tact
 						end
@@ -1026,51 +1023,51 @@ newAI("use_improved_tactical", function(self, t_filter, t_list)
 					-- the closein and escape tactics are mutually exclusive, use only the best value
 					if closein_val and escape_val then
 						if action.is_active then -- negated tactical weights
-							if closein_val < escape_val then action.value = action.value - escape_val else action.value = action.value - closein_val end
+							if closein_val < escape_val then action.score = action.score - escape_val else action.score = action.score - closein_val end
 						else
-							if closein_val > escape_val then action.value = action.value - escape_val else action.value = action.value - closein_val end
+							if closein_val > escape_val then action.score = action.score - escape_val else action.score = action.score - closein_val end
 						end
 					end
-					-- make final adjustments to get the FINAL TACTICAL VALUE
+					-- make final adjustments to get the FINAL TACTICAL SCORE
 					-- adjust for action speed (compared to global)
-					action.value = action.value/speed
+					action.score = action.score/speed
 					
 					-- apply a random bonus (to de-optimize and break ties)
 					mult = rng.float(1, 1 + ai_weight_range)
 					action.mult = mult
 					action.lvl_adjust = lvl_adjust
-					action.value = action.value*lvl_adjust*mult
+					action.score = action.score*lvl_adjust*mult
 					
 				end
-				if log_detail > 0 then print(("%3d: %-40s =%+6.2f[x%-5.2fx%5.2f x%0.2f] (%s)"):format(k, action.tid and " tid:"..action.tid or action.ai and "  ai:"..action.ai or "no action", action.value, action.lvl_adjust, 1/speed, action.mult, action.desc)) end
+				if log_detail > 0 then print(("%3d: %-40s =%+6.2f[x%-5.2fx%5.2f x%0.2f] (%s)"):format(k, action.tid and " tid:"..action.tid or action.ai and "  ai:"..action.ai or "no action", action.score, action.lvl_adjust, 1/speed, action.mult, action.desc)) end
 				-- update the best action
-				if action.value > best_value then sel, best_value = k, action.value end
+				if action.score > best_score then sel, best_score = k, action.score end
 			end
 			
 			action_pick = actions[sel]
 
 			--don't do anything without a useful choice or if the best action doesn't address a significant want
-			--(eliminates choosing relatively useless actions due to scaling of tactical values with level)
-			if best_value > 0.1 and (action_pick.mode == "sustained" or math.abs(want[action_pick.main_tactic]) >= 0.1) then
+			--(eliminates choosing relatively useless actions due to scaling of TACTICAL SCOREs with level)
+			if best_score > 0.1 and (action_pick.mode == "sustained" or math.abs(want[action_pick.main_tactic]) >= 0.1) then
 				if log_detail > 1.5 then -- debugging sort and summarize available actions
 					if action_attempt < 2 then
-						table.sort(actions, function(a, b) return a.value > b.value end)
+						table.sort(actions, function(a, b) return a.score > b.score end)
 						print("[use_tactical AI] === Tactical Action Summary (SORTED) === attempt:", action_attempt, self.uid, self.name)
-						print("  #:type:tid/ai name                          value  [xmLVL xmSPD  xmRNG] (tact=want*value, ...)")
+						print("  #:type:tid/ai name                          score  [xmLVL xmSPD  xmRNG] (tact=want*value, ...)")
 						for k, action in ipairs(actions) do
-						print(("%3d: %-40s =%+6.2f[x%-5.2fx%5.2f x%0.2f] (%s)"):format(k, action.tid and " tid:"..action.tid or action.ai and "  ai:"..action.ai or "no action", action.value, action.lvl_adjust, 1/action.speed, action.mult, action.desc))
+						print(("%3d: %-40s =%+6.2f[x%-5.2fx%5.2f x%0.2f] (%s)"):format(k, action.tid and " tid:"..action.tid or action.ai and "  ai:"..action.ai or "no action", action.score, action.lvl_adjust, 1/action.speed, action.mult, action.desc))
 						end
 					end
 					if config.settings.cheat then  -- debugging top 3 actions to combat log
 						for k, l_action in ipairs(actions) do
 							if k > 3 then break end
-							game.log("#GREY#%3d: %-40s value=%-+4.2f[Lx%-5.2f Sx%5.2f Mx%0.2f] (%s)", k, l_action.tid and " tid:"..l_action.tid or l_action.ai and "  ai:"..l_action.ai or "no l_action", l_action.value, l_action.lvl_adjust, 1/l_action.speed, l_action.mult, l_action.desc)
+							game.log("#GREY#%3d: %-40s score=%-+4.2f[Lx%-5.2f Sx%5.2f Mx%0.2f] (%s)", k, l_action.tid and " tid:"..l_action.tid or l_action.ai and "  ai:"..l_action.ai or "no l_action", l_action.score, l_action.lvl_adjust, 1/l_action.speed, l_action.mult, l_action.desc)
 						end
 					end -- end debugging
 				end
 				if log_detail > 0 then
-					print(("[use_tactical AI]### %s[%d] tactical AI picked action (%s)%s [att:%d, turn %s: {val:%-+4.2f [%s]}"):format(self.name, self.uid, action_pick.main_tactic, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_attempt, game.turn, action_pick.value, action_pick.desc))
-					if log_detail > 1.4 and config.settings.cheat then game.log("%s__%s[%d] tactical AI picked action[att:%d, turn %s]: (%s)%s {%-+4.2f [%s]}", action_pick.tid and "#ORCHID#" or "#ROYAL_BLUE#", self.name, self.uid, action_attempt, game.turn, action_pick.main_tactic, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_pick.value, action_pick.desc) end -- debugging
+					print(("[use_tactical AI]### %s[%d] tactical AI picked action (%s)%s [att:%d, turn %s: {score:%-+4.2f [%s]}"):format(self.name, self.uid, action_pick.main_tactic, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_attempt, game.turn, action_pick.score, action_pick.desc))
+					if log_detail > 1.4 and config.settings.cheat then game.log("%s__%s[%d] tactical AI picked action[att:%d, turn %s]: (%s)%s {%-+4.2f [%s]}", action_pick.tid and "#ORCHID#" or "#ROYAL_BLUE#", self.name, self.uid, action_attempt, game.turn, action_pick.main_tactic, action_pick.ai and "ai:"..action_pick.ai or action_pick.tid and "tid:"..action_pick.tid, action_pick.score, action_pick.desc) end -- debugging
 				end
 				
 				--if log_detail > 0 then print("[use_tactical AI] pre action energy for", self.uid, self.name) table.print(self.energy, "_energy\t") end -- debugging
@@ -1097,18 +1094,18 @@ if log_detail > 1.4 and config.settings.cheat then game.log("#GREY#__[%d]%s ACTI
 					-- return talent used, ai invoked, main tactic fulfilled, action_pick table
 					return action_pick.tid, action_pick.ai, action_pick.main_tactic, action_pick
 				else
-					action_pick.value = 0; self.ai_state.tactic = nil
+					action_pick.score = 0; self.ai_state.tactic = nil
 					print("[use_tactical AI] turn", game.turn, self.uid, self.name, "### FAILED ACTION returned:", action_pick.tid or action_pick.ai, success)
 if log_detail > 1.4 and config.settings.cheat then game.log("__[%d]%s #ORANGE# ACTION FAILED:  %s, FT:%s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end -- debugging
 				end
 			else -- no suitable action to take
 				if log_detail > 0 then 
-					print("[use_tactical AI] turn", game.turn, self.uid, self.name, "### NO ACTION Selected ###: best tactical value =", best_value, action_pick and action_pick.main_tactic, action_pick and want[action_pick.main_tactic])
+					print("[use_tactical AI] turn", game.turn, self.uid, self.name, "### NO ACTION Selected ###: best TACTICAL SCORE =", best_score, action_pick and action_pick.main_tactic, action_pick and want[action_pick.main_tactic])
 if log_detail > 1.4 and config.settings.cheat then game.log("__[%d]%s #SLATE# tactical AI: NO ACTION, best: %s, %s", self.uid, self.name, action_pick.tid or action_pick.ai, action_pick.force_target and ("[force_target: %s[%d] @(%d, %d)]"):format(action_pick.force_target.name, action_pick.force_target.uid, action_pick.force_target.x, action_pick.force_target.y)) end-- debugging
 					end
 				return
 			end
-		until best_value < 0.1 or self.energy.used or action_attempt > 5 -- end final actions evaluation loop
+		until best_score < 0.1 or self.energy.used or action_attempt > 5 -- end final actions evaluation loop
 	end
 end)
 

@@ -101,6 +101,21 @@ function poisonTactics(self, t, aitarget)
 	end
 end
 
+-- controls activating vile poisons by NPCs
+function poison_on_pre_use_ai(self, t, silent, fake)
+	if self.ai_state._advanced_ai then return true end -- let the advanced AI decide to use
+	-- dumb AIs won't activate a poison if it would force another one to be deactivated
+	if self.vile_poisons then
+		local count = 0
+		for tid, _ in pairs(self.vile_poisons) do
+			if tid == t.id then return false end
+			count = count + 1
+		end
+		return count < 2
+	else return true
+	end
+end
+
 newTalent{
 	name = "Apply Poison",
 	type = {"cunning/poisons", 1},
@@ -385,6 +400,7 @@ newTalent{
 	no_energy = true,
 	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
 	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
 	poison_tactics = { disable = {poison = 1.5}, defend = {poison = -0.5}},
 	tactical_imp = poisonTactics,
@@ -416,6 +432,7 @@ newTalent{
 	no_energy = true,
 	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
 	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
 	poison_tactics = {attack = {poison = 1.5}, disable = {poison = 0.5}},
 	tactical_imp = poisonTactics,
@@ -447,6 +464,7 @@ newTalent{
 	no_energy = true,
 	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
 	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
 	poison_tactics = {disable = {poison = 2}},
 	tactical_imp = poisonTactics,
@@ -477,7 +495,8 @@ newTalent{
 	no_break_stealth = true,
 	no_energy = true,
 	target = poisonTarget,
-	tactical = { BUFF = 2 },
+	tactical = { HEAL = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
 	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
 	poison_tactics = {heal = {poison = -2}}, -- heals if a HOSTILE target is affected by the poison
 	tactical_imp = poisonTactics,
@@ -508,6 +527,7 @@ newTalent{
 	no_break_stealth = true,
 	no_energy = true,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
 	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
 	poison_tactics = {attackarea = {NATURE = 1}},
 	tactical_imp = poisonTactics,
@@ -530,7 +550,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-	return ([[Enhances your Deadly Poison with a volatile agent, causing the poison to deal %d%% increased damage and damage to all adjacent enemies.]]):
+	return ([[Enhances your Deadly Poison with a volatile agent, causing the poison to deal %d%% increased damage to the victim and damage all of your enemies adjacent to it.]]):
 	format(t.getEffect(self, t))
 	end,
 }
@@ -562,6 +582,7 @@ newTalent{
 	no_energy = true,
 	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
 	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
 	poison_tactics = function(self, t, aitarget) -- resisted by immunity to stun, stone, and instakill
 		local wt = 1

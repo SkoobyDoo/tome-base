@@ -402,7 +402,7 @@ function _M:aiGetAvailableTalents(aitarget, t_filter, t_list)
 end
 
 --- Randomly find a grid, as close to the desired distance from target coordinates as possible 
---	(called by ActorAI:getTarget for NPC's that need to approach/retreat from a target grid)
+--	(called by ActorAI:getTarget for NPCs that need to approach/retreat from a target grid)
 -- @param[type=table, optional] tg = targeting table determining which grids can be reached via ActorProject:project
 --		(defaults to a radius 10 ball at range 1 centered on self)
 -- @param[type=table, optional] params parameters for finding acceptable grids:

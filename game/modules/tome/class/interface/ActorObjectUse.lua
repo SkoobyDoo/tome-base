@@ -39,7 +39,7 @@ For these items:
 		power = number, power points used when activated
 		use = function(object, who), called when the object is used, should include all effects and special log messages
 		target = table or function(object, who), targeting parameters (interpreted by engine.Target:getType and used by the AI when targeting the power)
-		requires_target<optional> = boolean or function(object, who), if true, the ai will not use the power if it's target is out of range, should generally be false for powers that target the user
+		requires_target<optional> = boolean or function(object, who), if true, the ai will not use the power if its target is out of range, should generally be false for powers that target the user
 		tactical = tactics table for interpretation by the tactical AI (mod.ai.tactical.lua)
 			(may be a function(object, who, aitarget) which returns a table), format:
 			{TACTIC1 = constant or function(who, t, aitarget),

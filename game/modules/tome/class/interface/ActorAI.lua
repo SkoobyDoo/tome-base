@@ -30,6 +30,8 @@ local Talents = require "engine.interface.ActorTalents"
 
 module(..., package.seeall, class.inherit(engine.interface.ActorAI))
 
+config.settings.log_detail_ai = 1 -- debugging general output for AI messages
+
 --- dgdgdgdgdg REMOVE THIS SECTION after the transitional AI phase ---
 -- soft switch enabling new AIs during transition phase
 -- set true to redirect "tactical" to "improved_tactical" and "dumb_talented_simple" to "improved_talented_simple"
@@ -428,7 +430,7 @@ end
 -- @return boolean representing if the talent may be toggled
 -- @return sustained table (if active)
 -- By default:
---		a sustained talent may be activated but not deactivated
+--		a sustained talent may be activated (if it won't deactivate another talent) but not deactivated
 -- If the talent drains resources (has a resource.drain_prop field), however, each resource is checked.
 --		If (when the talent is active) a resource would be depleted:
 --		with no aitarget, an inactive talent may not be activated and an active talent may always be deactivated
@@ -444,6 +446,11 @@ function _M:aiCheckSustainedTalent(t)
 	local is_active = self:isTalentActive(t.id)
 	if log_detail > 2 then print("[aiCheckSustainedTalent]", self.uid, self.name, "checking usability", is_active and "active" or "inactive", t.id) end
 	local ok = not is_active -- by default, sustains can be activated but not deactivated
+	
+	-- don't activate if another talent would be deactivated (sustain_slots), unless the AI is smart enough
+	if ok and t.sustain_slots and not self.ai_state._advanced_ai and self:getSustainSlot(t.sustain_slots) then
+		return false
+	end
 	-- Note: resources are updated every self.global_speed turns
 	if t._may_drain_resources then -- during AI parsing, potential resource drains were detected
 		local chance
@@ -1283,7 +1290,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 	local requires_target = self:getTalentRequiresTarget(t)
 	local hostile_target = aitarget and (self:reactionToward(aitarget) < 0 or aitarget:attr("encased_in_ice"))
 	local is_active = self:isTalentActive(t.id)
-	local weight_mod = 1 -- master tactic weight multiplier
+	local weight_mod = 1 -- master tactic weight modifier
 	local tactics, has_tacs
 	local implicit_tacs, deac_tactics --implicit (resource) tactics, and tactics for sustains that would need to be deactivated
 
@@ -1308,7 +1315,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 		print("[aiTalentTactics] _**_ai_state CACHED TARGET TACTICAL WEIGHTS for talent", t.id) table.print(tac_cache[t.id], "\t_ais_twc_")
 	end
 
-	 -- If possible, get/reconstruct TACTIC WEIGHTs from turn_procs cached data if inputs are consistent
+	 -- If possible, get/reconstruct TACTIC WEIGHTs from turn_procs cached data (for consistent inputs)
 	if tpid_cache and not reset_cache then
 		-- The base and implicit tactics are stored separately so that the final tactics table can be reconstructed
 		-- This allows the cached data to be used for different values of weight_mod (if an instant action changes resource status, for example)
@@ -1316,32 +1323,35 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 		-- Possibly get the tactics from cached data (if present and inputs are consistent)
 		if tpid_cache.tactics and tpid_cache.tactic == cache_tactic and (tpid_cache.target_list == target_list or table.equivalence(tpid_cache.target_list, target_list)) then
 
-			if log_detail > 3 then print("[aiTalentTactics] ***using cached TACTICS DATA ***", t.id, "tactic=", tactic, "cached tactic=", tpid_cache.tactic, "cache_wt_mod=", tpid_cache.wt_mod, "wt_mod=", wt_mod) end
+			if log_detail > 3 then print("[aiTalentTactics] ***using cached TACTICS DATA ***", t.id, "tactic=", tactic, "cached tactic=", tpid_cache.tactic, "tpid_cache.wt_mod=", tpid_cache.wt_mod, "wt_mod=", wt_mod) end
 
-			if tpid_cache.wt_mod == wt_mod then -- same inputs, use last computed tactics directly
+			if tpid_cache.wt_mod == wt_mod then -- exact same inputs, use last computed tactics directly
 				tactics, has_tacs = tpid_cache.tactics, tpid_cache.has_tacs
+				weight_mod = 1 -- tactics don't need any adjustment
 				if log_detail >= 2 then print("[aiTalentTactics] ***TACTICS TABLE (RETRIEVED from cache)***", t.id) table.print(tactics, "\t_ctr_") end
 			else -- different wt_mod, reconstruct last computed tactics from last base_tacs, implicit_tacs
 				tactical, tactics = tpid_cache.tactical, table.clone(tpid_cache.base_tacs)
 				has_tacs, implicit_tacs = tpid_cache.has_tacs, tpid_cache.implicit_tacs
-				
-				weight_mod = (wt_mod and wt_mod or tpid_cache.calc_weight_mod or 1)*(is_active and -1 or 1)
+				weight_mod = (wt_mod and wt_mod*(is_active and -1 or 1) or tpid_cache.calc_weight_mod or 1)
 				if log_detail > 3 then print("\tcached base_tacs:") table.print(tactics, "_*cbt_") end
-				if weight_mod ~= 1 then
+				if weight_mod ~= 1 then -- adjust cached base tactics (once) for wt_mod
 					for tact, val in pairs(tactics) do
 						tactics[tact] = val*weight_mod
 					end
 				end
-				if implicit_tacs then
+				weight_mod = 1
+				if implicit_tacs then -- add any implicit tactics
 					if log_detail > 3 then print("\tcached implicit_tacs:") table.print(implicit_tacs, "_*cit_") end
 					local iwt_mod = (wt_mod or 1)*(is_active and -1 or 1)
 					for tact, val in pairs(implicit_tacs) do
 						tactics[tact] = (tactics[tact] or 0) + val*iwt_mod
 					end
+					implicit_tacs = nil -- ensures it's not added again at end
 				end
 				if log_detail >= 2 then print("[aiTalentTactics] ***TACTICS TABLE (RECONSTRUCTED from cache)***", t.id) table.print(tactics, "\t_ctR_") end
+
 			end
-			cache_tactics = tactics -- for possible comparison (force_cache_test)
+			cache_tactics = tactics -- for possible later comparison with force_cache_test
 		end
 	end
 	if force_cache_test or not tactics then -- perform tactics computation (no cache)
@@ -1370,7 +1380,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 		cache_turns = tactical.__wt_cache_turns or cache_turns
 		reset_cache = reset_cache or game.turn - tac_cache[t.id]._computed >= cache_turns or tac_cache[t.id]._OHash ~= self.aiOHash
 
--- consider marking the weight cache (turn_procs?) table for no save self._no_save_fields (to avoid possible collisions of UID's in _tact_wt_cache[t.id][act.uid]
+		-- consider marking the weight cache (turn_procs?) table for no save self._no_save_fields (to avoid possible collisions of UID's in _tact_wt_cache[t.id][act.uid]
 
 		if reset_cache then
 			if log_detail > 2 then print("[aiTalentTactics] *** creating new target WEIGHT CACHE for talent", t.id, "cache validity(turns):", cache_turns, "aiOHash:", self.aiOHash, "vs (cache):", tac_cache[t.id] and tac_cache[t.id]._OHash) end
@@ -1378,7 +1388,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 		end
 		tid_cache = tac_cache[t.id]
 
-		tactics, weight_mod, has_tacs, implicit_tacs = {}, 1, false -- initialize output data
+		tactics, weight_mod, has_tacs, implicit_tacs = {}, 1, false, nil -- initialize output data
 		local selffire, friendlyfire
 		-- SECOND, get the target(s) for the talent
 		if not targets then
@@ -1509,12 +1519,10 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 					if tgt_weight and tid_cache[tact][act.uid] ~= act.aiDHash then
 						if log_detail > 3 then print("\t__DEFENSIVE HASH reset for tactic:", tact, act.aiDHash, "vs (cached DHash)", tid_cache[tact][act.uid], "for aitarget:", act.uid, act.name) end
 						tgt_weight = nil
---						tid_cache[tact][act.uid] = act.aiDHash
 					end
 
 					local cache_tgt_weight = tgt_weight -- save cached value for possible later check
---					if force_cache_test then tgt_weight = nil end -- force recomputation of tactical weights
-					if force_cache_test then
+					if force_cache_test then -- force recomputation of tactical weights
 						if log_detail > 2 then print("\t__cached weight for tactic:", tact, "vs", act.uid, act.name, "==", tid_cache[tact] and tid_cache[tact][act]) end
 						tgt_weight = nil
 					end
@@ -1608,7 +1616,7 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 								local color, msg if act == aitarget then color, msg = "#YELLOW#", "MAIN TARGET" else color, msg = "#ORANGE#", "off target" end
 								if math.abs(tgt_weight - cache_tgt_weight) > 1e-6 then -- cache mismatch
 									print(("\t***TACTICAL WEIGHT CACHE MISMATCH: [%d]%s %s (%s) on [%d]%s{%s}: %s vs %s(cache)"):format(self.uid, self.name, t.id, tact, act.uid, act.name, msg, tgt_weight, cache_tgt_weight))
-									if log_detail > 1.4 and config.settings.cheat then game.log("_[%d]%s %s%s tactical weight CACHE MISMATCH (%s) vs %s[%d]{%s}: %s vs %s(cache)", self.uid, self.name, color, t.id, tact, act.name, act.uid, msg, tgt_weight, cache_tgt_weight) end -- debugging
+									if log_detail > 1.4 and config.settings.cheat then game.log("_[%d]%s %s%s tactical weight CACHE MISMATCH (%s) vs %s[%d]{%s}: %s vs %s(cache)", self.uid, self.name, color, t.id, tact, act.name, act.uid, msg, tgt_weight, cache_tgt_weight) end
 								elseif log_detail > 3 then
 									print(("\t***TACTICAL WEIGHT CACHE MATCHES: [%d]%s %s (%s) on [%d]%s{%s}: %s vs %s(cache)"):format(self.uid, self.name, t.id, tact, act.uid, act.name, msg, tgt_weight, cache_tgt_weight))
 								end
@@ -1693,18 +1701,20 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 				if aitarget then  -- in combat, reduce weight if the cooldown is > 10 turns, unless the talent cannot be sustained for long
 					weight_mod = math.min(weight_mod, (100/math.min(10, drain_time)/util.bound(self:getTalentCooldown(t) or 1, 2, 50))^.5)
 				end
+				weight_mod = -weight_mod -- negate for active sustains
 			else --reduce weight for inactive sustains if they can't be kept up for at least 10 turns
 				weight_mod = math.min(weight_mod, math.max(0, drain_time-1)/9)
 				--sustain_slots: add the (negative) tactical values for sustain(s) that would be deactivated
 				local slots = t.sustain_slots
-				if slots and self.sustain_slots then -- inlined self:getReplacedSustains(talent) for speed
+				if slots and self.sustain_slots then -- inlined from Actor:getReplacedSustains(talent) for speed
 					if 'string' == type(slots) then slots = {slots} end
 					for _, slot in pairs(slots) do
 						local talid = self.sustain_slots[slot]
 						if talid and self:isTalentActive(talid) then --calculate tactical table for talent that would be turned off
 							local tal = self:getTalentFromId(talid)
+							if log_detail >= 2 then print("[aiTalentTactics]", t.id, "**DEACTIVATES**", talid, ":::") end
 							deac_tactics = self:aiTalentTactics(tal, aitarget, nil, nil, nil, 1) -- use full weight here (ignore cooldown and drain effects for deactivated talent)
-							if log_detail >= 2 then print("[aiTalentTactics]", t.id, "**DEACTIVATES**", talid, "tactics:", string.fromTable(deac_tactics)) end
+							if log_detail >= 2 then print("[aiTalentTactics]", t.id, "**DEACTIVATION TACTICS**", talid, "tactics:", string.fromTable(deac_tactics)) end
 							if deac_tactics then -- add to the tactics table
 								table.merge(tactics, deac_tactics, true, nil, nil, true) -- deep merge, add numbers
 								has_tacs = true
@@ -1715,7 +1725,6 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 			end
 			if log_detail >= 2 then print("\t--- sustained weight modifier adjustment:", weight_mod, drain_time, "usable_turns, cooldown turns:", self:getTalentCooldown(t), is_active and "active" or "inactive") end
 		end -- end sustained branch
-		
 		if tp_cache_tactics then -- cache computed tactical info to turn_procs to reconstruct the tactical table on later calls
 			tpid_cache.base_tacs, tpid_cache.tactics = table.clone(tactics), tactics -- save base tactics (weight_mod not applied)
 			tpid_cache.implicit_tacs = implicit_tacs
@@ -1723,21 +1732,22 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 				print("  ***tp_caching base tactical table,", self.uid, self.name, t.id, tpid_cache.base_tacs) table.print(tpid_cache.base_tacs, "\t_bt_")
 				if implicit_tacs then print("  ***tp_caching implicit tactics:") table.print(implicit_tacs, "\t_it_") end
 			end
+			tpid_cache.wt_mod = wt_mod -- cache input wt_mod
 			tpid_cache.has_tacs = has_tacs
 			tpid_cache.calc_weight_mod = weight_mod -- cache the computed weight_mod
 		end
+		if wt_mod then weight_mod = weight_mod*wt_mod end
 	end -- end tactics computation (no cache) branch
-	-- apply the weight_mod, negating weights for active sustains
-	weight_mod = (wt_mod or weight_mod)*(is_active and -1 or 1)
+	-- apply the weight modifier (weight_mod, will be negated for active sustains)
 	if log_detail >= 2 then print("\t\tis_active=", is_active, "wt_mod=", wt_mod, "weight_mod=", weight_mod) end
 	if weight_mod ~= 1 then
 		for tact, val in pairs(tactics) do
 			tactics[tact] = val*weight_mod
 		end
 	end
-	tpid_cache.weight_mod = weight_mod -- cache the weight_mod used
-	-- add any implicit tactics (not affected by weight_mod)
+	-- add any implicit tactics (not affected by weight_mod, but negated for active sustains)
 	if implicit_tacs then
+		--if log_detail >= 2 then print("  ***adding implicit tactics:") table.print(implicit_tacs, "\t_it_") end -- debugging
 		local iwt_mod = (wt_mod or 1)*(is_active and -1 or 1)
 		for tact, val in pairs(implicit_tacs) do
 			tactics[tact] = (tactics[tact] or 0) + val*iwt_mod

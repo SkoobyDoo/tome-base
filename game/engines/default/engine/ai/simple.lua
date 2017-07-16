@@ -103,6 +103,7 @@ newAI("flee_simple", function(self)
 	end
 end)
 
+-- this can fail frequently.  Could use a more sophisticated AI to flee around/out of corners, etc.
 newAI("flee_dmap", function(self)
 	if self.ai_target.actor then
 		local a = self.ai_target.actor
@@ -143,7 +144,7 @@ newAI("move_astar", function(self, add_check)
 			local moved = self:move(path[1].x, path[1].y)
 			if moved then return moved
 			else
-				if config.settings.log_detail_ai > 0 then print("[move_astar] invalid Astar node", path[1].x, path[1].y, "using move_simple") end
+				if config.settings.log_detail_ai > 0 then print("[move_astar] invalid Astar node, using move_simple", path[1].x, path[1].y, "using move_simple") end
 				return self:runAI("move_simple") 
 			end
 		end
