@@ -30,7 +30,7 @@ local Talents = require "engine.interface.ActorTalents"
 
 module(..., package.seeall, class.inherit(engine.interface.ActorAI))
 
-config.settings.log_detail_ai = 1 -- debugging general output for AI messages
+--config.settings.log_detail_ai = 0 -- debugging general output for AI messages
 
 --- dgdgdgdgdg REMOVE THIS SECTION after the transitional AI phase ---
 -- soft switch enabling new AIs during transition phase
@@ -218,7 +218,7 @@ end
 -- The defensive hash value is used as a fingerprint by aiTalentTactics when updating its cache
 -- Update as needed (for custom tactics in the tactical AI)
 _M.aiDHashProps = {}
-local DHashProps = {"aiDHashvalue", "fly", "levitation", "never_move", "encased_in_ice", "stoned", "invulnerable", "negative_status_effect_immune", "mental_negative_status_effect_immune", "physical_negative_status_effect_immune", "spell_negative_status_effect_immune"}
+local DHashProps = {"aiDHashvalue", "fly", "levitation", "never_move", "encased_in_ice", "stoned", "invulnerable", "negative_status_effect_immune", "mental_negative_status_effect_immune", "physical_negative_status_effect_immune", "spell_negative_status_effect_immune", "lucid_dreamer"}
 for typ, tag in pairs(Actor.StatusTypes) do
 	table.insert(DHashProps, type(tag) == "string" and tag or typ .. "_immune")
 end
@@ -246,6 +246,7 @@ end
 --		returns the result of the "archery" function if the talent is an archery talent
 -- "offhand" -- as "weapon" but for offhand (offhand penalty applies, 0 multiplier if unarmed)
 -- "archery" -- returns the ammo DamageType and up to 2x multiplier based on launcher weapon skill (or 0 if no archery weapon/ammo)
+-- "sleep" -- checks the target's "lucid_dreamer" attribute
 _M.aiSubstDamtypes = {
 	weapon = function(self, t, target) -- get mainhand DamageType and special weight modifier (or switch to archery)
 		if self:getTalentSpeedType(t) == "archery" then return self.aiSubstDamtypes.archery(self, t, target) end
@@ -304,6 +305,9 @@ _M.aiSubstDamtypes = {
 			DType = ammo.combat.damtype or DamageType.PHYSICAL
 		end
 		return DType, wt
+	end,
+	sleep = function(self, t, target) -- Sleep immunity is modified by the "lucid_dreamer" attribute
+		return sleep, target:attr("lucid_dreamer") and 0 or 1
 	end
 }
 

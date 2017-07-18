@@ -25,7 +25,7 @@ newTalent{
 	random_ego = "attack",
 	mana = 12,
 	cooldown = 8,
-	tactical = { ATTACKAREA = { COLD = 2 } },
+	tactical = { DISABLE = {stun = 0.5}, ATTACKAREA = { COLD = 1 } },
 	range = 8,
 	radius = 3,
 	direct_hit = true,
@@ -74,7 +74,7 @@ newTalent{
 		if self:attr("freeze_next_cd_reduce") then mod = 1 - self.freeze_next_cd_reduce self:attr("freeze_next_cd_reduce", -self.freeze_next_cd_reduce) end
 		return math.floor(self:combatTalentLimit(t, 20, 8, 12, true)) * mod
 	end, -- Limit cooldown <20
-	tactical = { ATTACK = { COLD = 1 }, DISABLE = { stun = 3 } },
+	tactical = { ATTACK = { COLD = 2.5 }, DISABLE = { stun = 1.5 } },
 	range = 10,
 	direct_hit = true,
 	reflectable = true,

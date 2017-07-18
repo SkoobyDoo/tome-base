@@ -311,7 +311,8 @@ newInscription{
 	name = "Infusion: Insidious Poison",
 	type = {"inscriptions/infusions", 1},
 	points = 1,
-	tactical = { ATTACK = { NATURE = 1 }, DISABLE= {poison = 1}, CURE = function(self, t, target)
+	tactical = { ATTACK = { NATURE = 1 }, DISABLE= {poison = 1},
+		SELF = {CURE = function(self, t, target)
 			local nb = 0
 			local data = self:getInscriptionData(t.short_name)
 			for eff_id, p in pairs(self.tmp) do
@@ -319,7 +320,7 @@ newInscription{
 				if e.type == "magical" and e.status == "detrimental" then nb = nb + 1 end
 			end
 			return nb
-		end },
+		end }},
 	requires_target = true,
 	range = function(self, t)
 		local data = self:getInscriptionData(t.short_name)
