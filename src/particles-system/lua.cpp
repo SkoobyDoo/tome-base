@@ -371,11 +371,11 @@ static int p_new(lua_State *L) {
 						g = new OriginPosGenerator();
 						break;
 					case GeneratorsList::DiskPosGenerator:
-						g = new DiskPosGenerator(lua_float(L, true, -1, "radius", 100));
+						g = new DiskPosGenerator(lua_float(L, true, -1, "min_angle", 0), lua_float(L, true, -1, "max_angle", M_PI*2), lua_float(L, true, -1, "radius", 100));
 						g->basePos(lua_float(L, true, -1, "sx", 0), lua_float(L, true, -1, "sy", 0));
 						break;
 					case GeneratorsList::CirclePosGenerator:
-						g = new CirclePosGenerator(lua_float(L, true, -1, "radius", 100), lua_float(L, true, -1, "width", 10));
+						g = new CirclePosGenerator(lua_float(L, true, -1, "min_angle", 0), lua_float(L, true, -1, "max_angle", M_PI*2), lua_float(L, true, -1, "radius", 100), lua_float(L, true, -1, "width", 10));
 						g->basePos(lua_float(L, true, -1, "sx", 0), lua_float(L, true, -1, "sy", 0));
 						break;
 					case GeneratorsList::TrianglePosGenerator:

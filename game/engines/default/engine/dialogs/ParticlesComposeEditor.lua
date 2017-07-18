@@ -181,11 +181,15 @@ local specific_uis = {
 		[PC.BasicTextureGenerator] = {name="BasicTextureGenerator", category="texture", fields={}},
 		[PC.OriginPosGenerator] = {name="OriginPosGenerator", category="position", fields={}},
 		[PC.DiskPosGenerator] = {name="DiskPosGenerator", category="position", fields={
-			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
+			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150, line=true},
+			{type="number", id="min_angle", text="Min angle: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
+			{type="number", id="max_angle", text="Max angle: ", min=-math.pi*2, max=math.pi*2, default=math.pi*2, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 		}},
 		[PC.CirclePosGenerator] = {name="CirclePosGenerator", category="position", fields={
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
-			{type="number", id="width", text="Width: ", min=0, max=10000, default=20},
+			{type="number", id="width", text="Width: ", min=0, max=10000, default=20, line=true},
+			{type="number", id="min_angle", text="Min angle: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) print("!!!!", type(v) == "number", tonumber(v), v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
+			{type="number", id="max_angle", text="Max angle: ", min=-math.pi*2, max=math.pi*2, default=math.pi*2, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 		}},
 		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", category="position", fields={
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}, line=true},
@@ -216,16 +220,16 @@ local specific_uis = {
 			{type="number", id="max_stop_size", text="Max stop: ", min=0.00001, max=1000, default=3},
 		}},
 		[PC.BasicRotationGenerator] = {name="BasicRotationGenerator", category="rotation", fields={
-			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=360, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_rot", text="Min rotation: ", min=0, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
+			{type="number", id="max_rot", text="Max rotation: ", min=0, max=math.pi*2, default=math.pi*2, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 		}},
 		[PC.RotationByVelGenerator] = {name="RotationByVelGenerator", category="rotation", fields={
-			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_rot", text="Min rotation: ", min=0, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation: ", min=0, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.BasicRotationVelGenerator] = {name="BasicRotationVelGenerator", category="rotation", fields={
-			{type="number", id="min_rot", text="Min rotation velocity: ", min=0, max=36000, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=36000, default=360, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_rot", text="Min rotation velocity: ", min=0, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
+			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=math.pi*2, default=math.pi*2, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 		}},
 		[PC.StartStopColorGenerator] = {name="StartStopColorGenerator", category="color", fields={
 			{type="color", id="min_color_start", text="Min start color: ", default=colors_alphaf.GOLD(1)},
@@ -456,14 +460,14 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 		field.to = field.to or function(v) return v end
 		if field.type == "number" then
 			if not spe[field.id] then spe[field.id] = field.default end
-			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "bool" then
 			if not spe[field.id] then spe[field.id] = field.default end
 			adds[#adds+1] = Checkbox.new{title=field.text, default=field.to(spe[field.id]), on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "point" then
 			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
-			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id][1]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
-			adds[#adds+1] = parametrizedBox{title="x", number=field.to(spe[field.id][2]), min=field.min, max=field.max, chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id][1]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = parametrizedBox{title="x", number=field.to(spe[field.id][2]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "color" then
 			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
 			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}

@@ -79,8 +79,9 @@ public:
 
 class DiskPosGenerator : public Generator {
 	float radius;
+	float min_angle, max_angle;
 public:
-	DiskPosGenerator(float radius) : radius(radius) {};
+	DiskPosGenerator(float min_angle, float max_angle, float radius) : min_angle(min_angle), max_angle(max_angle), radius(radius) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
@@ -88,8 +89,9 @@ public:
 class CirclePosGenerator : public Generator {
 	float radius;
 	float width;
+	float min_angle, max_angle;
 public:
-	CirclePosGenerator(float radius, float width) : radius(radius), width(width) {};
+	CirclePosGenerator(float min_angle, float max_angle, float radius, float width) : min_angle(min_angle), max_angle(max_angle), radius(radius), width(width) {};
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 };
