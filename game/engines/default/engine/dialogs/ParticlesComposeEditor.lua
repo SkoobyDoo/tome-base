@@ -574,7 +574,7 @@ function _M:makeUI()
 			self:displayParameter(add, name, value)
 		end
 	end					
-	add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add parameter", auto_width=1, auto_height=1, fct=function() self:addParameter() end})
+	add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addParameter() end}, Textzone.new{text="add parameter", auto_width=1, auto_height=1, fct=function() self:addParameter() end})
 	add(Separator.new{dir="vertical", size=self.iw})
 	add(10)
 
