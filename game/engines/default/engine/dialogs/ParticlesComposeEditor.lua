@@ -202,8 +202,8 @@ local specific_uis = {
 		}},
 		[PC.DirectionVelGenerator] = {name="DirectionVelGenerator", category="movement", fields={
 			{type="point", id="from", text="From: ", min=-10000, max=10000, default={0, 0}, line=true},
-			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
-			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
+			{type="number", id="min_vel", text="Min velocity: ", min=-1000, max=1000, default=50},
+			{type="number", id="max_vel", text="Max velocity: ", min=-1000, max=1000, default=150},
 		}},
 		[PC.BasicSizeGenerator] = {name="BasicSizeGenerator", category="size", fields={
 			{type="number", id="min_size", text="Min size: ", min=0.00001, max=1000, default=10},
@@ -216,16 +216,16 @@ local specific_uis = {
 			{type="number", id="max_stop_size", text="Max stop: ", min=0.00001, max=1000, default=3},
 		}},
 		[PC.BasicRotationGenerator] = {name="BasicRotationGenerator", category="rotation", fields={
-			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=360, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.RotationByVelGenerator] = {name="RotationByVelGenerator", category="rotation", fields={
-			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_rot", text="Min rotation: ", min=0, max=360, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation: ", min=0, max=360, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.BasicRotationVelGenerator] = {name="BasicRotationVelGenerator", category="rotation", fields={
-			{type="number", id="min_rot", text="Min rotation velocity: ", min=0, max=36000, default=0, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
-			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=36000, default=360, from=function(v) return math.rad(v) end, to=function(v) return math.deg(v) end},
+			{type="number", id="min_rot", text="Min rotation velocity: ", min=0, max=36000, default=0, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
+			{type="number", id="max_rot", text="Max rotation velocity: ", min=0, max=36000, default=360, from=function(v) return type(v)=="number" and math.rad(v) or v end, to=function(v) return math.deg(v) end},
 		}},
 		[PC.StartStopColorGenerator] = {name="StartStopColorGenerator", category="color", fields={
 			{type="color", id="min_color_start", text="Min start color: ", default=colors_alphaf.GOLD(1)},
@@ -406,6 +406,7 @@ function _M:addNew(kind, into)
 end
 
 local function getParametrizedColor(p)
+	if not p then return "CRIMSON" end
 	local f, err = loadstring("return "..p)
 	if not f then print("Param error", err) return "LIGHT_RED" end
 	local env = table.clone(pdef.parameters or {}, true)
@@ -865,6 +866,9 @@ function _M:init()
 	end
 
 	self:regenParticle()
+
+	-- local function autosave() self.renderer:tween(30, "wait", function() game:onTickEnd(function() self.uidialog:saveAs("__autosave__", true) autosave() end) end) end
+	-- autosave()
 end
 
 function _M:toggleBloom()
@@ -1140,31 +1144,37 @@ function UIDialog:saveDef(w)
 	w(0, "}\n")
 end
 
+function UIDialog:saveAs(txt, silent)
+	local mod = game.__mod_info
+
+	local basedir = "/data/gfx/particles/"
+	local path
+	if mod.team then
+		basedir = "/save/"
+		path = fs.getRealPath(basedir)
+	else
+		path = mod.real_path..basedir
+	end
+	if not path then return end
+	local restore = fs.getWritePath()
+	fs.setWritePath(path)
+	local f = fs.open("/"..txt..".pc", "w")
+	self:saveDef(function(indent, str) f:write(string.rep("\t", indent)..str) end)
+	f:close()
+	fs.setWritePath(restore)
+	if not silent then
+		self.master.bignews:saySimple(60, "#GOLD#Saved to "..tostring(fs.getRealPath(basedir..txt..".pc")))
+		core.display.setWindowTitle("Particles Editor: "..txt)
+		self.master.current_filename = txt
+	end
+end
+
 function UIDialog:save()
 	local d = Dialog.new("Save particle effects to /data/gfx/particles/", 1, 1)
 
 	local function exec(txt)
-		local mod = game.__mod_info
 		game:unregisterDialog(d)
-
-		local basedir = "/data/gfx/particles/"
-		local path
-		if mod.team then
-			basedir = "/save/"
-			path = fs.getRealPath(basedir)
-		else
-			path = mod.real_path..basedir
-		end
-		if not path then return end
-		local restore = fs.getWritePath()
-		fs.setWritePath(path)
-		local f = fs.open("/"..txt..".pc", "w")
-		self:saveDef(function(indent, str) f:write(string.rep("\t", indent)..str) end)
-		f:close()
-		fs.setWritePath(restore)
-		self.master.bignews:saySimple(60, "#GOLD#Saved to "..tostring(fs.getRealPath(basedir..txt..".pc")))
-		core.display.setWindowTitle("Particles Editor: "..txt)
-		self.master.current_filename = txt
+		self:saveAs(txt, false)
 	end
 
 	local box = Textbox.new{title="Filename (without .pc extension): ", chars=80, text=self.master.current_filename or "", fct=function(txt) if #txt > 0 then
