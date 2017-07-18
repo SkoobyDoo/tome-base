@@ -23,8 +23,60 @@ extern "C" {
 }
 #include "particles-system/system.hpp"
 #include "core_loader.hpp"
+#include <condition_variable>
+#ifdef MINGW_WIN_THREAD_COMPAT
+#include "mingw.condition_variable.h"
+#endif
 
 namespace particles {
+
+int PC_lua_ref = LUA_NOREF;
+int math_mt_lua_ref = LUA_NOREF;
+
+/********************************************************************
+ ** ThreadedRunner
+ ********************************************************************/
+class ThreadedRunner{
+public:
+	mutex mux;
+	thread th;
+	condition_variable cv;
+	float keyframes_accumulator = 0;
+
+	ThreadedRunner();
+	void onKeyframe(float nb_keyframes);
+};
+
+static ThreadedRunner th_runner_singleton;
+static inline bool check_frames() { return th_runner_singleton.keyframes_accumulator > 0; }
+
+static void threaded_runner_thread() {
+	while (true) {
+		unique_lock<mutex> lock(th_runner_singleton.mux);
+		th_runner_singleton.cv.wait(lock, check_frames);
+		float kf = th_runner_singleton.keyframes_accumulator;
+		th_runner_singleton.keyframes_accumulator = 0;
+		
+		for (auto e : Ensemble::all_ensembles) {
+			e->update(kf);
+		}
+		lock.unlock();
+	}
+}
+
+ThreadedRunner::ThreadedRunner() : th(threaded_runner_thread) {
+	printf("[ParticlesCompose] started updater thread\n");
+}
+
+void ThreadedRunner::onKeyframe(float nb_keyframes) {
+	lock_guard<mutex> guard(mux);
+	keyframes_accumulator += nb_keyframes;
+	cv.notify_all();
+}
+
+extern "C" void threaded_runner_keyframe(float nb_keyframes) {
+	th_runner_singleton.onKeyframe(nb_keyframes);
+}
 
 /********************************************************************
  ** ParticlesData
@@ -130,14 +182,21 @@ void System::finish() {
 }
 
 void System::shift(float x, float y, bool absolute) {
+	lock_guard<mutex> guard(mux);
+
 	for (auto &e : emitters) e->shift(x, y, absolute);
 }
 
 void System::fireTrigger(string &name) {
+	lock_guard<mutex> guard(mux);
+
 	for (auto &e : emitters) e->fireTrigger(name);
 }
 
 void System::update(float nb_keyframes) {
+	lock_guard<mutex> lguard(list.mux);
+	lock_guard<mutex> guard(mux);
+
 	uint8_t emitters_active_not_dormant = 0;
 	float dt = nb_keyframes / 30.0f;
 	for (auto e = emitters.begin(); e != emitters.end(); ) {
@@ -166,11 +225,13 @@ void System::draw(mat4 &model) {
 unordered_map<string, spTextureHolder> Ensemble::stored_textures;
 unordered_map<string, spNoiseHolder> Ensemble::stored_noises;
 unordered_map<string, spShaderHolder> Ensemble::stored_shaders;
+unordered_map<string, spDefHolder> Ensemble::stored_defs;
+unordered_set<Ensemble*> Ensemble::all_ensembles;
 
 spTextureHolder Ensemble::getTexture(const char *tex_str) {
 	auto it = stored_textures.find(tex_str);
 	if (it != stored_textures.end()) {
-		printf("Reusing texture %s : %d\n", tex_str, it->second->tex->tex);
+		// printf("Reusing texture %s : %d\n", tex_str, it->second->tex->tex);
 		return it->second;
 	}
 
@@ -184,7 +245,7 @@ spTextureHolder Ensemble::getTexture(const char *tex_str) {
 spNoiseHolder Ensemble::getNoise(const char *noise_str) {
 	auto it = stored_noises.find(noise_str);
 	if (it != stored_noises.end()) {
-		printf("Reusing noise %s\n", noise_str);
+		// printf("Reusing noise %s\n", noise_str);
 		return it->second;
 	}
 
@@ -198,7 +259,7 @@ spNoiseHolder Ensemble::getNoise(const char *noise_str) {
 spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	auto it = stored_shaders.find(shader_str);
 	if (it != stored_shaders.end()) {
-		printf("Reusing shader %s : %d\n", shader_str, it->second->shader->shader);
+		// printf("Reusing shader %s : %d\n", shader_str, it->second->shader->shader);
 		return it->second;
 	}
 
@@ -241,17 +302,88 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	return sh;
 }
 
-Ensemble::~Ensemble() {
-	printf("===Ensemble destroyed\n");
-	if (event_cb_ref != LUA_NOREF) {
-		luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
+int Ensemble::getDefinition(lua_State *L, const char *def_str) {
+	auto it = stored_defs.find(def_str);
+	if (it != stored_defs.end()) {
+		// printf("Reusing def %s : %d\n", def_str, it->second->ref);
+		return it->second->ref;
 	}
+
+	luaL_loadfile(L, def_str); // Load file
+	lua_newtable(L); // Make new env table
+	lua_pushliteral(L, "PC"); // Push particle composer table into the env
+	lua_rawgeti(L, LUA_REGISTRYINDEX, PC_lua_ref);
+	lua_rawset(L, -3);
+	lua_setfenv(L, -2); // Set the env
+
+	// Get the data
+	if (lua_pcall(L, 0, 1, 0)) {
+		printf("ParticlesComposer def get error: %s\n", lua_tostring(L, -1));
+		lua_pop(L, 1);
+		lua_newtable(L);
+	}
+
+	// Get a ref on it
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	spDefHolder dh = make_shared<DefHolder>(ref);
+
+	stored_defs.insert({def_str, dh});
+	return ref;
+}
+
+float Ensemble::getExpression(lua_State *L, const char *expr_str, int env_id) {
+	float ret = 0;
+	auto it = stored_defs.find(expr_str);
+	if (it != stored_defs.end()) {
+		// printf("Reusing expr %s : %d\n", expr_str, it->second->ref);
+		lua_rawgeti(L, LUA_REGISTRYINDEX, it->second->ref);
+		lua_pushvalue(L, env_id);
+		lua_setfenv(L, -2); // Set the env
+		if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
+		ret = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		return ret;
+	}
+
+	string expr("return ");
+	expr += expr_str;
+	luaL_loadstring(L, expr.c_str()); // Load expression
+	lua_pushvalue(L, env_id);
+	lua_setfenv(L, -2); // Set the env
+
+	// Get a ref on it
+	lua_pushvalue(L, -1);
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	spDefHolder dh = make_shared<DefHolder>(ref);
+
+	stored_defs.insert({expr_str, dh});
+
+	// Call it
+	if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
+	ret = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+
+	return ret;
+}
+
+Ensemble::Ensemble() {
+	printf("===Ensemble created, %lx\n", this);
+	lock_guard<mutex> lock(th_runner_singleton.mux);
+	all_ensembles.insert(this);
+}
+
+Ensemble::~Ensemble() {
+	printf("===Ensemble destroyed, %lx\n", this);
+	if (event_cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
+	lock_guard<mutex> lock(th_runner_singleton.mux);
+	all_ensembles.erase(this);
 }
 
 void Ensemble::gcTextures() {
 	stored_textures.clear();
 	stored_noises.clear();
 	stored_shaders.clear();
+	stored_defs.clear();
 	default_particlescompose_shader.reset();
 }
 
@@ -273,10 +405,8 @@ void Ensemble::shift(float x, float y, bool absolute) {
 }
 void Ensemble::update(float nb_keyframes) {
 	nb_keyframes *= speed;
-	dead = true;
 	for (auto &s : systems) {
 		s->update(nb_keyframes);
-		if (!s->isDead()) dead = false;
 	}
 }
 
@@ -288,9 +418,12 @@ void Ensemble::setEventsCallback(int ref) {
 }
 
 void Ensemble::draw(mat4 model) {
+	dead = true;
+
 	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
 	for (auto &s : systems) {
 		s->draw(model);
+		if (!s->isDead()) dead = false;
 	}
 	if (event_cb_ref != LUA_NOREF && events_triggers.size()) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, event_cb_ref);

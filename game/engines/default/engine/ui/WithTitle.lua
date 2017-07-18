@@ -39,9 +39,11 @@ function _M:generateTitle(h)
 		self.title_h = 0
 		return
 	end
+	h = h or self.h
 	self.title_w = self.title_w or self.font:size(self.size_title)
 	self.title_h = self.font:height()
 
+	if self.title_do then self.title_do:removeFromParent() end
 	self.title_do = core.renderer.text(self.font)
 	self.title_do:text(self.title or "")
 	self.title_do:maxWidth(self.title_w)

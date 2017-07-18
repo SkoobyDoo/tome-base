@@ -639,12 +639,6 @@ static void call_draw(float nb_keyframes)
 
 	if (nb_keyframes > NORMALIZED_FPS) nb_keyframes = NORMALIZED_FPS;
 
-	// Notify the particles threads that there are new keyframes
-	if (!anims_paused) {
-		thread_particle_new_keyframes(nb_keyframes);
-	}
-	interface_realtime(nb_keyframes);
-
 	if (current_game != LUA_NOREF)
 	{
 		lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
@@ -657,6 +651,14 @@ static void call_draw(float nb_keyframes)
 	}
 
 	mouse_draw_drag();
+
+	// Notify the particles threads that there are new keyframes
+	// We do it at the END so they have all the time until next frame to compute
+	if (!anims_paused) {
+		thread_particle_new_keyframes(nb_keyframes);
+		threaded_runner_keyframe(nb_keyframes);
+	}
+	interface_realtime(nb_keyframes);
 }
 
 void on_redraw()
@@ -675,14 +677,12 @@ void on_redraw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	frames_count = ((float)ticks - last_ticks) / ((float)1000.0 / (float)NORMALIZED_FPS);
-	// printf("ticks %d :: %f :: %f\n", ticks - last_ticks, ((float)1000.0 / (float)NORMALIZED_FPS), frames_count);
 	float nb_keyframes = frames_count;
 	run_physic_simulation(nb_keyframes);
 	call_draw(nb_keyframes);
 	keyframes_done += nb_keyframes;
 	frames_done++;
 
-	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);
 
 	// ticks_per_frame = /;

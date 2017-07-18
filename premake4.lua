@@ -67,6 +67,7 @@ configuration "windows"
 		"/Test/xcompile/local/include/SDL2",
 		"/Test/xcompile/local/include",
 	}
+	defines{'MINGW_WIN_THREAD_COMPAT'}
 else
 configuration "windows"
  	libdirs {

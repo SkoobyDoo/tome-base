@@ -25,6 +25,11 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#ifdef MINGW_WIN_THREAD_COMPAT
+#include "mingw.thread.h"
+#include "mingw.mutex.h"
+#include "mingw.condition_variable.h"
+#endif
 #include <atomic>
 
 class b2TaskGroup;

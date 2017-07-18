@@ -60,6 +60,8 @@ RendererGL2::~RendererGL2() {
 }
 
 void RendererGL2::update(ParticlesData &p) {
+	lock_guard<mutex> guard(p.mux);
+
 	vertexes.clear();
 	vec4* pos = p.getSlot4(POS);
 	vec4* tex = p.getSlot4(TEXTURE);

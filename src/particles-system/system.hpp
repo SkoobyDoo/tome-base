@@ -33,12 +33,22 @@ extern "C" {
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <thread>
+#include <mutex>
+#ifdef MINGW_WIN_THREAD_COMPAT
+#include "mingw.thread.h"
+#include "mingw.mutex.h"
+#endif
+#include <atomic>
 
 #define GLM_FORCE_INLINE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/ext.hpp"
+
+#include "renderer-moderngl/Interfaces.hpp"
 
 #include "core_loader.hpp"
 
@@ -61,6 +71,7 @@ public:
 	uint32_t count = 0, max = 0;
 	array<unique_ptr<vec2[]>, ParticlesSlots2::MAX2> slots2;
 	array<unique_ptr<vec4[]>, ParticlesSlots4::MAX4> slots4;
+	mutex mux;
 
 	ParticlesData();
 
@@ -128,6 +139,19 @@ public:
 };
 typedef shared_ptr<ShaderHolder> spShaderHolder;
 
+class DefHolder {
+public:
+	int ref = LUA_NOREF;
+	DefHolder(int ref) : ref(ref) {
+		printf("Creating def\n");
+	};
+	~DefHolder() {
+		printf("Freeing def\n");
+		if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+	};
+};
+typedef shared_ptr<DefHolder> spDefHolder;
+
 extern spShaderHolder default_particlescompose_shader;
 
 #include "particles-system/triggers.hpp"
@@ -141,6 +165,8 @@ class System {
 	friend class Emitter;
 	friend class Ensemble;
 private:
+	mutex mux;
+
 	bool dead = false;
 	ParticlesData list;
 
@@ -169,16 +195,21 @@ public:
 	void print();
 };
 
-
+class ThreadedRunner;
 class Ensemble {
-private:
+	friend ThreadedRunner;
+protected:
 	static unordered_map<string, spTextureHolder> stored_textures;
 	static unordered_map<string, spNoiseHolder> stored_noises;
 	static unordered_map<string, spShaderHolder> stored_shaders;
+	static unordered_map<string, spDefHolder> stored_defs;
 public:
+	static unordered_set<Ensemble*> all_ensembles;
 	static spTextureHolder getTexture(const char *tex_str);
 	static spNoiseHolder getNoise(const char *noise_str);
 	static spShaderHolder getShader(lua_State *L, const char *shader_str);
+	static int getDefinition(lua_State *L, const char *def_str);
+	static float getExpression(lua_State *L, const char *expr_str, int env_id);
 	static void gcTextures();
 
 private:
@@ -190,6 +221,7 @@ private:
 	float zoom = 1.0;
 	vector<unique_ptr<System>> systems;
 public:
+	Ensemble();
 	~Ensemble();
 
 	inline bool isDead() { return dead; };
@@ -215,6 +247,9 @@ public:
 	void draw(mat4 model);
 	void draw(float x, float y);
 };
+
+extern int PC_lua_ref;
+extern int math_mt_lua_ref;
 
 }
 
