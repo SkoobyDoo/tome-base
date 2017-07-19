@@ -195,6 +195,8 @@ public:
 	void print();
 };
 
+// typedef vector<tuple<GeneratorsList,Generator*>> vParametrizedGenerators;
+
 class ThreadedRunner;
 class Ensemble {
 	friend ThreadedRunner;
@@ -220,6 +222,11 @@ private:
 	float speed = 1.0;
 	float zoom = 1.0;
 	vector<unique_ptr<System>> systems;
+
+	int parameters_ref = LUA_NOREF;
+
+	// vParametrizedGenerators parametrized_generators;
+	// vector<Updater*> parametrized_updaters;
 public:
 	Ensemble();
 	~Ensemble();
@@ -241,6 +248,10 @@ public:
 	void setEventsCallback(int ref);
 
 	void add(System *system);
+	// void parametrizeGenerator(GeneratorsList g_id, Generator *g);
+	// vParametrizedGenerators& getParametrizeGenerators();
+	void storeParametersTable(int ref) { parameters_ref = ref; }
+
 	void shift(float x, float y, bool absolute);
 
 	void update(float nb_keyframes);
@@ -250,6 +261,7 @@ public:
 
 extern int PC_lua_ref;
 extern int math_mt_lua_ref;
+extern void lua_particles_system_update_params(lua_State *L, Ensemble *e);
 
 }
 

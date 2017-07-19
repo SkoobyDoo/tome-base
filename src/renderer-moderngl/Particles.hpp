@@ -69,6 +69,7 @@ public:
 	inline void setSpeed(float speed) { if (e) e->setSpeed(speed); }
 	inline void fireTrigger(string &name) { if (e) e->fireTrigger(name); }
 	inline void setEventsCallback(int lua_ref) { if (e) e->setEventsCallback(lua_ref); }
+	inline void updateParams(lua_State *L) { /*if (e) particles::lua_particles_system_update_params(L, e);*/ }
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
 };

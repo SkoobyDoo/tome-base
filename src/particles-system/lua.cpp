@@ -147,6 +147,14 @@ static int p_toscreen(lua_State *L)
 	return 0;
 }
 
+static int p_params(lua_State *L)
+{
+	Ensemble *e = *(Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	return 0;
+}
+
+static bool parametrizing = false;
+
 static inline float lua_float(lua_State *L, int table_idx, uint8_t field, float def) {
 	float ret = def;
 	lua_pushnumber(L, field);
@@ -183,6 +191,7 @@ static inline float lua_float(lua_State *L, bool allow_param, int table_idx, con
 	else if (allow_param && lua_isstring(L, -1)) {
 		const char *expr = lua_tostring(L, -1);
 		ret = Ensemble::getExpression(L, expr, 2);
+		parametrizing = true;
 	}
 	lua_pop(L, 1);
 	return ret;
@@ -197,9 +206,9 @@ static inline vec2 lua_vec2(lua_State *L, bool allow_param, int table_idx, const
 		lua_rawgeti(L, -2, 2);
 
 		if (lua_isnumber(L, -2)) ret.x = lua_tonumber(L, -2);
-		else ret.x = Ensemble::getExpression(L, lua_tostring(L, -2), 2);
+		else {ret.x = Ensemble::getExpression(L, lua_tostring(L, -2), 2); parametrizing = true; }
 		if (lua_isnumber(L, -1)) ret.y = lua_tonumber(L, -1);
-		else ret.y = Ensemble::getExpression(L, lua_tostring(L, -1), 2);
+		else {ret.y = Ensemble::getExpression(L, lua_tostring(L, -1), 2); parametrizing = true; }
 		lua_pop(L, 2);
 	}
 	lua_pop(L, 1);
@@ -216,13 +225,13 @@ static inline vec4 lua_vec4(lua_State *L, bool allow_param, int table_idx, const
 		lua_rawgeti(L, -3, 3);
 		lua_rawgeti(L, -4, 4);
 		if (lua_isnumber(L, -4)) ret.r = lua_tonumber(L, -4);
-		else ret.r = Ensemble::getExpression(L, lua_tostring(L, -4), 2);
+		else {ret.r = Ensemble::getExpression(L, lua_tostring(L, -4), 2); parametrizing = true; }
 		if (lua_isnumber(L, -3)) ret.g = lua_tonumber(L, -3);
-		else ret.g = Ensemble::getExpression(L, lua_tostring(L, -3), 2);
+		else {ret.g = Ensemble::getExpression(L, lua_tostring(L, -3), 2); parametrizing = true; }
 		if (lua_isnumber(L, -2)) ret.b = lua_tonumber(L, -2);
-		else ret.b = Ensemble::getExpression(L, lua_tostring(L, -2), 2);
+		else {ret.b = Ensemble::getExpression(L, lua_tostring(L, -2), 2); parametrizing = true; }
 		if (lua_isnumber(L, -1)) ret.a = lua_tonumber(L, -1);
-		else ret.a = Ensemble::getExpression(L, lua_tostring(L, -1), 2);
+		else {ret.a = Ensemble::getExpression(L, lua_tostring(L, -1), 2); parametrizing = true; }
 		lua_pop(L, 4);
 	}
 	lua_pop(L, 1);
@@ -278,10 +287,14 @@ static int p_new(lua_State *L) {
 	}
 	lua_pop(L, 1);
 
-
 	Ensemble *e = new Ensemble();
 	e->setSpeed(speed);
 	e->setZoom(zoom);
+
+	// Store parameters table for later
+	lua_pushvalue(L, 2);
+	e->storeParametersTable(luaL_ref(L, LUA_REGISTRYINDEX));
+
 	int nb_systems = lua_objlen(L, 1);
 	for (int i = 1; i <= nb_systems; i++) {		
 		lua_rawgeti(L, 1, i);
@@ -359,7 +372,9 @@ static int p_new(lua_State *L) {
 			for (int gi = 1; gi <= nb_generators; gi++) {
 				lua_rawgeti(L, -1, gi);
 				GeneratorsList g_id = (GeneratorsList)((uint8_t)lua_float(L, -1, 1, 0));
+				parametrizing = false;
 				Generator *g;
+
 				switch (g_id) {
 					case GeneratorsList::LifeGenerator:
 						g = new LifeGenerator(lua_float(L, true, -1, "min", 0.3), lua_float(L, true, -1, "max", 3));
@@ -372,26 +387,25 @@ static int p_new(lua_State *L) {
 						break;
 					case GeneratorsList::DiskPosGenerator:
 						g = new DiskPosGenerator(lua_float(L, true, -1, "min_angle", 0), lua_float(L, true, -1, "max_angle", M_PI*2), lua_float(L, true, -1, "radius", 100));
-						g->basePos(lua_float(L, true, -1, "sx", 0), lua_float(L, true, -1, "sy", 0));
+						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
 						break;
 					case GeneratorsList::CirclePosGenerator:
 						g = new CirclePosGenerator(lua_float(L, true, -1, "min_angle", 0), lua_float(L, true, -1, "max_angle", M_PI*2), lua_float(L, true, -1, "radius", 100), lua_float(L, true, -1, "width", 10));
-						g->basePos(lua_float(L, true, -1, "sx", 0), lua_float(L, true, -1, "sy", 0));
+						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
 						break;
 					case GeneratorsList::TrianglePosGenerator:
 						g = new TrianglePosGenerator(lua_vec2(L, true, -1, "p1", vec2(0, 0)), lua_vec2(L, true, -1, "p2", vec2(0, 0)), lua_vec2(L, true, -1, "p3", vec2(0, 0)));
-						g->basePos(lua_float(L, true, -1, "sx", 0), lua_float(L, true, -1, "sy", 0));
+						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
 						break;
 					case GeneratorsList::LinePosGenerator:
 						g = new LinePosGenerator(lua_vec2(L, true, -1, "p1", vec2(0, 0)), lua_vec2(L, true, -1, "p2", vec2(0, 0)));
-						g->basePos(lua_float(L, true, -1, "sx", 0), lua_float(L, true, -1, "sy", 0));
+						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
 						break;
 					case GeneratorsList::DiskVelGenerator:
 						g = new DiskVelGenerator(lua_float(L, true, -1, "min_vel", 5), lua_float(L, true, -1, "max_vel", 10));
 						break;
 					case GeneratorsList::DirectionVelGenerator:
 						g = new DirectionVelGenerator(lua_vec2(L, true, -1, "from", {0, 0}), lua_float(L, true, -1, "min_vel", 5), lua_float(L, true, -1, "max_vel", 10));
-						g->basePos(lua_float(L, true, -1, "sx", 0), lua_float(L, true, -1, "sy", 0));
 						break;
 					case GeneratorsList::BasicSizeGenerator:
 						g = new BasicSizeGenerator(lua_float(L, true, -1, "min_size", 10), lua_float(L, true, -1, "max_size", 30));
@@ -423,6 +437,7 @@ static int p_new(lua_State *L) {
 						break;
 				}
 				em->addGenerator(sys, g);
+				// if (parametrizing) e->parametrizeGenerator(g_id, g);
 				lua_pop(L, 1);
 			}
 			lua_pop(L, 1);

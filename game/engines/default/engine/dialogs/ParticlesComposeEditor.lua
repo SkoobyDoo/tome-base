@@ -181,22 +181,26 @@ local specific_uis = {
 		[PC.BasicTextureGenerator] = {name="BasicTextureGenerator", category="texture", fields={}},
 		[PC.OriginPosGenerator] = {name="OriginPosGenerator", category="position", fields={}},
 		[PC.DiskPosGenerator] = {name="DiskPosGenerator", category="position", fields={
+			{type="point", id="base_point", text="Origin: ", min=-10000, max=10000, default={0, 0}, line=true},
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150, line=true},
 			{type="number", id="min_angle", text="Min angle: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 			{type="number", id="max_angle", text="Max angle: ", min=-math.pi*2, max=math.pi*2, default=math.pi*2, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 		}},
 		[PC.CirclePosGenerator] = {name="CirclePosGenerator", category="position", fields={
+			{type="point", id="base_point", text="Origin: ", min=-10000, max=10000, default={0, 0}, line=true},
 			{type="number", id="radius", text="Radius: ", min=0, max=10000, default=150},
 			{type="number", id="width", text="Width: ", min=0, max=10000, default=20, line=true},
 			{type="number", id="min_angle", text="Min angle: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) print("!!!!", type(v) == "number", tonumber(v), v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 			{type="number", id="max_angle", text="Max angle: ", min=-math.pi*2, max=math.pi*2, default=math.pi*2, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 		}},
 		[PC.TrianglePosGenerator] = {name="TrianglePosGenerator", category="position", fields={
+			{type="point", id="base_point", text="Origin: ", min=-10000, max=10000, default={0, 0}, line=true},
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}, line=true},
 			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}, line=true},
 			{type="point", id="p3", text="P3: ", min=-10000, max=10000, default={-100, 100}},
 		}},
 		[PC.LinePosGenerator] = {name="LinePosGenerator", category="position", fields={
+			{type="point", id="base_point", text="Origin: ", min=-10000, max=10000, default={0, 0}, line=true},
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
 			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}},
 		}},

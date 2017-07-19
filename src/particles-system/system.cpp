@@ -375,6 +375,7 @@ Ensemble::Ensemble() {
 Ensemble::~Ensemble() {
 	printf("===Ensemble destroyed, %lx\n", this);
 	if (event_cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
+	if (parameters_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, parameters_ref);
 	lock_guard<mutex> lock(th_runner_singleton.mux);
 	all_ensembles.erase(this);
 }

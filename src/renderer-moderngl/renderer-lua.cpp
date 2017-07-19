@@ -1362,6 +1362,13 @@ static int gl_particles_trigger(lua_State *L)
 	lua_pushvalue(L, 1);
 	return 1;
 }
+static int gl_particles_params(lua_State *L)
+{
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	v->updateParams(L);
+	lua_pushvalue(L, 1);
+	return 1;
+}
 static int gl_particles_on_events(lua_State *L)
 {
 	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
@@ -2213,6 +2220,7 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"zoom", gl_particles_zoom},
 	{"speed", gl_particles_speed},
 	{"trigger", gl_particles_trigger},
+	{"params", gl_particles_params},
 	{"onEvents", gl_particles_on_events},
 	{"countAlive", gl_particles_count_alive},
 	{"getKind", gl_generic_getkind},

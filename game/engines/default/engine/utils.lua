@@ -22,6 +22,9 @@
 
 local lpeg = require "lpeg"
 
+math.hpi = math.pi / 2
+math.pi2 = math.pi * 2
+
 function math.decimals(v, nb)
 	nb = 10 ^ nb
 	return math.floor(v * nb) / nb

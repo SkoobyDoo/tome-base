@@ -40,7 +40,7 @@ public:
 	bool use_limiter = false;
 	virtual uint32_t weight() const { return 100; };
 	void shift(float x, float y, bool absolute);
-	void basePos(float x, float y) { base_pos = vec2(x, y); };
+	void basePos(vec2 p) { base_pos = p; };
 	virtual void useSlots(ParticlesData &p) {};
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) = 0;
 	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {};
