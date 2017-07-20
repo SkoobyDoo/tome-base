@@ -319,6 +319,8 @@ namespace mu
   void Parser::InitConst()
   {
     DefineConst(_T("pi"), (value_type)PARSER_CONST_PI);
+    DefineConst(_T("pi2"), (value_type)PARSER_CONST_PI*2);
+    DefineConst(_T("hpi"), (value_type)PARSER_CONST_PI/2);
     DefineConst(_T("e"), (value_type)PARSER_CONST_E);
   }
 
