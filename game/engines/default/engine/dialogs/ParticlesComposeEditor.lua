@@ -703,7 +703,7 @@ function _M:makeUI()
 			if core.key.modState("alt") then 
 				local a = math.atan2(my - self.old_shift_y, mx - self.old_shift_x)
 				local r = math.sqrt((my - self.old_shift_y)^2 + (mx - self.old_shift_x)^2)
-				self.pdo:params{size=r, range=r, angle=a}
+				self.pdo:params{size=r, range=r, angle=a, tx=mx - self.old_shift_x, ty=my - self.old_shift_y}
 			else
 				self:shift(mx, my)
 			end

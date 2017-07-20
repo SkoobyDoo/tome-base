@@ -102,7 +102,7 @@ void LinePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) 
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
 		pos[i].x = (p2.x - p1.x) * genrand_real(0, 1) + p1.x;
-		pos[i].y = (p1.y - p2.y) / (p1.x - p2.x) * (pos[i].x) + p1.y;
+		pos[i].y = (p1.y - p2.y) / (p1.x - p2.x) * (pos[i].x - p1.x) + p1.y;
 		pos[i].x += final_pos.x;
 		pos[i].y += final_pos.y;
 	}
