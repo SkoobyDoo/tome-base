@@ -34,6 +34,7 @@ protected:
 	vector<uGenerator> generators;
 	void generate(ParticlesData &p, uint32_t nb);
 public:
+	virtual void finish() {}
 	inline bool isActive() { return active; };
 	inline bool isActiveNotDormant() { return active && !dormant; };
 	void setDormant(bool d) { dormant = d; };
@@ -45,12 +46,12 @@ public:
 
 class LinearEmitter : public Emitter {
 private:
-	uint32_t nb;
+	float accumulator = 0;
+public:
+	float nb;
 	float rate;
 	float duration;
 	float startat;
-	float accumulator = 0;
-public:
-	LinearEmitter(float startat, float duration, float rate, uint32_t nb) : startat(startat), duration(duration), rate(rate), nb(nb) { accumulator = rate; };
+	virtual void finish() { accumulator = rate; };
 	virtual void emit(ParticlesData &p, float dt);
 };

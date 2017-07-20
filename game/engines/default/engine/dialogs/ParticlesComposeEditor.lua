@@ -69,7 +69,7 @@ local particle_speed = 1
 local particle_zoom = 1
 
 local pdef = {
-	parameters = { ring_size=300.000000 },
+	parameters = { size=300.000000, },
 	{
 		max_particles = 2000, blend=PC.ShinyBlend,
 		texture = "/data/gfx/particle.png",
@@ -78,16 +78,16 @@ local pdef = {
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
 				{PC.LifeGenerator, max=1.000000, duration=10.000000, min=0.300000},
-				{PC.CirclePosGenerator, radius="ring_size", width="ring_size/10"},
+				{PC.CirclePosGenerator, radius="size", width="size/10"},
 				{PC.DiskVelGenerator, max_vel=100.000000, min_vel=30.000000},
-				{PC.BasicSizeGenerator, max_size="sqrt(ring_size)*4", min_size="sqrt(ring_size)"},
+				{PC.BasicSizeGenerator, max_size="sqrt(size)*4", min_size="sqrt(size)"},
 				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
 				{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
 			}, startat=0.000000, dormant=false, duration=-1.000000, rate=0.030000, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=20.000000, events = { stopping = PC.EventSTOP } },
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
 				{PC.LifeGenerator, max=3.000000, duration=10.000000, min=0.300000},
-				{PC.CirclePosGenerator, radius="ring_size+200", width=20.000000},
+				{PC.CirclePosGenerator, radius="size+200", width=20.000000},
 				{PC.BasicSizeGenerator, max_size=70.000000, min_size=25.000000},
 				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
 				{PC.StartStopColorGenerator, min_color_start={0.000000, 0.000000, 0.890196, 1.000000}, max_color_start={0.498039, 1.000000, 0.831373, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
@@ -349,7 +349,7 @@ function _M:addParameter()
 	Dialog:listPopup("Parameter", "Type:", {{name="Number"}, {name="Point"}}, 150, 250, function(item) if item then
 		Dialog:textboxPopup("Parameter", "Name:", 1, 50, function(name) if name then
 			name = name:gsub("[A-Z]", function(c) return c:lower() end)
-			if not name:find("^[a-z_][a-z_0-9]*$") then Dialog:simplePopup("Parameter Error", "Name invalid, only letters, numbers and _ allowed and can not being with number.") return end
+			if not name:find("^[a-z][a-z_0-9]*$") then Dialog:simplePopup("Parameter Error", "Name invalid, only letters, numbers and _ allowed and can not being with number.") return end
 			Dialog:textboxPopup("Parameter", item.name=="Number" and "Default Value:" or "Default Value (format as '<number>x<number>'): ", 1, 50, function(value) if value then
 				if item.name == "Number" then
 					value = tonumber(value)
@@ -699,7 +699,14 @@ function _M:makeUI()
 			end
 		end
 
-		if mx < game.w - 550 then self:shift(mx, my)
+		if mx < game.w - 550 then 
+			if core.key.modState("alt") then 
+				local a = math.atan2(my - self.old_shift_y, mx - self.old_shift_x)
+				local r = math.sqrt((my - self.old_shift_y)^2 + (mx - self.old_shift_x)^2)
+				self.pdo:params{size=r, range=r, angle=a}
+			else
+				self:shift(mx, my)
+			end
 		else self:shift((game.w - 550) / 2, game.h / 2) end
 
 		self.uidialog:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)

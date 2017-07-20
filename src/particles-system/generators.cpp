@@ -80,7 +80,7 @@ void CirclePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end
 	}
 }
 
-TrianglePosGenerator::TrianglePosGenerator(vec2 p1, vec2 p2, vec2 p3) {
+void TrianglePosGenerator::finish() {
 	start_pos = p1;
 	u = vec2(p2.x - p1.x, p2.y - p1.y);
 	v = vec2(p3.x - p1.x, p3.y - p1.y);

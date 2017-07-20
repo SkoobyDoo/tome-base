@@ -202,7 +202,10 @@ void System::update(float nb_keyframes) {
 	for (auto e = emitters.begin(); e != emitters.end(); ) {
 		(*e)->emit(list, dt);
 		if ((*e)->isActiveNotDormant()) emitters_active_not_dormant++;
-		if (!(*e)->isActive()) e = emitters.erase(e);
+		if (!(*e)->isActive()) {
+			dead_emitters.push_back(std::move(*e));
+			e = emitters.erase(e);
+		}
 		else e++;
 	}
 	for (auto &up : updaters) up->update(list, dt);
@@ -325,45 +328,59 @@ int Ensemble::getDefinition(lua_State *L, const char *def_str) {
 
 	// Get a ref on it
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	spDefHolder dh = make_shared<DefHolder>(ref);
+	string def(def_str);
+	spDefHolder dh = make_shared<DefHolder>(ref, def);
 
 	stored_defs.insert({def_str, dh});
 	return ref;
 }
 
-float Ensemble::getExpression(lua_State *L, const char *expr_str, int env_id) {
-	float ret = 0;
-	auto it = stored_defs.find(expr_str);
-	if (it != stored_defs.end()) {
-		// printf("Reusing expr %s : %d\n", expr_str, it->second->ref);
-		lua_rawgeti(L, LUA_REGISTRYINDEX, it->second->ref);
-		lua_pushvalue(L, env_id);
-		lua_setfenv(L, -2); // Set the env
-		if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
-		ret = lua_tonumber(L, -1);
-		lua_pop(L, 1);
-		return ret;
-	}
+// void Ensemble::getExpression(lua_State *L, float *dst, const char *expr_str, int env_id) {
+// 	auto it = stored_defs.find(expr_str);
+// 	// printf("====tying to find %s (%d)\n", expr_str, it != stored_defs.end());
+// 	// for (auto &it : stored_defs) printf("  - %d : %s\n", it.second->ref, it.first.c_str());
+// 	if (it != stored_defs.end()) {
+// 		printf("Reusing expr %s : %d\n", expr_str, it->second->ref);
+// 		lua_rawgeti(L, LUA_REGISTRYINDEX, it->second->ref);
+// 		lua_pushvalue(L, env_id);
+// 		lua_setfenv(L, -2); // Set the env
+// 		if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
+// 		*dst = lua_tonumber(L, -1);
+// 		lua_pop(L, 1);
+// 		parametrized_values.emplace_back(dst, it->second->ref);
+// 		return;
+// 	}
 
-	string expr("return ");
-	expr += expr_str;
-	luaL_loadstring(L, expr.c_str()); // Load expression
-	lua_pushvalue(L, env_id);
-	lua_setfenv(L, -2); // Set the env
+// 	string expr("return ");
+// 	expr += expr_str;
+// 	luaL_loadstring(L, expr.c_str()); // Load expression
+// 	lua_pushvalue(L, env_id);
+// 	lua_setfenv(L, -2); // Set the env
 
-	// Get a ref on it
-	lua_pushvalue(L, -1);
-	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	spDefHolder dh = make_shared<DefHolder>(ref);
+// 	// Get a ref on it
+// 	lua_pushvalue(L, -1);
+// 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+// 	spDefHolder dh = make_shared<DefHolder>(ref, expr);
 
-	stored_defs.insert({expr_str, dh});
+// 	stored_defs.insert({expr_str, dh});
 
-	// Call it
-	if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
-	ret = lua_tonumber(L, -1);
-	lua_pop(L, 1);
+// 	// Call it
+// 	if (lua_pcall(L, 0, 1, 0)) printf("LUA EXPR ERROR: %s\n", lua_tostring(L, -1));
+// 	*dst = lua_tonumber(L, -1);
+// 	lua_pop(L, 1);
+// 	printf("Making new expr %s : %d\n", expr_str, ref);
 
-	return ret;
+// 	parametrized_values.emplace_back(dst, ref);
+// }
+
+void Ensemble::getExpression(lua_State *L, float *dst, const char *expr_str, int env_id) {
+	string expr(expr_str);
+	printf("-------------------\n");
+	ExpressionID id = exprs.compile(expr);
+	parametrized_values.emplace_back(dst, id);
+	*dst = exprs.eval(id);
+	exprs.print();
+	printf("Compiled expression %s to id %d => %f\n", expr_str, id, *dst);
 }
 
 Ensemble::Ensemble() {
@@ -416,6 +433,29 @@ void Ensemble::setEventsCallback(int ref) {
 		luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
 	}
 	event_cb_ref = ref;
+}
+
+void Ensemble::updateParameters(lua_State *L, int table_id) {
+	if (!parametrized_values.size()) return;
+
+	// Need to lock all, because we do not know which system owns the variable(s) being changed :/
+	for (auto &s : systems) s->mux.lock();
+
+	// Copy the new parameters
+	if (lua_istable(L, table_id)) {
+		lua_pushnil(L);
+		while (lua_next(L, table_id) != 0) {
+			exprs.set(lua_tostring(L, -2), lua_tonumber(L, -1));
+			lua_pop(L, 1);
+		}
+	}
+
+	for (auto &it : parametrized_values) {
+		*get<0>(it) = exprs.eval(get<1>(it));
+		// printf("update : %f\n", exprs.eval(get<1>(it)));
+	}
+
+	for (auto &s : systems) s->mux.unlock();
 }
 
 void Ensemble::draw(mat4 model) {

@@ -41,6 +41,7 @@ extern "C" {
 #include "mingw.mutex.h"
 #endif
 #include <atomic>
+#include "muparser/include/muParser.h"
 
 #define GLM_FORCE_INLINE
 #include "glm/glm.hpp"
@@ -142,11 +143,12 @@ typedef shared_ptr<ShaderHolder> spShaderHolder;
 class DefHolder {
 public:
 	int ref = LUA_NOREF;
-	DefHolder(int ref) : ref(ref) {
-		printf("Creating def\n");
+	string expr;
+	DefHolder(int ref, string &expr) : ref(ref), expr(expr) {
+		printf("Creating def %d : %s\n", ref, expr.c_str());
 	};
 	~DefHolder() {
-		printf("Freeing def\n");
+		printf("Freeing def %d : %s\n", ref, expr.c_str());
 		if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
 	};
 };
@@ -154,6 +156,7 @@ typedef shared_ptr<DefHolder> spDefHolder;
 
 extern spShaderHolder default_particlescompose_shader;
 
+#include "particles-system/expr.hpp"
 #include "particles-system/triggers.hpp"
 #include "particles-system/events.hpp"
 #include "particles-system/generators.hpp"
@@ -169,6 +172,8 @@ private:
 
 	bool dead = false;
 	ParticlesData list;
+
+	vector<unique_ptr<Emitter>> dead_emitters; // We keep them around because Ensemble::parametrized_values can refer to those still
 
 	vector<unique_ptr<Emitter>> emitters;
 	vector<unique_ptr<Updater>> updaters;
@@ -195,8 +200,6 @@ public:
 	void print();
 };
 
-// typedef vector<tuple<GeneratorsList,Generator*>> vParametrizedGenerators;
-
 class ThreadedRunner;
 class Ensemble {
 	friend ThreadedRunner;
@@ -211,7 +214,6 @@ public:
 	static spNoiseHolder getNoise(const char *noise_str);
 	static spShaderHolder getShader(lua_State *L, const char *shader_str);
 	static int getDefinition(lua_State *L, const char *def_str);
-	static float getExpression(lua_State *L, const char *expr_str, int env_id);
 	static void gcTextures();
 
 private:
@@ -225,15 +227,19 @@ private:
 
 	int parameters_ref = LUA_NOREF;
 
-	// vParametrizedGenerators parametrized_generators;
-	// vector<Updater*> parametrized_updaters;
+	vector<tuple<float*, uint32_t>> parametrized_values;
+
 public:
+	Expression exprs;
+
 	Ensemble();
 	~Ensemble();
 
 	inline bool isDead() { return dead; };
 	uint32_t countAlive();
 	System *getRawSystem(uint8_t id) { if (id < 0 || id >= systems.size()) return nullptr; else return systems[id].get(); };
+
+	void getExpression(lua_State *L, float *dst, const char *expr_str, int env_id);
 
 	void setZoom(float zoom) { this->zoom = zoom; };
 	void setSpeed(float speed) { this->speed = speed; };
@@ -248,9 +254,8 @@ public:
 	void setEventsCallback(int ref);
 
 	void add(System *system);
-	// void parametrizeGenerator(GeneratorsList g_id, Generator *g);
-	// vParametrizedGenerators& getParametrizeGenerators();
 	void storeParametersTable(int ref) { parameters_ref = ref; }
+	void updateParameters(lua_State *L, int table_id);
 
 	void shift(float x, float y, bool absolute);
 

@@ -1365,7 +1365,7 @@ static int gl_particles_trigger(lua_State *L)
 static int gl_particles_params(lua_State *L)
 {
 	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
-	v->updateParams(L);
+	v->updateParameters(L, 2);
 	lua_pushvalue(L, 1);
 	return 1;
 }

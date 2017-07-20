@@ -150,16 +150,42 @@ static int p_toscreen(lua_State *L)
 static int p_params(lua_State *L)
 {
 	Ensemble *e = *(Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	e->updateParameters(L, 2);
 	return 0;
 }
 
-static bool parametrizing = false;
+static Ensemble *current_ensemble = nullptr;
 
 static inline float lua_float(lua_State *L, int table_idx, uint8_t field, float def) {
 	float ret = def;
 	lua_pushnumber(L, field);
 	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
 	if (lua_isnumber(L, -1)) ret = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
+static inline float lua_float(lua_State *L, int table_idx, const char *field, float def) {
+	float ret = def;
+	lua_pushstring(L, field);
+	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
+	if (lua_isnumber(L, -1)) ret = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	return ret;
+}
+
+static inline vec2 lua_vec2(lua_State *L, int table_idx, const char *field, vec2 def) {
+	vec2 ret = def;
+	lua_pushstring(L, field);
+	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
+	if (lua_istable(L, -1)) {
+		lua_rawgeti(L, -1, 1);
+		lua_rawgeti(L, -2, 2);
+
+		if (lua_isnumber(L, -2)) ret.x = lua_tonumber(L, -2);
+		if (lua_isnumber(L, -1)) ret.y = lua_tonumber(L, -1);
+		lua_pop(L, 2);
+	}
 	lua_pop(L, 1);
 	return ret;
 }
@@ -182,41 +208,35 @@ static inline const char* lua_string(lua_State *L, int table_idx, const char *fi
 	return ret;
 }
 
-
-static inline float lua_float(lua_State *L, bool allow_param, int table_idx, const char *field, float def) {
-	float ret = def;
+/** Parametrized versions **/
+static inline void lua_float(lua_State *L, float *dst, int table_idx, const char *field, float def) {
 	lua_pushstring(L, field);
 	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
-	if (lua_isnumber(L, -1)) ret = lua_tonumber(L, -1);
-	else if (allow_param && lua_isstring(L, -1)) {
-		const char *expr = lua_tostring(L, -1);
-		ret = Ensemble::getExpression(L, expr, 2);
-		parametrizing = true;
-	}
+	if (lua_isnumber(L, -1)) *dst = lua_tonumber(L, -1);
+	else if (lua_isstring(L, -1)) current_ensemble->getExpression(L, dst, lua_tostring(L, -1), 2);
+	else *dst = def;
 	lua_pop(L, 1);
-	return ret;
 }
 
-static inline vec2 lua_vec2(lua_State *L, bool allow_param, int table_idx, const char *field, vec2 def) {
-	vec2 ret = def;
+static inline void lua_vec2(lua_State *L, vec2 *dst, int table_idx, const char *field, vec2 def) {
+	*dst = def;
 	lua_pushstring(L, field);
 	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
 	if (lua_istable(L, -1)) {
 		lua_rawgeti(L, -1, 1);
 		lua_rawgeti(L, -2, 2);
 
-		if (lua_isnumber(L, -2)) ret.x = lua_tonumber(L, -2);
-		else {ret.x = Ensemble::getExpression(L, lua_tostring(L, -2), 2); parametrizing = true; }
-		if (lua_isnumber(L, -1)) ret.y = lua_tonumber(L, -1);
-		else {ret.y = Ensemble::getExpression(L, lua_tostring(L, -1), 2); parametrizing = true; }
+		if (lua_isnumber(L, -2)) dst->x = lua_tonumber(L, -2);
+		else current_ensemble->getExpression(L, &dst->x, lua_tostring(L, -2), 2);
+		if (lua_isnumber(L, -1)) dst->y = lua_tonumber(L, -1);
+		else current_ensemble->getExpression(L, &dst->y, lua_tostring(L, -1), 2);
 		lua_pop(L, 2);
 	}
 	lua_pop(L, 1);
-	return ret;
 }
 
-static inline vec4 lua_vec4(lua_State *L, bool allow_param, int table_idx, const char *field, vec4 def) {
-	vec4 ret = def;
+static inline void lua_vec4(lua_State *L, vec4 *dst, int table_idx, const char *field, vec4 def) {
+	*dst = def;
 	lua_pushstring(L, field);
 	lua_rawget(L, table_idx < 0 ? (table_idx-1) : table_idx);
 	if (lua_istable(L, -1)) {
@@ -224,18 +244,17 @@ static inline vec4 lua_vec4(lua_State *L, bool allow_param, int table_idx, const
 		lua_rawgeti(L, -2, 2);
 		lua_rawgeti(L, -3, 3);
 		lua_rawgeti(L, -4, 4);
-		if (lua_isnumber(L, -4)) ret.r = lua_tonumber(L, -4);
-		else {ret.r = Ensemble::getExpression(L, lua_tostring(L, -4), 2); parametrizing = true; }
-		if (lua_isnumber(L, -3)) ret.g = lua_tonumber(L, -3);
-		else {ret.g = Ensemble::getExpression(L, lua_tostring(L, -3), 2); parametrizing = true; }
-		if (lua_isnumber(L, -2)) ret.b = lua_tonumber(L, -2);
-		else {ret.b = Ensemble::getExpression(L, lua_tostring(L, -2), 2); parametrizing = true; }
-		if (lua_isnumber(L, -1)) ret.a = lua_tonumber(L, -1);
-		else {ret.a = Ensemble::getExpression(L, lua_tostring(L, -1), 2); parametrizing = true; }
+		if (lua_isnumber(L, -4)) dst->r = lua_tonumber(L, -4);
+		else current_ensemble->getExpression(L, &dst->r, lua_tostring(L, -4), 2);
+		if (lua_isnumber(L, -3)) dst->g = lua_tonumber(L, -3);
+		else current_ensemble->getExpression(L, &dst->g, lua_tostring(L, -3), 2);
+		if (lua_isnumber(L, -2)) dst->b = lua_tonumber(L, -2);
+		else current_ensemble->getExpression(L, &dst->b, lua_tostring(L, -2), 2);
+		if (lua_isnumber(L, -1)) dst->a = lua_tonumber(L, -1);
+		else current_ensemble->getExpression(L, &dst->a, lua_tostring(L, -1), 2);
 		lua_pop(L, 4);
 	}
 	lua_pop(L, 1);
-	return ret;
 }
 
 static int p_new(lua_State *L) {
@@ -258,6 +277,8 @@ static int p_new(lua_State *L) {
 		lua_replace(L, 2);
 	}
 
+	Ensemble *e = new Ensemble();
+
 	// Setup math as env for the parameters table, so complex math works
 	lua_rawgeti(L, LUA_REGISTRYINDEX, math_mt_lua_ref);
 	lua_setmetatable(L, 2);
@@ -268,26 +289,21 @@ static int p_new(lua_State *L) {
 	if (lua_istable(L, -1)) {
 		lua_pushnil(L);
 		while (lua_next(L, -2) != 0) {
-			// Check existing
-			bool exists = false;
-			lua_pushvalue(L, -2); // Copy the key
-			lua_rawget(L, 2); 
-			exists = !lua_isnil(L, -1);
-			lua_pop(L, 1);
-
-			// Copy
-			if (!exists) {
-				lua_pushvalue(L, -2);
-				lua_pushvalue(L, -2);
-				lua_rawset(L, 2);
-			}
-
+			e->exprs.define(lua_tostring(L, -2), lua_tonumber(L, -1));
 			lua_pop(L, 1);
 		}
 	}
 	lua_pop(L, 1);
+	e->exprs.finish();
 
-	Ensemble *e = new Ensemble();
+	// Modify the values with the given ones
+	lua_pushnil(L);
+	while (lua_next(L, 2) != 0) {
+		e->exprs.set(lua_tostring(L, -2), lua_tonumber(L, -1));
+		lua_pop(L, 1);
+	}
+
+	current_ensemble = e;
 	e->setSpeed(speed);
 	e->setZoom(zoom);
 
@@ -298,7 +314,7 @@ static int p_new(lua_State *L) {
 	int nb_systems = lua_objlen(L, 1);
 	for (int i = 1; i <= nb_systems; i++) {		
 		lua_rawgeti(L, 1, i);
-		System *sys = new System(lua_float(L, false, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, false, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
+		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
 
 		const char *tex_str = lua_string(L, -1, "texture", NULL);
 		if (tex_str){
@@ -321,9 +337,10 @@ static int p_new(lua_State *L) {
 			EmittersList e_id = (EmittersList)((uint8_t)lua_float(L, -1, 1, 0));
 			Emitter *em;
 			switch (e_id) {
-				case EmittersList::LinearEmitter:
-					em = new LinearEmitter(lua_float(L, true, -1, "startat", -1), lua_float(L, true, -1, "duration", -1), lua_float(L, true, -1, "rate", 0.1), lua_float(L, true, -1, "nb", 10));
-					break;
+				case EmittersList::LinearEmitter: {
+					auto emm = new LinearEmitter(); em = emm;
+					lua_float(L, &emm->startat, -1, "startat", -1); lua_float(L, &emm->duration, -1, "duration", -1); lua_float(L, &emm->rate, -1, "rate", 0.1); lua_float(L, &emm->nb, -1, "nb", 10);
+					break;}
 				default:
 					lua_pushliteral(L, "Unknown particles emitter"); lua_error(L);
 					break;
@@ -372,77 +389,92 @@ static int p_new(lua_State *L) {
 			for (int gi = 1; gi <= nb_generators; gi++) {
 				lua_rawgeti(L, -1, gi);
 				GeneratorsList g_id = (GeneratorsList)((uint8_t)lua_float(L, -1, 1, 0));
-				parametrizing = false;
-				Generator *g;
+				Generator *gg;
 
 				switch (g_id) {
-					case GeneratorsList::LifeGenerator:
-						g = new LifeGenerator(lua_float(L, true, -1, "min", 0.3), lua_float(L, true, -1, "max", 3));
-						break;
-					case GeneratorsList::BasicTextureGenerator:
-						g = new BasicTextureGenerator();
-						break;
-					case GeneratorsList::OriginPosGenerator:
-						g = new OriginPosGenerator();
-						break;
-					case GeneratorsList::DiskPosGenerator:
-						g = new DiskPosGenerator(lua_float(L, true, -1, "min_angle", 0), lua_float(L, true, -1, "max_angle", M_PI*2), lua_float(L, true, -1, "radius", 100));
-						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
-						break;
-					case GeneratorsList::CirclePosGenerator:
-						g = new CirclePosGenerator(lua_float(L, true, -1, "min_angle", 0), lua_float(L, true, -1, "max_angle", M_PI*2), lua_float(L, true, -1, "radius", 100), lua_float(L, true, -1, "width", 10));
-						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
-						break;
-					case GeneratorsList::TrianglePosGenerator:
-						g = new TrianglePosGenerator(lua_vec2(L, true, -1, "p1", vec2(0, 0)), lua_vec2(L, true, -1, "p2", vec2(0, 0)), lua_vec2(L, true, -1, "p3", vec2(0, 0)));
-						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
-						break;
-					case GeneratorsList::LinePosGenerator:
-						g = new LinePosGenerator(lua_vec2(L, true, -1, "p1", vec2(0, 0)), lua_vec2(L, true, -1, "p2", vec2(0, 0)));
-						g->basePos(lua_vec2(L, true, -1, "base_point", {0, 0}));
-						break;
-					case GeneratorsList::DiskVelGenerator:
-						g = new DiskVelGenerator(lua_float(L, true, -1, "min_vel", 5), lua_float(L, true, -1, "max_vel", 10));
-						break;
-					case GeneratorsList::DirectionVelGenerator:
-						g = new DirectionVelGenerator(lua_vec2(L, true, -1, "from", {0, 0}), lua_float(L, true, -1, "min_vel", 5), lua_float(L, true, -1, "max_vel", 10));
-						break;
-					case GeneratorsList::BasicSizeGenerator:
-						g = new BasicSizeGenerator(lua_float(L, true, -1, "min_size", 10), lua_float(L, true, -1, "max_size", 30));
-						break;
-					case GeneratorsList::StartStopSizeGenerator:
-						g = new StartStopSizeGenerator(lua_float(L, true, -1, "min_start_size", 10), lua_float(L, true, -1, "max_start_size", 30), lua_float(L, true, -1, "min_stop_size", 1), lua_float(L, true, -1, "max_stop_size", 3));
-						break;
-					case GeneratorsList::BasicRotationGenerator:
-						g = new BasicRotationGenerator(lua_float(L, true, -1, "min_rot", 0), lua_float(L, true, -1, "max_rot", M_PI*2));
-						break;
-					case GeneratorsList::RotationByVelGenerator:
-						g = new RotationByVelGenerator(lua_float(L, true, -1, "min_rot", 0), lua_float(L, true, -1, "max_rot", 0));
-						break;
-					case GeneratorsList::BasicRotationVelGenerator:
-						g = new BasicRotationVelGenerator(lua_float(L, true, -1, "min_rot", 0), lua_float(L, true, -1, "max_rot", M_PI*2));
-						break;
-					case GeneratorsList::StartStopColorGenerator:
-						g = new StartStopColorGenerator(lua_vec4(L, true, -1, "min_color_start", vec4(1, 0, 0, 1)), lua_vec4(L, true, -1, "max_color_start", vec4(0, 1, 0, 1)), lua_vec4(L, true, -1, "min_color_stop", vec4(1, 0, 0, 0)), lua_vec4(L, true, -1, "max_color_stop", vec4(0, 1, 0, 0)));
-						break;
-					case GeneratorsList::FixedColorGenerator:
-						g = new FixedColorGenerator(lua_vec4(L, true, -1, "color_start", vec4(1, 0, 0, 1)), lua_vec4(L, true, -1, "color_stop", vec4(0, 1, 0, 1)));
-						break;
+					case GeneratorsList::LifeGenerator: {
+						auto g = new LifeGenerator(); gg = g;
+						lua_float(L, &g->min, -1, "min", 0.3); lua_float(L, &g->max, -1, "max", 3);
+						break;}
+					case GeneratorsList::BasicTextureGenerator: {
+						auto g = new BasicTextureGenerator(); gg = g;
+						break;}
+					case GeneratorsList::OriginPosGenerator: {
+						auto g = new OriginPosGenerator(); gg = g;
+						break;}
+					case GeneratorsList::DiskPosGenerator: {
+						auto g = new DiskPosGenerator(); gg = g;
+						lua_float(L, &g->min_angle, -1, "min_angle", 0); lua_float(L, &g->max_angle, -1, "max_angle", M_PI*2); lua_float(L, &g->radius, -1, "radius", 100);
+						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
+						break;}
+					case GeneratorsList::CirclePosGenerator: {
+						auto g = new CirclePosGenerator(); gg = g;
+						lua_float(L, &g->min_angle, -1, "min_angle", 0); lua_float(L, &g->max_angle, -1, "max_angle", M_PI*2); lua_float(L, &g->radius, -1, "radius", 100); lua_float(L, &g->width, -1, "width", 10);
+						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
+						break;}
+					case GeneratorsList::TrianglePosGenerator: {
+						auto g = new TrianglePosGenerator(); gg = g;
+						lua_vec2(L, &g->p1, -1, "p1", vec2(0, 0)); lua_vec2(L, &g->p2, -1, "p2", vec2(0, 0)); lua_vec2(L, &g->p3, -1, "p3", vec2(0, 0));
+						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
+						break;}
+					case GeneratorsList::LinePosGenerator: {
+						auto g = new LinePosGenerator(); gg = g;
+						lua_vec2(L, &g->p1, -1, "p1", vec2(0, 0)); lua_vec2(L, &g->p2, -1, "p2", vec2(0, 0));
+						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
+						break;}
+					case GeneratorsList::DiskVelGenerator: {
+						auto g = new DiskVelGenerator(); gg = g;
+						lua_float(L, &g->min_vel, -1, "min_vel", 5); lua_float(L, &g->max_vel, -1, "max_vel", 10);
+						break;}
+					case GeneratorsList::DirectionVelGenerator: {
+						auto g = new DirectionVelGenerator(); gg = g;
+						lua_vec2(L, &g->from, -1, "from", {0, 0}); lua_float(L, &g->min_vel, -1, "min_vel", 5); lua_float(L, &g->max_vel, -1, "max_vel", 10);
+						break;}
+					case GeneratorsList::BasicSizeGenerator: {
+						auto g = new BasicSizeGenerator(); gg = g;
+						lua_float(L, &g->min_size, -1, "min_size", 10); lua_float(L, &g->max_size, -1, "max_size", 30);
+						break;}
+					case GeneratorsList::StartStopSizeGenerator: {
+						auto g = new StartStopSizeGenerator(); gg = g;
+						lua_float(L, &g->min_start_size, -1, "min_start_size", 10); lua_float(L, &g->max_start_size, -1, "max_start_size", 30); lua_float(L, &g->min_stop_size, -1, "min_stop_size", 1); lua_float(L, &g->max_stop_size, -1, "max_stop_size", 3);
+						break;}
+					case GeneratorsList::BasicRotationGenerator: {
+						auto g = new BasicRotationGenerator(); gg = g;
+						lua_float(L, &g->min_rot, -1, "min_rot", 0); lua_float(L, &g->max_rot, -1, "max_rot", M_PI*2);
+						break;}
+					case GeneratorsList::RotationByVelGenerator: {
+						auto g = new RotationByVelGenerator(); gg = g;
+						lua_float(L, &g->min_rot, -1, "min_rot", 0); lua_float(L, &g->max_rot, -1, "max_rot", M_PI*2);
+						break;}
+					case GeneratorsList::BasicRotationVelGenerator: {
+						auto g = new BasicRotationVelGenerator(); gg = g;
+						lua_float(L, &g->min_rot, -1, "min_rot", 0); lua_float(L, &g->max_rot, -1, "max_rot", M_PI*2);
+						break;}
+					case GeneratorsList::StartStopColorGenerator: {
+						auto g = new StartStopColorGenerator(); gg = g;
+						lua_vec4(L, &g->min_color_start, -1, "min_color_start", vec4(1, 0, 0, 1)); lua_vec4(L, &g->min_color_stop, -1, "max_color_start", vec4(0, 1, 0, 1));
+						lua_vec4(L, &g->min_color_stop, -1, "min_color_stop", vec4(1, 0, 0, 0)); lua_vec4(L, &g->max_color_stop, -1, "max_color_stop", vec4(0, 1, 0, 0));
+						break;}
+					case GeneratorsList::FixedColorGenerator: {
+						auto g = new FixedColorGenerator(); gg = g;
+						lua_vec4(L, &g->color_start, -1, "color_start", vec4(1, 0, 0, 1)); lua_vec4(L, &g->color_stop, -1, "color_stop", vec4(0, 1, 0, 1));
+						break;}
 					case GeneratorsList::CopyGenerator: {
-						System *source_system = e->getRawSystem(lua_float(L, true, -1, "source_system", 1) - 1);
-						g = new CopyGenerator(source_system, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true));
-						break; }
-					default:
+						System *source_system = e->getRawSystem(lua_float(L, -1, "source_system", 1) - 1);
+						auto g = new CopyGenerator(source_system, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true)); gg = g;
+						break;}
+					default: 
 						lua_pushliteral(L, "Unknown particles Generator"); lua_error(L);
 						break;
 				}
-				em->addGenerator(sys, g);
+				gg->finish();
+				em->addGenerator(sys, gg);
 				// if (parametrizing) e->parametrizeGenerator(g_id, g);
 				lua_pop(L, 1);
 			}
 			lua_pop(L, 1);
 
-
+			em->finish();
 			sys->addEmitter(em);
 			lua_pop(L, 1);
 		}
@@ -490,10 +522,10 @@ static int p_new(lua_State *L) {
 					u = new BasicTimeUpdater();
 					break;
 				case UpdatersList::AnimatedTextureUpdater:
-					u = new AnimatedTextureUpdater(lua_float(L, true, -1, "splitx", 1), lua_float(L, true, -1, "splity", 1), lua_float(L, true, -1, "firstframe", 0), lua_float(L, true, -1, "lastframe", 0), lua_float(L, true, -1, "repeat_over_life", 1));
+					u = new AnimatedTextureUpdater(lua_float(L, -1, "splitx", 1), lua_float(L, -1, "splity", 1), lua_float(L, -1, "firstframe", 0), lua_float(L, -1, "lastframe", 0), lua_float(L, -1, "repeat_over_life", 1));
 					break;
 				case UpdatersList::EulerPosUpdater:
-					u = new EulerPosUpdater(lua_vec2(L, true, -1, "global_vel", vec2(0, 0)), lua_vec2(L, true, -1, "global_acc", vec2(0, 0)));
+					u = new EulerPosUpdater(lua_vec2(L, -1, "global_vel", vec2(0, 0)), lua_vec2(L, -1, "global_acc", vec2(0, 0)));
 					break;
 				case UpdatersList::EasingPosUpdater: {
 					easing_ptr easing = easing::linear;
@@ -509,7 +541,7 @@ static int p_new(lua_State *L) {
 				case UpdatersList::NoisePosUpdater: {
 					const char * noise_str = lua_string(L, -1, "noise", NULL);
 					spNoiseHolder nh = Ensemble::getNoise(noise_str);
-					u = new NoisePosUpdater(nh, lua_vec2(L, true, -1, "amplitude", vec2(5, 5)), lua_float(L, true, -1, "traversal_speed", 400));
+					u = new NoisePosUpdater(nh, lua_vec2(L, -1, "amplitude", vec2(5, 5)), lua_float(L, -1, "traversal_speed", 400));
 					break;}
 				case UpdatersList::LinearRotationUpdater:
 					u = new LinearRotationUpdater();
