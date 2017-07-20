@@ -7309,17 +7309,21 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		tactical = {DISABLE = function(who, t, aitarget)
 				if not (aitarget and who.aiSeeTargetPos) or aitarget:hasEffect(aitarget.EFF_SLOW_MOVE) then return end
 				local tx, ty = who:aiSeeTargetPos(aitarget)
-				if core.fov.distance(who.x, who.y, tx, ty) <= 1 then return {pin = 1.5} end
+				if core.fov.distance(who.x, who.y, tx, ty) <= 1 then return {slow = 1} end
 			end,
-			DEFEND = function(who, t, aitarget)
+			SELF = function(who, t, aitarget)
 				local resist = (util.bound(who.global_speed * (who.movement_speed), 0.3, 1) - (util.bound(who.global_speed * (who.movement_speed - .4), 0.3, 1)))*5
-				if resist > 0 then return resist end
-			end},
+				if resist > 0 then
+					return {defend=2*resist, escape=-resist, closein=-resist}
+				end
+			end,
+			__wt_cache_turns = 1,
+		},
 		on_pre_use_ai = function(self, who) return not who:hasEffect(who.EFF_SLOW_MOVE) end,
 		use = function(self, who)
 			local tg = self.use_power.target(self, who)
 			tg.selffire = true -- set here so that the ai will use it
-			game.logSeen(who, "%s rebalances the bulky plates of %s %s, and thngs slow down a bit.", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			game.logSeen(who, "%s rebalances the bulky plates of %s %s, and things slow down a bit.", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:project(tg, who.x, who.y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end
