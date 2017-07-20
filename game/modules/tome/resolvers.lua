@@ -220,7 +220,7 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 		end
 	else
 		print("[resolveObject] **FAILED** for", e.uid, e.name, "filter:", (string.fromTable(filter, 2)))
-		game.log("[%s] %s #YELLOW_GREEN#Object resolver FAILED#LAST# \n#AQUAMARINE#filter:%s#LAST#", e.uid, e.name, string.fromTable(filter, 2)) -- debugging
+--		game.log("[%s] %s #YELLOW_GREEN#Object resolver FAILED#LAST# \n#AQUAMARINE#filter:%s#LAST#", e.uid, e.name, string.fromTable(filter, 2)) -- debugging
 	end
 	return o
 end
@@ -1055,7 +1055,7 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		end
 		-- NPC's with predominantly ranged attacks will want to stay at range.
 		if count.atk_range + count.escape > count.atk_melee + count.close and count.range_value/(count.melee_value + 1) > 1.5 then
-			tactic.old_safe_range = util.bound(math.ceil(count.avg_attack_range/2), 2, e.sight)
+			tactic.old_safe_range = util.bound(math.ceil(count.avg_attack_range/2), 2, e.sight) -- debugging
 			local sum, break_pt, n, keys = 0, (count.range_value+count.melee_value)/3, 0, {} -- safe_range <= range of 2/3 of all attacks by value
 			for range, ct in pairs(count.atk_range_values) do
 				n = n + 1; keys[n] = range
@@ -1067,7 +1067,7 @@ function resolvers.calc.talented_ai_tactic(t, e)
 				--	print("processing range, ct:", range, ct)
 				if sum + ct >= break_pt then
 					tactic.safe_range = util.bound(math.floor((last_range*last_ct + range*(break_pt - sum))/(last_ct + break_pt - sum)), 2, e.sight)
-if config.settings.cheat then game.log("#LIGHT_BLUE#%s[%s] at (%s, %s): tactical safe_range=%s(vs. old:%s)", e.name, e.uid, x, y, tactic.safe_range, tactic.old_safe_range) end -- debugging
+--if config.settings.cheat then game.log("#LIGHT_BLUE#%s[%s] at (%s, %s): tactical safe_range=%s(vs. old:%s)", e.name, e.uid, x, y, tactic.safe_range, tactic.old_safe_range) end -- debugging
 					break
 				end
 				sum = sum + ct
