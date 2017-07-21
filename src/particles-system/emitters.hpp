@@ -21,7 +21,7 @@
 using namespace std;
 using namespace glm;
 
-enum class EmittersList : uint8_t { LinearEmitter };
+enum class EmittersList : uint8_t { LinearEmitter, BurstEmitter, BuildupEmitter };
 
 class System;
 class Emitter : public Triggerable, public Event {
@@ -50,6 +50,32 @@ private:
 public:
 	float nb;
 	float rate;
+	float duration;
+	float startat;
+	virtual void finish() { accumulator = rate; };
+	virtual void emit(ParticlesData &p, float dt);
+};
+
+class BurstEmitter : public Emitter {
+private:
+	float bursting = 0;
+	float accumulator = 0;
+public:
+	float nb;
+	float burst;
+	float rate;
+	float duration;
+	float startat;
+	virtual void finish() { accumulator = rate; bursting = burst; };
+	virtual void emit(ParticlesData &p, float dt);
+};
+
+class BuildupEmitter : public Emitter {
+private:
+	float accumulator = 0;
+public:
+	float nb, nb_sec;
+	float rate, rate_sec;
 	float duration;
 	float startat;
 	virtual void finish() { accumulator = rate; };

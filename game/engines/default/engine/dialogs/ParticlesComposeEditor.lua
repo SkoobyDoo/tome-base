@@ -43,7 +43,7 @@ module(..., package.seeall, class.inherit(Dialog))
 
 local UIDialog
 
-local new_default_emitter = {PC.LinearEmitter, {
+local new_default_linear_emitter = {PC.LinearEmitter, {
 	{PC.BasicTextureGenerator},
 	{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
 	{PC.DiskPosGenerator, radius=50.000000},
@@ -52,10 +52,28 @@ local new_default_emitter = {PC.LinearEmitter, {
 	{PC.LifeGenerator, min=1.000000, max=3.000000},
 }, duration=-1.000000, startat=0.000000, nb=10.000000, rate=0.030000 }
 
+local new_default_burst_emitter = {PC.BurstEmitter, {
+	{PC.BasicTextureGenerator},
+	{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
+	{PC.DiskPosGenerator, radius=50.000000},
+	{PC.BasicSizeGenerator, max_size=30.000000, min_size=10.000000},
+	{PC.DiskVelGenerator, max_vel=150.000000, min_vel=50.000000},
+	{PC.LifeGenerator, min=1.000000, max=3.000000},
+}, duration=-1.000000, startat=0.000000, nb=10.000000, rate=0.50000, burst=0.15 }
+
+local new_default_buildup_emitter = {PC.BuildupEmitter, {
+	{PC.BasicTextureGenerator},
+	{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
+	{PC.DiskPosGenerator, radius=50.000000},
+	{PC.BasicSizeGenerator, max_size=30.000000, min_size=10.000000},
+	{PC.DiskVelGenerator, max_vel=150.000000, min_vel=50.000000},
+	{PC.LifeGenerator, min=1.000000, max=3.000000},
+}, duration=-1.000000, startat=0.000000, nb=10.000000, rate=0.50000, nb_sec=5.000000, rate_sec=-0.150000 }
+
 local new_default_system = {
 	max_particles = 100, blend=PC.DefaultBlend,
 	texture = "/data/gfx/particle.png",
-	emitters = { new_default_emitter },
+	emitters = { new_default_linear_emitter },
 	updaters = {
 		{PC.BasicTimeUpdater},
 		{PC.LinearColorUpdater},
@@ -164,9 +182,28 @@ local easings = {
 
 local specific_uis = {
 	emitters = {
-		[PC.LinearEmitter] = {name="LinearEmitter", category="emitter", addnew=new_default_emitter, fields={
+		[PC.LinearEmitter] = {name="LinearEmitter", category="emitter", addnew=new_default_linear_emitter, fields={
 			{type="number", id="rate", text="Triggers every seconds: ", min=0, max=600, default=0.033},
 			{type="number", id="nb", text="Particles per trigger: ", min=0, max=100000, default=30, line=true},
+			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
+			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1, line=true},
+			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup): ", default=false},
+			{type="invisible", id=2, default={}},
+		}},
+		[PC.BurstEmitter] = {name="BurstEmitter", category="emitter", addnew=new_default_burst_emitter, fields={
+			{type="number", id="rate", text="Burst every seconds: ", min=0, max=600, default=0.5},
+			{type="number", id="burst", text="Burst for seconds: ", min=0, max=600, default=0.15, line=true},
+			{type="number", id="nb", text="Particles per burst: ", min=0, max=100000, default=10, line=true},
+			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
+			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1, line=true},
+			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup): ", default=false},
+			{type="invisible", id=2, default={}},
+		}},
+		[PC.BuildupEmitter] = {name="BuildupEmitter", category="emitter", addnew=new_default_buildup_emitter, fields={
+			{type="number", id="rate", text="Triggers every seconds: ", min=0, max=600, default=0.5},
+			{type="number", id="rate_sec", text="Triggers/sec increase/sec: ", min=-600, max=600, default=0.15, line=true},
+			{type="number", id="nb", text="Particles per trigger: ", min=0, max=100000, default=10},
+			{type="number", id="nb_sec", text="Particles/trig increase/sec: ", min=-100000, max=100000, default=5, line=true},
 			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
 			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1, line=true},
 			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup): ", default=false},

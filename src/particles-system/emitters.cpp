@@ -98,4 +98,84 @@ void LinearEmitter::emit(ParticlesData &p, float dt) {
 	}
 }
 
+void BurstEmitter::emit(ParticlesData &p, float dt) {
+	// We are not dead, but very sleepy
+	if (dormant) return;
+
+	// We are not at start yet
+	if (startat > 0) { startat -= dt; return; }
+
+	// A trigger forced use to fire
+	if (next_tick_force_generate) { bursting = burst; }
+
+	// No time passed
+	if (!dt) return;
+
+	// Are we done yet ?
+	if (duration > -1) {
+		duration -= dt;
+		if (duration < 0) {
+			active = false;
+			triggerEvent(EventKind::STOP);
+		}
+	}
+
+	// Are we fully triggers controlled?
+	if (!rate && !bursting) return;
+
+	if (first_tick) { first_tick = false; triggerEvent(EventKind::START); }
+
+	// Accumulate time and if needed call our generators
+	accumulator += dt;
+	if (accumulator >= rate) {
+		accumulator -= rate;
+		bursting = burst;
+	}
+
+	if (bursting > 0) {
+		bursting -= dt;
+		generate(p, ceil(nb * dt / burst));
+	}
+}
+
+
+void BuildupEmitter::emit(ParticlesData &p, float dt) {
+	// We are not dead, but very sleepy
+	if (dormant) return;
+
+	// We are not at start yet
+	if (startat > 0) { startat -= dt; return; }
+
+	// A trigger forced use to fire
+	if (next_tick_force_generate) { for (uint16_t i = 0; i < next_tick_force_generate; i++) generate(p, nb); next_tick_force_generate = 0; return; }
+
+	// No time passed
+	if (!dt) return;
+
+	// Are we done yet ?
+	if (duration > -1) {
+		duration -= dt;
+		if (duration < 0) {
+			active = false;
+			triggerEvent(EventKind::STOP);
+		}
+	}
+
+	rate += rate_sec * dt;
+	nb += nb_sec * dt;
+	if (rate_sec && rate < 0.01) rate = 0.0001;
+
+	// Are we fully triggers controlled?
+	if (rate <= 0) return;
+
+	if (first_tick) { first_tick = false; triggerEvent(EventKind::START); }
+
+	// Accumulate time and if needed call our generators
+	accumulator += dt;
+	while (accumulator >= rate) {
+		accumulator -= rate;
+		generate(p, nb);
+	}
+}
+
 }

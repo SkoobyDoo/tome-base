@@ -339,7 +339,19 @@ static int p_new(lua_State *L) {
 			switch (e_id) {
 				case EmittersList::LinearEmitter: {
 					auto emm = new LinearEmitter(); em = emm;
-					lua_float(L, &emm->startat, -1, "startat", -1); lua_float(L, &emm->duration, -1, "duration", -1); lua_float(L, &emm->rate, -1, "rate", 0.1); lua_float(L, &emm->nb, -1, "nb", 10);
+					lua_float(L, &emm->startat, -1, "startat", -1); lua_float(L, &emm->duration, -1, "duration", -1);
+					lua_float(L, &emm->rate, -1, "rate", 0.1); lua_float(L, &emm->nb, -1, "nb", 10);
+					break;}
+				case EmittersList::BurstEmitter: {
+					auto emm = new BurstEmitter(); em = emm;
+					lua_float(L, &emm->startat, -1, "startat", -1); lua_float(L, &emm->duration, -1, "duration", -1);
+					lua_float(L, &emm->rate, -1, "rate", 0.5); lua_float(L, &emm->nb, -1, "nb", 10); lua_float(L, &emm->burst, -1, "burst", 0.1);
+					break;}
+				case EmittersList::BuildupEmitter: {
+					auto emm = new BuildupEmitter(); em = emm;
+					lua_float(L, &emm->startat, -1, "startat", -1); lua_float(L, &emm->duration, -1, "duration", -1);
+					lua_float(L, &emm->rate, -1, "rate", 0.5); lua_float(L, &emm->nb, -1, "nb", 10);
+					lua_float(L, &emm->rate_sec, -1, "rate_sec", -0.15); lua_float(L, &emm->nb_sec, -1, "nb_sec", 5);
 					break;}
 				default:
 					lua_pushliteral(L, "Unknown particles emitter"); lua_error(L);
@@ -649,6 +661,8 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "ShinyBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::ShinyBlend)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "LinearEmitter"); lua_pushnumber(L, static_cast<uint8_t>(EmittersList::LinearEmitter)); lua_rawset(L, -3);
+	lua_pushliteral(L, "BurstEmitter"); lua_pushnumber(L, static_cast<uint8_t>(EmittersList::BurstEmitter)); lua_rawset(L, -3);
+	lua_pushliteral(L, "BuildupEmitter"); lua_pushnumber(L, static_cast<uint8_t>(EmittersList::BuildupEmitter)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "LinearColorUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::LinearColorUpdater)); lua_rawset(L, -3);
 	lua_pushliteral(L, "EasingColorUpdater"); lua_pushnumber(L, static_cast<uint8_t>(UpdatersList::EasingColorUpdater)); lua_rawset(L, -3);
