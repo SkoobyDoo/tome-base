@@ -346,7 +346,8 @@ function _M:addEvent(spe)
 end
 
 function _M:addParameter()
-	Dialog:listPopup("Parameter", "Type:", {{name="Number"}, {name="Point"}}, 150, 250, function(item) if item then
+	local item = {name="Number"}
+	-- Dialog:listPopup("Parameter", "Type:", {{name="Number"}, {name="Point"}}, 150, 250, function(item) if item then
 		Dialog:textboxPopup("Parameter", "Name:", 1, 50, function(name) if name then
 			name = name:gsub("[A-Z]", function(c) return c:lower() end)
 			if not name:find("^[a-z][a-z_0-9]*$") then Dialog:simplePopup("Parameter Error", "Name invalid, only letters, numbers and _ allowed and can not being with number.") return end
@@ -367,7 +368,7 @@ function _M:addParameter()
 				end
 			end end)
 		end end)
-	end end)
+	-- end end)
 end
 
 function _M:addNew(kind, into)
@@ -426,8 +427,9 @@ local function getParametrizedColor(p)
 	return "SALMON"
 end
 
-local function parametrizedBox(t)
+function _M:parametrizedBox(t)
 	local on_change = t.on_change
+	t.font = self.dfont
 	t.orig_title = t.title
 	t.text = tostring(t.number)
 	t.on_change = function(v, box)
@@ -457,32 +459,32 @@ end
 function _M:processSpecificUI(ui, add, kind, spe, delete)
 	local spe_def = specific_uis[kind][spe[1]]
 	if not spe_def then error("unknown def for: "..tostring(spe[1])) end
-	add(Checkbox.new{title="#{bold}##GOLD#"..spe_def.name, default=true, fct=function()end, on_change=function(v) if not v then delete() end end})
+	add(Checkbox.new{font=self.dfont, title="#{bold}##GOLD#"..spe_def.name, default=true, fct=function()end, on_change=function(v) if not v then delete() end end})
 	local adds = {}
 	for i, field in ipairs(spe_def.fields) do
 		field.from = field.from or function(v) return v end
 		field.to = field.to or function(v) return v end
 		if field.type == "number" then
 			if not spe[field.id] then spe[field.id] = field.default end
-			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = self:parametrizedBox{title=field.text, number=field.to(spe[field.id]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "bool" then
 			if not spe[field.id] then spe[field.id] = field.default end
-			adds[#adds+1] = Checkbox.new{title=field.text, default=field.to(spe[field.id]), on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = Checkbox.new{font=self.dfont, title=field.text, default=field.to(spe[field.id]), on_change=function(p) spe[field.id] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "point" then
 			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
-			adds[#adds+1] = parametrizedBox{title=field.text, number=field.to(spe[field.id][1]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
-			adds[#adds+1] = parametrizedBox{title="x", number=field.to(spe[field.id][2]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = self:parametrizedBox{title=field.text, number=field.to(spe[field.id][1]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id][1] = field.from(p) self:regenParticle() end, fct=function()end}
+			adds[#adds+1] = self:parametrizedBox{title="x", number=field.to(spe[field.id][2]), min=field.to(field.min), max=field.to(field.max), chars=6, on_change=function(p) spe[field.id][2] = field.from(p) self:regenParticle() end, fct=function()end}
 		elseif field.type == "color" then
 			if not spe[field.id] then spe[field.id] = table.clone(field.default, true) end
-			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
-			adds[#adds+1] = ColorPicker.new{color=spe[field.id], width=20, height=20, fct=function(p) spe[field.id] = p self:regenParticle() end}
+			adds[#adds+1] = Textzone.new{font=self.dfont, text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
+			adds[#adds+1] = ColorPicker.new{font=self.dfont, color=spe[field.id], width=20, height=20, fct=function(p) spe[field.id] = p self:regenParticle() end}
 		elseif field.type == "select" then
 			if not spe[field.id] then spe[field.id] = field.default end
-			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
-			adds[#adds+1] = Dropdown.new{width=200, default={"name", spe[field.id]}, fct=function(item) spe[field.id] = item.name self:regenParticle() self:makeUI() end, on_select=function(item)end, list=easings, nb_items=math.min(#easings, 30)}
+			adds[#adds+1] = Textzone.new{font=self.dfont, text=(i==1 and "    " or "")..field.text, auto_width=1, auto_height=1}
+			adds[#adds+1] = Dropdown.new{font=self.dfont, width=200, default={"name", spe[field.id]}, fct=function(item) spe[field.id] = item.name self:regenParticle() self:makeUI() end, on_select=function(item)end, list=easings, nb_items=math.min(#easings, 30)}
 		elseif field.type == "file" then
 			if not spe[field.id] then spe[field.id] = field.default end
-			adds[#adds+1] = Textzone.new{text=(i==1 and "    " or "")..field.text..tostring(spe[field.id]), auto_width=1, auto_height=1, fct=function() self:selectFile(spe, field) end}
+			adds[#adds+1] = Textzone.new{font=self.dfont, text=(i==1 and "    " or "")..field.text..tostring(spe[field.id]), auto_width=1, auto_height=1, fct=function() self:selectFile(spe, field) end}
 		end
 		if field.line then add(unpack(adds)) adds={} end
 	end
@@ -491,22 +493,22 @@ function _M:processSpecificUI(ui, add, kind, spe, delete)
 end
 
 function _M:displayParameter(add, name, value)
-	local adds = {Checkbox.new{title="", default=true, fct=function()end, on_change=function(v) if not v then pdef.parameters[name] = nil if not next(pdef.parameters) then pdef.parameters = nil end self:regenParticle() self:makeUI() end end}}
+	local adds = {Checkbox.new{font=self.dfont, title="", default=true, fct=function()end, on_change=function(v) if not v then pdef.parameters[name] = nil if not next(pdef.parameters) then pdef.parameters = nil end self:regenParticle() self:makeUI() end end}}
 	if type(value) == "number" then
-		adds[#adds+1] = Numberbox.new{title="#{bold}##SALMON#"..name..": ", number=value, min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name] = p self:regenParticle() end, fct=function()end}
+		adds[#adds+1] = Numberbox.new{font=self.dfont, title="#{bold}##SALMON#"..name..": ", number=value, min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name] = p self:regenParticle() end, fct=function()end}
 	elseif type(value) == "table" and #value == 2 then
-		adds[#adds+1] = Numberbox.new{title="#{bold}##SALMON#"..name..": ", number=value[1], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][1] = p self:regenParticle() end, fct=function()end}
-		adds[#adds+1] = Numberbox.new{title="x", number=value[2], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][2] = p self:regenParticle() end, fct=function()end}
+		adds[#adds+1] = Numberbox.new{font=self.dfont, title="#{bold}##SALMON#"..name..": ", number=value[1], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][1] = p self:regenParticle() end, fct=function()end}
+		adds[#adds+1] = Numberbox.new{font=self.dfont, title="x", number=value[2], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][2] = p self:regenParticle() end, fct=function()end}
 	end
 	add(unpack(adds))
 	add(8)
 end
 
 function _M:makeTitle(add, tab, text, important, on_click)
-	local b = Button.new{text=text, all_buttons_fct=true, fct=function(button) if on_click then on_click(button) end end, width=self.iw - tab - 10, use_frame=important and "ui/heading" or "ui/selector"}
+	local b = Button.new{font=self.dfont, text=text, all_buttons_fct=true, fct=function(button) if on_click then on_click(button) end end, width=self.iw - tab - 10, use_frame=important and "ui/heading" or "ui/selector"}
 
 	if important then
-		add(Checkbox.new{title="", default=true, fct=function()end, on_change=function(v) if not v then important() end end}, b)
+		add(Checkbox.new{font=self.dfont, title="", default=true, fct=function()end, on_change=function(v) if not v then important() end end}, b)
 	else
 		add(b)
 	end
@@ -583,8 +585,8 @@ function _M:makeUI()
 			self:displayParameter(add, name, value)
 		end
 	end					
-	add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addParameter() end}, Textzone.new{text="add parameter", auto_width=1, auto_height=1, fct=function() self:addParameter() end})
-	add(Separator.new{dir="vertical", size=self.iw})
+	add(DisplayObject.new{font=self.dfont, DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addParameter() end}, Textzone.new{font=self.dfont, text="add parameter", auto_width=1, auto_height=1, fct=function() self:addParameter() end})
+	add(Separator.new{font=self.dfont, dir="vertical", size=self.iw})
 	add(10)
 
 	for id_system, system in ipairs(def) do
@@ -594,12 +596,12 @@ function _M:makeUI()
 		if not system.hide then
 			tab = 20
 			add(
-				Textzone.new{text="Max: ", auto_width=1, auto_height=1}, Numberbox.new{number=system.max_particles, min=1, max=100000, chars=6, on_change=function(p) system.max_particles = p self:regenParticle() end, fct=function()end},
-				Textzone.new{text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes}
+				Textzone.new{font=self.dfont, text="Max: ", auto_width=1, auto_height=1}, Numberbox.new{font=self.dfont, number=system.max_particles, min=1, max=100000, chars=6, on_change=function(p) system.max_particles = p self:regenParticle() end, fct=function()end},
+				Textzone.new{font=self.dfont, text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{font=self.dfont, width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes}
 			)
 			add(0)
-			add(Textzone.new{text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
-			add(Textzone.new{text="Shader: "..(system.shader or "--"), auto_width=1, auto_height=1, fct=function() self:selectShader(system) end})
+			add(Textzone.new{font=self.dfont, text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
+			add(Textzone.new{font=self.dfont, text="Shader: "..(system.shader or "--"), auto_width=1, auto_height=1, fct=function() self:selectShader(system) end})
 			add(8)
 			
 			for id_emitter, emitter in ipairs(system.emitters) do
@@ -609,36 +611,36 @@ function _M:makeUI()
 				if not emitter.hide then
 					tab = 40
 					self:processSpecificUI(ui, add, "emitters", emitter, function() table.remove(system.emitters, id) self:makeUI() self:regenParticle() end)
-					add(Separator.new{dir="vertical", size=self.iw * 0.5})
+					add(Separator.new{font=self.dfont, dir="vertical", size=self.iw * 0.5})
 
 					for id_generator, generator in ipairs(emitter[2]) do
 						local id = id_generator
 						self:processSpecificUI(ui, add, "generators", generator, function() table.remove(emitter[2], id) self:makeUI() self:regenParticle() end)
 					end
-					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add generator", auto_width=1, auto_height=1, fct=function() self:addNew("generators", emitter[2]) end})
+					add(DisplayObject.new{font=self.dfont, DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{font=self.dfont, text="add generator", auto_width=1, auto_height=1, fct=function() self:addNew("generators", emitter[2]) end})
 
 					if emitter.triggers then
 						tab = 60
 						self:makeTitle(add, tab, "#{bold}##OLIVE_DRAB#----== Triggers ==----", false)
 						for name, kind in pairs(emitter.triggers) do
-							add(Checkbox.new{title="#OLIVE_DRAB#"..name.."#LAST# => #{italic}#"..trigger_by_id[kind], default=true, on_change=function(p) emitter.triggers[name] = nil if not next(emitter.triggers) then emitter.triggers = nil end self:makeUI() self:regenParticle() end, fct=function()end})
+							add(Checkbox.new{font=self.dfont, title="#OLIVE_DRAB#"..name.."#LAST# => #{italic}#"..trigger_by_id[kind], default=true, on_change=function(p) emitter.triggers[name] = nil if not next(emitter.triggers) then emitter.triggers = nil end self:makeUI() self:regenParticle() end, fct=function()end})
 						end
 					end					
-					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add trigger", auto_width=1, auto_height=1, fct=function() self:addTrigger(emitter) end})
+					add(DisplayObject.new{font=self.dfont, DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{font=self.dfont, text="add trigger", auto_width=1, auto_height=1, fct=function() self:addTrigger(emitter) end})
 
 					if emitter.events then
 						tab = 60
 						self:makeTitle(add, tab, "#{bold}##DARK_ORCHID#----== Events ==----", false)
 						for name, kind in pairs(emitter.events) do
-							add(Checkbox.new{title="#DARK_ORCHID#"..name.."#LAST# => #{italic}#"..event_by_id[kind], default=true, on_change=function(p) emitter.events[name] = nil if not next(emitter.events) then emitter.events = nil end self:makeUI() self:regenParticle() end, fct=function()end})
+							add(Checkbox.new{font=self.dfont, title="#DARK_ORCHID#"..name.."#LAST# => #{italic}#"..event_by_id[kind], default=true, on_change=function(p) emitter.events[name] = nil if not next(emitter.events) then emitter.events = nil end self:makeUI() self:regenParticle() end, fct=function()end})
 						end
 					end					
-					add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{text="add event", auto_width=1, auto_height=1, fct=function() self:addEvent(emitter) end})
+					add(DisplayObject.new{font=self.dfont, DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("generators", emitter[2]) end}, Textzone.new{font=self.dfont, text="add event", auto_width=1, auto_height=1, fct=function() self:addEvent(emitter) end})
 				end
 			end
 			tab = 20
 			add(5)
-			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("emitters", system.emitters) end}, Textzone.new{text="add emitter", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", system.emitters) end})
+			add(DisplayObject.new{font=self.dfont, DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("emitters", system.emitters) end}, Textzone.new{font=self.dfont, text="add emitter", auto_width=1, auto_height=1, fct=function() self:addNew("emitters", system.emitters) end})
 			add(5)
 			
 			self:makeTitle(add, tab, "#{bold}##AQUAMARINE#----== Updaters ==----", false)
@@ -647,13 +649,13 @@ function _M:makeUI()
 				local id = id_updater
 				self:processSpecificUI(ui, add, "updaters", updater, function() table.remove(system.updaters, id) self:makeUI() self:regenParticle() end)
 			end
-			add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("updaters", system.updaters) end}, Textzone.new{text="add updater", auto_width=1, auto_height=1, fct=function() self:addNew("updaters", system.updaters) end})
+			add(DisplayObject.new{font=self.dfont, DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("updaters", system.updaters) end}, Textzone.new{font=self.dfont, text="add updater", auto_width=1, auto_height=1, fct=function() self:addNew("updaters", system.updaters) end})
 		end
 		add(8)
 	end
 	tab = 0
 	add(8)
-	add(DisplayObject.new{DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("systems", def) end}, Textzone.new{text="add system", auto_width=1, auto_height=1, fct=function() self:addNew("systems", def) end})
+	add(DisplayObject.new{font=self.dfont, DO=core.renderer.fromTextureTable(self.plus_t), width=16, height=16, fct=function() self:addNew("systems", def) end}, Textzone.new{font=self.dfont, text="add system", auto_width=1, auto_height=1, fct=function() self:addNew("systems", def) end})
 	
 	self:loadUI(ui)
 	self:setupUI(false, false)
@@ -724,7 +726,7 @@ function _M:selectTexture(system)
 		list[#list+1] = "/data/gfx/particles_textures/"..file
 	end end 
 
-	local clist = ImageList.new{width=self.iw, height=self.ih, tile_w=128, tile_h=128, force_size=true, padding=10, scrollbar=true, root_loader=true, list=list, fct=function(item)
+	local clist = ImageList.new{font=self.dfont, width=self.iw, height=self.ih, tile_w=128, tile_h=128, force_size=true, padding=10, scrollbar=true, root_loader=true, list=list, fct=function(item)
 		game:unregisterDialog(d)
 		system.texture = item.data
 		self:makeUI()
@@ -748,7 +750,7 @@ function _M:selectShader(system)
 		list[#list+1] = {name=file, path="particles/"..file:gsub("%.lua$", "")}
 	end end 
 
-	local clist = List.new{width=self.iw, height=self.ih, scrollbar=true, list=list, fct=function(item)
+	local clist = List.new{font=self.dfont, width=self.iw, height=self.ih, scrollbar=true, list=list, fct=function(item)
 		game:unregisterDialog(d)
 		system.shader = item.path
 		self:makeUI()
@@ -772,7 +774,7 @@ function _M:selectFile(spe, field)
 		list[#list+1] = {name=file, path=field.dir..file}
 	end end 
 
-	local clist = List.new{width=self.iw, height=self.ih, scrollbar=true, list=list, fct=function(item)
+	local clist = List.new{font=self.dfont, width=self.iw, height=self.ih, scrollbar=true, list=list, fct=function(item)
 		game:unregisterDialog(d)
 		spe[field.id] = item.path
 		self:makeUI()
@@ -803,7 +805,12 @@ function _M:setBG(kind)
 	end
 end
 
-function _M:init()
+function _M:init(no_bloom)
+	local id, size = FontPackage:getDefault()
+	FontPackage:setDefaultId("default") FontPackage:setDefaultSize("normal")
+	self.dfont = FontPackage:get("default")
+	FontPackage:setDefaultId(id) FontPackage:setDefaultSize(size)
+
 	self.allow_scroll = true
 	Dialog.init(self, _t"Particles Editor", 500, game.h * 0.9, game.w - 550)
 	self.__showup = false
@@ -838,7 +845,7 @@ function _M:init()
 				"keybinds_all",
 				"video",
 				"sound",
-				"exit",
+				{"Exit", function() if game.__mod_info.short_name=="particles_editor" then os.exit() else game:unregisterDialog(self) end end},
 			}
 			local menu = require("engine.dialogs.GameMenu").new(list)
 			game:registerDialog(menu)
@@ -870,7 +877,7 @@ function _M:init()
 	local fbobloomview = core.renderer.view():ortho(w/self.downsampling, h/self.downsampling, false)
 	self.fbobloom = core.renderer.target(w/self.downsampling, h/self.downsampling, 1, true):setAutoRender(bloomr):view(fbobloomview)--:translate(0,-h)
 	self.initial_blooming = true
-	self:toggleBloom()
+	if not no_bloom then self:toggleBloom() end
 	self.initial_blooming = false
 	if false then -- true to see only the bloom texture
 		-- finalquad:textureTarget(self.fbobloom, 0, 0):shader(main_shader)
@@ -934,11 +941,13 @@ function _M:toScreen(x, y, nb_keyframes)
 		self:regenParticle(true)
 	end
 
-	if self.fbobloom then
+	if self.blooming then
 		self.fbomain:compute()
 		self.fbobloom:compute()
+		self.fborenderer:toScreen()
+	else
+		self.particle_renderer:toScreen()
 	end
-	self.fborenderer:toScreen()
 	-- self.p:toScreen(0, 0, nb_keyframes)
 
 	self.uidialog:toScreen(0, 0, nb_keyframes)
@@ -974,18 +983,18 @@ function UIDialog:init(master)
 	self.__showup = false
 	self.absolute = true
 
-	local cp =ColorPicker.new{color={0, 0, 0, 1}, width=20, height=20, fct=function(p) master:setBG(p) end}
+	local cp =ColorPicker.new{font=self.dfont, color={0, 0, 0, 1}, width=20, height=20, fct=function(p) master:setBG(p) end}
 
-	local new = Button.new{text="New", fct=function() self:reset() end}
-	local load = Button.new{text="Load", fct=function() self:load(master) end}
-	local merge = Button.new{text="Merge", fct=function() self:merge(master) end}
-	local save = Button.new{text="Save", fct=function() self:save() end}
+	local new = Button.new{font=master.dfont, text="New", fct=function() self:reset() end}
+	local load = Button.new{font=master.dfont, text="Load", fct=function() self:load(master) end}
+	local merge = Button.new{font=master.dfont, text="Merge", fct=function() self:merge(master) end}
+	local save = Button.new{font=master.dfont, text="Save", fct=function() self:save() end}
 
-	local bgt = Button.new{text="Transparent background", fct=function() master:setBG("transparent") end}
-	local bgb = Button.new{text="Color background", fct=function() cp:popup() end}
-	local bg1 = Button.new{text="Background1", fct=function() master:setBG("tome1") end}
-	local bg2 = Button.new{text="Background2", fct=function() master:setBG("tome2") end}
-	local bg3 = Button.new{text="Background3", fct=function() master:setBG("tome3") end}
+	local bgt = Button.new{font=master.dfont, text="Transparent background", fct=function() master:setBG("transparent") end}
+	local bgb = Button.new{font=master.dfont, text="Color background", fct=function() cp:popup() end}
+	local bg1 = Button.new{font=master.dfont, text="Background1", fct=function() master:setBG("tome1") end}
+	local bg2 = Button.new{font=master.dfont, text="Background2", fct=function() master:setBG("tome2") end}
+	local bg3 = Button.new{font=master.dfont, text="Background3", fct=function() master:setBG("tome3") end}
 
 	self.margin_top = new.h + 5
 	self.margin_bottom = bgt.h + 5
@@ -1029,7 +1038,7 @@ function UIDialog:load(master)
 		list[#list+1] = {name=file, path="/data/gfx/particles/"..file}
 	end end 
 
-	local clist = List.new{scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
+	local clist = List.new{font=self.dfont, scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
 		game:unregisterDialog(d)
 		-- PC.gcTextures()
 		pdef_history={} pdef_history_pos=0
@@ -1061,7 +1070,7 @@ function UIDialog:merge(master)
 		list[#list+1] = {name=file, path="/data/gfx/particles/"..file}
 	end end 
 
-	local clist = List.new{scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
+	local clist = List.new{font=self.dfont, scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
 		game:unregisterDialog(d)
 		local ok, f = pcall(loadfile, item.path)
 		if not ok then Dialog:simplePopup("Error loading particle file", f) return end
@@ -1192,7 +1201,7 @@ function UIDialog:save()
 		self:saveAs(txt, false)
 	end
 
-	local box = Textbox.new{title="Filename (without .pc extension): ", chars=80, text=self.master.current_filename or "", fct=function(txt) if #txt > 0 then
+	local box = Textbox.new{font=self.dfont, title="Filename (without .pc extension): ", chars=80, text=self.master.current_filename or "", fct=function(txt) if #txt > 0 then
 		if fs.exists("/data/gfx/particles/"..txt..".pc") then
 			Dialog:yesnoPopup("Override", "File already exists, override it?", function(ret) if ret then exec(txt) end end)
 		else exec(txt) end

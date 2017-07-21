@@ -55,6 +55,13 @@ function _M:setDefaultId(id)
 	cur_id = id
 end
 
+--- Returns the default current settings
+-- @return id
+-- @return size
+function _M:getDefault()
+	return cur_id or "basic", cur_size or "normal"
+end
+
 --- Resolves a font
 -- @string name
 -- @string orname

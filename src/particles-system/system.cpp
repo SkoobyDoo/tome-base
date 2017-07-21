@@ -313,11 +313,14 @@ int Ensemble::getDefinition(lua_State *L, const char *def_str) {
 		return it->second->ref;
 	}
 
-	if (!PHYSFS_exists(def_str)) {
-		printf("[ParticlesCompose] file not found: %s\n", def_str);
+	string full_def(def_str);
+	if (full_def[0] != '/') full_def.insert(0, "/data/gfx/particles/");
+
+	if (!PHYSFS_exists(full_def.c_str())) {
+		printf("[ParticlesCompose] file not found: %s\n", full_def.c_str());
 		lua_newtable(L);
 	} else {
-		luaL_loadfile(L, def_str); // Load file
+		luaL_loadfile(L, full_def.c_str()); // Load file
 		lua_newtable(L); // Make new env table
 		lua_pushliteral(L, "PC"); // Push particle composer table into the env
 		lua_rawgeti(L, LUA_REGISTRYINDEX, PC_lua_ref);
