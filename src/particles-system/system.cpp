@@ -20,6 +20,7 @@
 */
 extern "C" {
 #include "display_sdl.h"
+#include "physfs.h"
 }
 #include "particles-system/system.hpp"
 #include "core_loader.hpp"
@@ -142,10 +143,10 @@ System::System(uint32_t max, RendererBlend blend) {
 	list.max = max;
 	if (GLEW_VERSION_3_3) {
 		renderer.reset(new RendererGL3());
-		printf("[ParticlesCompose] System using RendererGL3\n");
+		// printf("[ParticlesCompose] System using RendererGL3\n");
 	} else {
 		renderer.reset(new RendererGL2());
-		printf("[ParticlesCompose] System using RendererGL2\n");
+		// printf("[ParticlesCompose] System using RendererGL2\n");
 	}
 	renderer->setBlend(blend);
 }
@@ -312,18 +313,23 @@ int Ensemble::getDefinition(lua_State *L, const char *def_str) {
 		return it->second->ref;
 	}
 
-	luaL_loadfile(L, def_str); // Load file
-	lua_newtable(L); // Make new env table
-	lua_pushliteral(L, "PC"); // Push particle composer table into the env
-	lua_rawgeti(L, LUA_REGISTRYINDEX, PC_lua_ref);
-	lua_rawset(L, -3);
-	lua_setfenv(L, -2); // Set the env
-
-	// Get the data
-	if (lua_pcall(L, 0, 1, 0)) {
-		printf("ParticlesComposer def get error: %s\n", lua_tostring(L, -1));
-		lua_pop(L, 1);
+	if (!PHYSFS_exists(def_str)) {
+		printf("[ParticlesCompose] file not found: %s\n", def_str);
 		lua_newtable(L);
+	} else {
+		luaL_loadfile(L, def_str); // Load file
+		lua_newtable(L); // Make new env table
+		lua_pushliteral(L, "PC"); // Push particle composer table into the env
+		lua_rawgeti(L, LUA_REGISTRYINDEX, PC_lua_ref);
+		lua_rawset(L, -3);
+		lua_setfenv(L, -2); // Set the env
+
+		// Get the data
+		if (lua_pcall(L, 0, 1, 0)) {
+			printf("[ParticlesComposer] file load error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+			lua_newtable(L);
+		}
 	}
 
 	// Get a ref on it
@@ -375,12 +381,11 @@ int Ensemble::getDefinition(lua_State *L, const char *def_str) {
 
 void Ensemble::getExpression(lua_State *L, float *dst, const char *expr_str, int env_id) {
 	string expr(expr_str);
-	printf("-------------------\n");
 	ExpressionID id = exprs.compile(expr);
 	parametrized_values.emplace_back(dst, id);
 	*dst = exprs.eval(id);
-	exprs.print();
-	printf("Compiled expression %s to id %d => %f\n", expr_str, id, *dst);
+	// exprs.print();
+	// printf("Compiled expression %s to id %d => %f\n", expr_str, id, *dst);
 }
 
 Ensemble::Ensemble() {
