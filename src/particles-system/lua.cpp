@@ -440,7 +440,9 @@ static int p_new(lua_State *L) {
 						break;}
 					case GeneratorsList::DirectionVelGenerator: {
 						auto g = new DirectionVelGenerator(); gg = g;
-						lua_vec2(L, &g->from, -1, "from", {0, 0}); lua_float(L, &g->min_vel, -1, "min_vel", 5); lua_float(L, &g->max_vel, -1, "max_vel", 10);
+						lua_vec2(L, &g->from, -1, "from", {0, 0});
+						lua_float(L, &g->min_vel, -1, "min_vel", 5); lua_float(L, &g->max_vel, -1, "max_vel", 10);
+						lua_float(L, &g->min_rot, -1, "min_rot", 0); lua_float(L, &g->max_rot, -1, "max_rot", 0);
 						break;}
 					case GeneratorsList::BasicSizeGenerator: {
 						auto g = new BasicSizeGenerator(); gg = g;

@@ -130,6 +130,7 @@ public:
 class DirectionVelGenerator : public Generator {
 public:
 	float min_vel, max_vel;
+	float min_rot, max_rot;
 	vec2 from;
 	virtual uint32_t weight() const { return 150; };
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(VEL); p.initSlot2(ACC); };

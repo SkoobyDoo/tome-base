@@ -248,7 +248,9 @@ local specific_uis = {
 		[PC.DirectionVelGenerator] = {name="DirectionVelGenerator", category="movement", fields={
 			{type="point", id="from", text="From: ", min=-10000, max=10000, default={0, 0}, line=true},
 			{type="number", id="min_vel", text="Min velocity: ", min=-1000, max=1000, default=50},
-			{type="number", id="max_vel", text="Max velocity: ", min=-1000, max=1000, default=150},
+			{type="number", id="max_vel", text="Max velocity: ", min=-1000, max=1000, default=150, line=true},
+			{type="number", id="min_rot", text="Min rotation: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
+			{type="number", id="max_rot", text="Max rotation: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 		}},
 		[PC.BasicSizeGenerator] = {name="BasicSizeGenerator", category="size", fields={
 			{type="number", id="min_size", text="Min size: ", min=0.00001, max=1000, default=10},
@@ -532,9 +534,9 @@ end
 function _M:displayParameter(add, name, value)
 	local adds = {Checkbox.new{font=self.dfont, title="", default=true, fct=function()end, on_change=function(v) if not v then pdef.parameters[name] = nil if not next(pdef.parameters) then pdef.parameters = nil end self:regenParticle() self:makeUI() end end}}
 	if type(value) == "number" then
-		adds[#adds+1] = Numberbox.new{font=self.dfont, title="#{bold}##SALMON#"..name..": ", number=value, min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name] = p self:regenParticle() end, fct=function()end}
+		adds[#adds+1] = Numberbox.new{font=self.dfont, title="#{bold}##SALMON#"..name..": ", number=value, min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name] = p self.pdo:params(pdef.parameters) end, fct=function()end}
 	elseif type(value) == "table" and #value == 2 then
-		adds[#adds+1] = Numberbox.new{font=self.dfont, title="#{bold}##SALMON#"..name..": ", number=value[1], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][1] = p self:regenParticle() end, fct=function()end}
+		adds[#adds+1] = Numberbox.new{font=self.dfont, title="#{bold}##SALMON#"..name..": ", number=value[1], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][1] = p self.pdo:params(pdef.parameters) end, fct=function()end}
 		adds[#adds+1] = Numberbox.new{font=self.dfont, title="x", number=value[2], min=-100000, max=100000, chars=6, on_change=function(p) pdef.parameters[name][2] = p self:regenParticle() end, fct=function()end}
 	end
 	add(unpack(adds))

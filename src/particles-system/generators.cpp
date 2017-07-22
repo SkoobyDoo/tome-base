@@ -123,7 +123,7 @@ void DirectionVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t 
 	vec4* life = p.getSlot4(LIFE);
 	vec2* vel = p.getSlot2(VEL);
 	for (uint32_t i = start; i < end; i++) {
-		float a = atan2f(pos[i].y - from.y - final_pos.y, pos[i].x - from.x - final_pos.x);
+		float a = atan2f(pos[i].y - from.y - final_pos.y, pos[i].x - from.x - final_pos.x) + genrand_real(min_rot, max_rot);
 		float r = genrand_real(min_vel, max_vel);
 		vel[i].x = cos(a) * r;
 		vel[i].y = sin(a) * r;
