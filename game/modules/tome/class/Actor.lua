@@ -6552,17 +6552,22 @@ function _M:on_set_temporary_effect(eff_id, e, p)
 		elseif save_type == "combatSpellResist" then p.save_string = "Spell save"
 		end
 
-		if p.dur > 0 and e.status == "detrimental" then
-			-- apply cross-tier effects
-			if not p.no_ct_effect and not e.no_ct_effect then self:crossTierEffect(eff_id, p.apply_power, p.apply_save or save_for_effects[e.type]) end
-			p.total_dur = p.dur
+		if e.status == "detrimental" then
+			if p.dur > 0 then
+				-- apply cross-tier effects
+				if not p.no_ct_effect and not e.no_ct_effect then self:crossTierEffect(eff_id, p.apply_power, p.apply_save or save_for_effects[e.type]) end
+				p.total_dur = p.dur
 
-			local hd = {"Actor:effectSave", saved=saved, save=save, save_type=save_type, eff_id=eff_id, e=e, p=p,}
-			self:triggerHook(hd)
-			self:fireTalentCheck("callbackOnEffectSave", hd)
-			saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p
-			if saved then
-				self:logCombat(p.src, "#ORANGE#%s shrugs off %s '%s'!", self.name:capitalize(), p.src and "#Target#'s" or "the effect", e.desc)
+				local hd = {"Actor:effectSave", saved=saved, save=save, save_type=save_type, eff_id=eff_id, e=e, p=p,}
+				self:triggerHook(hd)
+				self:fireTalentCheck("callbackOnEffectSave", hd)
+				saved, eff_id, e, p = hd.saved, hd.eff_id, hd.e, hd.p
+				if saved then
+					self:logCombat(p.src, "#ORANGE#%s shrugs off %s '%s'!", self.name:capitalize(), p.src and "#Target#'s" or "the effect", e.desc)
+					return true
+				end
+			else
+				self:logCombat(p.src, "#LIGHT_UMBER#%s resists %s '%s'!", self.name:capitalize(), p.src and "#Target#'s" or "the effect", e.desc)
 				return true
 			end
 		end
