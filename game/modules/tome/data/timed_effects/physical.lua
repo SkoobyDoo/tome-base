@@ -1130,7 +1130,7 @@ newEffect{
 	type = "physical",
 	subtype = { nature=true, speed=true },
 	status = "beneficial",
-	parameters = {power=1000},
+	parameters = {power=100, no_talents=1},
 	on_gain = function(self, err) return "#Target# is moving at extreme speed!", "+Wild Speed" end,
 	on_lose = function(self, err) return "#Target# slows down.", "-Wild Speed" end,
 	get_fractional_percent = function(self, eff)
@@ -1143,7 +1143,9 @@ newEffect{
 		eff.possible_end_turns = 10 * (eff.dur+1)
 		eff.tmpid = self:addTemporaryValue("wild_speed", 1)
 		eff.moveid = self:addTemporaryValue("movement_speed", eff.power/100)
-		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it
+
+		-- should change priorities rather than forbid all talents
+		if self.ai_state and eff.no_talents ~= 0 then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=eff.no_talents}) end -- Makes the AI not use talents while active
 		eff.stun = self:addTemporaryValue("stun_immune", 1)
 		eff.daze = self:addTemporaryValue("daze_immune", 1)
 		eff.pin = self:addTemporaryValue("pin_immune", 1)
@@ -1191,6 +1193,7 @@ newEffect{
 		eff.possible_end_turns = (eff.dur+1)*game.energy_to_act/game.energy_per_tick
 		eff.tmpid = self:addTemporaryValue("wild_speed", 1)
 		eff.moveid = self:addTemporaryValue("movement_speed", eff.power/100)
+-- should change priorities rather than forbid all talents
 		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it
 	end,
 	deactivate = function(self, eff)
@@ -1220,6 +1223,7 @@ newEffect{
 		eff.possible_end_turns = 10 * (eff.dur+1)
 		eff.tmpid = self:addTemporaryValue("step_up", 1)
 		eff.moveid = self:addTemporaryValue("movement_speed", eff.power/100)
+-- should change priorities rather than forbid all talents
 		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it
 	end,
 	deactivate = function(self, eff)
@@ -1255,6 +1259,7 @@ newEffect{
 		eff.capresistsid = self:addTemporaryValue("resists_cap", {
 			[DamageType.LIGHTNING]=100,
 		})
+-- should change priorities rather than forbid all talents
 		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it
 		eff.particle = self:addParticles(Particles.new("bolt_lightning", 1))
 	end,
@@ -1335,6 +1340,7 @@ newEffect{
 		eff.src = self
 	end,
 	deactivate = function(self, eff)
+		self:removeTemporaryValue("additional_melee_chance", eff.extra_blow_chance) -- backwards compatibility
 	end,
 }
 
@@ -2882,6 +2888,7 @@ newEffect {
 
 		-- AI won't use talents while active.
 		if self.ai_state then
+-- should change priorities rather than forbid all talents
 			self:effectTemporaryValue(eff, "ai_state", {no_talents=1})
 		end
 	end,
@@ -3737,6 +3744,7 @@ newEffect{
 		eff.possible_end_turns = 10 * (eff.dur+1)
 		eff.tmpid = self:addTemporaryValue("wild_speed", 1)
 		eff.moveid = self:addTemporaryValue("movement_speed", eff.speed/100)
+-- should change priorities rather than forbid all talents
 		if self.ai_state then eff.aiid = self:addTemporaryValue("ai_state", {no_talents=1}) end -- Make AI not use talents while using it
 		eff.stun = self:addTemporaryValue("stun_immune", 1)
 		eff.daze = self:addTemporaryValue("daze_immune", 1)

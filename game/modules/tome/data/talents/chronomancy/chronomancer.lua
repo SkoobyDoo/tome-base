@@ -202,7 +202,7 @@ getExtensionModifier = function(self, t, value)
 	return math.max(1, value)
 end
 
--- Tunes paradox
+-- Tunes paradox towards the preferred value
 tuneParadox = function(self, t, value)
 	local dox = self:getParadox() - (self.preferred_paradox or 300)
 	local fix = math.min( math.abs(dox), value )

@@ -61,7 +61,7 @@ A function has been provided to get the trap placement location within the trap 
 
 	x, y = self:trapGetGrid(t, tg, defense)
 		
-See the definition below.  This replaces the usual call to getTarget and handles getting the targeting coordinates from the player or the AI.  It automatically adjusts for Trap Priming as required and contains code for NPC's to find reasonable spots to place the trap.
+See the definition below.  This replaces the usual call to getTarget and handles getting the targeting coordinates from the player or the AI.  It automatically adjusts for Trap Priming as required and contains code for NPCs to find reasonable spots to place the trap.
 
 The support functions and tables are assigned to ActorTalents.
 --]]
@@ -105,25 +105,6 @@ trap_effectiveness = function(self, t, stat)
 	return mastery
 end
 
-local trap_init = false
-trap_mastery_tids = {}
---- initialize traps data
-traps_initialize = function()
-	if not trap_init then
-		local trap_talents = Talents.talents_types_def["cunning/traps"].talents
-		for i, t in ipairs(trap_talents) do
-			if not trap_mastery_tids[t.id] then
-				trap_mastery_tids[t.id] = t.trap_mastery_level
-			end
-			if t.message == nil then -- default, vague talent message
-				t.message = "@Source@ activates a prepared device."
-			end
-		end
-	end
-	trap_init = true
-	return true
-end
-
 --- generate a list of all trap tids that are either known or unlocked for this actor
 traps_getunlocked = function(self)
 	local unlocked = {}
@@ -137,6 +118,9 @@ end
 
 --- default target table for placing a trap
 local trap_default_target = {type="bolt", nowarning=true, range=1, nolock=true, simple_dir_request=true}
+
+-- default AI check to use a trap (don't deploy without a target)
+traps_on_pre_use_ai = function(self, t, silent, fake) return self.ai_target.actor end
 
 --- Method for NPCs to find a grid in which to place a trap near target coords,
 -- tries to place traps as close to the target and nearly inline as possible
@@ -304,8 +288,29 @@ Talents.trap_speed = trap_speed
 Talents.traps_initialize = traps_initialize
 Talents.traps_getunlocked = traps_getunlocked
 Talents.trap_ai_coords = trap_ai_coords
+Talents.traps_on_pre_use_ai = traps_on_pre_use_ai
 Talents.trapGetGrid = trapGetGrid
 Talents.trapping_CreateTrap = trapping_CreateTrap
+
+local trap_init = false
+trap_mastery_tids = {}
+--- initialize traps data
+traps_initialize = function()
+	if not trap_init then
+		local trap_talents = Talents.talents_types_def["cunning/traps"].talents
+		for i, t in ipairs(trap_talents) do
+			if not trap_mastery_tids[t.id] then
+				trap_mastery_tids[t.id] = t.trap_mastery_level
+			end
+			if t.message == nil then -- default, vague talent message
+				t.message = "@Source@ activates a prepared device."
+			end
+			if t.on_pre_use_ai == nil then t.on_pre_use_ai = traps_on_pre_use_ai end
+		end
+	end
+	trap_init = true
+	return true
+end
 
 --- Create and place an assassin ally (Ambush Trap)
 summon_assassin = function(self, target, duration, x, y, scale )

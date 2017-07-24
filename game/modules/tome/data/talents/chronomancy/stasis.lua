@@ -25,7 +25,7 @@ newTalent{
 	require = chrono_req1,
 	mode = "passive",
 	points = 5,
-	getTuning = function(self, t) return 1 + self:combatTalentLimit(t, 6, 0, 3) end,
+	getTuning = function(self, t) return self:combatLimit(self:getTalentLevel(t), 6, 0, 0, 3, 5) end,
 	callbackOnActBase = function(self, t)
 		if not self:hasEffect(self.EFF_SPACETIME_TUNING) then
 			tuneParadox(self, t, t.getTuning(self, t))

@@ -34,9 +34,9 @@ newTalent{
 	sustain_equilibrium = 18,
 	cooldown = 10,
 	tactical = { BUFF = 4 },
-	getPowermult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end, --I5
-	getStatmult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end, --I5
-	getAPRmult = function(self,t,level) return 0.65 + 0.51*(level or self:getTalentLevel(t))^.5 end, -- I5
+	getPowermult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end,
+	getStatmult = function(self,t,level) return 1.076 + 0.324*(level or self:getTalentLevel(t))^.5 end,
+	getAPRmult = function(self,t,level) return 0.65 + 0.51*(level or self:getTalentLevel(t))^.5 end,
 	getDamage = function(self, t) return 0 end,
 	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 1.5 end,
 	activate = function(self, t)
@@ -107,7 +107,12 @@ newTalent{
 	points = 5,
 	equilibrium = 20,
 	cooldown = 25,
-	tactical = { ATTACK = 2, DEFEND=3 },
+	tactical = {
+		ATTACK = {PHYSICAL = function(self, t, target) return self:reactionToward(target) < 0 and {cut=2} or 0 end
+		}, -- add for each foe affected
+		DEFEND = {special = function(self, t, target) return self:reactionToward(target) >= 0 and 3 or 0 end} -- add for each ally affected
+	},
+	target = {type="ball", radius=3, friendlyblock=false}, -- used by the AI to determine actors affected
 	getDamage = function(self, t) return 5 + self:combatTalentMindDamage(t, 5, 35) * get_mindstar_power_mult(self) end,
 	getChance = function(self, t) return util.bound(10 + self:combatTalentMindDamage(t, 3, 25), 10, 40) * get_mindstar_power_mult(self, 90) end,
 	on_pre_use = function(self, t, silent) if not self:hasPsiblades(true, true) then if not silent then game.logPlayer(self, "You require two psiblades in your hands to use this talent.") end return false end return true end,

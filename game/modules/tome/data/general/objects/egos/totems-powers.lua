@@ -79,6 +79,7 @@ newEntity{
 			end
 			return nb
 			end,
+			__wt_cache_turns = 0
 			},
 	}),
 }

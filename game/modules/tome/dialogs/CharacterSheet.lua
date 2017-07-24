@@ -200,17 +200,49 @@ Mouse: Hover over stat for info
 	self:updateKeys()
 end
 
--- Immunity types to display matching Actor:attr(<immunity>)
-_M.status_immunities = {poison_immune = "Poison     ",
-	disease_immune = "Disease    ", cut_immune = "Bleed      ", confusion_immune= "Confusion  ",
-	blind_immune = "Blind      ", silence_immune = "Silence    ", disarm_immune = "Disarm     ",
-	pin_immune = "Pinning    ", stun_immune = "Stun/Freeze", sleep_immune = "Sleep      ",
-	fear_immune = "Fear       ", knockback_immune = "Knockback  ", stone_immune = "Stoning    ",
-	instakill_immune = "Instadeath ", teleport_immune = "Teleport   ",
-	negative_status_effect_immune = "All        "}
--- Specific tooltips to use for certain immunity types
-_M.immunity_tooltips = {instakill_immune = "TOOLTIP_INSTAKILL_IMMUNE", negative_status_effect_immune = "TOOLTIP_NEGATIVE_STATUS_IMMUNE", stun_immune="TOOLTIP_STUN_IMMUNE"}
+--- immunity types to be displayed
+_M.immune_types = table.clone(mod.class.Actor.StatusTypes)
+table.merge(_M.immune_types, {negative_status_effect = "negative_status_effect_immune",
+	mental_negative_status_effect = "mental_negative_status_effect_immune",
+	physical_negative_status_effect = "physical_negative_status_effect_immune",
+	spell_negative_status_effect = "spell_negative_status_effect_immune",
+	worldport = table.NIL_MERGE,
+	planechange = table.NIL_MERGE})
 
+--- specific labels to use for certain immunity types
+_M.immune_labels = {poison = "Poison",
+	disease = "Disease", cut = "Bleed", confusion= "Confusion",
+	blind = "Blindness", silence = "Silence", disarm = "Disarm",
+	pin = "Pinning", stun = "Stun/Freeze", sleep = "Sleep",
+	fear = "Fear", knockback = "Knockback", stone = "Stoning",
+	instakill = "Instant death", teleport = "Teleportation",
+	negative_status_effect 			= "#GOLD#All Status     ",
+	mental_negative_status_effect 	= "#ORANGE#Mental Status  ",
+	physical_negative_status_effect = "#ORANGE#Physical Status",
+	spell_negative_status_effect 	= "#ORANGE#Magical Status ",
+}
+
+--- specific tooltips to use for certain immunity types
+_M.immune_tooltips = {instakill_immune = "TOOLTIP_INSTAKILL_IMMUNE", stun_immune="TOOLTIP_STUN_IMMUNE", negative_status_effect_immune = "TOOLTIP_NEGATIVE_STATUS_IMMUNE", mental_negative_status_effect_immune = "TOOLTIP_NEGATIVE_MENTAL_STATUS_IMMUNE",
+	physical_negative_status_effect_immune = "TOOLTIP_NEGATIVE_PHYSICAL_STATUS_IMMUNE",
+	spell_negative_status_effect_immune = "TOOLTIP_NEGATIVE_SPELL_STATUS_IMMUNE",
+	anomaly_immune = "TOOLTIP_ANOMALY_IMMUNE",
+}
+
+-- assign implied immunity attributes for functional immunity types and update labels
+for typ, atr in pairs(_M.immune_types) do
+	if type(atr) ~= "string" then _M.immune_types[typ] = typ.."_immune" end
+	_M.immune_labels[typ] = ("%-15s"):format(_M.immune_labels[typ] or typ:bookCapitalize())
+end
+
+-- sets the order to display the immunity types
+--local orderf = function(tb1, tb2) return tb1[2] < tb2[2] end
+--_M.immune_order = table.orderedPairs2(_M.immune_types, orderf)
+_M.immune_order = table.keys(_M.immune_types)
+table.sort(_M.immune_order, function(a, b)
+		return (_M.immune_labels[a] or "_") < (_M.immune_labels[b] or "_")
+	end)
+	
 function _M:innerDisplay(x, y, nb_keyframes)
 	self.actor:toScreen(nil, x + self.iw - 128, y + 6, 128, 128)
 end
@@ -1439,13 +1471,36 @@ Ability to reduce opponent resistances to your damage]]
 		w = self.w * 0.52
 		self:mouseTooltip(self.TOOLTIP_STATUS_IMMUNE, s:drawColorStringBlended(self.font, "#LIGHT_BLUE#Effect resistances:", w, h, 255, 255, 255, true)) h = h + self.font_h
 
-		for immune_type, immune_name in pairs(self.status_immunities) do
-			text = compare_fields(player, actor_to_compare, function(actor, ...) return util.bound((actor:attr(...) or 0) * 100, 0, 100) end, "%3d%%", "%+.0f%%", 1, false, false, immune_type)
-			if text ~= "  0%" then
-				self:mouseTooltip(self[self.immunity_tooltips[immune_type] or "TOOLTIP_SPECIFIC_IMMUNE"], s:drawColorStringBlended(self.font, ("%s: #00ff00#%s"):format(immune_name, text), w, h, 255, 255, 255, true))
+		-- list the status immunities in pre-sorted order
+		for i, immune_type in ipairs(self.immune_order) do
+			local immune_attr = self.immune_types[immune_type]
+			-- print("character sheet checking immune_type", immune_type, immune_attr)
+			if player:attr(immune_attr) or actor_to_compare and actor_to_compare:attr(immune_attr) then
+				local std = mod.class.Actor.StatusTypes[immune_type]
+				text = compare_fields(player, actor_to_compare, function(actor, ...)
+					local ok, chance
+					if std then
+						local ok, chance = actor:canBe(immune_type)
+						return util.bound(100-(chance or 100), 0, 100)
+					else
+						return util.bound((actor:attr(immune_attr) or 0) * 100, 0, 100)
+					end
+				end,
+				"%3d%%", "%+.0f%%", 1, false, false, self.immune_labels[immune_type] or immune_type:bookCapitalize())
+				self:mouseTooltip(self[self.immune_tooltips[immune_attr] or "TOOLTIP_SPECIFIC_IMMUNE"], s:drawColorStringBlended(self.font, ("%-14s: #00ff00#%s"):format(self.immune_labels[immune_type] or immune_type:bookCapitalize(), text), w, h, 255, 255, 255, true))
 				h = h + self.font_h
 			end
 		end
+		
+--[[ -- debugging previous immunity display
+		for immune_type, immune_name in pairs(self.status_immunities) do
+			text = compare_fields(player, actor_to_compare, function(actor, ...) return util.bound((actor:attr(...) or 0) * 100, 0, 100) end, "%3d%%", "%+.0f%%", 1, false, false, immune_type)
+			if text ~= "  0%" then
+				self:mouseTooltip(self[self.immune_tooltips[immune_type] or "TOOLTIP_SPECIFIC_IMMUNE"], s:drawColorStringBlended(self.font, ("%s: #00ff00#%s"):format(immune_name, text), w, h, 255, 255, 255, true))
+				h = h + self.font_h
+			end
+		end
+--]] -- end debugging
 
 		h = 0
 		w = self.w * 0.75

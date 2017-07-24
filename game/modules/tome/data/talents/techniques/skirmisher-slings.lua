@@ -49,7 +49,7 @@ newTalent {
 	points = 5,
 	no_energy = "fake",
 	random_ego = "attack",
-	tactical = {ATTACK = {weapon = 2}},
+	tactical = {ATTACK = {archery = 2}},
 	range = archery_range,
 	cooldown = 5,
 	stamina = 15,
@@ -103,7 +103,7 @@ newTalent {
 	no_energy = "fake",
 	speed = "archery",
 	random_ego = "attack",
-	tactical = {ATTACKALL = {weapon = 3}},
+	tactical = {ATTACKAREA = {weapon = 3}},
 	range = 0,
 	radius = archery_range,
 	cooldown = 7,
@@ -171,9 +171,7 @@ newTalent {
 		return fired
 	end,
 	info = function(self, t)
-		return ([[Take aim and unload up to %d shots for %d%% weapon damage each against random enemies inside a cone. Each enemy can only be hit once (twice for talent level 3 and higher). Using Swift Shot lowers the cooldown by 1.]])
-			:format(t.limit_shots(self, t),
-							t.damage_multiplier(self, t) * 100)
+		return ([[Take aim and unload up to %d shots for %d%% weapon damage each against random enemies inside a cone. Each enemy can only be hit once (twice for talent level 3 and higher). Using Swift Shot lowers the cooldown by 1.]]):format(t.limit_shots(self, t),	t.damage_multiplier(self, t) * 100)
 	end,
 }
 
@@ -187,7 +185,7 @@ newTalent {
 	points = 5,
 	mode = "sustained",
 	no_energy = true,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 2, STAMINA = -2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	cooldown = function(self, t)
 		return 10

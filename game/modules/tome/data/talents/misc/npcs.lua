@@ -428,7 +428,7 @@ newTalent{
 	cooldown = 8,
 	message = "@Source@ performs a diseased attack against @target@.",
 	requires_target = true,
-	tactical = { ATTACK = { BLIGHT = 2 }, DISABLE = { disease = 1 } },
+	tactical = { ATTACK = { weapon=1, BLIGHT = { disease = 2 } }, DISABLE = { disease = 1 } },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 13, 25)) end,
 	is_melee = true,
 	range = 1,
@@ -463,7 +463,7 @@ newTalent{
 	points = 5,
 	cooldown = 8,
 	message = "@Source@ performs a diseased attack against @target@.",
-	tactical = { ATTACK = { BLIGHT = 2 }, DISABLE = { disease = 1 } },
+	tactical = { ATTACK = { weapon=1, BLIGHT = { disease = 2 } }, DISABLE = { disease = 1 } },
 	requires_target = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 13, 25)) end,
 	is_melee = true,
@@ -500,7 +500,7 @@ newTalent{
 	cooldown = 8,
 	message = "@Source@ performs a diseased attack against @target@.",
 	requires_target = true,
-	tactical = { ATTACK = { BLIGHT = 2 }, DISABLE = { disease = 1 } },
+	tactical = { ATTACK = { weapon=1, BLIGHT = { disease = 2 } }, DISABLE = { disease = 1 } },
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 13, 25)) end,
 	is_melee = true,
 	range = 1,
@@ -822,7 +822,7 @@ newTalent{
 	stamina = 8,
 	require = { stat = { str=12 }, },
 	requires_target = true,
-	tactical = { DISABLE = { pin = 2 }, ATTACK = { PHYSICAL = 1 } },
+	tactical = { DISABLE = { pin = 1 }, ATTACK = { weapon = 2 } },
 	range = 1,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,
@@ -1231,7 +1231,7 @@ newTalent{
 	cooldown = 6,
 	stamina = 12,
 	requires_target = true,
-	tactical = { ATTACK = { PHYSICAL = 1 }, DISABLE = { pin = 2 } },
+	tactical = { ATTACK = { weapon = 2 }, DISABLE = { pin = 1 } },
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
@@ -1593,8 +1593,9 @@ newTalent{
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
 	cooldown = 8,
 	tactical = {
-		ATTACK = { TEMPORAL = 10 },
-		DISABLE = 10,
+		ATTACK = { TEMPORAL = 1 },
+		DISABLE = 2,
+		BUFF = 2,
 	},
 	range = 3,
 	direct_hit = true,
@@ -1618,7 +1619,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		return ([[Saps away 30%% of the targets speed and inflicts %0.2f temporal damage for three turns
+		return ([[Saps 30%% of the target's speed (increasing yours by the same amount) and inflicts %0.2f temporal damage for three turns.
 		]]):format(damDesc(self, DamageType.TEMPORAL, damage))
 	end,
 }
@@ -2033,7 +2034,7 @@ newTalent{
 			if not g then break end
 			meteor(self, g.x, g.y, t.getDamage(self, t))
 		end
-
+		game.log("") -- forces update of combat log
 		return true
 	end,
 	info = function(self, t)
@@ -2671,7 +2672,7 @@ newTalent{
 	cooldown = 2,
 	innate = true,
 	points = 1,
-	tactical = { AMMO = 2 },
+	tactical = { AMMO = 2, BUFF = -2 },
 	no_energy = true,
 	no_reload_break = true,
 	no_break_stealth = true,
@@ -2776,6 +2777,14 @@ newTalent{
 	no_energy = true,
 	tactical = { ATTACK = {NATURE = 1} },
 	range = 1,
+	on_pre_use_ai = function(self, t, silent, fake) -- don't use unless target is poisoned
+		local target = self.ai_target.actor
+		if not target then return end
+		for eff_id, p in pairs(target.tmp) do
+			local e = target.tempeffect_def[eff_id]
+			if e.subtype.poison then return true end
+		end
+	end,
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t)}
 		local x, y, target = self:getTarget(tg)
@@ -3048,7 +3057,10 @@ newTalent{
 	hide = false,
 	stamina = 20,
 	cooldown = 40,
-	tactical = { DEFEND = 2 },
+	tactical = { DEFEND = 2, ESCAPE = 1 },
+	on_pre_use_ai = function(self, t, silent, fake)
+		return self.ai_target.actor and not self:isTalentActive(self.T_STEALTH)
+	end,
 	-- Assume level 50 w/100 cun --> stealth = 54, detection = 50
 	-- 90% (~= 47% chance against 1 opponent (range 1) at talent level 1, 270% (~= 75% chance against 1 opponent (range 1) and 3 opponents (range 6) at talent level 5
 	stealthMult = function(self, t) return self:combatTalentScale(t, 0.9, 2.7) end,

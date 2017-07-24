@@ -206,6 +206,11 @@ function _M:updateFOV(a, sqdist)
 	self.fov_last_y = -1
 end
 
+--- Retrieve/Update the distance map
+--	The distance map value increases with how recently the actor had LOS to the grid and how close it was
+--	@param x, y coordinates
+--	@param [type = int, optional] set the distance map value
+--  @return distance map value at x, y
 function _M:distanceMap(x, y, v)
 	if v == nil then
 		return self.distance_map[x + y * game.level.map.w]

@@ -122,7 +122,7 @@ newTalent{
 	require = techs_dex_req3,
 	range = archery_range,
 	radius = 2,
-	tactical = { ATTACKAREA = { weapon = 2 }, DISABLE = { 3 } },
+	tactical = { ATTACKAREA = { weapon = 2 }, DISABLE = { blind = 1 } },
 	requires_target = true,
 	target = function(self, t)
 		local weapon, ammo = self:hasArcheryWeapon()
@@ -138,7 +138,7 @@ newTalent{
 		if not x or not y then return nil end
 
 		local _ _, x, y = self:canProject(tg, x, y)
-		self:project({type="ball", x=x, y=y, radius=3, selffire=false}, x, y, DamageType.FLARE, t.getDuration(self, t), {type="light"})
+		self:project({type="ball", x=x, y=y, radius=3, selffire=false}, x, y, DamageType.FLARE, t.getBlindDuration(self, t), {type="light"})
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
 			x, y, t.getDuration(self,t),

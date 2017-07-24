@@ -192,7 +192,7 @@ end
 ---	Does the actor have inadequate AI to use this object intelligently?
 --	@param who = the potential object user
 function _M:restrictAIUseObject(who)
-	return not (who.ai == "tactical" or who.ai_real == "tactical" or (who.ai_state and who.ai_state.ai_party) == "tactical")
+	return not (who.ai == "tactical" or who.ai_real == "tactical" or who.ai_state._advanced_ai or (who.ai_state and who.ai_state.ai_party) == "tactical")
 end
 
 function _M:useObject(who, ...)

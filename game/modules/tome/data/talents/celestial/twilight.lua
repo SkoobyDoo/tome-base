@@ -26,7 +26,7 @@ newTalent{
 	points = 5,
 	cooldown = 6,
 	positive = 15,
-	tactical = { BUFF = 1 },
+	tactical = { NEGATIVE = 2, POSITIVE = -0.5 },
 	range = 10,
 	getRestValue = function(self, t) return self:combatTalentLimit(t, 50, 20.5, 34.5) end, -- Limit < 50%
 	getNegativeGain = function(self, t) return math.max(0, self:combatScale(self:getTalentLevel(t) * self:getCun(40, true), 24, 4, 220, 200, nil, nil, 40)) end,
