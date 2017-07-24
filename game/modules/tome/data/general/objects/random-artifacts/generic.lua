@@ -512,8 +512,4 @@ newEntity{ theme={defense=true, mental=true}, name="save mental greater", points
 	wielder = { combat_mentalresist = resolvers.randartmax(10, 30), },
 }
 
-newEntity{ theme={defense=true, physical=true}, name="armor greater", points = 2, rarity = 10, level_range = {30, 50},
-	wielder = { combat_armor = resolvers.randartmax(2, 14), },
-}
-
 
