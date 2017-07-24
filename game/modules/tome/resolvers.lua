@@ -837,7 +837,7 @@ end
 local inscriptions_max = {
 	heal = 1,
 	protect = 1,
-	attack = 4,
+	attack = 1,  -- Reduce instant cast NPC bursts
 	movement = 1,
 	utility = 6,
 	teleport = 0, -- Annoying
