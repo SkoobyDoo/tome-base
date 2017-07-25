@@ -2039,13 +2039,13 @@ function _M:regenLife(fake)
 				regen = regen - psi_increase
 			if not fake then self:incPsi(psi_increase) end
 			psi_increase = psi_increase + self.psi_regen
-			end
+		end
 
 		-- handles maximum life (including Blood Lock)
 		regen = util.bound(self.life + regen, self.die_at, self:attr("blood_lock") or self.max_life) - self.life
 		if not fake then self.life = self.life + regen end
-		return regen, psi_increase or self.psi_regen
-		end
+		return regen, psi_increase or self.psi_regen or 0
+	end
 	return 0, 0
 end
 
