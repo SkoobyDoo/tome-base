@@ -117,6 +117,8 @@ _M.temporary_values_conf.flat_damage_cap = "lowest"
 _M.temporary_values_conf.projectile_evasion = "highest"
 _M.temporary_values_conf.projectile_evasion_spread = "highest"
 
+_M.temporary_values_conf.life_leech_chance = "highest"
+
 -- Damage redirection takes last
 _M.temporary_values_conf.force_use_resist = "last"
 _M.temporary_values_conf.force_use_resist_percent = "last"
