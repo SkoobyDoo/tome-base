@@ -31,7 +31,8 @@ newTalent{
 	equilibrium = 0,
 	cooldown = 20,
 	no_energy = true,
-	tactical = { BUFF = 2, EQUILIBRIUM = 2,
+	tactical = { EQUILIBRIUM = 2,
+		BUFF = function(self, t) return self.ai_target.actor and 2 or 0 end, -- prevents overuse out of combat
 		ATTACKAREA = function(self, t)
 			if self:getTalentLevel(t)>=4 then return {NATURE = 1 } end
 		end
@@ -203,7 +204,7 @@ newTalent{
 		local m = mod.class.NPC.new{
 			type = "vermin", subtype = "oozes",
 			display = "j", color=colors.GREEN, image = "npc/vermin_oozes_green_ooze.png",
-			name = "mucus ooze",
+			name = self.name:bookCapitalize().."'s mucus ooze",
 			faction = self.faction,
 			desc = "It's made from mucus and it's oozing.",
 			sound_moam = {"creatures/jelly/jelly_%d", 1, 3},
@@ -273,26 +274,32 @@ newTalent{
 	cooldown = 7,
 	equilibrium = 10,
 	range = 10,
-	tactical = { CLOSEIN = 2 },
+	tactical = { CLOSEIN = 2, ESCAPE = 2,
+		CURE = function(self, t)
+			local effs = self:effectsFilter(t.effectFilter, t.getNb(self, t))
+			return 2*(#effs)^.5
+		end
+	},
+	effectFilter = {status="detrimental", types={physical=true, magical=true}},
 	getNb = function(self, t) return math.ceil(self:combatTalentScale(t, 1.1, 2.9, "log")) end,
-	getEnergy = function(self,t)
-		local tl = math.max(0, self:getTalentLevel(t) - 1.8)
-		return 1-tl/(tl + 2.13)
-	end,
+	getEnergy = function(self, t) return math.min(1, self:combatTalentLimit(t, 0.1, 1, 0.4)) end,
 	on_pre_use = function(self, t)
 		return game.level and game.level.map and isOnMucus(game.level.map, self.x, self.y)
 	end,
 	action = function(self, t)
-		local tg = {type="hit", nolock=true, nowarning=true, range=self:getTalentRange(t), requires_knowledge=false}
+		-- set up movement parameters
+		local tg = {type="hit", nolock=true, nowarning=true, range=self:getTalentRange(t), requires_knowledge=false,
+			grid_params={want_range=self.ai_state.tactic == "escape" and 10 + self:getTalentCooldown(t) or self.ai_tactic.safe_range or 0,
+				check=function(x, y) return isOnMucus(game.level.map, x, y)	end
+				}
+			}
 		local x, y = self:getTargetLimitedWallStop(tg)
-		if not x then return nil end
-		if not isOnMucus(game.level.map, x, y) then return nil end
 		if not self:canMove(x, y) then return nil end
-
-		local energy = 1 - t.getEnergy(self, t)
-		self.energy.value = self.energy.value + game.energy_to_act * self.energy.mod * energy
-
-		self:removeEffectsFilter(function(t) return (t.type == "physical" or t.type == "magical") and t.status == "detrimental" end, t.getNb(self, t))
+		if not isOnMucus(game.level.map, x, y) then
+			game.logPlayer(self, "You can only Oozewalk from one area of mucus to another.")
+			return nil 
+		end
+		self:removeEffectsFilter(t.effectFilter, t.getNb(self, t))
 
 		game.level.map:particleEmitter(self.x, self.y, 1, "slime")
 		self:move(x, y, true)
@@ -305,7 +312,7 @@ newTalent{
 		local energy = t.getEnergy(self, t)
 		return ([[You temporarily merge with your mucus, cleansing yourself of %d physical or magical detrimental effects.
 		You can then reemerge on any tile within sight and range that is also covered by mucus.
-		This is quick, requiring only %d%% of a turn to perform, but you must be in contact with your mucus.]]):
+		This is quick, performed in only %d%% of the normal time, but you must be in contact with your mucus.]]):
 		format(nb, (energy) * 100)
 	end,
 }

@@ -152,6 +152,7 @@ newTalent{
 						if dist > 1 and rng.percent(p.mindstar_grab.chance) then
 							local tx, ty = util.findFreeGrid(self.x, self.y, 5, true, {[Map.ACTOR]=true})
 							if tx and ty and a:canBe("knockback") then
+								self:logCombat(a, "#Source#'s mindstar telekinetically grabs #target#!")
 								a:move(tx, ty, true)
 							end
 						end
@@ -273,7 +274,7 @@ newTalent{
 	info = function(self, t)
 		local base = [[Allows you to wield a physical melee or ranged weapon, a mindstar or a gem telekinetically, gaining a special effect for each.
 		A gem will provide a +3 bonus to all primary stats per tier of the gem.
-		A mindstar will randomly try to telekinetically grab a far away foe (10% chance and range 2 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
+		A mindstar will randomly try to telekinetically grab a far away foe (10% chance and range 3 for a tier 1 mindstar, +1 range and +5% chance for each tier above 1) and pull it into melee range.
 		A physical melee weapon will act as a semi independant entity, automatically attacking adjacent foes each turn, while a ranged weapon will fire at your target whenever you perform a ranged attack.
 		While this talent is active, all melee and ranged attacks use 60% of your Cunning and Willpower in place of Dexterity and Strength for accuracy and damage calculations respectively.
 		

@@ -119,7 +119,6 @@ newTalent{
 	cooldown = 10,
 	points = 5,
 	cooldown = 50,
-	sustain_hate = 40,
 	getPower = function(self, t) return 10 + self:combatTalentMindDamage(t, 0, 300) end,
 	onDie = function(self, t, value, src)
 		local shadow = self:callTalent(self.T_SHADOW_EMPATHY, "getRandomShadow")

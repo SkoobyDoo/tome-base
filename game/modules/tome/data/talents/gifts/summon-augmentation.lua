@@ -50,6 +50,23 @@ newTalent{
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8, 0.5, 0, 0, true)) end,
 	requires_target = true,
 	no_npc_use = true,
+--[[ WIP: how to set up tactics: (Not implemented at this time)
+-- onAIgetTarget to find summon to detonate (closest to target) within radius
+-- make sure target is in LOS and can be seen to not waste the summon
+-- (use target.fov.actors_dist or LOS to target from summon grid?)
+	
+--	summon.wild_gift_detonate == t.id for summoning talent
+--	tactical = summon.detonate_tactical
+
+	tactical = function(self, t, aitarget)
+		local sy, sy, summon = t.onAIgetTarget(self, t) -- finds summon to detonate
+		
+		if summon and summon.wild_gift_detonate then
+			return self:getTalentFromID(summon.wild_gift_detonate).detonate_tactical
+		
+		end
+	end,
+--]]
 	action = function(self, t)
 		local tg = {type="hit", range=self:getTalentRange(t), talent=t, first_target="friend"}
 		local tx, ty, target = self:getTarget(tg)

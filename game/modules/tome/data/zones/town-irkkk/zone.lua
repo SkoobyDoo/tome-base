@@ -34,7 +34,7 @@ return {
 	allow_respec = "limited",
 
 	max_material_level = 2,
-	store_levels_by_restock = { 8, 25, 40 },
+	store_levels_by_restock = { 10, 20, 35, 45, 50, 60 },
 
 	generator =  {
 		map = {

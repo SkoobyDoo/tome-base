@@ -21,7 +21,7 @@ local art_list = mod.class.Object:loadList("/data/general/objects/brotherhood-ar
 local alchemist_num = 4
 local other_alchemist_nums = {1, 2, 3}
 local q = game.player:hasQuest("brotherhood-of-alchemists")
-local final_reward = "TAINT_TELEPATHY"
+local final_reward = "TAINT_PURGING"
 local e = {
 	{
 	short_name = "brawn",
@@ -150,7 +150,7 @@ newChat{ id="help",
 }
 
 newChat{ id="competition",
-	text = [[Oh, easy. You get a swig of each brew, of course. They'll put hair on your chest, and possibly your eyelids and fingernails. And, if your aid proves the deciding factor, then I've got a real treat for you: perhaps the last Taint of Telepathy left in Maj'Eyal.]],
+	text = [[Oh, easy. You get a swig of each brew, of course. They'll put hair on your chest, and possibly your eyelids and fingernails. And, if your aid proves the deciding factor, then I've got a real treat for you: perhaps the last Taint of Purging left in Maj'Eyal.]],
 	answers = {
 		{"I accept.", jump="choice", action = function(npc, player) player:grantQuest("brotherhood-of-alchemists") end,},
 		{"I cannot aid you at this time."},
@@ -403,7 +403,7 @@ Tastes like Urh'Rok's own piss, but it gets the job done.]],
 --Final elixir:
 newChat{ id="totally-complete3",
 	text = [[#LIGHT_GREEN#*The dwarf finally returns with a vial and a small pouch.*#WHITE#
-I put a bit of the good stuff in this one, though it won't do you any favors tomorrow morning. And careful with that Taint of Telepathy, especially if the wife answers the door the next time you knock. Har!]],
+I put a bit of the good stuff in this one, though it won't do you any favors tomorrow morning. And careful with that Taint of Purging, especially if the wife answers the door the next time you knock. Har!]],
 	answers = {
 		{"Thank you. I'll be off.",
 			cond = function(npc, player) return q and q:isCompleted(e[1].almost) and not q:isCompleted(e[1].full) end,

@@ -165,6 +165,7 @@ newTalent{
 	end,
 }
 
+-- todo: update this to work for NPC's (evaluate target tactical weights for a match against ward types?)
 newTalent{
 	name = "Ward",
 	type = {"misc/objects", 1},
@@ -658,7 +659,7 @@ newTalent{
 	psi = 50,
 	cooldown = 50,
 	range = 10,
-	tactical = { AREAATTACK = 4 },
+	tactical = { ATTACKAREA = 3 },
 	getDuration = function(self, t) return 8 end,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 30, 300) end,
 	action = function(self, t)

@@ -99,7 +99,18 @@ newTalent{
 	cooldown = 45,
 	stamina = 120,
 	fixed_cooldown = true,
-	tactical = { DEFEND = 5, CLOSEIN = 2 },
+	tactical = { DEFEND = 4, STAMINA = -2,
+		HEAL = function(self, t, target) -- up to 2 if there are enemies near
+			local val = 0
+			if self.ai_target.actor and self.life < self.max_life then
+				for act, params in pairs(self.fov.actors) do
+					if act ~= self and self:reactionToward(act) < 0 then val = val + 1/params.sqdist end
+					if val >= 2 then return val end
+				end
+			end
+			return val
+		end
+	},
 	getHealPercent = function(self,t) return self:combatTalentLimit(t, 50, 3.5, 17.5) end, -- Limit <50%
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 15, 3, 7, true)) end, -- Limit < 25
 	action = function(self, t)

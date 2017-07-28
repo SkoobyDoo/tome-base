@@ -29,9 +29,11 @@ newEntity{
 	shader = "lava",
 	mindam = resolvers.mbonus(5, 15),
 	maxdam = resolvers.mbonus(10, 30),
+	DamageType = engine.DamageType.FIRE,
 	on_stand = function(self, x, y, who)
+		if self.faction and who:reactionToward(self) >= 0 then return end
 		local DT = engine.DamageType
-		local dam = DT:get(DT.FIRE).projector(self, x, y, DT.FIRE, rng.range(self.mindam, self.maxdam))
+		local dam = DT:get(DT.FIRE).projector(self, x, y, DT[self.DamageType] or DT.FIRE, rng.range(self.mindam, self.maxdam))
 		self.x, self.y = x, y
 		if dam > 0 and who.player then self:logCombat(who, "#Source# burns #Target#!") end
 	end,

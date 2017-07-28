@@ -72,6 +72,20 @@ function table.concatNice(t, sep, endsep)
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
 end
 
+---Convert a table (non-recursively) to a table of strings for each key/value pair
+-- @param src <table> = source table
+-- @param fmt <string, optional, default "[%s]=%s"> = format to use for each key-value pair
+-- @return <table> table containing a string for each key in the source table
+table.to_strings = function(src, fmt)
+	if type(src) ~= "table" then return {tostring(src)} end
+	local tt = {}
+	fmt = fmt or "[%s]=%s"
+	for label, val in pairs(src) do
+		tt[#tt+1] = (fmt):format(label, tostring(val))
+	end
+	return tt
+end
+
 function ripairs(t)
 	local i = #t
 	return function()
@@ -292,6 +306,38 @@ function table.values(t)
 	return tt
 end
 
+--- Check if 2 tables are equivalent
+-- tables are equivalent if they are identical or contain the same values assigned to the same keys
+-- search stops after the first difference is found
+-- @param t1, t2 tables to compare
+-- @param recurse [type=boolean or table] set to recursively check non-identical sub-tables for equivalence
+--		if recurse is a table, the keys pointing to the difference will be stored in it in order
+--		differing values: table.get(t1, unpack(recurse)), table.get(t2, unpack(recurse))
+-- @return[1] [type=boolean] true if the tables are equivalent
+-- @return[2] nil (if tables are equivalent)
+-- @return[2], first key found holding different value (if recurse == true)
+-- @return[2], recurse (if recurse is a table)
+function table.equivalence(t1, t2, recurse)
+	local save_keys = type(recurse) == "table"
+	if t1 ~= t2 then
+		if not (t1 and t2) then return false end
+		for k1, v1 in pairs(t1) do
+			if t2[k1] ~= v1 and not (recurse and type(v1) == "table" and type(t2[k1]) == "table" and table.equivalence(t2[k1], v1, recurse)) then
+				if save_keys then table.insert(recurse, 1, k1) return false, recurse else return false, k1 end
+			end
+		end
+		for k2, v2 in pairs(t2) do
+			if t1[k2] ~= v2 and not (recurse and type(v2) == "table" and type(t1[k2]) == "table" and table.equivalence(t1[k2], v2, recurse)) then
+				if save_keys then table.insert(recurse, 1, k2) return false, recurse else return false, k2 end
+			end
+		end
+	end
+	return true
+end
+
+--- Check (non-recursively) if 2 indexed tables contain all of the same values
+-- @param t1, t2 tables to compare
+-- @return true if all values in t1 are also in t2 and visa versa
 function table.extract_field(t, field, iterator)
 	iterator = iterator or pairs
 	local tt = {}
@@ -884,6 +930,7 @@ end
 --	@param offset: string to insert between table fields (default: ", ")
 --	@param prefix: prefix for the table and subtables (default: "{")
 --	@param suffix: suffix for the table and subtables (default: "}")
+--	@param sort: optional sort function(a, b) to sort results (by key, set == true for ascending order)
 --  @param key_recurse the recursion level for keys that are tables (default 0)
 --	@return[1] single line text representation of src
 --		non-string table.keys are surrounded by "[", "]"
@@ -891,7 +938,7 @@ end
 --		recursed subtables are converted and embedded
 --		subtables containing .__ATOMIC or .__CLASSNAME are never converted, but are noted
 --		functions are converted to embedded strings using string.fromFunction
-function string.fromTable(src, recurse, offset, prefix, suffix, key_recurse)
+function string.fromTable(src, recurse, offset, prefix, suffix, sort, key_recurse)
 	if type(src) ~= "table" then print("string.fromTable has no table:", src) return tostring(src) end
 	local tt = {}
 	recurse, offset, prefix, suffix = recurse or 0, offset or ", ", prefix or "{", suffix or "}"
@@ -904,6 +951,8 @@ function string.fromTable(src, recurse, offset, prefix, suffix, key_recurse)
 		vs = string.fromValue(v, recurse, offset, prefix, suffix)
 		tt[#tt+1] = ("%s=%s"):format(ks or tostring(k), vs or tostring(v))
 	end
+	if sort == true then sort = function(a, b) return a < b end end
+	if sort then table.sort(tt, sort) end
 	-- could sort here if desired
 	return prefix..table.concat(tt, offset)..suffix, tt
 end

@@ -286,5 +286,16 @@ for i, t in ipairs(stype_tot) do
 	print("[SCHOOL TOTAL]", t[2], t[1])
 end
 ]]
+
 ------------------------------------------------------------------------
+--Initialize some AI stuff (done last to update addon talents and resources)
+------------------------------------------------------------------------
+-- This updates talent and resource definitions to work with data for some AI functions
+-- use mod.class.interface.ActorAI.aiParseTalent(t) to parse any new talents defined later 
+mod.class.interface.ActorAI.AI_InitializeData()
+engine.interface.ActorTalents.aiParseTalent = mod.class.interface.ActorAI.aiParseTalent
+print("[Tome:load] Updated AI tactics list:")
+--table.print(mod.class.interface.ActorAI.AI_TACTICS_BENEFIT)
+table.print(mod.class.interface.ActorAI.AI_TACTICS)
+
 return {require "mod.class.Game", require "mod.class.World"}

@@ -128,6 +128,7 @@ function setupSummon(self, m, x, y, no_control)
 	m.save_hotkeys = true
 	m.ai_state = m.ai_state or {}
 	m.ai_state.tactic_leash = 100
+	m.ai_state.target_last_seen = table.clone(self.ai_state.target_last_seen)
 	-- Try to use stored AI talents to preserve tweaking over multiple summons
 	m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
 	local main_weapon = self:getInven("MAINHAND") and self:getInven("MAINHAND")[1]
