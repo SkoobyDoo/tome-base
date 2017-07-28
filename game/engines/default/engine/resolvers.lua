@@ -38,6 +38,14 @@ function resolvers.calc.rngrange(t)
 	return rng.range(t[1], t[2])
 end
 
+--- Resolves a rng float range
+function resolvers.rngfloat(x, y)
+	return {__resolver="rngfloat",  __resolve_instant=true, x, y}
+end
+function resolvers.calc.rngfloat(t)
+	return rng.float(t[1], t[2])
+end
+
 --- Average random
 function resolvers.rngavg(x, y)
 	return {__resolver="rngavg",  __resolve_instant=true, x, y}
