@@ -100,7 +100,7 @@ _M.AI_TACTICAL_AI_ACTION_BONUS = 0.02
 _M.AI_TACTICAL_TALENT_LEVEL_BONUS = 0.2
 
 --- size of random weight bonus added to actions by the tactical AI (higher makes actions more random)
--- 0.5 --> a bonus of 0% to 50% added to the TACTICAL VALUE for each action
+-- 0.5 --> a bonus of 0% to 50% added to the TACTICAL SCORE for each action
 -- replaced by ai_state.tactical_random_range if present
 _M.AI_TACTICAL_RANDOM_RANGE = 0.5
 

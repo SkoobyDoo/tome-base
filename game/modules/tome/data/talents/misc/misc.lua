@@ -61,12 +61,6 @@ newTalent{
 	
 		if not ok or not target then
 			if swap then doWardenWeaponSwap(self, t, "bow") end
-		--[[
-		if config.settings.cheat then
-			game.bignews:saySimple(60, "#GREY#___ [%s]%s (%d, %d) failed attack vs %s (%s, %s) ok:%s", self.uid, self.name, self.x, self.y, target and target.name, x, y, ok) -- debugging
-			game.log("#GREY#___[%s]%s (%d, %d) #AQUAMARINE#failed T_ATTACK#LAST# vs %s (%s, %s) ok:%s", self.uid, self.name, self.x, self.y, target and target.name, x, y, ok) -- debugging
-		end
-		--]]
 			if ok then -- talent is treated as used even if there is no target (prevents stealth scumming)
 				print("[T_ATTACK]", self.uid, self.name, "attacks empty space:", x, y)
 				self:logCombat(target, "#Source# attacks empty space.")

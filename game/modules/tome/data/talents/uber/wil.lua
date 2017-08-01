@@ -159,7 +159,7 @@ uberTalent{
 	cooldown = 15,
 	no_energy = true,
 	tactical = function(self, t, aitarget) -- build a tactical table for all defined resources the first time this is called.
-		local tacs = {}
+		local tacs = {special = -1}
 		for i, res_def in ipairs(self.resources_def) do
 			if res_def.talent then tacs[res_def.short_name] = 0.5 end
 		end
