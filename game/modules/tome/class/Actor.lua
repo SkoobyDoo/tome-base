@@ -6797,6 +6797,7 @@ end
 
 --- Call when added to a level
 -- Used to make escorts and such
+-- Triggered after the entity is resolved
 function _M:addedToLevel(level, x, y)
 	if not self._rst_full then self:resetToFull() self._rst_full = true end -- Only do it once, the first time we come into being
 	local summoner = self.summoner

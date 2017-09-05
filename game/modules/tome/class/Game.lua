@@ -60,6 +60,8 @@ local MapMenu = require "mod.dialogs.MapMenu"
 module(..., package.seeall, class.inherit(engine.GameTurnBased, engine.interface.GameMusic, engine.interface.GameSound, engine.interface.GameTargeting))
 
 -- Difficulty settings
+-- Adjustments handled in _M:loaded, _M:noStairsTime, NPC:addedToLevel, Actor::on_set_temporary_effect, 
+-- data.damage_types (setDefaultProjector), GameState:zoneCheckBackupGuardian
 DIFFICULTY_EASY = 1
 DIFFICULTY_NORMAL = 2
 DIFFICULTY_NIGHTMARE = 3
@@ -352,6 +354,42 @@ end
 function _M:setupDifficulty(d)
 	self.difficulty = d
 end
+
+--- Apply game difficulty to a zone, updating zone.level_range
+-- @param zone the zone to update
+-- @param level_range number(lowest base level) or table (level ranges) to update the level range to
+--  will not update a zone that has already been updated unless level_range is specified
+--  saves the original zone.level_range to zone.base_level_range
+function _M:applyDifficulty(zone, level_range)
+	if not zone.__applied_difficulty or level_range then
+		zone.base_level_range = zone.base_level_range or table.clone(zone.level_range, true)
+		if type(level_range) == "number" then
+			zone.level_range = {level_range, level_range}
+		elseif type(level_range) == "table" then
+			zone.level_range = table.clone(level_range)
+		end
+		-- difficulty effects are phased in as the player reaches level 10
+		local lev_mult, lev_add, diff_adjust = 1, 0, math.min(1, game:getPlayer(true).level/10)
+		if self.difficulty == self.DIFFICULTY_NIGHTMARE then
+			lev_mult, lev_add = 1.5, 0
+		elseif self.difficulty == self.DIFFICULTY_INSANE then
+			lev_mult, lev_add = 1.5, 1
+		elseif self.difficulty == self.DIFFICULTY_MADNESS then
+			lev_mult, lev_add = 2.5, 2
+		end
+		
+		if lev_mult ~= 1 then
+			local diff_adjust = math.min(1, game:getPlayer(true).level/10)
+			lev_mult = 1 + (lev_mult - 1)*diff_adjust
+			lev_add = lev_add*diff_adjust
+			zone.level_range[1] = zone.level_range[1]*lev_mult + lev_add
+			zone.level_range[2] = zone.level_range[2]*lev_mult + lev_add
+			zone:updateBaseLevel()
+		end
+		zone.__applied_difficulty = true
+	end
+end
+
 function _M:setupPermadeath(p)
 	if p:attr("infinite_lifes") then self.permadeath = PERMADEATH_INFINITE
 	elseif p:attr("easy_mode_lifes") then self.permadeath = PERMADEATH_MANY
@@ -366,26 +404,7 @@ function _M:loaded()
 	Zone:setup{
 		npc_class="mod.class.NPC", grid_class="mod.class.Grid", object_class="mod.class.Object", trap_class="mod.class.Trap",
 		on_setup = function(zone)
-			-- Increases zone level for higher difficulties
-			if not zone.__applied_difficulty then
-				zone.__applied_difficulty = true
-				if self.difficulty == self.DIFFICULTY_NIGHTMARE then
-					zone.base_level_range = table.clone(zone.level_range, true)
-					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 1.5 + 0
-					zone.level_range[2] = zone.level_range[2] * 1.5 + 0
-				elseif self.difficulty == self.DIFFICULTY_INSANE then
-					zone.base_level_range = table.clone(zone.level_range, true)
-					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 1.5 + 1
-					zone.level_range[2] = zone.level_range[2] * 1.5 + 1
-				elseif self.difficulty == self.DIFFICULTY_MADNESS then
-					zone.base_level_range = table.clone(zone.level_range, true)
-					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 2.5 + 1
-					zone.level_range[2] = zone.level_range[2] * 2.5 + 1
-				end
-			end
+			self:applyDifficulty(zone) -- Increases zone level for higher difficulties
 		end,
 	}
 	Zone.check_filter = function(...) return self.state:entityFilter(...) end
