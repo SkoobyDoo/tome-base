@@ -699,6 +699,7 @@ project "te4-muparser"
 	kind "StaticLib"
 	language "C++"
 	targetname "te4-muparser"
+	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 
 	includedirs{ "../src/muparser/include/" }
