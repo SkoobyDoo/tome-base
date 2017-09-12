@@ -5090,6 +5090,7 @@ local sustainCallbackCheck = {
 	callbackOnEffectSave = "talents_on_effect_save",
 	callbackOnPartyAdd = "talents_on_party_add",
 	callbackOnPartyRemove = "talents_on_party_remove",
+	callbackOnTargeted = "talents_on_targeted",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 

@@ -51,6 +51,7 @@ local function shadowChooseActorTarget(self)
 		self.ai_target.actor = actors[rng.range(1, #actors)]
 		self:check("on_acquire_target", act)
 		act:check("on_targeted", self)
+		if act.fireTalentCheck then act:fireTalentCheck("callbackOnTargeted", self) end
 
 		return true
 	end

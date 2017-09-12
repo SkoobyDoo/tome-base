@@ -41,6 +41,7 @@ newAI("target_world", function(self)
 			self.ai_target.actor = act
 			self:check("on_acquire_target", act)
 			act:check("on_targeted", self)
+			if act.fireTalentCheck then act:fireTalentCheck("callbackOnTargeted", self) end
 			print("AI took for target", self.uid, self.name, "::", act.uid, act.name, self.fov.actors[act].sqdist, "<", sqsense)
 			return true
 		end
