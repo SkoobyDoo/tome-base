@@ -46,6 +46,8 @@ end
 
 --- Restock all stores
 function _M:storesRestock()
+	self.stores_restock_levels = self.stores_restock_levels or {}
+	self.stores_restock_levels[#self.stores_restock_levels+1] = game.player.level -- Store the level so shops using player_material_level know what levels to update stock
 	self.stores_restock = self.stores_restock + 1
 	game.log("#AQUAMARINE#Most stores should have new stock now.")
 	print("[STORES] restocking")
@@ -142,32 +144,18 @@ end
 function _M:zoneCheckBackupGuardian()
 	if not self.is_advanced then print("Not gone east, no backup guardian") return end
 
+	local guard_data = self.allow_backup_guardians[game.zone.short_name]
 	-- Adjust level of the zone
-	if self.allow_backup_guardians[game.zone.short_name] then
-		local data = self.allow_backup_guardians[game.zone.short_name]
-		game.zone.base_level = data.new_level
-		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
-			game.zone.base_level_range = table.clone(game.zone.level_range, true)
-			game.zone.specific_base_level.object = -10 -game.zone.base_level
-			game.zone.base_level = game.zone.base_level * 1.5 + 0
-		elseif game.difficulty == game.DIFFICULTY_INSANE then
-			game.zone.base_level_range = table.clone(game.zone.level_range, true)
-			game.zone.specific_base_level.object = -10 -game.zone.base_level
-			game.zone.base_level = game.zone.base_level * 1.5 + 1
-		elseif game.difficulty == game.DIFFICULTY_MADNESS then
-			game.zone.base_level_range = table.clone(game.zone.level_range, true)
-			game.zone.specific_base_level.object = -10 -game.zone.base_level
-			game.zone.base_level = game.zone.base_level * 2.5 + 1
-		end
-		if data.action then data.action(false) end
+	-- Note: this permanently changes the zone properties when a BackupGuardian is spawned
+	if guard_data then
+		game.zone.base_level = guard_data.new_level
+		game:applyDifficulty(game.zone, guard_data.new_level) -- apply difficulty if required
+		if guard_data.action then guard_data.action(false) end
 	end
-
 	-- Spawn the new guardian
-	if self.allow_backup_guardians[game.zone.short_name] and self.allow_backup_guardians[game.zone.short_name].on_level == game.level.level then
-		local data = self.allow_backup_guardians[game.zone.short_name]
-
+	if guard_data and guard_data.on_level == game.level.level then
 		-- Place the guardian, we do not check for connectivity, vault or whatever, the player is supposed to be strong enough to get there
-		local m = game.zone:makeEntityByName(game.level, "actor", data.guardian)
+		local m = game.zone:makeEntityByName(game.level, "actor", guard_data.guardian)
 		if m then
 			local x, y = rng.range(0, game.level.map.w - 1), rng.range(0, game.level.map.h - 1)
 			local tries = 0
@@ -177,13 +165,13 @@ function _M:zoneCheckBackupGuardian()
 			end
 			if tries < 100 then
 				game.zone:addEntity(game.level, m, "actor", x, y)
-				print("Backup Guardian allocated: ", data.guardian, m.uid, m.name)
+				print("Backup Guardian allocated: ", guard_data.guardian, m.uid, m.name)
 			end
 		else
-			print("WARNING: Backup Guardian not found: ", data.guardian)
+			print("WARNING: Backup Guardian not found: ", guard_data.guardian)
 		end
 
-		if data.action then data.action(true) end
+		if guard_data.action then guard_data.action(true) end
 		self.allow_backup_guardians[game.zone.short_name] = nil
 	end
 end
@@ -1278,7 +1266,7 @@ local drop_tables = {
 		},
 		[5] = {
 			uniques = 7,
-			double_greater = 50,
+			double_greater = 10,
 			greater_normal = 30,
 			greater = 25,
 			double_ego = 10,

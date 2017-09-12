@@ -221,7 +221,7 @@ newTalent{
 	stamina = 15,
 	require = techs_dex_req1,
 	requires_target = true,
-	tactical = { ATTACK = { weapon = 1 }, DISABLE = { stun = 2 } },
+	tactical = { ATTACK = { weapon = 1, offhand = 1 }, DISABLE = { stun = 2 } },
 	on_pre_use = function(self, t, silent) if not self:hasDualWeapon() then if not silent then game.logPlayer(self, "You require two weapons to use this talent.") end return false end return true end,
 	getStunDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)

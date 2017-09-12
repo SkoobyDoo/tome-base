@@ -273,24 +273,29 @@ newTalent{
 	message = "@Source@ summons void shards.",
 	cooldown = 20,
 	range = 10,
+	radius = 5, -- used by the the AI as additional range to the target
+	tactical = { ATTACK = { TEMPORAL = 2, PHYSICAL = 1 } },
 	requires_target = true,
-	tactical = { ATTACK = { TEMPORAL = 3, PHYSICAL = 1 } },
-	requires_target = true,
+	target = SummonTarget,
+	onAIGetTarget = onAIGetTargetSummon,
+	aiSummonGrid = aiSummonGridMelee,
 	is_summon = true,
+	on_pre_use_ai = aiSummonPreUse,
 	getDamage = function(self, t) return self:combatTalentMindDamage(t, 5, 50) end,
 	getExplosion = function(self, t) return self:combatTalentMindDamage(t, 20, 200) end,
 	getSummonTime = function(self, t) return math.floor(self:combatTalentScale(t, 7, 11)) end,
+	getNumber = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	action = function(self, t)
 		local tg = {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t}
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, tx, ty = self:canProject(tg, tx, ty)
-		target = game.level.map(tx, ty, Map.ACTOR)
+		target = self.ai_target.actor
 		if target == self then target = nil end
 
 		if self:getTalentLevel(t) < 5 then self:setEffect(self.EFF_SUMMON_DESTABILIZATION, 500, {power=5}) end
 
-		for i = 1, self:getTalentLevelRaw(t) do
+		for i = 1, t.getNumber(self, t) do
 		-- Find space
 			local x, y = util.findFreeGrid(tx, ty, 5, true, {[Map.ACTOR]=true})
 			if not x then
@@ -314,7 +319,7 @@ newTalent{
 				size_category = 1,
 
 				autolevel = "summoner",
-				ai = "summoned", ai_real = "dumb_talented_simple", ai_state = { talent_in=2, ai_move="move_snake" },
+				ai = "summoned", ai_real = "dumb_talented_simple", ai_state = { talent_in=2, ai_move="move_snake", target_last_seen = table.clone(self.ai_state.target_last_seen) },
 				combat_armor = 1, combat_def = 1,
 				combat = { dam=resolvers.levelup(resolvers.mbonus(40, 15), 1, 1.2), atk=15, apr=15, dammod={wil=0.8}, damtype=DamageType.TEMPORAL },
 				on_melee_hit = { [DamageType.TEMPORAL] = resolvers.mbonus(20, 10), },

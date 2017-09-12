@@ -145,10 +145,11 @@ newTalent{
 	sustain_mana = 100,
 	points = 5,
 	range = function(self, t) return math.ceil(self:combatTalentLimit(t, 6, 1, 3)) end,
-	tactical = { BUFF=1 },
+	tactical = { SELF = {DEFEND = 1, BUFF = 1}, ESCAPE = 0.5, CLOSEIN = 0.5, ATTACKAREA = {LIGHTNING = 0.5}},
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.05, 0.15, 0.90) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 70) end,
 	getTurn = function(self, t) return util.bound(50 + self:combatTalentSpellDamage(t, 5, 500) / 10, 50, 160) end,
+	target = function(self, t) return{type="hit", range=self:getTalentRange(t), talent=t, friendlyblock=false, friendlyfire=false} end,
 	callbackOnActBase = function(self, t)
 		local tgts = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 6, true)
@@ -160,7 +161,7 @@ newTalent{
 		end end
 
 		-- Randomly take targets
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t, friendlyfire=false} -- don't make it blocked by the golem
+		local tg = self:getTalentTarget(t)
 		for i = 1, 1 do
 			if #tgts <= 0 then break end
 			local a, id = rng.table(tgts)

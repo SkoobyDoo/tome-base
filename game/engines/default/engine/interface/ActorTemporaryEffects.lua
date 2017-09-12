@@ -135,7 +135,7 @@ function _M:setEffect(eff_id, dur, p, silent)
 		local ret, fly = ed.on_gain(self, p)
 		if not silent and not had then
 			if ret then
-				game.logSeen(self, ret:gsub("#Target#", self.name:capitalize()):gsub("#target#", self.name):gsub("#himher#", self.female and "her" or "him"))
+				game.logSeen(self, ret:gsub("#Target#", self.name:capitalize()):gsub("#target#", self.name):gsub("#himher#", self.female and "her" or "him"):gsub("#hisher#", self.female and "her" or "his"))
 			end
 			if fly and game.flyers and self.x and self.y and game.level.map.seens(self.x, self.y) then
 				if fly == true then fly = "+"..ed.desc end

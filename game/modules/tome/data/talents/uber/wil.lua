@@ -24,7 +24,7 @@ uberTalent{
 	requires_target = true,
 	range = 10,
 	fixed_cooldown = true,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 1}, -- instant talent
 	action = function(self, t)
 		self:setEffect(self.EFF_DRACONIC_WILL, 5, {})
 		return true
@@ -158,7 +158,14 @@ uberTalent{
 	name = "Hidden Resources",
 	cooldown = 15,
 	no_energy = true,
-	tactical = { BUFF = 2 },
+	tactical = function(self, t, aitarget) -- build a tactical table for all defined resources the first time this is called.
+		local tacs = {special = -1}
+		for i, res_def in ipairs(self.resources_def) do
+			if res_def.talent then tacs[res_def.short_name] = 0.5 end
+		end
+		t.tactical = tacs
+		return tacs
+	end,
 	action = function(self, t)
 		self:setEffect(self.EFF_HIDDEN_RESOURCES, 5, {})
 		return true
@@ -170,7 +177,6 @@ uberTalent{
 		:format()
 	end,
 }
-
 
 uberTalent{
 	name = "Lucky Day",
@@ -238,7 +244,7 @@ uberTalent{
 	mode = "sustained",
 	require = { },
 	cooldown = 20,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 3 },
 	require = { special={desc="Have dealt over 50000 mind damage", fct=function(self) return 
 		self.damage_log and (
 			(self.damage_log[DamageType.MIND] and self.damage_log[DamageType.MIND] >= 50000)

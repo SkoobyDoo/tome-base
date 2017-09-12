@@ -111,7 +111,7 @@ uberTalent{
 	is_spell = true,
 	requires_target = true,
 	range = 10,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 2, BUFF = 2 },
 	action = function(self, t)
 		self:setEffect(self.EFF_TEMPORAL_FORM, 10, {})
 		return true

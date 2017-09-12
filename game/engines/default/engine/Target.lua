@@ -606,7 +606,7 @@ _M.types_def = {
 --		returns block (grid blocks), hit (grid hit), hit_radius (grid blocks, path around disallowed)
 -- @param t.block_radius = function(typ, lx, ly, for_highlights) (default set according to t.type):
 --		Determines if a radial projection from a point is blocked
- --Parameters interpreted by the default blocking functions:
+-- Parameters interpreted by the default blocking functions:
 -- @param t.no_restrict = boolean all grids are treated as non-blocking
 -- @param t.pass_terrain = boolean pass through all terrain (Grid.pass_projectile also checked)
 -- @param t.requires_knowledge = boolean stop at unknown grids (for player)

@@ -149,6 +149,7 @@ newBirthDescriptor{
 		"All damage done to the player decreased by 30%",
 		"All healing for the player increased by 30%",
 		"All detrimental status effects durations reduced by 50%",
+		"Player starts with 15 gold",
 		"Achievements are not granted.",
 	},
 	descriptor_choices =
@@ -169,6 +170,7 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Normal mode#WHITE##{normal}#",
 		"Provides the normal level of challenges.",
+		"Player starts with 15 gold",
 		"Stairs can not be used for 2 turns after a kill.",
 	},
 	descriptor_choices =
@@ -189,10 +191,12 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Nightmare mode#WHITE##{normal}#",
 		"Unfair game setting",
-		"All zone levels increased by 50%",
+		"All zone levels increased by 50% by the time Player reaches level 10",
 		"All creature talent levels increased by 30%",
+		"All enemies have 50% more life",
 		"Rare creatures are slightly more frequent",
 		"Stairs can not be used for 3 turns after a kill.",
+		"Player starts with 50 gold",
 		"Player can earn Nightmare version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -203,7 +207,7 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 3,
-		money = 100,
+		money = 50,
 	},
 	game_state = {
 		default_random_rare_chance = 15,
@@ -219,12 +223,13 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Insane mode#WHITE##{normal}#",
 		"Similar rules to Nightmare, but with more random bosses!",
-		"All zone levels increased by 50% + 1",
-		"All creature talent levels increased by 50%",
+		"All zone levels increased by 50% + 1 by the time Player reaches level 10",
+		"All creature talent levels increased by 80%",
+		"All enemies have 100% more life",
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Nonrandom bosses will have randomly selected talents",
-		"All enemies have 20% more life",
 		"Stairs can not be used for 5 turns after a kill.",
+		"Player starts with 100 gold",
 		"Player can earn Insane version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -235,8 +240,7 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 4,
-		money = 250,
-		start_level = 2,
+		money = 100,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
@@ -253,12 +257,14 @@ newBirthDescriptor{
 	{
 		"#GOLD##{bold}#Madness mode#WHITE##{normal}#",
 		"Absolutely unfair game setting.  You are really mentally ill and wish to get worse to play this mode!",
-		"All zone levels increased by 150% + 1",
+		"All zone levels increased by 150% + 2 by the time Player reaches level 10",
 		"All creature talent levels increased by 170%",
+		"All enemies have 200% more life",
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Bosses will have randomly selected talents",
 		"Stairs can not be used for 9 turns after a kill.",
 		"Player is being hunted! Randomly all foes in a radius will get a feeling of where she/he is",
+		"Player starts with 150 gold",
 		"Player can earn Madness version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -272,8 +278,7 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 5,
-		money = 500,
-		start_level = 3,
+		money = 150,
 	},
 	game_state = {
 		default_random_rare_chance = 3,

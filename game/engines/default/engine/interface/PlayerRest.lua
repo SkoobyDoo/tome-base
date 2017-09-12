@@ -64,10 +64,10 @@ end
 function _M:onRestStop()
 end
 
---- Rest a turn
--- For a turn based game you want in you player's act() something like the usage example
+--- The Player rests a turn
+-- For a turn based game, you want to call this in your player's act() method:
 -- @usage if not self:restStep() then game.paused = true end
--- @return[1] true if we can continue to rest
+-- @return[1] true if we can continue to rest (This uses energy)
 -- @return[2] false if we can't continue
 function _M:restStep()
 	if not self.resting then return false end

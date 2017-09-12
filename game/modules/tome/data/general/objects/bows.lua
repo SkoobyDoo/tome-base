@@ -47,7 +47,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 1,
 	combat = {
 		range = 6,
-		physspeed = 0.8,
 	},
 }
 
@@ -59,7 +58,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 2,
 	combat = {
 		range = 7,
-		physspeed = 0.8,
 	},
 }
 
@@ -71,7 +69,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 3,
 	combat = {
 		range = 8,
-		physspeed = 0.8,
 	},
 }
 
@@ -83,7 +80,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 4,
 	combat = {
 		range = 9,
-		physspeed = 0.8,
 	},
 }
 
@@ -95,7 +91,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 5,
 	combat = {
 		range = 10,
-		physspeed = 0.8,
 	},
 }
 

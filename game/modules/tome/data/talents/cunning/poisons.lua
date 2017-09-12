@@ -23,7 +23,8 @@ local Map = require "engine.Map"
 -- Poisons
 ----------------------------------------------------------------
 
-local function cancelPoisons(self)
+--- deactivate poison(s) as needed to allow another poison to be activated
+function cancelPoisons(self)
 	local todel = {}
 	for tid, p in pairs(self.sustain_talents) do
 		local t = self:getTalentFromId(tid)
@@ -34,6 +35,87 @@ local function cancelPoisons(self)
 	while #todel > 1 do self:forceUseTalent(rng.tableRemove(todel), {ignore_energy=true}) end
 end
 
+--- default targeting parameters for poisons
+--	automatically targets aitarget to allow AI evaluation of poison tactical tables
+function poisonTarget(self, t)
+	local tgt = self.ai_target.actor
+	local tg = {type="hit", selffire=false}
+	if tgt then	tg.x, tg.y = tgt.x, tgt.y end
+	return tg
+end
+
+local use_base_tactics = false
+
+-- for improved tactical AI (DEBUGGING transitional until reassignment)
+--- Generate the tactical table for a vile poison (as self tactics)
+-- This combines the tactical table of the poison activated/deactivated with the (negated) tactics
+-- of any poisons that may be deactivated (needed because poisons don't use sustain_slots)
+-- when adding a new vile poison, include some fields to allow the tactical AI to evaluate it vs its target:
+-- t.poison_tactics = tactical table for the poison only (applied to aitarget)
+-- t.target = function returning targeting table for the poison (should include x=aitarget.y, y=aitarget.y if centered on aitarget), (defaults to poisonTarget function above)
+function poisonTactics(self, t, aitarget)
+	if not (aitarget and self.vile_poisons and self:isTalentActive(self.T_APPLY_POISON)) then return end
+	local log_detail = config.settings.log_detail_ai or 0
+	local _, poison_chance = aitarget:canBe("poison")
+	if poison_chance > 0 then
+		if use_base_tactics then
+			local tacs = type(t.poison_tactics) == "function" and t.poison_tactics(self, t, aitarget) or t.poison_tactics
+			tacs._no_tp_cache = true -- allow aiTalentTactics to cache only the final tactic weights
+			if log_detail > 1 then print("###_POISONS_### TACTICAL FUNCTION getting base poison tactical table for", t.id, tacs) table.print(tacs, "\t_bpt_") end
+			return tacs
+		end
+		if log_detail > 1 then print("###_POISONS_### TACTICAL FUNCTION computing combined tactics for", t.id) end
+		use_base_tactics = true
+		local count = 0
+		--talent level for poisons fixed at 1, scale with level of VILE_POISONS talent instead
+		for tid, _ in pairs(self.vile_poisons) do
+			count = count + 1
+			if tid == t.id then -- already active: return normal (negated) tactical table for this poison
+				if log_detail > 1 then print(" ##_POISONS_## computing normal deactivation tactics for", tid, "use_base_tactics:", use_base_tactics) end
+				local deac_tacs = self:aiTalentTactics(t, aitarget, nil, nil, nil, -1)
+				use_base_tactics = false
+				return {self=deac_tacs, _no_tp_cache=nil}
+			end
+		end
+		
+		-- Compute the tactical weights for the poison to be activated
+		if log_detail > 1 then print(" ##_POISONS_## computing poison base tactics for", t.id) table.print(t.poison_tactics) end
+		local tactical = self:aiTalentTactics(t, aitarget, nil, nil, nil, 1)
+		if log_detail > 1 then print(" ##_POISONS_## base tactical for ", t.id) table.print(tactical, "\t_pb_") end
+		if count < 2 then -- open poison slot: return the normal tactical table for this poison
+			use_base_tactics = false
+			return {self=tactical, _no_tp_cache=nil}
+		end
+		-- subtract 50% (chance to be deactivated) of the tactical weights (automatically negated) for each active poison
+		for tid, _ in pairs(self.vile_poisons) do
+			local tal = self.talents_def[tid]
+			use_base_tactics = true
+			if log_detail > 2 then print(" ##_POISONS_## computing (50%) deactivation tactics for", tid, "use_base_tactics:", use_base_tactics) end
+			local tacts = self:aiTalentTactics(tal, aitarget, nil, nil, nil, 0.5)
+			if log_detail > 1 then print(" ##_POISONS_## adding 50% (chance to deactivate) tactical weights for", tid) table.print(tacts, "\t_ps_") end
+			table.merge(tactical, tacts, true, nil, nil, true)
+		end
+		if log_detail > 1 then print(" ##_POISONS_## net tactical for ", t.id) table.print(tactical, "\t_pn_") end
+		use_base_tactics = false
+		return {self=tactical, _no_tp_cache=nil} -- Net tactics applied to self only
+	end
+end
+
+-- controls activating vile poisons by NPCs
+function poison_on_pre_use_ai(self, t, silent, fake)
+	if self.ai_state._advanced_ai then return true end -- let the advanced AI decide to use
+	-- dumb AIs won't activate a poison if it would force another one to be deactivated
+	if self.vile_poisons then
+		local count = 0
+		for tid, _ in pairs(self.vile_poisons) do
+			if tid == t.id then return false end
+			count = count + 1
+		end
+		return count < 2
+	else return true
+	end
+end
+
 newTalent{
 	name = "Apply Poison",
 	type = {"cunning/poisons", 1},
@@ -42,7 +124,12 @@ newTalent{
 	points = 5,
 	cooldown = 10,
 	no_break_stealth = true,
-	tactical = { BUFF = 2 },
+	target = poisonTarget,
+	tactical = {ATTACK = {NATURE = {poison = 2},
+		ARCANE = function(self, t, target) return self:knowTalent(self.T_VULNERABILITY_POISON) and {poison = 1} or 0 end},
+		BUFF = function(self, t, target) return self:knowTalent(self.T_VULNERABILITY_POISON) and {poison = -1} or 0 end,
+		SELF = {BUFF = 1}
+	},
 	sustain_stamina = 10,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
 	getChance = function(self,t) return self:combatTalentLimit(t, 100, 25, 45) end,
@@ -187,7 +274,7 @@ info = function(self, t)
 	New poison enhancements can also be learned from special teachers in the world.
 	Also increases the effectiveness of your poisons by %d%%. (The effect varies for each poison.)
 	Adjusting your weapon coating takes no time and does not break stealth.
-	You may only have two poison enhancements active at once; applying a third will cause one of the existing ones to be cancelled at random.]]):
+	You may only have two poison enhancements active at once; applying a third will randomly cause one of the existing ones to be cancelled.]]):
 	format(self:getTalentLevel(t) * 20)
 end,
 }
@@ -200,13 +287,22 @@ newTalent{
 	stamina = 14,
 	require = cuns_req4,
 	requires_target = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	on_learn = venomous_throw_check,
 	on_unlearn = venomous_throw_check,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 1.2, 2.1) end,
 	getSecondaryDamage = function (self, t) return self:combatTalentStatDamage(t, "cun", 50, 550) end,
 	getNb = function(self, t) return math.floor(self:combatTalentScale(t, 1, 4, "log")) end,
 	getPower = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end,
-	tactical = { ATTACK = {NATURE = 2}},
+	tactical = function(self, t, aitarget)
+		local tacs = { attack = {NATURE = self:isTalentActive(self.T_INSIDIOUS_POISON) and 3 or 2},
+			__wt_cache_turns=1}
+		if self:isTalentActive(self.T_NUMBING_POISON) then tacs.disable = 1 end
+		if self:isTalentActive(self.T_CRIPPLING_POISON) then tacs.disable = (tacs.disable or 0) + 1 end
+		if self:isTalentActive(self.T_LEECHING_POISON) then tacs.heal = 1 end
+		if self:isTalentActive(self.T_VOLATILE_POISON) then tacs.attackarea = {NATURE = 1} end -- only checks aitarget
+		return tacs
+	end,
 	speed = "weapon",
 	is_melee = function(self, t) return not self:hasArcheryWeapon() end,
 	range = function(self, t)
@@ -248,7 +344,7 @@ newTalent{
 	action = function(self, t)
 		local dam = t.getDamage(self,t)
 		if not self:hasArcheryWeapon() then
-			local tg = {type="hit", range=self:getTalentRange(t)}
+			local tg = self:getTalentTarget(t)
 			local x, y, target = self:getTarget(tg)
 			if not target or not self:canProject(tg, x, y) then return nil end
 			local hit = self:attackTarget(target, DamageType.NATURE, dam, true)
@@ -302,7 +398,12 @@ newTalent{
 	cooldown = 10,
 	no_break_stealth = true,
 	no_energy = true,
+	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
+	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
+	poison_tactics = { disable = {poison = 1.5}, defend = {poison = -0.5}},
+	tactical_imp = poisonTactics,
 	no_unlearn_last = true,
 	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, -- Limit effect to <35%
 	activate = function(self, t)
@@ -329,7 +430,12 @@ newTalent{
 	cooldown = 10,
 	no_break_stealth = true,
 	no_energy = true,
+	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
+	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
+	poison_tactics = {attack = {poison = 1.5}, disable = {poison = 0.5}},
+	tactical_imp = poisonTactics,
 	no_unlearn_last = true,
 	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 150, 45, 70) end, -- Limit -healing effect to <150%
 	activate = function(self, t)
@@ -356,7 +462,12 @@ newTalent{
 	cooldown = 10,
 	no_break_stealth = true,
 	no_energy = true,
+	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
+	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
+	poison_tactics = {disable = {poison = 2}},
+	tactical_imp = poisonTactics,
 	no_unlearn_last = true,
 	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 35, 10, 20) end, --	Limit chance to < 35%
 	activate = function(self, t)
@@ -383,7 +494,12 @@ newTalent{
 	cooldown = 10,
 	no_break_stealth = true,
 	no_energy = true,
-	tactical = { BUFF = 2 },
+	target = poisonTarget,
+	tactical = { HEAL = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
+	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
+	poison_tactics = {heal = {poison = -2}}, -- heals if a HOSTILE target is affected by the poison
+	tactical_imp = poisonTactics,
 	no_unlearn_last = true,
 	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 10, 40) end, -- limit < 50%
 	activate = function(self, t)
@@ -411,6 +527,16 @@ newTalent{
 	no_break_stealth = true,
 	no_energy = true,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
+	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
+	poison_tactics = {attackarea = {NATURE = 1}},
+	tactical_imp = poisonTactics,
+	target = function(self, t) -- for AI only (considers all actors around aitarget
+		local tgt = self.ai_target.actor
+		if tgt then 
+			return {type="ball", radius=1, friendlyfire=false, start_x=tgt.x, start_y=tgt.y}
+		end
+	end,
 	no_unlearn_last = true,
 	getEffect = function(self, t) return self:combatTalentLimit(self:getTalentLevel(self.T_VILE_POISONS), 100, 15, 50) end, --	Limit effect to < 100%
 	activate = function(self, t)
@@ -424,7 +550,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-	return ([[Enhances your Deadly Poison with a volatile agent, causing the poison to deal %d%% increased damage and damage to all adjacent enemies.]]):
+	return ([[Enhances your Deadly Poison with a volatile agent, causing the poison to deal %d%% increased damage to the victim and damage all of your enemies adjacent to it.]]):
 	format(t.getEffect(self, t))
 	end,
 }
@@ -454,7 +580,20 @@ newTalent{
 	cooldown = 10,
 	no_break_stealth = true,
 	no_energy = true,
+	target = poisonTarget,
 	tactical = { BUFF = 2 },
+	on_pre_use_ai = poison_on_pre_use_ai,
+	ai_level = function(self, t) return self:getTalentLevelRaw(self.T_VILE_POISONS) end, -- talent level for ai
+	poison_tactics = function(self, t, aitarget) -- resisted by immunity to stun, stone, and instakill
+		local wt = 1
+		local _, chance = aitarget:canBe("instakill")
+		wt = wt*chance/100
+		_, chance = aitarget:canBe("stun") wt = wt*chance/100
+		_, chance = aitarget:canBe("stone") wt = wt*chance/100
+		_, chance = aitarget:canBe("poison") wt = wt*chance/100
+		return {escape = wt, disable = wt, attack = {NATURE = {poison = 1}}}
+	end,
+	tactical_imp = poisonTactics,
 	no_unlearn_last = true,
 	vile_poison = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(self:getTalentLevel(self.T_VILE_POISONS), 6, 8)) end,

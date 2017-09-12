@@ -337,7 +337,7 @@ newEntity{ base = "BASE_LONGBOW",
 	special_desc = function(self) return "Automatically fires lightning bolts at nearby enemies, with a chance to inflict Daze." end,
 	combat = {
 		range=10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 	},
 	wielder = {
 		combat_spellpower=20,

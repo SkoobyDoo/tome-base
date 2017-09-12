@@ -37,7 +37,7 @@ According to legend it was made from the first ash sapling to sprout after the S
 	material_level = 3,
 	combat = {
 		range = 9,
-		physspeed = 0.7,
+		physspeed = 0.9,
 	},
 	wielder = {
 		life_regen = 2.0,

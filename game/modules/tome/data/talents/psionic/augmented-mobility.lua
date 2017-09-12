@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009, 2010, 2011, 2012, 2013 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ newTalent{
 	cooldown = 0,
 	sustain_psi = 10,
 	no_energy = true,
-	tactical = { BUFF = 2 },
+	tactical = { SELF = { ESCAPE = 1 }, CLOSEIN = 1},
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.2, 0.5, 0.75) end,
 	getKBVulnerable = function(self, t) return 1 - self:combatTalentLimit(t, 1, 0.3, 0.7) end,
 	activate = function(self, t)
@@ -58,6 +58,7 @@ newTalent{
 	cooldown = 20,
 	psi = 30,
 	no_energy = true,
+	tactical = { BUFF = 2 },
 	getDuration = function(self, t) return math.floor(self:combatLimit(self:combatMindpower(0.1), 10, 4, 0, 6, 6)) end, -- Limit < 10
 	speed = function(self, t) return self:combatTalentScale(t, 0.1, 0.4, 0.75) end,
 	getBoost = function(self, t)
@@ -121,40 +122,35 @@ newTalent{
 	cooldown = 15,
 	psi = 10,
 	points = 5,
-	tactical = { CLOSEIN = 2, ESCAPE = 1 },
+	tactical = { SELF = { ESCAPE = 1 }, CLOSEIN = 2},
 	range = function(self, t)
 		return math.floor(math.max(1, self:combatTalentLimit(t, 10, 2, 7.5))) -- Limit < 10
 	end,
+	message = "@Source@ performs a telekinetically enhanced leap!",
 	target = function(self, t)
-		return {default_target=self, type="ball", nolock=true, pass_terrain=false, nowarning=true, range=self:getTalentRange(t), radius=0, requires_knowledge=false}
+		local range=self:getTalentRange(t)
+		local tg = {talent=t, type="hit", nolock=true, pass_terrain=false, nowarning=true, range=range}
+		if not self.player then
+			tg.grid_params = {want_range=self.ai_state.tactic == "escape" and self:getTalentCooldown(t) + 11 or self.ai_tactic.safe_range or 0, max_delta=-1}
+		end
+		return tg
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
-		local tx, ty = self:getTargetLimitedWallStop(tg)
-		if not tx or not ty then return nil end
-		local x, y
-		if not self.player and self.ai_state.tactic == "escape" then -- NPC trying to jump away
-			x = self.x + (self.x - tx)*100
-			y = self.y + (self.y - ty)*100
-			local _ _, _, _, x, y = self:canProject(tg, x, y)
-			if not x or not y then return nil end
-			if not x or not y or core.fov.distance(x, y, tx, ty) <=1 then return nil end
-		else -- jump to target location
-			local _ _, _, _, x, y = self:canProject(tg, tx, ty)
-			if not x or not y then return nil end
+		local x, y, dist = self:getTarget(tg)
+		if not (x and y) then return end
+		
+		local _ _, _, _, fx, fy = self:canProject(tg, x, y)
+		if not (fx and fy) or (fx == self.x and fy == self.y) then return end
+		if fx ~= x or fy ~= y then
+			game.logPlayer(self, "Terrain blocked your trajectory.")
 		end
-		local fx, fy = util.findFreeGrid(x, y, 5, true, {[Map.ACTOR]=true})
-		if not fx then
-			return
-		end
-		game.logSeen(self, "%s performs a telekinetically enhanced leap!", self.name:capitalize())
-		self:move(fx, fy, true)
-
-		return true
+		
+		return self:move(fx, fy, true)
 	end,
 	info = function(self, t)
 		local range = self:getTalentRange(t)
-		return ([[You perform a precise, telekinetically-enhanced leap, landing up to %d squares away.]]):
+		return ([[You perform a precise, telekinetically-enhanced leap, landing up to %d squares from your starting point.]]):
 		format(range)
 	end,
 }

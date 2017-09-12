@@ -127,9 +127,9 @@ newTalent{
 		if src and src.x and src ~= self then
 			self.turn_procs.antimagic_shield_feedback = self.turn_procs.antimagic_shield_feedback or 0
 			if self.turn_procs.antimagic_shield_feedback < 10 then
+				self.turn_procs.antimagic_shield_feedback = self.turn_procs.antimagic_shield_feedback + 1
 				DamageType:get(DamageType.MANABURN).projector(self, src.x, src.y, DamageType.MANABURN, t.getBurn(self, t) * 0.75 ^ self.turn_procs.antimagic_shield_feedback)
 				game.level.map:particleEmitter(src.x, src.y, 1, "slime")
-				self.turn_procs.antimagic_shield_feedback = self.turn_procs.antimagic_shield_feedback + 1
 			end
 		end
 

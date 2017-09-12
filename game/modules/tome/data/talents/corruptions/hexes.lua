@@ -26,7 +26,7 @@ newTalent{
 	vim = 30,
 	range = 10,
 	radius = 2,
-	tactical = { DISABLE = 2 },
+	tactical = { DISABLE = {stun = 2} },
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
@@ -64,7 +64,7 @@ newTalent{
 	vim = 30,
 	range = 10,
 	radius = 2,
-	tactical = { DISABLE = 2 },
+	tactical = { DISABLE = 2, ATTACK = {FIRE = 1} },
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
@@ -102,7 +102,7 @@ newTalent{
 	vim = 30,
 	range = 10,
 	radius = 2,
-	tactical = { DISABLE = 2 },
+	tactical = { ATTACK = 2 },
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)

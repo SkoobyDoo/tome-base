@@ -65,27 +65,61 @@ newEntity{ base = "BASE_GEM",
 	},
 }
 
--- Low base values because you can stack affinity and resist
--- The 3rd type is pretty meaningless balance-wise.  Magic debuffs hardly matter.  The real advantage is the affinity.
 newEntity{ base = "BASE_INFUSION",
 	name = "Primal Infusion", unique=true, image = "object/artifact/primal_infusion.png",
 	desc = [[This wild infusion has evolved.]],
 	unided_name = "pulsing infusion",
-	level_range = {15, 40},
+	level_range = {15, 50},
 	rarity = 300,
-	cost = 300,
-	material_level = 3,
+	cost = 500,
 
 	inscription_kind = "protect",
 	inscription_data = {
 		cooldown = 18,
-		dur = 6,
+		dur = 5,
+		reduce = 1,
 		power = 10,
-		use_stat_mod = 0.1, 
-		use_stat = "con",
-		what = {physical=true, mental=true, magical=true},
+		use_stat_mod = 0.02, -- +2 duration reduction and +20% affinity at 100 stat
+		use_stat = "wil",
 	},
 	inscription_talent = "INFUSION:_PRIMAL",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "Prismatic Rune", unique=true, define_as="RUNE_PRISMATIC",
+	level_range = {5, 50},
+	rarity = 300,
+	cost = 500,
+	inscription_kind = "protect",
+	types = {"FIRE", "LIGHTNING", "COLD", "ACID", "MIND", "ARCANE", "BLIGHT", "NATURE", "TEMPORAL", "LIGHT", "DARK"},
+	inscription_data = {
+		cooldown = 18,
+		dur = 6,
+		num_types = resolvers.rngrange(3, 5),
+		wards = {},
+		resolvers.genericlast(function(e)
+			e.inscription_data.wards["PHYSICAL"] = resolvers.rngrange(2, 4) -- guarantee physical wards
+			for _ = 1,e.inscription_data.num_types do
+				local pick = rng.tableRemove(e.types)
+				e.inscription_data.wards[pick] = resolvers.rngrange(3, 5)
+			end
+		end)
+	},
+	inscription_talent = "RUNE:_PRISMATIC",
+}
+
+newEntity{ base = "BASE_RUNE",
+	name = "Mirror Image Rune", unique=true, define_as="RUNE_MIRROR_IMAGE",
+	level_range = {5, 50},
+	rarity = 300,
+	cost = 500,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = 24,
+		dur = 6,
+		inheritance = 1,
+	},
+	inscription_talent = "RUNE:_MIRROR_IMAGE",
 }
 
 newEntity{ base = "BASE_STAFF",
@@ -2872,7 +2906,7 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 1,
 	combat = {
 		range = 9,
-		physspeed = 0.75,
+		physspeed = 0.95,
 	},
 	wielder = {
 		inc_damage={ [DamageType.PHYSICAL] = 5, },
@@ -3143,7 +3177,7 @@ newEntity{ base = "BASE_CLOTH_ARMOR",
 		range =5,
 		target = function(self, who) return {type="beam", range=self.use_power.range} end,
 		requires_target = true,
-		tactical = {ATTACK = {PHYSICAL = 2}, ESCAPE = 1.5},
+		tactical = {ATTACK = {PHYSICAL = 2}, ESCAPE = {knockback = 1.5}},
 		use = function(self, who)
 			local dam = self.use_power.damage(self, who)
 			local tg = self.use_power.target(self, who)
@@ -3808,7 +3842,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 3,
 	combat = {
 		range = 9,
-		physspeed = 0.8,
 		travel_speed = 4,
 		talent_on_hit = { [Talents.T_ARCANE_EYE] = {level=4, chance=100} },
 	},
@@ -4040,7 +4073,7 @@ newEntity{ base = "BASE_MINDSTAR",
 
 newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 	power_source = {arcane=true},
-	unique = true,
+	unique = true, define_as = "AETHERWALK",
 	name = "Aetherwalk", image = "object/artifact/aether_walk.png",
 	moddable_tile = "special/aether_walk",
 	unided_name = "ethereal boots",
@@ -4072,33 +4105,18 @@ newEntity{ base = "BASE_LEATHER_BOOT", --Thanks Grayswandir!
 	},
 	max_power = 24, power_regen = 1,
 	use_power = { name = "phase door up to range 6, within radius 2 of the target location", power = 24,
-		tactical = {ESCAPE = 2, CLOSEIN = 2},
+		tactical = {ESCAPE = 2, CLOSEIN = 1.5},
+		on_pre_use = function(self, who, silent, fake) return not who:attr("encased_in_ice") and not who:attr("cant_teleport") end,
 		use = function(self, who)
-			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=6, radius=2, requires_knowledge=false}
+			local tg = {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=6, radius=2, requires_knowledge=false,
+			grid_params = {want_range = (not who.ai_target.actor or who.ai_state.tactic == "escape") and 6 or 1	}
+			}
 			local tx, ty = who:getTarget(tg)
-			if not tx or not ty then return nil end
-			local x, y = tx, ty
+			if not tx or not ty or core.fov.distance(who.x, who.y, tx, ty) <=1 then return nil end
 			
-			if not who.player then
-				if who.ai_state.tactic == "closein" then  -- teleport to target location
-					local _ _, x, y = who:canProject(tg, tx, ty)
-	--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
-					if not x or not y then return {id=true} end
-				else  -- try to teleport away
-	--			if who.ai_state.tactic == "escape" then -- try to teleport away
-	--game.log("--%s trying to jump away from (%s, %s)", who.name, tx, ty)
-					x = who.x + (who.x - tx)*100
-					y = who.y + (who.y - ty)*100
-					local _ _, x, y = who:canProject(tg, x, y)
-					if not x or not y then return nil end
-	--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
-					if not x or not y or core.fov.distance(x, y, tx, ty) <=1 then return nil end
-	--			else -- teleport to target location
-	--				local _ _, x, y = who:canProject(tg, tx, ty)
-	--game.log("--%s trying to jump to (%s, %s)", who.name, x, y)
-	--				if not x or not y then return {id=true} end
-				end
-			end
+			local _ _, x, y = who:canProject(tg, tx, ty)
+			if not x or not y then return {id=true} end
+
 			local rad = 2
 			game.logSeen(who, "%s is #PURPLE#ENVELOPED#LAST# in a deep purple aura from %s %s!", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
@@ -5463,7 +5481,7 @@ newEntity{ base = "BASE_SLING",
 	material_level = 5,
 	combat = {
 		range = 10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 	},
 	wielder = {
 		pin_immune = 0.3,
@@ -7325,17 +7343,21 @@ newEntity{ base = "BASE_MASSIVE_ARMOR",
 		tactical = {DISABLE = function(who, t, aitarget)
 				if not (aitarget and who.aiSeeTargetPos) or aitarget:hasEffect(aitarget.EFF_SLOW_MOVE) then return end
 				local tx, ty = who:aiSeeTargetPos(aitarget)
-				if core.fov.distance(who.x, who.y, tx, ty) <= 1 then return {pin = 1.5} end
+				if core.fov.distance(who.x, who.y, tx, ty) <= 1 then return {slow = 1} end
 			end,
-			DEFEND = function(who, t, aitarget)
+			SELF = function(who, t, aitarget)
 				local resist = (util.bound(who.global_speed * (who.movement_speed), 0.3, 1) - (util.bound(who.global_speed * (who.movement_speed - .4), 0.3, 1)))*5
-				if resist > 0 then return resist end
-			end},
+				if resist > 0 then
+					return {defend=2*resist, escape=-resist, closein=-resist}
+				end
+			end,
+			__wt_cache_turns = 1,
+		},
 		on_pre_use_ai = function(self, who) return not who:hasEffect(who.EFF_SLOW_MOVE) end,
 		use = function(self, who)
 			local tg = self.use_power.target(self, who)
 			tg.selffire = true -- set here so that the ai will use it
-			game.logSeen(who, "%s rebalances the bulky plates of %s %s, and thngs slow down a bit.", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
+			game.logSeen(who, "%s rebalances the bulky plates of %s %s, and things slow down a bit.", who.name:capitalize(), who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			who:project(tg, who.x, who.y, function(px, py)
 				local target = game.level.map(px, py, engine.Map.ACTOR)
 				if not target then return end

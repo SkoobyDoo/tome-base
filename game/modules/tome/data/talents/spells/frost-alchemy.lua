@@ -114,7 +114,7 @@ newTalent{
 	sustain_mana = 100,
 	points = 5,
 	range = 6,
-	tactical = { BUFF=1 },
+	tactical = { DEFEND = 2 },
 	critResist = function(self, t) return self:combatTalentScale(t, 10, 50) end,
 	getResistance = function(self, t) return self:combatTalentSpellDamage(t, 5, 45) end,
 	getAffinity = function(self, t) return self:combatTalentLimit(t, 50, 5, 20) end, -- Limit <50%

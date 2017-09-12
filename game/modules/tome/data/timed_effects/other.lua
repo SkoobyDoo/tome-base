@@ -2281,7 +2281,7 @@ newEffect{
 		-- Bypass all shields & such
 		local old = self.onTakeHit
 		self.onTakeHit = nil
-		mod.class.interface.ActorLife.takeHit(self, self.max_life * eff.dam / 100, self, {special_death_msg="suffocated to death"})
+		mod.class.interface.ActorLife.takeHit(self, self.max_life * eff.dam / 100, nil, {special_death_msg="suffocated to death"})
 		eff.dam = util.bound(eff.dam + 5, 20, 100)
 		self.onTakeHit = old
 	end,
@@ -2380,14 +2380,14 @@ newEffect{
 newEffect{
 	name = "SPACETIME_TUNING", image = "talents/spacetime_tuning.png",
 	desc = "Spacetime Tuning",
-	long_desc = function(self, eff) return ("Tuning Paradox at a rate of %d per turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("Tuning Paradox at a rate of %+d per turn."):format(eff.power) end,
 	type = "other",
 	subtype = { time=true },
 	status = "beneficial",
 	parameters = { power=10},
 	on_gain = function(self, err) return "#Target# retunes the fabric of spacetime.", "+Spacetime Tuning" end,
 	on_timeout = function(self, eff)
-		self:callTalent(self.T_SPACETIME_TUNING, "tuneParadox")
+		self:callTalent(self.T_SPACETIME_TUNING, "tuneParadox") -- adjusts paradox level
 	end,
 	activate = function(self, eff)
 		if core.shader.active(4) then
