@@ -1788,3 +1788,15 @@ function _M:aiTalentTactics(t, aitarget, target_list, tactic, tg, wt_mod)
 	end
 	return false
 end
+
+--- Sets the current AI target
+-- @param [type=Entity, optional] target the target to set (assign nil to clear the target)
+-- @param [type=table, optional] last_seen data for use by aiSeeTargetPos
+-- When targeting a new entity, checks self.on_acquire_target and target.on_targeted
+function _M:setTarget(target, last_seen)
+	local old_target = self.ai_target.actor
+	engine.interface.ActorAI.setTarget(self, target, last_seen)
+	if target and target ~= old_target and game.level:hasEntity(target) then
+		if target.fireTalentCheck then target:fireTalentCheck("callbackOnTargeted", self) end
+	end
+end
