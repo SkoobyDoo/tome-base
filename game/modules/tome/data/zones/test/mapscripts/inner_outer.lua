@@ -48,11 +48,11 @@ if not WaveFunctionCollapse:waitAll(wfcinner, wfcwater, wfcouter) then print("[i
 
 -- Merge them all
 local tm = Tilemap.new(self.mapsize)
-wfcouter:merge(1, 1, wfcwater, self.data.merge_order)
+wfcouter:merge(1, 1, wfcwater, merge_order)
 if wfcouter:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] outer is too small") return self:regenerate() end
 if wfcinner:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] inner is too small") return self:regenerate() end
-tm:merge(1, 1, wfcouter, self.data.merge_order)
-tm:merge(self.mapsize.w - wfcinner.data_w, 1, wfcinner, self.data.merge_order)
+tm:merge(1, 1, wfcouter, merge_order)
+tm:merge(self.mapsize.w - wfcinner.data_w, 1, wfcinner, merge_order)
 
 -- Find rooms
 local rooms = tm:findGroupsOf{'r'}
