@@ -173,7 +173,7 @@ newTalent{
 			no_drops = true,
 			summoner = self, summoner_gain_exp = true,
 			summon_time = t.getGhoulDuration(self, t),
-			ai = "summoned", ai_state = { talent_in=2, ai_move="move_ghoul", },
+			ai = "summoned", ai_state = { talent_in=1, ai_move="move_ghoul", },
 			ai_real = "tactical",
 			ai_tactic = resolvers.tactic"melee",
 			stats = { str=14, dex=12, mag=10, con=12 },
@@ -188,9 +188,9 @@ newTalent{
 
 			resolvers.talents{
 				[Talents.T_GHOUL]={base=1, every=10, max=5},
-				[Talents.T_GNAW]={base=1, max=1},  -- Limit effect duration on the ghouls
+				[Talents.T_GNAW]={base=1, every=10, max=5},
 				[Talents.T_GHOULISH_LEAP]={base=1, every=10, max=5},
-				[Talents.T_STUN]={base=1, every=10, max=5},
+				[Talents.T_STUN]={base=1, every=10, max=3},
 				[Talents.T_ROTTING_DISEASE]={base=1, max=1},  -- The scaling on this is completely insane, TL1 is plenty
 			},
 
@@ -253,7 +253,7 @@ newTalent{
 		return ([[Gnaw your target for %d%% damage.  If your attack hits, the target may be infected with Ghoul Rot for %d turns.
 		Each turn, Ghoul Rot inflicts %0.2f blight damage.
 		Targets suffering from Ghoul Rot rise as friendly ghouls when slain.
-		Ghouls last for %d turns and can use Gnaw, Ghoulish Leap, Stun, and Rotting Disease.
+		Ghouls last for %d turns and can use Gnaw, Ghoulish Leap, Stun, and Rotting Disease.  Some of these talents will increase with level.
 		The blight damage scales with your Constitution.]]):
 		format(100 * damage, duration, damDesc(self, DamageType.BLIGHT, disease_damage), ghoul_duration)
 	end,
