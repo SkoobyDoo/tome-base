@@ -143,15 +143,15 @@ newTalent{
 	require = undeads_req4,
 	points = 5,
 	cooldown = 10,
-	tactical = { ATTACK = {BLIGHT = 3} },
+	tactical = { ATTACK = {BLIGHT = 5} },  -- Ghouls really like making more ghouls
 	range = 1,
 	requires_target = true,
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentScale(t, 1, 1.6) end,
-	getDuration = function(self, t) return self:combatTalentLimit(t, 10, 4, 7) end,
-	getGhoulDuration = function(self, t) return self:combatTalentLimit(t, 10, 4, 7) end,
-	getDiseaseDamage = function(self, t) return self:combatTalentStatDamage(t, "con", 15, 80) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 6)) end,
+	getGhoulDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 3, 6)) end,
+	getDiseaseDamage = function(self, t) return self:combatTalentStatDamage(t, "con", 10, 70) end,
 	spawn_ghoul = function (self, target, t)
 		local x, y = util.findFreeGrid(target.x, target.y, 10, true, {[Map.ACTOR]=true})
 		if not x then return nil end
@@ -164,11 +164,13 @@ newTalent{
 			desc = [[Flesh is falling off in chunks from this decaying abomination.]],
 			faction = self.faction,
 			level_range = {1, nil}, exp_worth = 0,
-			life_rating = 8,
+			life_rating = 10,
 			max_life = 100,
-			combat_armor = 2, combat_def = 7,
+			combat_armor_hardiness = 40,  -- 70% total
+			combat_armor=resolvers.levelup(3, 1, 1), combat_def = 7,
 			body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 			autolevel = "ghoul",
+			silent_levelup = true,
 			no_inventory_access = true,
 			no_drops = true,
 			summoner = self, summoner_gain_exp = true,
@@ -177,10 +179,11 @@ newTalent{
 			ai_real = "tactical",
 			ai_tactic = resolvers.tactic"melee",
 			stats = { str=14, dex=12, mag=10, con=12 },
-			-- 70 Accuracy, 58 ppower at level 50
-			-- Melee damage is terrible, but we need these to scale to beat save checks 
-			combat_dam = resolvers.levelup(1, 1, 1),
-			combat = { dam=resolvers.levelup(10, 1, 1), atk=resolvers.levelup(9, 1, 3), apr=3, dammod={str=0.6} },
+			-- 1200 life, 82 Accuracy, 80 ppower at level 50 (with difficulty player summon bug fixed)
+			-- Melee damage is terrible, but we need these to scale to beat save checks
+			-- APR isn't thematic but its the best way to ensure armor can't 0 out our low damage and thus prevent the much more relevant on hit effects
+			combat_dam = resolvers.levelup(1, 1, 3),
+			combat = { dam=resolvers.levelup(10, 1, 1), atk=resolvers.levelup(9, 1, 4), apr=resolvers.levelup(3, 1, 1), dammod={str=1} },
 
 			rank = 2,
 			size_category = 3,
@@ -188,11 +191,13 @@ newTalent{
 
 			resolvers.talents{
 				[Talents.T_GHOUL]={base=1, every=10, max=5},
-				[Talents.T_GNAW]={base=1, every=10, max=5},
+				[Talents.T_GNAW]={base=1, every=10, max=3},
 				[Talents.T_GHOULISH_LEAP]={base=1, every=10, max=5},
 				[Talents.T_STUN]={base=1, every=10, max=3},
 				[Talents.T_ROTTING_DISEASE]={base=1, max=1},  -- The scaling on this is completely insane, TL1 is plenty
 			},
+
+			--log_detail_ai = 2,
 
 			open_door = true,
 
@@ -203,6 +208,9 @@ newTalent{
 		}
 		ghoul:resolve() ghoul:resolve(nil, true)
 		ghoul:forceLevelup(self.level)
+		ghoul.unused_talents = 0
+		ghoul.unused_generics = 0
+		ghoul.unused_talents_types = 0
 
 		if self:knowTalent(self.T_BLIGHTED_SUMMONING) then
 			ghoul:incIncStat("mag", self:getMag())
@@ -236,7 +244,7 @@ newTalent{
 				if target.dead then
 					t.spawn_ghoul(self, target, t)
 				else
-				target:setEffect(target.EFF_GHOUL_ROT, t.getDuration(self,t), {src=self, apply_power=self:combatPhysicalpower(), dam=t.getDiseaseDamage(self, t),  make_ghoul=1})
+					target:setEffect(target.EFF_GHOUL_ROT, t.getDuration(self,t), {src=self, apply_power=self:combatPhysicalpower(), dam=t.getDiseaseDamage(self, t),  make_ghoul=1})
 				end
 			else
 				game.logSeen(target, "%s resists the disease!", target.name:capitalize())
