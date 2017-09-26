@@ -101,20 +101,19 @@ newTalent{
 		HEAL = function(self, t, aitarget)
 			return self:attr("undead") and 1 or nil
 		end},
-	range=1,
 	radius = 3,
+	range=0,
 	target = function(self, t) return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire = not self:attr("undead")} end,  --selffire is set only for the ai, the map effect doesn't use it
 	requires_target = true,
-	getduration = function(self, t) return self:combatTalentScale(t, 7, 15, 0.5) end,
+	getduration = function(self, t) return 10 end,
 	getPurgeChance = function(self, t) return self:combatTalentLimit(t, 100, 5, 25) end, -- Limit < 100%
 	-- status effect removal handled in mod.data.damage_types (type = "RETCH")
 	action = function(self, t)
 		local duration = t.getduration(self, t)
 		local dam = 10 + self:combatTalentStatDamage(t, "con", 10, 60)
 		local tg = self:getTalentTarget(t)
-		local tx, ty = self:getTarget(tg)
+		local tx, ty = self.x, self.y
 		if not tx or not ty then return nil end
-		local _, tx, ty = self:canProject(tg, tx, ty)
 
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
@@ -150,7 +149,6 @@ newTalent{
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	getDamage = function(self, t) return self:combatTalentScale(t, 1, 1.6) end,
-	--getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	getDuration = function(self, t) return self:combatTalentLimit(t, 10, 4, 7) end,
 	getGhoulDuration = function(self, t) return self:combatTalentLimit(t, 10, 4, 7) end,
 	getDiseaseDamage = function(self, t) return self:combatTalentStatDamage(t, "con", 15, 80) end,
@@ -161,7 +159,8 @@ newTalent{
 		local ghoul = NPC.new{
 			type = "undead", subtype = "ghoul",
 			display = "z",
-			name = "ghoul", color=colors.TAN,
+			name = "Risen Ghoul", color=colors.TAN,
+			image="npc/undead_ghoul_ghoul.png",
 			desc = [[Flesh is falling off in chunks from this decaying abomination.]],
 			faction = self.faction,
 			level_range = {1, nil}, exp_worth = 0,
@@ -170,7 +169,11 @@ newTalent{
 			combat_armor = 2, combat_def = 7,
 			body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 			autolevel = "ghoul",
-			ai = "summoned", ai_state = { talent_in=1, ai_move="move_ghoul", },
+			no_inventory_access = true,
+			no_drops = true,
+			summoner = self, summoner_gain_exp = true,
+			summon_time = t.getGhoulDuration(self, t),
+			ai = "summoned", ai_state = { talent_in=2, ai_move="move_ghoul", },
 			ai_real = "tactical",
 			ai_tactic = resolvers.tactic"melee",
 			stats = { str=14, dex=12, mag=10, con=12 },
@@ -185,9 +188,10 @@ newTalent{
 
 			resolvers.talents{
 				[Talents.T_GHOUL]={base=1, every=10, max=5},
-				[Talents.T_GNAW]={base=1, every=10, max=5},
+				[Talents.T_GNAW]={base=1, max=1},  -- Limit effect duration on the ghouls
+				[Talents.T_GHOULISH_LEAP]={base=1, every=10, max=5},
 				[Talents.T_STUN]={base=1, every=10, max=5},
-				[Talents.T_ROTTING_DISEASE]={base=1, every=10, max=3},
+				[Talents.T_ROTTING_DISEASE]={base=1, max=1},  -- The scaling on this is completely insane, TL1 is plenty
 			},
 
 			open_door = true,
@@ -214,7 +218,7 @@ newTalent{
 		if game.party:hasMember(self) then
 			ghoul.remove_from_party_on_death = true
 			game.party:addMember(ghoul, {
-				control="full",
+				control="no",
 				type="minion",
 				title="Ghoulish Minion",
 				orders = {target=true},
@@ -249,7 +253,7 @@ newTalent{
 		return ([[Gnaw your target for %d%% damage.  If your attack hits, the target may be infected with Ghoul Rot for %d turns.
 		Each turn, Ghoul Rot inflicts %0.2f blight damage.
 		Targets suffering from Ghoul Rot rise as friendly ghouls when slain.
-		Ghouls last for %d turns and can use Gnaw, Stun, and Rotting Disease.
+		Ghouls last for %d turns and can use Gnaw, Ghoulish Leap, Stun, and Rotting Disease.
 		The blight damage scales with your Constitution.]]):
 		format(100 * damage, duration, damDesc(self, DamageType.BLIGHT, disease_damage), ghoul_duration)
 	end,
