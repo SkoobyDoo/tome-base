@@ -1157,6 +1157,15 @@ static int lua_free_fov_line(lua_State *L)
 		lua_line = (lua_fov_line*)auxiliar_checkclass(L, "core{fovline}", 1);
 	}
 
+	if (lua_line->fov.opaque_ref != LUA_NOREF) {
+		luaL_unref(L, LUA_REGISTRYINDEX, lua_line->fov.opaque_ref);
+		lua_line->fov.opaque_ref = LUA_NOREF;
+	}
+	if (lua_line->fov.cache_ref != LUA_NOREF) {
+		luaL_unref(L, LUA_REGISTRYINDEX, lua_line->fov.cache_ref);
+		lua_line->fov.cache_ref = LUA_NOREF;
+	}
+
 	lua_pushnumber(L, 1);
 	return 1;
 }
