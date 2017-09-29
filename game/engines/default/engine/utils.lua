@@ -400,6 +400,29 @@ function table.mapv(f, source)
 	return result
 end
 
+-- Make a new list with each k, v = k, f(v) in the original.
+function table.maplist(f, source)
+	local result = {}
+	for i, v in ipairs(source) do
+		local v2 = f(i, v)
+		if v2 then result[#result+1] = v2 end
+	end
+	return result
+end
+
+-- Make a new list with each k, v = k, f(v) in the original.
+function table.splitlist(f, source)
+	local results = {}
+	for i, v in ipairs(source) do
+		local id, v2 = f(i, v)
+		if id and v2 then
+			results[id] = results[id] or {}
+			table.insert(results[id], v2)
+		end
+	end
+	return results
+end
+
 -- Find the keys that are only in left, only in right, and are common
 -- to both.
 function table.compareKeys(left, right)
