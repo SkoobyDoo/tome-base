@@ -58,11 +58,15 @@ function _M:block_move(x, y, e, act, couldpass)
 
 	-- Open doors
 	if self.door_opened and e.open_door and act then
+		local door_g
+		if type(self.door_opened) == "string" then door_g = game.zone.grid_list[self.door_opened]
+		else door_g = self.door_opened end
+
 		if self.door_player_check then
 			if e.player then
 				Dialog:yesnoPopup(self.name, self.door_player_check, function(ret)
 					if ret then
-						game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
+						game.level.map(x, y, engine.Map.TERRAIN, door_g)
 						game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
 						game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
@@ -75,7 +79,7 @@ function _M:block_move(x, y, e, act, couldpass)
 				Dialog:simplePopup(self.name, self.door_player_stop)
 			end
 		else
-			game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
+			game.level.map(x, y, engine.Map.TERRAIN, door_g)
 			game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
 			game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
