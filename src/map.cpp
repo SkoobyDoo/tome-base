@@ -1660,7 +1660,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 	float tim = SDL_GetTicks() / 1500.0;
 	mat4 scrollmodel = mat4();
 	// scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx + map->w / 2 * map->tile_w * cos(tim), -scrolly + map->h / 2 * map->tile_w * sin(tim), 0));
-	scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx, -scrolly, 0));
+	scrollmodel = glm::translate(scrollmodel, glm::vec3(-floor(scrollx), -floor(scrolly), 0));
 	model = model * scrollmodel;
 
 	color *= vec4(map->tint_r, map->tint_g, map->tint_b, map->tint_a);
