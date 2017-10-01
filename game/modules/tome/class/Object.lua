@@ -493,7 +493,8 @@ end
 --- Gets the color in which to display the object in lists
 function _M:getDisplayColor(fake)
 	if not fake and not self:isIdentified() then return {180, 180, 180}, "#B4B4B4#" end
-	if self.lore then return {0, 128, 255}, "#0080FF#"
+	if self.cosmetic then return {0xC5, 0x75, 0xC6}, "#C578C6#"
+	elseif self.lore then return {0, 128, 255}, "#0080FF#"
 	elseif self.unique then
 		if self.randart then
 			return {255, 0x77, 0}, "#FF7700#"
@@ -1151,6 +1152,7 @@ function _M:getTextualDesc(compare_with, use_actor)
 	local desc = tstring{}
 
 	if self.quest then desc:add({"color", "VIOLET"},"[Plot Item]", {"color", "LAST"}, true)
+	elseif self.cosmetic then desc:add({"color", "C578C6"},"[Cosmetic Item]", {"color", "LAST"}, true)
 	elseif self.unique then
 		if self.legendary then desc:add({"color", "FF4000"},"[Legendary]", {"color", "LAST"}, true)
 		elseif self.godslayer then desc:add({"color", "AAD500"},"[Godslayer]", {"color", "LAST"}, true)
