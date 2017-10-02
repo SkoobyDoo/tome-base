@@ -103,7 +103,7 @@ void RendererGL3::draw(ParticlesData &p, mat4 &model) {
 	glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
 	if (shader->p_color != -1) { glUniform4fv(shader->p_color, 1, glm::value_ptr(color)); }
 
-	// Upload data
+	// Upload data, do it in a sub-block to auto unlock the mutex
 	{
 		lock_guard<mutex> guard(p.mux);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
