@@ -62,6 +62,9 @@ public:
 	}
 };
 
+/************************************************************************************
+ ** PNG to texture
+ ************************************************************************************/
 class LoaderPNG : public Loader {
 private:
 	string filename;
@@ -89,6 +92,9 @@ public:
 	}
 };
 
+/************************************************************************************
+ ** PNG(greyscale) to noise data
+ ************************************************************************************/
 void noise_data::define(int32_t w, int32_t h) {
 	this->w = w; this->h = h;
 	data = new float[w * h];
@@ -134,6 +140,88 @@ public:
 	}
 };
 
+/************************************************************************************
+ ** PNG to points list
+ ************************************************************************************/
+bool points_list::hasData() {
+	if (finished) return true;
+	if (lock.test_and_set()) return false;
+	else {
+		finished = true;
+		lock.clear();
+	}
+	return false;
+}
+
+static glm::vec4 getpixel(SDL_Surface *surface, int x, int y)
+{
+	int bpp = surface->format->BytesPerPixel;
+	/* Here p is the address to the pixel we want to retrieve */
+	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+
+	switch(bpp) {
+	case 1:
+		return glm::vec4((float)*p / 255.0, (float)*p / 255.0, (float)*p / 255.0, (float)*p / 255.0);
+	case 2:
+		return glm::vec4((float)p[0] / 255.0, (float)p[1] / 255.0, (float)p[1] / 255.0, (float)p[1] / 255.0);
+	case 3:
+		// if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+		// 	return p[0] << 16 | p[1] << 8 | p[2];
+		// else
+		// 	return p[0] | p[1] << 8 | p[2] << 16;
+	case 4:
+		return glm::vec4((float)p[0] / 255.0, (float)p[1] / 255.0, (float)p[2] / 255.0, (float)p[3] / 255.0);
+	default:
+		return glm::vec4();       /* shouldn't happen, but avoids warnings */
+	}
+}
+
+void points_list::set(SDL_Surface *s) {
+	int nOfColors = s->format->BytesPerPixel;
+	if (nOfColors != 4) printf("[LOADER] LoaderPointsList ERROR, surface has %d colors\n", nOfColors);
+	
+	for (int32_t j = 0; j < s->h; j++) {
+		for (int32_t i = 0; i < s->w; i++) {
+			glm::vec4 color = getpixel(s, i, j);
+			// unsigned char r = ((unsigned char*)s->pixels)[j * s->w + i + 0];
+			// unsigned char g = ((unsigned char*)s->pixels)[j * s->w + i + 1];
+			// unsigned char b = ((unsigned char*)s->pixels)[j * s->w + i + 2];
+			// unsigned char a = ((unsigned char*)s->pixels)[j * s->w + i + 3];
+			// printf("tst point %dx%d : %0.2f,%0.2f,%0.2f,%0.2f\n", i,j,color.r,color.g,color.b,color.a);
+			if (color.a > 0.7) list.emplace_back(glm::vec2(i-s->w/2, j-s->h/2), color);
+		}
+	}
+
+	lock.clear();
+}
+
+class LoaderPointsList : public Loader {
+private:
+	string filename;
+	points_list *list;
+	PHYSFS_file *file;
+	SDL_Surface *s;
+public:
+	LoaderPointsList(const char *filename, PHYSFS_file *file, points_list *list) : file(file), list(list), filename(filename) {};
+	virtual ~LoaderPointsList() { };
+	virtual bool load() {
+		s = IMG_Load_RW(PHYSFSRWOPS_makeRWops(file), TRUE);
+		if (!s) printf("ERROR : LoaderPointsList : %s\n",SDL_GetError());
+		file = NULL;
+		done();		
+	}
+	virtual bool finish() {
+		if (s) {
+			list->set(s);
+			SDL_FreeSurface(s);
+			printf("[LOADER] done loading points list %s (%d points)!\n", filename.c_str(), list->list.size());
+		}
+	}
+};
+
+/************************************************************************************
+ ** Loader thread
+ ************************************************************************************/
 static int thread_loader(void *data) {
 	while (true) {
 		SDL_SemWait(loader_sem);
@@ -267,6 +355,20 @@ bool loader_noise(const char *filename, noise_data *noise) {
 
 	SDL_mutexP(loader_mutex);
 	loader_queue.push(new LoaderNoise(filename, file, noise));
+	loader_running++;
+	SDL_mutexV(loader_mutex);
+	SDL_SemPost(loader_sem);
+	return true;
+}
+
+bool loader_points_list(const char *filename, points_list *list) {
+	if (!PHYSFS_exists(filename)) return false;
+
+	list->lock.test_and_set();
+	PHYSFS_file *file = PHYSFS_openRead(filename);
+
+	SDL_mutexP(loader_mutex);
+	loader_queue.push(new LoaderPointsList(filename, file, list));
 	loader_running++;
 	SDL_mutexV(loader_mutex);
 	SDL_SemPost(loader_sem);

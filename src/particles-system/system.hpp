@@ -93,8 +93,8 @@ public:
 	}
 
 	void dumpLinks() {
-		printf("~~~~ DUMPING LINKS ~~~~~\n");
 		vec2 *links = slots2[LINKS].get();
+		printf("~~~~ DUMPING LINKS (%lx) ~~~~~\n", (long unsigned int)links);
 		for (uint32_t i = 0; i < count; i++) {
 			printf(" ~ [%d] : prev(%d), next(%d)\n", i, (int32_t)links[i].x, (int32_t)links[i].y);
 		}

@@ -23,6 +23,10 @@
 
 #include "tgl.h"
 #include "tSDL.h"
+#include <atomic>
+#include <vector>
+#define GLM_FORCE_INLINE
+#include "glm/glm.hpp"
 
 struct noise_data {
 	float *data;
@@ -37,7 +41,21 @@ struct noise_data {
 	};
 };
 
+struct points_list_entry {
+	glm::vec2 pos;
+	glm::vec4 color;
+	points_list_entry(glm::vec2 pos, glm::vec4 color) : pos(pos), color(color) {};
+};
+struct points_list {
+	std::vector<points_list_entry> list;
+	std::atomic_flag lock;
+	bool finished = false;
+	bool hasData();
+	void set(SDL_Surface *s);
+};
+
 extern bool loader_png(const char *filename, texture_type *t, bool nearest, bool norepeat, bool exact_size);
 extern bool loader_noise(const char *filename, noise_data *noise);
+extern bool loader_points_list(const char *filename, points_list *list);
 
 #endif

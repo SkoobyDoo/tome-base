@@ -123,6 +123,7 @@ local pdef = {
 }
 --]]
 local pdef = {
+--[[
 	parameters = { ty=0.000000, size=300.000000, tx=500.000000 },
 	{
 		max_particles = 10000, blend=PC.AdditiveBlend, type=PC.RendererLine,
@@ -143,6 +144,150 @@ local pdef = {
 			{PC.LinearColorUpdater, bilinear=false},
 		},
 	},
+--]]
+--[[
+	parameters = { ty=0.000000, size=300.000000, tx=500.000000 },
+	{
+		max_particles = 2000, blend=PC.DefaultBlend, type=PC.RendererPoint,
+		texture = "/data/gfx/particle.png",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
+				{PC.BasicSizeGenerator, max_size=0.000010, min_size=0.000010},
+				{PC.DiskVelGenerator, max_vel=5.000000, min_vel=5.000000},
+				{PC.LifeGenerator, min=0.100000, max=0.100000},
+				{PC.CirclePosGenerator, width=20.000000, max_angle=6.283185, base_point={0.000000, 0.000000}, radius=60.000000, min_angle=0.000000},
+			}, startat=0.000000, duration=-1.000000, rate=0.010000, nb=10.000000, dormant=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=false},
+			{PC.EulerPosUpdater, global_vel={0.000000, 0.000000}, global_acc={0.000000, 0.000000}},
+		},
+	},
+	{
+		max_particles = 10000, blend=PC.AdditiveBlend, type=PC.RendererLine,
+		texture = "/data/gfx/particles_textures/line2.png",
+		shader = "particles/lineglow",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, max=0.300000, duration=10.000000, min=0.300000},
+				{PC.DiskVelGenerator, max_vel=40.000000, min_vel=0.000000},
+				{PC.BasicSizeGenerator, max_size=10.000000, min_size=1.000000},
+				{PC.StartStopColorGenerator, min_color_start={0.000000, 0.938983, 1.000000, 1.000000}, max_color_start={0.000000, 1.000000, 0.898305, 1.000000}, min_color_stop={0.088228, 0.947922, 0.984375, 0.003086}, max_color_stop={0.000000, 0.776271, 1.000000, 0.003086}},
+				{PC.JaggedLineBetweenGenerator, sway=80.000000, copy_pos=true, copy_color=true, source_system1=1.000000, source_system2=1.000000},
+			}, startat=0.000000, duration=-1.000000, rate=0.010000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=20.000000, hide=false },
+			-- {PC.LinearEmitter, {
+			-- 	{PC.BasicTextureGenerator},
+			-- 	{PC.LifeGenerator, max=0.300000, duration=10.000000, min=0.300000},
+			-- 	{PC.DiskVelGenerator, max_vel=0.000000, min_vel=40.000000},
+			-- 	{PC.BasicSizeGenerator, max_size=10.000000, min_size=1.000000},
+			-- 	{PC.StartStopColorGenerator, min_color_start={1.000000, 0.142373, 0.000000, 1.000000}, max_color_stop={1.000000, 0.335593, 0.000000, 0.003086}, min_color_stop={0.984375, 0.598576, 0.088228, 0.003086}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}},
+			-- 	{PC.JaggedLineBetweenGenerator, sway=80.000000, copy_pos=true, source_system1=1.000000, source_system2=1.000000, copy_color=true},
+			-- }, startat=0.000000, duration=-1.000000, rate=0.010000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active (duplicated)", nb=20.000000, hide=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=true},
+			{PC.EulerPosUpdater, global_acc={0.000000, 0.000000}, global_vel={0.000000, 0.000000}},
+		},
+	},
+--]]
+--[[
+	parameters = { ty=0.000000, size=300.000000, tx=500.000000 },
+	{
+		display_name = "ring source",
+		max_particles = 2000, blend=PC.DefaultBlend, type=PC.RendererPoint,
+		texture = "/data/gfx/particle.png",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
+				{PC.BasicSizeGenerator, max_size=0.000010, min_size=0.000010},
+				{PC.DiskVelGenerator, max_vel=5.000000, min_vel=5.000000},
+				{PC.LifeGenerator, min=0.100000, max=0.100000},
+				{PC.CirclePosGenerator, width=20.000000, max_angle=6.283185, base_point={0.000000, 0.000000}, radius=150.000000, min_angle=0.000000},
+			}, startat=0.000000, duration=-1.000000, rate=0.010000, nb=10.000000, dormant=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=false},
+			{PC.EulerPosUpdater, global_vel={0.000000, 0.000000}, global_acc={0.000000, 0.000000}},
+		},
+	},
+	{
+		display_name = "center source",
+		max_particles = 2000, blend=PC.DefaultBlend, type=PC.RendererPoint,
+		texture = "/data/gfx/particle.png",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
+				{PC.BasicSizeGenerator, max_size=0.000010, min_size=0.000010},
+				{PC.DiskVelGenerator, max_vel=5.000000, min_vel=5.000000},
+				{PC.LifeGenerator, min=0.100000, max=0.100000},
+				{PC.CirclePosGenerator, width=10.000000, max_angle=6.283185, base_point={0.000000, 0.000000}, radius=80.000000, min_angle=0.000000},
+			}, startat=0.000000, duration=-1.000000, rate=0.010000, nb=10.000000, dormant=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=false},
+			{PC.EulerPosUpdater, global_acc={0.000000, 0.000000}, global_vel={0.000000, 0.000000}},
+		},
+	},
+	{
+		display_name = "lightnings",
+		max_particles = 10000, blend=PC.AdditiveBlend, type=PC.RendererLine,
+		texture = "/data/gfx/particles_textures/line2.png",
+		shader = "particles/lineglow",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, max=0.300000, duration=10.000000, min=0.300000},
+				{PC.DiskVelGenerator, max_vel=40.000000, min_vel=0.000000},
+				{PC.BasicSizeGenerator, max_size=10.000000, min_size=1.000000},
+				{PC.StartStopColorGenerator, min_color_start={0.000000, 0.938983, 1.000000, 1.000000}, max_color_start={0.000000, 1.000000, 0.898305, 1.000000}, min_color_stop={0.088228, 0.947922, 0.984375, 0.003086}, max_color_stop={0.000000, 0.776271, 1.000000, 0.003086}},
+				{PC.JaggedLineBetweenGenerator, sway=80.000000, copy_pos=true, source_system1=2.000000, strands=1.000000, copy_color=true, source_system2=1.000000},
+			}, startat=0.000000, duration=-1.000000, rate=0.010000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=20.000000, hide=false },
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, max=0.300000, duration=10.000000, min=0.300000},
+				{PC.DiskVelGenerator, max_vel=40.000000, min_vel=0.000000},
+				{PC.BasicSizeGenerator, max_size=10.000000, min_size=1.000000},
+				{PC.StartStopColorGenerator, min_color_start={0.788235, 0.000000, 0.000000, 1.000000}, max_color_stop={0.843137, 0.421569, 0.000000, 1.000000}, min_color_stop={1.000000, 0.514469, 0.089628, 1.000000}, max_color_start={0.862745, 0.000000, 0.172549, 1.000000}},
+				{PC.JaggedLineBetweenGenerator, sway=80.000000, copy_pos=true, source_system1=2.000000, strands=1.000000, source_system2=1.000000, copy_color=true},
+			}, startat=0.000000, duration=-1.000000, rate=0.010000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active (duplicated)", nb=20.000000, hide=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=true},
+			{PC.EulerPosUpdater, global_acc={0.000000, 0.000000}, global_vel={0.000000, 0.000000}},
+		},
+	},
+--]]
+-- [[
+	{
+		max_particles = 10000, blend=PC.DefaultBlend, type=PC.RendererPoint,
+		texture = "/data/gfx/particle.png",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.FixedColorGenerator, color_stop={1.000000, 1.000000, 1.000000, 0.000000}, color_start={1.000000, 1.000000, 1.000000, 1.000000}},
+				{PC.BasicSizeGenerator, max_size=1.000000, min_size=1.000000},
+				{PC.DiskVelGenerator, max_vel=0.000000, min_vel=0.000000},
+				{PC.LifeGenerator, min=0.100000, max=1.000000},
+				{PC.ImagePosGenerator, base_point={0.000000, 0.000000}},
+			}, startat=0.000000, duration=-1.000000, rate=0.010000, nb=10.000000, dormant=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=false},
+			{PC.EulerPosUpdater, global_acc={0.000000, 0.000000}, global_vel={0.000000, 0.000000}},
+		},
+	},
+--]]
 }
 
 local typemodes = {
@@ -276,7 +421,10 @@ local specific_uis = {
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
 			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}, line=true},
 			{type="number", id="sway", text="Sway: ", min=0, max=10000, default=80},
-			{type="number", id="strands", text="strands: ", min=0, max=10000, default=1},
+			{type="number", id="strands", text="strands: ", min=1, max=10000, default=1},
+		}},
+		[PC.ImagePosGenerator] = {name="ImagePosGenerator", category="position", fields={
+			{type="point", id="base_point", text="Origin: ", min=-10000, max=10000, default={0, 0}, line=true},
 		}},
 		[PC.DiskVelGenerator] = {name="DiskVelGenerator", category="movement", fields={
 			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
@@ -327,10 +475,14 @@ local specific_uis = {
 			{type="bool", id="copy_color", text="Copy color: ", default=true},
 		}},
 		[PC.JaggedLineBetweenGenerator] = {name="JaggedLineBetweenGenerator", category="special", fields={
-			{type="number", id="source_system", text="Source system ID: ", min=1, max=100, default=1},
+			{type="number", id="source_system1", text="Source system1 ID: ", min=1, max=100, default=1},
+			{type="number", id="source_system2", text="Source system2 ID: ", min=1, max=100, default=1, line=true},
 			{type="bool", id="copy_pos", text="Copy position: ", default=true},
-			{type="bool", id="copy_color", text="Copy color: ", default=true},
+			{type="bool", id="copy_color", text="Copy color: ", default=true, line=true},
 			{type="number", id="sway", text="Sway: ", min=0, max=10000, default=80},
+			{type="number", id="strands", text="Strands: ", min=1, max=10000, default=1, line=true},
+			{type="number", id="close_tries", text="Pick closer tries: ", min=0, max=200, default=0},
+			{type="number", id="repeat_times", text="Repeat: ", min=1, max=1000, default=1},
 		}},
 	},
 	updaters = {

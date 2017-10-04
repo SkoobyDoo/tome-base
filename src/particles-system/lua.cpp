@@ -445,6 +445,10 @@ static int p_new(lua_State *L) {
 						lua_float(L, &g->strands, -1, "strands", 1);
 						lua_float(L, &g->sway, -1, "sway", 80);
 						break;}
+					case GeneratorsList::ImagePosGenerator: {
+						auto g = new ImagePosGenerator(); gg = g;
+						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
+						break;}
 					case GeneratorsList::DiskVelGenerator: {
 						auto g = new DiskVelGenerator(); gg = g;
 						lua_float(L, &g->min_vel, -1, "min_vel", 5); lua_float(L, &g->max_vel, -1, "max_vel", 10);
@@ -489,8 +493,12 @@ static int p_new(lua_State *L) {
 						auto g = new CopyGenerator(source_system, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true)); gg = g;
 						break;}
 					case GeneratorsList::JaggedLineBetweenGenerator: {
-						System *source_system = e->getRawSystem(lua_float(L, -1, "source_system", 1) - 1);
-						auto g = new JaggedLineBetweenGenerator(source_system, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true)); gg = g;
+						System *source_system1 = e->getRawSystem(lua_float(L, -1, "source_system1", 1) - 1);
+						System *source_system2 = e->getRawSystem(lua_float(L, -1, "source_system2", 1) - 1);
+						auto g = new JaggedLineBetweenGenerator(source_system1, source_system2, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true)); gg = g;
+						lua_float(L, &g->strands, -1, "strands", 1);
+						lua_float(L, &g->repeat_times, -1, "repeat_times", 1);
+						lua_float(L, &g->close_tries, -1, "close_tries", 1);
 						lua_float(L, &g->sway, -1, "sway", 80);
 						break;}
 					default: 
@@ -705,6 +713,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "TrianglePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::TrianglePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "LinePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::LinePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "JaggedLinePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::JaggedLinePosGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "ImagePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::ImagePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DirectionVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DirectionVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);

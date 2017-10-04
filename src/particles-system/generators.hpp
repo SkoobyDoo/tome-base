@@ -24,7 +24,7 @@ using namespace glm;
 enum class GeneratorsList : uint8_t {
 	LifeGenerator,
 	BasicTextureGenerator,
-	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator, LinePosGenerator, JaggedLinePosGenerator,	
+	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator, LinePosGenerator, JaggedLinePosGenerator, ImagePosGenerator,
 	DiskVelGenerator, DirectionVelGenerator,
 	BasicSizeGenerator, StartStopSizeGenerator,
 	BasicRotationGenerator, RotationByVelGenerator, BasicRotationVelGenerator,
@@ -49,6 +49,16 @@ public:
 	virtual GeneratorsList getID() = 0;
 };
 typedef unique_ptr<Generator> uGenerator;
+
+/********************************************************************
+ ** Misc Utilities
+ ********************************************************************/
+class JaggedLineGeneratorBase : public Generator {
+public:
+	float strands;
+	float sway;
+	virtual void generateStrands(ParticlesData &p, uint32_t &start, uint32_t &end, vec2 p1, vec2 p2);
+};
 
 /********************************************************************
  ** Life
@@ -119,17 +129,26 @@ public:
 	virtual GeneratorsList getID() { return GeneratorsList::LinePosGenerator; }
 };
 
-class JaggedLinePosGenerator : public Generator {
+class JaggedLinePosGenerator : public JaggedLineGeneratorBase {
 public:
 	vec2 p1, p2;
-	float strands;
-	float sway;
 	JaggedLinePosGenerator() { use_limiter = true; };
 	virtual uint32_t weight() const { return 0; };
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(LINKS); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {}
 	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end);
 	virtual GeneratorsList getID() { return GeneratorsList::JaggedLinePosGenerator; }
+};
+
+class ImagePosGenerator : public Generator {
+public:
+	points_list list;
+	ImagePosGenerator();
+	virtual uint32_t weight() const { return 0; };
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {}
+	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end);
+	virtual GeneratorsList getID() { return GeneratorsList::ImagePosGenerator; }
 };
 
 
@@ -245,14 +264,15 @@ public:
 	virtual GeneratorsList getID() { return GeneratorsList::CopyGenerator; }
 };
 
-class JaggedLineBetweenGenerator : public Generator {
-	System *source_system; // Nasty, not a shared_ptr because systems are stored as unique_ptr, but the way things are guaranties it wont be destroyed under us so ... meh
+class JaggedLineBetweenGenerator : public JaggedLineGeneratorBase {
+	System *source_system1; // Nasty, not a shared_ptr because systems are stored as unique_ptr, but the way things are guaranties it wont be destroyed under us so ... meh
+	System *source_system2; // Nasty, not a shared_ptr because systems are stored as unique_ptr, but the way things are guaranties it wont be destroyed under us so ... meh
 	bool copy_pos;
 	bool copy_color;
 public:
-	float strands;
-	float sway;
-	JaggedLineBetweenGenerator(System *source_system, bool copy_pos, bool copy_color) : source_system(source_system), copy_pos(copy_pos), copy_color(copy_color) { use_limiter = true; };
+	float close_tries;
+	float repeat_times;
+	JaggedLineBetweenGenerator(System *source_system1, System *source_system2, bool copy_pos, bool copy_color) : source_system1(source_system1), source_system2(source_system2), copy_pos(copy_pos), copy_color(copy_color) { use_limiter = true; };
 	virtual uint32_t weight() const { return 0; };
 	virtual void useSlots(ParticlesData &p);
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {};

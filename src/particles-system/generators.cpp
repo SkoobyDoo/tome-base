@@ -108,8 +108,9 @@ void LinePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) 
 	}
 }
 
-uint32_t JaggedLinePosGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
-	if (end - start < 2) return 0;
+void JaggedLineGeneratorBase::generateStrands(ParticlesData &p, uint32_t &start, uint32_t &end, vec2 p1, vec2 p2) {
+	// printf("--generating at %d to %d\n", start, end);
+	if (end - start < 2 || !strands) { end = start; return; }
 	uint32_t nb_gen = end - start;
 
 	vec4* pos = p.getSlot4(POS);
@@ -119,7 +120,9 @@ uint32_t JaggedLinePosGenerator::generateLimit(ParticlesData &p, uint32_t start,
 	vec2 normal = glm::normalize(vec2(tangent.y, -tangent.x));
 	float length = glm::length(tangent);
  
+ 	// printf("@stranding start %d\n", (int)strands);
  	for (uint32_t strand = 0; strand < strands; strand++) {
+	 	// printf("@stranding exec %d / %d\n", strand, (int)strands);
 		vector<float> positions;
 		positions.push_back((float)0);
 		if (nb_gen > 2) {
@@ -129,8 +132,8 @@ uint32_t JaggedLinePosGenerator::generateLimit(ParticlesData &p, uint32_t start,
 		}
 	 
 	 
-		pos[start].x = p1.x + final_pos.x;
-		pos[start].y = p1.y + final_pos.y;
+		pos[start].x = p1.x;
+		pos[start].y = p1.y;
 		links[start].x = -1; links[start].y = start + 1;
 
 		float jaggedness = 1 / sway;
@@ -151,24 +154,59 @@ uint32_t JaggedLinePosGenerator::generateLimit(ParticlesData &p, uint32_t start,
 	 
 			vec2 point = p1 + curpos * tangent + displacement * normal;
 
-			pos[start + i].x = point.x + final_pos.x;
-			pos[start + i].y = point.y + final_pos.y;
+			pos[start + i].x = point.x;
+			pos[start + i].y = point.y;
 			links[start + i].x = start + i - 1; links[start + i].y = start + i + 1;
+			// printf("- filling %d with parents %d : %d\n", start+i, start+i-1,start+i+1);
 			// printf("=== %d < %d < %d\n", start, start + i , end);
 			
 			prevDisplacement = displacement;
 		} 
 
-		pos[end-1].x = p2.x + final_pos.x;
-		pos[end-1].y = p2.y + final_pos.y;
+		pos[end-1].x = p2.x;
+		pos[end-1].y = p2.y;
 		links[end-1].x = end - 2; links[end-1].y = -1;
 
-		if (strand < strands - 1 && end + nb_gen < p.max) {
+		if ((strand < strands - 1) && (end + nb_gen < p.max)) {
 			start += nb_gen;
 			end += nb_gen;
 		} else {
-			return end;
+			// printf("__ return cut %d -> %d (%d)\n", start, end, end-start);
+			return;
 		}
+	}
+	// printf("__ return %d -> %d (%d)\n", start, end, end-start);
+}
+
+uint32_t JaggedLinePosGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
+	generateStrands(p, start, end, p1 + final_pos, p2 + final_pos);
+	return end;
+}
+
+ImagePosGenerator::ImagePosGenerator() {
+	use_limiter = true;
+	// loader_points_list("/data/gfx/particles_masks/test.png", &list);
+	loader_points_list("/data/gfx/particles_masks/tome.png", &list);
+	// loader_points_list("/data/gfx/particles_masks/tome-logo.png", &list);
+}
+
+uint32_t ImagePosGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
+	if (!list.hasData()) { printf("==computing list..\n"); return start; }
+	// printf("===== OK!\n");
+
+	vec4* pos = p.getSlot4(POS);
+	vec4* color = p.getSlot4(COLOR);
+	vec4* cstart = p.getSlot4(COLOR_START);
+	vec4* cstop = p.getSlot4(COLOR_STOP);
+
+	for (uint32_t i = start; i < end; i++) {
+		uint32_t id = rand_div(list.list.size());
+		pos[i].x = list.list[id].pos.x + final_pos.x;
+		pos[i].y = list.list[id].pos.y + final_pos.y;
+		color[i] = list.list[id].color;
+		cstart[i] = list.list[id].color;
+		cstop[i] = list.list[id].color;
+		// printf("computed list! generated point %f x %f :: %fx%fx%fx%f\n", pos[i].x, pos[i].x, color[i].r, color[i].g, color[i].b, color[i].a);
 	}
 	return end;
 }
@@ -294,74 +332,40 @@ uint32_t CopyGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t
 
 void JaggedLineBetweenGenerator::useSlots(ParticlesData &p) {
 	p.initSlot2(LINKS);
-	if (copy_pos) p.initSlot4(POS);
-	if (copy_color) { p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); }
+	p.initSlot4(POS);
 }
 uint32_t JaggedLineBetweenGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
-	ParticlesData &sp = source_system->getList();
-	if (sp.count < 2) return 0;
+	ParticlesData &sp1 = source_system1->getList();
+	ParticlesData &sp2 = source_system2->getList();
+	if (sp1.count < 2 || sp2.count < 2) { return start; }
 
-	vec4* spos = sp.getSlot4(POS);
-	vec4* scolor = sp.getSlot4(COLOR);
-	vec4* scstart = sp.getSlot4(COLOR_START);
-	vec4* scstop = sp.getSlot4(COLOR_STOP);
+	vec4* spos1 = sp1.getSlot4(POS);
+	vec4* spos2 = sp2.getSlot4(POS);
 
-	vec4* pos = p.getSlot4(POS);
-	vec2* links = p.getSlot2(LINKS);
+	uint32_t nb_gen = end - start;
 
-	uint32_t p1i = rand_div(sp.count);
-	uint32_t p2i = rand_div(sp.count);
+	for (uint32_t r = 0; r < repeat_times; r++) {
+		uint32_t p1i = rand_div(sp1.count);
+		vec2 p1(spos1[p1i].x, spos1[p1i].y);
 
-	vec2 p1(spos[p1i].x, spos[p1i].y);
-	vec2 p2(spos[p2i].x, spos[p2i].y);
+		uint32_t p2i = rand_div(sp2.count);
+		vec2 p2(spos2[p2i].x, spos2[p2i].y);
+		for (uint8_t tries = 0; tries < close_tries; tries++) {
+			uint32_t p2t = rand_div(sp2.count);
+			vec2 pt(spos2[p2t].x, spos2[p2t].y);
+			// printf("test for %d to %d\n", start, end);
+			if (glm::length(pt-p1) < glm::length(p2-p1)) {
+				// printf("using closer %f to %f\n", glm::length(pt-p1), glm::length(p2-p1));
+				p2 = pt;
+			}
+		}
 
-	vec2 tangent = p2 - p1;
-	vec2 normal = glm::normalize(vec2(tangent.y, -tangent.x));
-	float length = glm::length(tangent);
- 
-	vector<float> positions;
-	positions.push_back((float)0);
-	if (end - start > 2) {
-	 	for (int i = 0; i < end - start - 2; i++) {
-	 		positions.push_back((float)genrand_real(0, 1)); 
-	 	}
-		std::sort(positions.begin(), positions.end());
+		generateStrands(p, start, end, p1, p2);
+		if (r < repeat_times - 1 && end + nb_gen < p.max) {
+			start += nb_gen;
+			end += nb_gen;
+		} else break;
 	}
- 
- 
-	pos[start].x = p1.x;
-	pos[start].y = p1.y;
-	links[start].x = -1; links[start].y = start + 1;
-
-	float jaggedness = 1 / sway;
-	float prevDisplacement = 0;
-	for (uint32_t i = 1; i < positions.size(); i++)
-	{
-		float curpos = positions[i];
- 
-		// used to prevent sharp angles by ensuring very close positions also have small perpendicular variation.
-		float scale = (length * jaggedness) * (curpos - positions[i - 1]);
- 
-		// defines an envelope. Points near the middle of the bolt can be further from the central line.
-		float envelope = curpos > 0.95f ? 20 * (1 - curpos) : 1;
- 
-		float displacement = genrand_real(-sway, sway);
-		displacement -= (displacement - prevDisplacement) * (1 - scale);
-		displacement *= envelope;
- 
-		vec2 point = p1 + curpos * tangent + displacement * normal;
-
-		pos[start + i].x = point.x;
-		pos[start + i].y = point.y;
-		links[start + i].x = start + i - 1; links[start + i].y = start + i + 1;
-		// printf("=== %d < %d < %d\n", start, start + i , end);
-		
-		prevDisplacement = displacement;
-	} 
-
-	pos[end-1].x = p2.x;
-	pos[end-1].y = p2.y;
-	links[end-1].x = end - 2; links[end-1].y = -1;
 	return end;
 }
 
