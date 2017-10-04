@@ -62,6 +62,7 @@ void Emitter::generate(ParticlesData &p, uint32_t nb) {
 	}
 	p.count = end;
 	triggerEvent(EventKind::EMIT);
+	p.dumpLinks();
 }
 
 void LinearEmitter::emit(ParticlesData &p, float dt) {

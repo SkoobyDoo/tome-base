@@ -24,11 +24,11 @@
 namespace particles {
 
 void RendererLine::setup(ParticlesData &p) {
-	vertexes.reserve(4 * p.max / 2 * 3);
+	vertexes.reserve(4 * p.max * 3);
 
 	glGenBuffers(2, vbos);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[0]);
-	GLuint *vbo_elements_data = new GLuint[p.max * 6 / 2 * 3];
+	GLuint *vbo_elements_data = new GLuint[p.max * 6 * 3];
 	for (uint32_t i = 0; i < p.max; i++) {
 		vbo_elements_data[i * 6 + 0] = i * 4 + 0;
 		vbo_elements_data[i * 6 + 1] = i * 4 + 1;
@@ -38,7 +38,7 @@ void RendererLine::setup(ParticlesData &p) {
 		vbo_elements_data[i * 6 + 4] = i * 4 + 2;
 		vbo_elements_data[i * 6 + 5] = i * 4 + 3;
 	}
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * p.max * 6, vbo_elements_data, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * p.max * 6 * 3, vbo_elements_data, GL_STATIC_DRAW);
 	delete[] vbo_elements_data;
 }
 

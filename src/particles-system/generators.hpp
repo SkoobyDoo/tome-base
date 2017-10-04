@@ -122,9 +122,13 @@ public:
 class JaggedLinePosGenerator : public Generator {
 public:
 	vec2 p1, p2;
+	float strands;
 	float sway;
+	JaggedLinePosGenerator() { use_limiter = true; };
+	virtual uint32_t weight() const { return 0; };
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(LINKS); };
-	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {}
+	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end);
 	virtual GeneratorsList getID() { return GeneratorsList::JaggedLinePosGenerator; }
 };
 
@@ -246,6 +250,7 @@ class JaggedLineBetweenGenerator : public Generator {
 	bool copy_pos;
 	bool copy_color;
 public:
+	float strands;
 	float sway;
 	JaggedLineBetweenGenerator(System *source_system, bool copy_pos, bool copy_color) : source_system(source_system), copy_pos(copy_pos), copy_color(copy_color) { use_limiter = true; };
 	virtual uint32_t weight() const { return 0; };

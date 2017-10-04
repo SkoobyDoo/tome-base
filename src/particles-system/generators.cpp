@@ -108,7 +108,10 @@ void LinePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) 
 	}
 }
 
-void JaggedLinePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+uint32_t JaggedLinePosGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
+	if (end - start < 2) return 0;
+	uint32_t nb_gen = end - start;
+
 	vec4* pos = p.getSlot4(POS);
 	vec2* links = p.getSlot2(LINKS);
 
@@ -116,49 +119,58 @@ void JaggedLinePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t
 	vec2 normal = glm::normalize(vec2(tangent.y, -tangent.x));
 	float length = glm::length(tangent);
  
-	vector<float> positions;
-	positions.push_back((float)0);
-	if (end - start > 2) {
-	 	for (int i = 0; i < end - start - 2; i++) {
-	 		positions.push_back((float)genrand_real(0, 1)); 
-	 	}
-		std::sort(positions.begin(), positions.end());
+ 	for (uint32_t strand = 0; strand < strands; strand++) {
+		vector<float> positions;
+		positions.push_back((float)0);
+		if (nb_gen > 2) {
+			// Randomly choose spots
+		 	for (int i = 0; i < nb_gen - 2; i++) positions.push_back((float)genrand_real(0, 1)); 
+			std::sort(positions.begin(), positions.end());
+		}
+	 
+	 
+		pos[start].x = p1.x + final_pos.x;
+		pos[start].y = p1.y + final_pos.y;
+		links[start].x = -1; links[start].y = start + 1;
+
+		float jaggedness = 1 / sway;
+		float prevDisplacement = 0;
+		for (uint32_t i = 1; i < positions.size(); i++)
+		{
+			float curpos = positions[i];
+	 
+			// used to prevent sharp angles by ensuring very close positions also have small perpendicular variation.
+			float scale = (length * jaggedness) * (curpos - positions[i - 1]);
+	 
+			// defines an envelope. Points near the middle of the bolt can be further from the central line.
+			float envelope = curpos > 0.95f ? 20 * (1 - curpos) : 1;
+	 
+			float displacement = genrand_real(-sway, sway);
+			displacement -= (displacement - prevDisplacement) * (1 - scale);
+			displacement *= envelope;
+	 
+			vec2 point = p1 + curpos * tangent + displacement * normal;
+
+			pos[start + i].x = point.x + final_pos.x;
+			pos[start + i].y = point.y + final_pos.y;
+			links[start + i].x = start + i - 1; links[start + i].y = start + i + 1;
+			// printf("=== %d < %d < %d\n", start, start + i , end);
+			
+			prevDisplacement = displacement;
+		} 
+
+		pos[end-1].x = p2.x + final_pos.x;
+		pos[end-1].y = p2.y + final_pos.y;
+		links[end-1].x = end - 2; links[end-1].y = -1;
+
+		if (strand < strands - 1 && end + nb_gen < p.max) {
+			start += nb_gen;
+			end += nb_gen;
+		} else {
+			return end;
+		}
 	}
- 
- 
-	pos[start].x = p1.x + final_pos.x;
-	pos[start].y = p1.y + final_pos.y;
-	links[start].x = -1; links[start].y = start + 1;
-
-	float jaggedness = 1 / sway;
-	float prevDisplacement = 0;
-	for (uint32_t i = 1; i < positions.size(); i++)
-	{
-		float curpos = positions[i];
- 
-		// used to prevent sharp angles by ensuring very close positions also have small perpendicular variation.
-		float scale = (length * jaggedness) * (curpos - positions[i - 1]);
- 
-		// defines an envelope. Points near the middle of the bolt can be further from the central line.
-		float envelope = curpos > 0.95f ? 20 * (1 - curpos) : 1;
- 
-		float displacement = genrand_real(-sway, sway);
-		displacement -= (displacement - prevDisplacement) * (1 - scale);
-		displacement *= envelope;
- 
-		vec2 point = p1 + curpos * tangent + displacement * normal;
-
-		pos[start + i].x = point.x + final_pos.x;
-		pos[start + i].y = point.y + final_pos.y;
-		links[start + i].x = start + i - 1; links[start + i].y = start + i + 1;
-		// printf("=== %d < %d < %d\n", start, start + i , end);
-		
-		prevDisplacement = displacement;
-	} 
-
-	pos[end-1].x = p2.x + final_pos.x;
-	pos[end-1].y = p2.y + final_pos.y;
-	links[end-1].x = end - 2; links[end-1].y = -1;
+	return end;
 }
 
 void DiskVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {

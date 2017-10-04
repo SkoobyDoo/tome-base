@@ -123,67 +123,26 @@ local pdef = {
 }
 --]]
 local pdef = {
-	parameters = { tx=500.000000, size=300.000000, ty=0.000000 },
+	parameters = { ty=0.000000, size=300.000000, tx=500.000000 },
 	{
-		max_particles = 10, blend=PC.AdditiveBlend, type=PC.RendererLine,
+		max_particles = 10000, blend=PC.AdditiveBlend, type=PC.RendererLine,
 		texture = "/data/gfx/particles_textures/line2.png",
 		shader = "particles/lineglow",
 		emitters = {
 			{PC.LinearEmitter, {
 				{PC.BasicTextureGenerator},
 				{PC.LifeGenerator, max=1.000000, duration=10.000000, min=1.000000},
-				{PC.JaggedLinePosGenerator, base_point={0.000000, 0.000000}, p1={0.000000, 0.000000}, p2={400.000000, 0.000000}},
+				{PC.JaggedLinePosGenerator, sway=80.000000, p1={0.000000, 0.000000}, base_point={0.000000, 0.000000}, strands=1.000000, p2={400.000000, 0.000000}},
 				{PC.DiskVelGenerator, max_vel=1.000000, min_vel=1.000000},
 				{PC.BasicSizeGenerator, max_size=10.000000, min_size=10.000000},
-				{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 1.000000}, min_color_stop={0.088228, 0.984375, 0.549677, 1.000000}},
-			}, startat=0.000000, duration=-1, rate=0.030000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=2.000000, hide=false },
+				{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, min_color_stop={0.088228, 0.984375, 0.549677, 1.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 1.000000}},
+			}, startat=0.000000, duration=-1.000000, rate=2.000000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=20.000000, hide=false },
 		},
 		updaters = {
 			{PC.BasicTimeUpdater},
 			{PC.LinearColorUpdater, bilinear=false},
 		},
 	},
-	-- {
-	-- 	display_name = "unnamed (duplicated)",
-	-- 	max_particles = 2, blend=PC.AdditiveBlend, type=PC.RendererPoint,
-	-- 	texture = "/data/gfx/particles_textures/line.png",
-	-- 	shader = "particles/lineglow",
-	-- 	emitters = {
-	-- 		{PC.LinearEmitter, {
-	-- 			{PC.BasicTextureGenerator},
-	-- 			{PC.LifeGenerator, max=1.000000, duration=10.000000, min=1.000000},
-	-- 			{PC.JaggedLinePosGenerator, base_point={0.000000, 0.000000}, p1={0.000000, 30.000000}, p2={400.000000, 30.000000}},
-	-- 			{PC.DiskVelGenerator, max_vel=1.000000, min_vel=1.000000},
-	-- 			{PC.BasicSizeGenerator, max_size=2.000000, min_size=2.000000},
-	-- 			{PC.FixedColorGenerator, color_stop={1.000000, 0.000000, 0.000000, 1.000000}, color_start={1.000000, 0.000000, 0.000000, 1.000000}},
-	-- 		}, startat=0.000000, duration=-1.000000, rate=0.030000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=2.000000, hide=false },
-	-- 	},
-	-- 	updaters = {
-	-- 		{PC.BasicTimeUpdater},
-	-- 		{PC.LinearColorUpdater, bilinear=false},
-	-- 	},
-	-- },
-
-	-- parameters = { tx=500.000000, size=300.000000, ty=0.000000 },
-	-- {
-	-- 	max_particles = 40, blend=PC.AdditiveBlend, type=PC.AdditiveBlend,
-	-- 	texture = "/data/gfx/particles_textures/line.png",
-	-- 	shader = "particles/lineglow",
-	-- 	emitters = {
-	-- 		{PC.LinearEmitter, {
-	-- 			{PC.BasicTextureGenerator},
-	-- 			{PC.LifeGenerator, max=0.200000, duration=10.000000, min=0.200000},
-	-- 			{PC.JaggedLinePosGenerator, base_point={0.000000, 0.000000}, p1={0.000000, 0.000000}, p2={"tx", "ty"}},
-	-- 			{PC.DiskVelGenerator, max_vel=1.000000, min_vel=1.000000},
-	-- 			{PC.BasicSizeGenerator, max_size=1.000000, min_size=1.000000},
-	-- 			{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 1.000000}, min_color_stop={0.088228, 0.984375, 0.549677, 1.000000}},
-	-- 		}, dormant=false, startat=0.000000, events = { stopping = PC.EventSTOP }, rate=0.030000, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=40.000000, duration=-1.000000 },
-	-- 	},
-	-- 	updaters = {
-	-- 		{PC.BasicTimeUpdater},
-	-- 		{PC.LinearColorUpdater, bilinear=false},
-	-- 	},
-	-- },
 }
 
 local typemodes = {
@@ -317,6 +276,7 @@ local specific_uis = {
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
 			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}, line=true},
 			{type="number", id="sway", text="Sway: ", min=0, max=10000, default=80},
+			{type="number", id="strands", text="strands: ", min=0, max=10000, default=1},
 		}},
 		[PC.DiskVelGenerator] = {name="DiskVelGenerator", category="movement", fields={
 			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
