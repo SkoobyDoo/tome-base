@@ -138,15 +138,21 @@ void ParticlesData::print() {
  ** System
  ********************************************************************/
 
-System::System(uint32_t max, RendererBlend blend) {
+System::System(uint32_t max, RendererBlend blend, RendererType type) {
 	if (max > 1000000) max = 1000000;
 	list.max = max;
-	if (GLEW_VERSION_3_3) {
-		renderer.reset(new RendererGL3());
-		// printf("[ParticlesCompose] System using RendererGL3\n");
+	renderer_type = type;
+
+	if (type == RendererType::Line) {
+		renderer.reset(new RendererLine());
 	} else {
-		renderer.reset(new RendererGL2());
-		// printf("[ParticlesCompose] System using RendererGL2\n");
+		if (GLEW_VERSION_3_3) {
+			renderer.reset(new RendererGL3());
+			// printf("[ParticlesCompose] System using RendererGL3\n");
+		} else {
+			renderer.reset(new RendererGL2());
+			// printf("[ParticlesCompose] System using RendererGL2\n");
+		}
 	}
 	renderer->setBlend(blend);
 }
@@ -219,6 +225,7 @@ void System::print() {
 }
 
 void System::draw(mat4 &model) {
+	if (hidden) return;
 	renderer->update(list);
 	renderer->draw(list, model);
 }

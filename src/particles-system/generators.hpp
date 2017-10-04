@@ -24,12 +24,12 @@ using namespace glm;
 enum class GeneratorsList : uint8_t {
 	LifeGenerator,
 	BasicTextureGenerator,
-	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator, LinePosGenerator,
+	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator, LinePosGenerator, JaggedLinePosGenerator,	
 	DiskVelGenerator, DirectionVelGenerator,
 	BasicSizeGenerator, StartStopSizeGenerator,
 	BasicRotationGenerator, RotationByVelGenerator, BasicRotationVelGenerator,
 	StartStopColorGenerator, FixedColorGenerator,
-	CopyGenerator,
+	CopyGenerator, JaggedLineBetweenGenerator,
 };
 
 class Generator {
@@ -119,6 +119,19 @@ public:
 	virtual GeneratorsList getID() { return GeneratorsList::LinePosGenerator; }
 };
 
+class JaggedLinePosGenerator : public Generator {
+public:
+	vec2 p1, p2;
+	float sway;
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot2(LINKS); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+	virtual GeneratorsList getID() { return GeneratorsList::JaggedLinePosGenerator; }
+};
+
+
+/********************************************************************
+ ** Velocities
+ ********************************************************************/
 class DiskVelGenerator : public Generator {
 public:
 	float min_vel, max_vel;
@@ -138,6 +151,10 @@ public:
 	virtual GeneratorsList getID() { return GeneratorsList::DirectionVelGenerator; }
 };
 
+
+/********************************************************************
+ ** Sizes
+ ********************************************************************/
 class BasicSizeGenerator : public Generator {
 public:
 	float min_size, max_size;
@@ -155,6 +172,10 @@ public:
 	virtual GeneratorsList getID() { return GeneratorsList::StartStopSizeGenerator; }
 };
 
+
+/********************************************************************
+ ** Rotations
+ ********************************************************************/
 class BasicRotationGenerator : public Generator {
 public:
 	float min_rot, max_rot;
@@ -218,4 +239,18 @@ public:
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {};
 	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end);
 	virtual GeneratorsList getID() { return GeneratorsList::CopyGenerator; }
+};
+
+class JaggedLineBetweenGenerator : public Generator {
+	System *source_system; // Nasty, not a shared_ptr because systems are stored as unique_ptr, but the way things are guaranties it wont be destroyed under us so ... meh
+	bool copy_pos;
+	bool copy_color;
+public:
+	float sway;
+	JaggedLineBetweenGenerator(System *source_system, bool copy_pos, bool copy_color) : source_system(source_system), copy_pos(copy_pos), copy_color(copy_color) { use_limiter = true; };
+	virtual uint32_t weight() const { return 0; };
+	virtual void useSlots(ParticlesData &p);
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {};
+	virtual uint32_t generateLimit(ParticlesData &p, uint32_t start, uint32_t end);
+	virtual GeneratorsList getID() { return GeneratorsList::JaggedLineBetweenGenerator; }
 };

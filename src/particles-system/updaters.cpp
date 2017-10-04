@@ -76,7 +76,8 @@ void BasicTimeUpdater::update(ParticlesData &p, float dt) {
 	uint32_t end = p.count;
 	vec4* life = p.getSlot4(LIFE);
 
-	for (uint32_t i = 0; i < end; i++) {
+	// for (uint32_t i = 0; i < end; i++) {
+	for (int32_t i = end - 1; i >= 0; i--) {
 		life[i].x -= dt;
 		// interpolation: from 0 (start of life) till 1 (end of life)
 		life[i].z = (float)1.0 - (life[i].x * life[i].w); // .w is 1.0/max life time		
@@ -84,6 +85,7 @@ void BasicTimeUpdater::update(ParticlesData &p, float dt) {
 		if (life[i].x < (float)0.0) {
 			p.kill(i);
 			end = p.count < p.max ? p.count : p.max;
+			if (i >= end) i = end - 1;
 			// printf("p died, %d left\n", p.count);
 		}
 	}

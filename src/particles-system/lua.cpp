@@ -314,7 +314,7 @@ static int p_new(lua_State *L) {
 	int nb_systems = lua_objlen(L, 1);
 	for (int i = 1; i <= nb_systems; i++) {		
 		lua_rawgeti(L, 1, i);
-		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))));
+		System *sys = new System(lua_float(L, -1, "max_particles", 10), (RendererBlend)((uint8_t)lua_float(L, -1, "blend", static_cast<uint8_t>(RendererBlend::DefaultBlend))), (RendererType)((uint8_t)lua_float(L, -1, "type", static_cast<uint8_t>(RendererType::Default))));
 
 		const char *tex_str = lua_string(L, -1, "texture", NULL);
 		if (tex_str){
@@ -326,6 +326,10 @@ static int p_new(lua_State *L) {
 		if (shader_str){
 			spShaderHolder sh = Ensemble::getShader(L, shader_str);
 			sys->setShader(sh);
+		}
+
+		if (lua_bool(L, -1, "hidden", false)) {
+			sys->setHidden(true);
 		}
 
 		/** Emitters **/
@@ -434,6 +438,12 @@ static int p_new(lua_State *L) {
 						lua_vec2(L, &g->p1, -1, "p1", vec2(0, 0)); lua_vec2(L, &g->p2, -1, "p2", vec2(0, 0));
 						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
 						break;}
+					case GeneratorsList::JaggedLinePosGenerator: {
+						auto g = new JaggedLinePosGenerator(); gg = g;
+						lua_vec2(L, &g->p1, -1, "p1", vec2(0, 0)); lua_vec2(L, &g->p2, -1, "p2", vec2(0, 0));
+						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
+						lua_float(L, &g->sway, -1, "sway", 80);
+						break;}
 					case GeneratorsList::DiskVelGenerator: {
 						auto g = new DiskVelGenerator(); gg = g;
 						lua_float(L, &g->min_vel, -1, "min_vel", 5); lua_float(L, &g->max_vel, -1, "max_vel", 10);
@@ -476,6 +486,11 @@ static int p_new(lua_State *L) {
 					case GeneratorsList::CopyGenerator: {
 						System *source_system = e->getRawSystem(lua_float(L, -1, "source_system", 1) - 1);
 						auto g = new CopyGenerator(source_system, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true)); gg = g;
+						break;}
+					case GeneratorsList::JaggedLineBetweenGenerator: {
+						System *source_system = e->getRawSystem(lua_float(L, -1, "source_system", 1) - 1);
+						auto g = new JaggedLineBetweenGenerator(source_system, lua_bool(L, -1, "copy_pos", true), lua_bool(L, -1, "copy_color", true)); gg = g;
+						lua_float(L, &g->sway, -1, "sway", 80);
 						break;}
 					default: 
 						lua_pushliteral(L, "Unknown particles Generator"); lua_error(L);
@@ -657,6 +672,9 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_rawset(L, -3);
 	particles::math_mt_lua_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
+	lua_pushliteral(L, "RendererPoint"); lua_pushnumber(L, static_cast<uint8_t>(RendererType::Default)); lua_rawset(L, -3);
+	lua_pushliteral(L, "RendererLine"); lua_pushnumber(L, static_cast<uint8_t>(RendererType::Line)); lua_rawset(L, -3);
+
 	lua_pushliteral(L, "DefaultBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::DefaultBlend)); lua_rawset(L, -3);
 	lua_pushliteral(L, "AdditiveBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::AdditiveBlend)); lua_rawset(L, -3);
 	lua_pushliteral(L, "MixedBlend"); lua_pushnumber(L, static_cast<uint8_t>(RendererBlend::MixedBlend)); lua_rawset(L, -3);
@@ -685,6 +703,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "CirclePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::CirclePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "TrianglePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::TrianglePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "LinePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::LinePosGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "JaggedLinePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::JaggedLinePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DirectionVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DirectionVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
@@ -695,6 +714,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "StartStopColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "FixedColorGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::FixedColorGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "CopyGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::CopyGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "JaggedLineBetweenGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::JaggedLineBetweenGenerator)); lua_rawset(L, -3);
 
 	lua_pushliteral(L, "TriggerDELETE"); lua_pushnumber(L, static_cast<uint8_t>(TriggerableKind::DESTROY)); lua_rawset(L, -3);
 	lua_pushliteral(L, "TriggerWAKEUP"); lua_pushnumber(L, static_cast<uint8_t>(TriggerableKind::WAKEUP)); lua_rawset(L, -3);

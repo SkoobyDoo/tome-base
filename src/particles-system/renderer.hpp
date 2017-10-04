@@ -45,6 +45,18 @@ public:
 	virtual void draw(ParticlesData &p, mat4 &model) = 0;
 };
 
+class RendererLine : public Renderer {
+protected:
+	GLuint vbos[2];
+	vector<renderer_vertex> vertexes;
+	
+public:
+	virtual void setup(ParticlesData &p);
+	virtual ~RendererLine();
+	virtual void update(ParticlesData &p);
+	virtual void draw(ParticlesData &p, mat4 &model);
+};
+
 class RendererGL2 : public Renderer {
 protected:
 	GLuint vbos[2];

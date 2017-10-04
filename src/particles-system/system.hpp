@@ -61,7 +61,7 @@ using namespace glm;
 namespace particles {
 
 
-enum ParticlesSlots2 : uint8_t { ORIGIN_POS, ROT_VEL, VEL, ACC, SIZE, MAX2 };
+enum ParticlesSlots2 : uint8_t { ORIGIN_POS, ROT_VEL, VEL, ACC, SIZE, LINKS, MAX2 };
 enum ParticlesSlots4 : uint8_t { POS, LIFE, TEXTURE, COLOR, COLOR_START, COLOR_STOP, MAX4 };
 
 class System;
@@ -72,6 +72,7 @@ public:
 	uint32_t count = 0, max = 0;
 	array<unique_ptr<vec2[]>, ParticlesSlots2::MAX2> slots2;
 	array<unique_ptr<vec4[]>, ParticlesSlots4::MAX4> slots4;
+	vector<int32_t> pointdeleter;
 	mutex mux;
 
 	ParticlesData();
@@ -91,9 +92,52 @@ public:
 		}
 	}
 
+	void dumpLinks() {
+		printf("~~~~ DUMPING LINKS ~~~~~\n");
+		vec2 *links = slots2[LINKS].get();
+		for (uint32_t i = 0; i < count; i++) {
+			printf(" ~ [%d] : prev(%d), next(%d)\n", i, (int32_t)links[i].x, (int32_t)links[i].y);
+		}
+		printf("~~~~~~~~~~~~~~~~~~~~~~~~\n");
+	}
+
 	inline void kill(uint32_t id) {
-		swapData(id, count - 1);
-		count--;
+		// Kill the whole chain at once
+		if (slots2[LINKS]) {
+			// dumpLinks();
+			// printf("ParticlesData::kill() killing chain for %d\n", id);
+			vec2 *links = slots2[LINKS].get();
+			pointdeleter.clear();
+			pointdeleter.push_back(id);
+
+			int32_t curid = id;
+			while (links[curid].x >= 0) {
+				curid = links[curid].x;
+				pointdeleter.push_back(curid);
+			}
+			curid = id;
+			while (links[curid].y >= 0) {
+				curid = links[curid].y;
+				pointdeleter.push_back(curid);
+			}
+			sort(pointdeleter.rbegin(), pointdeleter.rend());
+
+			// printf("pointDeleter contains:\n");
+			// for (int32_t i : pointdeleter) printf(" - %d\n", i);
+
+			for (int32_t i : pointdeleter) {
+				count--;
+				swapData(i, count);
+				// Reindex the moved link
+				vec2 &lcur = links[i];
+				if (lcur.x >= 0) links[(uint32_t)lcur.x].y = i;
+				if (lcur.y >= 0) links[(uint32_t)lcur.y].x = i;
+			}
+			// dumpLinks();
+		} else {
+			count--;
+			swapData(id, count);
+		}
 	};
 
 	void print();
@@ -164,6 +208,8 @@ extern spShaderHolder default_particlescompose_shader;
 #include "particles-system/emitters.hpp"
 #include "particles-system/renderer.hpp"
 
+enum class RendererType : uint8_t { Default, Line };
+
 class System {
 	friend class Emitter;
 	friend class Ensemble;
@@ -171,16 +217,19 @@ private:
 	mutex mux;
 
 	bool dead = false;
+	bool hidden = false;
 	ParticlesData list;
 
 	vector<unique_ptr<Emitter>> dead_emitters; // We keep them around because Ensemble::parametrized_values can refer to those still
 
 	vector<unique_ptr<Emitter>> emitters;
 	vector<unique_ptr<Updater>> updaters;
+
+	RendererType renderer_type;
 	unique_ptr<Renderer> renderer;
 
 public:
-	System(uint32_t max, RendererBlend blend);
+	System(uint32_t max, RendererBlend blend, RendererType type = RendererType::Default);
 	inline bool isDead() { return dead; }
 
 	inline ParticlesData& getList() { return list; };
@@ -193,6 +242,7 @@ public:
 
 	void setShader(spShaderHolder &shader);
 	void setTexture(spTextureHolder &tex);
+	void setHidden(bool hide) { hidden = hide; };
 
 	void shift(float x, float y, bool absolute);
 	void update(float nb_keyframes);

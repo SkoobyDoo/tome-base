@@ -71,7 +71,7 @@ local new_default_buildup_emitter = {PC.BuildupEmitter, {
 }, duration=-1.000000, startat=0.000000, nb=10.000000, rate=0.50000, nb_sec=5.000000, rate_sec=-0.150000 }
 
 local new_default_system = {
-	max_particles = 100, blend=PC.DefaultBlend,
+	max_particles = 100, blend=PC.DefaultBlend, type=PC.RendererPoint,
 	texture = "/data/gfx/particle.png",
 	emitters = { new_default_linear_emitter },
 	updaters = {
@@ -86,6 +86,7 @@ local pdef_history_pos = 0
 local particle_speed = 1
 local particle_zoom = 1
 
+--[[
 local pdef = {
 	parameters = { size=300.000000, },
 	{
@@ -120,6 +121,76 @@ local pdef = {
 		},
 	},
 }
+--]]
+local pdef = {
+	parameters = { tx=500.000000, size=300.000000, ty=0.000000 },
+	{
+		max_particles = 10, blend=PC.AdditiveBlend, type=PC.RendererLine,
+		texture = "/data/gfx/particles_textures/line2.png",
+		shader = "particles/lineglow",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, max=1.000000, duration=10.000000, min=1.000000},
+				{PC.JaggedLinePosGenerator, base_point={0.000000, 0.000000}, p1={0.000000, 0.000000}, p2={400.000000, 0.000000}},
+				{PC.DiskVelGenerator, max_vel=1.000000, min_vel=1.000000},
+				{PC.BasicSizeGenerator, max_size=10.000000, min_size=10.000000},
+				{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 1.000000}, min_color_stop={0.088228, 0.984375, 0.549677, 1.000000}},
+			}, startat=0.000000, duration=-1, rate=0.030000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=2.000000, hide=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=false},
+		},
+	},
+	-- {
+	-- 	display_name = "unnamed (duplicated)",
+	-- 	max_particles = 2, blend=PC.AdditiveBlend, type=PC.RendererPoint,
+	-- 	texture = "/data/gfx/particles_textures/line.png",
+	-- 	shader = "particles/lineglow",
+	-- 	emitters = {
+	-- 		{PC.LinearEmitter, {
+	-- 			{PC.BasicTextureGenerator},
+	-- 			{PC.LifeGenerator, max=1.000000, duration=10.000000, min=1.000000},
+	-- 			{PC.JaggedLinePosGenerator, base_point={0.000000, 0.000000}, p1={0.000000, 30.000000}, p2={400.000000, 30.000000}},
+	-- 			{PC.DiskVelGenerator, max_vel=1.000000, min_vel=1.000000},
+	-- 			{PC.BasicSizeGenerator, max_size=2.000000, min_size=2.000000},
+	-- 			{PC.FixedColorGenerator, color_stop={1.000000, 0.000000, 0.000000, 1.000000}, color_start={1.000000, 0.000000, 0.000000, 1.000000}},
+	-- 		}, startat=0.000000, duration=-1.000000, rate=0.030000, dormant=false, events = { stopping = PC.EventSTOP }, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=2.000000, hide=false },
+	-- 	},
+	-- 	updaters = {
+	-- 		{PC.BasicTimeUpdater},
+	-- 		{PC.LinearColorUpdater, bilinear=false},
+	-- 	},
+	-- },
+
+	-- parameters = { tx=500.000000, size=300.000000, ty=0.000000 },
+	-- {
+	-- 	max_particles = 40, blend=PC.AdditiveBlend, type=PC.AdditiveBlend,
+	-- 	texture = "/data/gfx/particles_textures/line.png",
+	-- 	shader = "particles/lineglow",
+	-- 	emitters = {
+	-- 		{PC.LinearEmitter, {
+	-- 			{PC.BasicTextureGenerator},
+	-- 			{PC.LifeGenerator, max=0.200000, duration=10.000000, min=0.200000},
+	-- 			{PC.JaggedLinePosGenerator, base_point={0.000000, 0.000000}, p1={0.000000, 0.000000}, p2={"tx", "ty"}},
+	-- 			{PC.DiskVelGenerator, max_vel=1.000000, min_vel=1.000000},
+	-- 			{PC.BasicSizeGenerator, max_size=1.000000, min_size=1.000000},
+	-- 			{PC.StartStopColorGenerator, min_color_start={1.000000, 0.843137, 0.000000, 1.000000}, max_color_start={1.000000, 0.466667, 0.000000, 1.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 1.000000}, min_color_stop={0.088228, 0.984375, 0.549677, 1.000000}},
+	-- 		}, dormant=false, startat=0.000000, events = { stopping = PC.EventSTOP }, rate=0.030000, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=40.000000, duration=-1.000000 },
+	-- 	},
+	-- 	updaters = {
+	-- 		{PC.BasicTimeUpdater},
+	-- 		{PC.LinearColorUpdater, bilinear=false},
+	-- 	},
+	-- },
+}
+
+local typemodes = {
+	{name="RendererPoint", type=PC.RendererPoint},
+	{name="RendererLine", type=PC.RendererLine},
+}
+local type_by_id = table.map(function(k, v) return v.type, v.name end, typemodes)
 
 local blendmodes = {
 	{name="DefaultBlend", blend=PC.DefaultBlend},
@@ -241,6 +312,12 @@ local specific_uis = {
 			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
 			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}},
 		}},
+		[PC.JaggedLinePosGenerator] = {name="JaggedLinePosGenerator", category="position", fields={
+			{type="point", id="base_point", text="Origin: ", min=-10000, max=10000, default={0, 0}, line=true},
+			{type="point", id="p1", text="P1: ", min=-10000, max=10000, default={0, 0}},
+			{type="point", id="p2", text="P2: ", min=-10000, max=10000, default={100, 100}, line=true},
+			{type="number", id="sway", text="Sway: ", min=0, max=10000, default=80},
+		}},
 		[PC.DiskVelGenerator] = {name="DiskVelGenerator", category="movement", fields={
 			{type="number", id="min_vel", text="Min velocity: ", min=0, max=1000, default=50},
 			{type="number", id="max_vel", text="Max velocity: ", min=0, max=1000, default=150},
@@ -276,7 +353,7 @@ local specific_uis = {
 		}},
 		[PC.StartStopColorGenerator] = {name="StartStopColorGenerator", category="color", fields={
 			{type="color", id="min_color_start", text="Min start color: ", default=colors_alphaf.GOLD(1)},
-			{type="color", id="max_color_start", text="Max start color: ", default=colors_alphaf.ORANGE(1)},
+			{type="color", id="max_color_start", text="Max start color: ", default=colors_alphaf.ORANGE(1), line=true},
 			{type="color", id="min_color_stop", text="Min stop color: ", default=colors_alphaf.GREEN(0)},
 			{type="color", id="max_color_stop", text="Max stop color: ", default=colors_alphaf.LIGHT_GREEN(0)},
 		}},
@@ -288,6 +365,12 @@ local specific_uis = {
 			{type="number", id="source_system", text="Source system ID: ", min=1, max=100, default=1},
 			{type="bool", id="copy_pos", text="Copy position: ", default=true},
 			{type="bool", id="copy_color", text="Copy color: ", default=true},
+		}},
+		[PC.JaggedLineBetweenGenerator] = {name="JaggedLineBetweenGenerator", category="special", fields={
+			{type="number", id="source_system", text="Source system ID: ", min=1, max=100, default=1},
+			{type="bool", id="copy_pos", text="Copy position: ", default=true},
+			{type="bool", id="copy_color", text="Copy color: ", default=true},
+			{type="number", id="sway", text="Sway: ", min=0, max=10000, default=80},
 		}},
 	},
 	updaters = {
@@ -638,6 +721,7 @@ function _M:makeUI()
 				Textzone.new{font=self.dfont, text="Max: ", auto_width=1, auto_height=1}, Numberbox.new{font=self.dfont, number=system.max_particles, min=1, max=100000, chars=6, on_change=function(p) system.max_particles = p self:regenParticle() end, fct=function()end},
 				Textzone.new{font=self.dfont, text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{font=self.dfont, width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes}
 			)
+			add(Textzone.new{font=self.dfont, text="Type: ", auto_width=1, auto_height=1}, Dropdown.new{font=self.dfont, width=200, default={"type", system.type}, fct=function(item) system.type = item.type self:regenParticle() self:makeUI() end, on_select=function(item)end, list=typemodes, nb_items=#typemodes})
 			add(0)
 			add(Textzone.new{font=self.dfont, text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
 			add(Textzone.new{font=self.dfont, text="Shader: "..(system.shader or "--"), auto_width=1, auto_height=1, fct=function() self:selectShader(system) end})
@@ -1182,7 +1266,7 @@ function UIDialog:saveDef(w)
 	for _, system in ipairs(pdef) do
 		w(1, "{\n")
 		if system.display_name then w(2, ("display_name = %q,\n"):format(system.display_name)) end
-		w(2, ("max_particles = %d, blend=PC.%s,\n"):format(system.max_particles, blend_by_id[system.blend]))
+		w(2, ("max_particles = %d, blend=PC.%s, type=PC.%s,\n"):format(system.max_particles, blend_by_id[system.blend], system.type and type_by_id[system.type] or "RendererPoint"))
 		w(2, ("texture = %q,\n"):format(system.texture))
 		if system.shader then w(2, ("shader = %q,\n"):format(system.shader)) end
 		w(2, "emitters = {\n")
