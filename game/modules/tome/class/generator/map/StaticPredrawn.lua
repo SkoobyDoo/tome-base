@@ -324,7 +324,8 @@ function _M:tmxLoad(file)
 	local fakeid = -1
 	for _, og in ipairs(map:findAll("objectgroup")) do
 		for _, o in ipairs(og:findAll("object")) do
-			local props = o:findOne("properties"):findAllAttrs("property", "name", "value")
+			local props = {}
+			if o:findOne("properties") then o:findOne("properties"):findAllAttrs("property", "name", "value") end
 
 			if og.attr.name:find("^addSpot") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
