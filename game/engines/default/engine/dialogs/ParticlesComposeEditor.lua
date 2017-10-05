@@ -417,7 +417,7 @@ local specific_uis = {
 			{type="number", id="nb", text="Particles per trigger: ", min=0, max=100000, default=30, line=true},
 			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
 			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1, line=true},
-			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup): ", default=false},
+			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup)", default=false},
 			{type="invisible", id=2, default={}},
 		}},
 		[PC.BurstEmitter] = {name="BurstEmitter", category="emitter", addnew=new_default_burst_emitter, fields={
@@ -426,7 +426,7 @@ local specific_uis = {
 			{type="number", id="nb", text="Particles per burst: ", min=0, max=100000, default=10, line=true},
 			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
 			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1, line=true},
-			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup): ", default=false},
+			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup)", default=false},
 			{type="invisible", id=2, default={}},
 		}},
 		[PC.BuildupEmitter] = {name="BuildupEmitter", category="emitter", addnew=new_default_buildup_emitter, fields={
@@ -436,7 +436,7 @@ local specific_uis = {
 			{type="number", id="nb_sec", text="Particles/trig increase/sec: ", min=-100000, max=100000, default=5, line=true},
 			{type="number", id="startat", text="Start at second: ", min=0, max=600, default=0},
 			{type="number", id="duration", text="Work for seconds (-1 for infinite): ", min=-1, max=600, default=-1, line=true},
-			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup): ", default=false},
+			{type="bool", id="dormant", text="Dormant (needs trigger to wakeup)", default=false},
 			{type="invisible", id=2, default={}},
 		}},
 	},
@@ -585,6 +585,8 @@ local specific_uis = {
 			{id=1, default=nil},
 			{id="max_particles", default=100},
 			{id="blend", default=PC.AdditiveBlend},
+			{id="type", default=PC.RendererPoint},
+			{id="compute_only", default=false},
 			{id="texture", default="/data/gfx/particle.png"},
 			{id="emitters", default={}},
 			{id="updaters", default={}},
@@ -892,6 +894,8 @@ function _M:makeUI()
 				Textzone.new{font=self.dfont, text="Blend: ", auto_width=1, auto_height=1}, Dropdown.new{font=self.dfont, width=200, default={"blend", system.blend}, fct=function(item) system.blend = item.blend self:regenParticle() self:makeUI() end, on_select=function(item)end, list=blendmodes, nb_items=#blendmodes}
 			)
 			add(Textzone.new{font=self.dfont, text="Type: ", auto_width=1, auto_height=1}, Dropdown.new{font=self.dfont, width=200, default={"type", system.type}, fct=function(item) system.type = item.type self:regenParticle() self:makeUI() end, on_select=function(item)end, list=typemodes, nb_items=#typemodes})
+			add(0)
+			add(Checkbox.new{font=self.dfont, title="Compute Only (Hidden)", default=system.compute_only, on_change=function(p) system.compute_only = p self:regenParticle() end, fct=function()end})
 			add(0)
 			add(Textzone.new{font=self.dfont, text="Texture: "..system.texture, auto_width=1, auto_height=1, fct=function() self:selectTexture(system) end})
 			add(Textzone.new{font=self.dfont, text="Shader: "..(system.shader or "--"), auto_width=1, auto_height=1, fct=function() self:selectShader(system) end})
@@ -1443,7 +1447,7 @@ function UIDialog:saveDef(w)
 	for _, system in ipairs(pdef) do
 		w(1, "{\n")
 		if system.display_name then w(2, ("display_name = %q,\n"):format(system.display_name)) end
-		w(2, ("max_particles = %d, blend=PC.%s, type=PC.%s,\n"):format(system.max_particles, blend_by_id[system.blend], system.type and type_by_id[system.type] or "RendererPoint"))
+		w(2, ("max_particles = %d, blend=PC.%s, type=PC.%s, compute_only=%s,\n"):format(system.max_particles, blend_by_id[system.blend], system.type and type_by_id[system.type] or "RendererPoint", system.compute_only and "true" or "false"))
 		w(2, ("texture = %q,\n"):format(system.texture))
 		if system.shader then w(2, ("shader = %q,\n"):format(system.shader)) end
 		w(2, "emitters = {\n")

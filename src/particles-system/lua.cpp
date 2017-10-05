@@ -328,7 +328,7 @@ static int p_new(lua_State *L) {
 			sys->setShader(sh);
 		}
 
-		if (lua_bool(L, -1, "hidden", false)) {
+		if (lua_bool(L, -1, "compute_only", false)) {
 			sys->setHidden(true);
 		}
 
