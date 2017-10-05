@@ -235,6 +235,7 @@ void System::draw(mat4 &model) {
  ********************************************************************/
 unordered_map<string, spTextureHolder> Ensemble::stored_textures;
 unordered_map<string, spNoiseHolder> Ensemble::stored_noises;
+unordered_map<string, spPointsListHolder> Ensemble::stored_points_lists;
 unordered_map<string, spShaderHolder> Ensemble::stored_shaders;
 unordered_map<string, spDefHolder> Ensemble::stored_defs;
 unordered_set<Ensemble*> Ensemble::all_ensembles;
@@ -264,6 +265,21 @@ spNoiseHolder Ensemble::getNoise(const char *noise_str) {
 	loader_noise(noise_str, noise);
 	spNoiseHolder nh = make_shared<NoiseHolder>(noise);
 	stored_noises.insert({noise_str, nh});
+	return nh;
+}
+
+spPointsListHolder Ensemble::getPointsList(const char *image_str) {
+	auto it = stored_points_lists.find(image_str);
+	if (it != stored_points_lists.end()) {
+		printf("Reusing points list %s\n", image_str);
+		return it->second;
+	}
+
+	points_list *list = new points_list();
+	loader_points_list(image_str, list);
+	spPointsListHolder nh = make_shared<PointsListHolder>(list);
+	stored_points_lists.insert({image_str, nh});
+	printf("Making points list %s\n", image_str);
 	return nh;
 }
 
@@ -415,6 +431,7 @@ Ensemble::~Ensemble() {
 void Ensemble::gcTextures() {
 	stored_textures.clear();
 	stored_noises.clear();
+	stored_points_lists.clear();
 	stored_shaders.clear();
 	stored_defs.clear();
 	default_particlescompose_shader.reset();

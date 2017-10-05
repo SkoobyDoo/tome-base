@@ -446,7 +446,9 @@ static int p_new(lua_State *L) {
 						lua_float(L, &g->sway, -1, "sway", 80);
 						break;}
 					case GeneratorsList::ImagePosGenerator: {
-						auto g = new ImagePosGenerator(); gg = g;
+						const char *image_str = lua_string(L, -1, "image", NULL);
+						spPointsListHolder plh = Ensemble::getPointsList(image_str);
+						auto g = new ImagePosGenerator(plh); gg = g;
 						lua_vec2(L, &g->base_pos, -1, "base_point", {0, 0});
 						break;}
 					case GeneratorsList::DiskVelGenerator: {
@@ -458,6 +460,9 @@ static int p_new(lua_State *L) {
 						lua_vec2(L, &g->from, -1, "from", {0, 0});
 						lua_float(L, &g->min_vel, -1, "min_vel", 5); lua_float(L, &g->max_vel, -1, "max_vel", 10);
 						lua_float(L, &g->min_rot, -1, "min_rot", 0); lua_float(L, &g->max_rot, -1, "max_rot", 0);
+						break;}
+					case GeneratorsList::SwapPosByVelGenerator: {
+						auto g = new SwapPosByVelGenerator(); gg = g;
 						break;}
 					case GeneratorsList::BasicSizeGenerator: {
 						auto g = new BasicSizeGenerator(); gg = g;
@@ -716,6 +721,7 @@ extern "C" int luaopen_particles_system(lua_State *L) {
 	lua_pushliteral(L, "ImagePosGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::ImagePosGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DiskVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DiskVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "DirectionVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::DirectionVelGenerator)); lua_rawset(L, -3);
+	lua_pushliteral(L, "SwapPosByVelGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::SwapPosByVelGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "StartStopSizeGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::StartStopSizeGenerator)); lua_rawset(L, -3);
 	lua_pushliteral(L, "BasicRotationGenerator"); lua_pushnumber(L, static_cast<uint8_t>(GeneratorsList::BasicRotationGenerator)); lua_rawset(L, -3);

@@ -27,7 +27,7 @@ enum class GeneratorsList : uint8_t {
 	OriginPosGenerator, DiskPosGenerator, CirclePosGenerator, TrianglePosGenerator, LinePosGenerator, JaggedLinePosGenerator, ImagePosGenerator,
 	DiskVelGenerator, DirectionVelGenerator,
 	BasicSizeGenerator, StartStopSizeGenerator,
-	BasicRotationGenerator, RotationByVelGenerator, BasicRotationVelGenerator,
+	BasicRotationGenerator, RotationByVelGenerator, BasicRotationVelGenerator, SwapPosByVelGenerator,
 	StartStopColorGenerator, FixedColorGenerator,
 	CopyGenerator, JaggedLineBetweenGenerator,
 };
@@ -142,8 +142,8 @@ public:
 
 class ImagePosGenerator : public Generator {
 public:
-	points_list list;
-	ImagePosGenerator();
+	spPointsListHolder lph;
+	ImagePosGenerator(spPointsListHolder lph);
 	virtual uint32_t weight() const { return 0; };
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(COLOR); p.initSlot4(COLOR_START); p.initSlot4(COLOR_STOP); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end) {}
@@ -172,6 +172,14 @@ public:
 	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(VEL); p.initSlot2(ACC); };
 	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
 	virtual GeneratorsList getID() { return GeneratorsList::DirectionVelGenerator; }
+};
+
+class SwapPosByVelGenerator : public Generator {
+public:
+	virtual uint32_t weight() const { return 300; };
+	virtual void useSlots(ParticlesData &p) { p.initSlot4(POS); p.initSlot4(LIFE); p.initSlot2(VEL); p.initSlot2(ACC); };
+	virtual void generate(ParticlesData &p, uint32_t start, uint32_t end);
+	virtual GeneratorsList getID() { return GeneratorsList::SwapPosByVelGenerator; }
 };
 
 

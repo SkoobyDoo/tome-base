@@ -86,8 +86,8 @@ local pdef_history_pos = 0
 local particle_speed = 1
 local particle_zoom = 1
 
---[[
 local pdef = {
+-- [[
 	parameters = { size=300.000000, },
 	{
 		max_particles = 2000, blend=PC.ShinyBlend,
@@ -120,9 +120,7 @@ local pdef = {
 			{PC.EulerPosUpdater, global_vel={30.000000, -120.000000}, global_acc={0.000000, 0.000000}},
 		},
 	},
-}
 --]]
-local pdef = {
 --[[
 	parameters = { ty=0.000000, size=300.000000, tx=500.000000 },
 	{
@@ -267,7 +265,7 @@ local pdef = {
 		},
 	},
 --]]
--- [[
+--[[
 	{
 		max_particles = 10000, blend=PC.DefaultBlend, type=PC.RendererPoint,
 		texture = "/data/gfx/particle.png",
@@ -424,6 +422,7 @@ local specific_uis = {
 			{type="number", id="strands", text="strands: ", min=1, max=10000, default=1},
 		}},
 		[PC.ImagePosGenerator] = {name="ImagePosGenerator", category="position", fields={
+			{type="file", id="image", text="Image: ", dir="/data/gfx/particles_masks/", filter="%.png$", default="/data/gfx/particles_masks/tome.png", line=true},
 			{type="point", id="base_point", text="Origin: ", min=-10000, max=10000, default={0, 0}, line=true},
 		}},
 		[PC.DiskVelGenerator] = {name="DiskVelGenerator", category="movement", fields={
@@ -436,6 +435,8 @@ local specific_uis = {
 			{type="number", id="max_vel", text="Max velocity: ", min=-1000, max=1000, default=150, line=true},
 			{type="number", id="min_rot", text="Min rotation: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
 			{type="number", id="max_rot", text="Max rotation: ", min=-math.pi*2, max=math.pi*2, default=0, from=function(v) return (type(v) == "number" or tonumber(v)) and math.rad(v) or v end, to=function(v) return (type(v) == "number" or tonumber(v)) and math.deg(v) or v end},
+		}},
+		[PC.SwapPosByVelGenerator] = {name="SwapPosByVelGenerator", category="movement", fields={
 		}},
 		[PC.BasicSizeGenerator] = {name="BasicSizeGenerator", category="size", fields={
 			{type="number", id="min_size", text="Min size: ", min=0.00001, max=1000, default=10},
@@ -944,7 +945,7 @@ function _M:makeUI()
 			else
 				self:shift(mx, my)
 			end
-		else self:shift((game.w - 550) / 2, game.h / 2) end
+		else self:shift((game.w - (self.hide_ui and 0 or 550)) / 2, game.h / 2) end
 
 		self.uidialog:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)
 
@@ -1095,6 +1096,7 @@ function _M:init(no_bloom)
 	}
 	self.key:addCommands{
 		_b = function() self:toggleBloom() end,
+		_u = function() self:toggleUI() end,
 	}
 
 	self.particle_renderer = core.renderer.renderer()
@@ -1141,6 +1143,10 @@ function _M:toggleBloom()
 	end
 end
 
+function _M:toggleUI()
+	self.hide_ui = not self.hide_ui
+end
+
 function _M:regenParticle(nosave)
 	if not self.particle_renderer then return end
 	if not nosave then
@@ -1185,11 +1191,13 @@ function _M:toScreen(x, y, nb_keyframes)
 	end
 	-- self.p:toScreen(0, 0, nb_keyframes)
 
-	self.uidialog:toScreen(0, 0, nb_keyframes)
+	if not self.hide_ui then
+		self.uidialog:toScreen(0, 0, nb_keyframes)
 
-	Dialog.toScreen(self, x, y, nb_keyframes)
+		Dialog.toScreen(self, x, y, nb_keyframes)
 
-	self.bignews:display(nb_keyframes)
+		self.bignews:display(nb_keyframes)
+	end
 end
 
 function _M:keyEvent(...)

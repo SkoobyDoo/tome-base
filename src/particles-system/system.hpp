@@ -170,6 +170,19 @@ public:
 };
 typedef shared_ptr<NoiseHolder> spNoiseHolder;
 
+class PointsListHolder {
+public:
+	points_list *list;
+	PointsListHolder(points_list *list) : list(list) {
+		printf("Creating points list\n");
+	};
+	~PointsListHolder() {
+		printf("Freeing points list\n");
+		delete list;
+	};
+};
+typedef shared_ptr<PointsListHolder> spPointsListHolder;
+
 class ShaderHolder {
 public:
 	shader_type *shader;
@@ -256,12 +269,14 @@ class Ensemble {
 protected:
 	static unordered_map<string, spTextureHolder> stored_textures;
 	static unordered_map<string, spNoiseHolder> stored_noises;
+	static unordered_map<string, spPointsListHolder> stored_points_lists;
 	static unordered_map<string, spShaderHolder> stored_shaders;
 	static unordered_map<string, spDefHolder> stored_defs;
 public:
 	static unordered_set<Ensemble*> all_ensembles;
 	static spTextureHolder getTexture(const char *tex_str);
 	static spNoiseHolder getNoise(const char *noise_str);
+	static spPointsListHolder getPointsList(const char *image_str);
 	static spShaderHolder getShader(lua_State *L, const char *shader_str);
 	static int getDefinition(lua_State *L, const char *def_str);
 	static void gcTextures();

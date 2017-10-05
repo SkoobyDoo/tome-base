@@ -183,29 +183,30 @@ uint32_t JaggedLinePosGenerator::generateLimit(ParticlesData &p, uint32_t start,
 	return end;
 }
 
-ImagePosGenerator::ImagePosGenerator() {
+ImagePosGenerator::ImagePosGenerator(spPointsListHolder lph) : lph(lph) {
 	use_limiter = true;
 	// loader_points_list("/data/gfx/particles_masks/test.png", &list);
-	loader_points_list("/data/gfx/particles_masks/tome.png", &list);
+	// loader_points_list("/data/gfx/particles_masks/tome.png", &list);
 	// loader_points_list("/data/gfx/particles_masks/tome-logo.png", &list);
 }
 
 uint32_t ImagePosGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
-	if (!list.hasData()) { printf("==computing list..\n"); return start; }
+	if (!lph->list->hasData()) { printf("==computing list..\n"); return start; }
 	// printf("===== OK!\n");
 
+	vector<points_list_entry> &list = lph->list->list;
 	vec4* pos = p.getSlot4(POS);
 	vec4* color = p.getSlot4(COLOR);
 	vec4* cstart = p.getSlot4(COLOR_START);
 	vec4* cstop = p.getSlot4(COLOR_STOP);
 
 	for (uint32_t i = start; i < end; i++) {
-		uint32_t id = rand_div(list.list.size());
-		pos[i].x = list.list[id].pos.x + final_pos.x;
-		pos[i].y = list.list[id].pos.y + final_pos.y;
-		color[i] = list.list[id].color;
-		cstart[i] = list.list[id].color;
-		cstop[i] = list.list[id].color;
+		uint32_t id = rand_div(list.size());
+		pos[i].x = list[id].pos.x + final_pos.x;
+		pos[i].y = list[id].pos.y + final_pos.y;
+		color[i] = list[id].color;
+		cstart[i] = list[id].color;
+		cstop[i] = list[id].color;
 		// printf("computed list! generated point %f x %f :: %fx%fx%fx%f\n", pos[i].x, pos[i].x, color[i].r, color[i].g, color[i].b, color[i].a);
 	}
 	return end;
@@ -265,6 +266,19 @@ void RotationByVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t
 	for (uint32_t i = start; i < end; i++) {
 		float a = atan2f(vel[i].y, vel[i].x);
 		pos[i].w = a + genrand_real(min_rot, max_rot);
+	}
+}
+
+void SwapPosByVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
+	vec4* life = p.getSlot4(LIFE);
+	vec2* origin = p.getSlot2(ORIGIN_POS);
+	vec4* pos = p.getSlot4(POS);
+	vec2* vel = p.getSlot2(VEL);
+	for (uint32_t i = start; i < end; i++) {
+		pos[i].x = pos[i].x + vel[i].x * life[i].x;
+		pos[i].y = pos[i].y + vel[i].y * life[i].x;
+		if (origin) origin[i] = origin[i] + vel[i] * life[i].x;
+		vel[i] = -vel[i];
 	}
 }
 
