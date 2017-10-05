@@ -92,6 +92,11 @@ function colors.hex1alphaunpack(hex)
 	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255, tonumber("0x"..hex:sub(7, 8)) / 255
 end
 
+function colors.lerp(a, b, x)
+	local lerp = util.lerp
+	return { lerp(a.r/255, b.r/255, x), lerp(a.g/255, b.g/255, x), lerp(a.b/255, b.b/255, x) }
+end
+
 defineColor('BLACK', 0, 0, 0)
 defineColor('WHITE', 0xFF, 0xFF, 0xFF)
 defineColor('SLATE', 0x8C, 0x8C, 0x8C)
