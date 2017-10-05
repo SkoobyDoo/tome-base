@@ -57,7 +57,7 @@ class JaggedLineGeneratorBase : public Generator {
 public:
 	float strands;
 	float sway;
-	virtual void generateStrands(ParticlesData &p, uint32_t &start, uint32_t &end, vec2 p1, vec2 p2);
+	virtual void generateStrands(ParticlesData &p, uint32_t &start, uint32_t &end, vec2 p1, vec2 p2, vec4 &c1, vec4 &c2);
 };
 
 /********************************************************************

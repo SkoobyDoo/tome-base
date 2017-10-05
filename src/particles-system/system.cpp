@@ -295,6 +295,7 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	spShaderHolder sh;
 
 	// Get Shader.new
+	int top = lua_gettop(L);
 	lua_getglobal(L, "engine");
 	lua_pushliteral(L, "Shader");
 	lua_gettable(L, -2);
@@ -323,7 +324,7 @@ spShaderHolder Ensemble::getShader(lua_State *L, const char *shader_str) {
 	} else {
 		printf("ParticlesComposer shader get error: %s\n", lua_tostring(L, -1));
 	}
-	lua_pop(L, 1 + 1); // Engine table & result
+	lua_settop(L, top);
 
 	stored_shaders.insert({shader_str, sh});
 	return sh;
