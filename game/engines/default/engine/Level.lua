@@ -40,6 +40,7 @@ function _M:init(level, map)
 	self.sublevels = {}
 	self.sublevel_id = "__main__"
 	self.data = {}
+	self.tmpdata = {}
 end
 
 function _M:onSaving()
@@ -163,7 +164,7 @@ end
 
 --- Serialization
 function _M:save()
-	return class.save(self, {entities_list=true})
+	return class.save(self, {entities_list=true, tmpdata=true})
 end
 function _M:loaded()
 	__level_store[self] = true
@@ -176,6 +177,7 @@ function _M:loaded()
 	end
 	self.entities = nes
 	self.entities_list = {}
+	self.tmpdata = {}
 end
 
 --- Setup an entity list for the level, this allows the Zone to pick objects/actors/...
