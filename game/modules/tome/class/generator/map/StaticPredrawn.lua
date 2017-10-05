@@ -325,7 +325,7 @@ function _M:tmxLoad(file)
 	for _, og in ipairs(map:findAll("objectgroup")) do
 		for _, o in ipairs(og:findAll("object")) do
 			local props = {}
-			if o:findOne("properties") then o:findOne("properties"):findAllAttrs("property", "name", "value") end
+			if o:findOne("properties") then props = o:findOne("properties"):findAllAttrs("property", "name", "value") end
 
 			if og.attr.name:find("^addSpot") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
@@ -366,9 +366,6 @@ function _M:tmxLoad(file)
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
 				for i = x, x + w do for j = y, y + h do
 					local i, j = i + 1, j + 1
-					print("!!!!!")
-					table.print(props)
-					print("!!!!!")
 					self.to_spawn[#self.to_spawn+1] = {i=i, j=j, particles=props}
 				end end
 			end
@@ -486,7 +483,6 @@ function _M:generate(lev, old_lev)
 			elseif particles.radius then size = particles.radius + 1
 			elseif particles.tx then size = math.max(particles.tx, particles.ty) + 1
 			end
-			table.print(particles)
 			self.level.map:particleEmitter(i-1, j-1, size, particles.type, particles)
 		end
 	end
