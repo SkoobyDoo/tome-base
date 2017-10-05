@@ -376,6 +376,7 @@ uint32_t JaggedLineBetweenGenerator::generateLimit(ParticlesData &p, uint32_t st
 
 	uint32_t nb_gen = end - start;
 
+	if (repeat_times < 1) repeat_times = 1;
 	for (uint32_t r = 0; r < repeat_times; r++) {
 		uint32_t p1i = rand_div(sp1.count);
 		vec2 p1(spos1[p1i].x, spos1[p1i].y);
