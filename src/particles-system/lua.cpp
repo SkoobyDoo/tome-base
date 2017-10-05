@@ -337,7 +337,6 @@ static int p_new(lua_State *L) {
 		lua_rawget(L, -2);
 		int nb_emitters = lua_objlen(L, -1);
 		for (int ei = 1; ei <= nb_emitters; ei++) {
-			printf("   * creating emitter %d\n", ei);
 			lua_rawgeti(L, -1, ei);
 			EmittersList e_id = (EmittersList)((uint8_t)lua_float(L, -1, 1, 0));
 			Emitter *em;
@@ -367,7 +366,6 @@ static int p_new(lua_State *L) {
 			if (lua_bool(L, -1, "dormant", false)) {
 				em->setDormant(true);
 			}
-
 			
 			/** Triggers **/
 			lua_pushliteral(L, "triggers");

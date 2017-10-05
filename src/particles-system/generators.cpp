@@ -111,7 +111,6 @@ void LinePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) 
 void JaggedLineGeneratorBase::generateStrands(ParticlesData &p, uint32_t &start, uint32_t &end, vec2 p1, vec2 p2, vec4 &c1, vec4 &c2) {
 	// printf("--generating at %d to %d\n", start, end);
 	if (end - start < 2 || !strands) { end = start; return; }
-	printf("===4\n");
 	uint32_t nb_gen = end - start;
 
 	vec4* pos = p.getSlot4(POS);
@@ -163,7 +162,7 @@ void JaggedLineGeneratorBase::generateStrands(ParticlesData &p, uint32_t &start,
 
 			pos[start + i].x = point.x;
 			pos[start + i].y = point.y;
-			color[start + 1] = cstart[start + 1] = cstop[start + 1] = mix(c2, c1, curpos);
+			color[start + i] = cstart[start + i] = cstop[start + i] = mix(c2, c1, curpos);
 			// printf("  - morphing color as %0.2fx%0.2fx%0.2fx%0.2f\n", color[start + 1].r, color[start + 1].g, color[start + 1].b, color[start + 1].a);
 
 			links[start + i].x = start + i - 1; links[start + i].y = start + i + 1;
@@ -368,9 +367,7 @@ void JaggedLineBetweenGenerator::useSlots(ParticlesData &p) {
 uint32_t JaggedLineBetweenGenerator::generateLimit(ParticlesData &p, uint32_t start, uint32_t end) {
 	ParticlesData &sp1 = source_system1->getList();
 	ParticlesData &sp2 = source_system2->getList();
-	printf("===1\n");
 	if (sp1.count < 2 || sp2.count < 2) { return start; }
-	printf("===2\n");
 
 	vec4* spos1 = sp1.getSlot4(POS);
 	vec4* spos2 = sp2.getSlot4(POS);
@@ -398,7 +395,6 @@ uint32_t JaggedLineBetweenGenerator::generateLimit(ParticlesData &p, uint32_t st
 			}
 		}
 		c1.a = c2.a = 1;
-		printf("===3\n");
 		generateStrands(p, start, end, p1, p2, c1, c2);
 		if (r < repeat_times - 1 && end + nb_gen < p.max) {
 			start += nb_gen;

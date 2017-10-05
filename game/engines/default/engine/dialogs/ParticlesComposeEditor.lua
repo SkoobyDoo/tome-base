@@ -87,7 +87,7 @@ local particle_speed = 1
 local particle_zoom = 1
 
 local pdef = {
---[[
+-- [[
 	parameters = { size=300.000000, },
 	{
 		max_particles = 2000, blend=PC.ShinyBlend,
@@ -121,7 +121,7 @@ local pdef = {
 		},
 	},
 --]]
--- [[
+--[[
 	{
 		max_particles = 100, blend=PC.DefaultBlend, type=PC.RendererPoint,
 		texture = "/data/gfx/particle.png",
@@ -169,7 +169,6 @@ local pdef = {
 				{PC.BasicSizeGenerator, max_size=30.000000, min_size=10.000000},
 				{PC.LifeGenerator, min=0.500000, max=0.500000},
 				{PC.JaggedLineBetweenGenerator, sway=80.000000, source_system2=2.000000, close_tries=0.000000, copy_color=true, strands=1.000000, repeat_times=1.000000, source_system1=1.000000, copy_pos=true},
-				{PC.FixedColorGenerator, color_stop={0.000000, 1.000000, 0.000000, 0.000000}, color_start={1.000000, 0.843137, 0.000000, 1.000000}},
 			}, startat=0.000000, duration=-1.000000, rate=0.300000, nb=10.000000, dormant=false },
 		},
 		updaters = {
