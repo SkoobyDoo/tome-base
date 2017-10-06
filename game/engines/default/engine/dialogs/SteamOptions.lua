@@ -74,7 +74,7 @@ function _M:generateList()
 	local list = {}
 	local i = 0
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Enable Steam Cloud saves.\nYour saves will be put on steam cloud and always be available everywhere.\nDisable if you have bandwidth limitations.\n#CRIMSON#Warning:#LAST#Activating this option switches to a new savefiles folder, your stem saves and normal saves are separated. As long as the option is enabled you can not access non steam-cloud saves.#WHITE#"}
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Enable Steam Cloud saves.\nYour saves will be put on steam cloud and always be available everywhere.\nDisable if you have bandwidth limitations.\n#CRIMSON#Warning:#LAST#Activating this option switches to a new savefiles folder, your steam saves and normal saves are separated. As long as the option is enabled you can not access non steam-cloud saves and vice versa.#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Cloud Saves#WHITE##{normal}#", status=function(item)
 		return tostring(core.steam.isCloudEnabled(true) and "enabled" or "disabled")
 	end, fct=function(item)
