@@ -75,6 +75,23 @@ newEntity{
 
 newEntity{
 	power_source = {technique=true},
+	name = "truestriking ", prefix=true, instant_resolve=true,
+	keywords = {truestriking=true},
+	level_range = {30, 50},
+	greater_ego = 1,
+	rarity = 15,
+	cost = 40,
+	wielder = {
+		combat_atk = resolvers.mbonus_material(10, 5),
+		combat_apr = resolvers.mbonus_material(10, 5),
+		resists_pen = {
+			[DamageType.PHYSICAL] = resolvers.mbonus_material(10, 5),
+		},
+	},
+}
+
+newEntity{
+	power_source = {technique=true},
 	name = "warbringer's ", prefix=true, instant_resolve=true,
 	keywords = {warbringer=true},
 	level_range = {30, 50},
@@ -125,10 +142,20 @@ newEntity{
 		combat_dam = resolvers.mbonus_material(10, 5),
 	},
 	combat = {
-		special_on_crit = {desc="wounds the target reducing their healing", fct=function(combat, who, target)
-			local dam = 5 + (who:combatPhysicalpower()/5)
+		special_on_crit = {
+		desc=function(self, who, special)
+			local dam, hf = special.wound(self.combat, who)
+			return ("wounds the target for 7 turns: %d bleeding, %d%% reduced healing"):format(dam, hf)
+		end,
+		wound=function(combat, who)
+			local dam = 5 + (who:combatPhysicalpower(nil, combat)/5)
+			local hf = 150*dam/(dam + 25) -- limit healing loss < 150%
+			return dam, hf
+		end,
+		fct=function(combat, who, target, dam, special)
 			if target:canBe("cut") then
-				target:setEffect(target.EFF_DEEP_WOUND, 7, {src=who, heal_factor=dam * 2, power=dam, apply_power=who:combatAttack()})
+				local dam, hf = special.wound(combat, who)
+				target:setEffect(target.EFF_DEEP_WOUND, 7, {src=who, heal_factor=hf, power=dam, apply_power=who:combatAttack()})
 			end
 		end},
 	},
@@ -800,35 +827,36 @@ newEntity{
 	name = " of projection", suffix=true, instant_resolve=true,
 	keywords = {projection=true},
 	level_range = {1, 50},
-	rarity = 5,
+	rarity = 25,
 	cost = 15,
-	resolvers.charm(function(self, who) 
-			return ("project a melee attack out to range %d, dealing 150%%%% (mind) weapon damage"):format(self.use_power.range)
-		end,
-		6,
-		function(self, who)
-			local tg = self.use_power.target(self, who)
-			local x, y = who:getTarget(tg)
-			if not x or not y then return nil end
-			local _ _, x, y = who:canProject(tg, x, y)
-			if not x or not y then return nil end
-			local target = game.level.map(x, y, engine.Map.ACTOR)
-			who:logCombat(target, "#Source# psionically attacks #target# with %s %s!", who:his_her(), self:getName({do_color=true, no_add_name=true}))
-			if target then
-				who:attackTarget(target, engine.DamageType.MIND, 1.5, true)
-			end
-			return {id=true, used=true}
-		end,
-		"T_GLOBAL_CD",
-		{range = 10,
-		requires_target = true,
-		tactical = { ATTACK = { MIND = 2 } },
-		target = function(self, who) return {type="hit", range=self.use_power.range} end}
-	),
+	greater_ego = 1,
 	combat = {
-		melee_project={
-			[DamageType.MIND] = resolvers.mbonus_material(15, 5),
-		},
+		projection_targets = resolvers.mbonus_material(2, 1),
+		special_on_hit = {
+			on_kill = 1,
+			desc=function(self, who, special)
+				local targets = self.combat.projection_targets
+				return ("Projects up to %d attacks dealing 30%% weapon damage to random targets in range 7 (cannot hit the initial target)"):format(targets or 0)
+			end,
+			fct=function(combat, who, target)
+				if who.turn_procs.ego_projection then return end
+				who.turn_procs.ego_projection = true
+
+				local tg = {type="ball", radius=7}
+				local grids = who:project(tg, who.x, who.y, function() end)
+				local tgts = {}
+				for x, ys in pairs(grids) do for y, _ in pairs(ys) do
+					local target2 = game.level.map(x, y, engine.Map.ACTOR)
+					if target2 and target ~= target2 and who:reactionToward(target2) < 0 then tgts[#tgts+1] = target2 end
+				end end
+
+				for i = 1,combat.projection_targets do
+					local project_target = rng.tableRemove(tgts) -- Don't strike the same target more than once
+					if project_target then
+						who:attackTarget(project_target, engine.DamageType.MIND, 0.3, true)
+					end
+				end
+		end},
 	},
 }
 

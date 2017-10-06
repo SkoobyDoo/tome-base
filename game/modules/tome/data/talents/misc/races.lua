@@ -120,7 +120,32 @@ newTalent{
 	points = 5,
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 20, 47, 35)) end, -- Limit >20
-	tactical = { MANA = 2, VIM = 2, EQUILIBRIUM = 2, STAMINA = 2, POSITIVE = 2, NEGATIVE = 2, PARADOX = 2, PSI = 2 },
+	on_pre_use_ai = function(self, t)
+		local aitarget = self.ai_target.actor
+		if not aitarget then return end -- don't activate without a target
+		for i, res_def in ipairs(self.resources_def) do -- look for a depleted resource (~ 25% level or want > 4)
+			if res_def.talent and self:knowTalent(res_def.talent) then
+				if res_def.ai and res_def.ai.tactical and res_def.ai.tactical.want_level then
+					if res_def.ai.tactical.want_level(self, aitarget) > 4 then return true end
+				elseif res_def.min and res_def.max then
+					local min, max, val = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self), self[res_def.getFunction](self)
+					if res_def.invert_values then
+						if (max-val)/(max-min) < 0.25 then return true end
+					else
+						if (val-min)/(max-min) < 0.25 then return true end
+					end
+				end
+			end
+		end
+	end,
+	tactical = function(self, t, aitarget) -- build a tactical table for all defined resources the first time this is called.
+		local tacs = {}
+		for i, res_def in ipairs(self.resources_def) do
+			if res_def.talent then tacs[res_def.short_name] = 0.5 end
+		end
+		t.tactical = tacs
+		return tacs
+	end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 2, 6.1)) end,  --  Limit to < 10
 	action = function(self, t)
 		self:setEffect(self.EFF_HIGHBORN_S_BLOOM, t.getDuration(self, t), {})
@@ -168,9 +193,7 @@ newTalent{
 	critChance = function(self, t) return self:combatTalentScale(t, 3, 10, 0.75) end,
 	critPower = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
 	passives = function(self, t, p)
-		self:talentTemporaryValue(p, "combat_physcrit", t.critChance(self, t))
-		self:talentTemporaryValue(p, "combat_spellcrit", t.critChance(self, t))
-		self:talentTemporaryValue(p, "combat_mindcrit", t.critChance(self, t))
+		self:talentTemporaryValue(p, "combat_generic_crit", t.critChance(self, t))
 		self:talentTemporaryValue(p, "combat_critical_power", t.critPower(self, t))
 	end,
 	info = function(self, t)
@@ -602,7 +625,7 @@ newTalent{
 			local count, t = 0
 			for tid, _ in pairs(aitarget.talents) do
 				t = aitarget.talents_def[tid]
-				if type(t.tactical) == "table" and type(t.tactical.disable) == "table" and (t.tactical.disable.stun or t.tactical.disable.pin) then
+				if t and type(t.tactical) == "table" and type(t.tactical.disable) == "table" and (t.tactical.disable.stun or t.tactical.disable.pin) then
 					count = count + 1
 					if count > 1 then break end
 				end
@@ -665,22 +688,34 @@ newTalent{
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 5, 46, 30)) end, -- Limit to >5 turns
 	getPower = function(self, t) return self:combatStatScale("con", 1, 6 ) end,
-	tactical = { ATTACK = 2 },
-	action = function(self, t)
-		-- Count actors in view
+	enemyCount = function(self, t) -- Count actors in LOS and seen
 		local nb = 0
 		for i = 1, #self.fov.actors_dist do
 			local act = self.fov.actors_dist[i]
 			if act and self:reactionToward(act) < 0 and self:canSee(act) then nb = nb + 1 end
+			if nb >= 5 then break end
 		end
+		self.turn_procs[t.id] = {count = nb}
+		return nb
+	end,
+	on_pre_use_ai = function(self, t, silent, fake) -- don't use without visible enemies
+		local nb = self.turn_procs[t.id] and self.turn_procs[t.id].count or t.enemyCount(self, t)
+		if nb > 0 then return true end
+	end,
+	tactical = { BUFF = function(self, t, aitarget)
+			local nb = self.turn_procs[t.id] and self.turn_procs[t.id].count or t.enemyCount(self, t)
+			return nb^.5
+		end
+	},
+	action = function(self, t)
+		local nb = self.turn_procs[t.id] and self.turn_procs[t.id].count or t.enemyCount(self, t)
 		if nb <= 0 then return false end
-
 		self:setEffect(self.EFF_ORC_FURY, 3, {power=10 + t.getPower(self, t) * math.min(5, nb)})
 		return true
 	end,
 	info = function(self, t)
 		return ([[Summons your lust for blood and destruction, especially when the odds are against you.  
-		You increase your damage by 10%% + %0.1f%% per enemy in line of sight up to 5 (max %0.1f%%) for 3 turns.
+		You increase your damage by 10%% + %0.1f%% per enemy you can see in line of sight of you (maximum 5 enemies, %0.1f%% bonus) for 3 turns.
 		The damage bonus will increase with your Constitution.]]):
 		format(t.getPower(self, t), 10 + t.getPower(self, t) * 5)
 	end,
@@ -748,9 +783,8 @@ newTalent{
 	no_energy = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 46, 30)) end, -- Limit to >10
 	remcount  = function(self,t) return math.ceil(self:combatTalentScale(t, 0.5, 3, "log", 0, 3)) end,
-	--heal = function(self, t) return 25 + 2.3* self:getCon() + self:combatTalentLimit(t, 0.1, 0.01, 0.05)*self.max_life end,
 	heal = function(self, t) return 50+self:combatTalentStatDamage(t, "wil", 100, 500) end,
-	tactical = { DEFEND = 1, HEAL = 2, CURE = function(self, t, target)
+	tactical = { HEAL = 1, CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
 			local e = self.tempeffect_def[eff_id]
@@ -758,7 +792,7 @@ newTalent{
 				nb = nb + 1
 			end
 		end
-		return nb
+		return nb^0.5
 	end },
 	action = function(self, t)
 		local target = self
@@ -914,7 +948,7 @@ newTalent{
 				resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/humanoid_yeek_yeek_mindslayer.png", display_h=2, display_y=-1}}},
 				desc = "A wayist that came to help.",
 
-				body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+				body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, PSIONIC_FOCUS=1 },
 
 				rank = 3,
 				life_rating = 8,
@@ -935,6 +969,7 @@ newTalent{
 				resolvers.equip{
 					{type="weapon", subtype="longsword", autoreq=true},
 					{type="weapon", subtype="dagger", autoreq=true},
+					{type="weapon", subtype="greatsword", autoreq=true, force_inven = "PSIONIC_FOCUS"},
 				},
 
 				level_range = {1, nil}, exp_worth = 0,
@@ -946,7 +981,8 @@ newTalent{
 					[Talents.T_KINETIC_AURA]={base=1, every=5, max=5},
 					[Talents.T_CHARGED_AURA]={base=1, every=5, max=5},
 				},
-
+				resolvers.sustains_at_birth(),
+				
 				faction = self.faction,
 				summoner = self, summoner_gain_exp=true,
 				summon_time = 6,

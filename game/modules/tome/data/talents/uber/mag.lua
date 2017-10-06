@@ -41,18 +41,20 @@ uberTalent{
 	require = { special={desc="Have at least 25% arcane damage reduction and have been exposed to the void of space", fct=function(self)
 		return (game.state.birth.ignore_prodigies_special_reqs or self:attr("planetary_orbit")) and self:combatGetResist(DamageType.ARCANE) >= 25
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local ret = {}
 		self:talentTemporaryValue(ret, "force_use_resist", DamageType.ARCANE)
 		self:talentTemporaryValue(ret, "force_use_resist_percent", 66)
 		self:talentTemporaryValue(ret, "resists", {[DamageType.ARCANE] = 20})
+		self:talentTemporaryValue(ret, "resists_cap", {[DamageType.ARCANE] = 10})
 		return ret
 	end,
 	on_unlearn = function(self, t)
 	end,
 	info = function(self, t)
 		return ([[You manifest a thin layer of aether all around you. Any attack passing through it will check arcane resistance instead of the incoming damage resistance.
-		In effect, all of your resistances are equal to 66%% of your arcane resistance, which is increased by 20%%.]])
+		In effect, all of your resistances are equal to 66%% of your arcane resistance, which is increased by 20%% (and cap increased by 10%%).]])
 		:format()
 	end,
 }
@@ -109,7 +111,7 @@ uberTalent{
 	is_spell = true,
 	requires_target = true,
 	range = 10,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 2, BUFF = 2 },
 	action = function(self, t)
 		self:setEffect(self.EFF_TEMPORAL_FORM, 10, {})
 		return true
@@ -117,7 +119,7 @@ uberTalent{
 	info = function(self, t)
 		return ([[You can wrap temporal threads around you, assuming the form of a telugoroth for 10 turns.
 		While in this form you gain pinning, bleeding, blindness and stun immunity, 30%% temporal resistance, your temporal damage bonus is set to your current highest damage bonus + 30%%, 50%% of the damage you deal becomes temporal, and you gain 20%% temporal resistance penetration.
-		You also are able to cast two anomalies: Anomaly Rearrange and Anomaly Temporal Storm.]])
+		You also are able to cast anomalies: Anomaly Rearrange, Anomaly Temporal Storm, Anomaly Flawed Design, Anomaly Gravity Pull and Anomaly Wormhole.]])
 		:format()
 	end,
 }
@@ -128,6 +130,7 @@ uberTalent{
 	require = { special={desc="Have summoned at least 100 creatures affected by this talent. The alchemist golem counts as 100.", fct=function(self)
 		return self:attr("summoned_times") and self:attr("summoned_times") >= 100
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local golem = self.alchemy_golem
 		if not golem then return end

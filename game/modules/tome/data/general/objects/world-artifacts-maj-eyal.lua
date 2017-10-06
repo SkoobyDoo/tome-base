@@ -247,7 +247,7 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 5,
 	combat = {
 		range = 10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 		apr = 12,
 	},
 	wielder = {
@@ -280,7 +280,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 2,
 	combat = {
 		range = 7,
-		physspeed = 0.8,
 	},
 	wielder = {
 		disease_immune = 0.5,
@@ -458,12 +457,12 @@ newEntity{ base = "BASE_SLING",
 	material_level = 3,
 	combat = {
 		range = 10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 	},
 	wielder = {
 		inc_stats = { [Stats.STAT_DEX] = 4, [Stats.STAT_CUN] = 3,  },
 		inc_damage={ [DamageType.PHYSICAL] = 15 },
-		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_EYE_SHOT]=2},
+		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_SCATTER_SHOT]=2},
 	},
 }
 
@@ -707,6 +706,11 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'BLIGHT',
+		alt_damage_type = 'DRAINLIFE',
+		particle = 'slime',
+	},
 	carrier = {
 		lite = 2,
 	},
@@ -716,6 +720,7 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		confusion_immune = 0.3,
 		fear_immune = 0.3,
 		resists={[DamageType.MIND] = 30,},
+		sentient_telos = 1,
 	},
 	imbue_powers = {
 		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_DEX] = 5, [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 5, [Stats.STAT_CON] = 5, },
@@ -757,6 +762,28 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		end)
 		return {id=true, used=true}
 	end },
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","TELOS_TOP_HALF"} },
+	on_set_complete = function(self, who)
+		local DamageType = require "engine.DamageType"
+		self:specialSetAdd({"wielder","spell_cooldown_reduction"}, 0.1)
+		self:specialWearAdd({"wielder","melee_project"}, { [engine.DamageType.DRAINLIFE] = 50 } )
+		game.logSeen(game.player, "#CRIMSON#Telos's gem seems to flare and glows an unearthly colour.")
+	end,
+	on_set_broken = function(self, who)
+		game.logPlayer(game.player, "#CRIMSON#The unearthly glow fades away.")
+	end,
+	on_wear = function(self, who)
+		if who.is_alchemist_golem then
+			self.old_golem_name = who.name
+			who.name = "Telos Golem (reluctant follower of "..who.summoner.name..")"
+			game.log("#ROYAL_BLUE#The golem decides to change it's name to #{bold}#%s#{normal}#.", who.name)
+		end
+	end,
+	on_takeoff = function(self, who)
+		if who.is_alchemist_golem then
+			who.name = self.old_golem_name or "I feel lost!"
+		end
+	end,
 }
 
 -- The staff that goes with the crystal above, it will not be generated randomly it is created by the crystal

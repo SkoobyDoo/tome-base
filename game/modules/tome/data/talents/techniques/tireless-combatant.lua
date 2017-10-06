@@ -19,7 +19,7 @@ newTalent {
 	short_name = "SKIRMISHER_BREATHING_ROOM",
 	name = "Breathing Room",
 	type = {"technique/tireless-combatant", 1},
-	require = techs_wil_req1,
+	require = techs_strdex_req1,
 	mode = "passive",
 	points = 5,
 	getRestoreRate = function(self, t)
@@ -81,15 +81,18 @@ newTalent {
 	cooldown = 10,
 	sustain_stamina = 0,
 	no_energy = true,
-	require = techs_wil_req2,
+	require = techs_strdex_req2,
 	tactical = { STAMINA = 2 },
 	random_ego = "utility",
 	activate = function(self, t)
-		-- Superloads Combat:combatFatigue.
-		local eff = {}
-		self:talentTemporaryValue(eff, "global_speed_add", -t.getSlow(self, t))
-		self:talentTemporaryValue(eff, "fatigue", -t.getReduction(self, t))
-		return eff
+		local ret = {}
+		self:talentTemporaryValue(ret, "global_speed_add", -t.getSlow(self, t))
+		self:talentTemporaryValue(ret, "fatigue", -t.getReduction(self, t))
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="pace_yourself_shieldwall"}, shader={type="rotatingshield", noup=2.0, time_factor=2500, appearTime=0.2}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="pace_yourself_shieldwall"}, shader={type="rotatingshield", noup=1.0, time_factor=2500, appearTime=0.2}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p) return true end,
 	getSlow = function(self, t)
@@ -110,7 +113,7 @@ newTalent {
 	short_name = "SKIRMISHER_DAUNTLESS_CHALLENGER",
 	name = "Dauntless Challenger",
 	type = {"technique/tireless-combatant", 3},
-	require = techs_wil_req3,
+	require = techs_strdex_req3,
 	mode = "passive",
 	points = 5,
 	getStaminaRate = function(self, t)
@@ -168,7 +171,7 @@ newTalent {
 	short_name = "SKIRMISHER_THE_ETERNAL_WARRIOR",
 	name = "The Eternal Warrior",
 	type = {"technique/tireless-combatant", 4},
-	require = techs_wil_req4,
+	require = techs_strdex_req4,
 	mode = "passive",
 	points = 5,
 	getResist = function(self, t)

@@ -125,7 +125,7 @@ newTalent{
 	require = techs_dex_req_high2,
 	points = 5,
 	random_ego = "attack",
-	cooldown = 8,
+	cooldown = 10,
 	stamina = 15,
 	requires_target = true,
 	tactical = { ATTACK = 2, ESCAPE = 1, DISABLE = { stun = 1 } },
@@ -148,6 +148,19 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 
+		-- Leap
+		local tg = {type="hit", range=t.getDist(self,t)}
+		local x, y  = self:getTarget(tg)
+		if not x or not y then return nil end
+		local _ _, x, y = self:canProject(tg, x, y)
+
+		if game.level.map(x, y, Map.ACTOR) then
+			x, y = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
+			if not x then return end
+		end
+
+		if game.level.map:checkAllEntities(x, y, "block_move") then return end
+
 		-- Modify shield combat to use dex.
 		local combat = table.clone(shield_combat, true)
 		if combat.dammod.str and combat.dammod.str > 0 then
@@ -167,19 +180,6 @@ newTalent{
 			end
 		end
 		
-		-- Leap
-		local tg = {type="hit", range=t.getDist(self,t)}
-		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
-		local _ _, x, y = self:canProject(tg, x, y)
-
-		if game.level.map(x, y, Map.ACTOR) then
-			x, y = util.findFreeGrid(x, y, 1, true, {[Map.ACTOR]=true})
-			if not x then return end
-		end
-
-		if game.level.map:checkAllEntities(x, y, "block_move") then return end
-
 		local ox, oy = self.x, self.y
 		self:move(x, y, true)
 		if config.settings.tome.smooth_move > 0 then
@@ -211,7 +211,7 @@ newTalent{
 	no_energy = "fake",
 	points = 5,
 	random_ego = "attack",
-	cooldown = 6,
+	cooldown = 8,
 	stamina = 18,
 	require = techs_dex_req_high3,
 	range = archery_range,
@@ -228,7 +228,7 @@ newTalent{
 			self.talents_cd[t.id] = math.max(cooldown - 1, 0)
 		end
 	end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.4, 2.6) end, --high damage, high opportunity cost
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.0, 2.2) end, --high damage, high opportunity cost
 	getDist = function(self, t) if self:getTalentLevel(t) >= 3 then return 2 else return 1 end end,
 	archery_onhit = function(self, t, target, x, y)
 		if not target or not target:canBe("knockback") then return end
@@ -289,9 +289,9 @@ newTalent{
 	no_energy = true,
 	tactical = { BUFF = 2 },
 	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent) end,
-	getAttackSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 5, 20))/100 end,
-	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 25, 60))/100 end,
-	getTurn = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 10, 20)) end,
+	getAttackSpeed = function(self, t) return math.floor(self:combatTalentLimit(t, 35, 10, 25))/100 end,
+	getMovementSpeed = function(self, t) return math.floor(self:combatTalentScale(t, 25, 50))/100 end,
+	getTurn = function(self, t) return math.floor(self:combatTalentLimit(t, 20, 4, 12)) end,
 	on_pre_use = function(self, t, silent)
 		if not archerPreUse(self, t, silent, "sling") then return false end
 		return true
@@ -316,9 +316,14 @@ newTalent{
 		end
 
 		local speed = t.getAttackSpeed(self, t)
-		return {
+		local ret = {
 			speed = self:addTemporaryValue("combat_physspeed", speed),
 		}
+		if core.shader.active() then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1.5, rotspeed=7, img="rapid_shot_rotating_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, wobblingType=0, appearTime=0.4, time_factor=600, noup=2.0}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1.5, rotspeed=7, img="rapid_shot_rotating_tentacles"}, shader={type="tentacles", backgroundLayersCount=-4, wobblingType=0, appearTime=0.4, time_factor=600, noup=1.0}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_physspeed", p.speed)
@@ -329,7 +334,8 @@ newTalent{
 		local move = t.getMovementSpeed(self,t)*100
 		local turn = t.getTurn(self,t)
 		return ([[Enter a fluid, mobile shooting stance that excels at close combat. Your ranged attack speed is increased by %d%% and each time you shoot you gain %d%% increased movement speed for 2 turns.
-Ranged attacks against targets will also grant you up to %d%% of a turn. This is 100%% effective against targets within 3 tiles, and decreases by 20%% for each tile beyond that (to 0%% at 8 tiles). This cannot occur more than once per turn.]]):
+Ranged attacks against targets will also grant you up to %d%% of a turn. This is 100%% effective against targets within 3 tiles, and decreases by 20%% for each tile beyond that (to 0%% at 8 tiles). This cannot occur more than once per turn.
+Requires a sling to use.]]):
 		format(atk, move, turn)
 	end,
 }

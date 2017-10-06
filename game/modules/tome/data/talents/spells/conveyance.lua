@@ -17,9 +17,12 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+-- ToDO: to convert to use targeting grid_params (prevent teleporting targets into vaults)
+
 -- find a spot to escape to via teleport (for NPCs)
--- cx, cy = center of teleport radius
--- ax, ay = anchor point
+-- cx, cy = center of teleport radius (starting location of teleport target)
+-- radius = error radius
+-- ax, ay = anchor point (location of target to move away from)
 -- want_range = desired range from anchor point
 local function escapeGrid(self, cx, cy, radius, ax, ay, want_range)
 	ax, ay = ax or cx, ay or cy
@@ -42,6 +45,16 @@ local function escapeGrid(self, cx, cy, radius, ax, ay, want_range)
 	if dist then return grid.x, grid.y, grid.dist end
 end
 
+local teleport_tactical = function(self, t, aitarget)
+	local tacs = { escape = 2}
+	if aitarget and self:getTalentLevel(t) >= 5 then
+		local ax, ay = self:aiSeeTargetPos(aitarget)
+		local dist = core.fov.distance(self.x, self.y, ax, ay)
+		tacs.closein = dist/math.max(1, t.getRadius(self, t), dist-t.getRange(self, t))/2
+	end
+	return tacs
+end
+
 newTalent{
 	name = "Phase Door",
 	type = {"spell/conveyance",1},
@@ -50,13 +63,7 @@ newTalent{
 	random_ego = "utility",
 	mana = function(self, t) return game.zone and game.zone.force_controlled_teleport and 1 or 10 end,
 	cooldown = function(self, t) return game.zone and game.zone.force_controlled_teleport and 3 or 8 end,
-	tactical = { ESCAPE = 2,
-		CLOSEIN = function(self, t, aitarget)
-			if aitarget and self:getTalentLevel(t) >= 5 then
-				local dist = core.fov.distance(self.x, self.y, aitarget.x, aitarget.y)
-				return dist/math.max(1, t.getRadius(self, t), dist-t.getRange(self, t))/2
-			end
-		end},
+	tactical = teleport_tactical,
 	getRange = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 15), 40, 4, 0, 13.4, 9.4) end, -- Limit to range 40
 	range = function(self, t) return self:getTalentLevel(t) >= 4 and 10 or 0 end, -- for targeting enemies
 	getRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 0, 6, 2)) end, -- Limit to radius >=0	
@@ -119,7 +126,7 @@ newTalent{
 			range = radius
 			-- Check LOS
 			if not self:hasLOS(x, y) and rng.percent(35 + (game.level.map.attrs(self.x, self.y, "control_teleport_fizzle") or 0)) then
-				game.logPlayer(self, "The targetted phase door fizzles and works randomly!")
+				game.logPlayer(self, "The targeted phase door fizzles and works randomly!")
 				x, y = self.x, self.y
 				range = t.getRange(self, t)
 			end
@@ -128,7 +135,7 @@ newTalent{
 		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
 		target:teleportRandom(x, y, range)
 		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
-		print("[phase door] final location of ", target.name, target.x, target.y)
+		print("[phase door] final location of ", target.name, target.x, target.y, "vs", x, y)
 		
 		if target ~= self then
 			if target:reactionToward(self) < 0 then target:setTarget(self) end -- Annoy them!
@@ -157,13 +164,7 @@ newTalent{
 	random_ego = "utility",
 	mana = 20,
 	cooldown = 30,
-	tactical = { ESCAPE = 3,
-		CLOSEIN = function(self, t, aitarget)
-			if aitarget and self:getTalentLevel(t) >= 5 then
-				local dist = core.fov.distance(self.x, self.y, aitarget.x, aitarget.y)
-				return dist/math.max(t.getRadius(self, t), dist-t.getRange(self, t))/2
-			end
-		end},
+	tactical = teleport_tactical,
 	getRange = function(self, t) return 100 + self:combatSpellpower(1) end,
 	range = function(self, t) return self:getTalentLevel(t) >= 4 and 10 or 0 end, -- for targeting enemies
 	getRadius = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 19, 15)) end, -- Limit > 0

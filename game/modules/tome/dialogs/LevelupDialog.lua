@@ -97,6 +97,17 @@ function _M:init(actor, on_finish, on_birth)
 	self:setupUI()
 
 	self.key:addCommands{
+		[{"_p","ctrl"}] = function() if config.settings.cheat then
+			local tid = self.last_drawn_talent
+			if tid then
+				-- package.loaded["mod.dialogs.debug.PlotTalent"] = nil
+				game:registerDialog(require("mod.dialogs.debug.PlotTalent").new(self.actor, self.actor:getTalentFromId(tid)))
+			end
+		end end,
+		[{"_l","ctrl"}] = function() if profile.auth and profile.hash_valid then
+			local tid = self.last_drawn_talent
+			if tid then profile.chat.uc_ext:sendTalentLink(tid) end
+		end end,
 		__TEXTINPUT = function(c)
 			if self.focus_ui.ui.last_mz then
 				if c == "+" and self.focus_ui and self.focus_ui.ui.onUse then
@@ -854,7 +865,7 @@ function _M:getStatDesc(item)
 		local multi_life = 4 + (self.actor.inc_resource_multi.life or 0)
 		text:add("Max life: ", color, ("%0.2f"):format(diff * multi_life), dc, true)
 		text:add("Physical save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		text:add("Healing mod: ", color, ("%0.1f%%"):format(((self.actor:getCon()/10)^.5 - (self.actor_dup:getCon()/10)^.5)*.25*100), dc, true)
+		text:add("Healing mod: ", color, ("%0.1f%%"):format((self.actor:combatStatLimit("con", 1.5, 0, 0.5) - self.actor_dup:combatStatLimit("con", 1.5, 0, 0.5))*100), dc, true)
 	elseif stat_id == self.actor.STAT_WIL then
 		if self.actor:knowTalent(self.actor.T_MANA_POOL) then
 			local multi_mana = 5 + (self.actor.inc_resource_multi.mana or 0)
@@ -904,6 +915,7 @@ end
 
 
 function _M:getTalentDesc(item)
+	self.last_drawn_talent = item.talent
 	local text = tstring{}
 
  	text:add({"color", "GOLD"}, {"font", "bold"}, util.getval(item.rawname, item), {"color", "LAST"}, {"font", "normal"})

@@ -333,16 +333,27 @@ Increases chance to shrug off magically-induced effects.  Also reduces duration 
 TOOLTIP_MENTAL_SAVE = [[#GOLD#Mental saving throw#LAST#
 Increases chance to shrug off mentally-induced effects.  Also reduces duration of detrimental mental effects by up to 5% per point, depending on the power of the opponent's effect.
 ]]
-
+-------------------------------------------------------------
+-- Physical
+-------------------------------------------------------------
+TOOLTIP_PHYSICAL_POWER = [[#GOLD#Physical Power#LAST#
+Your physical power represents how overwhelming your physcial abilities are. It is usually improved by Strength, but may be modified by your weapon.  It is opposed by your opponent's physical save.
+In addition, when your physical attacks inflict temporary detrimental effects, every point your opponent's save exceeds your physical power will reduce the duration of the effect by 5%.
+]]
+TOOLTIP_PHYSICAL_CRIT = [[#GOLD#Physical critical chance#LAST#
+Each time you deal damage with a physical ability you may have a chance to perform a critical hit that deals extra damage.
+Some talents allow you to increase this percentage, and it may be modified by your weapon.
+It is improved by Cunning.
+]]
 -------------------------------------------------------------
 -- Spells
 -------------------------------------------------------------
 TOOLTIP_SPELL_POWER = [[#GOLD#Spellpower#LAST#
-Your spellpower represents how powerful your magical spells are.
-In addition, when your spells inflict temporary detrimental effects, every point your opponent's relevant saving throw exceeds your spellpower will reduce the duration of the effect by 5%.
+Your spellpower represents how powerful your magical spells are.  It is opposed by your opponent's spell save.
+In addition, when your spells inflict temporary detrimental effects, every point your opponent's save exceeds your spellpower will reduce the duration of the effect by 5%.
 ]]
 TOOLTIP_SPELL_CRIT = [[#GOLD#Spell critical chance#LAST#
-Each time you deal damage with a spell you may have a chance to make a critical hit that deals extra damage.
+Each time you deal damage with a spell you may have a chance to perform a critical hit that deals extra damage.
 Some talents allow you to increase this percentage.
 It is improved by Cunning.
 ]]
@@ -358,11 +369,11 @@ The lower it is, the more often you'll be able to use your spell talents and run
 -- Mental
 -------------------------------------------------------------
 TOOLTIP_MINDPOWER = [[#GOLD#Mindpower#LAST#
-Your mindpower represents how powerful your mental abilities are.
-In addition, when your mental abilities inflict temporary detrimental effects, every point your opponent's relevant saving throw exceeds your mindpower will reduce the duration of the effect by 5%.
+Your mindpower represents how powerful your mental abilities are.  It is opposed by your opponent's mental save.
+In addition, when your mental abilities inflict temporary detrimental effects, every point your opponent's save exceeds your mindpower will reduce the duration of the effect by 5%.
 ]]
 TOOLTIP_MIND_CRIT = [[#GOLD#Mental critical chance#LAST#
-Each time you deal damage with a mental attack you may have a chance to make a critical hit that deals extra damage.
+Each time you deal damage with a mental attack you may have a chance to perform a critical hit that deals extra damage.
 Some talents allow you to increase this percentage.
 It is improved by Cunning.
 ]]
@@ -422,16 +433,28 @@ TOOLTIP_STATUS_IMMUNE = [[#GOLD#Status resistance#LAST#
 Most bad status effects can be avoided by having an appropriate immunity, represented by a percent chance to completely avoid the effect in question.  This chance is applied in addition to any saving throws or other checks that may apply.
 ]]
 TOOLTIP_SPECIFIC_IMMUNE = [[#GOLD#Effect resistance chance#LAST#
-This represents your chance to completely avoid this specific effect.
+This represents your chance to completely resist this specific effect.
 ]]
 TOOLTIP_STUN_IMMUNE = [[#GOLD#Stun immunity chance#LAST#
 This represents your chance to completely avoid being stunned, dazed, or frozen.
 ]]
+TOOLTIP_ANOMALY_IMMUNE = [[#GOLD#Anomaly immunity chance#LAST#
+This represents your chance to avoid most chronomatic anomaly effects.
+]]
 TOOLTIP_INSTAKILL_IMMUNE = [[#GOLD#Instant death resistance#LAST#
 This represents your chance to avoid being instantly killed, severely incapacitated, or controlled by certain abilities.
 ]]
-TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative effect immunity chance#LAST#
-This represents your chance to completely avoid ANY bad effects applied to you from others.
+TOOLTIP_NEGATIVE_STATUS_IMMUNE = [[#GOLD#Negative status effect immunity chance#LAST#
+This represents your chance to completely avoid ANY persistent bad effects applied to you from others.
+]]
+TOOLTIP_NEGATIVE_MENTAL_STATUS_IMMUNE = [[#GOLD#Negative mental effect immunity chance#LAST#
+This represents your chance to completely avoid ANY persistent bad mental effects applied to you from others.
+]]
+TOOLTIP_NEGATIVE_PHYSICAL_STATUS_IMMUNE = [[#GOLD#Negative physical effect immunity chance#LAST#
+This represents your chance to completely avoid ANY persistent bad physical effects applied to you from others.
+]]
+TOOLTIP_NEGATIVE_SPELL_STATUS_IMMUNE = [[#GOLD#Negative magical effect immunity chance#LAST#
+This represents your chance to completely avoid ANY persistent bad magical effects applied to you from others.
 ]]
 TOOLTIP_ON_HIT_DAMAGE = [[#GOLD#Damage when hit#LAST#
 Each time a creature hits you with a melee attack, it will suffer damage or other effects.

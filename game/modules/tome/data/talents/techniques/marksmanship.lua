@@ -71,8 +71,8 @@ newTalent{
 	points = 5,
 	require = { stat = { dex=function(level) return 12 + level * 6 end }, },
 	mode = "passive",
-	getDamage = function(self, t) return self:getTalentLevel(t) * 10 end,
-	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 2 end,
+	getDamage = function(self, t) return 0 end,
+	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 1.5 end,
 	getReload = function(self, t)
 		return math.floor(self:combatTalentScale(t, 0, 2.7, "log"))
 	end,
@@ -106,7 +106,7 @@ newTalent{
 	info = function(self, t)
 		local bleed = t.getBleed(self,t)*100
 		local sta = t.getStamina(self,t)
-		return ([[You take advantage of unwary foes, giving Steady Shot and Shoot an additional 50%% chance to mark targets and bleeding them for %d%% additional damage over 5 turns if the target is at or above 90%% life.
+		return ([[You take advantage of unwary foes (those at or above 90%% life). Against these targets, Shoot, Steady Shot and Headshot bleed targets for %d%% additional damage over 5 turns and have a 50%% increased chance to mark (if capable of marking).
 In addition, your Steady Shot, Shoot and Headshot now restore %0.1f stamina on hit.]])
 		:format(bleed, sta)
 	end,
@@ -122,7 +122,7 @@ newTalent{
 	require = techs_dex_req3,
 	range = archery_range,
 	radius = 2,
-	tactical = { ATTACKAREA = { weapon = 2 }, DISABLE = { 3 } },
+	tactical = { ATTACKAREA = { weapon = 2 }, DISABLE = { blind = 1 } },
 	requires_target = true,
 	target = function(self, t)
 		local weapon, ammo = self:hasArcheryWeapon()
@@ -138,7 +138,7 @@ newTalent{
 		if not x or not y then return nil end
 
 		local _ _, x, y = self:canProject(tg, x, y)
-		self:project({type="ball", x=x, y=y, radius=3, selffire=false}, x, y, DamageType.FLARE, t.getDuration(self, t), {type="light"})
+		self:project({type="ball", x=x, y=y, radius=3, selffire=false}, x, y, DamageType.FLARE, t.getBlindDuration(self, t), {type="light"})
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
 			x, y, t.getDuration(self,t),
@@ -166,22 +166,24 @@ newTalent{
 	no_energy = true,
 	points = 5,
 	cooldown = 25,
-	stamina = 50,
+	stamina = 30,
 	require = techs_dex_req4,
 	random_ego = "attack",
 	tactical = { BUFF = 3 },
-	getSpeed = function(self, t) return self:combatTalentLimit(t, 60, 15, 45)/100 end,
+	getSpeed = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 7)) end,
+	getMarkChance = function(self,t) return self:combatTalentLimit(t, 100, 10, 50) end,
 	action = function(self, t)
 		local dur = t.getDuration(self,t)
 		local speed = t.getSpeed(self,t)
-		self:setEffect(self.EFF_TRUESHOT, dur, {src=self, speed=speed})
+		self:setEffect(self.EFF_TRUESHOT, dur, {src=self, power=speed})
 		return true
 	end,
 	info = function(self, t)
 		local dur = t.getDuration(self,t)
 		local speed = t.getSpeed(self,t)*100
-		return ([[Enter a state of heightened focus for %d turns. While in this state your ranged attack speed is increased by %d%%, your shots do not consume ammo, and all shots capable of marking have their chance to mark doubled.]]):
-		format(dur, speed)
+		local mark = t.getMarkChance(self,t)
+		return ([[Enter a state of heightened focus for %d turns. While in this state your ranged attack speed is increased by %d%%, your shots do not consume ammo, and all shots capable of marking have their chance to mark increased by %d%%.]]):
+		format(dur, speed, mark)
 	end,
 }

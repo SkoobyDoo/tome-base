@@ -26,13 +26,14 @@ newTalent{
 	cooldown = 20,
 	negative = 10,
 	no_energy = true,
-	tactical = { DEFEND = 2, ATTACKAREA = {DARKNESS = 1} },
+	tactical = { DEFEND = 1, ATTACKAREA = {DARKNESS = 1} },
+	tactical_imp = { SELF = {DEFEND = 1}, ATTACKAREA = {DARKNESS = 1} }, -- debugging transitional
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 4, 30) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+	target = function(self, t) -- for AI only
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false}
 	end,
 	action = function(self, t)
 		-- Add a lasting map effect
@@ -42,7 +43,7 @@ newTalent{
 			self:getTalentRadius(t),
 			5, nil,
 			MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, oversize=0, img="darkness_celestial_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/darkness_effect.png"},
-			nil, self:spellFriendlyFire(true)
+			nil, true --self:spellFriendlyFire(true)
 		)
 		game:playSoundNear(self, "talents/arcane")
 		return true
@@ -65,13 +66,14 @@ newTalent{
 	cooldown = 20,
 	positive = 10,
 	no_energy = true,
-	tactical = { DEFEND = 2, ATTACKAREA = {FIRE = 0.5, LIGHT = 0.5} },
+	tactical = { ATTACKAREA = {FIRE = 0.5, LIGHT = 0.5} },
+	tactical_imp = { SELF = {POSITIVE = 0.5}, ATTACKAREA = {FIRE = 0.5, LIGHT = 0.5} }, -- debugging transitional
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 2, 15) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+	target = function(self, t) -- for AI only
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false}
 	end,
 	action = function(self, t)
 		local radius = self:getTalentRadius(t)
@@ -84,7 +86,7 @@ newTalent{
 			radius,
 			5, nil,
 			MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, img="sun_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/sunlight_effect.png"},
-			nil, self:spellFriendlyFire(true)
+			nil, true --self:spellFriendlyFire(true)
 		)
 		game:playSoundNear(self, "talents/arcane")
 		return true
@@ -115,7 +117,7 @@ newTalent{
 			for tid, lev in pairs(aitarget.talents) do
 				t = aitarget.talents_def[tid]
 				if t.tactical and type(t.tactical) == "table" and t.tactical.disable and type(t.tactical.disable) == "table" and t.tactical.disable.silence then
-					num = num + 1
+					num = num + 1 break
 				end
 			end
 			return math.min(num*2, 2)
@@ -124,10 +126,28 @@ newTalent{
 			if aitarget:attr("has_arcane_knowledge") and self.fov.actors[aitarget] and self.fov.actors[aitarget].sqdist < t.radius(self, t)^2 then return {silence = 2} end
 		end
 	},
+	tactical_imp = { SELF = {DEFEND = function(self, t) -- can our target silence us?
+			local aitarget = self.ai_target.actor
+			if aitarget then
+				local num, t = 0
+				for tid, lev in pairs(aitarget.talents) do
+					t = aitarget.talents_def[tid]
+					if t.tactical and type(t.tactical) == "table" and t.tactical.disable and type(t.tactical.disable) == "table" and t.tactical.disable.silence then
+						num = num + 1 break
+					end
+				end
+				return math.min(num*2, 2)
+			end
+			return 0
+		end},
+		DISABLE = {silence = function(self, t, target)
+				if target:attr("has_arcane_knowledge") then return 2 end
+			end}
+	},
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
-	target = function(self, t)
+	target = function(self, t) -- for AI only
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire = false}
 	end,
 	action = function(self, t)
@@ -138,7 +158,8 @@ newTalent{
 			self:getTalentRadius(t),
 			5, nil,
 			MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, img="sun_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/sunlight_effect.png"},
-			nil, self:spellFriendlyFire(true)
+			nil, 
+			true --self:spellFriendlyFire(true)
 		)
 		game:playSoundNear(self, "talents/arcane")
 		return true
@@ -160,12 +181,13 @@ newTalent{
 	positive = 10,
 	negative = 10,
 	no_energy = true,
-	tactical = { DEFEND = 2, ESCAPE = 1, ATTACKAREA = {LIGHT = 0.5, DARKNESS = 0.5} },
+	tactical = { DEFEND = 0.5, ESCAPE = 1, ATTACKAREA = {LIGHT = 0.5, DARKNESS = 0.5} },
+	tactical_imp = { SELF = {DEFEND = 0.5}, ESCAPE = {knockback = 1}, ATTACKAREA = {LIGHT = 0.5, DARKNESS = 0.5} }, -- debugging transitional
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t)}
+	target = function(self, t) -- for AI only
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false}
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 2, 20)  end,
 	action = function(self, t)
@@ -176,7 +198,7 @@ newTalent{
 			self:getTalentRadius(t),
 			5, nil,
 			MapEffect.new{zdepth=6, overlay_particle={zdepth=6, only_one=true, type="circle", args={appear=8, oversize=0, img="moon_circle", radius=self:getTalentRadius(t)}}, color_br=255, color_bg=255, color_bb=255, effect_shader="shader_images/moonlight_effect.png"},
-			nil, self:spellFriendlyFire(true)
+			nil, true --self:spellFriendlyFire(true)
 		)
 		game:playSoundNear(self, "talents/arcane")
 		return true
@@ -185,7 +207,7 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local duration = t.getDuration(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[Creates a circle of radius %d at your feet; the circle slows incoming projectiles by %d%%, and attempts to push all creatures other then yourself out of its radius, inflicting %0.2f light damage and %0.2f darkness damage per turn as it does so.  The circle lasts %d turns.
+		return ([[Creates a circle of radius %d at your feet; the circle slows incoming projectiles by %d%%, and attempts to push all creatures other than yourself out of its radius, inflicting %0.2f light damage and %0.2f darkness damage per turn as it does so.  The circle lasts %d turns.
 		The effects will increase with your Spellpower.]]):
 		format(radius, damage*5, (damDesc (self, DamageType.LIGHT, damage)), (damDesc (self, DamageType.DARKNESS, damage)), duration)
 	end,

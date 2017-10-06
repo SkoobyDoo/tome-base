@@ -67,9 +67,14 @@ end
 --		add_speed = add to combat_physspeed for this attack
 -- returns a table of target data containing a list of target spots {x=tx, y=ty, ammo=a.combat}
 --		entries may include main = {}, off = {}, psi = {}
-function _M:archeryAcquireTargets(tg, params)
+function _M:archeryAcquireTargets(tg, params, force)
 	params = params or {}
 	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(params.type)
+
+	if force and force.mainhand then weapon = force.mainhand end
+	if force and force.offhand then offweapon = force.offhand end
+	if force and force.ammo then ammo = force.ammo end
+
 	-- Awesome, we can shoot from our offhand!
 	if not weapon and offweapon then weapon, offweapon = offweapon, nil end -- treat offweapon as primary
 	if not weapon and not pf_weapon then
@@ -365,7 +370,7 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 			print("[ATTACK] after inc by type (ammo)", dam)
 		end
 
-		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, tg.archery.crit_power or 0) end
+		if deflect == 0 then dam, crit = self:physicalCrit(dam, ammo, target, atk, def, tg.archery.crit_chance or 0, (tg.archery.crit_power or 0) + (weapon.crit_power or 0)/100) end
 		print("[ATTACK ARCHERY] after crit", dam)
 
 		dam = dam * mult * (weapon.dam_mult or 1)
@@ -437,17 +442,17 @@ local function archery_projectile(tx, ty, tg, self, tmp)
 		if not tg.no_archery_particle then game.level.map:particleEmitter(target.x, target.y, 1, "archery") end
 		hitted = true
 
-		if talent.archery_onhit then talent.archery_onhit(self, talent, target, target.x, target.y) end
+		if talent.archery_onhit then talent.archery_onhit(self, talent, target, target.x, target.y, tg) end
 
 		-- add damage conversion back in so the total damage still gets passed
 		dam = dam + ammo_conversion + weapon_conversion
-		target:fireTalentCheck("callbackOnArcheryHit", self, dam)
+		target:fireTalentCheck("callbackOnArcheryHit", self, dam, tg)
 	else
 		self:logCombat(target, "#Source# misses #target#.")
 
 		if talent.archery_onmiss then talent.archery_onmiss(self, talent, target, target.x, target.y) end
 
-		target:fireTalentCheck("callbackOnArcheryMiss", self)
+		target:fireTalentCheck("callbackOnArcheryMiss", self, tg)
 	end
 
 	-- Ranged project
@@ -660,7 +665,7 @@ end
 _M.archery_projectile = archery_projectile
 
 -- launch projectiles to each spot in the targets list (from archeryAcquireTargets)
-function _M:archeryShoot(targets, talent, tg, params)
+function _M:archeryShoot(targets, talent, tg, params, force)
 	params = params or {}
 	-- some extra safety checks
 	if self:attr("disarmed") then
@@ -668,6 +673,11 @@ function _M:archeryShoot(targets, talent, tg, params)
 		return nil
 	end
 	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(params.type)
+
+	if force and force.mainhand then weapon = force.mainhand end
+	if force and force.offhand then offweapon = force.offhand end
+	if force and force.ammo then ammo = force.ammo end
+
 	if not weapon and not pf_weapon then
 		game.logPlayer(self, "You must wield a ranged weapon (%s)!", ammo)
 		return nil

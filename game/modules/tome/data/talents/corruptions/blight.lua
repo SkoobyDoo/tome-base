@@ -31,6 +31,9 @@ newTalent{
 		local ret = {
 			per = self:addTemporaryValue("combat_critical_power", self:combatTalentSpellDamage(t, 20, 60)),
 		}
+		if core.shader.active() then
+			local h1x, h1y = self:attachementSpot("head", true) if h1x then self:talentParticles(ret, {type="circle", args={toback=true, shader=true, oversize=0.7, a=225, appear=8, speed=0, img="dark_ritual_aura", base_rot=0, radius=0, x=h1x, y=h1y}}) end
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -163,7 +166,12 @@ newTalent{
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 12, 130) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
-	getPower = function(self, t) return self:combatTalentScale(t, 15, 40) end,
+	getEffects = function(self, t)
+		local power = self:combatTalentScale(t, 15, 40)
+		local heal_factor = 150*power/(power + 50) -- Limit < 150%
+		local fail = 50*power/(power + 26) -- Limit < 50% chance
+		return power, heal_factor, fail
+	end,
 	getPoisonPenetration = function(self, t) return self:combatTalentLimit(t, 100, 15, 75) end,
 	getPoison = function(self,t) 
 		if self:getTalentLevel(t) >= 6 then return 4
@@ -176,15 +184,18 @@ newTalent{
 		local radius = self:getTalentRadius(t)
 		local dam = self:spellCrit(t.getDamage(self,t))
 		local poison = t.getPoison(self,t)
-		local power = t.getPower(self,t)
+		local power, heal_factor, fail = t.getEffects(self, t)
 		local actor = self
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
 			self.x, self.y, duration,
-			DamageType.BLIGHT_POISON, {dam=dam, power=power, penetration=t.getPoisonPenetration(self,t), poison=t.getPoison(self,t), apply_power=actor:combatSpellpower()},
+			DamageType.BLIGHT_POISON, {dam=dam, power=power, heal_factor=heal_factor, fail=fail, penetration=t.getPoisonPenetration(self,t), poison=t.getPoison(self,t), apply_power=actor:combatSpellpower()},
 			radius,
 			5, nil,
-			MapEffect.new{color_br=20, color_bg=220, color_bb=70, effect_shader="shader_images/poison_effect.png"},
+			MapEffect.new{
+				color_br=20, color_bg=220, color_bb=70, effect_shader="shader_images/poison_effect.png",
+				overlay_particle = { zdepth=6, only_one=true, type="perfect_strike", args={img="spinningwinds_poison_storm", radius=radius}},
+			},
 			function(e)
 				e.x = e.src.x
 				e.y = e.src.y
@@ -196,13 +207,15 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[A furious storm of blighted poison rages around the caster in a radius of %d for %d turns.  Each creature hit by the storm takes %0.2f blight damage and is poisoned for %0.2f blight damage over 4 turns. Blight poison is especially virulent, and has a %d%% chance to bypass poison immunity.
-		At talent level 2 you have a chance to inflict Insidious Blight, reducing healing factor by %d%%.
-		At talent level 4 you have a chance to inflict Numbing Blight, reducing damage dealt by %d%%.
-		At talent level 6 you have a chance to inflict Crippling Blight, giving a %d%% chance for talent failure.
-		The chance is evenly split between possible effects.
+		local dam = damDesc(self, DamageType.BLIGHT, t.getDamage(self,t))
+		local power, heal_factor, fail = t.getEffects(self, t)
+		return ([[A furious storm of blighted poison rages around the caster in a radius of %d for %d turns.  Each creature hit by the storm takes %0.2f blight damage and is poisoned for %0.2f blight damage over 4 turns. The blight poison is especially virulent, and has a %d%% chance to ignore poison immunity.
+		At talent level 2 you have a chance to inflict Insidious Blight, which reduces healing by %d%%.
+		At talent level 4 you have a chance to inflict Numbing Blight, which reduces all damage dealt by %d%%.
+		At talent level 6 you have a chance to inflict Crippling Blight, which causes talents to have a %d%% chance of failure.
+		Each possible effect is equally likely.
 		The poison damage dealt is capable of a critical strike.
 		The damage will increase with your Spellpower.]]):
-		format(self:getTalentRadius(t), t.getDuration(self, t), damDesc(self, DamageType.BLIGHT, t.getDamage(self,t)/4), damDesc(self, DamageType.BLIGHT, t.getDamage(self,t)), t.getPoisonPenetration(self,t), t.getPower(self,t)*1.5, t.getPower(self,t), t.getPower(self,t))
+		format(self:getTalentRadius(t), t.getDuration(self, t), dam/4, dam, t.getPoisonPenetration(self,t), heal_factor, power, fail)
 	end,
 }

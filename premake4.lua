@@ -83,6 +83,7 @@ configuration "Debug"
 	targetdir "bin/Debug"
 	if _OPTIONS.luaassert then defines {"LUA_USE_APICHECK"} end
 	if _OPTIONS.pedantic then buildoptions { "-Wall" } end
+	defines {"TE4_LUA_ALLOW_GENERIC_IO"}
 
 configuration "Release"
 	defines { "NDEBUG=1" }

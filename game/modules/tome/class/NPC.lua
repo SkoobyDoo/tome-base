@@ -18,14 +18,14 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local ActorAI = require "engine.interface.ActorAI"
+local ActorAI = require "mod.class.interface.ActorAI"
 local Faction = require "engine.Faction"
 local Emote = require("engine.Emote")
 local Chat = require "engine.Chat"
 local Particles = require "engine.Particles"
 require "mod.class.Actor"
 
-module(..., package.seeall, class.inherit(mod.class.Actor, engine.interface.ActorAI))
+module(..., package.seeall, class.inherit(mod.class.Actor, mod.class.interface.ActorAI))
 
 function _M:init(t, no_default)
 	mod.class.Actor.init(self, t, no_default)
@@ -62,7 +62,9 @@ function _M:actBase()
 	return mod.class.Actor.actBase(self)
 end
 
+-- Entry point for NPC's to act, invoking the AI, called by engine.GameEnergyBased:tickLevel
 function _M:act()
+	if config.settings.log_detail_ai > 2 then print("[NPC:act] turn", game.turn, "pre act ENERGY for", self.uid, self.name) table.print(self.energy, "\t_energy_") end
 	while self:enoughEnergy() and not self.dead do
 		-- Do basic actor stuff
 		if not mod.class.Actor.act(self) then return end
@@ -77,13 +79,19 @@ function _M:act()
 		if self.emote_random and self.x and self.y and game.level.map.seens(self.x, self.y) and rng.range(0, 999) < self.emote_random.chance * 10 then
 			local e = util.getval(rng.table(self.emote_random))
 			if e then
-				local dur = util.bound(#e, 30, 90)
+				local dur = util.bound(#e, 45, 90)
 				self:doEmote(e, dur)
 			end
 		end
 
-		-- If AI did nothing, use energy anyway
-		if not self.energy.used then self:useEnergy() end
+		-- If AI did nothing, perform resting actions and then use energy anyway
+		if not self.energy.used then
+			local err, mrr = self:attr("equilibrium_regen_on_rest"), self:attr("mana_regen_on_rest")
+			if err then self:incEquilibrium(err) end
+			if mrr then self:incMana(mrr) end
+			self:waitTurn() -- This triggers "callbackOnWait" effects
+		 end
+		if config.settings.log_detail_ai > 2 then print("[NPC:act] turn", game.turn, "post act ENERGY for", self.uid, self.name) table.print(self.energy, "\t_energy_") end
 		if old_energy == self.energy.value then break end -- Prevent infinite loops
 	end
 end
@@ -219,24 +227,27 @@ function _M:lineFOV(tx, ty, extra_block, block, sx, sy)
 	return core.fov.line(sx, sy, tx, ty, block)
 end
 
---- Give target to others
+--- Gather and share information about enemies from others
+--	applied each turn to every actor in LOS by self:computeFOV (or core.fov.calc_default_fov)
+-- @param who = actor acting (updating its FOV info), calling self:seen_by(who)
+-- @see ActorFOV:computeFOV, ActorAI:aiSeeTargetPos, NPC:doAI
 function _M:seen_by(who)
 	if self:hasEffect(self.EFF_VAULTED) and who and game.party:hasMember(who) then self:removeEffect(self.EFF_VAULTED, true, true) end
 
 	-- Check if we can pass target
 	if self.dont_pass_target then return end -- This means that ghosts can alert other NPC's but not vice versa ;)
-	if not who.ai_target then return end
-	if not who.ai_target.actor then return end
-	if not who.ai_target.actor.x then return end
-	-- Only receive targets from allies
-	if self:reactionToward(who) <= 0 then return end
+	local who_target = who.ai_target and who.ai_target.actor
+	if not (who_target and who_target.x) then return end
+	-- Only receive (usually) hostile targets from allies
+	if self:reactionToward(who) <= 0 or not who.ai_state._pass_friendly_target and who:reactionToward(who_target) > 0 then return end
+	
 	-- Check if we can actually see the ally (range and obstacles)
 	if not who.x or not self:hasLOS(who.x, who.y) then return end
 	-- Check if it's actually a being of cold machinery and not of blood and flesh
 	if not who.aiSeeTargetPos then return end
 	if self.ai_target.actor then
 		-- Pass last seen coordinates
-		if self.ai_target.actor == who.ai_target.actor then
+		if self.ai_target.actor == who_target then
 			-- Adding some type-safety checks, but this isn't fixing the source of the errors
 			local last_seen = {turn=0}
 			if self.ai_state.target_last_seen and type(self.ai_state.target_last_seen) == "table" then
@@ -254,11 +265,11 @@ function _M:seen_by(who)
 	end
 	
 	-- Only trust the ally if they can actually see the target
-	if not who:canSee(who.ai_target.actor) then return end
+	if not who:canSee(who_target) then return end
 	
 	if who.ai_state and who.ai_state.target_last_seen and type(who.ai_state.target_last_seen) == "table" then
-		-- Don't believe allies if they think the target is too far (away based on distance to ally plus ally to hostile estimate (1.3 * sight range, usually))
-		local tx, ty = who:aiSeeTargetPos(who.ai_target.actor)
+		-- Don't believe allies if they think the target is too far away (based on distance to ally plus ally to hostile estimate (1.3 * sight range, usually))
+		local tx, ty = who:aiSeeTargetPos(who_target)
 		local distallyhostile = core.fov.distance(who.x, who.y, tx, ty) or 100
 		local range_factor = 1.2 + (tonumber(game.difficulty) or 1)/20 -- NPC's pass targets more freely at higher difficulties
 		if distallyhostile + core.fov.distance(self.x, self.y, who.x, who.y) > math.min(10, math.max(self.sight, self.infravision or 0, self.heightened_senses or 0, self.sense_radius or 0))*range_factor then return end
@@ -267,8 +278,8 @@ function _M:seen_by(who)
 		if (game.turn - (who.ai_state.target_last_seen.turn or game.turn)) / (game.energy_to_act / game.energy_per_tick) > 10 then return end 
 	end
 
-	self:setTarget(who.ai_target.actor, who.ai_state.target_last_seen)
-	print("[TARGET] Passing target", self.name, "from", who.name, "to", who.ai_target.actor.name)
+	print("[NPC:seen_by] Passing target", who_target.name, "from", who.uid, who.name, "to", self.uid, self.name)
+	self:setTarget(who_target, who.ai_state.target_last_seen)
 end
 
 --- Check if we are angered
@@ -340,7 +351,7 @@ function _M:onTakeHit(value, src, death_note)
 		if src then
 			if src.targetable and not self.ai_target.actor then self:setTarget(src) end
 			-- Get angry if hurt by a friend
-			if src.faction and self:reactionToward(src) >= 0 then
+			if src.faction and self:reactionToward(src) >= 0 and self.fov then
 				self:checkAngered(src, false, -50)
 
 				-- Share reaction with allies
@@ -434,17 +445,18 @@ function _M:tooltip(x, y, seen_by)
 	return str
 end
 
+--- Get the current target
+-- @param typ <optional> targeting parameters
+-- @return x coordinate to target
+-- @return y coordinate to target
+-- @return target actor @ x, y
+--	returns the result of typ.talent.onAIGetTarget(self, typ.talent) (if defined)
 function _M:getTarget(typ)
 	-- Free ourselves
-	if self:attr("encased_in_ice") then
-		return self.x, self.y, self
-	-- Heal/buff/... ourselves
-	elseif type(typ) == "table" and typ.first_target == "friend" and typ.default_target == self then
-		return self.x, self.y, self
-	-- Hit our foes
-	else
-		return ActorAI.getTarget(self, typ)
-	end
+	if self:attr("encased_in_ice") then	return self.x, self.y, self end
+	
+	-- get our ai_target according to the targeting parameters (possibly talent-specific)
+	return ActorAI.getTarget(self, typ)
 end
 
 --- Make emotes appear in the log too
@@ -458,116 +470,63 @@ function _M:doEmote(text, dur, color)
 	self:setEmote(Emote.new(text, dur, color))
 end
 
---- Call when added to a level
--- Used to make escorts, adjust to game difficulty settings, and such
+--- Called when added to a level
+-- Used to make escorts, adjust to game difficulty settings, etc.
+-- Triggered after the entity is resolved
 function _M:addedToLevel(level, x, y)
 	if not self:attr("difficulty_boosted") and not game.party:hasMember(self) then
-		-- make adjustments for game difficulty and equip some items
+		-- make adjustments for game difficulty to talent levels, max life, add classes to bosses
+		local talent_mult, life_mult, nb_classes = 1, 1, 0
 		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
-			-- Increase talent level
-			for tid, lev in pairs(self.talents) do
-				self:learnTalent(tid, true, math.floor(lev / 3))
-			end
-			self:attr("difficulty_boosted", 1)
+			talent_mult = 1.3
+			life_mult = 1.5
 		elseif game.difficulty == game.DIFFICULTY_INSANE then
-			-- Increase talent level
-			for tid, lev in pairs(self.talents) do
-				self:learnTalent(tid, true, math.floor(lev / 2))
-			end
-			-- Give unrand bosses extra classes
-			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
-				local data = {}
-				if self.rank == 3.5 then data = {nb_classes=1}
-				elseif self.rank == 4 then data = {nb_classes=1}
-				elseif self.rank == 5 then data = {nb_classes=2}
-				elseif self.rank >= 10 then data = {nb_classes=3}
+			talent_mult = 1.8
+			life_mult = 2.0
+			if self.rank >= 3.5 then
+				if self.rank >= 10 then nb_classes = 3
+				elseif self.rank >= 5 then nb_classes = 2
+				else nb_classes = 1
 				end
-				data.auto_sustain = true
-				data.forbid_equip = true
-				game.state:applyRandomClass(self, data, true)
 			end
-			-- Increase life
-			self.max_life_no_difficulty_boost = self.max_life
-			local lifeadd = self.max_life * 0.2
-			self.max_life = self.max_life + lifeadd
-			self.life = self.life + lifeadd
-			-- print("Insane increasing " .. self.name .. " life by " .. lifeadd)
-
-			self:attr("difficulty_boosted", 1)
 		elseif game.difficulty == game.DIFFICULTY_MADNESS then
-			-- Increase talent level
-			for tid, lev in pairs(self.talents) do
-				self:learnTalent(tid, true, math.ceil(lev * 1.7))
-			end
-			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
-				local data = {}
-				if self.rank == 3.5 then data = {nb_classes=1}
-				elseif self.rank == 4 then data = {nb_classes=2}
-				elseif self.rank == 5 then data = {nb_classes=3}
-				elseif self.rank >= 10 then data = {nb_classes=5}
+			talent_mult = 2.7
+			life_mult = 3.0
+			if self.rank >= 3.5 then
+				if self.rank >= 10 then nb_classes = 5
+				elseif self.rank >= 5 then nb_classes = 3
+				elseif self.rank >= 4 then nb_classes = 2
+				else nb_classes = 1
 				end
-				data.auto_sustain = true
-				data.forbid_equip = true
-				game.state:applyRandomClass(self, data, true)
 			end
-			-- Increase life
-			self.max_life_no_difficulty_boost = self.max_life
-			local lifeadd = self.max_life * self:getRankLifeAdjust(1) * self.level / 65 / 1.5
-			self.max_life = self.max_life + lifeadd
-			self.life = self.life + lifeadd
+	
+		end
+		if talent_mult ~= 1 then
+			-- increase level of innate talents
+			for tid, lev in pairs(self.talents) do
+				local t = self:getTalentFromId(tid)
+				if t.points ~= 1 then
+					self:learnTalent(tid, true, math.floor(lev*(talent_mult - 1)))
+				end
+			end
+			-- add extra character classes
+			if nb_classes > 0 and not self.randboss and not self.no_difficulty_random_class then
+				-- Note: talent levels from added classes are not adjusted for difficulty
+				-- This means that the NPC's innate talents are generally higher level, preserving its "character"
+				local data = {auto_sustain=true, forbid_equip=false, nb_classes=nb_classes, update_body=true, spend_points=true, autolevel=nb_classes<2 and self.autolevel or "random_boss"}
+				game.state:applyRandomClass(self, data, true)
+				self:resolve() self:resolve(nil, true)
+			end
 			
+			-- increase maximum life
+			self.max_life = self.max_life*life_mult
+			self.life = self.max_life
 			self:attr("difficulty_boosted", 1)
 		end
-		
-		-- try to equip inventory items
-		local MainInven, o = self:getInven(self.INVEN_INVEN)
-
---if config.settings.cheat then self:inventoryApplyAll(function(inv, item, o) o:identify(true) end) end-- temp
-		
-		if MainInven then --try to equip items from inventory
-			for i = #MainInven, 1, -1 do
-				o = MainInven[i]
-				local inven, worn = self:getInven(o:wornInven())
-				if inven and game.state:checkPowers(self, o, nil, "antimagic_only") then -- check antimagic restrictions
-					local ro, replace = inven and inven[1], false
-					o = self:removeObject(self.INVEN_INVEN, i)
-					if o then
-
-					-- could put more sophisticated criteria here to pick the best gear
-						if ro and o.type == ro.type and o.subtype == ro.subtype and (o.rare or o.randart or o.unique) and not (ro.rare or ro.randart or ro.unique) then replace = true end
-						worn = self:wearObject(o, replace, false)
-						if worn then
-							print("[NPC:addedToLevel]", self.name, self.uid, "wearing", o.name)
-							if type(worn) == "table" then
-								print("--- replacing", worn.name)
-								self:addObject(self.INVEN_INVEN, worn)
-							end
-						else
-							self:addObject(self.INVEN_INVEN, o) -- put object back in main inventory
-						end
-					end
-				end
-			end
-		end
+		-- try to equip items in inventory
+		self:wearAllInventory()
 		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
 			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})
-		end
-
-		if profile and profile.auth and profile.auth.login == "raderak" then
-			if self.rank <= 3 and self.name == "snow giant boulder thrower" then
-				local b = game.state:createRandomBoss(self, {level=self.level})
-				if b then
-					local uid = self.uid
-					self:replaceWith(b)
-					self.uid = uid
-					self.desc = self.desc.."\n#CRIMSON#Well Raderak, you wanted them buffed. I did... but ONLY FOR YOU ! :) *CACKLES EVILY*\n-- yours truly, DarkGod#LAST#"
-				end
-			end
-			if self.type == "vermin" and self.subtype == "rodent" then
-				self.max_life = self.max_life * 20
-				self.life = self.life * 20
-				self.desc = self.desc.."\n#CRIMSON#Well Raderak, you wanted them buffed. I did... but ONLY FOR YOU ! :) *CACKLES EVILY*\n-- yours truly, DarkGod#LAST#"
-			end
 		end
 	end
 
@@ -593,57 +552,13 @@ function _M:clearAITarget()
 	if self.ai_target.actor and self.ai_target.actor.dead then self.ai_target.actor = nil end
 end
 
-local shove_algorithm = function(self)
-	return 3 * self.rank + self.size_category * self.size_category
-end
-
-function _M:aiCanPass(x, y)
-	-- If there is a friendly actor, add shove_pressure to it
-	local target = game.level.map(x, y, engine.Map.ACTOR)
-	if target and target ~= game.player and self:reactionToward(target) > 0 and not target:attr("never_move") and target.x then
-		target.shove_pressure = (target.shove_pressure or 0) + shove_algorithm(self) + (self.shove_pressure or 0)
-		-- Shove the target?
-		if target.shove_pressure > shove_algorithm(target) * 1.7 then
-			local dir = util.getDir(target.x, target.y, self.x, self.y)
-			local sides = util.dirSides(dir, target.x, target.y)
-			local check_order = {}
-			if rng.percent(50) then
-				table.insert(check_order, "left")
-				table.insert(check_order, "right")
-			else
-				table.insert(check_order, "right")
-				table.insert(check_order, "left")
-			end
-			if rng.percent(50) then
-				table.insert(check_order, "hard_left")
-				table.insert(check_order, "hard_right")
-			else
-				table.insert(check_order, "hard_right")
-				table.insert(check_order, "hard_left")
-			end
-			for _, side in ipairs(check_order) do
-				local check_dir = sides[side]
-				local sx, sy = util.coordAddDir(target.x, target.y, check_dir)
-				if target:canMove(sx, sy) and target:move(sx, sy) then
-					self:logCombat(target, "#Source# shoves #Target# forward.")
-					target.shove_pressure = nil
-					target._last_shove_pressure = nil
-					break
-				end
-			end
-			return true
-		end
-	end
-	return engine.interface.ActorAI.aiCanPass(self, x, y)
-end
-
 --- Returns the seen coords of the target
 -- This will usually return the exact coords, but if the target is only partially visible (or not at all)
 -- it will return estimates, to throw the AI a bit off
 -- @param target the target we are tracking
 -- @return x, y coords to move/cast to
 function _M:aiSeeTargetPos(target)
-	if not target then return self.x, self.y end
+	if not (target and target.x) then return self.x, self.y end
 	local tx, ty = target.x, target.y
 
 	-- Special case, a boss that can pass walls can always home in on the target; otherwise it would get lost in the walls for a long while

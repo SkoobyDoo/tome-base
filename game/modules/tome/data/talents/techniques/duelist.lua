@@ -27,14 +27,20 @@ newTalent{
 	points = 5,
 	require = techs_dex_req1,
 	mode = "passive",
+	callbackOnLevelup = function(self, t, level) -- make sure NPC's start with the parry buff active
+		if not self.player then
+			game:onTickEnd(function()
+				if not self:hasEffect(self.EFF_PARRY) then
+					t.callbackOnActBase(self, t)
+				end
+			end, self.uid.."PARRY")
+		end
+	end,
 	getDeflectChance = function(self, t) --Chance to parry with an offhand weapon
 		local chance = math.min(100, self:combatLimit(self:getTalentLevel(t)*self:getDex(), 90, 15, 20, 60, 250)) -- limit < 90%, ~67% at TL 6.5, 55 dex
 		local eff = self:hasEffect(self.EFF_FEINT)
 		if eff then chance = 100 - (100 - chance)*(1 - eff.parry_efficiency) end
 		return chance
-	end,
-	getDeflectPercent = function(self, t) -- Percent of offhand weapon damage used to deflect
-		return math.max(0, self:combatTalentLimit(t, 100, 15, 50))
 	end,
 	-- deflect count handled in physical effect "PARRY" in mod.data.timed_effects.physical.lua
 	getDeflects = function(self, t, fake)
@@ -43,13 +49,13 @@ newTalent{
 		else return 0
 		end
 	end,
-	getDamageChange = function(self, t, fake)
+	getDamageChange = function(self, t)
 		local dam,_,weapon = 0,self:hasDualWeapon()
 		if not weapon or weapon.subtype=="mindstar" and not fake then return 0 end
 		if weapon then
 			dam = self:combatDamage(weapon.combat) * self:getOffHandMult(weapon.combat)
 		end
-		return t.getDeflectPercent(self, t) * dam/100
+		return self:combatScale(dam, 5, 10, 50, 250)
 	end,
 	getoffmult = function(self,t) return self:combatTalentLimit(t, 1, 0.6, 0.80) end, -- limit <100%
 	callbackOnActBase = function(self, t)
@@ -63,11 +69,10 @@ newTalent{
 		mult = t.getoffmult(self,t)*100
 		block = t.getDamageChange(self, t, true)
 		chance = t.getDeflectChance(self,t)
-		perc = t.getDeflectPercent(self,t)
 		return ([[Your offhand weapon damage penalty is reduced to %d%%.
-		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (%d%% of your offhand weapon damage) from a melee or ranged attack.  The number of parries increases with your Cunning.  (A fractional parry has a reduced chance to succeed.)
+		Up to %0.1f times a turn, you have a %d%% chance to parry up to %d damage (based on your offhand weapon damage) from a melee or ranged attack.  The number of parries increases with your Cunning.  (A fractional parry has a reduced chance to succeed.)
 		A successful parry reduces damage like armour (before any attack multipliers) and prevents critical strikes.  It is difficult to parry attacks from unseen attackers and you cannot parry with a mindstar.]]):
-		format(100 - mult, t.getDeflects(self, t, true), chance, block, perc)
+		format(100 - mult, t.getDeflects(self, t, true), chance, block)
 	end,
 }
 
@@ -214,8 +219,10 @@ newTalent{
 		-- Attack		
 		local dam = t.getDamage(self,t)
 		local spd, hitted, dmg = self:attackTargetWith(target, offweapon.combat, nil, self:getOffHandMult(offweapon.combat, dam))
-		if hitted then
+		if hitted and target:canBe("disarm") then
 			target:setEffect(target.EFF_DISARMED, t.getDuration(self, t), {apply_power=self:combatAttack()})
+		else
+			game.logSeen(target, "%s resists the blow!", target.name:capitalize())
 		end
 		return true
 	end,

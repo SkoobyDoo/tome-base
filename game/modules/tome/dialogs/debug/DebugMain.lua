@@ -48,7 +48,7 @@ function _M:use(item)
 	game:unregisterDialog(self)
 
 	if item.dialog then
-		local d = require("mod.dialogs.debug."..item.dialog).new()
+		local d = require("mod.dialogs.debug."..item.dialog).new(item)
 		game:registerDialog(d)
 		return
 	end
@@ -57,46 +57,25 @@ function _M:use(item)
 
 	local stop = false
 	if act == "godmode" then
-		game.player:forceLevelup(50)
-		game.player.invulnerable = 1
-		game.player.esp_all = 1
-		game.player.esp_range = 50
-		game.player.no_breath = 1
-		game.player.money = 500
-		game.player.auto_id = 100
-		game.state.birth.ignore_prodigies_special_reqs = true
-		game.player.inc_damage.all = 100000
-		game.player:incStat("str", 100) game.player:incStat("dex", 100) game.player:incStat("mag", 100) game.player:incStat("wil", 100) game.player:incStat("cun", 100) game.player:incStat("con", 100)
-	elseif act == "semigodmode" then
-		game.player.invulnerable = 0
-		game.player.no_breath = 0
-		game.player:forceLevelup(50)
-		game.player.life_regen = 2000
-		game.player.esp_all = 1
-		game.player.esp_range = 50
-		game.player.money = 500
-		game.player.auto_id = 100
-		game.state.birth.ignore_prodigies_special_reqs = true
-		game.player.inc_damage.all = 500
-		game.player:incStat("str", 100) game.player:incStat("dex", 100) game.player:incStat("mag", 100) game.player:incStat("wil", 100) game.player:incStat("cun", 100) game.player:incStat("con", 100)
+		if game.player:hasEffect(game.player.EFF_GODMODE) then
+			game.player:removeEffect(game.player.EFF_GODMODE, false, true)
+			game.log("#LIGHT_BLUE#God mode OFF")
+		else
+			game.player:setEffect(game.player.EFF_GODMODE, 1, {})
+			game.log("#LIGHT_BLUE#God mode ON")
+		end
+	elseif act == "demigodmode" then
+		if game.player:hasEffect(game.player.EFF_DEMI_GODMODE) then
+			game.player:removeEffect(game.player.EFF_DEMI_GODMODE, false, true)
+			game.log("#LIGHT_BLUE#Demi-God mode OFF")
+		else
+			game.player:setEffect(game.player.EFF_DEMI_GODMODE, 1, {})
+			game.log("#LIGHT_BLUE#Demi-God mode ON")
+		end
 	elseif act == "weakdamage" then
 		game.player.inc_damage.all = -90
-	elseif act == "all_arts" then
-		for i, e in ipairs(game.zone.object_list) do
-			if e.unique and e.define_as ~= "VOICE_SARUMAN" and e.define_as ~= "ORB_MANY_WAYS_DEMON" then
-				local a = game.zone:finishEntity(game.level, "object", e)
-				a.no_unique_lore = true -- to not spam
-				a:identify(true)
-				game.zone:addEntity(game.level, a, "object", game.player.x, game.player.y)
-				if a.slot then
-					local invendef = game.player:getInvenDef(a.slot)
-					if invendef and invendef.infos and invendef.infos.shimmerable then
-						world:unlockShimmer(a)
-					end
-				end
-			end
-		end
 	elseif act == "magic_map" then
+		game.log("#LIGHT_BLUE#Revealing Map.")
 		game.level.map:liteAll(0, 0, game.level.map.w, game.level.map.h)
 		game.level.map:rememberAll(0, 0, game.level.map.w, game.level.map.h)
 		for i = 0, game.level.map.w - 1 do
@@ -131,13 +110,27 @@ function _M:use(item)
 			end
 		end end
 	elseif act == "remove-all" then
-		local l = {}
-		for uid, e in pairs(game.level.entities) do
-			if not game.party:hasMember(e) then l[#l+1] = e end
-		end
-		for i, e in ipairs(l) do
-			game.level:removeEntity(e)
-		end
+		local d = require"engine.ui.Dialog":yesnocancelPopup("Kill or Remove", "Remove all (non-party) creatures or kill them for the player (awards experience and drops loot)?",
+			function(remove_all, escape)
+				if escape then return end
+				local l = {}
+				for uid, e in pairs(game.level.entities) do
+					if e.__is_actor and not game.party:hasMember(e) then l[#l+1] = e end
+				end
+				local count = 0
+				for i, e in ipairs(l) do
+					if remove_all then
+						game.log("#GREY#Removing [%s] %s at (%s, %s)", e.uid, e.name, e.x, e.y)
+						game.level:removeEntity(e)
+					else
+						game.log("#GREY#Killing [%s] %s at (%s, %s)", e.uid, e.name, e.x, e.y)
+						e:die(game.player, "By Cheating!")
+					end
+					count = count + 1
+				end
+				game.log("#LIGHT_BLUE#%s %d creatures.", remove_all and "Removed" or "Killed", count)
+			end
+		, "Remove", "Kill", "Cancel", false)
 	elseif act == "all-ingredients" then
 		game.party:giveAllIngredients(100)
 		-- Gems count too
@@ -149,47 +142,31 @@ function _M:use(item)
 				game.player:sortInven()
 			end
 		end
-	elseif act == "test-dummy" then
-		local m = mod.class.NPC.new{define_as="TRAINING_DUMMY",
-			type = "training", subtype = "dummy",
-			name = "Test Dummy", color=colors.GREY,
-			desc = "Test dummy.", image = "npc/lure.png",
-			level_range = {1, 1}, exp_worth = 0,
-			rank = 3,
-			max_life = 300000, life_rating = 0,
-			life_regen = 300000,
-			never_move = 1,
-			training_dummy = 1,
-		}
-		local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[engine.Map.ACTOR]=true})
-		if not x then return end
-		m:resolve()
-		m:resolve(nil, true)
-		game.zone:addEntity(game.level, m, "actor", x, y)
 	else
 		self:triggerHook{"DebugMain:use", act=act}
 	end
 end
 
+-- Ideas:
+-- force reload all shops
 function _M:generateList()
 	local list = {}
 
 	list[#list+1] = {name="Change Zone", dialog="ChangeZone"}
 	list[#list+1] = {name="Change Level", action="change_level"}
 	list[#list+1] = {name="Reveal all map", action="magic_map"}
-	list[#list+1] = {name="Godmode", action="godmode"}
-	list[#list+1] = {name="Create all artifacts", action="all_arts"}
-	list[#list+1] = {name="Grant/Alter Quests", dialog="GrantQuest"}
-	list[#list+1] = {name="Summon Creature", dialog="SummonCreature"}
-	list[#list+1] = {name="Create Item", dialog="CreateItem"}
+	list[#list+1] = {name="Toggle Demi-Godmode", action="demigodmode"}
+	list[#list+1] = {name="Toggle Godmode", action="godmode"}
 	list[#list+1] = {name="Alter Faction", dialog="AlterFaction"}
+	list[#list+1] = {name="Summon a Creature", dialog="SummonCreature"}
+	list[#list+1] = {name="Create Items", dialog="CreateItem"}
+	list[#list+1] = {name="Create a Trap", dialog="CreateTrap"}
+	list[#list+1] = {name="Grant/Alter Quests", dialog="GrantQuest"}
+	list[#list+1] = {name="Advance Player", dialog="AdvanceActor"}
+	list[#list+1] = {name="Remove or Kill all creatures", action="remove-all"}
 	list[#list+1] = {name="Give Sher'tul fortress energy", action="shertul-energy"}
-	list[#list+1] = {name="Create Trap", dialog="CreateTrap"}
-	list[#list+1] = {name="Remove all creatures", action="remove-all"}
-	list[#list+1] = {name="Semi-Godmode", action="semigodmode"}
 	list[#list+1] = {name="Give all ingredients", action="all-ingredients"}
 	list[#list+1] = {name="Weakdamage", action="weakdamage"}
-	list[#list+1] = {name="Test Dummy", action="test-dummy"}
 	self:triggerHook{"DebugMain:generate", menu=list}
 
 	local chars = {}

@@ -22,20 +22,47 @@ local ActorTalents = require "engine.interface.ActorTalents"
 print("[Resources] Defining Actor Resources")
 
 -- Actor resources
--- Additional (ToME specific) fields:
+-- Additional (ToME specific) fields (all optional):
 -- cost_factor increases/decreases resource cost (used mostly to account for the effect of armor-based fatigue)
 -- invert_values = true means the resource increases as it is consumed (equilibrium/paradox)
 -- status_text = function(actor) returns a textual description of the resource status (defaults to "val/max")
 -- color = text color string ("#COLOR#") to use to display the resource (text or uiset graphics)
 -- hidden_resource = true prevents display of the resource in various interfaces
+-- randomboss_enhanced = true gives random bosses some bonuses for the resource (see GameState:createRandomBoss)
 -- depleted_unsustain = true makes sustained talents using the resource (with .remove_on_zero == true) deactivate when the resource is depleted
+-- wait_on_rest = true causes resting (for the Player) to continue until the resource is replenished if possible
+-- ai = parameters/routines for the ai:
+-- 	tactical = table of tactical ai parameters (see ai.improved_tactical.lua, ActorAI):
+--		default_pool_size, -- override the a default pool size (normally: def.max or 100 - def.min or 0), used to  evaluate the tactical value of gains/losses/regeneration, used by ActorAI.aiTalentTactics
+--		want_level = function(act, aitarget), -- return a number (0 to +10) representing how much the actor needs to replenish the resource (used by the "improved tactical" AI)
+-- 	aiResourceAction = function(actor, res_def, t_list) generate an action to replenish the resource
+--		(for simple AIs, overrides the default method, called by ActorAI:aiResourceAction)
 -- CharacterSheet = table of parameters to be used with the CharacterSheet (mod.dialogsCharacterSheet.lua):
 --		status_text = function(act1, act2, compare_fields) generate text of resource status
 -- Minimalist = table of parameters to be used with the Minimalist uiset (see uiset.Minimalist.lua)
+
+-- == Resource Definitions ==
 ActorResource:defineResource("Air", "air", nil, "air_regen", "Air capacity in your lungs. Entities that need not breathe are not affected.", nil, nil, {
 	color = "#LIGHT_STEEL_BLUE#",
-	-- wait_on_rest = true,
+	ai = {-- if drowning/suffocating due to terrain, try to move to a safe tile (simple AIs)
+		aiResourceAction = function(actor, res_def)
+			if actor.air >= actor.max_air then return end
+			local dam, air = actor:aiGridDamage()
+			local air_rate = air + actor.air_regen
+			if air_rate <= 0 then
+				local air_time = (actor.min_air - actor.air)/math.min(-1, air_rate)
+				-- exaggerate time left while in combat (ignore air with > 20 turns left)
+				if actor.ai_target.actor then
+					if air_time > 20 then return else air_time = air_time*10 end
+				end
+				if actor.ai_state.safe_grid or rng.percent(100 - 100*air_time/(air_time + 50)) then -- 50% @ 50 turns left (5 turns in combat), 100% if already seeking air
+					return {ai="move_safe_grid", name = "move to air"}
+				end
+			end
+		end,
+	}
 })
+
 ActorResource:defineResource("Stamina", "stamina", ActorTalents.T_STAMINA_POOL, "stamina_regen", "Stamina represents your physical fatigue.  Most physical abilities consume it.", nil, nil, {
 	color = "#ffcc80#",
 	cost_factor = function(self, t, check) return (check and self:hasEffect(self.EFF_ADRENALINE_SURGE)) and 0 or (100 + self:combatFatigue()) / 100 end,
@@ -58,6 +85,29 @@ ActorResource:defineResource("Equilibrium", "equilibrium", ActorTalents.T_EQUILI
 		local _, chance = act:equilibriumChance()
 		return ("%d (%d%%%% fail)"):format(act:getEquilibrium(), 100 - chance)
 	end,
+	ai = { -- special ai functions and data
+		-- tactical AI
+		tactical = {  default_pool_size = 100, -- assumed pool size to account for gains/losses/regeneration
+			want_level = function(act, aitarget) -- (lower is always better) linear until failure chance > 0
+				local value = math.min(2.5, 2.5*(act:getEquilibrium()-act:getMinEquilibrium())/act:getWil())*act.global_speed
+				if value > 0 then
+					local _, chance = act:equilibriumChance()
+					value = value + 7.5*((100-chance)/100)^.5 -- avoid failure chance as much as possible
+				end
+				return value
+			end
+		},
+		-- find a talent to restore equilibrium (simple AIs)
+		aiResourceAction = function(act, res_def, t_filter, t_list) 
+			if act:getEquilibrium() > act:getMinEquilibrium() then
+				local tid = act:aiGetResourceTalent(res_def, t_filter, t_list)
+				if tid then
+				if config.settings.log_detail_ai > 1 then print("[aiResourceAction:equilibrium]:", act.name, act.uid, "picked talent", tid, "to replenish", res_def.name) end
+					return {name = "custom equilibrium", tid=tid}
+				end
+			end
+		end,
+	},
 	CharacterSheet = { -- special params for the character sheet
 		status_text = function(act1, act2, compare_fields)
 			local text = compare_fields(act1, act2, function(act) local _, chance = act:equilibriumChance() return 100-chance end, "%d%%", "%+d%%", 1, true)
@@ -118,11 +168,31 @@ ActorResource:defineResource("Hate", "hate", ActorTalents.T_HATE_POOL, "hate_reg
 })
 ActorResource:defineResource("Paradox", "paradox", ActorTalents.T_PARADOX_POOL, "paradox_regen", "Paradox represents how much damage you've done to the space-time continuum. A high Paradox score makes Chronomancy less reliable and more dangerous to use but also amplifies its effects.", 0, false, {
 	color = "#4198dc#", invert_values = true,
-	randomboss_enhanced = true,
+--	randomboss_enhanced = true,
 	status_text = function(act)
 		local chance = act:paradoxFailChance()
 		return ("%d/%d (%d%%%%)"):format(act:getModifiedParadox(), act:getParadox(), chance), chance
 	end,
+	ai = { -- special ai functions and data
+		tactical = { default_pool_size = 100, -- assumed pool size to account for gains/losses/regeneration
+			want_level = function(act, aitarget)
+				local value = util.bound(5*(act:getParadox()-act.preferred_paradox)*act.global_speed/300, -10, 5) -- excess paradox
+				value = value + math.min(value, 5*(act:paradoxFailChance()/100)^.5) -- preferred paradox overrides failure chance
+				return value
+			end
+		},
+		-- find a talent to reduce paradox if it is above preferred_paradox (simple AIs)
+		aiResourceAction = function(act, res_def, t_filter, t_list)
+			local val, min = act:getParadox(), act:getMinParadox()
+			if val - math.max(act.preferred_paradox or 300, min) > 0 then
+				local tid = act:aiGetResourceTalent(res_def, t_filter, t_list)
+				if tid then
+					if config.settings.log_detail_ai > 1 then print("[aiResourceAction:paradox]:", act.name, act.uid, "picked talent", tid, "to replenish", res_def.name) end
+					return {name = "custom paradox", tid=tid}
+				end
+			end
+		end,
+	},
 	CharacterSheet = { -- special params for the character sheet
 		status_text = function(act1, act2, compare_fields)
 			local text = compare_fields(act1, act2, function(act) return act:paradoxFailChance() end, "%d%%", "%+d%%", 1, true)
@@ -161,6 +231,37 @@ ActorResource:defineResource("Psi", "psi", ActorTalents.T_PSI_POOL, "psi_regen",
 	wait_on_rest = true,
 	randomboss_enhanced = true,
 	cost_factor = function(self, t) return (100 + 2 * self:combatFatigue()) / 100 end,
+	ai = { -- special ai functions and data
+		tactical = { -- tactical AI
+			want_level = function(act, aitarget) -- compute want level for psi
+				local life_regen, psi_regen = act:regenLife(true) -- (includes Solipsism effect on psi_regen)
+				local depleted = 1-(act:getPsi() + math.max(0, psi_regen))/act.max_psi
+				-- use std resource formula, accounting for Solipsism regeneration
+				depleted = depleted/math.max(0.001, 1-depleted)*act.global_speed
+				return 10*(depleted/(depleted + 2.5))^2
+			end
+		},
+		-- find a talent to restore psi (simple AIs)
+		aiResourceAction = function(act, res_def, t_filter, t_list)
+			if act:getPsi() < act.max_psi * act.AI_RESOURCE_LEVEL_TRIGGER then
+				local tid = act:aiGetResourceTalent(res_def, t_filter, t_list)
+				if tid then
+					if config.settings.log_detail_ai > 1 then print("[aiResourceAction:psi]:", act.name, act.uid, "picked talent", tid, "to replenish", res_def.name) end
+					return {name = "restore psi", tid=tid}
+				end
+				-- Solipsists can use healing to restore psi
+				if act:knowTalent(act.T_SOLIPSISM) then
+					local filter = {mode="activated", properties = {"is_heal"}}
+					local tid_list = act:aiGetAvailableTalents(aitarget, filter)
+					if #tid_list > 0 then
+						local tid = rng.tableRemove(tid_list)
+						if config.settings.log_detail_ai > 1 then print("[aiResourceAction:psi]:", act.name, act.uid, "picked healing talent", tid, "to replenish", res_def.name) end
+						return {name = "restore psi (Solipsism heal)", tid=tid}
+					end
+				end
+			end
+		end
+	},
 })
 ActorResource:defineResource("Souls", "soul", ActorTalents.T_SOUL_POOL, "soul_regen", "This is the number of soul fragments you have extracted from your foes for your own use.", 0, 10, {
 	color = "#bebebe#",

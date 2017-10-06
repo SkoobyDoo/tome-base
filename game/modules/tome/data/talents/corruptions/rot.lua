@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ newTalent{
 		local hitted = self:attackTarget(target, nil, dam, true)
 		
 		if hitted then
-			self:project({type="hit"}, target.x, target.y, DamageType.BLIGHT_POISON, {dam=poison, power=0, poison=1, apply_power=self:combatSpellpower()})
+			self:project({type="hit"}, target.x, target.y, DamageType.BLIGHT_POISON, {dam=poison, power=0, poison=1, heal_factor=0, apply_power=self:combatSpellpower()})
 		end
 		
 		return true
@@ -162,10 +162,13 @@ newTalent{
 		local resist = t.getResist(self,t)
 		local affinity = t.getAffinity(self,t)
 		local ret = {
-					res = self:addTemporaryValue("resists", {[DamageType.BLIGHT]=resist, [DamageType.ACID]=resist}),
-					aff = self:addTemporaryValue("damage_affinity", {[DamageType.BLIGHT]=affinity}),
-					worm = self:addTemporaryValue("worm", 1),
-					}
+			res = self:addTemporaryValue("resists", {[DamageType.BLIGHT]=resist, [DamageType.ACID]=resist}),
+			aff = self:addTemporaryValue("damage_affinity", {[DamageType.BLIGHT]=affinity}),
+			worm = self:addTemporaryValue("worm", 1),
+		}
+		if core.shader.active() then
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1.5, img="infestation_sustain_tentacles2"}, shader={type="tentacles", appearTime=0.6, time_factor=1000, noup=0.0}})
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -194,16 +197,9 @@ newTalent{
 			if not self.turn_procs.infestation then
 				self.turn_procs.infestation = true
 				
-				local nb = 0
-
-				local grids = {}
-				self:project({type="ball", range=0, radius=2, talent=t}, self.x, self.y, function(px, py)
-					if not ((px == x and py == y) or game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move") or game.level.map(px, py, Map.TRAP)) then grids[#grids+1] = {x=px, y=py} end
-				end)
-		
-				local g = rng.tableRemove(grids)
-				if g then 
-					carrionworm(self, self, 5, g.x, g.y)
+				local gx, gy = util.findFreeGrid(self.x, self.y, 2, true, {[Map.ACTOR]=true})
+				if gx and gy then 
+					carrionworm(self, self, 5, gx, gy)
 				end
 			end
 			return cb.value
@@ -290,10 +286,10 @@ newTalent{
 	require = corrs_req_high3,
 	points = 5,
 	mode = "passive",
-	cooldown = 6,
+	cooldown = 5,
 	radius = function(self, t) return self:getTalentLevel(t) >= 4 and 1 or 0 end,
-	getChance = function(self, t) return self:combatTalentScale(t, 10, 35) end,
-	getDuration = function(self, t)  return math.floor(self:combatTalentScale(t, 2, 4)) end,
+	getChance = function(self, t) return self:combatTalentScale(t, 15, 45) end,
+	getDuration = function(self, t)  return math.floor(self:combatTalentScale(t, 2, 5)) end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false, talent=t}
 	end,
@@ -340,6 +336,7 @@ newTalent{
 	tactical = { ATTACK = { ACID = 1, BLIGHT = 1 }, DISABLE = 4 },
 	getBurstDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 150) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 55) end,
+	getChance = function(self, t) return math.min(100,self:combatTalentScale(t, 20, 90)) end,
 	proj_speed = 6,
 	spawn_carrion_worm = function (self, target, t)
 		local nb = 0 
@@ -378,10 +375,12 @@ newTalent{
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local burst = t.getBurstDamage(self, t)
+		local chance = t.getChance(self,t)
 		return ([[Infects the target with parasitic carrion worm larvae for 5 turns.  Each turn the disease will remove a beneficial physical effect and deal %0.2f acid and %0.2f blight damage.
 If not cleared after five turns it will inflict %0.2f blight damage as the larvae hatch, removing the effect but spawning a full grown carrion worm mass near the target's location.
+Even if this disease is removed early, there is still a %d%% chance for the larvae to hatch.
 You can never have more than 5 worms active from any source at a time.
 The damage dealt will increase with your Spellpower.]]):
-		format(damDesc(self, DamageType.ACID, (damage/2)), damDesc(self, DamageType.BLIGHT, (damage/2)), damDesc(self, DamageType.BLIGHT, (burst)))
+		format(damDesc(self, DamageType.ACID, (damage/2)), damDesc(self, DamageType.BLIGHT, (damage/2)), damDesc(self, DamageType.BLIGHT, (burst)), chance)
 	end,
 }

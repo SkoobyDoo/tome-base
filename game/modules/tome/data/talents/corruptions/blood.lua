@@ -24,7 +24,7 @@ newTalent{
 	points = 5,
 	cooldown = 7,
 	vim = 24,
-	tactical = { ATTACKAREA = {BLIGHT = 2} },
+	tactical = { ATTACKAREA = {BLIGHT = {1, disease = 1}}, DISABLE = {disease = 1} },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
 	direct_hit = true,
@@ -65,7 +65,7 @@ newTalent{
 	vim = 20,
 	range = 10,
 	proj_speed = 20,
-	tactical = { ATTACK = {BLIGHT = 2}, HEAL = 2 },
+	tactical = { ATTACK = {BLIGHT = 1.75}, HEAL = {BLIGHT = 1}}, -- damage to foe heals self
 	requires_target = true,
 	target = function(self, t)
 		return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_blood"}}
@@ -91,7 +91,7 @@ newTalent{
 	points = 5,
 	cooldown = 12,
 	vim = 30,
-	tactical = { ATTACKAREA = {BLIGHT = 2}, DISABLE = 2 },
+	tactical = { ATTACKAREA = {BLIGHT = 2}, DISABLE = 1 },
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	requires_target = true,
@@ -128,6 +128,10 @@ newTalent{
 		local ret = {
 			per = self:addTemporaryValue("combat_spellcrit", self:combatTalentSpellDamage(t, 10, 14)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="blood_fury_sustain_shieldwall"}, shader={type="rotatingshield", noup=2.0, appearTime=0.4}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="blood_fury_sustain_shieldwall"}, shader={type="rotatingshield", noup=1.0, appearTime=0.4}})
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)

@@ -39,15 +39,8 @@ Someone foolish has tried to reconstruct it, but was unable to complete the task
 			if eye then
 				require("engine.ui.Dialog"):yesnoPopup("Atamathon", "It seems that your "..eye:getName{do_color=true}.." is made to fit inside the empty eye socket of Atamathon. This is probably very unwise.", function(ret)
 					if not ret then return end
-					if game.difficulty == game.DIFFICULTY_NIGHTMARE then
-						game.zone.base_level = 50 * 1.5 + 3
-					elseif game.difficulty == game.DIFFICULTY_INSANE then
-						game.zone.base_level = 50 * 2.2 + 5
-					elseif game.difficulty == game.DIFFICULTY_MADNESS then
-						game.zone.base_level = 50 * 2.5 + 10
-					else
-						game.zone.base_level = 50
-					end
+					game:applyDifficulty(game.zone, {50, 50})
+					game.zone:updateBaseLevel()
 					game.zone.min_material_level = 5
 					game.zone.max_material_level = 5
 					game.level.data.no_worldport = true

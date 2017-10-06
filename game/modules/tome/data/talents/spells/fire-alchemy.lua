@@ -56,7 +56,7 @@ newTalent{
 	cooldown = 34,
 	range = 6,
 	direct_hit = true,
-	tactical = { DISABLE = 2 },
+	tactical = { DISABLE = 1, ESCAPE = 2 },
 	requires_target = true,
 	getDuration = function(self, t) return math.floor(self:combatScale(self:combatSpellpower(0.03) * self:getTalentLevel(t), 2, 0, 10, 8)) end,
 	action = function(self, t)
@@ -158,7 +158,6 @@ newTalent{
 	end,
 }
 
-
 newTalent{
 	name = "Body of Fire",
 	type = {"spell/fire-alchemy",4},
@@ -169,11 +168,28 @@ newTalent{
 	points = 5,
 	proj_speed = 2.4,
 	range = 6,
-	tactical = { ATTACKAREA = { FIRE = 3 } },
+	tactical = { ATTACKAREA = { FIRE = 1.5 },
+			SELF = {defend = 1}
+	},
+	on_pre_use_ai = function(self, t, silent, fake)
+		if self.ai_state._advanced_ai then return true end -- let the advanced tactical AI decide to use
+		local is_active = self:isTalentActive(t.id)
+		local aitarget = self.ai_target.actor
+		if not aitarget or self:reactionToward(aitarget) >= 0 then -- no hostile target, keep deactivated
+			return is_active
+		else -- hostile target, may activate if in range with sufficient mana
+			local tx, ty = self:aiSeeTargetPos(aitarget)
+			if core.fov.distance(self.x, self.y, tx, ty) <= t.range + 1 then return self:aiCheckSustainedTalent(t) end
+			return is_active
+		end
+	end,
 	getFireDamageOnHit = function(self, t) return self:combatTalentSpellDamage(t, 5, 25) end,
 	getResistance = function(self, t) return self:combatTalentSpellDamage(t, 5, 45) end,
 	getFireDamageInSight = function(self, t) return self:combatTalentSpellDamage(t, 15, 70) end,
-	getManaDrain = function(self, t) return -0.1 * self:getTalentLevelRaw(t) end,
+	drain_mana = function(self, t) return self:combatTalentScale(t, 0.15, 0.5) end,
+	target = function(self, t) return {type="ball", radius=self:getTalentRange(t), range=0, talent=t, friendlyblock=false, friendlyfire=false} end, -- for AI (gets all targets)
+	oneTarget = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_fire"}, friendlyblock=false, friendlyfire=false} end, -- only hits one target
+	getNumber = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	callbackOnActBase = function(self, t)
 		if self:getMana() <= 0 then
 			self:forceUseTalent(t.id, {ignore_energy=true})
@@ -190,8 +206,8 @@ newTalent{
 		end end
 
 		-- Randomly take targets
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_fire"}, friendlyblock=false, friendlyfire=false}
-		for i = 1, math.floor(self:getTalentLevel(t)) do
+		local tg = t.oneTarget(self, t)
+		for i = 1, t.getNumber(self, t) do
 			if #tgts <= 0 then break end
 			local a, id = rng.table(tgts)
 			table.remove(tgts, id)
@@ -207,7 +223,6 @@ newTalent{
 		return {
 			onhit = self:addTemporaryValue("on_melee_hit", {[DamageType.FIRE]=t.getFireDamageOnHit(self, t)}),
 			res = self:addTemporaryValue("resists", {[DamageType.FIRE] = t.getResistance(self, t)}),
-			drain = self:addTemporaryValue("mana_regen", t.getManaDrain(self, t)),
 		}
 	end,
 	deactivate = function(self, t, p)
@@ -215,18 +230,17 @@ newTalent{
 		game.logSeen(self, "#FF8000#The raging fire around %s calms down and disappears.", self.name)
 		self:removeTemporaryValue("on_melee_hit", p.onhit)
 		self:removeTemporaryValue("resists", p.res)
-		self:removeTemporaryValue("mana_regen", p.drain)
 		return true
 	end,
 	info = function(self, t)
 		local onhitdam = t.getFireDamageOnHit(self, t)
 		local insightdam = t.getFireDamageInSight(self, t)
 		local res = t.getResistance(self, t)
-		local manadrain = t.getManaDrain(self, t)
-		return ([[Turn your body into pure flame, increasing your fire resistance by %d%%, burning any creatures attacking you for %0.2f fire damage, and projecting %d random slow-moving fire bolts per turn at targets in sight, doing %0.2f fire damage with each bolt.
+		local manadrain = t.drain_mana(self, t)
+		return ([[Turn your body into pure flame, increasing your fire resistance by %d%%, burning any creatures striking you in melee for %0.2f fire damage, and randomly launching up to %d slow-moving fire bolt(s) per turn at targets in sight, each dealing %0.2f fire damage.
 		The projectiles safely go through your friends without harming them.
-		This powerful spell drains %0.2f mana while active.
+		This powerful spell drains %0.2f mana per turn while active.
 		The damage and resistance will increase with your Spellpower.]]):
-		format(res,onhitdam, math.floor(self:getTalentLevel(t)), insightdam,-manadrain)
+		format(res,onhitdam, t.getNumber(self, t), insightdam, manadrain)
 	end,
 }

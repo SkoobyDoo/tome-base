@@ -75,7 +75,7 @@ newEntity{ base = "BASE_TRIDENT",
 	power_source = {nature=true, psionic=true},
 	define_as = "LEGACY_NALOREN",
 	unided_name = "ornate orichalcum trident",
-	name = "Legacy of the Naloren", unique=true, image = "object/artifact/trident_of_the_tides.png",
+	name = "Legacy of the Naloren", unique=true, image = "object/artifact/legacy_of_the_naloren.png",
 	desc = [[This incredibly beautiful -- and powerful -- trident is made of the rare metal orichalcum. An amazing pearl is seated in head of the trident, as it spreads into three razor sharp prongs.
 It is imbued with the greatest strengths of all of the most powerful Naga warriors.
 Slasul gave it to you as a sign of his faith in you. It is a sign of hope for all of the Naloren race, that one outside of their tribe could be so trusted.]],

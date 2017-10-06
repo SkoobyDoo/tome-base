@@ -32,6 +32,5 @@ end
 on_status_change = function(self, who, status, sub)
 	if self:isCompleted() then
 		who:setQuestStatus(self.id, engine.Quest.DONE)
-		game.state:storesRestock()
 	end
 end

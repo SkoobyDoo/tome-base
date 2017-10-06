@@ -341,6 +341,7 @@ newTalent{
 	points = 5,
 	cooldown = 10,
 	hate = 0,
+	unlearn_on_clone = true,
 	tactical = { BUFF = 5 },
 	getLevel = function(self, t) return self.level end,
 	getMaxShadows = function(self, t)
@@ -606,6 +607,9 @@ newTalent{
 	requires_target = true,
 	tactical = { ATTACK = 2 },
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), nowarning=true} end,
+	on_pre_use = function(self, t, silent)
+		return self:isTalentActive(self.T_CALL_SHADOWS)
+	end,
 	getDefenseDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4.4, 10.1)) end,
 	getBlindsideChance = function(self, t) return self:combatTalentLimit(t, 100, 40, 80) end, -- Limit < 100%
 	action = function(self, t)
@@ -639,7 +643,7 @@ newTalent{
 				self:logCombat(target, "#PINK#The shadows converge on #Target#!")
 				return true
 			else
-				game.logPlayer(self, "Their are no shadows to heed the call!")
+				game.logPlayer(self, "There are no shadows to heed the call!")
 				return false
 			end
 		else

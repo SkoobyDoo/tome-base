@@ -45,7 +45,7 @@ newTalent{
 	no_break_stealth = true, -- stealth is broken in attackTarget
 	requires_target = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	tactical = { ATTACK = { PHYSICAL = 1 } },
+	tactical = { ATTACK = { weapon = 1}},
 	no_unlearn_last = true,
 	ignored_by_hotkeyautotalents = true,
 	alternate_attacks = {'T_DOUBLE_STRIKE'},
@@ -56,11 +56,17 @@ newTalent{
 		local swap = not self:attr("disarmed") and (self:attr("warden_swap") and doWardenWeaponSwap(self, t, "blade"))
 	
 		local tg = self:getTalentTarget(t)
-		local _, x, y = self:canProject(tg, self:getTarget(tg))
+		local ok, x, y = self:canProject(tg, self:getTarget(tg))
 		local target = game.level.map(x, y, game.level.map.ACTOR)
-		if not target then
+	
+		if not ok or not target then
 			if swap then doWardenWeaponSwap(self, t, "bow") end
-			return true -- Make sure this is done if an NPC attacks an empty grid.
+			if ok then -- talent is treated as used even if there is no target (prevents stealth scumming)
+				print("[T_ATTACK]", self.uid, self.name, "attacks empty space:", x, y)
+				self:logCombat(target, "#Source# attacks empty space.")
+				self:useEnergy(game.energy_to_act * self:getTalentSpeed(t))
+			end
+			return ok
 		end
 
 		local did_alternate = false
@@ -72,7 +78,7 @@ newTalent{
 			end
 		end
 
-		if not did_alternate then self:attackTarget(target) end
+		if not did_alternate then self:attackTarget(target) end -- this uses energy
 
 		if config.settings.tome.smooth_move > 0 and config.settings.tome.twitch_move then
 			self:setMoveAnim(self.x, self.y, config.settings.tome.smooth_move, blur, util.getDir(x, y, self.x, self.y), 0.2)
@@ -256,7 +262,7 @@ newTalent{
 	end,
 	info = function(self, t) return ([[You are hunted!.
 		There is a %d%% chance each turn that all foes in a %d radius get a glimpse of your position for 30 turns.]]):
-		format(1 + self.level / 7, 10 + self.level / 5)
+		format(math.min(100, 1 + self.level / 7), 10 + self.level / 5)
 	end,
 }
 
@@ -333,9 +339,9 @@ newTalent{
 		return true
 	end,
 	info = [[Allows a chronomancer to timeport to Point Zero.
-	You have studied the chronomancy there and have been granted a special portal spell to teleport there.
-	Nobody must learn about this spell and so it should never be used while seen by any creatures.
-	The spell will take time to activate. You must be out of sight of any creature when you cast it and when the timeportation takes effect.]]
+	You have studied the chronomancy there and have been granted a special portal spell to teleport back.
+	This spell must be kept secret; it should never be used within view of uninitiated witnesses.
+	The spell takes time (40 turns) to activate, and you must be out of sight of any other creature when you cast it and when the timeportation takes effect.]]
 }
 
 newTalent{
@@ -343,7 +349,7 @@ newTalent{
 	type = {"base/class", 1},
 	points = 5,
 	no_energy = true,
-	cooldown = function(self, t) return 55 - self:getTalentLevel(t) * 5 end,
+	cooldown = function(self, t) return self:combatTalentLimit(t, 20, 50, 30) end, -- Shouldn't really need more than one level
 	tactical = { CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
@@ -352,21 +358,20 @@ newTalent{
 		end
 		return nb
 	end},
+	getReduction = function(self, t, e)
+		local save_fn = self[type(e) == "table" and self.save_for_effects[e.type] or self.save_for_effects[e]]
+		local save = save_fn and save_fn(self, true) or 0
+		return math.floor(math.max(2, save/5))
+	end,
 	action = function(self, t)
 		local target = self
 		local todel = {}
 
-		local save_for_effects = {
-			magical = "combatSpellResist",
-			mental = "combatMentalResist",
-			physical = "combatPhysicalResist",
-		}
 		for eff_id, p in pairs(target.tmp) do
 			local e = target.tempeffect_def[eff_id]
-			if e.status == "detrimental" and save_for_effects[e.type] then
-				local save = self[save_for_effects[e.type]](self, true)
-				local decrease = math.floor(save/5)
-				print("About to reduce duration of... %s. Will use %s. Reducing duration by %d", e.desc, save_for_effects[e.type])
+			if e.status == "detrimental" and self.save_for_effects[e.type] then
+				local decrease = t.getReduction(self, t, e)
+				print(("%s: Reducing duration of %s, using %s, by %d"):format(t.name, e.desc, self.save_for_effects[e.type], decrease))
 				p.dur = p.dur - decrease
 				if p.dur <= 0 then todel[#todel+1] = eff_id end
 			end
@@ -378,16 +383,15 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local physical_reduction = math.floor(self:combatPhysicalResist(true)/5)
-		local spell_reduction = math.floor(self:combatSpellResist(true)/5)
-		local mental_reduction = math.floor(self:combatMentalResist(true)/5)
+		local eff_desc = ""
+		for e_type, fn in pairs(self.save_for_effects) do
+			eff_desc = eff_desc .. ("\n%s effect durations -%d turns"):format(e_type:capitalize(), t.getReduction(self, t, e_type))
+		end
 		return ([[Not the Master himself, nor all the orcs in fallen Reknor, nor even the terrifying unknown beyond Reknor's portal could slow your pursuit of the Staff of Absorption.
 		Children will hear of your relentlessness in song for years to come.
-		When activated, this ability reduces the duration of all active detrimental effects by 20%% of your appropriate save value.
-		Physical effect durations reduced by %d turns
-		Magical effect durations reduced by %d turns
-		Mental effect durations reduced by %d turns]]):
-		format(physical_reduction, spell_reduction, mental_reduction)
+		When activated, this ability reduces the duration of all active detrimental effects by 20%% of your associated save value or 2, whichever is greater:
+		%s]]):
+		format(eff_desc)
 	end,
 }
 

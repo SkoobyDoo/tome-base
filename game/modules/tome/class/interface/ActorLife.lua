@@ -41,6 +41,11 @@ end
 function _M:takeHit(value, src, death_note)
 	if self.onTakeHit then value = self:onTakeHit(value, src, death_note) end
 	if value <= 0 then return false, 0 end
+
+	if death_note and death_note.cant_die then
+		if value >= self.life then value = self.life - 1 end
+	end
+
 	self.life = self.life - value
 	self.changed = true
 	if self.life <= self.die_at and not self.dead then

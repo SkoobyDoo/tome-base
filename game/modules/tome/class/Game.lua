@@ -60,6 +60,8 @@ local MapMenu = require "mod.dialogs.MapMenu"
 module(..., package.seeall, class.inherit(engine.GameTurnBased, engine.interface.GameMusic, engine.interface.GameSound, engine.interface.GameTargeting))
 
 -- Difficulty settings
+-- Adjustments handled in _M:loaded, _M:noStairsTime, NPC:addedToLevel, Actor::on_set_temporary_effect, 
+-- data.damage_types (setDefaultProjector), GameState:zoneCheckBackupGuardian
 DIFFICULTY_EASY = 1
 DIFFICULTY_NORMAL = 2
 DIFFICULTY_NIGHTMARE = 3
@@ -352,6 +354,42 @@ end
 function _M:setupDifficulty(d)
 	self.difficulty = d
 end
+
+--- Apply game difficulty to a zone, updating zone.level_range
+-- @param zone the zone to update
+-- @param level_range number(lowest base level) or table (level ranges) to update the level range to
+--  will not update a zone that has already been updated unless level_range is specified
+--  saves the original zone.level_range to zone.base_level_range
+function _M:applyDifficulty(zone, level_range)
+	if not zone.__applied_difficulty or level_range then
+		zone.base_level_range = zone.base_level_range or table.clone(zone.level_range, true)
+		if type(level_range) == "number" then
+			zone.level_range = {level_range, level_range}
+		elseif type(level_range) == "table" then
+			zone.level_range = table.clone(level_range)
+		end
+		-- difficulty effects are phased in as the player reaches level 10
+		local lev_mult, lev_add, diff_adjust = 1, 0, math.min(1, game:getPlayer(true).level/10)
+		if self.difficulty == self.DIFFICULTY_NIGHTMARE then
+			lev_mult, lev_add = 1.5, 0
+		elseif self.difficulty == self.DIFFICULTY_INSANE then
+			lev_mult, lev_add = 1.5, 1
+		elseif self.difficulty == self.DIFFICULTY_MADNESS then
+			lev_mult, lev_add = 2.5, 2
+		end
+		
+		if lev_mult ~= 1 then
+			local diff_adjust = math.min(1, game:getPlayer(true).level/10)
+			lev_mult = 1 + (lev_mult - 1)*diff_adjust
+			lev_add = lev_add*diff_adjust
+			zone.level_range[1] = zone.level_range[1]*lev_mult + lev_add
+			zone.level_range[2] = zone.level_range[2]*lev_mult + lev_add
+			zone:updateBaseLevel()
+		end
+		zone.__applied_difficulty = true
+	end
+end
+
 function _M:setupPermadeath(p)
 	if p:attr("infinite_lifes") then self.permadeath = PERMADEATH_INFINITE
 	elseif p:attr("easy_mode_lifes") then self.permadeath = PERMADEATH_MANY
@@ -366,26 +404,7 @@ function _M:loaded()
 	Zone:setup{
 		npc_class="mod.class.NPC", grid_class="mod.class.Grid", object_class="mod.class.Object", trap_class="mod.class.Trap",
 		on_setup = function(zone)
-			-- Increases zone level for higher difficulties
-			if not zone.__applied_difficulty then
-				zone.__applied_difficulty = true
-				if self.difficulty == self.DIFFICULTY_NIGHTMARE then
-					zone.base_level_range = table.clone(zone.level_range, true)
-					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 1.5 + 0
-					zone.level_range[2] = zone.level_range[2] * 1.5 + 0
-				elseif self.difficulty == self.DIFFICULTY_INSANE then
-					zone.base_level_range = table.clone(zone.level_range, true)
-					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 1.5 + 1
-					zone.level_range[2] = zone.level_range[2] * 1.5 + 1
-				elseif self.difficulty == self.DIFFICULTY_MADNESS then
-					zone.base_level_range = table.clone(zone.level_range, true)
-					zone.specific_base_level.object = -10 -zone.level_range[1]
-					zone.level_range[1] = zone.level_range[1] * 2.5 + 1
-					zone.level_range[2] = zone.level_range[2] * 2.5 + 1
-				end
-			end
+			self:applyDifficulty(zone) -- Increases zone level for higher difficulties
 		end,
 	}
 	Zone.check_filter = function(...) return self.state:entityFilter(...) end
@@ -787,25 +806,31 @@ function _M:noStairsTime()
 	return nb * 10
 end
 
-function _M:changeLevel(lev, zone, params)
+function _M:changeLevelCheck(lev, zone, params)
 	params = params or {}
-	if not params.direct_switch and (self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime()) then
+	if not params.direct_switch and (self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime()) and not config.settings.cheat then
 		local left = math.ceil((10 + self:getPlayer(true).last_kill_turn - self.turn + self:noStairsTime()) / 10)
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level so soon after a kill (%d game turns left to wait)!", left)
-		return
+		return false
 	end
 	if not self.player.can_change_level then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level without your own body!")
-		return
+		return false
 	end
 	if zone and not self.player.can_change_zone then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not leave the zone with this character!")
-		return
+		return false
 	end
 	if self.player:hasEffect(self.player.EFF_PARADOX_CLONE) or self.player:hasEffect(self.player.EFF_IMMINENT_PARADOX_CLONE) then
 		self.logPlayer(self.player, "#LIGHT_RED#You cannot escape your fate by leaving the level!")
-		return
+		return false
 	end
+	return true
+end
+
+function _M:changeLevel(lev, zone, params)
+	params = params or {}
+	if not self:changeLevelCheck(lev, zone, params) then return end
 
 	-- Transmo!
 	local p = self:getPlayer(true)
@@ -912,7 +937,7 @@ end
 
 function _M:changeLevelReal(lev, zone, params)
 	local oz, ol = self.zone, self.level
-	
+
 	-- Unlock first!
 	if not params.temporary_zone_shift_back and self.level and self.level.temp_shift_zone then
 		self:changeLevelReal(1, "useless", {temporary_zone_shift_back=true})
@@ -938,7 +963,7 @@ function _M:changeLevelReal(lev, zone, params)
 	end
 
 	-- clear chrono worlds and their various effects
-	if self._chronoworlds then self._chronoworlds = nil end
+	if self._chronoworlds and not params.keep_chronoworlds then self._chronoworlds = nil end
 
 	local left_zone = self.zone
 	local old_lev = (self.level and not zone) and self.level.level or -1000
@@ -1095,7 +1120,7 @@ function _M:changeLevelReal(lev, zone, params)
 					list[#list+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack((rng.table(list))) end
 		elseif params.auto_level_stair then
 			-- Dirty but quick
 			local list = {}
@@ -1105,18 +1130,18 @@ function _M:changeLevelReal(lev, zone, params)
 					list[#list+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack((rng.table(list))) end
 		end
 
-		if self.level.exited then -- use the last location, if defined
-			local turn = 0
-			if self.level.exited.down then
-				x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
-			end
-			if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
-				x, y = self.level.exited.up.x, self.level.exited.up.y
-			end
-		end
+		-- if self.level.exited then -- use the last location, if defined
+		-- 	local turn = 0
+		-- 	if self.level.exited.down then
+		-- 		x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
+		-- 	end
+		-- 	if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
+		-- 		x, y = self.level.exited.up.x, self.level.exited.up.y
+		-- 	end
+		-- end
 
 		if not x then -- Default to stairs
 			if lev > old_lev and not params.force_down and self.level.default_up then x, y = self.level.default_up.x, self.level.default_up.y
@@ -1351,6 +1376,7 @@ end
 
 --- Update the zone name, if needed
 function _M:updateZoneName()
+	if not self.zone_font then return end
 	local name
 	if self.zone.display_name then
 		name = self.zone.display_name()
@@ -1568,7 +1594,7 @@ end
 
 --- Queue combat damage values and messages for later display with displayDelayedLogDamage
 -- @param src: source (primary) actor dealing the damage
--- @param target: target (secondary) actor recieving the damage
+-- @param target: target (secondary) actor receiving the damage
 -- @param dam: [type=number] damage effectively dealt, added to total
 --		negative dam is counted as healing and summed separately
 -- @param desc: [type=string] text description of damage dealth, passed directly to log message
@@ -1838,14 +1864,18 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(game.level.level + 1)
+			self:changeLevel(1, "cults+test")
+do return end
+			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)
+			local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[Map.ACTOR]=true})
+			if m and x then
+				game.zone:addEntity(game.level, m, "actor", x, y)
+			end
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
 			print(f, err)
 			setfenv(f, setmetatable({level=self.level, zone=self.zone}, {__index=_G}))
 			print(pcall(f))
-do return end
-			self:registerDialog(require("mod.dialogs.DownloadCharball").new())
 		end end,
 		[{"_f","ctrl"}] = function() if config.settings.cheat then
 			self.player.quests["love-melinda"] = nil

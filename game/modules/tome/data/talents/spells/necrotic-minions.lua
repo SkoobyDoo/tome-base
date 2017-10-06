@@ -737,6 +737,7 @@ newTalent{
 	requires_target = true,
 	range = 0,
 	autolearn_talent = "T_NECROTIC_AURA",
+	unlearn_on_clone = true,
 	radius = function(self, t)
 		local aura = self:getTalentFromId(self.T_NECROTIC_AURA)
 		return aura.getRadius(self, aura)
@@ -823,7 +824,8 @@ newTalent{
 		self:forceUseTalent(self.T_NECROTIC_AURA, {ignore_energy=true, ignore_cd=true, no_equilibrium_fail=true, no_paradox_fail=true})
 	end,
 	info = function(self, t)
-		return ([[Your dark power radiates further as you grow stronger. Increases the radius of your necrotic aura by %d, and reduces the decay rate of your minions outside the aura by %d%%.]]):
+		return ([[Your dark power radiates further as you grow stronger. Increases the radius of your necrotic aura by %d, and reduces the decay rate of your minions outside the aura by %d%%. 
+		At level 3, necrotic minions inside your aura have a 25%% chance to refund their soul on death. If a minion turns into a will o' the wisp then the wisp will have that chance instead.]]):
 		format(math.floor(t.getbonusRadius(self, t)), math.min(7, self:getTalentLevelRaw(t)))
 	end,
 }
@@ -873,7 +875,7 @@ newTalent{
 	getPerc = function(self, t) return self:combatTalentSpellDamage(t, 15, 80) end,
 	info = function(self, t)
 		return ([[You share your powers with your minions, granting them %d%% of your resistances and saves.
-		In addition all damage done by your minions to you is reduced by %d%%.
+		In addition all damage done by your minions to you or your other minions is reduced by %d%%.
 		The effect will increase with your Spellpower.]]):
 		format(t.getPerc(self, t), self:getTalentLevelRaw(t) * 20)
 	end,

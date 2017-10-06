@@ -50,25 +50,20 @@ vec4 GetColor(const int layerIndex, vec2 texPos)
 
 vec2 GetDistortion(vec2 texPos, int layerIndex, int distortionType, float deformRate)
 {
-	switch(distortionType)
-	{
-		case 0:
-		{
-			float alpha = 0.2 * sin(tick / time_factor * (layerIndex * 0.5 + 1.0) + layerIndex * 100.0) * deformRate;
-			mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
+	float layerIndexF = float(layerIndex);
+	if (distortionType == 0) {
+		float alpha = 0.2 * sin(tick / time_factor * (layerIndexF * 0.5 + 1.0) + layerIndexF * 100.0) * deformRate;
+		mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
 
-			return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
-		}break;
-		case 1:
-		{
-			float phase = length(texPos - vec2(0.5));
-			float alpha = 0.2 * sin(-tick / time_factor * (layerIndex * 0.5 + 1.0) + phase * 30.0 + layerIndex * 100.0) * deformRate;
-			mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
+		return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
+	} else if (distortionType == 1) {
+		float phase = length(texPos - vec2(0.5));
+		float alpha = 0.2 * sin(-tick / time_factor * (layerIndexF * 0.5 + 1.0) + phase * 30.0 + layerIndexF * 100.0) * deformRate;
+		mat2 rotation = mat2(cos(alpha), sin(alpha), -sin(alpha), cos(alpha));
 
-			return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
+		return clamp(rotation * (texPos - vec2(0.5)) + vec2(0.5), 0.01, 0.99);
 
-			return clamp(texPos, 0.01, 0.99);
-		}break;
+		return clamp(texPos, 0.01, 0.99);
 	}
 	return clamp(texPos, 0.01, 0.99);
 }
@@ -79,8 +74,7 @@ float snoise( vec3 v );
 void main(void)
 {
 	vec2 pos = gl_TexCoord[0].xy;
-	float normTime = (tick - tick_start) / time_factor;
-	float appearPhase = clamp(normTime / appearTime, 0.0, 1.0);
+	float appearPhase = clamp((tick - tick_start) / time_factor / appearTime, 0.0, 1.0);
 	vec4 resultColor = vec4(0.0, 0.0, 0.0, 0.0);
 
 	const int layersCount = 4;
@@ -90,14 +84,14 @@ void main(void)
 	int backLayersCount = int(backgroundLayersCount + 0.5);
 	for(int layerIndex = 0; layerIndex < 4; layerIndex++)
 	{
-		if(noup == 1 && layerIndex < backLayersCount) continue;
-		if(noup == 2 && layerIndex >= backLayersCount) continue;
+		if(noup == 1.0 && layerIndex < backLayersCount) continue;
+		if(noup == 2.0 && layerIndex >= backLayersCount) continue;
 		float deformRate = GetDistortionRange(layerIndex, pos);
 		vec2 texPos = GetDistortion(pos, layerIndex, distortionType, deformRate);
 		vec4 layerColor = GetColor(layerIndex, texPos);
-		float alphaThreshold = 1.0 - appearPhase + deformRate;
-		layerColor.a = max(0.0, layerColor.a - alphaThreshold) / (1.0 - alphaThreshold + 1e-4);
-		//vec4 layerColor = texture2D(tex, texPos * 0.5 + layerOffsets[layerIndex]);
+    //float alphaThreshold = 1.0 - clamp(appearPhase / mix(0.5, 1.0, deformRate), 0.0, 1.0);
+    float alphaThreshold = clamp(1.0 - 2.0 * appearPhase + deformRate, 0.0, 1.0);
+    layerColor.a = max(0.0, layerColor.a - alphaThreshold) / (1.0 - alphaThreshold + 1e-4);
 		resultColor = Uberblend(resultColor, layerColor);
 	}
 	/*float deformRate = pos.x;
@@ -106,7 +100,7 @@ void main(void)
 	resultColor = texture2D(tex, vec2(0.5) + (pos - vec2(0.5)) * rotation);*/
 	//resultColor = texture2D(tex, pos);
 
-	gl_FragColor = resultColor;
+	gl_FragColor = resultColor * gl_Color;
 }
 
 

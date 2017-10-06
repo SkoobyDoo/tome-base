@@ -81,16 +81,19 @@ newEntity{
 	resists = { all = 40, },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, FEET=1 },
+	resolvers.auto_equip_filters("Archmage", true),
 	resolvers.equip{
 		{type="weapon", subtype="staff", defined="STAFF_ABSORPTION_AWAKENED", autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="head", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="feet", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 	},
+	resolvers.drops{chance=100, nb=1, {defined="ELANDAR_JOURNAL2"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
 	resolvers.talents{
 		[Talents.T_STAFF_MASTERY]={base=5, every=8},
+		[Talents.T_ARMOUR_TRAINING]=1,
 		[Talents.T_STONE_SKIN]={base=7, every=6},
 		[Talents.T_QUICKEN_SPELLS]={base=7, every=6},
 		[Talents.T_SPELLCRAFT]={base=7, every=6},
@@ -158,14 +161,19 @@ newEntity{
 	resists = { all = 45, },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, FEET=1, HEAD=1, HANDS=1 },
+	resolvers.auto_equip_filters("Reaver"),
+	resolvers.auto_equip_filters{
+		BODY = {type="armor", special=function(e) return e.subtype=="heavy" or e.subtype=="massive" end},
+	},
 	resolvers.equip{
-		{type="weapon", subtype="sword", force_drop=true,  forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
+		{type="weapon", subtype="longsword", force_drop=true,  forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="weapon", subtype="waraxe", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="massive", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="feet", name="pair of voratun boots", force_drop=true, forbid_power_source={antimagic=true}, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="head", name="voratun helm", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="hands", name="voratun gauntlets", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 	},
+	resolvers.drops{chance=100, nb=1, {defined="ARGONIEL_ATHAME"} },
 	resolvers.drops{chance=100, nb=1, {defined="PEARL_LIFE_DEATH"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },
 
@@ -240,6 +248,7 @@ newEntity{ define_as = "FALLEN_SUN_PALADIN_AERYN",
 	no_auto_resists = true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, FEET=1 },
+	resolvers.auto_equip_filters("Sun Paladin"),
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.equip{
@@ -314,6 +323,7 @@ newEntity{ define_as = "HIGH_SUN_PALADIN_AERYN",
 	resolvers.inscriptions(4, {}),
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, FEET=1 },
+	resolvers.auto_equip_filters("Sun Paladin"),
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.equip{

@@ -208,7 +208,7 @@ newTalent{
 	require = techs_dex_req2,
 	random_ego = "defensive",
 	tactical = { ESCAPE = 2, DEFEND = 2 },
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 15, 30, 20)) end, --shorter cooldown but less duration - as especially on randbosses a long duration evasion is frustrating, this makes it a bit more useful for hit and run
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 28, 15)) end, --shorter cooldown but less duration - as especially on randbosses a long duration evasion is frustrating, this makes it a bit more useful for hit and run
 	base_stamina = 25,
 	stamina = mobility_stamina,
 	no_energy = true,
@@ -242,7 +242,7 @@ newTalent {
 	points = 5,
 	random_ego = "attack",
 	on_pre_use = mobility_pre_use,
-	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 4, 13, 7)) end,
+	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 4, 11, 5)) end,
 	no_energy = true,
 	no_break_stealth = true,
 	tactical = { CLOSEIN = 2 },
@@ -288,7 +288,7 @@ newTalent {
 	points = 5,
 	require = techs_dex_req4,
 	sustain_stamina = 10,
-	cooldown = 10,
+	cooldown = 5,
 	no_energy = true,
 	tactical = { DEFEND = 2 },
 --	pinImmune = function(self, t) return self:combatTalentLimit(t, 1, .17, .5) end, -- limit < 100%
@@ -305,7 +305,7 @@ newTalent {
 	getReduction = function(self, t, fake) -- % reduction based on both TL and Defense
 		return math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.6))*self:combatLimit(self:combatDefense(fake), 1.0, 0.25, 0, 0.5, 50) -- vs TL/def: 1/10 == ~08%, 1.3/10 == ~10%, 1.3/50 == ~16%, 6.5/50 == ~32%, 6.5/100 = ~40%
 	end,
-	getStamina = function(self, t) return 12*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.65)) end,
+	getStamina = function(self, t) return 12*(1 + self:combatFatigue()/100)*math.max(0.1, self:combatTalentLimit(t, 0.8, 0.25, 0.45)) end,
 	getLifeTrigger = function(self, t)
 		return self:combatTalentLimit(t, 10, 30, 15) -- Limit trigger > 10% life
 	end,
@@ -334,11 +334,13 @@ newTalent {
 				self.turn_procs[t.id] = state
 				self:incStamina(-stam_cost) -- Note: force_talent_ignore_ressources has no effect on this
 
-				local reduce = t.getReduction(self, t)
-				local newdam = dam*(1-reduce)
-				src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow by #ORCHID#" .. math.ceil(dam-newdam) .. "#LAST#.", is_attk and "an attack" or "damage")
-				dam = newdam
+				local reduce = t.getReduction(self, t)*dam
+				if src.logCombat then src:logCombat(self, "#FIREBRICK##Target# reacts to %s from #Source#, mitigating the blow!#LAST#.", is_attk and "an attack" or "damage") end
+				dam = dam - reduce
 				print("[PROJECTOR] dam after callbackOnTakeDamage", t.id, dam)
+				local d_color = DamageType:get(type).text_color or "#FIREBRICK#"
+				local stam_txt = stam_cost > 0 and (" #ffcc80#, -%d stam#LAST#"):format(stam_cost) or ""
+				game:delayedLogDamage(src, self, 0, ("%s(%d reacted#LAST#%s%s)#LAST#"):format(d_color, reduce, stam_txt, d_color), false)
 				if not is_attk then self.turn_procs.gen_trained_reactions = true end
 				return {dam = dam}
 			end

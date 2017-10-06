@@ -29,6 +29,7 @@ local fast_cache = {}
 setmetatable(fast_cache, {__mode="v"})
 
 --- Defines an Actor resource
+-- Resources are numeric quantities that decrease in value as the resource is depleted (set params.invert_values to reverse this)
 -- Static!
 -- This defines for all actors the methods :getResource(), :incResource(), :getMinResource(), :incMinResource(), :getMaxResource(), and :incMaxResource()
 -- (where "Resource" = short_name:lower():capitalize())
@@ -53,6 +54,7 @@ function _M:defineResource(name, short_name, talent, regen_prop, desc, min, max,
 		talent = talent,
 		regen_prop = regen_prop,
 		invert_values = false, -- resource value decreases as it is consumed by default
+		switch_direction = false, -- resource value prefers to go to the min instead of max
 		description = desc,
 		minname = minname,
 		maxname = maxname,
@@ -126,7 +128,7 @@ function _M:init(t)
 	for i, r in ipairs(_M.resources_def) do
 		self[r.minname] = t[r.minname] or r.min
 		self[r.maxname] = t[r.maxname] or r.max
-		self[r.short_name] = t[r.short_name] or self[r.maxname]
+		self[r.short_name] = t[r.short_name] or (r.switch_direction and self[r.minname] or self[r.maxname])
 		if r.regen_prop then
 			self[r.regen_prop] = t[r.regen_prop] or 0
 		end

@@ -138,6 +138,7 @@ newEntity{ define_as="TRAINING_DUMMY",
 	max_life = 300000, life_rating = 0,
 	life_regen = 300000,
 	never_move = 1,
+	knockback_immune = 1,
 	training_dummy = 1,
 	on_takehit = function(self, value, src, infos)
 		local data = game.zone.training_dummies

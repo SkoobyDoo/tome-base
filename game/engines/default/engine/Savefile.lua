@@ -680,17 +680,22 @@ function _M:loadEntity(name)
 	local loadedEntity = self:loadReal("main")
 
 	-- Delay loaded must run
-	for i, o in ipairs(self.delayLoad) do
---		print("loader executed for class", o, o.__CLASSNAME)
-		o:loaded()
-	end
+	local ok = false
+	pcall(function()
+		for i, o in ipairs(self.delayLoad) do
+--			print("loader executed for class", o, o.__CLASSNAME)
+			o:loaded()
+		end
+		ok = true
+	end)
 
 	-- We check for the server return, while we loaded the save it probably responded so we do not wait at all
-	if not checker() then self:badMD5Load() end
+	if ok and not checker() then self:badMD5Load() end
 
 	popup:done()
 
 	fs.umount(path)
+	if not ok then return false end
 	return loadedEntity
 end
 

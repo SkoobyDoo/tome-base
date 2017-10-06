@@ -58,11 +58,15 @@ function _M:block_move(x, y, e, act, couldpass)
 
 	-- Open doors
 	if self.door_opened and e.open_door and act then
+		local door_g
+		if type(self.door_opened) == "string" then door_g = game.zone.grid_list[self.door_opened]
+		else door_g = self.door_opened end
+
 		if self.door_player_check then
 			if e.player then
 				Dialog:yesnoPopup(self.name, self.door_player_check, function(ret)
 					if ret then
-						game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
+						game.level.map(x, y, engine.Map.TERRAIN, door_g)
 						game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
 						game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
@@ -75,7 +79,7 @@ function _M:block_move(x, y, e, act, couldpass)
 				Dialog:simplePopup(self.name, self.door_player_stop)
 			end
 		else
-			game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
+			game.level.map(x, y, engine.Map.TERRAIN, door_g)
 			game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
 			game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
@@ -222,8 +226,9 @@ function _M:tooltip(x, y)
 		-- debugging info
 		if game.level.map.room_map then
 			local data = game.level.map.room_map[x][y]
-			local room = table.get(game.level.map.room_map.rooms, data.room, "room")
-			tstr:add(true, {"color", "PINK"}, ("room_map: rm:%s(%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
+			local room_base = table.get(game.level.map.room_map.rooms, data.room)
+			local room = room_base and room_base.room
+			tstr:add(true, {"color", "PINK"}, ("room_map:rm:%s(id:%s,name:%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room_base and room_base.id, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
 		end
 		local attrs = game.level.map.attrs[x+y*game.level.map.w]
 		if attrs then

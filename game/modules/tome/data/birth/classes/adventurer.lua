@@ -79,6 +79,7 @@ newBirthDescriptor{
 				end
 			end end
 		end
+		tts["technique/combat-training"] = {true, 0}
 		return tts
 	end,
 	copy_add = {

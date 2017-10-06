@@ -77,7 +77,7 @@ Each swing drips pustulant fluid before it, and each droplet writhes and wriggle
 	resolvers.equip{
 		{type="weapon", subtype="waraxe", ego_chance = 100, autoreq=true},
 		{type="weapon", subtype="waraxe", ego_chance = 100, autoreq=true},
-		{type="armor", subtype="robe", ego_chance = 100, autoreq=true}
+		{type="armor", subtype="cloth", ego_chance = 100, autoreq=true}
 	},
 
 	talent_cd_reduction = {[Talents.T_BLINDSIDE]=4},
@@ -968,6 +968,7 @@ You can discern a huge round mouth covered in razor-sharp teeth.]],
 	size_category = 4,
 	movement_speed = 0.8,
 	is_grgglck = true,
+	immune_possession = 1,
 
 	stun_immune = 1,
 	knockback_immune = 1,

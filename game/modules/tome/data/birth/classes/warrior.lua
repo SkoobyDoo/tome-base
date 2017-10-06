@@ -84,6 +84,17 @@ newBirthDescriptor{
 		[ActorTalents.T_ARMOUR_TRAINING] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", properties={"twohanded"}},
+			OFFHAND = {special=function(e, filter) -- only allow if there is already a weapon in MAINHAND
+				local who = filter._equipping_entity
+				if who then
+					local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+					if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+				end
+				return false
+			end},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="heavy", name="iron mail armour", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -93,6 +104,11 @@ newBirthDescriptor{
 		life_rating = 3,
 	},
 }
+
+local shield_special = function(e) -- allows any object with shield combat
+	local combat = e.shield_normal_combat and e.combat or e.special_combat
+	return combat and combat.block
+end
 
 newBirthDescriptor{
 	type = "subclass",
@@ -104,7 +120,7 @@ newBirthDescriptor{
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +5 Strength, +2 Dexterity, +2 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
-		"#GOLD#Life per level:#LIGHT_BLUE# +2",
+		"#GOLD#Life per level:#LIGHT_BLUE# +6",
 	},
 	birth_example_particles = {
 		function(actor) if core.shader.active() then
@@ -137,6 +153,24 @@ newBirthDescriptor{
 		[ActorTalents.T_WEAPONS_MASTERY] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", special=function(e, filter) -- allow any weapon that doesn't forbid OFFHAND
+				if e.slot_forbid == "OFFHAND" then
+					local who = filter._equipping_entity
+					return who and not who:slotForbidCheck(e, who.INVEN_MAINHAND)
+				end
+				return true
+			end},
+			OFFHAND = {special=shield_special},
+			BODY = {type="armor", special=function(e, filter)
+				if e.subtype=="heavy" or e.subtype=="massive" then return true end
+				local who = filter._equipping_entity
+				if who then
+					local body = who:getInven(who.INVEN_BODY)
+					return not (body and body[1])
+				end
+			end},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -144,7 +178,7 @@ newBirthDescriptor{
 		},
 	},
 	copy_add = {
-		life_rating = 2,
+		life_rating = 6,
 	},
 }
 
@@ -188,6 +222,21 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 110,
+		resolvers.auto_equip_filters{MAINHAND = {type="weapon", properties={"archery"}},
+			OFFHAND = {special=function(e, filter) -- only allow if there is a 1H weapon in MAINHAND
+				local who = filter._equipping_entity
+				if who then
+					local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+					if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+				end
+				return false
+			end},
+			QUIVER={properties={"archery_ammo"}, special=function(e, filter) -- must match the MAINHAND weapon, if any
+				local mh = filter._equipping_entity and filter._equipping_entity:getInven(filter._equipping_entity.INVEN_MAINHAND)
+				mh = mh and mh[1]
+				if not mh or mh.archery == e.archery_ammo then return true end
+			end}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
@@ -317,6 +366,9 @@ newBirthDescriptor{
 		[ActorTalents.T_UNARMED_MASTERY] = 1, -- early game is absolutely stupid without this
 	},
 	copy = {
+		resolvers.auto_equip_filters{-- will not try to equip weapons
+			MAINHAND = {type="none"}, OFFHAND = {type="none"}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="armor", subtype="hands", name="iron gauntlets", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="light", name="rough leather armour", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -329,6 +381,4 @@ newBirthDescriptor{
 		life_rating = 2,
 	},
 }
-
-
 

@@ -39,7 +39,7 @@ uberTalent{
 	mode = "activated",
 	require = { special={desc="Be of size category 'big' or larger. This is also required to use it.", fct=function(self) return self.size_category and self.size_category >= 4 end} },
 	requires_target = true,
-	tactical = { ATTACK = 4 },
+	tactical = { ATTACK = 3, DISABLE = {stun = 1}, ESCAPE = {knockback = 1} },
 	on_pre_use = function(self, t) return self.size_category and self.size_category >= 4 end,
 	cooldown = 10,
 	is_melee = true,
@@ -59,18 +59,20 @@ uberTalent{
 		local sides = util.dirSides(dir, 0)
 
 		target:knockback(self.x, self.y, 5, function(t2)
-			local d = rng.chance(2) and sides.hard_left or sides.hard_right
-			local sx, sy = util.coordAddDir(t2.x, t2.y, d)
-			local ox, oy = t2.x, t2.y
-			t2:knockback(sx, sy, 2, function(t3) return true end)
+			if sides then
+				local d = rng.chance(2) and sides.hard_left or sides.hard_right
+				local sx, sy = util.coordAddDir(t2.x, t2.y, d)
+				local ox, oy = t2.x, t2.y
+				t2:knockback(sx, sy, 2, function(t3) return true end)
+			end
 			if t2:canBe("stun") then t2:setEffect(t2.EFF_STUNNED, 3, {}) end
 		end)
 		if target:canBe("stun") then target:setEffect(target.EFF_STUNNED, 3, {}) end
 		return true
 	end,
 	info = function(self, t)
-		return ([[You deal a massive blow to your foe, smashing it for 350%% weapon damage and knocking it back 6 tiles.
-		All foes in its path will be knocked to the side and stunned for 3 turns.
+		return ([[You deal a massive blow to your foe, smashing it for 350%% weapon damage, knocking it back 5 tiles, and knocking aside all foes in its path.
+		All targets affected are stunned for 3 turns.
 		For each size category over 'big' you gain an additional +80%% weapon damage.]])
 		:format()
 	end,
@@ -102,12 +104,14 @@ uberTalent{
 			end
 		end)
 
-		self:attackTarget(target, nil, 1.5 + (destroyed and 3.5 or 0), true)
+		if self:attackTarget(target, nil, 1.5 + (destroyed and 3.5 or 0), true) then
+			target:setEffect(target.EFF_COUNTERSTRIKE, 2, {power=20, no_ct_effect=true, src=self, nb=1})
+		end
 		return true
 	end,
 	info = function(self, t)
-		return ([[You deal a massive blow to your foe, smashing it for 150%% weapon damage and knocking it back 4 tiles.
-		If the knockback makes it hit a wall, it will smash down the wall and deal an additional 350%% weapon damage.]])
+		return ([[You deal a massive blow to your foe, smashing it for 150%% weapon damage and knocking it back 4 tiles (ignoring knockback resistance or physical save).
+		If the knockback makes it hit a wall, it will smash down the wall, deal an additional 350%% weapon damage and apply the Counterstrike effect.]])
 		:format()
 	end,
 }
@@ -129,7 +133,8 @@ uberTalent{
 	cooldown = 25,
 	requires_target = true,
 	range = 5,
-	tactical = { ATTACKAREA = 50, CLOSEIN = 30 },  -- someone loves this talent :P
+	tactical = { ATTACKAREA = {LIGHT = 2, FIRE = 2, PHYSICAL = 2}, CLOSEIN = 2 },
+	target = {type="ball", range=0, friendlyfire=false, radius=5},
 	require = { special={desc="Have dealt over 50000 light or fire damage", fct=function(self) return
 		self.damage_log and (
 			(self.damage_log[DamageType.FIRE] and self.damage_log[DamageType.FIRE] >= 50000) or
@@ -154,12 +159,18 @@ uberTalent{
 	mode = "passive",
 	require = { special={desc="Be able to use massive armours", fct=function(self) return self:getTalentLevelRaw(self.T_ARMOUR_TRAINING) >= 3 end} },
 	on_learn = function(self, t)
+		self:attr("size_category", 1)
 		self:attr("max_encumber", 500)
-		self:incIncStat(self.STAT_STR, 40)
+		self:incIncStat(self.STAT_STR, 50)
+	end,
+	on_unlearn = function(self, t)
+		self:attr("size_category", -1)
+		self:attr("max_encumber", -500)
+		self:incIncStat(self.STAT_STR, -50)
 	end,
 	info = function(self, t)
 		return ([[Your strength is legendary; fatigue and physical exertion mean nothing to you.
-		Your fatigue is permanently set to 0, carrying capacity increased by 500, and strength increased by 40.]])
+		Your fatigue is permanently set to 0, carrying capacity increased by 500, and strength increased by 50 and you gain a size category.]])
 		:format()
 	end,
 }
@@ -172,6 +183,7 @@ uberTalent{
 		local q = self:hasQuest("temple-of-creation")
 		return q and not q:isCompleted("kill-slasul") and q:isCompleted("kill-drake")
 	end} },
+	cant_steal = true,
 	-- _M:levelup function in mod.class.Actor.lua updates the talent levels with character level
 	bonusLevel = function(self, t) return math.ceil(self.level/10) end,
 	callbackOnLevelup = function(self, t, new_level)
@@ -214,8 +226,8 @@ uberTalent{
 	mode = "passive",
 	info = function(self, t)
 		return ([[A strong body is key to a strong mind, and a strong mind can be powerful enough to make a strong body.
-		This prodigy grants a Mindpower bonus equal to 50%% of your Strength.
-		Additionally, you treat all weapons as having an additional 30%% Willpower modifier.]])
+		This prodigy grants a Mindpower bonus equal to 60%% of your Strength.
+		Additionally, you treat all weapons as having an additional 40%% Willpower modifier.]])
 		:format()
 	end,
 }

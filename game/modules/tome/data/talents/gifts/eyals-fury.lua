@@ -161,7 +161,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You call upon the earth to create a blinding, corrosive cloud in an area of radius %d for %d turns.
-		Each turn, this cloud deals %0.1f Acid damage to each foe while (%d%% chance) burning away one beneficial magical effect.
+		Each turn, this cloud deals %0.1f acid damage to each foe with a 25%% chance to blind and a (%d%% chance) of burning away one beneficial magical effect.
 		The damage increases with your Mindpower.]]):
 		format(self:getTalentRadius(t), t.getDuration(self, t), damDesc(self, DamageType.ACID, t.getDamage(self, t)), t.getChance(self, t))
 	end,

@@ -284,6 +284,9 @@ newTalent{
 
 			if game.level.map:checkAllEntities(x, y, "block_move") then return end
 
+			-- local a = util.dirToAngle(util.getDir(grappled.x, self.y, self.x, grappled.y))
+			game.level.map:particleEmitter(grappled.x, grappled.y, 2, "circle", {appear_size=0, base_rot=0, a=250, appear=6, limit_life=4, speed=0, img="hurricane_throw", radius=-0.3})
+
 			local ox, oy = grappled.x, grappled.y
 			grappled:move(x, y, true)
 			if config.settings.tome.smooth_move > 0 then

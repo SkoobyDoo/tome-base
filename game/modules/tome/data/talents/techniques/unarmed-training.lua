@@ -31,7 +31,7 @@ newTalent{
 		local fct = function()
 			self.before_empty_hands_combat = self.combat
 			self.combat = table.clone(self.combat, true)
-			self.combat.physspeed = math.min(0.6, self.combat.physspeed or 1000)
+			self.combat.physspeed = math.min(0.8, self.combat.physspeed or 1000)
 			if not self.combat.sound then self.combat.sound = {"actions/punch%d", 1, 4} end
 			if not self.combat.sound_miss then self.combat.sound_miss = "actions/melee_miss" end
 		end
@@ -53,21 +53,19 @@ newTalent{
 	end,
 }
 
--- This is by far the most powerful weapon tree in the game, loosely because you lose 2 weapon slots to make use of it and weapon stats are huge
--- Regardless, it gives much less damage than most weapon trees and is slightly more frontloaded
 newTalent{
 	name = "Unarmed Mastery",
 	type = {"technique/unarmed-training", 1},
 	points = 5,
 	require = { stat = { cun=function(level) return 12 + level * 6 end }, },
 	mode = "passive",
-	getDamage = function(self, t) return self:getTalentLevel(t) * 10 end,
-	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 4 end,
+	getDamage = function(self, t) return 0 end,
+	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 1.5 end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local inc = t.getPercentInc(self, t)
 		return ([[Increases Physical Power by %d, and increases all unarmed damage by %d%% (including grapples and kicks).
-		Note that brawlers naturally gain 0.5 Physical Power per character level while unarmed (current brawler physical power bonus: %0.1f) and attack 40%% faster while unarmed.]]):
+		Note that brawlers naturally gain 0.5 Physical Power per character level while unarmed (current brawler physical power bonus: %0.1f) and attack 20%% faster while unarmed.]]):
 		format(damage, 100*inc, self.level * 0.5)
 	end,
 }
@@ -78,7 +76,6 @@ newTalent{
 	require = techs_cun_req2,
 	mode = "passive",
 	points = 5,
-	tactical = { BUFF = 2 },
 	getStr = function(self, t) return math.ceil(self:combatTalentScale(t, 1.5, 7.5, 0.75) + self:combatTalentStatDamage(t, "cun", 2, 10)) end,
 	getCon = function(self, t) return math.ceil(self:combatTalentScale(t, 1.5, 7.5, 0.75) + self:combatTalentStatDamage(t, "dex", 5, 25)) end,
 	passives = function(self, t, tmptable)

@@ -21,5 +21,5 @@ return {
 	{name="tombstones", percent=10},
 	{name="old-battle-field", percent=5},
 	{name="thunderstorm", percent=7},
-	{name="rat-lich", percent=2},
+	{name="rat-lich", percent=2, unique=true},
 }

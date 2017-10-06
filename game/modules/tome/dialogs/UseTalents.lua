@@ -162,6 +162,7 @@ function _M:use(item, button)
 			{name="Bind to left mouse click (on a target)", what="left"},
 			{name="Bind to middle mouse click (on a target)", what="middle"},
 		}
+		if profile.auth and profile.hash_valid then table.insert(list, {name="Link in chat", what="chat-link"}) end
 
 		if self.actor:isTalentConfirmable(t) then
 			table.insert(list, 1, {name="#YELLOW#Disable talent confirmation", what="unset-confirm"})
@@ -211,8 +212,10 @@ function _M:use(item, button)
 				self.actor:checkSetTalentAuto(item.talent, true, 4)
 			elseif b.what == "auto-dis" then
 				self.actor:checkSetTalentAuto(item.talent, false)
+			elseif b.what == "chat-link" then
+				profile.chat.uc_ext:sendTalentLink(item.talent)
 			else
-				self:triggerHook{"UseTalents:use", actor=self.actor, talent=t, item=item}
+				self:triggerHook{"UseTalents:use", what=b.what, actor=self.actor, talent=t, item=item}
 			end
 			self.c_list:drawTree()
 			self.actor.changed = true

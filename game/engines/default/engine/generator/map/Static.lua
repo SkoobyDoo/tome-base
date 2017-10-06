@@ -33,6 +33,7 @@ function _M:init(zone, map, level, data)
 	self.grid_list = zone.grid_list
 	self.subgen = {}
 	self.spots = {}
+	data.static_replace_tiles = data.static_replace_tiles or {}
 	self.data = data
 	data.__import_offset_x = data.__import_offset_x or 0
 	data.__import_offset_y = data.__import_offset_y or 0
@@ -101,6 +102,7 @@ function _M:getLoader(t)
 			self.subgen[#self.subgen+1] = g
 		end,
 		defineTile = function(char, grid, obj, actor, trap, status, spot)
+			grid = self.data.static_replace_tiles[grid] or grid
 			t[char] = {grid=grid, object=obj, actor=actor, trap=trap, status=status, define_spot=spot}
 		end,
 		quickEntity = function(char, e, status, spot)
@@ -365,17 +367,21 @@ function _M:tmxLoad(file)
 				if props.start then m.startx = x m.starty = y end
 				if props['end'] then m.endx = x m.endy = y end
 				if props.type and props.subtype then
+					local t, st = props.type, props.subtype
+					props.type, props.subtype = nil, nil
 					for i = x, x + w do for j = y, y + h do
 						local i, j = rotate_coords(i, j)
-						g.addSpot({i, j}, props.type, props.subtype)
+						g.addSpot({i, j}, t, st, props)
 					end end
 				end
 			elseif og.attr.name:find("^addZone") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)
 				if props.type and props.subtype then
+					local t, st = props.type, props.subtype
+					props.type, props.subtype = nil, nil
 					local i1, j1 = rotate_coords(x, y)
 					local i2, j2 = rotate_coords(x + w, y + h)
-					g.addZone({i1, j1, i2, j2}, props.type, props.subtype)
+					g.addZone({i1, j1, i2, j2}, t, st, props)
 				end
 			elseif og.attr.name:find("^attrs") then
 				local x, y, w, h = math.floor(tonumber(o.attr.x) / tw), math.floor(tonumber(o.attr.y) / th), math.floor(tonumber(o.attr.width) / tw), math.floor(tonumber(o.attr.height) / th)

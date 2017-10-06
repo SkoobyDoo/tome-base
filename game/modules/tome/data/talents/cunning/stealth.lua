@@ -103,7 +103,21 @@ newTalent{
 			local t = self:getTalentFromId(self.T_TERRORIZE)
 			t.terrorize(self,t)
 		end
-		
+
+		if self:knowTalent(self.T_SHADOWSTRIKE) then
+			local power = self:callTalent(self.T_SHADOWSTRIKE, "getMultiplier") * 100
+			local dur = self:callTalent(self.T_SHADOWSTRIKE, "getDuration")
+			
+			self:setEffect(self.EFF_SHADOWSTRIKE, dur, {power=power})
+		end
+
+		if self:knowTalent(self.T_SOOTHING_DARKNESS) then
+			local life = self:callTalent(self.T_SOOTHING_DARKNESS, "getLife") * 5
+			local sta = self:callTalent(self.T_SOOTHING_DARKNESS, "getStamina")
+			local dur = self:callTalent(self.T_SOOTHING_DARKNESS, "getDuration")
+			self:setEffect(self.EFF_SOOTHING_DARKNESS, dur, {life=life, stamina=sta})
+		end
+
 		local sd = self:hasEffect(self.EFF_SHADOW_DANCE)
 		if sd then
 			sd.no_cancel_stealth = true
@@ -140,15 +154,18 @@ newTalent{
 	require = cuns_req2,
 	mode = "passive",
 	points = 5,
-	getMultiplier = function(self, t) return self:combatTalentScale(t, .10, .35) end,
-
+	getMultiplier = function(self, t) return self:combatTalentScale(t, 0.15, 0.40, 0.1) end,
+	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 4 else return 3 end end,
 	passives = function(self, t, p) -- attribute that increases crit multiplier vs targets that cannot see us
 		self:talentTemporaryValue(p, "unseen_critical_power", t.getMultiplier(self, t))
 	end,
 	info = function(self, t)
-	local multiplier = t.getMultiplier(self, t)*100
-	return ([[You know how to make the most out of being unseen.  Your critical multiplier against targets that cannot see you is increased by up to %d%%. (You must be able to see your target and the bonus is reduced from its full value at range 3 to 0 at range 10.)
-	Also, when striking from stealth, your attacks are automatically critical if the target does not notice you just before you land it.  (Spell and mind attacks critically strike even if the target notices you.)]]):format(multiplier)
+		local multiplier = t.getMultiplier(self, t)*100
+		local dur = t.getDuration(self, t)
+		return ([[You know how to make the most out of being unseen.
+		When striking from stealth, your attacks are automatically critical if the target does not notice you just before you land it.  (Spell and mind attacks critically strike even if the target notices you.)
+		Your critical multiplier against targets that cannot see you is increased by up to %d%%. (You must be able to see your target and the bonus is reduced from its full value at range 3 to 0 at range 10.)
+		Also, after exiting stealth for any reason, the critical multiplier persists for %d turns (with no range limitation).]]):format(multiplier, dur)
 	end,
 }
 
@@ -158,18 +175,18 @@ newTalent{
 	require = cuns_req3,
 	points = 5,
 	mode = "passive",
-	getLife = function(self, t) return self:combatStatScale("cun", 0.5, 5, 0.75) + self:combatTalentScale(t, 0.5, 5, 0.75) end, -- Primarily for out of combat recovery
-	getStamina = function(self, t) return self:combatTalentScale(t, 1, 2.5) end, --2.9 @TL5
+	getLife = function(self, t) return self:combatStatScale("cun", 0.5, 5, 0.75) + self:combatTalentScale(t, 0.5, 5, 0.75) end,
+	getStamina = function(self, t) return self:combatTalentScale(t, 1, 2.5) end, --2.9 @TL6.5
 	getRadius = function(self, t, fake)
 		if not fake and game.level.map.lites(self.x, self.y) then return 0 end
 		return math.floor(self:combatTalentLimit(t, 10, 2, 5))
 	end,
-	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 3 else return 2 end end,
+	getDuration = function(self,t) if self:getTalentLevel(t) >= 3 then return 4 else return 3 end end,
 	info = function(self, t)
 		return ([[You have a special affinity for darkness and shadows.
 		When standing in an unlit grid, the minimum range to your foes for activating stealth or for maintaining it after a Shadow Dance is reduced by %d.
-		While stealthed, and for %d turns thereafter, your life regeneration is increased by %0.1f (based on your Cunning) and your stamina regeneration is increased %0.1f.]]):
-		format(t.getRadius(self, t, true), t.getDuration(self, t), t.getLife(self,t), t.getStamina(self,t))
+		While stealthed, your life regeneration is increased by %0.1f (based on your Cunning) and your stamina regeneration is increased by %0.1f.  The regeneration effects persist for %d turns after exiting stealth, with 5 times the normal life regeneration rate.]]):
+		format(t.getRadius(self, t, true), t.getLife(self,t), t.getStamina(self,t), t.getDuration(self, t))
 	end,
 }
 
@@ -184,7 +201,7 @@ newTalent{
 	cooldown = function(self, t) return self:combatTalentLimit(t, 10, 30, 15) end,
 	tactical = { DEFEND = 2, ESCAPE = 2 },
 	getRadius = stealthRadius,
-	getDuration = function(self, t) return 1 + math.min(self:combatTalentScale(t, 1, 3),3) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 7, 2, 5)) end,
 	action = function(self, t)
 		if not self:isTalentActive(self.T_STEALTH) then
 			self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, silent=true})

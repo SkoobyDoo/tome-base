@@ -177,6 +177,7 @@ It moves swiftly toward you, casting terrible spells and swinging its weapons at
 
 	ai = "tactical",
 
+	resolvers.auto_equip_filters("Reaver"),
 	resolvers.equip{ {type="weapon", subtype="longsword", forbid_power_source={antimagic=true}, autoreq=true}, },
 	resolvers.equip{ {type="weapon", subtype="waraxe", forbid_power_source={antimagic=true}, autoreq=true}, },
 
@@ -219,6 +220,7 @@ newEntity{ base = "BASE_NPC_MAJOR_DEMON",
 
 	combat_dam = resolvers.levelup(resolvers.mbonus(40, 20), 1, 2),
 
+	resolvers.auto_equip_filters{MAINHAND = {properties = {"twohanded"}}, },
 	resolvers.equip{ {type="weapon", subtype="greatsword", autoreq=true}, },
 
 	resists={all = resolvers.mbonus(25, 20)},
@@ -259,6 +261,7 @@ newEntity{ base = "BASE_NPC_MAJOR_DEMON",
 
 	ai = "tactical",
 
+	resolvers.auto_equip_filters("Reaver"),
 	resolvers.equip{ {type="weapon", subtype="mace", forbid_power_source={antimagic=true}, autoreq=true}, },
 	resolvers.equip{ {type="weapon", subtype="mace", forbid_power_source={antimagic=true}, autoreq=true}, },
 
@@ -306,6 +309,7 @@ newEntity{ base = "BASE_NPC_MAJOR_DEMON",
 
 	ai = "tactical",
 
+	resolvers.auto_equip_filters{MAINHAND = {properties = {"twohanded"}}, },
 	resolvers.equip{ {type="weapon", subtype="battleaxe", defined="KHULMANAR_WRATH", random_art_replace={chance=30}, autoreq=true, force_drop=true}, },
 
 	resists={[DamageType.PHYSICAL] = resolvers.mbonus(8, 8), [DamageType.FIRE] = 100},

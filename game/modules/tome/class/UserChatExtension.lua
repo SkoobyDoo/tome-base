@@ -28,6 +28,16 @@ function _M:init(chat)
 	chat:enableShadow(0.6)
 end
 
+function _M:sendTalentLink(t)
+	local p = game:getPlayer()
+	t = p:getTalentFromId(t)
+	local desc = tstring{{"color","GOLD"}, {"font", "bold"}, t.name, {"font", "normal"}, {"color", "LAST"}, true}
+	desc:merge(p:getTalentFullDescription(t))
+	desc = desc:toString():removeUIDCodes()
+	local ser = zlib.compress(table.serialize{kind="talent-link", name="#GOLD#"..t.name.."#LAST#", desc=desc})
+	core.profile.pushOrder(string.format("o='ChatSerialData' kind='talent-link' channel=%q msg=%q", self.chat.cur_channel, ser))
+end
+
 function _M:sendObjectLink(o)
 	local name = o:getName{do_color=true}:removeUIDCodes()
 	local desc = tostring(o:getDesc(nil, nil, true)):removeUIDCodes()
@@ -73,8 +83,12 @@ function _M:event(e)
 			self.chat:addMessage("link", e.channel, e.login, {e.name, color}, "#ANTIQUE_WHITE#has linked an item: #WHITE# "..data.name, {mode="tooltip", tooltip=data.desc})
 		elseif data.kind == "actor-link" then
 			self.chat:addMessage("link", e.channel, e.login, {e.name, color}, "#ANTIQUE_WHITE#has linked a creature: #WHITE# "..data.name, {mode="tooltip", tooltip=data.desc})
+		elseif data.kind == "talent-link" then
+			self.chat:addMessage("link", e.channel, e.login, {e.name, color}, "#ANTIQUE_WHITE#has linked a talent: #WHITE# "..data.name, {mode="tooltip", tooltip=data.desc})
 		elseif data.kind == "killer-link" then
 			self.chat:addMessage("death", e.channel, e.login, {e.name, color}, "#CRIMSON#"..data.msg.."#WHITE#", data.desc and {mode="tooltip", tooltip=data.desc} or nil)
+		else
+			self:triggerHook{"UserChat:event", color=color, e=e, data=data}
 		end
 	end
 end

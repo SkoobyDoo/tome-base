@@ -19,6 +19,18 @@
 
 local Particles = require "engine.Particles"
 
+local mage_equip_filters = resolvers.auto_equip_filters{
+	MAINHAND = {type="weapon", subtype="staff"},
+	OFFHAND = {special=function(e, filter) -- only allow if there is a 1H weapon in MAINHAND
+		local who = filter._equipping_entity
+		if who then
+			local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+			if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+		end
+		return false
+	end}
+},
+
 newBirthDescriptor{
 	type = "class",
 	name = "Mage",
@@ -87,6 +99,8 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 90,
+		mage_equip_filters,
+		resolvers.auto_equip_filters{QUIVER = {type="alchemist-gem"}},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000}
@@ -192,7 +206,7 @@ newBirthDescriptor{
 		["spell/storm"]={false, 0.3, "mage_tempest"},
 	},
 	talents = {
-		[ActorTalents.T_ARCANE_POWER] = 1,
+		[ActorTalents.T_MANATHRUST] = 1,
 		[ActorTalents.T_FLAME] = 1,
 		[ActorTalents.T_LIGHTNING] = 1,
 		[ActorTalents.T_PHASE_DOOR] = 1,
@@ -213,6 +227,7 @@ newBirthDescriptor{
 		end,
 
 		max_life = 90,
+		mage_equip_filters,
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
@@ -279,9 +294,9 @@ newBirthDescriptor{
 	copy = {
 		soul = 1,
 		max_life = 90,
+		mage_equip_filters,
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
---			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
 		},
 	},

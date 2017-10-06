@@ -268,20 +268,16 @@ newEntity{
 -- The four possible final rewards for the Brotherhood of Alchemists quest:
 
 newEntity{ base = "BASE_TAINT",
-	name = "Taint of Telepathy",
-	define_as = "TAINT_TELEPATHY", image = "object/taint_of_telepathy.png",
-	unique = true,
-	identified = true,
-	cost = 200,
+	name = "Taint of Purging", unique = true, define_as = "TAINT_PURGING",
+	level_range = {5, 50},
+	cost = 20,
 	material_level = 3,
-	quest = 1,
-
-	inscription_kind = "utility",
+	inscription_kind = "protect",
 	inscription_data = {
-		cooldown = 15,
+		cooldown = 20,
 		dur = 5,
 	},
-	inscription_talent = "TAINT:_TELEPATHY",
+	inscription_talent = "TAINT:_PURGING",
 }
 
 newEntity{ base = "BASE_INFUSION",
@@ -314,6 +310,11 @@ newEntity{ base = "BASE_GEM",
 	cost = 200,
 	quest = 1,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'NATURE',
+		alt_damage_type = 'SPYDRIC_POISON',
+		particle = 'slime',
+	},
 	wielder = {
 		inc_stats = {[Stats.STAT_CON] = 15, },
 		healing_factor = 0.3,

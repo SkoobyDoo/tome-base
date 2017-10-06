@@ -1,5 +1,4 @@
 -- ToME - Tales of Maj'Eyal
--- ToME - Tales of Maj'Eyal
 -- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
@@ -19,13 +18,15 @@
 -- darkgod@te4.org
 
 -- Misc. Paradox Talents
+
 newTalent{
 	name = "Spacetime Tuning",
 	type = {"chronomancy/other", 1},
 	points = 1,
-	tactical = { PARADOX = 2 },
-	no_npc_use = true,
+	message = false,
 	no_unlearn_last = true,
+	no_breakSpacetimeTuning = true,
+	tactical = { PARADOX = 0.5 }, -- low priority to wait a turn to rebalance Paradox
 	on_learn = function(self, t)
 		if not self.preferred_paradox then self.preferred_paradox = 300 end
 	end,
@@ -37,51 +38,77 @@ newTalent{
 		end
 		return value
 	end,
-	startTuning = function(self, t)
-		if self.preferred_paradox and (self:getParadox() ~= self:getMinParadox() or self.preferred_paradox > self:getParadox())then
-			local power = t.getTuning(self, t)
-			if math.abs(self:getParadox() - self.preferred_paradox) > 1 then
-				local duration = (self.preferred_paradox - self:getParadox())/power
-				if duration < 0 then duration = math.abs(duration); power = power - (power*2) end
-				duration = math.max(1, duration)
-				self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
+	callbackOnWait = function(self, t)
+		if self.preferred_paradox then
+			local paradox = self:getParadox()
+			if (paradox < self.preferred_paradox or paradox ~= self:getMinParadox()) then
+				local power = t.getTuning(self, t)
+				if math.abs(paradox - self.preferred_paradox) > 1 then
+					local duration = (self.preferred_paradox - paradox)/power
+					if duration < 0 then duration, power = -duration, -power end
+					duration = math.max(1, duration)
+					self:setEffect(self.EFF_SPACETIME_TUNING, duration, {power=power})
+				end
+				return true
 			end
 		end
+	end,
+	callbackOnRest = function(self, t, mode)
+		if mode == "start" then return t.callbackOnWait(self, t) end
+		return self:hasEffect(self.EFF_SPACETIME_TUNING)
 	end,
 	tuneParadox = function(self, t)
 		tuneParadox(self, t, t.getTuning(self, t))
 	end,
+	on_pre_use_ai = function(self, t, silent, fake)
+		-- recalculate preferred_paradox as needed or every 1000 game turns
+		local sustain_modifier = self:getMinParadox()
+		if not self.preferred_paradox or self.preferred_paradox < sustain_modifier or game.turn - (self.paradox_tuning_turn or 0) > 1000 and self ~= game:getPlayer({main=true}) then
+			-- Want 200 modified paradox (100 margin before triggering anomalies) accounting for sustains and Wil
+			-- (follows the calculations in Actor:getModifiedParadox)
+			local will_modifier = 2*(self:getWil() + (self:attr("paradox_reduce_anomalies") or 0))
+			self.preferred_paradox = math.max(sustain_modifier, 200 + will_modifier - sustain_modifier)
+			print("[Spacetime Tuning]", self.uid, self.name, "setting preferred_paradox:", self.preferred_paradox)
+			self.paradox_tuning_turn = game.turn
+		end
+		return self.preferred_paradox ~= self.paradox
+	end,
 	action = function(self, t)
-		local function getQuantity(title, prompt, default, min, max)
-			local result
-			local co = coroutine.running()
+		if self.player then -- prompt the player for the preferred paradox level
+			local function getQuantity(title, prompt, default, min, max)
+				local result
+				local co = coroutine.running()
 
-			local dialog = engine.dialogs.GetQuantity.new(
-				title,
-				prompt,
-				default,
-				max,
-				function(qty)
-					result = qty
-					coroutine.resume(co)
-				end,
-				min)
-			dialog.unload = function(dialog)
-				if not dialog.qty then coroutine.resume(co) end
+				local dialog = engine.dialogs.GetQuantity.new(
+					title,
+					prompt,
+					default,
+					max,
+					function(qty)
+						result = qty
+						coroutine.resume(co)
+					end,
+					min)
+				dialog.unload = function(dialog)
+					if not dialog.qty then coroutine.resume(co) end
+				end
+
+				game:registerDialog(dialog)
+				coroutine.yield()
+				return result
 			end
 
-			game:registerDialog(dialog)
-			coroutine.yield()
-			return result
-		end
-
-		local paradox = getQuantity(
-			"Spacetime Tuning",
-			"What's your preferred paradox level?",
-			math.floor(self.paradox))
+			local paradox = getQuantity(
+				"Spacetime Tuning",
+				"What's your preferred paradox level?",
+				math.floor(self.paradox))
 			if not paradox then return end
 			if paradox > 1000 then paradox = 1000 end
 			self.preferred_paradox = paradox
+		else -- NPCs just wait a turn to recover paradox
+			self:useEnergy(-game.energy_to_act)
+			self:waitTurn() -- triggers "callbackOnWait"
+		end
 		return true
 	end,
 	info = function(self, t)
@@ -349,38 +376,24 @@ newTalent{
 			return
 		end
 
-		local sex = game.player.female and "she" or "he"
-		local m = require("mod.class.NPC").new(self:cloneFull{
-			no_drops = true, keep_inven_on_death = false,
-			faction = self.faction,
-			summoner = self, summoner_gain_exp=true,
-			exp_worth = 0,
-			summon_time = t.getDuration(self, t),
-			ai_target = {actor=nil},
-			ai = "summoned", ai_real = "tactical",
-			ai_tactic = resolvers.tactic("ranged"), ai_state = { talent_in=1, ally_compassion=10},
-			desc = [[The real you... or so ]]..sex..[[ says.]]
-		})
-		m:removeAllMOs()
-		m.make_escort = nil
-		m.on_added_to_level = nil
-
-		m.energy.value = 0
-		m.player = nil
-		m.puuid = nil
-		m.max_life = m.max_life
-		m.life = util.bound(m.life, 0, m.max_life)
+		local m = makeParadoxClone(self, self, t.getDuration(self, t))
+		-- Change some values
+		m.name = self.name.."'s Paradox Clone"
+		m.desc = ([[The real %s... or so %s says.]]):format(self.name, self:he_she())
+		m.life = util.bound(m.life, m.die_at, m.max_life)
 		m.forceLevelup = function() end
-		m.die = nil
-		m.on_die = nil
-		m.on_acquire_target = nil
-		m.seen_by = nil
-		m.can_talk = nil
-		m.on_takehit = nil
-		m.no_inventory_access = true
-		m.clone_on_hit = nil
-		m.remove_from_party_on_death = true
-
+		m.summoner = self
+		m.summoner_gain_exp = true
+		m.exp_worth = 0
+		m.ai_target = {actor=nil}
+		m.ai = "summoned"
+		m.ai_real = "tactical"
+		-- Handle some AI stuff
+		m.ai_state = { talent_in=1, ally_compassion=10 }
+		ai_tactic = resolvers.tactic("ranged")
+		-- Try to use stored AI talents to preserve tweaking over multiple summons
+		m.ai_talents = self.stored_ai_talents and self.stored_ai_talents[m.name] or {}
+		
 		-- Remove some talents
 		local tids = {}
 		for tid, _ in pairs(m.talents) do
@@ -392,6 +405,7 @@ newTalent{
 		end
 
 		game.zone:addEntity(game.level, m, "actor", x, y)
+		m:resolve()
 		game.level.map:particleEmitter(x, y, 1, "temporal_teleport")
 		game:playSoundNear(self, "talents/teleport")
 
@@ -516,7 +530,7 @@ newTalent{
 	tactical = { ATTACK = 2, DISABLE = 2 },
 	requires_target = true,
 	range = 10,
-	remove_on_clone = true,
+	unlearn_on_clone = true,
 	target = function (self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t, nowarning=true}
 	end,
@@ -550,7 +564,6 @@ newTalent{
 		m.generic_damage_penalty = t.getDamagePenalty(self, t)
 		m.max_life = m.max_life * (100 - t.getDamagePenalty(self, t))/100
 		m.life = m.max_life
-		m.remove_from_party_on_death = true
 
 		-- Handle some AI stuff
 		m.ai_state = { talent_in=2, ally_compassion=10 }

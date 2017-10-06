@@ -606,7 +606,7 @@ _M.types_def = {
 --		returns block (grid blocks), hit (grid hit), hit_radius (grid blocks, path around disallowed)
 -- @param t.block_radius = function(typ, lx, ly, for_highlights) (default set according to t.type):
 --		Determines if a radial projection from a point is blocked
- --Parameters interpreted by the default blocking functions:
+-- Parameters interpreted by the default blocking functions:
 -- @param t.no_restrict = boolean all grids are treated as non-blocking
 -- @param t.pass_terrain = boolean pass through all terrain (Grid.pass_projectile also checked)
 -- @param t.requires_knowledge = boolean stop at unknown grids (for player)
@@ -704,7 +704,8 @@ function _M:scan(dir, radius, sx, sy, filter, kind)
 			if (not self.source_actor or self.source_actor:canSee(a)) and (not filter or filter(a)) then
 				table.insert(actors, {
 					a = a,
-					dist = math.abs(sx - x)*math.abs(sx - x) + math.abs(sy - y)*math.abs(sy - y)
+					dist = math.abs(sx - x)*math.abs(sx - x) + math.abs(sy - y)*math.abs(sy - y),
+					has_los = (self.source_actor and self.source_actor:hasLOS(x, y)) and 1 or 0,
 				})
 				actors[a] = true
 			end
@@ -720,7 +721,10 @@ function _M:scan(dir, radius, sx, sy, filter, kind)
 		core.fov.calc_circle(sx, sy, game.level.map.w, game.level.map.h, radius, checker, function()end, nil)
 	end
 
-	table.sort(actors, function(a,b) return a.dist<b.dist end)
+	table.sort(actors, function(a,b)
+		if a.has_los == b.has_los then return a.dist<b.dist
+		else return a.has_los > b.has_los end
+	end)
 	if #actors > 0 then
 		self.target.entity = actors[1].a
 		self.target.x = self.target.entity.x

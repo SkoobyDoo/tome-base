@@ -243,8 +243,10 @@ end
 -- @param w, h = width and height of the dialog (in pixels, optional: dialog sized to its elements by default)
 -- @param no_leave set true to force a selection
 -- @param escape = the default choice (number) to select if escape is pressed
-function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape)
+-- @param default = the default choice (number) to select (highlight) when the dialog opens, default 1
+function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape, default)
 	escape = escape or 1
+	default = default or 1
 	-- compute display limits
 	local max_w, max_h = w or game.w*.75, h or game.h*.75
 
@@ -256,7 +258,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	
 	local d = new(title, w or 1, h or 1)
 --print(("[multiButtonPopup] initialized: (w:%s,h:%s), (maxw:%s,maxh:%s) "):format(w, h, max_w, max_h))
-	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) choice_fct(button_list[escape]) end) end
+	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d)
+			if choice_fct then choice_fct(button_list[escape]) end
+		end)
+	end
 
 	local num_buttons = math.min(#button_list, 50)
 	local buttons, buttons_width, button_height = {}, 0, 0
@@ -298,7 +303,7 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	local width = w or math.min(max_w, math.max(text_width + 20, max_buttons_width + 20))
 	local height = h or math.min(max_h, text_height + 10 + nrow*button_height)
 	local uis = {
-		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text}}
+		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text, can_focus=false}}
 	}
 	-- actually place the buttons in the dialog
 	top = math.max(text_height, text_height + (height - text_height - nrow*button_height - 5)/2)
@@ -312,7 +317,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 		end
 	end
 	d:loadUI(uis)
-	if uis[escape + 1] then d:setFocus(uis[escape + 1]) end
+	-- set default focus if possible
+	if uis[default + 1] then d:setFocus(uis[default + 1])
+	elseif uis[escape + 1] then d:setFocus(uis[escape + 1])
+	end
 	d:setupUI(not w, not h)
 	game:registerDialog(d)
 	return d
@@ -380,12 +388,14 @@ function _M:init(title, w, h, x, y, alpha, font, showup, skin)
 	self.frame.oy2 = self.frame.oy2 or conf.frame_oy2
 
 	if self.frame.dialog_h_middles then
-		self.frame.b8 = "ui/dialogframe_8_middle.png"
-		self.frame.b8l = "ui/dialogframe_8_left.png"
-		self.frame.b8r = "ui/dialogframe_8_right.png"
-		self.frame.b2 = "ui/dialogframe_2_middle.png"
-		self.frame.b2l = "ui/dialogframe_2_left.png"
-		self.frame.b2r = "ui/dialogframe_2_right.png"
+		local t = type(self.frame.dialog_h_middles) == "table" and table.clone(self.frame.dialog_h_middles) or {}
+		table.merge(t, self.dialog_h_middles_alter or {})
+		self.frame.b8 = t.b8 or "ui/dialogframe_8_middle.png"
+		self.frame.b8l = t.b8l or "ui/dialogframe_8_left.png"
+		self.frame.b8r = t.b8r or "ui/dialogframe_8_right.png"
+		self.frame.b2 = t.b2 or "ui/dialogframe_2_middle.png"
+		self.frame.b2l = t.b2l or "ui/dialogframe_2_left.png"
+		self.frame.b2r = t.b2r or "ui/dialogframe_2_right.png"
 	end
 
 	self.particles = {}
@@ -522,11 +532,13 @@ function _M:loadUI(t)
 end
 
 function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
+	local gamew, gameh = core.display.size()
 	local mw, mh = nil, nil
 
 	local padding = 3 -- to not glue stuff to each other
 
 --	resizex, resizey = true, true
+	local nw, nh
 	if resizex or resizey then
 		mw, mh = 0, 0
 		local addw, addh = 0, 0
@@ -558,11 +570,20 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		mh = mh + addh + 5 + 22 + 3 + (addmh or 0) + th + padding
 
 		if on_resize then on_resize(resizex and mw or self.w, resizey and mh or self.h) end
-		self:resize(resizex and mw or self.w, resizey and mh or self.h)
+		nw, nh = resizex and mw or self.w, resizey and mh or self.h
 	else
 		if on_resize then on_resize(self.w, self.h) end
-		self:resize(self.w, self.h)
+		nw, nh = self.w, self.h
 	end
+
+	local disx = math.floor(self.force_x or (gamew - nw) / 2)
+	local disy = math.floor(self.force_y or (gameh - nh) / 2)
+	if self.no_offscreen == "bottom" then if disy + nh >= gameh then self.force_y = gameh - nh end
+	elseif self.no_offscreen == "top" then if disy + nh < 0 then self.force_y = 0 end
+	elseif self.no_offscreen == "right" then if disx + nw >= gamew then self.force_x = gamew - nw end
+	elseif self.no_offscreen == "left" then if disx + nw < 0 then self.force_x = 0 end
+	end
+	self:resize(nw, nh)
 
 	for i, ui in ipairs(self.uis) do
 		local ux, uy

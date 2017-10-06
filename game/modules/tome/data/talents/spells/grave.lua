@@ -52,8 +52,22 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
 		return ([[Conjures up a bolt of cold that moves toward the target and explodes into a chilly circle of death, doing %0.2f cold damage in a radius of %d.
-		The damage will increase with your Spellpower.]]):
+		The damage will increase with your Spellpower. 
+		Additionally, when Will o' the Wisp is sustained, minions killed by this spell will spawn Wisps.]]):
 		format(damDesc(self, DamageType.COLD, damage), radius)
+	end,
+	callbackOnKill = function(self, t, target, death_note)
+		if not death_note then return end
+		if not death_note.source_talent then return end
+		if not death_note.source_talent == self:getTalentFromId(self.T_CHILL_OF_THE_TOMB) then return end
+		local talent = self:isTalentActive(self.T_WILL_O__THE_WISP)
+		if talent then
+			if target.summoner and (target.summoner == self) and target.necrotic_minion then
+				local wisp = self:getTalentFromId(self.T_WILL_O__THE_WISP)
+				-- Handle any % chances or whatever you want involved here
+				wisp.summon(self, wisp, self:isTalentActive(self.T_WILL_O__THE_WISP).dam, target, self, true)
+			end
+		end
 	end,
 }
 
@@ -67,8 +81,9 @@ newTalent{
 	cooldown = 30,
 	tactical = { BUFF = 3 },
 	getParams = function(self, t) return util.bound(30 + self:getTalentLevel(t) * 10, 30, 100), 20 + self:combatTalentSpellDamage(t, 25, 300) end,
-	summon = function(self, t, dam, src, killer)
-		if not killer or not killer.faction or self:reactionToward(killer) >= 0 or self.dead then return end
+	summon = function(self, t, dam, src, killer, grave)
+		if not killer or not killer.faction or (self:reactionToward(killer) >= 0 and not grave) or self.dead then return end
+		game.logPlayer(game.player, "Step 2")
 		local minion = require("mod.class.NPC").new{
 			name = "will o' the wisp",
 			type = "undead", subtype = "ghost",
@@ -103,10 +118,11 @@ newTalent{
 		local x, y = util.findFreeGrid(src.x or self.x, src.y or self.y, 5, true, {[Map.ACTOR]=true})
 		if minion and x and y then
 			necroSetupSummon(self, minion, x, y, lev, true)
-			minion.on_die = nil
+			--minion.on_die = nil
 			minion.on_act = nil
-			minion:setTarget(killer)
+			if not grave then minion:setTarget(killer) end
 		end
+		return true
 	end,
 	activate = function(self, t)
 		local chance, dam = t.getParams(self, t)

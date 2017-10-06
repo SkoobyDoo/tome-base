@@ -29,6 +29,7 @@ uberTalent{
 	on_unlearn = function(self, t)
 		self:attr("bump_swap_speed_divide", -10)
 	end,
+	tactical = {DEFEND = 2, ESCAPE = 2, CLOSEIN = 2},
 	callbackOnAct = function(self, t)
 		local nb_friends = 0
 		local act
@@ -38,12 +39,23 @@ uberTalent{
 		end
 		if nb_friends > 1 then
 			nb_friends = math.min(nb_friends, 5)
-			self:setEffect(self.EFF_THROUGH_THE_CROWD, 4, {power=nb_friends * 10})
+			self:setEffect(self.EFF_THROUGH_THE_CROWD, 4, {power=nb_friends})
 		end
+	end,
+	callbackOnPartyAdd = function(self, t, actor)
+		if not self.player then return end
+		if actor:knowTalent(actor.T_THROUGH_THE_CROWD) then return end
+		actor:learnTalent(actor.T_THROUGH_THE_CROWD, true)
+		actor:forceUseTalent(actor.T_THROUGH_THE_CROWD, {ignore_cooldown=true, ignore_energy=true})
 	end,
 	activate = function(self, t)
 		local ret = {}
 		self:talentTemporaryValue(ret, "nullify_all_friendlyfire", 1)
+		if game.party:hasMember(self) then
+			for i, actor in ipairs(game.party.m_list) do if actor ~= self then
+				t.callbackOnPartyAdd(self, t, actor)
+			end end
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -53,7 +65,8 @@ uberTalent{
 		return ([[You are used to a crowded party:
 		- you can swap places with friendly creatures in just one tenth of a turn as a passive effect.
 		- you can never damage your friends or neutral creatures while this talent is active.
-		- you love being surrounded by friends; for each friendly creature in sight you gain +10 to all saves]])
+		- you love being surrounded by friends; for each friendly creature in sight you gain +10 to all saves and +3%% to global speed (max 15%%)
+		- every party member is also automatically granted Through The Crowd]])
 		:format()
 	end,
 }
@@ -116,20 +129,22 @@ uberTalent{
 uberTalent{
 	name = "Windtouched Speed",
 	mode = "passive",
-	require = { special={desc="Know at least 20 talent levels of equilibrium-using talents", fct=function(self) return knowRessource(self, "equilibrium", 20) end} },
+	require = { special={desc="Know at least 10 talent levels of equilibrium-using talents", fct=function(self) return knowRessource(self, "equilibrium", 10) end} },
 	on_learn = function(self, t)
 		self:attr("global_speed_add", 0.2)
 		self:attr("avoid_pressure_traps", 1)
+		self.talent_cd_reduction.allpct = (self.talent_cd_reduction.allpct or 0) + 0.1
 		self:recomputeGlobalSpeed()
 	end,
 	on_unlearn = function(self, t)
 		self:attr("global_speed_add", -0.2)
 		self:attr("avoid_pressure_traps", -1)
+		self.talent_cd_reduction.allpct = self.talent_cd_reduction.allpct - 0.1
 		self:recomputeGlobalSpeed()
 	end,
 	info = function(self, t)
 		return ([[You are attuned with Nature, and she helps you in your fight against the arcane forces.
-		You gain 20%% permanent global speed and do not trigger pressure traps.]])
+		You gain 20%% permanent global speed, 10%% cooldowns reduction and do not trigger pressure traps.]])
 		:format()
 	end,
 }
@@ -145,11 +160,12 @@ uberTalent{
 			(self.damage_log.weapon.other and self.damage_log.weapon.other >= 50000)
 		)
 	end} },
-	cooldown = 20,
+	cooldown = 12,
 	radius = 1,
 	range = 10,
 	is_melee = true,
-	tactical = { CLOSEIN = 2, ATTACKAREA = { weapon = 2 }, DISABLE = { daze = 1 } },
+	requires_target = true,
+	tactical = { CLOSEIN = 2, ATTACKAREA = { weapon = 2 }, DISABLE = { stun = 1 } },
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), selffire=false, radius=self:getTalentRadius(t)}
 	end,
@@ -173,6 +189,8 @@ uberTalent{
 			self:setMoveAnim(ox, oy, 8, 5)
 		end
 
+		self:removeEffectsFilter({subtype={stun=true, daze=true, pin=true, pinned=true, pinning=true}}, 50)
+
 		self:project(tg, self.x, self.y, function(px, py, tg, self)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if target and target ~= self then
@@ -186,7 +204,8 @@ uberTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[You accurately jump to the target and deal 200%% weapon damage to all foes within radius 1 on impact as well as dazing them for 3 turns.]])
+		return ([[You accurately jump to the target and deal 200%% weapon damage to all foes within radius 1 on impact as well as dazing them for 3 turns.
+		When you jump you free yourself from any stun, daze and pinning effects.]])
 		:format()
 	end,
 }
@@ -194,6 +213,7 @@ uberTalent{
 uberTalent{
 	name = "Crafty Hands",
 	mode = "passive",
+	no_npc_use = true,
 	require = { special={desc="Know Imbue Item to level 5", fct=function(self)
 		return self:getTalentLevelRaw(self.T_IMBUE_ITEM) >= 5
 	end} },
@@ -207,7 +227,11 @@ uberTalent{
 	name = "Roll With It",
 	mode = "sustained",
 	cooldown = 10,
-	tactical = { ESCAPE = 1 },
+	tactical = function(self, t, aitarget)
+		if self:attr("never_move") then return
+		else return {ESCAPE = 2, DEFEND = 2}
+		end
+	end,
 	require = { special={desc="Have been knocked around at least 50 times", fct=function(self) return self:attr("knockback_times") and self:attr("knockback_times") >= 50 end} },
 	-- Called by default projector in mod.data.damage_types.lua
 	getMult = function(self, t) return self:combatLimit(self:getDex(), 0.7, 0.9, 50, 0.85, 100) end, -- Limit > 70% damage taken
@@ -235,7 +259,7 @@ uberTalent{
 	cooldown = 10,
 	range = archery_range,
 	require = { special={desc="Have dealt over 50000 damage with ranged weapons", fct=function(self) return self.damage_log and self.damage_log.weapon.archery and self.damage_log.weapon.archery >= 50000 end} },
-	tactical = { ATTACK = { weapon = 3 }, DISABLE = 3 },
+	tactical = { ATTACK = { weapon = 3 }, DISABLE = {2, stun = 2}},
 	requires_target = true,
 	on_pre_use = function(self, t, silent) return Talents.archerPreUse(self, t, silent) end,
 	archery_onhit = function(self, t, target, x, y)

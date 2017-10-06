@@ -338,17 +338,29 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	unided_name = "ice-covered boots",
 	name = "Frost Treads", unique=true, image="object/artifact/frost_treads.png",
 	desc = [[A pair of leather boots. Cold to the touch, they radiate a cold blue light.]],
-	require = { stat = { dex=16 }, },
 	level_range = {10, 18},
 	material_level = 2,
 	rarity = 220,
-	cost = 40,
-
+	cost = 200,
+	special_desc = function(self) return "Each step taken casts a ground frost effect in a radius of 1 around you for 5 turns, giving you a 20% cold damage bonus for 3 turns. Additionally, any enemy standing in the frost has a 20% chance of talent failure for 3 turns." end,
+	callbackOnMove = function(self, who, moved, force, ox, oy, x, y)
+			if not moved or force or (ox == who.x and oy == who.y) then return end
+			local Talents = require "engine.interface.ActorTalents"
+			game.level.map:addEffect(who,
+				who.x, who.y, 5,
+				engine.DamageType.ITEM_FROST_TREADS, {},
+				1,
+				5, nil,
+				engine.MapEffect.new{zdepth=3, color_br=245, color_bg=245, color_bb=245, effect_shader="shader_images/ice_effect.png"},
+				nil, true
+			)
+	end,
 	wielder = {
 		lite = 1,
 		combat_armor = 4,
 		combat_def = 1,
 		fatigue = 7,
+		movement_speed = 0.1,
 		inc_damage = {
 			[DamageType.COLD] = 15,
 		},
@@ -356,7 +368,7 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 			[DamageType.COLD] = 20,
 			[DamageType.NATURE] = 10,
 		},
-		inc_stats = { [Stats.STAT_STR] = 4, [Stats.STAT_DEX] = 4, [Stats.STAT_CUN] = 4, },
+		inc_stats = { [Stats.STAT_STR] = 4, [Stats.STAT_WIL] = 4, [Stats.STAT_CUN] = 4, },
 	},
 }
 
@@ -556,6 +568,11 @@ newEntity{ base = "BASE_GEM",
 	desc = [[A piece of the scorched wood taken from the remains of Snaproot.]],
 	cost = 100,
 	material_level = 4,
+	color_attributes = {
+		damage_type = 'FIRE',
+		alt_damage_type = 'FLAMESHOCK',
+		particle = 'flame',
+	},
 	identified = false,
 	imbue_powers = {
 		resists = { [DamageType.NATURE] = 25, [DamageType.DARKNESS] = 10, [DamageType.COLD] = 10 },
@@ -658,7 +675,7 @@ newEntity{ base = "BASE_WARAXE",
 	require = { stat = { str=55 }, },
 	level_range = {35, 45},
 	rarity = 290,
-	cost = 375,
+	cost = 450,
 	material_level = 4,
 	combat = {
 		dam = 55,
@@ -668,10 +685,18 @@ newEntity{ base = "BASE_WARAXE",
 		damrange = 1.2,
 		burst_on_hit={[DamageType.BLIGHT] = 25},
 		lifesteal=5, --You can counter the life regen by fighting, muhuhahah
+		talent_on_hit = {
+				[Talents.T_CURSE_OF_VULNERABILITY] = {level=3, chance=10},
+				[Talents.T_CURSE_OF_DEATH] = {level=3, chance=10},
+		},
 	},
 	wielder = {
-		life_regen = -0.3,
+		combat_spellpower = 20,
 		inc_damage = { [DamageType.BLIGHT] = 20 },
+	},
+	talent_on_spell = {
+			{talent=Talents.T_CURSE_OF_DEFENSELESSNESS, level=3, chance=10},
+			{talent=Talents.T_CURSE_OF_IMPOTENCE, level=3, chance=10},
 	},
 }
 
@@ -764,6 +789,11 @@ newEntity{ base = "BASE_STAFF",
 		inc_damage = {[DamageType.ARCANE] = 35 },
 		learn_talent = {[Talents.T_COMMAND_STAFF] = 1 },
 	},
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","GEM_TELOS"} },
+	on_set_complete = function(self, who)
+	end,
+	on_set_broken = function(self, who)
+	end,
 }
 
 newEntity{ base = "BASE_AMULET",
@@ -859,6 +889,11 @@ newEntity{ define_as = "RUNED_SKULL",
 	encumber = 3,
 	material_level = 5,
 	desc = [[Dull red runes are etched all over this blackened skull.]],
+	color_attributes = {
+		damage_type = 'FIRE',
+		alt_damage_type = 'FLAMESHOCK',
+		particle = 'flame',
+	},
 
 	carrier = {
 		combat_spellpower = 7,
@@ -966,13 +1001,24 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 	color = colors.WHITE, image = "object/artifact/crystal_focus.png",
 	level_range = {5, 12},
 	desc = [[This crystal radiates the power of the Spellblaze itself.]],
+	special_desc = function(self) return "(The created item can be activated to recover the Focus.)" end,
 	rarity = 200,
 	identified = false,
 	cost = 50,
 	material_level = 2,
+	color_attributes = {
+		damage_type = 'ARCANE',
+		alt_damage_type = 'ARCANE_SILENCE',
+		particle = 'manathrust',
+	},
+	
+	wielder = {
+		inc_stats = {[Stats.STAT_MAG] = 5 },
+		inc_damage = {[DamageType.ARCANE] = 20, [DamageType.BLIGHT] = 20 },
+	},
 
 	max_power = 1, power_regen = 1,
-	use_power = { name = "combine with a weapon", power = 1, use = function(self, who, gem_inven, gem_item)
+	use_power = { name = "combine with a weapon (makes a non enchanted weapon into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
 		who:showInventory("Fuse with which weapon?", who:getInven("INVEN"), function(o) return (o.type == "weapon" or o.subtype == "hands" or o.subtype == "shield") and o.subtype ~= "mindstar" and not o.egoed and not o.unique and not o.rare and not o.archery end, function(o, item)
 			local oldname = o:getName{do_color=true}
 
@@ -1034,6 +1080,27 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 							o.special_combat.block = o.special_combat.block * 1.25
 						end
 					end
+					
+					o.power = 1
+					o.max_power = 1
+					o.power_regen = 1
+					o.use_no_wear = true
+					o.use_power = { name = "recover the Crystal Focus (destroys this weapon)", power = 1, use = function(self, who, inven, item)
+						local art_list = mod.class.Object:loadList("/data/general/objects/objects-maj-eyal.lua")
+						local o = art_list.CRYSTAL_FOCUS:clone()
+						o:resolve()
+						o:resolve(nil, true)
+						o:identify(true)
+						who:addObject(who.INVEN_INVEN, o)
+						who:sortInven(who.INVEN_INVEN)
+						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
+						for i, h in ipairs(who.hotkey) do
+							if h[2] == name then who.hotkey[i] = nil end
+						end
+						who.changed = true
+						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
+						return {used=true, id=true, destroy=true}
+					end }
 				end),
 				resolvers.genericlast(function(o) if o.wielder.learn_talent then o.wielder.learn_talent["T_COMMAND_STAFF"] = nil end end),
 				fake_ego = true,
@@ -1057,7 +1124,7 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_FOCUS",
 
 			who:sortInven()
 			who.changed = true
-
+			
 			game.logPlayer(who, "You fix the crystal on the %s and create the %s.", oldname, o:getName{do_color=true})
 		end)
 	end,
@@ -1072,13 +1139,24 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 	color = colors.RED, image = "object/artifact/crystal_heart.png",
 	level_range = {35, 42},
 	desc = [[This crystal is huge, easily the size of your head. It sparkles brilliantly almost of its own accord.]],
+	special_desc = function(self) return "(The created item can be activated to recover the Heart.)" end,
 	rarity = 250,
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'ARCANE',
+		alt_damage_type = 'ARCANE_SILENCE',
+		particle = 'manathrust',
+	},
+	
+	wielder = {
+		inc_stats = {[Stats.STAT_CON] = 5 },
+		resists = {[DamageType.ARCANE] = 20, [DamageType.BLIGHT] = 20 },
+	},
 
 	max_power = 1, power_regen = 1,
-	use_power = { name = "combine with a suit of body armor", power = 1, use = function(self, who, gem_inven, gem_item)
+	use_power = { name = "combine with a suit of body armor (makes a non enchanted armour into an artifact)", power = 1, use = function(self, who, gem_inven, gem_item)
 		-- Body armour only, can be cloth, light, heavy, or massive though. No clue if o.slot works for this.
 		who:showInventory("Fuse with which armor?", who:getInven("INVEN"), function(o) return o.type == "armor" and o.slot == "BODY" and not o.egoed and not o.unique and not o.rare end, function(o, item)
 			local oldname = o:getName{do_color=true}
@@ -1121,6 +1199,27 @@ newEntity{ base = "BASE_GEM", define_as = "CRYSTAL_HEART",
 					o.wielder.combat_def = ((o.wielder.combat_def or 0) + 2) * 1.7
 					-- Same for armour. Yay crap cloth!
 					o.wielder.combat_armor = ((o.wielder.combat_armor or 0) + 3) * 1.7
+					
+					o.power = 1
+					o.max_power = 1
+					o.power_regen = 1
+					o.use_no_wear = true
+					o.use_power = { name = "recover the Crystal Heart (destroys this armour)", power = 1, use = function(self, who, inven, item)
+						local art_list = mod.class.Object:loadList("/data/general/objects/objects-maj-eyal.lua")
+						local o = art_list["CRYSTAL_HEART"]:clone()
+						o:resolve()
+						o:resolve(nil, true)
+						o:identify(true)
+						who:addObject(who.INVEN_INVEN, o)
+						who:sortInven(who.INVEN_INVEN)
+						local name = self:getName({no_count=true, force_id=true, no_add_name=true})
+						for i, h in ipairs(who.hotkey) do
+							if h[2] == name then who.hotkey[i] = nil end
+						end
+						who.changed = true
+						game.logPlayer(who, "You created: %s", o:getName{do_color=true})
+						return {used=true, id=true, destroy=true}
+					end }
 				end),
 			}
 			game.zone:applyEgo(o, crystalline_ego, "object", true)
@@ -1376,7 +1475,6 @@ Hard to tell if that really helped its former owner, but it's clear that the ski
 	use_no_energy = true,
 	combat = {
 		range = 10,
-		physspeed = 0.8,
 	},
 	wielder = {
 		movement_speed = 0.2,

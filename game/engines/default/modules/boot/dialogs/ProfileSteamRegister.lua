@@ -20,6 +20,7 @@
 require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local Button = require "engine.ui.Button"
+local Checkbox = require "engine.ui.Checkbox"
 local Textbox = require "engine.ui.Textbox"
 local Textzone = require "engine.ui.Textzone"
 
@@ -42,12 +43,16 @@ Luckily this is very easy to do: you only require a profile name and optionally 
 
 	self.c_login = Textbox.new{title="Username: ", text="", chars=30, max_len=20, fct=function(text) self:okclick() end}
 	self.c_email = Textbox.new{title="Email: ", size_title=self.c_login.title, text="", chars=30, max_len=60, fct=function(text) self:okclick() end}
+	self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=true, fct=function() self:okclick() end}
+	self.c_news2 = Textzone.new{text="about important game events from us.", width=self.iw - 20, auto_height=true}
 	local ok = require("engine.ui.Button").new{text="Register", fct=function() self:okclick() end}
 	local cancel = require("engine.ui.Button").new{text="Cancel", fct=function() self:cancelclick() end}
 	self:loadUI{
 		{left=0, top=0, ui=self.c_desc},
 		{left=0, top=self.c_desc.h, ui=self.c_login},
 		{left=0, top=self.c_desc.h+self.c_login.h+5, ui=self.c_email},
+		{left=0, top=self.c_desc.h+self.c_login.h+self.c_email.h+5, ui=self.c_news},
+		{left=0, top=self.c_desc.h+self.c_login.h+self.c_email.h+self.c_news.h+5, ui=self.c_news2},
 		{left=0, bottom=0, ui=ok},
 		{right=0, bottom=0, ui=cancel},
 	}
@@ -70,7 +75,7 @@ function _M:okclick()
 		return
 	end
 
-	local d = self:simpleWaiter("Registering...", "Registering on http://te4.org/, please wait...") core.display.forceRedraw()
+	local d = self:simpleWaiter("Registering...", "Registering on https://te4.org/, please wait...") core.display.forceRedraw()
 	d:timeout(30, function() Dialog:simplePopup("Steam", "Steam client not found.")	end)
 	core.steam.sessionTicket(function(ticket)
 		if not ticket then
@@ -78,7 +83,7 @@ function _M:okclick()
 			return
 		end
 
-		profile:performloginSteam(ticket:toHex(), self.c_login.text, self.c_email.text ~= "" and self.c_email.text)
+		profile:performloginSteam(ticket:toHex(), self.c_login.text, self.c_email.text ~= "" and self.c_email.text, self.c_news.checked)
 		profile:waitFirstAuth()
 		d:done()
 		if not profile.auth and profile.auth_last_error then

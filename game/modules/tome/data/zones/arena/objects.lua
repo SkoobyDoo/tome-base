@@ -124,7 +124,6 @@ newEntity{ define_as = "ARENA_BOW", name = "elm longbow of piercing arrows",
 	max_power = 10, power_regen = 1,
 	combat = {
 		range = 8,
-		physspeed = 0.8,
 	},
 }
 
@@ -144,6 +143,5 @@ newEntity{ define_as = "ARENA_SLING", name = "rough leather sling of flare",
 	max_power = 25, power_regen = 1,
 	combat = {
 		range = 8,
-		physspeed = 0.8,
 	},
 }

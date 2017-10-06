@@ -408,7 +408,7 @@ function _M:forceUseTalent(t, def)
 	if def.ignore_energy then self.energy.value = 10000 end
 
 	if def.ignore_ressources then self:attr("force_talent_ignore_ressources", 1) end
-	local ret = {self:useTalent(t, def.force_who, def.force_level, def.ignore_cd, def.force_target, def.silent, true)}
+	local ret = {self:useTalent(t, def.force_who, def.force_level, def.ignore_cd or def.ignore_cooldown, def.force_target, def.silent, true)}
 	if def.ignore_ressources then self:attr("force_talent_ignore_ressources", -1) end
 
 	if def.ignore_energy then
@@ -421,6 +421,65 @@ end
 --- Is the sustained talent activated ?
 function _M:isTalentActive(t_id)
 	return self.sustain_talents[t_id]
+end
+
+--- Checks a talent against a filter
+-- @param[type=table] t the talent definition
+-- @param[type=table, optional] filter a table of filter parameters
+-- @return true if the talent satisfies the filter
+-- Filter parameters:
+--	mode: the mode of the talent (must match exactly)
+--	not_mode: forbidden talent mode
+--	ignore: additional filter that must NOT be satisfied
+--	type: talent type[1] and subtype[2] that must be matched (if defined)
+--	name: talent name (must match exactly)
+--	short_name: talent short_name
+--	define_as: talent define_as parameter
+--	properties: list of properties (fields) that must be defined in the talent definition
+--	properties_match: list of all required properties (fields) that must match exactly
+--	not_properties: list of properties (fields) that must be nil or false in the talent definition
+--	not_properties_match: list of all property values that must not match exactly
+--	properties_include: list of properties (fields) to include (at least one must be defined)
+--	preUse <boolean>: check self:preUseTalent(t, true, filter.fake)
+--	aiPreUse <boolean>: check self:aiPreUseTalent(t, true, filter.fake)
+--	special: function(t, self) that must return true (checked last)
+-- Actor parameters:
+--	self.filter_talents: additional filter to be applied to all talents for this actor
+function _M:filterTalent(t, filter)
+	if not filter then return true end
+	if filter.ignore and self:filterTalent(t, filter.ignore) then return false end
+
+	if filter.mode and filter.mode ~= t.mode then return false end
+	if filter.not_mode and filter.not_mode == t.mode then return false end
+	if filter.type then -- talent type
+		if filter.type[1] ~= t.type[1] then return false end
+		if filter.type[2] and filter.type[2] ~= t.type[2] then return false	end
+	end
+	if filter.name and filter.name ~= t.name then return false end
+	if filter.short_name and filter.short_name ~= t.short_name then return false end
+	if filter.properties then -- list of required properties
+		for i = 1, #filter.properties do if t[filter.properties[i]] == nil then return false end end
+	end
+	if filter.properties_match then -- list of all required properties that must match exactly
+		for prop, val in pairs(filter.properties_match) do if t[prop] ~= val then return false end end
+	end
+	if filter.not_properties then -- list of forbidden properties
+		for i = 1, #filter.not_properties do if t[filter.not_properties[i]] then return false end end
+	end
+	if filter.not_properties_match then -- list of forbidden property values
+		for prop, val in pairs(filter.not_properties_match) do if t[prop] == val then return false end end
+	end
+	if filter.properties_include then -- list of properties to include (at least one must be defined)
+		local ok = false
+		for i = 1, #filter.properties_include do if t[filter.properties_include[i]] ~= nil then ok = true break end end
+		if not ok then return false end
+	end
+	if filter.preUse and not self:preUseTalent(t, true, filter.fake) then return false end
+	if filter.aiPreUse and not self:aiPreUseTalent(t, true, filter.fake) then return false	end
+	
+	if self.filter_talents and not self:filterTalent(t, self.filter_talents) then return false end
+	if filter.special and not filter.special(t, self) then return false end
+	return true
 end
 
 --- Returns how many talents of this type the actor knows
@@ -815,6 +874,9 @@ function _M:updateTalentTypeMastery(tt)
 			end
 		end
 	end
+	if self.talents_types_def[tt] and self.talents_types_def[tt].on_mastery_change then
+		self.talents_types_def[tt].on_mastery_change(self, self:getTalentTypeMastery(tt), tt)
+	end
 end
 
 --- Return talent definition from id
@@ -891,7 +953,7 @@ end
 --- Is talent in cooldown?
 function _M:isTalentCoolingDown(t)
 	t = self:getTalentFromId(t)
-	if not t.cooldown then return false end
+	if not t or not t.cooldown then return false end
 	if self.talents_cd[t.id] and self.talents_cd[t.id] > 0 then return self.talents_cd[t.id] else return false end
 end
 

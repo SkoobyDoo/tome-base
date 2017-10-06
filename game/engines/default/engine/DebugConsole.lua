@@ -43,6 +43,8 @@ history = {
 	[[<     Ctrl+A or Home     :=: Move the cursor to the beginning of the line                     >]],
 	[[<     Ctrl+E or End      :=: Move the cursor to the end of the line                           >]],
 	[[<     Ctrl+K or Ctrl+End :=: Move the cursor to the end of the line                           >]],
+	[[<     Ctrl+Backspace     :=: Delete to beginning of line                                      >]],
+	[[<     Ctrl+Del           :=: Delete to end of line                                            >]],
 	[[<     Up/down arrows     :=: Move between previous/later executed lines                       >]],
 	[[<     Ctrl+Space         :=: Print help for the function to the left of the cursor            >]],
 	[[<     Ctrl+Shift+Space   :=: Print the entire definition for the function                     >]],
@@ -216,13 +218,19 @@ function _M:init()
 		end,
 		_BACKSPACE = function()
 			if _M.line_pos > 0 then
-				_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
-				_M.line_pos = _M.line_pos - 1
+				local st = core.key.modState("ctrl") and 0 or _M.line_pos - 1
+				for i = _M.line_pos - 1, st, -1 do
+					_M.line = _M.line:sub(1, _M.line_pos - 1) .. _M.line:sub(_M.line_pos + 1)
+					_M.line_pos = _M.line_pos - 1
+				end
 			end
 			self.changed = true
 		end,
 		_DELETE = function()
-			_M.line = _M.line:sub(1, _M.line_pos) .. _M.line:sub(_M.line_pos + 2)
+			local st = core.key.modState("ctrl") and #_M.line or _M.line_pos
+			for i = _M.line_pos, st do
+				_M.line = _M.line:sub(1, _M.line_pos) .. _M.line:sub(_M.line_pos + 2)
+			end
 			self.changed = true
 		end,
 		[{"_END", "ctrl"}] = function()
@@ -452,7 +460,7 @@ end
 -- @param[type=boolean] verbose give extra junk
 function _M:functionHelp(func, verbose)
 	if type(func) ~= "function" then return nil, "Can only give help on functions." end
-	local info = debug.getinfo(func)
+	local info = debug.getinfo(func, "S")
 	-- Check the path exists
 	local fpath = string.gsub(info.source,"@","")
 	if not fs.exists(fpath) then return nil, ([[%s does not exist.]]):format(fpath) end

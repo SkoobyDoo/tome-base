@@ -476,6 +476,7 @@ newTalent{
 	require = psi_wil_req1,
 	mode = "passive",
 	range = 10,
+	unlearn_on_clone = true,
 	getStatBonus = function(self, t) return self:combatTalentMindDamage(t, 5, 50) end,
 	on_learn = function(self, t)
 		if self:getTalentLevel(t) >= 1 and not self:knowTalent(self.T_TF_BOWMAN) then

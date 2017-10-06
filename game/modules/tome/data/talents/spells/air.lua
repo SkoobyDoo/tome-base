@@ -63,7 +63,7 @@ newTalent{
 	require = spells_req2,
 	points = 5,
 	random_ego = "attack",
-	mana = 40,
+	mana = 30,
 	cooldown = 8,
 	tactical = { ATTACKAREA = {LIGHTNING = 2} }, --note: only considers the primary target
 	range = 10,
@@ -153,6 +153,8 @@ newTalent{
 	getEncumberance = function(self, t) return math.floor(self:combatTalentSpellDamage(t, 10, 110)) end,
 	getRangedDefence = function(self, t) return self:combatTalentSpellDamage(t, 4, 30) end,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.05, 0.25, 0.75) end,
+	getPinImmune = function(self, t) return math.min(1, self:combatTalentScale(t, 0.1, 0.90, 0.5)) end,
+	getStunImmune = function(self, t) return math.min(1, self:combatTalentScale(t, 0.05, 0.45, 0.5)) end,
 	getFatigue = function(self, t) return math.floor(2.5 * self:getTalentLevel(t)) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
@@ -160,6 +162,8 @@ newTalent{
 
 		self:talentTemporaryValue(ret, "max_encumber", t.getEncumberance(self, t))
 		self:talentTemporaryValue(ret, "combat_def_ranged", t.getRangedDefence(self, t))
+		self:talentTemporaryValue(ret, "pin_immune", t.getPinImmune(self, t))
+		self:talentTemporaryValue(ret, "stun_immune", t.getStunImmune(self, t))
 		
 		if self:getTalentLevel(t) >= 4 then
 			self:talentTemporaryValue(ret, "levitation", 1)
@@ -180,10 +184,12 @@ newTalent{
 	info = function(self, t)
 		local encumberance = t.getEncumberance(self, t)
 		local rangedef = t.getRangedDefence(self, t)
-		return ([[A gentle wind circles around the caster, increasing carrying capacity by %d and increasing defense against projectiles by %d.
+		local stun = t.getStunImmune(self, t)
+		local pin = t.getPinImmune(self, t)
+		return ([[A gentle wind circles around the caster, increasing carrying capacity by %d, defense against projectiles by %d, pin immunity by %d%% and stun immunity by %d%%.
 		At level 4 it also makes you levitate slightly above the ground, allowing you to ignore some traps.
 		At level 5 it also grants %d%% movement speed and removes %d fatigue.]]):
-		format(encumberance, rangedef, t.getSpeed(self, t) * 100, t.getFatigue(self, t))
+		format(encumberance, rangedef, pin*100, stun*100, t.getSpeed(self, t) * 100, t.getFatigue(self, t))
 	end,
 }
 
@@ -193,7 +199,7 @@ newTalent{
 	require = spells_req4,
 	points = 5,
 	mode = "sustained",
-	sustain_mana = 100,
+	sustain_mana = 30,
 	cooldown = 15,
 	tactical = { ATTACKAREA = {LIGHTNING = 2} },
 	range = 6,

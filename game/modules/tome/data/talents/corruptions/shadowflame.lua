@@ -25,7 +25,7 @@ newTalent{
 	vim = 12,
 	cooldown = 30,
 	no_energy = true,
-	tactical = { BUFF = 2, ESCAPE = 1, CLOSEIN = 1 },
+	tactical = { DEFEND = 1, ESCAPE = 1, CLOSEIN = 1 },
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 5, 9)) end, -- Limit < 30 (make sure they can't hide forever)
 	getDefs = function(self, t) return self:combatTalentScale(t, 5, 20), self:combatTalentScale(t, 5, 16) end,
 	action = function(self, t)
@@ -89,7 +89,7 @@ newTalent{
 	points = 5,
 	sustain_vim = 90,
 	cooldown = 30,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 1, BUFF = 2 },
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.03, 0.15, 0.75) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/flame")
@@ -128,21 +128,45 @@ newTalent{
 	mode = "sustained",
 	points = 5,
 	sustain_vim = 5,
-	drain_vim = 5,
+	drain_vim = function(self, t) -- automatically updated while active
+		local drain = 5
+		local p = self:isTalentActive(t.id)
+		drain = drain + (p and p.drain_add or 0)
+		return drain
+	end,
 	remove_on_zero = true,
+	requires_target = true,
 	cooldown = 60,
 	no_sustain_autoreset = true,
 	random_boss_rarity = 10,
-	tactical = { DISABLE = function(self, t, target) if target and target.game_ender then return 3 else return 0 end end},
+	tactical = {
+		-- heals (negative attack) demons hurts others
+		ATTACKAREA = {FIRE = function(self, t, target) return target:attr("demon") and -2 or 2 end},
+		-- heals self if demon, otherwise hurts
+		SELF = {HEAL = function(self, t, target) return self:attr("demon") and 2 end,
+			 ATTACK = {FIRE = function(self, t, target)
+				return not self:attr("demon") and self.ai_state.self_compassion ~= false and -2*(self.ai_state.self_compassion or 5) end
+			 }
+		}
+	},
+	target = function(self, t)
+		if self:isTalentActive(t.id) then -- always hit enemies while in the Fearscape (affects AI)
+			return {type="ball", nolock=true, pass_terrain=true, nowarning=true, range=20, radius=20, requires_knowledge=false, selffire=false, block_path=false, block_radius=false}
+		else -- always hit the primary target
+			local tgt = self.ai_target.actor
+			if tgt then return {type="hit", range=self:getTalentRange(t), talent=t, x=tgt.x, y=tgt.y} end
+		end
+	end,
 	range = 5,
-	on_pre_use = function(self, t) return self:canBe("planechange") and self:getVim() >= 10 end,
-	callbackOnActBase = function(self, t)
+	on_pre_use = function(self, t) return not (game.zone.is_demon_plane or game.zone.no_planechange) and self:canBe("planechange") and self:getVim() > 11 end,
+	-- only use against the player
+	on_pre_use_ai = function(self, t) return self.ai_target.actor and self.ai_target.actor.game_ender or self.sustain_talents[t.id] end,
+	callbackOnActBase = function(self, t) -- update vim regeneration
 		local p = self:isTalentActive(t.id)
 		if not p then return end
-		p.drain_add = p.drain_add or 0
-		self:incVim(-p.drain_add)
-
-		p.drain_add = p.drain_add + 1
+		p.drain_add = (p.drain_add or 0) + 1
+		self:removeTemporaryValue("vim_regen", p.vim_drain)
+		p.vim_drain = self:addTemporaryValue("vim_regen", -p.drain_add)
 	end,
 	activate = function(self, t)
 		if game.zone.is_demon_plane then
@@ -154,7 +178,7 @@ newTalent{
 			return
 		end
 
-		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty or not target then return nil end
 		local _ _, tx, ty = self:canProject(tg, tx, ty)
@@ -178,7 +202,7 @@ newTalent{
 			local oldzone = game.zone
 			local oldlevel = game.level
 
-			-- Remove them before making the new elvel, this way party memebrs are not removed from the old
+			-- Remove them before making the new level, this way party members are not removed from the old level
 			if oldlevel:hasEntity(self) then oldlevel:removeEntity(self) end
 			if oldlevel:hasEntity(target) then oldlevel:removeEntity(target) end
 
@@ -251,10 +275,11 @@ newTalent{
 		return ret
 	end,
 	deactivate = function(self, t, p)
-		-- If we're a clone of the original fearscapper, just deactivate
+		-- If we're a clone of the original Fearscaper, just deactivate
 		if not self.on_die then return true end
 		
 		if p.particle then self:removeParticles(p.particle) end
+		self:removeTemporaryValue("vim_regen", p.vim_drain)
 
 		game:onTickEnd(function()
 			-- Collect objects
@@ -330,11 +355,11 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Summon a part of the Fearscape to intersect with the current level.
-		Your target and yourself are taken to the Fearscape, trapped there until you end the spell or until your target dies.
-		While inside, a constant aura of flames will burn both of you (and heal demons) for %0.2f fire damage.
-		When the spell ends, only you and the target (if still alive) are taken back to your home plane; all summons are left in the Fearscape. Objects will be moved as well.
-		This spell has no effect if cast when already inside the Fearscape.
-		This powerful spell drains 5 vim per turn, ending when it reaches 0; the amount drained increases by one each turn.
+		You and your target are taken to the Fearscape, trapped there until you end the spell or until your target dies.
+		While inside, a constant aura of flames will burn both of you for %0.2f fire damage (demons are healed instead) each turn.
+		When the spell ends, only you and the target (if still alive) plus any loose objects are taken back to your home plane; all summons are left in the Fearscape.
+		This powerful spell drains 5 vim per turn initially, increasing by +1 for each turn it has been active, and ends when your vim is depleted.
+		It has no effect if cast from within the Fearscape.
 		The damage will increase with your Spellpower.]]):format(damDesc(self, DamageType.FIRE, self:combatTalentSpellDamage(t, 12, 140)))
 	end,
 }

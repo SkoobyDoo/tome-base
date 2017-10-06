@@ -23,9 +23,9 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = cuns_req1,
-	critpower = function(self, t) return self:combatTalentScale(t, 7.5, 20, 0.75) end,
+	critpower = function(self, t) return self:combatTalentScale(t, 7.5, 20, 0.1) end,
 	-- called by _M:combatCrit in mod.class.interface.Combat.lua
-	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.75) end,
+	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.1) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "combat_critical_power", t.critpower(self, t))
 	end,
@@ -33,7 +33,7 @@ newTalent{
 		local critchance = t.getCriticalChance(self, t)
 		local power = t.critpower(self, t)
 		return ([[You have learned to find and hit weak spots. All your strikes have a %0.1f%% greater chance to be critical hits, and your critical hits do %0.1f%% more damage.
-		Also, when using knives, you now use your Cunning instead of your Strength for bonus damage.]]):
+		Also, when using knives and throwing knives, you now use your Cunning instead of your Strength for bonus damage.]]):
 		format(critchance, power)
 	end,
 }
@@ -100,15 +100,20 @@ newTalent{
 	cooldown = 30,
 	sustain_stamina = 50,
 	tactical = { BUFF = 2 },
-	drain_stamina = 6,
+	drain_stamina = 4,
 	no_break_stealth = true,
 	no_energy = true,
 	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.30, 0.75) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.0) end,
+	getDamage = function(self, t) return 1 end,
 	activate = function(self, t)
-		return {
+		local ret = {
 			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1.2, img="blade_flurry_shieldwall"}, shader={type="rotatingshield", noup=2.0, time_factor=500, appearTime=0.8}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1.2, img="blade_flurry_shieldwall"}, shader={type="rotatingshield", noup=1.0, time_factor=500, appearTime=0.8}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)
@@ -146,8 +151,8 @@ newTalent{
 	type = {"cunning/lethality",4},
 	require = cuns_req4,
 	points = 5,
-	stamina = 50,
-	cooldown = 50,
+	stamina = 25,
+	cooldown = 30,
 	tactical = { BUFF = 1 },
 	fixed_cooldown = true,
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,
