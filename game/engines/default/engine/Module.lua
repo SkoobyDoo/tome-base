@@ -1092,7 +1092,7 @@ function _M:setupWrite(mod, nomount)
 	fs.setWritePath(engine.homepath)
 	fs.mkdir(mod.short_name)
 	fs.mkdir(mod.short_name.."/save/")
-	fs.mkdir(mod.short_name.."/save_steamcloud/")
+	if core.steam then fs.mkdir(mod.short_name.."/save_steamcloud/") end
 
 	-- Enter module directory
 	local base = engine.homepath .. fs.getPathSeparator() .. mod.short_name
