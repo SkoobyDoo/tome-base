@@ -297,6 +297,9 @@ static int serial_free(lua_State *L)
 	serial_type *s = (serial_type*)auxiliar_checkclass(L, "core{serial}", 1);
 	luaL_unref(L, LUA_REGISTRYINDEX, s->fname);
 	luaL_unref(L, LUA_REGISTRYINDEX, s->fadd);
+	luaL_unref(L, LUA_REGISTRYINDEX, s->a_ref);
+	luaL_unref(L, LUA_REGISTRYINDEX, s->d_ref);
+	luaL_unref(L, LUA_REGISTRYINDEX, s->d2_ref);
 	lua_pushnumber(L, 1);
 	return 1;
 }
