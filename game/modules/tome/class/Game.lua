@@ -1092,16 +1092,20 @@ function _M:changeLevelReal(lev, zone, params)
 		self.player.last_wilderness = self.zone.short_name
 	else
 		local x, y = nil, nil
-		if params.auto_zone_stair and left_zone then
+		if (params.auto_zone_stair or self.level.data.auto_zone_stair) and left_zone then
 			-- Dirty but quick
-			local list = {}
+			local list, catchall = {}, {}
 			for i = 0, self.level.map.w - 1 do for j = 0, self.level.map.h - 1 do
 				local idx = i + j * self.level.map.w
 				if self.level.map.map[idx][Map.TERRAIN] and self.level.map.map[idx][Map.TERRAIN].change_zone == left_zone.short_name then
 					list[#list+1] = {i, j}
+				elseif self.level.map.map[idx][Map.TERRAIN] and self.level.map.map[idx][Map.TERRAIN].change_zone_catchall then
+					catchall[#catchall+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack(rng.table(list))
+			elseif #catchall  > 0 then x, y = unpack(rng.table(catchall))
+			end
 		elseif params.auto_level_stair then
 			-- Dirty but quick
 			local list = {}
