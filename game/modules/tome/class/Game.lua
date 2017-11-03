@@ -1103,8 +1103,8 @@ function _M:changeLevelReal(lev, zone, params)
 					catchall[#catchall+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list))
-			elseif #catchall  > 0 then x, y = unpack(rng.table(catchall))
+			if #list > 0 then x, y = unpack((rng.table(list)))
+			elseif #catchall  > 0 then x, y = unpack((rng.table(catchall)))
 			end
 		elseif params.auto_level_stair then
 			-- Dirty but quick
@@ -1115,7 +1115,7 @@ function _M:changeLevelReal(lev, zone, params)
 					list[#list+1] = {i, j}
 				end
 			end end
-			if #list > 0 then x, y = unpack(rng.table(list)) end
+			if #list > 0 then x, y = unpack((rng.table(list))) end
 		end
 
 		-- if self.level.exited then -- use the last location, if defined
