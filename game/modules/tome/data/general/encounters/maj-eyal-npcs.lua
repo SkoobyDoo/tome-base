@@ -81,7 +81,7 @@ newEntity{
 	sight = 1,
 	rarity = 1,
 	unit_power = 14,
-	movement_speed = 0.75,
+	movement_speed = 0.5,
 	ai = "world_hostile", ai_state = {chase_distance=3},
 	on_encounter = {
 		type="ambush",
@@ -117,7 +117,7 @@ newEntity{
 	rarity = 1,
 	unit_power = 20,
 	hates_arcane = 1,
-	movement_speed = 0.75,
+	movement_speed = 0.5,
 	cant_be_moved = false,
 	ai = "world_hostile", ai_state = {chase_distance=3},
 	on_encounter = {
