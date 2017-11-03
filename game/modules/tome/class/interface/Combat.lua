@@ -1675,9 +1675,10 @@ function _M:combatDamage(weapon, adddammod, damage)
 	end
 	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then totstat = totstat + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
+	if talented_mod > 1 then totstat = totstat + 30 end -- This is horrible, but its to prevent the +30 constant put in to help keep the weapon damage changes symmetric from effecting things without a mastery
 	local power = self:combatDamagePower(damage or weapon, totstat)
-	local phys = self:combatPhysicalpower(nil, weapon, totstat + 30)
-	return self:rescaleDamage(0.3 * phys * power * talented_mod) * 0.9
+	local phys = self:combatPhysicalpower(nil, weapon, totstat)
+	return 0.3 * phys * power * talented_mod
 end
 
 --- Gets the 'power' portion of the damage
