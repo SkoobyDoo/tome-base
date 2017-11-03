@@ -1107,6 +1107,14 @@ function _M:changeLevelReal(lev, zone, params)
 
 	-- place the player on the level
 	if self.zone.wilderness then -- Move back to old wilderness position
+		local x, y = self.player.wild_x, self.player.wild_y
+		local blocking_actor = self.level.map(x, y, engine.Map.ACTOR)
+		if blocking_actor then
+			-- This is mostly protecting the Angolwen Apprentice from misc stuff like leaving Timepoint Zero
+			local newx, newy = util.findFreeGrid(x, y, 2, true, {[Map.ACTOR]=true})
+			if newx and newy then blocking_actor:move(newx, newy, true)
+			else blocking_actor:teleportRandom(x, y, 10) end
+		end
 		self.player:move(self.player.wild_x, self.player.wild_y, true)
 		self.player.last_wilderness = self.zone.short_name
 	else

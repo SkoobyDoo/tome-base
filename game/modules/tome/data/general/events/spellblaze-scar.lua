@@ -48,6 +48,7 @@ for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	end
 	g.always_remember = true
 	g.on_stand_safe = true
+	g:resolve()
 	game.zone:addEntity(game.level, g, "terrain", x, y)
 end end
 print("[EVENT] spellblaze-scar centered at ", x, y)
