@@ -396,6 +396,17 @@ static void handle_event(WebEvent *event) {
 			}
 			break;
 		}
+		case TE4_WEB_EVENT_EVENT_LUA: {
+			lua_rawgeti(he_L, LUA_REGISTRYINDEX, event->handlers);
+			lua_pushstring(he_L, event->data.event_lua.kind);
+			lua_gettable(he_L, -2);
+			lua_remove(he_L, -2);
+			if (!lua_isnil(he_L, -1)) {
+				lua_pushstring(he_L, event->data.event_lua.data);
+				docall(he_L, 1, 0);
+			} else lua_pop(he_L, 1);
+			break;
+		}
 		case TE4_WEB_EVENT_DELETE_TEXTURE:
 			break;
 		case TE4_WEB_EVENT_BROWSER_COUNT:

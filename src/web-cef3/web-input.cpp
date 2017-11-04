@@ -160,6 +160,10 @@ extern "C" {
 	#include <tSDL.h>
 }
 
+#if defined(SELFEXE_LINUX)
+#include "web-gdk-keyvals.h"
+#endif
+
 void te4_web_inject_key(web_view_type *view, int scancode, int asymb, const char *uni, int unilen, bool up) {
 	WebViewOpaque *opaque = (WebViewOpaque*)view->opaque;
 	if (view->closed) return;
@@ -173,30 +177,8 @@ void te4_web_inject_key(web_view_type *view, int scancode, int asymb, const char
 	// OMFG ... CEF3 is very very nice, except for key handling
 	// Once this will be working(-ish) I never want to take a look at that thing again.
 #if defined(SELFEXE_LINUX)
-	if (key_code == SDLK_BACKSPACE)
-		key_event.native_key_code = 0xff08;
-	else if (key_code == SDLK_DELETE)
-		key_event.native_key_code = 0xffff;
-	else if (key_code == SDLK_DOWN)
-		key_event.native_key_code = 0xff54;
-	else if (key_code == SDLK_RETURN)
-		key_event.native_key_code = 0xff0d;
-	else if (key_code == SDLK_ESCAPE)
-		key_event.native_key_code = 0xff1b;
-	else if (key_code == SDLK_LEFT)
-		key_event.native_key_code = 0xff51;
-	else if (key_code == SDLK_RIGHT)
-		key_event.native_key_code = 0xff53;
-	else if (key_code == SDLK_TAB)
-		key_event.native_key_code = 0xff09;
-	else if (key_code == SDLK_UP)
-		key_event.native_key_code = 0xff52;
-	else if (key_code == SDLK_PAGEUP)
-		key_event.native_key_code = 0xff55;
-	else if (key_code == SDLK_PAGEDOWN)
-		key_event.native_key_code = 0xff56;
-	else
-		key_event.native_key_code = key_code;
+	if (unilen) key_event.native_key_code = get_gdk_keyval_from_uni(uni[0]);
+	else key_event.native_key_code = get_gdk_keyval_from_sdl_scancode(key_code);
 #elif defined(SELFEXE_WINDOWS)
 	// This has been fully untested and most certainly isnt working
 	BYTE VkCode;
@@ -337,23 +319,21 @@ void te4_web_inject_key(web_view_type *view, int scancode, int asymb, const char
 	key_event.native_key_code = key_code;
 #endif
 
-	key_event.unmodified_character = key_code;
+	key_event.unmodified_character = unilen ? uni[0] : key_code;
 	key_event.character = key_event.unmodified_character;
 	key_event.modifiers = get_cef_state_modifiers();
 
-	if (unilen) {
+	
+	if (!up) {
 		key_event.type = KEYEVENT_RAWKEYDOWN;
 		opaque->browser->GetHost()->SendKeyEvent(key_event);
-		key_event.type = KEYEVENT_KEYUP;
-		opaque->browser->GetHost()->SendKeyEvent(key_event);
-		key_event.type = KEYEVENT_CHAR;
-		opaque->browser->GetHost()->SendKeyEvent(key_event);
-	} else if (!up) {
-		key_event.type = KEYEVENT_KEYDOWN;
-		opaque->browser->GetHost()->SendKeyEvent(key_event);
+		printf("here2\n");
 	} else {
 		// Need to send both KEYUP and CHAR events.
 		key_event.type = KEYEVENT_KEYUP;
 		opaque->browser->GetHost()->SendKeyEvent(key_event);
+		key_event.type = KEYEVENT_CHAR;
+		opaque->browser->GetHost()->SendKeyEvent(key_event);
+		printf("here3\n");
 	}
 }

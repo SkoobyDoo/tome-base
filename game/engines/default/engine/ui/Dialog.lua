@@ -196,23 +196,28 @@ function _M:yesnocancelLongPopup(title, text, w, fct, yes_text, no_text, cancel_
 	return d
 end
 
-function _M:webPopup(url)
-	local d = new(url, game.w * 0.9, game.h * 0.9)
+function _M:webPopup(url, no_clip, no_title)
+	local d = new(no_title or url, game.w * 0.9, game.h * 0.9)
 	local w = require("engine.ui.WebView").new{width=d.iw, height=d.ih, url=url, allow_downloads={addons=true, modules=true}}
 	if w.unusable then return nil end
-	local b = require("engine.ui.ButtonImage").new{no_decoration=true, alpha_unfocus=0.5, file="copy-icon.png", fct=function()
-		if w.cur_url then
-			local url = w.cur_url:gsub("%?_te4&", "?"):gsub("%?_te4", ""):gsub("&_te4", "")
-			core.key.setClipboard(url)
-			print("[WEBVIEW] url copy", url)
-			self:simplePopup("Copy URL", "URL copied to your clipboard.")
-		end
-	end}
-	w.on_title = function(title) d:updateTitle(title) end
-	d:loadUI{
-		{left=0, top=-b.h / 2, ui=b},
+	if not no_title then w.on_title = function(title) d:updateTitle(title) end end
+	local uis = {
 		{left=0, top=0, ui=w},
 	}
+
+	if not no_clip then
+		local b = require("engine.ui.ButtonImage").new{no_decoration=true, alpha_unfocus=0.5, file="copy-icon.png", fct=function()
+			if w.cur_url then
+				local url = w.cur_url:gsub("%?_te4&", "?"):gsub("%?_te4", ""):gsub("&_te4", "")
+				core.key.setClipboard(url)
+				print("[WEBVIEW] url copy", url)
+				self:simplePopup("Copy URL", "URL copied to your clipboard.")
+			end
+		end}
+		table.insert(uis, 1, {left=0, top=-b.h / 2, ui=b})
+	end
+
+	d:loadUI(uis)
 	d:setupUI()
 	d.key:addBind("EXIT", function() game:unregisterDialog(d) end)
 	game:registerDialog(d)

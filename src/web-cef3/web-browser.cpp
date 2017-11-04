@@ -243,12 +243,28 @@ bool BrowserClient::processRunLua(CefRefPtr<CefBrowser> browser, CefRefPtr<CefPr
 	return true;
 }
 
+bool BrowserClient::processEventLua(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message) {
+	// Execute the registered JavaScript callback if any.
+	CefRefPtr<CefListValue> list = message->GetArgumentList();
+	if (list->GetSize() != 2) return false;
+
+	WebEvent *event = new WebEvent();
+	event->kind = TE4_WEB_EVENT_EVENT_LUA;
+	event->handlers = handlers;
+	event->data.event_lua.kind = cstring_to_c(list->GetString(0));
+	event->data.event_lua.data = cstring_to_c(list->GetString(1));
+	push_event(event);
+
+	return true;
+}
+
 bool BrowserClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message) {
 	bool handled = false;
 
 	// printf("Main Receiving IPC message '%s' from %d\n", (char*)message->GetName().c_str(), source_process);
 
 	if (message->GetName() == "runlua") handled = processRunLua(browser, message);
+	else if (message->GetName() == "eventlua") handled = processEventLua(browser, message);
 
 	return handled;
 }

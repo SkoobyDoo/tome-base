@@ -59,6 +59,19 @@ bool TE4V8Handler::Execute(const CefString& name, CefRefPtr<CefV8Value> object, 
 
 		return true;
 	}
+	// Generic lua event
+	else if (name == "luaevent" && arguments.size() == 2 && arguments[0]->IsString() && arguments[1]->IsString()) {
+		CefRefPtr<CefV8Context> context = CefV8Context::GetCurrentContext();
+
+		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create("eventlua");
+		CefRefPtr<CefListValue> list = message->GetArgumentList();
+		list->SetSize(2);
+		list->SetString(0, arguments[0]->GetStringValue());
+		list->SetString(1, arguments[1]->GetStringValue());
+		context->GetBrowser()->SendProcessMessage(PID_BROWSER, message);
+
+		return true;
+	}
 	return false;
 }
 
@@ -87,6 +100,10 @@ void TE4RenderProcessHandler::OnWebKitInitialized() {
 "			cb(data); "
 "		}); "
 "	}; "
+"	te4.event = function(kind, data) { "
+"		if (typeof data == 'string') luaevent(kind, data); "
+"		else luaevent(kind, JSON.stringify(data));"
+"	}; "
 "})(); "
 	;
 
@@ -100,6 +117,7 @@ void TE4RenderProcessHandler::OnContextCreated(CefRefPtr<CefBrowser> browser, Ce
 
 	CefRefPtr<CefV8Handler> handler = new TE4V8Handler();
 	object->SetValue("lua", CefV8Value::CreateFunction("lua", handler), V8_PROPERTY_ATTRIBUTE_NONE);
+	object->SetValue("luaevent", CefV8Value::CreateFunction("luaevent", handler), V8_PROPERTY_ATTRIBUTE_NONE);
 }
 
 bool TE4ClientApp::processCallback(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message) {

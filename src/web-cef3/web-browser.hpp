@@ -100,6 +100,7 @@ public:
 	virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message);
 
 	bool processRunLua(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message);
+	bool processEventLua(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message);
 
 	IMPLEMENT_REFCOUNTING(BrowserClient);
 };

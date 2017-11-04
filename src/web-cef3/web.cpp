@@ -174,6 +174,10 @@ void te4_web_do_update(void (*cb)(WebEvent*)) {
 			case TE4_WEB_EVENT_RUN_LUA:
 				free((void*)event->data.run_lua.code);
 				break;
+			case TE4_WEB_EVENT_EVENT_LUA:
+				free((void*)event->data.event_lua.kind);
+				free((void*)event->data.event_lua.data);
+				break;
 			case TE4_WEB_EVENT_DELETE_TEXTURE:
 				web_del_texture(event->data.texture);
 				break;
