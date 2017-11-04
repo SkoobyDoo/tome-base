@@ -82,6 +82,7 @@ newEntity{
 	sight = 4,
 	rarity = 3,
 	unit_power = 8,
+	movement_speed = 0.5,
 	ai = "world_patrol", ai_state = {route_kind="orc-pride"},
 	on_encounter = {type="ambush", width=14, height=14, nb={6,10}, filters={{type="humanoid", subtype="orc"}}},
 }
