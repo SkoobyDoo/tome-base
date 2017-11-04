@@ -139,7 +139,8 @@ function _M:generate()
 			if not self.view then return end
 
 			-- Control keys and such, send directly
-			if bit.band(keysym, 0x40000000) == 0x40000000 then
+			-- Such ugly, much hack
+			if bit.band(keysym, 0x40000000) == 0x40000000 or (keysym > 0 and keysym < 32) or keysym == 127 then
 				self.view:injectKey(isup, keysym, 0)
 				return
 			end
@@ -157,22 +158,23 @@ function _M:generate()
 			if unicode or not isup then
 				self.last_keys[#self.last_keys+1] = {sym, ctrl, shift, alt, meta, unicode, isup, key, ismouse, keysym}
 			else
-				local uni = nil
+				local uni = {}
 				for _, k in ipairs(self.last_keys) do local sym, ctrl, shift, alt, meta, unicode, isup, key, ismouse, keysym = unpack(k)
-					if unicode then uni = unicode break end
+					if unicode and not uni[unicode] then
+						self.view:injectKey(false, unicode, 0, unicode)
+						self.view:injectKey(true, unicode, 0, unicode)
+						print("--injecting uni", unicode)
+						uni[unicode] = true
+					end
 				end
 
-				-- Found a unicode key, just send that
-				if uni then
-					self.view:injectKey(false, unicode, 0, uni)
-					self.view:injectKey(true, unicode, 0, uni)
-				-- No unicode, ok send whatever we've got
-				else
-					for _, k in ipairs(self.last_keys) do local sym, ctrl, shift, alt, meta, unicode, isup, key, ismouse, keysym = unpack(k)
-						self.view:injectKey(isup, keysym, 0)
-					end
-					self.view:injectKey(isup, keysym, 0)
-				end
+				-- -- No unicode, ok send whatever we've got
+				-- if not uni then
+				-- 	for _, k in ipairs(self.last_keys) do local sym, ctrl, shift, alt, meta, unicode, isup, key, ismouse, keysym = unpack(k)
+				-- 		self.view:injectKey(isup, keysym, 0)
+				-- 	end
+				-- 	self.view:injectKey(isup, keysym, 0)
+				-- end
 				self.last_keys = {}
 			end
 		end
