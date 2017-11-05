@@ -470,64 +470,60 @@ function _M:doEmote(text, dur, color)
 	self:setEmote(Emote.new(text, dur, color))
 end
 
---- Call when added to a level
--- Used to make escorts, adjust to game difficulty settings, and such
+--- Called when added to a level
+-- Used to make escorts, adjust to game difficulty settings, etc.
+-- Triggered after the entity is resolved
 function _M:addedToLevel(level, x, y)
 	if not self:attr("difficulty_boosted") and not game.party:hasMember(self) then
-		-- make adjustments for game difficulty and equip some items
+		-- make adjustments for game difficulty to talent levels, max life, add classes to bosses
+		local talent_mult, life_mult, nb_classes = 1, 1, 0
 		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
-			-- Increase talent level
-			for tid, lev in pairs(self.talents) do
-				self:learnTalent(tid, true, math.floor(lev / 3))
-			end
-			self:attr("difficulty_boosted", 1)
+			talent_mult = 1.3
+			life_mult = 1.5
 		elseif game.difficulty == game.DIFFICULTY_INSANE then
-			-- Increase talent level
-			for tid, lev in pairs(self.talents) do
-				self:learnTalent(tid, true, math.floor(lev / 2))
-			end
-			-- Give randbosses extra classes
-			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
-				local nb_classes = 0
+			talent_mult = 1.8
+			life_mult = 2.0
+			if self.rank >= 3.5 then
 				if self.rank >= 10 then nb_classes = 3
 				elseif self.rank >= 5 then nb_classes = 2
-				elseif self.rank >= 3.5 then nb_classes = 1
+				else nb_classes = 1
 				end
-				local data = {auto_sustain=true, forbid_equip=false, nb_classes=nb_classes, update_body=true, spend_points=true, autolevel=nb_classes<2 and self.autolevel or "random_boss"}
-				game.state:applyRandomClass(self, data, true)
-				self:resolve() self:resolve(nil, true)
 			end
-			-- Increase life
-			self.max_life_no_difficulty_boost = self.max_life
-			local lifeadd = self.max_life * 0.2
-			self.max_life = self.max_life + lifeadd
-			self.life = self.life + lifeadd
-			self:attr("difficulty_boosted", 1)
 		elseif game.difficulty == game.DIFFICULTY_MADNESS then
-			-- Increase talent level
-			for tid, lev in pairs(self.talents) do
-				self:learnTalent(tid, true, math.ceil(lev * 1.7))
-			end
-			if not self.randboss and self.rank >= 3.5 and not self.no_difficulty_random_class then
-				local nb_classes = 0
+			talent_mult = 2.7
+			life_mult = 3.0
+			if self.rank >= 3.5 then
 				if self.rank >= 10 then nb_classes = 5
 				elseif self.rank >= 5 then nb_classes = 3
 				elseif self.rank >= 4 then nb_classes = 2
-				elseif self.rank >= 3.5 then nb_classes = 1
+				else nb_classes = 1
 				end
+			end
+	
+		end
+		if talent_mult ~= 1 then
+			-- increase level of innate talents
+			for tid, lev in pairs(self.talents) do
+				local t = self:getTalentFromId(tid)
+				if t.points ~= 1 then
+					self:learnTalent(tid, true, math.floor(lev*(talent_mult - 1)))
+				end
+			end
+			-- add extra character classes
+			if nb_classes > 0 and not self.randboss and not self.no_difficulty_random_class then
+				-- Note: talent levels from added classes are not adjusted for difficulty
+				-- This means that the NPC's innate talents are generally higher level, preserving its "character"
 				local data = {auto_sustain=true, forbid_equip=false, nb_classes=nb_classes, update_body=true, spend_points=true, autolevel=nb_classes<2 and self.autolevel or "random_boss"}
 				game.state:applyRandomClass(self, data, true)
 				self:resolve() self:resolve(nil, true)
 			end
-			-- Increase life
-			self.max_life_no_difficulty_boost = self.max_life
-			local lifeadd = self.max_life * self:getRankLifeAdjust(1) * self.level / 65 / 1.5
-			self.max_life = self.max_life + lifeadd
-			self.life = self.life + lifeadd
 			
+			-- increase maximum life
+			self.max_life = self.max_life*life_mult
+			self.life = self.max_life
 			self:attr("difficulty_boosted", 1)
 		end
-
+		-- try to equip items in inventory
 		self:wearAllInventory()
 		if self:knowTalent(self.T_COMMAND_STAFF) then -- make sure staff aspect is appropriate to talents
 			self:forceUseTalent(self.T_COMMAND_STAFF, {ignore_energy = true, ignore_cd=true, silent=true})

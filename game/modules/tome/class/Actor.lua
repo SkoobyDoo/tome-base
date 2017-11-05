@@ -123,6 +123,8 @@ _M.temporary_values_conf.flat_damage_cap = "lowest"
 _M.temporary_values_conf.projectile_evasion = "highest"
 _M.temporary_values_conf.projectile_evasion_spread = "highest"
 
+_M.temporary_values_conf.life_leech_chance = "highest"
+
 -- Damage redirection takes last
 _M.temporary_values_conf.force_use_resist = "last"
 _M.temporary_values_conf.force_use_resist_percent = "last"
@@ -1712,13 +1714,13 @@ function _M:regenLife(fake)
 				regen = regen - psi_increase
 			if not fake then self:incPsi(psi_increase) end
 			psi_increase = psi_increase + self.psi_regen
-			end
+		end
 
 		-- handles maximum life (including Blood Lock)
 		regen = util.bound(self.life + regen, self.die_at, self:attr("blood_lock") or self.max_life) - self.life
 		if not fake then self.life = self.life + regen end
-		return regen, psi_increase or self.psi_regen
-		end
+		return regen, psi_increase or self.psi_regen or 0
+	end
 	return 0, 0
 end
 
@@ -4888,6 +4890,7 @@ local sustainCallbackCheck = {
 	callbackOnEffectSave = "talents_on_effect_save",
 	callbackOnPartyAdd = "talents_on_party_add",
 	callbackOnPartyRemove = "talents_on_party_remove",
+	callbackOnTargeted = "talents_on_targeted",
 }
 _M.sustainCallbackCheck = sustainCallbackCheck
 
@@ -6470,6 +6473,7 @@ end
 
 --- Call when added to a level
 -- Used to make escorts and such
+-- Triggered after the entity is resolved
 function _M:addedToLevel(level, x, y)
 	if not self._rst_full then self:resetToFull() self._rst_full = true end -- Only do it once, the first time we come into being
 	local summoner = self.summoner

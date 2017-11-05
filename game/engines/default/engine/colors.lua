@@ -145,6 +145,11 @@ function colors.smart1(color)
 	return {colors.smart1unpack(color)}
 end
 
+function colors.lerp(a, b, x)
+	local lerp = util.lerp
+	return { lerp(a.r/255, b.r/255, x), lerp(a.g/255, b.g/255, x), lerp(a.b/255, b.b/255, x) }
+end
+
 defineColor('BLACK', 0, 0, 0)
 defineColor('WHITE', 0xFF, 0xFF, 0xFF)
 defineColor('SLATE', 0x8C, 0x8C, 0x8C)

@@ -666,6 +666,23 @@ function _M:findInAllInventories(name, getname)
 	end
 end
 
+--- Finds an object by name in all the actor's worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @param name the name to look for
+-- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
+function _M:findInAllWornInventories(worn, name, getname)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			local o, item = self:findInInventory(inven, name, getname)
+			if o and item then return o, item, inven_id end
+		end
+	end
+end
+
 --- Finds an object by property in an inventory
 -- @param inven the inventory to look into
 -- @param prop the property to look for
@@ -699,6 +716,23 @@ function _M:findInAllInventoriesBy(prop, value)
 	end
 end
 
+--- Finds an object by property in all the actor's worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @param prop the property to look for
+-- @param value the value to look for, can be a function
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
+function _M:findInAllWornInventoriesBy(worn, prop, value)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			local o, item = self:findInInventoryBy(inven, prop, value)
+			if o and item then return o, item, inven_id end
+		end
+	end
+end
+
 --- Finds an object by reference in an inventory
 -- @param inven the inventory to look into
 -- @param so the object(reference) to look for
@@ -724,6 +758,22 @@ function _M:findInAllInventoriesByObject(so)
 	end
 end
 
+--- Finds an object by reference in all the actor's worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @param so the object(reference) to look for
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
+function _M:findInAllWornInventoriesByObject(worn, so)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			local o, item = self:findInInventoryByObject(inven, so)
+			if o and item then return o, item, inven_id end
+		end
+	end
+end
+
 --- Applies fct over all items
 -- @param inven the inventory to look into
 -- @func fct the function to be called. It will receive three parameters: inven, item, object
@@ -738,6 +788,17 @@ end
 function _M:inventoryApplyAll(fct)
 	for inven_id, inven in pairs(self.inven) do
 		self:inventoryApply(inven, fct)
+	end
+end
+
+--- Applies fct over all items in all  worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @func fct the function to be called. It will receive three parameters: inven, item, object
+function _M:wornInventoryApplyAll(worn, fct)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			self:inventoryApply(inven, fct)
+		end
 	end
 end
 

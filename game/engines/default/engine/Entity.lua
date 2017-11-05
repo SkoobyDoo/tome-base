@@ -1207,6 +1207,7 @@ function _M:loadList(file, no_default, res, mod, loaded)
 
 			res[#res+1] = e
 			if t.define_as then res[t.define_as] = e end
+			return e
 		end,
 		importEntity = function(t)
 			local e = t:cloneFull()

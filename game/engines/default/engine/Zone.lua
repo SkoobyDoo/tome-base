@@ -994,7 +994,9 @@ function _M:getGenerator(what, level, spots)
 	else
 		local base = require(level.data.generator[what].class)
 		local c = class.inherit(base){}
-		local name = self:getBaseName().."generator"..what:capitalize()..".lua"
+		local append = ""
+		if type(level.data.generator[what].zoneclass) == "string" then append = level.data.generator[what].zoneclass end
+		local name = self:getBaseName().."generator"..what:capitalize()..append..".lua"
 		print("[ZONE] Custom zone generator for "..what.." loading from "..name)
 		local add = loadfile(name)
 		setfenv(add, setmetatable({

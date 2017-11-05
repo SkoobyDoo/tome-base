@@ -2254,6 +2254,7 @@ newEffect{
 		if self.player then engine.Map:setViewerFaction(self.faction) end
 	end,
 	deactivate = function(self, eff)
+		if self.permanent_undead_cloak then return end  -- Make absolutely sure that players can't lose this effect
 		self.faction = self.old_faction_cloak
 		if self.descriptor and self.descriptor.race and self:attr("undead") then self.descriptor.fake_race = nil end
 		if self.descriptor and self.descriptor.subrace and self:attr("undead") then self.descriptor.fake_subrace = nil end
