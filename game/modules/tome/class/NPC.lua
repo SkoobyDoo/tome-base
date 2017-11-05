@@ -103,6 +103,7 @@ function _M:doFOV()
 	else
 		self:computeFOV(self.sight or 10, "block_sight")
 	end
+	self:postFOVCombatCheck()
 end
 
 local function spotHostiles(self)
