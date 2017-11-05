@@ -48,6 +48,7 @@ function _M:use(item)
 	game:unregisterDialog(self)
 
 	if item.dialog then
+		package.loaded["mod.dialogs.debug."..item.dialog] = nil
 		local d = require("mod.dialogs.debug."..item.dialog).new(item)
 		game:registerDialog(d)
 		return
