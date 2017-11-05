@@ -163,7 +163,6 @@ function _M:generate()
 					if unicode and not uni[unicode] then
 						self.view:injectKey(false, unicode, 0, unicode)
 						self.view:injectKey(true, unicode, 0, unicode)
-						print("--injecting uni", unicode)
 						uni[unicode] = true
 					end
 				end

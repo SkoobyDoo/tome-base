@@ -172,8 +172,6 @@ void te4_web_inject_key(web_view_type *view, int scancode, int asymb, const char
 
 	CefKeyEvent key_event;
 
-	key_event.modifiers = get_cef_state_modifiers();
-
 	// OMFG ... CEF3 is very very nice, except for key handling
 	// Once this will be working(-ish) I never want to take a look at that thing again.
 #if defined(SELFEXE_LINUX)
@@ -327,13 +325,11 @@ void te4_web_inject_key(web_view_type *view, int scancode, int asymb, const char
 	if (!up) {
 		key_event.type = KEYEVENT_RAWKEYDOWN;
 		opaque->browser->GetHost()->SendKeyEvent(key_event);
-		printf("here2\n");
 	} else {
 		// Need to send both KEYUP and CHAR events.
 		key_event.type = KEYEVENT_KEYUP;
 		opaque->browser->GetHost()->SendKeyEvent(key_event);
 		key_event.type = KEYEVENT_CHAR;
 		opaque->browser->GetHost()->SendKeyEvent(key_event);
-		printf("here3\n");
 	}
 }
