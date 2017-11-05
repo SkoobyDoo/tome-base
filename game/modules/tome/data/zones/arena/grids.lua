@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,9 +55,12 @@ newEntity{
 	block_sight = true,
 	does_block_move = true,
 	air_level = -40,
+	mindam = 200,
+	maxdam = 200,
+	DamageType = engine.DamageType.PHYSICAL,
 	on_stand = function(self, x, y, who)
 		local DT = engine.DamageType
-		local dam = DT:get(DT.PHYSICAL).projector(self, x, y, DT.PHYSICAL, 200)
+		local dam = DT:get(DT.PHYSICAL).projector(self, x, y, DT[self.DamageType] or DT.PHYSICAL, rng.range(self.mindam, self.maxdam))
 	end,
 	nice_tiler = { method="door3d", north_south="LOCK_VERT", west_east="LOCK_HORIZ" },
 }

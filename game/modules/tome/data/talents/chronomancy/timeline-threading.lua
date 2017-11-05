@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,18 +26,18 @@ newTalent{
 	points = 5,
 	cooldown = 4,
 	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
-	tactical = { ATTACKAREA = {TEMPORAL = 2}, PARADOX = 2 },
+	tactical = { ATTACKAREA = {TEMPORAL = 2}},
 	range = 10,
 	direct_hit = true,
 	reflectable = true,
 	requires_target = true,
 	target = function (self, t)
-		return {type="bolt", range=self:getTalentRange(t), talent=t}
+		return {type="ball", selffire=false, friendlyfire=50, radius=10, range=self:getTalentRange(t), talent = t} -- fake target parameters for ai only, to estimate # targets hit
 	end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 230, getParadoxSpellpower(self, t)) end,
 	getTargetCount = function(self, t) return 3 end,
 	action = function(self, t)
-		local tg = self:getTalentTarget(t)
+		local tg = {type="bolt", range=self:getTalentRange(t), talent=t} -- actual target parameters
 		local fx, fy = self:getTarget(tg)
 		if not fx or not fy then return nil end
 
@@ -123,9 +123,9 @@ newTalent{
 	require = chrono_req_high2,
 	points = 5,
 	cooldown = 24,
-	paradox = function(self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function(self, t) return getParadoxCost(self, t, 24) end,
 	tactical = { ATTACK = 2, DISABLE = 2 },
-	remove_on_clone = true,
+	unlearn_on_clone = true,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 8))) end,
 	on_pre_use = function(self, t, silent) if self:hasEffect(self.EFF_TEMPORAL_FUGUE) then return false end return true end,
 	action = function(self, t)
@@ -133,16 +133,10 @@ newTalent{
 		
 		 -- Clone the caster
 		local function makeFugueClone(self, t)
-			local sex = game.player.female and "she" or "he"
 			local m = makeParadoxClone(self, self, t.getDuration(self, t))
 			-- Add and change some values
-			m.name = self.name
-			m.desc = [[The real you... or so ]]..sex..[[ says.]]
-			m.shader = nil
-			m.shader_args = nil
-			m.faction = self.faction
-			m.summoner = self
-			m.remove_from_party_on_death = true
+			m.name = self.name.."'s Fugue Clone"
+			m.desc = ([[The real %s... or so %s says.]]):format(self.name, self:he_she())
 			
 			-- Handle some AI stuff
 			m.ai_state = { talent_in=1, ally_compassion=10 }
@@ -223,10 +217,11 @@ newTalent{
 	require = chrono_req_high4,
 	points = 5,
 	cooldown = 24,
-	paradox = function (self, t) return getParadoxCost(self, t, 25) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	range = 10,
 	tactical = { ATTACK = 2 },
 	requires_target = true,
+	no_npc_use = true,
 	direct_hit = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	getPower = function(self, t) return self:combatTalentScale(t, 20, 50) end,

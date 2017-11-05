@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,14 +55,15 @@ newEntity{ define_as = "FILLAREL",
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.talents{
-		[Talents.T_MOONLIGHT_RAY]=4,
-		[Talents.T_STARFALL]=5,
-		[Talents.T_SHADOW_BLAST]=3,
-		[Talents.T_SEARING_LIGHT]=4,
-		[Talents.T_FIREBEAM]=4,
-		[Talents.T_SUNBURST]=3,
-		[Talents.T_HYMN_OF_SHADOWS]=2,
-		[Talents.T_CHANT_OF_FORTITUDE]=2,
+		[Talents.T_STAFF_MASTERY]={base=2, every=8},
+		[Talents.T_MOONLIGHT_RAY]={base=4, every = 10},
+		[Talents.T_STARFALL]={base=5, every = 8},
+		[Talents.T_SHADOW_BLAST]={base=3, every = 10},
+		[Talents.T_SEARING_LIGHT]={base=4, every = 8},
+		[Talents.T_FIREBEAM]={base=4, every = 8},
+		[Talents.T_SUNBURST]={base=3, every = 10},
+		[Talents.T_HYMN_OF_SHADOWS]={base=2, every = 6},
+		[Talents.T_CHANT_OF_FORTITUDE]={base=2, every = 6},
 	},
 	resolvers.sustains_at_birth(),
 
@@ -80,10 +81,15 @@ newEntity{ define_as = "FILLAREL",
 
 	seen_by = function(self, who)
 		if not self.has_been_seen and who.player then
+			for uid, act in pairs(game.level.entities) do
+				if act.name == "Krogar" then
+					local Chat = require("engine.Chat")
+					local chat = Chat.new("unremarkable-cave-bosses", self, who)
+					chat:invoke()
+					break
+				end
+			end
 			self.seen_by = nil
-			local Chat = require("engine.Chat")
-			local chat = Chat.new("unremarkable-cave-bosses", self, who)
-			chat:invoke()
 			self.has_been_seen = true
 		end
 	end,
@@ -118,15 +124,16 @@ newEntity{ define_as = "CORRUPTOR",
 	resolvers.drops{chance=100, nb=1, {type="jewelry", subtype="orb", defined="ORB_MANY_WAYS"} },
 
 	resolvers.talents{
-		[Talents.T_ARMOUR_TRAINING]=2,
-		[Talents.T_MOONLIGHT_RAY]=4,
-		[Talents.T_STARFALL]=5,
-		[Talents.T_SHADOW_BLAST]=3,
-		[Talents.T_SEARING_LIGHT]=4,
-		[Talents.T_FIREBEAM]=4,
-		[Talents.T_SUNBURST]=3,
-		[Talents.T_HYMN_OF_SHADOWS]=2,
-		[Talents.T_CHANT_OF_FORTITUDE]=2,
+		[Talents.T_STAFF_MASTERY]={base=2, every=8},
+		[Talents.T_ARMOUR_TRAINING]={base=2, every=7},
+		[Talents.T_MOONLIGHT_RAY]={base=4, every=10},
+		[Talents.T_STARFALL]={base=5, every=10},
+		[Talents.T_SHADOW_BLAST]={base=3, every=8},
+		[Talents.T_SEARING_LIGHT]={base=4, every=8},
+		[Talents.T_FIREBEAM]={base=4, every=10},
+		[Talents.T_SUNBURST]={base=3, every=10},
+		[Talents.T_HYMN_OF_SHADOWS]={base=2, every=8},
+		[Talents.T_CHANT_OF_FORTITUDE]={base=2, every=7},
 	},
 	resolvers.sustains_at_birth(),
 

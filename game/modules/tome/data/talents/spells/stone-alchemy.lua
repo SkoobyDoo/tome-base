@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Carve 40 to 80 alchemist gems out of a natural gemstone.
-		Alchemists gems are used for many other spells, and each gem type creates a different effect.]]):format()
+		Alchemist gems are used for many other spells, and each gem type creates a different effect.]]):format()
 	end,
 }
 
@@ -190,7 +190,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local range = t.getRange(self, t)
-		return ([[Crush 5 alchemists gems into dust to mark impassable terrain next to you. You immediately enter it and appear on the other side of the obstacle, up to %d grids away.]]):
+		return ([[Crush 5 alchemist gems into dust to mark impassable terrain next to you. You immediately enter it and appear on the other side of the obstacle, up to %d grids away.]]):
 		format(range)
 	end,
 }

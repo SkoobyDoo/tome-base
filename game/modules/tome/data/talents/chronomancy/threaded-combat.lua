@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -157,25 +157,43 @@ newTalent{
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.blended_threads and self.turn_procs.blended_threads >= t.getCount(self, t) then return end
-			for tid, cd in pairs(self.talents_cd) do
+			
+			-- Refresh talent
+			local tids = {}
+			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
-				if tt.type[1]:find("^chronomancy/blade") then
-					self:alterTalentCoolingdown(tt, - 1)
-					self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+				if tt.type[1]:find("^chronomancy/blade") and not tt.fixed_cooldown then
+					tids[#tids+1] = tt
 				end
 			end
+
+			if #tids > 0 then
+				local tid = rng.tableRemove(tids)
+				self:alterTalentCoolingdown(tid, - 1)
+				self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+			end
+			
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.blended_threads and self.turn_procs.blended_threads >= t.getCount(self, t) then return end
-			for tid, cd in pairs(self.talents_cd) do
+			
+			-- Refresh talent
+			local tids = {}
+			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
-				if tt.type[1]:find("^chronomancy/bow") then
-					self:alterTalentCoolingdown(tt, - 1)
-					self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+				if tt.type[1]:find("^chronomancy/bow") and not tt.fixed_cooldown then
+					tids[#tids+1] = tt
 				end
 			end
+
+			if #tids > 0 then
+				local tid = rng.tableRemove(tids)
+				self:alterTalentCoolingdown(tid, - 1)
+				self.turn_procs.blended_threads = (self.turn_procs.blended_threads or 0) + 1
+			end
+			
 		end
 	end,
 	info = function(self, t)
@@ -220,13 +238,13 @@ newTalent{
 			-- Ranged attack
 			local targets = self:archeryAcquireTargets(tg, {one_shot=true, no_energy = true})
 			if not targets then return end
-			self:archeryShoot(targets, t, tg, {mult=dam})
+			self:archeryShoot(targets, t, tg, {mult=damage})
 		elseif mainhand then
 			-- Melee attack
 			self:project(tg, self.x, self.y, function(px, py, tg, self)
 				local target = game.level.map(px, py, Map.ACTOR)
 				if target and target ~= self then
-					self:attackTarget(target, nil, dam, true)
+					self:attackTarget(target, nil, damage, true)
 				end
 			end)
 			self:addParticles(Particles.new("meleestorm2", 1, {}))
@@ -245,29 +263,47 @@ newTalent{
 }
 
 newTalent{
-	name = "Warden's Call", short_name = WARDEN_S_CALL,
+	name = "Warden's Call", short_name = "WARDEN_S_CALL",
 	type = {"chronomancy/threaded-combat", 4},
 	require = chrono_req_high4,
 	mode = "passive",
 	points = 5,
-	remove_on_clone = true,
-	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
+	unlearn_on_clone = true,
+	getChance = function(self, t) return self:combatTalentLimit(t, 65, 30, 50) end,
+	--getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 80, 10, 60) end,
+	getDamagePenalty = function(self, t) return 100 - self:combatTalentLimit(t, 95, 60, 80) end,
 	findTarget = function(self, t)
 		local tgts = {}
 		local grids = core.fov.circle_grids(self.x, self.y, 10, true)
-		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
-			local target_type = Map.ACTOR
-			local a = game.level.map(x, y, Map.ACTOR)
-			if a and not a.dead and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
-				tgts[#tgts+1] = a
+		for x, yy in pairs(grids) do
+			for y, _ in pairs(grids[x]) do
+				local target_type = Map.ACTOR
+				local a = game.level.map(x, y, Map.ACTOR)
+				if a and not a.dead and self:reactionToward(a) < 0 and self:hasLOS(a.x, a.y) then
+					tgts[#tgts+1] = a
+				end
 			end
-		end end
-		
+		end
 		return tgts
+	end,
+	cleanupClone = function(self, t, clone)
+		if not self or not clone then return false end
+		if not clone.dead then clone:die() end
+		for _, ent in pairs(game.level.entities) do
+			-- Replace clone references in timed effects so they don't prevent GC
+			if ent.tmp then
+				for _, eff in pairs(ent.tmp) do
+					if eff.src and eff.src == clone then eff.src = self end
+				end
+			end
+		end
+		return true
 	end,
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.wardens_call then
+				return
+			elseif not rng.percent(t.getChance(self, t)) then
 				return
 			else
 				self.turn_procs.wardens_call = true
@@ -291,6 +327,7 @@ newTalent{
 				local tx, ty = util.findFreeGrid(wf.x, wf.y, 1, true, {[Map.ACTOR]=true})
 				if tx and ty then
 					m.blended_target = wf
+					game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 					game.zone:addEntity(game.level, m, "actor", tx, ty)
 				end
 			end
@@ -301,8 +338,9 @@ newTalent{
 					local a, id = rng.tableRemove(tgts)
 					-- look for space
 					local tx, ty = util.findFreeGrid(a.x, a.y, 1, true, {[Map.ACTOR]=true})
-					if tx and ty then	
-						m.blended_target = a				
+					if tx and ty then
+						m.blended_target = a
+						game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 						game.zone:addEntity(game.level, m, "actor", tx, ty)
 						break
 					else
@@ -310,11 +348,14 @@ newTalent{
 					end
 				end
 			end
+			t.cleanupClone(self, t, m)
 		end
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted)
 		if hitted then
 			if self.turn_procs.wardens_call then
+				return
+			elseif not rng.percent(t.getChance(self, t)) then
 				return
 			else
 				self.turn_procs.wardens_call = true
@@ -335,7 +376,7 @@ newTalent{
 				self:die()
 				game.level.map:particleEmitter(self.x, self.y, 1, "temporal_teleport")
 			end
-			
+
 			-- Find a good location for our shot
 			local function find_space(self, target, clone)
 				local poss = {}
@@ -363,6 +404,7 @@ newTalent{
 				local tx, ty = find_space(self, target, m)
 				if tx and ty then
 					m.blended_target = wf
+					game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 					game.zone:addEntity(game.level, m, "actor", tx, ty)
 				end
 			else
@@ -372,17 +414,19 @@ newTalent{
 					local tx, ty = find_space(self, target, m)
 					if tx and ty then
 						m.blended_target = a
+						game.logSeen(self, "%s calls forth a temporal warden from another timeline.", self.name:capitalize())
 						game.zone:addEntity(game.level, m, "actor", tx, ty)
 					end
 				end
 			end
+			t.cleanupClone(self, t, m)
 		end
 	end,
 	info = function(self, t)
-		local damage_penalty = t.getDamagePenalty(self, t)
-		return ([[When you hit with a melee or arrow attack a warden may appear from another timeline, depending on available space, and shoot or attack a random enemy.
-		The wardens are out of phase with this reality and deal %d%% less damage but the bow warden's arrows will pass through friendly targets.
-		This effect can only occur once per turn and the wardens return to their own timeline after attacking.]])
-		:format(damage_penalty)
+		return ([[When you hit with a melee or arrow attack, there is a %d%% chance that a warden will appear from another timeline to attack a random enemy.
+		The summoned warden will attempt a melee attack if you made an arrow attack, or an arrow attack if you made a melee attack.
+		These wardens are out of phase with your reality and deal %d%% less damage, and their arrows will pass through friendly targets.
+		A warden can only be summoned this way once per turn and they return to their own timeline after attacking.]])
+		:format(t.getChance(self, t), t.getDamagePenalty(self, t))
 	end
 }

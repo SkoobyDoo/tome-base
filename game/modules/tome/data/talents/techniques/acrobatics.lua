@@ -1,4 +1,5 @@
--- Skirmisher, a class for Tales of Maj'Eyal 1.1.5
+-- ToME - Tales of Maj'Eyal
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,45 +33,74 @@ newTalent {
 	random_ego = "attack",
 	cooldown = function(self, t) return 10 - cooldown_bonus(self) end,
 	stamina = function(self, t) return math.max(0, 18 - stamina_bonus(self)) end,
-	tactical = {ESCAPE = 2},
-	on_pre_use = function(self, t)
-		return not self:attr("never_move")
+	tactical = {SELF = {ESCAPE = 2, CLOSEIN = 2}},
+	on_pre_use = function(self, t, silent, fake)
+		if self:attr("never_move") then
+			if not silent then game.logPlayer(self, "You cannot move!") end
+			return
+		end
+		return true
+	end,
+	on_pre_use_ai = function(self, t)
+		for i, act in ipairs(self.fov.actors_dist) do
+			if act ~= self then	return self.fov.actors[act].sqdist <= 1	end
+		end
 	end,
 	range = function(self, t)
 		return math.floor(self:combatTalentScale(t, 3, 8))
 	end,
 	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t, nolock=true}
+		return {type="beam", talent=t, range=self:getTalentRange(t), nolock=true,
+			-- Set up grid_params. Desired range depends on if we have a target and the current tactic.
+			grid_params = {want_range = (not self.ai_target.actor or self.ai_state.tactic == "escape") and 10 + self:getTalentCooldown(t) or 0, max_delta=-1},
+		}
 	end,
 	speed_bonus = function(self, t)
 		return self:combatTalentScale(t, 0.6, 1.0, 0.75)
 	end,
 	action = function(self, t)
+		local tx, ty, target
+		local vault_launch_target = function(bx, by) -- find someone to launch from to reach a grid
+			local vault_block = function(_, bx, by)
+				return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self)
+			end
+			local line = self:lineFOV(bx, by, vault_block)
+			local lx, ly, is_corner_blocked = line:step()
+			local launch_target = game.level.map(lx, ly, Map.ACTOR)
+			if launch_target then print("\tSKIRMISHER_VAULT: grid", bx, by, "has vault launch target at", launch_target.x, launch_target.y) end
+			return self:canSee(launch_target) and launch_target
+		end
 		-- Get Landing Point.
 		local tg = self:getTalentTarget(t)
-		local tx, ty, target = self:getTarget(tg)
+		tg.grid_params.check=vault_launch_target
+		local range = tg.range
+		if self.player then
+			tg.display_line_step = function(self, d) -- highlight permissible grids for the player
+				local t_range = core.fov.distance(self.target_type.start_x, self.target_type.start_y, d.lx, d.ly)
+				if t_range >= 2 and t_range <= tg.range and not d.block and vault_launch_target(d.lx, d.ly) then
+					d.s = self.sb
+				else
+					d.s = self.sr
+				end
+				d.display_highlight(d.s, d.lx, d.ly)
+			end
+		end
+
+		tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return end
-		if core.fov.distance(self.x, self.y, tx, ty) > self:getTalentRange(t) then return end
-		if tx == self.x and ty == self.y then return end
-		if target or
-			game.level.map:checkEntity(tx, ty, Map.TERRAIN, "block_move", self)
-		then
-			game.logPlayer(self, "You must have an empty space to land in.")
-			return
+		if game.level.map:checkAllEntities(tx, ty, "block_move", self) or not self:canProject(tg, tx, ty) then
+			game.logPlayer(self, "You cannot land in that space.") return
 		end
-
+		
 		-- Get Launch target.
-		local block_actor = function(_, bx, by)
-			return game.level.map:checkEntity(bx, by, Map.TERRAIN, "block_move", self)
-		end
-		local line = self:lineFOV(tx, ty, block_actor)
-		local lx, ly, is_corner_blocked = line:step()
-		local launch_target = game.level.map(lx, ly, Map.ACTOR)
+		local launch_target = vault_launch_target(tx, ty)
+
 		if not launch_target then
-			game.logPlayer(self, "You need someone adjacent to vault over.")
+			game.logPlayer(self, "You must vault over someone adjacent to you.")
 			return
 		end
 
+		self:logCombat(launch_target, "#Source# #YELLOW#vaults#LAST# over #target#!")
 		local ox, oy = self.x, self.y
 		self:move(tx, ty, true)
 
@@ -103,32 +133,44 @@ newTalent {
 	random_ego = "attack",
 	cooldown = function(self, t) return 20 - cooldown_bonus(self) end,
 	no_energy = true,
+	message = function(self, t) return "@Source@ tumbles to a better position!" end,
 	stamina = function(self, t)
 		return math.max(0, 20 - stamina_bonus(self))
 	end,
-	tactical = {ESCAPE = 2, BUFF = 1},
+	tactical = {SELF = {CLOSEIN = 1, ESCAPE = 1, BUFF = 0.5}},
+	on_pre_use = function(self, t, silent, fake)
+		if self:attr("never_move") then
+			if not silent then game.logPlayer(self, "You cannot move!") end
+			return
+		end
+		return true
+	end,
 	range = function(self, t)
 		return math.floor(self:combatTalentScale(t, 2, 4))
 	end,
 	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t}
+		return {type="beam", talent=t, range=self:getTalentRange(t),
+			-- Set up grid_params. Desired range depends on if we have a target and the current tactic.
+			grid_params = {want_range=(not self.ai_target.actor or self.ai_state.tactic == "escape") and 10 + self:getTalentCooldown(t) or 0, max_delta=-1}
+		}
 	end,
 	combat_physcrit = function(self, t)
 		return self:combatTalentScale(t, 2.3, 7.5, 0.75)
 	end,
 	action = function(self, t)
+		local tx, ty, target
+		local range = t.range(self, t)
+		-- Get Landing Point.
 		local tg = self:getTalentTarget(t)
-		local x, y, target = self:getTarget(tg)
-		if not x or not y then return end
-		if self.x == x and self.y == y then return end
-		if core.fov.distance(self.x, self.y, x, y) > self:getTalentRange(t) or not self:hasLOS(x, y) then return end
-
-		if target or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move", self) then
-			game.logPlayer(self, "You must have an empty space to roll to.")
-			return false
+		tx, ty, target = self:getTarget(tg)
+		if not tx or not ty then return end
+		if game.level.map:checkAllEntities(tx, ty, "block_move", self) or not self:canProject(tg, tx, ty) then
+			game.logPlayer(self, "You cannot tumble to that space.")
+			return
 		end
 
-		self:move(x, y, true)
+		print(t.id, "tumbling from", self.x, self.y, "to", tx, ty)
+		self:move(tx, ty, true)
 		local combat_physcrit = t.combat_physcrit(self, t)
 		if combat_physcrit then
 			-- Can't set to 0 duration directly, so set to 1 and then decrease by 1.
@@ -155,7 +197,9 @@ newTalent {
 	stamina_per_use = function(self, t) return 30 - stamina_bonus(self) end,
 	sustain_stamina = 10,
 	require = techs_dex_req3,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 2,
+		SELF = {STAMINA = function(self, t, target) return -t.stamina_per_use(self, t)/30 end}
+	},
 	activate = function(self, t)
 		return {}
 	end,
@@ -171,7 +215,6 @@ newTalent {
 	-- called by mod/Actor.lua, although it could be a callback one day
 	onHit = function(self, t, damage)
 		-- Don't have trigger cooldown.
-		-- if self:hasEffect("EFF_SKIRMISHER_TRAINED_REACTIONS_COOLDOWN") then return damage end
 
 		local cost = t.stamina_per_use(self, t)
 		if damage >= self.max_life * t.getLifeTrigger(self, t) * 0.01 then
@@ -202,7 +245,7 @@ newTalent {
 		local reduce = t.getReduction(self, t)
 		local cost = t.stamina_per_use(self, t) * (1 + self:combatFatigue() * 0.01)
 		return ([[While this talent is sustained, you anticipate deadly attacks against you.
-		Any time you would lose more than %d%% of your life in a single hit, you instead duck out of the way and assume a defensive posture.
+		Any time you would lose more than %d%% of your maximum life in a single hit, you instead duck out of the way and assume a defensive posture.
 		This reduces the triggering damage and all further damage in the same turn by %d%%.
 		You need %0.1f Stamina and an adjacent open tile to perform this feat (though it does not cause you to move).]])
 		:format(trigger, reduce, cost)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local heal = t.getHeal(self, t)
-		return ([[Crush and consume one of your captured souls, healing your for %d life and restoring %d mana.
+		return ([[Crush and consume one of your captured souls, healing you for %d life and restoring %d mana.
 		The life and mana healed will increase with your Spellpower.]]):
 		format(heal, heal / 3)
 	end,
@@ -54,21 +54,13 @@ newTalent{
 	name = "Animus Hoarder",
 	type = {"spell/animus",2},
 	require = spells_req2,
-	mode = "sustained",
+	mode = "passive",
 	points = 5,
-	sustain_mana = 50,
-	cooldown = 30,
-	tactical = { BUFF = 3 },
 	getMax = function(self, t) return math.floor(self:combatTalentScale(t, 2, 8)) end,
-	getChance = function(self, t) return math.floor(self:combatTalentScale(t, 10, 80)) end,
-	activate = function(self, t)
-		local ret = {}
-		self:talentTemporaryValue(ret, "max_soul", t.getMax(self, t))
-		self:talentTemporaryValue(ret, "extra_soul_chance", t.getChance(self, t))
-		return ret
-	end,
-	deactivate = function(self, t, p)
-		return true
+	getChance = function(self, t) return self:combatTalentLimit(t, 100, 20, 80) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "extra_soul_chance", t.getChance(self, t))
+		self:talentTemporaryValue(p, "max_soul", t.getMax(self, t))
 	end,
 	info = function(self, t)
 		local max, chance = t.getMax(self, t), t.getChance(self, t)
@@ -83,8 +75,8 @@ newTalent{
 	type = {"spell/animus",3},
 	require = spells_req3,
 	points = 5,
-	mana = 50,
-	soul = 4,
+	mana = 45,
+	soul = 2,
 	cooldown = 15,
 	range = 6,
 	proj_speed = 20,

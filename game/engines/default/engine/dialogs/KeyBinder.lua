@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@ local KeyBind = require "engine.KeyBind"
 local Gestures = require "engine.ui.Gestures"
 local GetText = require "engine.dialogs.GetText"
 
+--- Bind your keys!
+-- @classmod engine.dialogs.KeyBinder
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(key_source, force_all, gesture_source)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ newTalent{
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
 	end,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 28, 170) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 28, 200) end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local dam = self:spellCrit(t.getDamage(self, t))
@@ -76,7 +76,7 @@ newTalent{
 	range = 10,
 	requires_target = true,
 	reflectable = true,
-	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 200) end,
+	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 25, 280) end,
 	action = function(self, t)
 		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_lightning", trail="lightningtrail"}}
 		local x, y = self:getTarget(tg)
@@ -101,7 +101,7 @@ newTalent{
 	require = spells_req_high3,
 	points = 5,
 	mode = "sustained",
-	sustain_mana = 100,
+	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { DISABLE = 2, BUFF = 2 },
 	range = 10,
@@ -114,6 +114,7 @@ newTalent{
 			return radius
 		end,
 	do_hurricane = function(self, t, target)
+		if target.dead then return end
 		if not rng.percent(t.getChance(self, t)) then return end
 
 		target:setEffect(target.EFF_HURRICANE, 10, {src=self, dam=t.getDamage(self, t), radius=t.getRadius(self, t) })

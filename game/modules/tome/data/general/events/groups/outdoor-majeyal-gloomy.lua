@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,5 +21,5 @@ return {
 	{name="tombstones", percent=10},
 	{name="old-battle-field", percent=5},
 	{name="thunderstorm", percent=7},
-	{name="rat-lich", percent=2},
+	{name="rat-lich", percent=2, unique=true},
 }

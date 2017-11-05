@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,9 +17,12 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- Defines a simple AI building blocks
+--- Defines a simple AI building blocks
 -- Target nearest and move/attack it
+-- @classmod engine.ai.simple
 local Astar = require "engine.Astar"
+
+-- consider adding target coordinates to the inputs of these ais (to move without an aitarget)
 
 newAI("move_simple", function(self)
 	if self.ai_target.actor then
@@ -100,6 +103,7 @@ newAI("flee_simple", function(self)
 	end
 end)
 
+-- this can fail frequently.  Could use a more sophisticated AI to flee around/out of corners, etc.
 newAI("flee_dmap", function(self)
 	if self.ai_target.actor then
 		local a = self.ai_target.actor
@@ -112,19 +116,19 @@ newAI("flee_dmap", function(self)
 			for _, i in ipairs(util.adjacentDirs()) do
 				local sx, sy = util.coordAddDir(self.x, self.y, i)
 				local cd = a:distanceMap(sx, sy)
---				print("looking for dmap", dir, i, "::", c, cd)
+				if config.settings.log_detail_ai > 0 then print("[flee_dmap] looking for dmap", dir, i, "::", c, cd) end
 				if not cd or (c and (cd < c and self:canMove(sx, sy))) then c = cd; dir = i end
 			end
 		end
 
 		-- If we do not accurately know the targets position, move away from where we think it is
-		if  dir == 5 then
+		if dir == 5 then
+			if config.settings.log_detail_ai > 0 then print("[flee_dmap] no dmap escape, using flee_simple") end
 			return self:runAI("flee_simple")
 		-- Otherwise, move in the dmap direction
 		else
 			return self:moveDirection(util.coordAddDir(self.x, self.y, dir))
 		end
-
 	end
 end)
 
@@ -134,10 +138,15 @@ newAI("move_astar", function(self, add_check)
 		local a = Astar.new(game.level.map, self)
 		local path = a:calc(self.x, self.y, tx, ty, nil, nil, add_check)
 		if not path then
+			if config.settings.log_detail_ai > 0 then print("[move_astar] no Astar path, using move_simple") end
 			return self:runAI("move_simple")
 		else
 			local moved = self:move(path[1].x, path[1].y)
-			if not moved then return self:runAI("move_simple") end
+			if moved then return moved
+			else
+				if config.settings.log_detail_ai > 0 then print("[move_astar] invalid Astar node, using move_simple", path[1].x, path[1].y, "using move_simple") end
+				return self:runAI("move_simple") 
+			end
 		end
 	end
 end)
@@ -185,6 +194,8 @@ newAI("move_wander", function(self)
 	end
 end)
 
+
+-- could allow for handling hostile terrain here
 newAI("move_complex", function(self)
 	if self.ai_target.actor and self.x and self.y then
 		local tx, ty = self:aiSeeTargetPos(self.ai_target.actor)
@@ -238,7 +249,8 @@ end)
 -- Find an hostile target
 -- this requires the ActorFOV interface, or an interface that provides self.fov.actors*
 newAI("target_simple", function(self)
-	if self.ai_target.actor and not self.ai_target.actor.dead and rng.percent(90) then return true end
+	-- keep same (hostile) target 90% of the time
+	if self.ai_target.actor and not self.ai_target.actor.dead and self:reactionToward(act) < 0 and rng.percent(90) then return true end
 
 	-- Find closer enemy and target it
 	-- Get list of actors ordered by distance
@@ -248,9 +260,8 @@ newAI("target_simple", function(self)
 		act = self.fov.actors_dist[i]
 --		print("AI looking for target", self.uid, self.name, "::", act.uid, act.name, self.fov.actors[act].sqdist)
 		-- find the closest enemy
-		if act and self:reactionToward(act) < 0 and not act.dead then
+		if act and not act.dead and self:reactionToward(act) < 0 then
 			self:setTarget(act)
-			self:check("on_acquire_target", act)
 			return true
 		end
 	end

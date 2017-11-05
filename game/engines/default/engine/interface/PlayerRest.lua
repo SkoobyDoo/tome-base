@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 
 --- Handles player resting
+-- @classmod engine.generator.interface.PlayerRest
 module(..., package.seeall, class.make)
 
 --- Initializes resting
@@ -63,12 +64,11 @@ end
 function _M:onRestStop()
 end
 
---- Rest a turn
--- For a turn based game you want in you player's act() something like that:<br/>
--- <pre>
--- if not self:restStep() then game.paused = true end
--- </pre>
--- @return true if we can continue to rest, false otherwise
+--- The Player rests a turn
+-- For a turn based game, you want to call this in your player's act() method:
+-- @usage if not self:restStep() then game.paused = true end
+-- @return[1] true if we can continue to rest (This uses energy)
+-- @return[2] false if we can't continue
 function _M:restStep()
 	if not self.resting then return false end
 
@@ -84,9 +84,10 @@ function _M:restStep()
 	end
 end
 
---- Can we continue resting ?
+--- Can we continue resting?  
 -- Rewrite this method to check for mana, life, whatever. By default we always return false so resting will never work
--- @return true if we can continue to rest, false otherwise
+-- @return[1] true if we can continue to rest
+-- @return[2] false if we can't continue
 function _M:restCheck()
 	return false, "player:restCheck() method not defined"
 end

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ uberTalent{
 		if eff.nb >= 3 and not eff.blink then
 			self:effectTemporaryValue(eff, "prob_travel", 5)
 			game.logSeen(self, "#LIGHT_BLUE#%s reaches critical velocity!", self.name:capitalize())
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, rng.float(-3, -2), (rng.range(0,2)-1) * 0.5, "CRITICAL VELOCITY!", {0,128,255})
 			eff.particle = self:addParticles(Particles.new("megaspeed", 1, {angle=util.dirToAngle((dir == 4 and 6) or (dir == 6 and 4 or dir))}))
 			eff.blink = true
@@ -62,6 +62,7 @@ uberTalent{
 	end,
 	info = function(self, t)
 		return ([[When moving over 800%% speed for at least 3 steps in the same direction, you become so fast you can blink through obstacles as if they were not there.
+		While moving this fast you have 50%% chances to fully ignore an attack by displacing yourself (this may only happen once per turn).
 		Changing direction will break the effect.]])
 		:format()
 	end,
@@ -131,6 +132,7 @@ uberTalent{
 		local o3 = self:findInAllInventoriesBy("define_as", "TELOS_BOTTOM_HALF")
 		return o1 and o2 and o3
 	end} },
+	cant_steal = true,
 	on_learn = function(self, t)
 		local list = mod.class.Object:loadList("/data/general/objects/special-artifacts.lua")
 		local o = game.zone:makeEntityByName(game.level, list, "TELOS_SPIRE", true)
@@ -203,7 +205,7 @@ uberTalent{
 		Arcane damage has a 30%% chance to increase your spellcasting speed by 20%% for 5 turns.
 		Fire damage has a 30%% chance to cleanse all physical or magical detrimental effects on you.
 		Cold damage has a 30%% chance to turn your skin into ice for 5 turns, reducing physical damage taken by %d%%, increasing armor by %d, and dealing %d ice damage to attackers.
-		Lightning damage has a 30%% chance to transform you into pure lightning for 5 turns; any damage will teleport you to an adjacent tile and ignore the damage (can only happen once per turn).
+		Lightning damage has a 30%% chance to transform you into pure lightning for 5 turns; any damage will displace you to an adjacent tile and ignore the damage (can only happen once per turn).
 		Light damage has a 30%% chance to create a barrier around you, absorbing %d damage for 5 turns.
 		Nature damage has a 30%% chance to harden your skin, preventing the application of any magical detrimental effects for 5 turns.
 		The Cold and Light effects scale with your Cunning.
@@ -212,6 +214,23 @@ uberTalent{
 	end,
 }
 
+eye_of_the_tiger_data = {
+	physical = {
+		desc = "All physical criticals reduce the remaining cooldown of a random technique or cunning talent by 2.",
+		types = { "^technique/", "^cunning/" },
+		reduce = 2,
+	},
+	spell = {
+		desc = "All spell criticals reduce the remaining cooldown of a random spell talent by 1.",
+		types = { "^spell/", "^corruption/", "^celestial/", "^chronomancy/" },
+		reduce = 1,
+	},
+	mind = {
+		desc = "All mind criticals reduce the remaining cooldown of a random wild gift/psionic/afflicted talent by 2.",
+		types = { "^wild%-gift/", "^cursed/", "^psionic/" },
+		reduce = 2,
+	},
+}
 uberTalent{
 	name = "Eye of the Tiger",
 	mode = "passive",
@@ -223,52 +242,37 @@ uberTalent{
 		for tid, _ in pairs(self.talents_cd) do
 			local t = self:getTalentFromId(tid)
 			if not t.fixed_cooldown then
-				if
-					(kind == "physical" and
-						(
-							t.type[1]:find("^technique/") or
-							t.type[1]:find("^cunning/")
-						)
-					) or
-					(kind == "spell" and
-						(
-							t.type[1]:find("^spell/") or
-							t.type[1]:find("^corruption/") or
-							t.type[1]:find("^celestial/") or
-							t.type[1]:find("^chronomancy/")
-						)
-					) or
-					(kind == "mind" and
-						(
-							t.type[1]:find("^wild%-gift/") or
-							t.type[1]:find("^cursed/") or
-							t.type[1]:find("^psionic/")
-						)
-					)
-					then
+				local ok = false
+				local d = eye_of_the_tiger_data[kind]
+				if d then for _, check in ipairs(d.types) do
+						if t.type[1]:find(check) then ok = true break end
+				end end
+				if ok then
 					tids[#tids+1] = tid
 				end
 			end
 		end
 		if #tids == 0 then return end
 		local tid = rng.table(tids)
-		self.talents_cd[tid] = self.talents_cd[tid] - (kind == "spell" and 1 or 2)
+		local d = eye_of_the_tiger_data[kind]
+		self.talents_cd[tid] = self.talents_cd[tid] - (d and d.reduce or 1)
 		if self.talents_cd[tid] <= 0 then self.talents_cd[tid] = nil end
 		self.changed = true
 		self.turn_procs.eye_tiger = true
 	end,
 	info = function(self, t)
-		return ([[All physical criticals reduce the remaining cooldown of a random technique or cunning talent by 2.
-		All spell criticals reduce the remaining cooldown of a random spell talent by 1.
-		All mind criticals reduce the remaining cooldown of a random wild gift/psionic/afflicted talent by 2.
+		local list = {}
+		for _, d in pairs(eye_of_the_tiger_data) do list[#list+1] = d.desc end
+		return ([[%s		
 		This can only happen once per turn, and cannot affect the talent that triggers it.]])
-		:format()
+		:format(table.concat(list, "\n"))
 	end,
 }
 
 uberTalent{
 	name = "Worldly Knowledge",
 	mode = "passive",
+	cant_steal = true,
 	on_learn = function(self, t, kind)
 		local Chat = require "engine.Chat"
 		local chat = Chat.new("worldly-knowledge", {name="Worldly Knowledge"}, self)
@@ -299,6 +303,7 @@ uberTalent{
 uberTalent{
 	name = "Tricks of the Trade",
 	mode = "passive",
+	cant_steal = true,
 	require = { special={desc="Have sided with the Assassin Lord", fct=function(self) return game.state.birth.ignore_prodigies_special_reqs or (self:isQuestStatus("lost-merchant", engine.Quest.COMPLETED, "evil")) end} },
 	on_learn = function(self, t) 
 		if self:knowTalentType("cunning/stealth") then
@@ -316,7 +321,7 @@ uberTalent{
 	end,
 	info = function(self, t)
 		return ([[You have friends in low places and have learned some underhanded tricks.
-		Gain 0.2 Category Mastery to the Cunning/Stealth Category (or unlock it, if locked), and either gain +0.1 to the Cunning/Scoundrel category or learn and unlock the category at 0.9 if you lack it.
+		Gain 0.2 Category Mastery to the Cunning/Stealth Category (or unlock it, if you have the tree and it is locked), and either gain +0.1 to the Cunning/Scoundrel category or learn and unlock the category at 0.9 if you lack it.
 		Additionally, all of your damage penalties from invisibility are permanently halved.]]):
 		format()
 	end,

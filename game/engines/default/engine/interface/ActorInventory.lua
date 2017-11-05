@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ local ShowEquipInven = require_first("mod.dialogs.ShowEquipInven", "engine.dialo
 local ShowPickupFloor = require_first("mod.dialogs.ShowPickupFloor", "engine.dialogs.ShowPickupFloor")
 
 --- Handles actors stats
+-- @classmod engine.generator.interface.ActorInventory
 module(..., package.seeall, class.make)
 
 _M.inven_def = {}
@@ -65,20 +66,22 @@ function _M:init(t)
 	self:initBody()
 end
 
---- generate inventories according to the body definition table
+--- Generate inventories according to the body definition table
+--	This creates new inventories or updates existing ones
 --	@param self.body = {SLOT_ID = max, ...}
 --	@param max = number of slots if number or table of properties (max = , stack_limit = , ..) merged into definition
 function _M:initBody()
 	if self.body then
-		local def
+		local long_name, def
 		for inven, max in pairs(self.body) do
-			def = self.inven_def[self["INVEN_"..inven]]
-			assert(def, "inventory slot undefined")
-			self.inven[self["INVEN_"..inven]] = {worn=def.is_worn, id=self["INVEN_"..inven], name=inven, stack_limit = def.stack_limit}
+			long_name = "INVEN_"..inven
+			def = self.inven_def[self[long_name]]
+			assert(def, "inventory slot undefined: "..inven)
+			self.inven[self[long_name]] = table.merge(self.inven[self[long_name]] or {}, {worn=def.is_worn, id=self[long_name], name=inven, short_name=def.short_name, stack_limit = def.stack_limit})
 			if type(max) == "table" then
-				table.merge(self.inven[self["INVEN_"..inven]], max, true)
+				table.merge(self.inven[self[long_name]], max, true)
 			else
-				self.inven[self["INVEN_"..inven]].max = max
+				self.inven[self[long_name]].max = max
 			end
 		end
 		self.body = nil
@@ -93,6 +96,17 @@ function _M:getInven(id)
 		return self.inven[self["INVEN_"..id]]
 	else
 		return id
+	end
+end
+
+--- Returns the inventory definition
+function _M:getInvenDef(id)
+	if type(id) == "number" then
+		return self.inven_def[id]
+	elseif type(id) == "string" then
+		return self.inven_def[self["INVEN_"..id]]
+	else
+		return nil
 	end
 end
 
@@ -115,12 +129,15 @@ function _M:invenStackLimit(id)
 end
 
 --- Adds an object to an inventory
+-- checks o:on_preaddobject(self, inven) (must return true to add to inventory)
 -- @param inven_id = inventory id to add to
 -- @param o = object to add
 -- @param no_unstack = boolean to prevent unstacking the object to be added
 -- @param force_item to add to the set position instead of to the end
--- @return false if the object could not be added or true, inventory index it was moved to, remaining stack if any or false
--- checks o:on_preaddobject(self, inven) (must return true to add to inventory)
+-- @return[1] false if the object could not be added
+-- @return[2] true
+-- @return[2] inventory index it was moved to
+-- @return[2] remaining stack if any or false
 function _M:addObject(inven_id, o, no_unstack, force_item)
 	local inven = self:getInven(inven_id)
 	local slot
@@ -167,7 +184,7 @@ function _M:addObject(inven_id, o, no_unstack, force_item)
 		self:onWear(o, self.inven_def[inven.id].short_name)
 	end
 
-	self:onAddObject(o)
+	self:onAddObject(o, inven_id, slot)
 
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
@@ -178,7 +195,9 @@ end
 -- @param inven = inventory or inventory id to search
 -- @param o = object to look for
 -- @param by_reference set true to match by exact (memory) reference, otherwise matches by o.name
--- @return nil or the inventory slot, stack position if stacked
+-- @return[1] nil
+-- @return[2] the inventory slot
+-- @return[2] stack position if stacked
 function _M:itemPosition(inven, o, by_reference)
 	inven = self:getInven(inven)
 	local found, pos = nil, nil
@@ -193,14 +212,16 @@ function _M:itemPosition(inven, o, by_reference)
 	return nil
 end
 
---- Pick up an object from the floor
--- @param i = object position on map at self.x, self.y
--- @param vocal = boolean to post messages to log
--- @param no_sort = boolen to suppress automatic sorting of inventory
---	puts picked up objects in self.INVEN_INVEN
--- @return the object picked up (or stack added to), num picked up or true if o:on_prepickup(i) returns true (not "skip") or nil
---  checks obj:on_prepickup(self, i) (must return true to pickup)
---	checks obj:on_pickup(self, num) and self:on_pickup_object(obj, num) functions after pickup (includes stacks)
+--- Pick up an object from the floor  
+-- checks obj:on_prepickup(self, i) (must return true to pickup)  
+-- checks obj:on_pickup(self, num) and self:on_pickup_object(obj, num) functions after pickup (includes stacks)
+-- @param i object position on map at self.x, self.y
+-- @param[type=boolean] vocal to post messages to log
+-- @param[type=boolean] no_sort suppress automatic sorting of inventory. puts picked up objects in self.INVEN_INVEN
+-- @return[1] nil
+-- @return[2] true if o:on_prepickup(i) returns true (not "skip")
+-- @return[3] the object picked up (or stack added to)
+-- @return[3] num picked up
 function _M:pickupFloor(i, vocal, no_sort)
 	local inven = self:getInven(self.INVEN_INVEN)
 	if not inven then return end
@@ -243,11 +264,13 @@ function _M:pickupFloor(i, vocal, no_sort)
 end
 
 --- Removes an object from inventory
--- @param inven the inventory to remove from
+-- checks obj:on_preremoveobject(self, inven) (return true to not remove)
+-- @param inven_id the inventory to remove from
 -- @param item inven slot of the item to remove
--- @param no_unstack = num items to remove into a new stack (set true to remove the original stack unchanged)
--- @return the object removed or nil if no item existed and a boolean saying if there is no more objects
---  checks obj:on_preremoveobject(self, inven) (return true to not remove)
+-- @param no_unstack num items to remove into a new stack (set true to remove the original stack unchanged)
+-- @return[1] nil if no item existed
+-- @return[1] a boolean saying if there is no more objects
+-- @return[2] the object removed
 function _M:removeObject(inven_id, item, no_unstack)
 	local inven = self:getInven(inven_id)
 
@@ -272,8 +295,7 @@ function _M:removeObject(inven_id, item, no_unstack)
 		self:onTakeoff(o, self.inven_def[inven.id].short_name)
 	end
 
-	self:onRemoveObject(o)
-
+	self:onRemoveObject(o, inven.id, item)
 	-- Make sure the object is registered with the game, if need be
 	if not game:hasEntity(o) then game:addEntity(o) end
 
@@ -281,7 +303,7 @@ function _M:removeObject(inven_id, item, no_unstack)
 end
 
 --- Called upon adding an object
-function _M:onAddObject(o)
+function _M:onAddObject(o, inven_id, item)
 	if self.__allow_carrier then
 		-- Apply carrier properties
 		o.carried = {}
@@ -294,7 +316,7 @@ function _M:onAddObject(o)
 end
 
 --- Called upon removing an object
-function _M:onRemoveObject(o)
+function _M:onRemoveObject(o, inven_id, item)
 	if o.carried then
 		for k, id in pairs(o.carried) do
 			self:removeTemporaryValue(k, id)
@@ -308,11 +330,12 @@ function _M:onDropObject(o)
 end
 
 --- Drop an object on the floor
+-- checks item:on_drop(self) (return true to not drop)
 -- @param inven the inventory to drop from
 -- @param item the item id to drop
+-- @param vocal do we show a log message on dropping?
 -- @param all set to remove part (if number) or all (if true) a stack
 -- @return the object removed or nil if no item existed
---  checks obj:on_drop(self) (return true to not drop)
 function _M:dropFloor(inven, item, vocal, all)
 	local o = self:getInven(inven)[item]
 	if not o then
@@ -335,9 +358,10 @@ function _M:dropFloor(inven, item, vocal, all)
 end
 
 --- Show combined equipment/inventory dialog
--- @param inven the inventory (from self:getInven())
+-- @param title title of the dialog
 -- @param filter nil or a function that filters the objects to list
 -- @param action a function called when an object is selected
+-- @param on_select the function to be called on selecting the item
 function _M:showEquipInven(title, filter, action, on_select)
 	local d = ShowEquipInven.new(title, self, filter, action, on_select)
 	game:registerDialog(d)
@@ -345,6 +369,7 @@ function _M:showEquipInven(title, filter, action, on_select)
 end
 
 --- Show inventory dialog
+-- @param title title of the dialog
 -- @param inven the inventory (from self:getInven())
 -- @param filter nil or a function that filters the objects to list
 -- @param action a function called when an object is selected
@@ -356,6 +381,7 @@ function _M:showInventory(title, inven, filter, action)
 end
 
 --- Show equipment dialog
+-- @param title title of the dialog
 -- @param filter nil or a function that filters the objects to list
 -- @param action a function called when an object is selected
 function _M:showEquipment(title, filter, action)
@@ -365,6 +391,7 @@ function _M:showEquipment(title, filter, action)
 end
 
 --- Show floor pickup dialog
+-- @param title title of the dialog
 -- @param filter nil or a function that filters the objects to list
 -- @param action a function called when an object is selected
 function _M:showPickupFloor(title, filter, action)
@@ -374,9 +401,9 @@ function _M:showPickupFloor(title, filter, action)
 end
 
 --- Can we wear this item?
--- @param o = object to wear
--- @param try_slot = inventory slot to wear (override)
---  checks self:canWearObjectCustom(o, try_slot)  (return true to make unwearable)
+-- checks self:canWearObjectCustom(o, try_slot)  (return true to make unwearable)
+-- @param o object to wear
+-- @param try_slot inventory slot to wear (override)
 function _M:canWearObject(o, try_slot)
 	local req = rawget(o, "require")
 
@@ -438,7 +465,7 @@ end
 
 --- Checks if the given item should respect its slot_forbid value
 -- @param o the item to check
--- @param in_inven the inventory id in which the item is worn or tries to be worn
+-- @param in_inven_id the inventory id in which the item is worn or tries to be worn
 function _M:slotForbidCheck(o, in_inven_id)
 	return true
 end
@@ -449,13 +476,17 @@ function _M:getObjectOffslot(o)
 end
 
 --- Wear/wield an item
---	@param o = object to be worn
---	@param replace = boolean allow first object in wearable inventory to be removed to make space if needed
---	@vocal = boolean to post messages to game.logSeen(self, ....)
---  @force_inven = try to equip into this inventory only
---  @force_item = attempt to equip/replace into that slot
---	returns true or replaced object if succeeded or false if not, remaining stack of o if any
---  checks o:on_canwear(self, inven) (return true to prevent wearing)
+-- checks o:on_canwear(self, inven) (return true to prevent wearing)
+-- @param o object to be worn
+-- @param[type=boolean] replace allow first object in wearable inventory to be removed to make space if needed
+-- @param[type=boolean] vocal to post messages to game.logSeen(self, ....)
+-- @param[type=boolean] force_inven try to equip into this inventory only
+-- @param[type=boolean] force_item attempt to equip/replace into that slot
+-- @return[1] false
+-- @return[2] true
+-- @return[2] remaining stack of o if any
+-- @return[3] replaced object if succeeded
+-- @return[3] remaining stack of o if any
 function _M:wearObject(o, replace, vocal, force_inven, force_item)
 	-- keep it cause stack might change later
 	local o_name = o:getName{do_color=true}
@@ -486,7 +517,7 @@ function _M:wearObject(o, replace, vocal, force_inven, force_item)
 		return true, stack
 	elseif not force_inven and offslot and self:getInven(offslot) and #(self:getInven(offslot)) < self:getInven(offslot).max and self:canWearObject(o, offslot) then
 		if vocal then game.logSeen(self, "%s wears (offslot): %s.", self.name:capitalize(), o:getName{do_color=true}) end
-		added, slot, stack = self:addObject(self:getInven(offslot), o)
+		added, slot, stack = self:addObject(offslot, o)
 		return added, stack
 	elseif replace then -- no room but replacement is allowed
 		local ro = self:takeoffObject(inven_id, force_item or 1)
@@ -610,8 +641,10 @@ end
 --- Finds an object by name in an inventory
 -- @param inven the inventory to look into
 -- @param name the name to look for
--- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
--- @return object, position or nil if not found
+-- @param[type=?table] getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
 function _M:findInInventory(inven, name, getname)
 	getname = getname or {no_count=true, force_id=true}
 	for item, o in ipairs(inven) do
@@ -622,7 +655,10 @@ end
 --- Finds an object by name in all the actor's inventories
 -- @param name the name to look for
 -- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
--- @return object, position, inven_id or nil if not found
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
 function _M:findInAllInventories(name, getname)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventory(inven, name, getname)
@@ -630,11 +666,30 @@ function _M:findInAllInventories(name, getname)
 	end
 end
 
+--- Finds an object by name in all the actor's worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @param name the name to look for
+-- @param getname the parameters to pass to getName(), if nil the default is {no_count=true, force_id=true}
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
+function _M:findInAllWornInventories(worn, name, getname)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			local o, item = self:findInInventory(inven, name, getname)
+			if o and item then return o, item, inven_id end
+		end
+	end
+end
+
 --- Finds an object by property in an inventory
 -- @param inven the inventory to look into
 -- @param prop the property to look for
 -- @param value the value to look for, can be a function
--- @return object, position or nil if not found
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
 function _M:findInInventoryBy(inven, prop, value)
 	if type(value) == "function" then
 		for item, o in ipairs(inven) do
@@ -650,7 +705,10 @@ end
 --- Finds an object by property in all the actor's inventories
 -- @param prop the property to look for
 -- @param value the value to look for, can be a function
--- @return object, position, inven_id or nil if not found
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
 function _M:findInAllInventoriesBy(prop, value)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventoryBy(inven, prop, value)
@@ -658,10 +716,29 @@ function _M:findInAllInventoriesBy(prop, value)
 	end
 end
 
+--- Finds an object by property in all the actor's worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @param prop the property to look for
+-- @param value the value to look for, can be a function
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
+function _M:findInAllWornInventoriesBy(worn, prop, value)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			local o, item = self:findInInventoryBy(inven, prop, value)
+			if o and item then return o, item, inven_id end
+		end
+	end
+end
+
 --- Finds an object by reference in an inventory
 -- @param inven the inventory to look into
 -- @param so the object(reference) to look for
--- @return object, position or nil if not found
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
 function _M:findInInventoryByObject(inven, so)
 	for item, o in ipairs(inven) do
 		if o == so then return o, item end
@@ -669,9 +746,11 @@ function _M:findInInventoryByObject(inven, so)
 end
 
 --- Finds an object by reference in all the actor's inventories
--- @param inven the inventory to look into
 -- @param so the object(reference) to look for
--- @return object, position, inven_id or nil if not found
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
 function _M:findInAllInventoriesByObject(so)
 	for inven_id, inven in pairs(self.inven) do
 		local o, item = self:findInInventoryByObject(inven, so)
@@ -679,9 +758,25 @@ function _M:findInAllInventoriesByObject(so)
 	end
 end
 
+--- Finds an object by reference in all the actor's worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @param so the object(reference) to look for
+-- @return[1] nil if not found
+-- @return[2] object
+-- @return[2] position
+-- @return[2] inven_id
+function _M:findInAllWornInventoriesByObject(worn, so)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			local o, item = self:findInInventoryByObject(inven, so)
+			if o and item then return o, item, inven_id end
+		end
+	end
+end
+
 --- Applies fct over all items
 -- @param inven the inventory to look into
--- @param fct the function to be called. It will receive three parameters: inven, item, object
+-- @func fct the function to be called. It will receive three parameters: inven, item, object
 function _M:inventoryApply(inven, fct)
 	for item, o in ipairs(inven) do
 		fct(inven, item, o)
@@ -689,15 +784,26 @@ function _M:inventoryApply(inven, fct)
 end
 
 --- Applies fct over all items in all inventories
--- @param inven the inventory to look into
--- @param fct the function to be called. It will receive three parameters: inven, item, object
+-- @func fct the function to be called. It will receive three parameters: inven, item, object
 function _M:inventoryApplyAll(fct)
 	for inven_id, inven in pairs(self.inven) do
 		self:inventoryApply(inven, fct)
 	end
 end
 
+--- Applies fct over all items in all  worn (or not) inventories
+-- @param worn true to search in worn inventories, false in non worn ones
+-- @func fct the function to be called. It will receive three parameters: inven, item, object
+function _M:wornInventoryApplyAll(worn, fct)
+	for inven_id, inven in pairs(self.inven) do
+		if (worn and inven.worn) or (not worn and not inven.worn) then
+			self:inventoryApply(inven, fct)
+		end
+	end
+end
+
 --- Empties given inventory and marks items inside as never generated
+-- @param inven the inventory to empty
 function _M:forgetInven(inven)
 	inven = self:getInven(inven)
 	if not inven then return end

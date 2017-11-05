@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Tiles = require "engine.Tiles"
 
+
+--- @classmod engine.ui.ActorFrame
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)
@@ -30,6 +32,10 @@ function _M:init(t)
 	self.tiles = t.tiles or Tiles.new(self.w, self.h, nil, nil, true, nil)
 
 	Base.init(self, t)
+end
+
+function _M:setActor(actor)
+	self.actor = actor
 end
 
 function _M:generate()

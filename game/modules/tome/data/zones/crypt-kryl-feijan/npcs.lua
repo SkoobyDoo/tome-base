@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -144,12 +144,13 @@ newEntity{ define_as = "ACOLYTE",
 
 	on_die = function(self)
 		if not game.level.turn_counter then return end
+		if self.summoner then return end
 		game.level.turn_counter = game.level.turn_counter + 6 * 10
 
 		local nb = 0
 		local melinda
 		for uid, e in pairs(game.level.entities) do
-			if e.define_as and e.define_as == "ACOLYTE" and not e.dead then nb = nb + 1 end
+			if e.define_as and e.define_as == "ACOLYTE" and not e.dead and not e.summoner then nb = nb + 1 end
 			if e.define_as and e.define_as == "MELINDA" then melinda = e end
 		end
 		if nb == 0 then

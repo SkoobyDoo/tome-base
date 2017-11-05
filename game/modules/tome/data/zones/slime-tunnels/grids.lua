@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -138,12 +138,20 @@ newEntity{ base = "SLIME_DOOR_VERT",
 	does_block_move = true,
 }
 
+newEntity{ base = "SLIME_UP",
+	define_as = "UP_GRUSHNAK",
+	name = "exit to Grushnak Pride",
+	change_level = 6,
+	change_zone = "grushnak-pride",
+	force_down = true,
+}
+
 newEntity{
-	define_as = "PEAK_STAIR",
+	define_as = "PEAK_STAIR_FAKE",
 	always_remember = true,
 	show_tooltip=true,
 	name="Entrance to the High Peak",
-	display='>', color=colors.VIOLET, image = "terrain/stair_up_wild.png",
+	display='>', color=colors.VIOLET, image = "terrain/slime/slime_floor_01.png",
 	notice = true,
 	change_level=1, change_zone="high-peak",
 	change_level_check = function()
@@ -154,10 +162,20 @@ newEntity{
 	end,
 }
 
-newEntity{ base = "SLIME_UP",
-	define_as = "UP_GRUSHNAK",
-	name = "exit to Grushnak Pride",
-	change_level = 6,
-	change_zone = "grushnak-pride",
-	force_down = true,
+newEntity{ base = "PEAK_STAIR_FAKE",
+	define_as = "PEAK_STAIR",
+	add_displays = {class.new{
+		image = "terrain/high_peak_stairs.png",
+		display_w = 8,
+		display_h = 16,
+		display_x = -6,
+		display_y = -8.5,
+		z = 5,
+	}},
+	does_block_move = true,
+}
+
+newEntity{ base = "PEAK_STAIR_FAKE",
+	define_as = "FAKE_WALL",
+	does_block_move = true,
 }

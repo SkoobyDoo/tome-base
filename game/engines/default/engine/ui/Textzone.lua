@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local Slider = require "engine.ui.Slider"
 
---- A generic UI list
+--- A generic UI text zone
+-- @classmod engine.ui.Textzone
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
@@ -36,8 +37,9 @@ function _M:init(t)
 	self.scrollbar = t.scrollbar
 	self.auto_height = t.auto_height
 	self.auto_width = t.auto_width
+	self.has_box = t.has_box
 	self.fct = t.fct
-	
+
 	self.dest_area = t.dest_area and t.dest_area or { h = self.h }
 	
 	self.color = t.color or {r=255, g=255, b=255}
@@ -70,6 +72,11 @@ function _M:generate()
 	self.list = gen
 
 	if self.scrollbar then self.scrollbar.max=self.max_display - self.h end
+
+	if self.has_box then
+		self.frame = self:makeFrame("ui/textbox", nil, nil, self.w, self.h)
+		self.frame_ox, self.frame_oy = self.frame.b4.w, self.frame.b8.h
+	end
 
 	-- Add UI controls
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
@@ -125,6 +132,10 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, 
 	local total_h = 0
 	local clip_y_start = 0
 	local clip_y_end = 0
+
+	if self.frame then
+		self:drawFrame(self.frame, x - self.frame_ox, y - self.frame_oy)
+	end
 	
 	if self.scrollbar then
 		self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max)

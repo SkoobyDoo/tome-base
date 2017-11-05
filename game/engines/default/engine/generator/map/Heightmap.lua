@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@ require "engine.class"
 local Map = require "engine.Map"
 local Heightmap = require "engine.Heightmap"
 require "engine.Generator"
+
+--- @classmod engine.generator.map.Heightmap
 module(..., package.seeall, class.inherit(engine.Generator))
 
 function _M:init(zone, map, level, data)

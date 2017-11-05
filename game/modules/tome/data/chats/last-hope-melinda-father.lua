@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ newChat{ id="melinda",
 -- Flirting
 ------------------------------------------------------------------
 newChat{ id="scars",
-	text = [[Yes it has mostly healed, though I still do nightmares. I feel like something is still lurking.
+	text = [[Yes it has mostly healed, though I still do have nightmares. I feel like something is still lurking.
 Ah well, the bad dreams are still better than the fate you saved me from!]],
 	answers = {
 		{"Should I come across a way to help you during my travels, I will try to help.", quick_reply="Thank you, you are most welcome."},
@@ -121,7 +121,7 @@ My father gave me some funds so that I can take my future into my own hands. I h
 is_am and
 	[[I have seen how you fought those corruptors, the way you destroyed their magic. I want to learn to do the same, so that such horrors never happen again. To anyone.]]
 or (is_mage and
-	[[Or maybe, well I suppose I can trust you with this, I've always secretly dreamt of learning magic. Real magic I mean not alchemist tricks!
+	[[Or maybe, well I suppose I can trust you with this, I've always secretly dreamed of learning magic. Real magic I mean not alchemist tricks!
 I've learnt about a secret place, Angolwen, where I could learn it.]]
 or [[]])),
 	answers = (not is_am and not is_mage) and {

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -85,4 +85,38 @@ end
 function _M:hasSeenZone(short_name)
 	self.seen_zones = self.seen_zones or {}
 	return self.seen_zones[short_name]
+end
+
+function _M:unlockShimmer(o)
+	if not o.slot or type(o.type) ~= "string" or type(o.subtype) ~= "string" then return end
+	self.unlocked_shimmers = self.unlocked_shimmers or {}
+
+	local shimmer_name
+	local unique = nil
+	-- if o.randart or o.rare then return end
+	if o.cosmetic then
+		shimmer_name = o:getName{do_color=true, no_add_name=true, no_image=true, force_id=true}
+		unique = true
+	elseif o.unique and not o.randart then
+		shimmer_name = o:getName{do_color=true, no_add_name=true, no_image=true, force_id=true}
+		unique = true
+	elseif o.__original and not o.__original.randart and not o.__original.rare then
+		o = o.__original
+		shimmer_name = o:getName{do_color=true, no_add_name=true, no_image=true, force_id=true}
+	else
+		return
+	end
+
+	local moddables = {}
+	for _, p in ipairs{"moddable_tile", "moddable_tile2", "moddable_tile_back", "moddable_tile_hood", "moddable_tile_particle", "moddable_tile_ornament"} do
+		if o[p] then moddables[p] = o[p] end
+	end
+
+	if next(moddables) then
+		self.unlocked_shimmers[o.slot] = self.unlocked_shimmers[o.slot] or {}
+		if not self.unlocked_shimmers[o.slot][shimmer_name] then
+			game.log("#LIGHT_BLUE#New shimmer option unlocked: #{italic}#%s#{normal}#", shimmer_name)
+		end
+		self.unlocked_shimmers[o.slot][shimmer_name] = { type = o.type, subtype = o.subtype, unique=unique, moddables = moddables}
+	end
 end

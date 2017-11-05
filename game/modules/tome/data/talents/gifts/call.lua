@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,24 +22,38 @@ newTalent{
 	type = {"wild-gift/call", 1},
 	require = gifts_req1,
 	points = 5,
-	message = "@Source@ meditates on nature.",
+	message = function(self, t) return self.sustain_talents[t.id] and "@Source@ interrupts @hisher@ #GREEN#meditation#LAST#." or "@Source@ #GREEN#meditates#LAST# on nature." end,
 	mode = "sustained",
 	cooldown = 20,
 	range = 10,
-	no_npc_use = true,
 	no_energy = true,
-	on_learn = function(self, t)
-		self.equilibrium_regen_on_rest = (self.equilibrium_regen_on_rest or 0) - 0.5
+	tactical = {EQUILIBRIUM = 2, HEAL = 0.1, BUFF = -3,
+		SPECIAL = function(self, t) return self.ai_target.actor and -2 or 0 end -- offsets minimal equilibrium and healing tactics while in combat
+	},
+	drain_equilibrium = function(self, t)
+		local boost = 1 + (self.enhance_meditate or 0)
+		return -(2 + self:combatTalentMindDamage(t, 20, 120) / 10) * boost
 	end,
-	on_unlearn = function(self, t)
-		self.equilibrium_regen_on_rest = (self.equilibrium_regen_on_rest or 0) + 0.5
+	on_pre_use_ai = function(self, t, silent, fake)
+		if self.ai_state._advanced_ai then return true end -- let the advanced AI decide to use
+		local equil, _, chance = self:getEquilibrium(), self:equilibriumChance()
+		local aitarget = self.ai_target.actor and not self.ai_target.actor.dead
+		local is_active = self:isTalentActive(t.id)
+		if self:isTalentActive(t.id) then
+			return rng.percent(chance + (not aitarget and self.min_equilibrium - equil or 0)*5)
+		else
+			return not aitarget and equil > self.min_equilibrium or rng.percent(2*(100 - chance))
+		end
+	end,
+	restingRegen = function(self, t) return self:combatTalentScale(t, 0.5, 2.5, 0.75) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "equilibrium_regen_on_rest", -t.restingRegen(self, t))
 	end,
 	activate = function(self, t)
 		local ret = {}
 
 		local boost = 1 + (self.enhance_meditate or 0)
 
-		local pt = (2 + self:combatTalentMindDamage(t, 20, 120) / 10) * boost
 		local save = (5 + self:combatTalentMindDamage(t, 10, 40)) * boost
 		local heal = (5 + self:combatTalentMindDamage(t, 12, 30)) * boost
 
@@ -50,7 +64,6 @@ newTalent{
 		end
 
 		game:playSoundNear(self, "talents/heal")
-		self:talentTemporaryValue(ret, "equilibrium_regen", -pt)
 		self:talentTemporaryValue(ret, "combat_mentalresist", save)
 		self:talentTemporaryValue(ret, "healing_factor", heal / 100)
 		self:talentTemporaryValue(ret, "numbed", 50)
@@ -61,16 +74,15 @@ newTalent{
 	end,
 	info = function(self, t)
 		local boost = 1 + (self.enhance_meditate or 0)
-
-		local pt = (2 + self:combatTalentMindDamage(t, 20, 120) / 10) * boost
+		local pt = t.drain_equilibrium(self, t)
 		local save = (5 + self:combatTalentMindDamage(t, 10, 40)) * boost
 		local heal = (5 + self:combatTalentMindDamage(t, 12, 30)) * boost
-		local rest = 0.5 * self:getTalentLevelRaw(t)
+		local rest = t.restingRegen(self, t)
 		return ([[Meditate on your link with Nature.
-		While meditating, you regenerate %d equilibrium per turn, your Mental Save is increased by %d, and your healing factor increases by %d%%.
-		Your deep meditation does not, however, let you deal damage correctly, reducing your damage done by 50%%.
+		While meditating, you regenerate %0.2f equilibrium per turn, your Mental Save is increased by %d, and your healing factor increases by %d%%.
+		Your deep meditation does not, however, let you deal damage correctly, reducing the damage you and your summons deal by 50%%.
 		Also, any time you are resting (even with Meditation not sustained) you enter a simple meditative state that lets you regenerate %0.2f equilibrium per turn.
-		The effects will increase with your Mindpower.]]):
+		The activated effects increase with your Mindpower.]]):
 		format(pt, save, heal, rest)
 	end,
 }
@@ -84,17 +96,43 @@ newTalent{ short_name = "NATURE_TOUCH",
 	equilibrium = 10,
 	cooldown = 15,
 	range = 1,
-	requires_target = true,
-	tactical = { HEAL = 2 },
+	onAIGetTarget = function(self, t) -- find target to heal (prefers self, usually, doesn't consider Solipsism)
+		local target
+		local heal, bestheal = t.getHeal(self, t), 0
+		if not self:attr("undead") and self.max_life - self.life > 0 then -- check self
+			target = self
+			bestheal = math.min(self.max_life - self.life, heal*self.healing_factor)*(self.ai_state.self_compassion or 5)
+		end
+		local adjacents = util.adjacentCoords(self.x, self.y)
+		local act
+		for dir, coords in pairs(adjacents) do -- check for nearby allies
+			act = game.level.map(coords[1], coords[2], Map.ACTOR)
+		--if act then game.log("heal...found actor %s at (%d, %d)", act.name, act.x, act.y) end
+			if act and self:reactionToward(act) > 0 and not act:attr("undead") then
+				local effectheal = math.min(act.max_life - act.life, heal*act.healing_factor)*(self.ai_state.ally_compassion or 1)
+				if effectheal > bestheal then
+					target, bestheal = act, effectheal
+				end
+			end
+		end
+		if target and bestheal > 0 then
+			return target.x, target.y, target
+		end
+	end,
+	on_pre_use_ai = function(self, t, silent) return t.onAIGetTarget(self, t) and true or false end,
+	getHeal = function(self, t) return 20 + self:combatTalentMindDamage(t, 20, 500) end,
+	tactical = { HEAL = function(self, t, target)
+		return not target:attr("undead") and 2*(target.healing_factor or 1) or 0 
+	end},
 	is_heal = true,
-	target = function(self, t) return {default_target=self, type="hit", nowarning=true, range=self:getTalentRange(t), first_target="friend"} end,
+	target = function(self, t) return {talent = t, default_target=self, type="hit", nowarning=true, range=self:getTalentRange(t), first_target="friend"} end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
 		if not target or not self:canProject(tg, x, y) then return nil end
 		if not target:attr("undead") then
 			target:attr("allow_on_heal", 1)
-			target:heal(self:mindCrit(20 + self:combatTalentMindDamage(t, 20, 500)), self)
+			target:heal(self:mindCrit(t.getHeal(self, t)), self)
 			target:attr("allow_on_heal", -1)
 			if core.shader.active(4) then
 				target:addParticles(Particles.new("shader_shield_temp", 1, {toback=true ,size_factor=1.5, y=-0.3, img="healgreen", life=25}, {type="healing", time_factor=2000, beamsCount=20, noup=2.0}))
@@ -107,7 +145,7 @@ newTalent{ short_name = "NATURE_TOUCH",
 	info = function(self, t)
 		return ([[Touch a target (or yourself) to infuse it with Nature, healing it for %d (this heal does not work on undead).
 		The amount healed will increase with your Mindpower.]]):
-		format(20 + self:combatTalentMindDamage(t, 20, 500))
+		format(t.getHeal(self, t))
 	end,
 }
 

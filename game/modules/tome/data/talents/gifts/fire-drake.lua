@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -172,7 +172,7 @@ newTalent{
 	equilibrium = 12,
 	cooldown = 12,
 	message = "@Source@ breathes fire!",
-	tactical = { ATTACKAREA = { FIRE = 2 } },
+	tactical = { ATTACKAREA = { FIRE = 2 }, DISABLE = {stun = 1}},
 	range = 0,
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	direct_hit = true,

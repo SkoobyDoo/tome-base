@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Handles activable objects, much more simple than actor's resource
 -- It can define simple activations, complex ones that use power and it can also activate talent (ActorTalents interface must also be used on the Object class in this case)
+-- @classmod engine.generator.interface.ObjectActivatable
 module(..., package.seeall, class.make)
 
 function _M:init(t)

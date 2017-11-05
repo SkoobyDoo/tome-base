@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -34,11 +34,12 @@ return {
 	color_shown = {0.7, 0.6, 0.8, 1},
 	color_obscure = {0.7*0.6, 0.6*0.6, 0.8*0.6, 0.6},
 	allow_respec = "limited",
+	effects = {"EFF_ZONE_AURA_OUT_OF_TIME"},
 
 	no_level_connectivity = true,
 
 	max_material_level = 2,
-	store_levels_by_restock = { 8, 25, 40 },
+	store_levels_by_restock = { 10, 20, 35, 45, 50, 60 },
 
 	generator =  {
 		map = {

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ LIES!  The Conclave could not have lost!  I don't know who you are, but we can't
 	}
 }
 
-if (player.descriptor.race == "Halfling") then
+if player.descriptor and player.descriptor.race == "Halfling" then
 	return "nargol-scum"
 elseif (player:findInAllInventoriesBy('define_as', 'CONCLAVE_ROBE') and player:findInAllInventoriesBy('define_as', 'CONCLAVE_ROBE').wielded and (player.descriptor.race == "Human" or player.descriptor.subrace == "Ogre")) then
 	return "conclave"

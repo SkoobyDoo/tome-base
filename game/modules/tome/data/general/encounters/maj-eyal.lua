@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 newEntity{
 	name = "Novice mage",
 	type = "harmless", subtype = "special", unique = true,
-	immediate = {"world-encounter", "angolwen"},
+	immediate = {"world-encounter", "angolwen-quest"},
 	-- Spawn the novice mage near the player
 	on_encounter = function(self, who)
 		local x, y = self:findSpot(who)

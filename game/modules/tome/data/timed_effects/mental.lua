@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -117,34 +117,36 @@ newEffect{
 		self.summoner = eff.src
 		self.summoner_gain_exp = true
 		if self.dead then return end
-		game.party:addMember(self, {
-			control="full",
-			type="thrall",
-			title="Thrall",
-			orders = {leash=true, follow=true},
-			on_control = function(self)
-				self:hotkeyAutoTalents()
-			end,
-			leave_level = function(self, party_def) -- Cancel control and restore previous actor status.
-				local eff = self:hasEffect(self.EFF_DOMINANT_WILL)
-				local uid = self.uid
-				eff.survive_domination = true
-				self:removeTemporaryValue("inc_damage", eff.pid)
-				game.party:removeMember(self)
-				self:replaceWith(require("mod.class.NPC").new(self))
-				self.uid = uid
-				__uids[uid] = self
-				self.faction = eff.oldstate.faction
-				self.ai_state = eff.oldstate.ai_state
-				self.ai = eff.oldstate.ai
-				self.remove_from_party_on_death = eff.oldstate.remove_from_party_on_death
-				self.no_inventory_access = eff.oldstate.no_inventory_access
-				self.move_others = eff.oldstate.move_others
-				self.summoner = eff.oldstate.summoner
-				self.summoner_gain_exp = eff.oldstate.summoner_gain_exp
-				self:removeEffect(self.EFF_DOMINANT_WILL)
-			end,
-		})
+		game:onTickEnd(function()
+			game.party:addMember(self, {
+				control="full",
+				type="thrall",
+				title="Thrall",
+				orders = {leash=true, follow=true},
+				on_control = function(self)
+					self:hotkeyAutoTalents()
+				end,
+				leave_level = function(self, party_def) -- Cancel control and restore previous actor status.
+					local eff = self:hasEffect(self.EFF_DOMINANT_WILL)
+					local uid = self.uid
+					eff.survive_domination = true
+					self:removeTemporaryValue("inc_damage", eff.pid)
+					game.party:removeMember(self)
+					self:replaceWith(require("mod.class.NPC").new(self))
+					self.uid = uid
+					__uids[uid] = self
+					self.faction = eff.oldstate.faction
+					self.ai_state = eff.oldstate.ai_state
+					self.ai = eff.oldstate.ai
+					self.remove_from_party_on_death = eff.oldstate.remove_from_party_on_death
+					self.no_inventory_access = eff.oldstate.no_inventory_access
+					self.move_others = eff.oldstate.move_others
+					self.summoner = eff.oldstate.summoner
+					self.summoner_gain_exp = eff.oldstate.summoner_gain_exp
+					self:removeEffect(self.EFF_DOMINANT_WILL)
+				end,
+			})
+		end)
 	end,
 	deactivate = function(self, eff)
 		if eff.survive_domination then
@@ -388,6 +390,7 @@ newEffect{
 	parameters = {},
 	activate = function(self, eff)
 		local effStalker = eff.src:hasEffect(eff.src.EFF_STALKER)
+		if not effStalker then game:onTickEnd(function() self:removeEffect(self.EFF_STALKED, true, true) end) return end
 		eff.particleBonus = effStalker.bonus
 		eff.particle = self:addParticles(Particles.new("stalked", 1, { bonus = eff.particleBonus }))
 	end,
@@ -556,7 +559,7 @@ newEffect{
 newEffect{
 	name = "HARASSED", image = "talents/harass_prey.png",
 	desc = "Harassed",
-	long_desc = function(self, eff) return ("The target has been harassed by its stalker, reducing damage by %d%%."):format( -eff.damageChange * 100) end,
+	long_desc = function(self, eff) return ("The target has been harassed by its stalker, reducing damage by %d%%."):format( -eff.damageChange) end,
 	type = "mental",
 	subtype = { fear=true },
 	status = "detrimental",
@@ -607,7 +610,7 @@ newEffect{
 	subtype = { psychic_drain=true },
 	status = "beneficial",
 	parameters = { },
-	activate = function(self, eff)
+	activate = function(self, eff, ed)
 		eff.src = self
 
 		-- hate
@@ -641,6 +644,8 @@ newEffect{
 		end
 
 		eff.target:setEffect(eff.target.EFF_FED_UPON, eff.dur, { src = eff.src, target = eff.target, constitutionLoss = -eff.constitutionGain, lifeRegenLoss = -eff.lifeRegenGain, damageLoss = -eff.damageGain, resistLoss = -eff.resistGain })
+
+		ed.updateFeed(self, eff)
 	end,
 	deactivate = function(self, eff)
 		-- hate
@@ -1596,90 +1601,13 @@ newEffect{
 		if rng.percent(chance) then
 			if self:attr("sleep") or self:checkHit(eff.src:combatMindpower(), self:combatMentalResist(), 0, 95, 5) then
 				t.summon_inner_demons(eff.src, self, t)
+				self:removeEffectsFilter({subtype={["sleep"] = true}}, 3) -- Allow the player to actually react to one of the biggest threats in the game before 50 more spawn
 			else
 				eff.dur = 0
 			end
 		end
 	end,
 }
-
-newEffect{
-	name = "PACIFICATION_HEX", image = "talents/pacification_hex.png",
-	desc = "Pacification Hex",
-	long_desc = function(self, eff) return ("The target is hexed, granting it %d%% chance each turn to be dazed for 3 turns."):format(eff.chance) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = {chance=10, power=10},
-	on_gain = function(self, err) return "#Target# is hexed!", "+Pacification Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Pacification Hex" end,
-	-- Damage each turn
-	on_timeout = function(self, eff)
-		if not self:hasEffect(self.EFF_DAZED) and rng.percent(eff.chance) and self:canBe("stun") then
-			self:setEffect(self.EFF_DAZED, 3, {})
-			if not self:checkHit(eff.power, self:combatSpellResist(), 0, 95, 15) then eff.dur = 0 end
-		end
-	end,
-	activate = function(self, eff)
-		if self:canBe("stun") then
-			self:setEffect(self.EFF_DAZED, 3, {})
-		end
-	end,
-}
-
-newEffect{
-	name = "BURNING_HEX", image = "talents/burning_hex.png",
-	desc = "Burning Hex",
-	long_desc = function(self, eff) return ("The target is hexed.  Each time it uses an ability it takes %0.2f fire damage, and talent cooldowns are increased by %s plus 1 turn."):
-		format(eff.dam, eff.power and ("%d%%"):format((eff.power-1)*100) or "")
-	end,
-	type = "mental",
-	subtype = { hex=true, fire=true },
-	status = "detrimental",
-	-- _M:getTalentCooldown(t) in mod.class.Actor.lua references this table to compute cooldowns
-	parameters = {dam=10, power = 1},
-	on_gain = function(self, err) return "#Target# is hexed!", "+Burning Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Burning Hex" end,
-}
-
-newEffect{
-	name = "EMPATHIC_HEX", image = "talents/empathic_hex.png",
-	desc = "Empathic Hex",
-	long_desc = function(self, eff) return ("The target is hexed, creating an empathic bond with its victims. It takes %d%% feedback damage from all damage done."):format(eff.power) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = { power=10 },
-	on_gain = function(self, err) return "#Target# is hexed.", "+Empathic Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Empathic hex" end,
-	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("martyrdom", eff.power)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("martyrdom", eff.tmpid)
-	end,
-}
-
-newEffect{
-	name = "DOMINATION_HEX", image = "talents/domination_hex.png",
-	desc = "Domination Hex",
-	long_desc = function(self, eff) return ("The target is hexed, temporarily changing its faction to %s."):format(engine.Faction.factions[eff.faction].name) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = {},
-	on_gain = function(self, err) return "#Target# is hexed.", "+Domination Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Domination hex" end,
-	activate = function(self, eff)
-		self:setTarget() -- clear ai target
-		eff.olf_faction = self.faction
-		self.faction = eff.src.faction
-	end,
-	deactivate = function(self, eff)
-		self.faction = eff.olf_faction
-	end,
-}
-
 
 newEffect{
 	name = "DOMINATE_ENTHRALL", image = "talents/yeek_will.png",
@@ -1703,20 +1631,18 @@ newEffect{
 newEffect{
 	name = "HALFLING_LUCK", image = "talents/halfling_luck.png",
 	desc = "Halflings's Luck",
-	long_desc = function(self, eff) return ("The target's luck and cunning combine to grant it %d%% higher combat critical chance, %d%% higher mental critical chance, and %d%% higher spell critical chance."):format(eff.physical, eff.mind, eff.spell) end,
+	long_desc = function(self, eff) return ("The target's luck and cunning combine to grant it %d%% higher critical chance and %d saves."):format(eff.crit, eff.save) end,
 	type = "mental",
 	subtype = { focus=true },
 	status = "beneficial",
-	parameters = { spell=10, physical=10 },
+	parameters = { crit=10, save=10 },
 	on_gain = function(self, err) return "#Target# seems more aware." end,
 	on_lose = function(self, err) return "#Target#'s awareness returns to normal." end,
 	activate = function(self, eff)
-		self:effectTemporaryValue(eff, "combat_physcrit", eff.physical)
-		self:effectTemporaryValue(eff, "combat_spellcrit", eff.spell)
-		self:effectTemporaryValue(eff, "combat_mindcrit", eff.mind)
-		self:effectTemporaryValue(eff, "combat_physresist", eff.physical)
-		self:effectTemporaryValue(eff, "combat_spellresist", eff.spell)
-		self:effectTemporaryValue(eff, "combat_mentalresist", eff.mind)
+		self:effectTemporaryValue(eff, "combat_generic_crit", eff.crit)
+		self:effectTemporaryValue(eff, "combat_physresist", eff.save)
+		self:effectTemporaryValue(eff, "combat_spellresist", eff.save)
+		self:effectTemporaryValue(eff, "combat_mentalresist", eff.save)
 	end,
 }
 
@@ -1733,6 +1659,7 @@ newEffect{
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("combat_atk", eff.power)
 		eff.bid = self:addTemporaryValue("blind_fight", 1)
+		self:effectParticles(eff, {type="perfect_strike", args={radius=1}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_atk", eff.tmpid)
@@ -1787,7 +1714,7 @@ newEffect{
 
 		-- check negative life first incase the creature has healing
 		if self.life <= (self.die_at or 0) then
-			local sx, sy = game.level.map:getTileToScreen(self.x, self.y)
+			local sx, sy = game.level.map:getTileToScreen(self.x, self.y, true)
 			game.flyers:add(sx, sy, 30, (rng.range(0,2)-1) * 0.5, rng.float(-2.5, -1.5), "Falls dead!", {255,0,255})
 			game.logSeen(self, "%s dies when its frenzy ends!", self.name:capitalize())
 			self:die(self)
@@ -2266,6 +2193,24 @@ newEffect{
 }
 
 newEffect{
+	name = "ORC_TRIUMPH", image = "talents/skirmisher.png",
+	desc = "Orcish Triumph",
+	long_desc = function(self, eff) return ("Inspired by a recent kill increasing all resistance by %d%%."):format(eff.resists) end,
+	type = "mental",
+	subtype = { frenzy=true },
+	status = "beneficial",
+	parameters = { resists=10 },
+	on_gain = function(self, err) return "#Target# roars triumphantly." end, -- Too spammy?
+	on_lose = function(self, err) return "#Target# is no longer inspired." end,
+	activate = function(self, eff)
+		eff.pid = self:addTemporaryValue("resists", {all=eff.resists})
+	end,
+	deactivate = function(self, eff)
+		self:removeTemporaryValue("resists", eff.pid)
+	end,
+}
+
+newEffect{
 	name = "INTIMIDATED",
 	desc = "Intimidated",
 	long_desc = function(self, eff) return ("The target's morale is weakened, reducing its attack power, mind power, and spellpower by %d."):format(eff.power) end,
@@ -2444,17 +2389,17 @@ newEffect{
 newEffect{
 	name = "CLEAR_MIND", image = "talents/mental_shielding.png",
 	desc = "Clear Mind",
-	long_desc = function(self, eff) return ("Nullifies the next %d detrimental mental effects."):format(self.mental_negative_status_effect_immune) end,
+	long_desc = function(self, eff) return ("Nullifies the next %d detrimental mental effects."):format(self.clear_mind_immune) end,
 	type = "mental",
 	subtype = { psionic=true, },
 	status = "beneficial",
 	parameters = { power=2 },
 	activate = function(self, eff)
-		self.mental_negative_status_effect_immune = eff.power
+		self.clear_mind_immune = eff.power
 		eff.particles = self:addParticles(engine.Particles.new("generic_power", 1, {rm=0, rM=0, gm=100, gM=180, bm=180, bM=255, am=200, aM=255}))
 	end,
 	deactivate = function(self, eff)
-		self.mental_negative_status_effect_immune = nil
+		self.clear_mind_immune = nil
 		self:removeParticles(eff.particles)
 	end,
 }
@@ -2552,7 +2497,7 @@ newEffect{
 newEffect{
 	name = "SLEEP", image = "talents/sleep.png",
 	desc = "Sleep",
-	long_desc = function(self, eff) return ("The target is asleep and unable to act.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is asleep and unable to perform most actions.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
 	type = "mental",
 	subtype = { sleep=true },
 	status = "detrimental",
@@ -2606,7 +2551,7 @@ newEffect{
 newEffect{
 	name = "SLUMBER", image = "talents/slumber.png",
 	desc = "Slumber",
-	long_desc = function(self, eff) return ("The target is in a deep sleep and unable to act.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
+	long_desc = function(self, eff) return ("The target is in a deep sleep and unable to perform most actions.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.power) end,
 	type = "mental",
 	subtype = { sleep=true },
 	status = "detrimental",
@@ -2656,7 +2601,7 @@ newEffect{
 newEffect{
 	name = "NIGHTMARE", image = "talents/nightmare.png",
 	desc = "Nightmare",
-	long_desc = function(self, eff) return ("The target is in a nightmarish sleep, suffering %0.2f mind damage each turn and unable to act.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.dam, eff.power) end,
+	long_desc = function(self, eff) return ("The target is in a nightmarish sleep, suffering %0.2f mind damage each turn and unable to to perform most actions.  Every %d damage it takes will reduce the duration of the effect by one turn."):format(eff.dam, eff.power) end,
 	type = "mental",
 	subtype = { nightmare=true, sleep=true },
 	status = "detrimental",
@@ -2959,10 +2904,12 @@ newEffect{
 	parameters = { power=10 },
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "die_at", -eff.power)
-		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
+		self:effectParticles(eff, {type="darkness_power"})
+		if core.shader.active() then
+			self:effectParticles(eff, {type="circle", args={shader=true, oversize=1.5, a=225, appear=8, speed=0, img="shadow_decoy_aura", base_rot=0, radius=0}})
+		end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -3011,7 +2958,7 @@ newEffect{
 					self:attackTargetWith(target, o.combat, nil, t.getWeaponDamage(self, t))
 				end
 			end
-			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarmed") then
+			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarm") then
 				target:setEffect(target.EFF_DISARMED, 3, {apply_power=self:combatMindpower()})
 			end
 		end
@@ -3043,7 +2990,7 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
+		if eff.particle then self:removeParticles(eff.particle) end
 	end,
 }
 
@@ -3175,7 +3122,7 @@ newEffect{
 		self.damage_shield_absorb = eff.power
 		self.damage_shield_absorb_max = eff.power
 		if core.shader.active(4) then
-			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {size_factor=1.4, img="shield3"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor=colors.hex1alpha"9fe836a0", auraColor=colors.hex1alpha"36bce8da"}))
+			eff.particle = self:addParticles(Particles.new("shader_shield", 1, {a=eff.shield_transparency or 1, size_factor=1.4, img="shield3"}, {type="runicshield", ellipsoidalFactor=1, time_factor=-10000, llpow=1, aadjust=7, bubbleColor=colors.hex1alpha"9fe836a0", auraColor=colors.hex1alpha"36bce8da"}))
 		else
 			eff.particle = self:addParticles(Particles.new("damage_shield", 1))
 		end
@@ -3293,7 +3240,7 @@ newEffect{
 	status = "beneficial",
 	parameters = {  },
 	on_merge = function(self, old_eff, new_eff)
-		old_eff.dur = old_eff.dur + new_eff.dur
+		old_eff.dur = math.min(old_eff.dur + new_eff.dur, 10)
 		return old_eff
 	end,
 	activate = function(self, eff)
@@ -3323,5 +3270,55 @@ newEffect{
 			[Stats.STAT_WIL] = eff.dur,
 			[Stats.STAT_CUN] = eff.dur,
 		})
+	end,
+}
+
+newEffect{
+	name = "EXPOSE_WEAKNESS", image = "talents/expose_weakness.png",
+	desc = "Exploiting Weaknesses",
+	long_desc = function(self, eff)
+		local bonuses = {}
+		if eff.bonus_accuracy > 0 then table.insert(bonuses, ("have %+d accuracy"):format(eff.bonus_accuracy)) end
+		if eff.bonus_power > 0 then table.insert(bonuses, ("deal %+0.1f damage"):format(eff.bonus_power)) end
+		if eff.bonus_pen > 0 then table.insert(bonuses, ("have %+d%% resistance penetration"):format(eff.bonus_pen)) end
+		if #bonuses > 0 then bonuses = table.concatNice(bonuses, ", ", " and ") else bonuses = "are not affected" end
+		return ("You are focused on weaknesses you have found in your target's defences.  Your melee attacks against %s %s."):format(eff.target and eff.target.name:capitalize() or "noone", bonuses)
+	end,
+	type = "mental",
+	subtype = { tactical=true},
+	status = "beneficial",
+	parameters = {power=10, hardiness=10, penetration=10, accuracy=0, find_weakness=true},
+	on_gain = function(self, eff) return ("#Target# #GOLD#focuses on weaknesses#LAST# in %s's defenses!"):format(eff.target and eff.target.name:capitalize() or self:his_her().." target"), "+Expose Weakness" end,
+	on_lose = function(self, eff) return "#Target#'s attacks are less focused.", "-Expose Weakness" end,
+	on_timeout = function(self, eff)
+		eff.find_weakness = false
+		if not eff.target or eff.target.dead or not game.level:hasEntity(eff.target) then
+			self:removeEffect(eff.effect_id)
+		end
+	end,
+	activate = function(self, eff)
+		eff.bonus_power = 0
+		eff.bonus_accuracy = 0
+		eff.bonus_pen = 0
+	end,
+	deactivate = function(self, eff)
+	end,
+	-- pre attack: assign bonuses already set up  Note: This is post rescaleCombatStats (i.e. applied directly)
+	callbackOMeleeAttackBonuses = function(self, eff, hd)
+		if not eff.find_weakness then
+			hd.atk = hd.atk + eff.bonus_accuracy
+			hd.dam = hd.dam + eff.bonus_power
+		end
+	end,
+	-- after attack, accumulate weakness bonuses (1 turn only) based on combat result
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
+		if eff.find_weakness then -- compile bonuses
+			if hitted then
+				eff.bonus_power = eff.bonus_power + eff.power
+				eff.bonus_pen = eff.bonus_pen + eff.penetration
+			else -- missed, add accuracy
+				eff.bonus_accuracy = eff.bonus_accuracy + eff.accuracy
+			end
+		end
 	end,
 }

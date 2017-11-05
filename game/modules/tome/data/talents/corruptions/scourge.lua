@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -85,6 +85,10 @@ newTalent{
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/slime")
 		local ret = {}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1, img="ruin_shieldwall"}, shader={type="rotatingshield", noup=2.0, time_factor=2500, appearTime=0.2}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1, img="ruin_shieldwall"}, shader={type="rotatingshield", noup=1.0, time_factor=2500, appearTime=0.2}})
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)

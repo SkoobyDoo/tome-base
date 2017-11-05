@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@ newTalent{
 	require = spells_req1,
 	points = 5,
 	random_ego = "attack",
-	mana = 12,
-	cooldown = 4,
+	mana = 10,
+	cooldown = 3,
 	tactical = { ATTACK = { DARKNESS = 2 } },
 	range = 10,
 	reflectable = true,
@@ -81,8 +81,8 @@ newTalent{
 	type = {"spell/nightfall",2},
 	require = spells_req2,
 	points = 5,
-	mana = 45,
-	cooldown = 18,
+	mana = 40,
+	cooldown = 16,
 	tactical = { ATTACKAREA = { DARKNESS = 2 }, DISABLE = { confusion = 1.5, blind = 1.5 } },
 	range = 6,
 	radius = 3,
@@ -129,8 +129,8 @@ newTalent{
 	require = spells_req3,
 	points = 5,
 	random_ego = "attack",
-	mana = 40,
-	cooldown = 12,
+	mana = 30,
+	cooldown = 10,
 	direct_hit = true,
 	tactical = { ATTACKAREA = { DARKNESS = 2 }, DISABLE = { knockback = 2 }, ESCAPE = { knockback = 1 } },
 	range = 0,

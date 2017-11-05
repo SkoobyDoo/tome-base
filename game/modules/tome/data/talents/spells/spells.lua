@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -68,6 +68,10 @@ newTalentType{ allow_random=true, no_silence=true, is_spell=true, mana_regen=tru
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, mana_regen=true, type="spell/grave", name = "grave", description = "Use the rotting cold doom of the tomb to fell your foes." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, mana_regen=true, type="spell/animus", name = "animus", description = "Crush the souls of your foes to improve yourself." }
 
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="spell/eldritch-shield", name = "eldritch shield", description = "Infuse arcane forces into your shield." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="spell/eldritch-stone", name = "eldritch stone", description = "Summon stony spikes imbued with various powers." }
+newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="spell/deeprock", name = "deeprock", description = "Harness the power of the world to turn into a Deeprock Form." }
+
 -- Generic requires for spells based on talent level
 spells_req1 = {
 	stat = { mag=function(level) return 12 + (level-1) * 2 end },
@@ -128,6 +132,9 @@ function applyDarkEmpathy(self, m)
 		local perc = t.getPerc(self, t)
 		for k, e in pairs(self.resists) do
 			m.resists[k] = (m.resists[k] or 0) + e * perc / 100
+		end
+		for k, e in pairs(self.resists_cap) do
+			m.resists_cap[k] = e
 		end
 		m.combat_physresist = m.combat_physresist + self:combatPhysicalResist() * perc / 100
 		m.combat_spellresist = m.combat_spellresist + self:combatSpellResist() * perc / 100
@@ -215,16 +222,24 @@ function necroSetupSummon(self, m, x, y, level, no_control, no_decay)
 		local src = self.summoner
 		local w = src:isTalentActive(src.T_WILL_O__THE_WISP)
 		local p = src:isTalentActive(src.T_NECROTIC_AURA)
-		if not w or not p or not self.x or not self.y or not src.x or not src.y or core.fov.distance(self.x, self.y, src.x, src.y) > self.summoner.necrotic_aura_radius then return end
-		if not rng.percent(w.chance) then return end
-
-		local t = src:getTalentFromId(src.T_WILL_O__THE_WISP)
-		t.summon(src, t, w.dam, self, killer)
+		if not p or not self.x or not self.y or not src.x or not src.y or core.fov.distance(self.x, self.y, src.x, src.y) > self.summoner.necrotic_aura_radius then return end
+		if w and rng.percent(w.chance) then
+			local t = src:getTalentFromId(src.T_WILL_O__THE_WISP)
+			ret = t.summon(src, t, w.dam, self, killer, false)
+			if ret then return end
+		end
+		if src:getTalentLevel(src.T_AURA_MASTERY) >= 3 and rng.percent(25) then
+			src:incSoul(1)
+			src.changed = true
+			game.logPlayer(src, "A soul returns to %s.", src.name)
+		end
 	end
 
 	-- Summons never flee
 	m.ai_tactic = m.ai_tactic or {}
 	m.ai_tactic.escape = 0
+
+	if self:knowTalent(self.T_BLIGHTED_SUMMONING) then m:incVim(m:getMaxVim()) end
 
 	self:attr("summoned_times", 1)
 end
@@ -277,3 +292,7 @@ load("/data/talents/spells/shades.lua")
 load("/data/talents/spells/necrosis.lua")
 load("/data/talents/spells/grave.lua")
 load("/data/talents/spells/animus.lua")
+
+load("/data/talents/spells/eldritch-shield.lua")
+load("/data/talents/spells/eldritch-stone.lua")
+load("/data/talents/spells/deeprock.lua")

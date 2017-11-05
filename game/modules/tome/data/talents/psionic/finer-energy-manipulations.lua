@@ -83,14 +83,13 @@ newTalent{
 }
 
 newTalent{
-	name = "Reshape Weapon/Armour", image = "talents/reshape_weapon.png",
+	name = "Form and Function", image = "talents/reshape_weapon.png",
 	type = {"psionic/finer-energy-manipulations", 2},
 	require = psi_cun_req2,
 	mode = "passive",
 	points = 5,
 	no_npc_use = true,
-	no_unlearn_last = true,
-	damBoost = function(self, t) return math.floor(self:combatTalentMindDamage(t, 5, 20)) end,
+	damBoost = function(self, t) return math.floor(self:combatTalentMindDamage(t, 5, 25)) end,
 	armorBoost = function(self, t) return math.floor(self:combatTalentMindDamage(t, 5, 20)) end,
 	fatigueBoost = function(self, t) return math.floor(self:combatTalentMindDamage(t, 2, 10)) end,
 	getDamBoost = function(self, t, weapon)
@@ -115,8 +114,8 @@ newTalent{
 		local weapon_boost = t.damBoost(self, t)
 		local arm = t.armorBoost(self, t)
 		local fat = t.fatigueBoost(self, t)
-		return ([[Manipulate forces on the molecular level to realign, rebalance, and hone a weapon, set of body armor, or a shield.  (Mindstars resist being adjusted because they are already in an ideal natural state.)
-		The accuracy and damage of any weapon will act as if %d higher.
+		return ([[Manipulate forces on the molecular level to realign, rebalance, and synergize equipment you wear to your form and function.
+		Any weapon you wield will gain a boost of %d to both accuracy and power. (The power is treated like an increase to your stats.  Mindstars cannot be manipulated in this way because they are already in an ideal natural state.)
 		Your total armour will increase by %d and your fatigue rating by %d for each body armour and shield worn.
 		The effects increase with your Mindpower.]]):
 		format(weapon_boost, arm, fat)

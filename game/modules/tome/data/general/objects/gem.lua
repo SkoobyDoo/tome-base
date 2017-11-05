@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ local function newGem(name, image, cost, rarity, color, min_level, max_level, ti
 	-- Alchemist gems, not lootable, only created by talents
 	newEntity{ base = "BASE_GEM", define_as = "ALCHEMIST_GEM_"..name:gsub(" ", "_"):upper(),		name = "alchemist "..name:lower(), type='alchemist-gem', subtype = color,
 		slot = "QUIVER",
-		moddable_tile = "gembag",
+		moddable_tile = resolvers.moddable_tile("gembag"),
 		use_no_wear = false,
 		color = colors[color:upper()], image=image,
 		cost = cost * 0.01,

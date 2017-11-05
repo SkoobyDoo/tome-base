@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,7 +19,8 @@
 
 require "engine.class"
 
---- Make a UI element clickable
+--- A generic UI group
+-- @classmod engine.ui.UIGroup
 module(..., package.seeall, class.make)
 
 function _M:setInnerFocus(id)

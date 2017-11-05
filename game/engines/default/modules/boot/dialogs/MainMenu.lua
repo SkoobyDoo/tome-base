@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ function _M:init()
 	l[#l+1] = {name="New Game", fct=function() game:registerDialog(require("mod.dialogs.NewGame").new()) end}
 	l[#l+1] = {name="Load Game", fct=function() game:registerDialog(require("mod.dialogs.LoadGame").new()) end}
 --	l[#l+1] = {name="Online Profile", fct=function() game:registerDialog(require("mod.dialogs.Profile").new()) end}
-	l[#l+1] = {name="View High Scores", fct=function() game:registerDialog(require("mod.dialogs.ViewHighScores").new()) end}
+	-- l[#l+1] = {name="View High Scores", fct=function() game:registerDialog(require("mod.dialogs.ViewHighScores").new()) end}
 	l[#l+1] = {name="Addons", fct=function() game:registerDialog(require("mod.dialogs.Addons").new()) end}
 --	if config.settings.install_remote then l[#l+1] = {name="Install Module", fct=function() end} end
 --	l[#l+1] = {name="Update", fct=function() game:registerDialog(require("mod.dialogs.UpdateAll").new()) end}
@@ -169,7 +169,7 @@ function _M:uiLoginSteam(uis)
 end
 
 function _M:uiStats(uis)
-	self.logged_url = "http://te4.org/users/"..profile.auth.page
+	self.logged_url = "https://te4.org/users/"..profile.auth.page
 	local str1 = Textzone.new{auto_width=true, auto_height=true, text="#GOLD#Online Profile#WHITE#"}
 	local str2 = Textzone.new{auto_width=true, auto_height=true, text="#LIGHT_BLUE##{underline}#"..self.logged_url.."#LAST##{normal}#", fct=function() util.browserOpenUrl(self.logged_url, {is_external=true}) end}
 

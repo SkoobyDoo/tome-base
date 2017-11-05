@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,7 +33,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d mana"):format(self:getCharmPower(who, true) / 5) end, function(self, who)
 			who:incMana(self:getCharmPower(who, true) / 5)
 		end},
-	}
+	},
+	use_power = {tactical = {MANA = 0.5}}
 }
 
 newEntity{
@@ -59,7 +60,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d positive energy"):format(self:getCharmPower(who, true) / 8) end, function(self, who)
 			who:incPositive(self:getCharmPower(who, true) / 8)
 		end},
-	}
+	},
+	use_power = {tactical = {POSITIVE = 0.5}}
 }
 
 newEntity{
@@ -73,7 +75,8 @@ newEntity{
 		{100, function(self, who) return ("regenerate %d negative energy"):format(self:getCharmPower(who, true) / 8) end, function(self, who)
 			who:incNegative(self:getCharmPower(who, true) / 8)
 		end},
-	}
+	},
+	use_power = {tactical = {NEGATIVE = 0.5}}
 }
 
 newEntity{
@@ -105,7 +108,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
-		talent_cd_reduction={[Talents.T_VOID_BLAST]=-6},
+--		talent_cd_reduction={[Talents.T_VOID_BLAST]=-6},
 		learn_talent = {[Talents.T_VOID_BLAST] = resolvers.mbonus_material(4, 1)},
 	},
 }
@@ -119,6 +122,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
+		talent_cd_reduction={[Talents.T_VOLCANO]=2},
 		learn_talent = {[Talents.T_VOLCANO] = resolvers.mbonus_material(4, 1)},
 	},
 }
@@ -132,6 +136,7 @@ newEntity{
 	cost = 5,
 
 	wielder = {
+		talent_cd_reduction={[Talents.T_STRIKE]=1},
 		learn_talent = {[Talents.T_STRIKE] = resolvers.mbonus_material(4, 1)},
 	},
 }

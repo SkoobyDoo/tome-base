@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ local function TalentStatus(who,t)
 		status = tstring{{"color", "LIGHT_RED"}, who:isTalentCoolingDown(t).." turns"}
 	elseif not who:preUseTalent(t, true, true) then
 		status = tstring{{"color", "GREY"}, "Unavailable"}
+	elseif t.is_object_use then
+		status = tstring{{"color", "SALMON"}, "Object"}
 	elseif t.mode == "sustained" then
 		status = who:isTalentActive(t.id) and tstring{{"color", "YELLOW"}, "Sustaining"} or tstring{{"color", "LIGHT_GREEN"}, "Sustain"}
 	elseif t.mode == "passive" then
@@ -160,6 +162,7 @@ function _M:use(item, button)
 			{name="Bind to left mouse click (on a target)", what="left"},
 			{name="Bind to middle mouse click (on a target)", what="middle"},
 		}
+		if profile.auth and profile.hash_valid then table.insert(list, {name="Link in chat", what="chat-link"}) end
 
 		if self.actor:isTalentConfirmable(t) then
 			table.insert(list, 1, {name="#YELLOW#Disable talent confirmation", what="unset-confirm"})
@@ -172,6 +175,7 @@ function _M:use(item, button)
 		table.insert(list, 2, {name=autoMark:getDisplayString()..(automode==2 and ds or "").."Auto-use when no enemies are visible", what=(automode==2 and "auto-dis" or "auto-en-2")})
 		table.insert(list, 2, {name=autoMark:getDisplayString()..(automode==3 and ds or "").."Auto-use when enemies are visible", what=(automode==3 and "auto-dis" or "auto-en-3")})
 		table.insert(list, 2, {name=autoMark:getDisplayString()..(automode==4 and ds or "").."Auto-use when enemies are visible and adjacent", what=(automode==4 and "auto-dis" or "auto-en-4")})
+		self:triggerHook{"UseTalents:generate", actor=self.actor, talent=t, menu=list}
 
 		for i = 1, 12 * self.actor.nb_hotkey_pages do list[#list+1] = {name="Hotkey "..i, what=i} end
 		Dialog:listPopup("Bind talent: "..item.name:toString(), "How do you want to bind this talent?", list, 400, 500, function(b)
@@ -208,6 +212,10 @@ function _M:use(item, button)
 				self.actor:checkSetTalentAuto(item.talent, true, 4)
 			elseif b.what == "auto-dis" then
 				self.actor:checkSetTalentAuto(item.talent, false)
+			elseif b.what == "chat-link" then
+				profile.chat.uc_ext:sendTalentLink(item.talent)
+			else
+				self:triggerHook{"UseTalents:use", what=b.what, actor=self.actor, talent=t, item=item}
 			end
 			self.c_list:drawTree()
 			self.actor.changed = true
@@ -282,13 +290,13 @@ function _M:generateList()
 	end
 ]]
 
-	local actives, sustains, sustained, unavailables, cooldowns, passives = {}, {}, {}, {}, {}, {}
+	local actives, sustains, sustained, objects, unavailables, cooldowns, passives = {}, {}, {}, {}, {}, {}, {}
 	local chars = {}
 
 	-- Generate lists of all talents by category
 	for j, t in pairs(self.actor.talents_def) do
 		if self.actor:knowTalent(t.id) and not (t.hide and t.mode == "passive") then
-			local nodes = (t.mode == "sustained" and sustains) or (t.mode =="passive" and passives) or actives
+			local nodes = (t.mode == "sustained" and sustains) or (t.mode =="passive" and passives) or (t.is_object_use and objects) or actives
 			if self.actor:isTalentCoolingDown(t) then
 				nodes = cooldowns
 			elseif not self.actor:preUseTalent(t, true, true) then
@@ -302,10 +310,10 @@ function _M:generateList()
 			
 			-- Pregenerate icon with the Tiles instance that allows images
 			if t.display_entity then t.display_entity:getMapObjects(game.uiset.hotkeys_display_icons.tiles, {}, 1) end
-
+			local tname = t.is_object_use and tostring(self.actor:getTalentDisplayName(t)) or t.name
 			nodes[#nodes+1] = {
-				name=((t.display_entity and t.display_entity:getDisplayString() or "")..t.name):toTString(),
-				cname=t.name,
+				name=((t.display_entity and t.display_entity:getDisplayString() or "")..tname):toTString(),
+				cname=tname,
 				status=status,
 				entity=t.display_entity,
 				talent=t.id,
@@ -324,18 +332,21 @@ function _M:generateList()
 	table.sort(actives, function(a,b) return a.cname < b.cname end)
 	table.sort(sustains, function(a,b) return a.cname < b.cname end)
 	table.sort(sustained, function(a,b) return a.cname < b.cname end)
+	table.sort(objects, function(a,b) return a.cname < b.cname end)
 	table.sort(cooldowns, function(a,b) return a.cname < b.cname end)
 	table.sort(unavailables, function(a,b) return a.cname < b.cname end)
 	table.sort(passives, function(a,b) return a.cname < b.cname end)
 	for i, node in ipairs(actives) do node.char = self:makeKeyChar(letter) chars[node.char] = node letter = letter + 1 end
 	for i, node in ipairs(sustains) do node.char = self:makeKeyChar(letter) chars[node.char] = node letter = letter + 1 end
 	for i, node in ipairs(sustained) do node.char = self:makeKeyChar(letter) chars[node.char] = node letter = letter + 1 end
+	for i, node in ipairs(objects) do node.char = self:makeKeyChar(letter) chars[node.char] = node letter = letter + 1 end
 	for i, node in ipairs(cooldowns) do node.char = self:makeKeyChar(letter) chars[node.char] = node letter = letter + 1 end
 	for i, node in ipairs(unavailables) do node.char = self:makeKeyChar(letter) chars[node.char] = node letter = letter + 1 end
 	for i, node in ipairs(passives) do node.char = "" end
 
 	list = {
 		{ char='', name=('#{bold}#Activable talents#{normal}#'):toTString(), status='', hotkey='', desc="All activable talents you can currently use.", color=function() return colors.simple(colors.LIGHT_GREEN) end, nodes=actives, shown=true },
+		{ char='', name=('#{bold}#Object powers#{normal}#'):toTString(), status='', hotkey='', desc="Object powers that can be activated automatically.  Most usable objects will appear here unless they are on cooldown or have ai restrictions.", color=function() return colors.simple(colors.SALMON) end, nodes=objects, shown=true },
 		{ char='', name=('#{bold}#Sustainable talents#{normal}#'):toTString(), status='', hotkey='', desc="All sustainable talents you can currently use.", color=function() return colors.simple(colors.LIGHT_GREEN) end, nodes=sustains, shown=true },
 		{ char='', name=('#{bold}#Sustained talents#{normal}#'):toTString(), status='', hotkey='', desc="All sustainable talents you currently sustain, using them will de-activate them.", color=function() return colors.simple(colors.YELLOW) end, nodes=sustained, shown=true },
 		{ char='', name=('#{bold}#Cooling down talents#{normal}#'):toTString(), status='', hotkey='', desc="All talents you have used that are still cooling down.", color=function() return colors.simple(colors.LIGHT_RED) end, nodes=cooldowns, shown=true },

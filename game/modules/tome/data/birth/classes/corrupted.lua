@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ newBirthDescriptor{
 		["corruption/bone"]={true, 0.3},
 		["corruption/torment"]={true, 0.3},
 		["corruption/vim"]={true, 0.3},
+		["corruption/rot"]={false, 0.3},
 	},
 	talents = {
 		[ActorTalents.T_CORRUPTED_STRENGTH] = 1,
@@ -81,6 +82,16 @@ newBirthDescriptor{
 		[ActorTalents.T_REND] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", special=function(e, filter) -- allow any weapon that doesn't forbid OFFHAND
+				if e.slot_forbid == "OFFHAND" then
+					local who = filter._equipping_entity
+					return who and not who:slotForbidCheck(e, who.INVEN_MAINHAND)
+				end
+				return true
+			end},
+			OFFHAND = {type="weapon", not_properties={"twohanded"}}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="waraxe", name="iron waraxe", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="waraxe", name="iron waraxe", autoreq=true, ego_chance=-1000},
@@ -134,6 +145,17 @@ newBirthDescriptor{
 		[ActorTalents.T_PACIFICATION_HEX] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", subtype="staff"},
+			OFFHAND = {special=function(e, filter) -- only allow if there is a 1H weapon in MAINHAND
+				local who = filter._equipping_entity
+				if who then
+					local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+					if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+				end
+				return false
+			end}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000}

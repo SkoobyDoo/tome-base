@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,7 +22,10 @@ newChat{ id="welcome",
 I am Linaniil of the Kar'Krul. Welcome to our city, @playerdescriptor.subclass@. What may I do for thee?]],
 	answers = {
 		{"I require all the help I can get, not for my sake but for the town of Derth, to the northeast of here.", jump="save-derth", cond=function(npc, player) local q = player:hasQuest("lightning-overload") return q and q:isCompleted("saved-derth") and not q:isCompleted("tempest-located") and not q:isStatus(q.DONE) end},
-		{"I am ready! Send me to Urkis!", jump="teleport-urkis", cond=function(npc, player) local q = player:hasQuest("lightning-overload") return q and not q:isEnded("tempest-located") and q:isCompleted("tempest-located") end},
+		{"I am ready! Send me to Urkis!", jump="teleport-urkis", cond=function(npc, player) local q = player:hasQuest("lightning-overload") return q and not q:isEnded("tempest-located") and q:isCompleted("tempest-located") and not q:isCompleted("tempest-urkis-slain") end},
+		{"Urkis has been slain.", jump="reward-urkis", cond=function(npc, player) 
+			local q = player:hasQuest("lightning-overload") 
+			return q and q:isCompleted("tempest-urkis-slain") and not q:isStatus(q.DONE) end},
 		{"Nothing for now. Sorry to have taken your time. Farewell, my lady."},
 	}
 }
@@ -49,6 +52,21 @@ newChat{ id="teleport-urkis",
 		{"Thank you.", action=function(npc, player)
 			player:hasQuest("lightning-overload"):teleport_urkis()
 			game:unlockBackground("linaniil", "Archmage Linaniil")
+		end},
+	}
+}
+
+newChat{ id="reward-urkis",
+	text = [[I see the storm is calmed.  Take this rune as a token of my appreciation.]],
+	answers = {
+		{"Thank you.", action=function(npc, player)
+			local q = player:hasQuest("lightning-overload") 
+			local o = game.zone:makeEntityByName(game.level, "object", "RUNE_DISSIPATION")
+			if q then player:setQuestStatus("lightning-overload", engine.Quest.COMPLETED) end
+			if not o then return end
+			o:identify(true)
+			game.zone:addEntity(game.level, o, "object")
+			player:addObject(player:getInven("INVEN"), o)
 		end},
 	}
 }

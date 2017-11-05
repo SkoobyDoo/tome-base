@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,11 +30,12 @@ return {
 	tier1 = true,
 	persistent = "zone",
 	ambient_music = "Suspicion.ogg",
-	max_material_level = 2,
+	max_material_level = 1,
 	no_level_connectivity = true,
 	force_controlled_teleport = true,
 	projectile_speed_mod = 0.3,
 	no_autoexplore = true,
+	effects = {"EFF_ZONE_AURA_ABASHED"},
 
 	generator =  {
 		map = {

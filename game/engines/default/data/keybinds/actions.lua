@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,6 +77,13 @@ defineAction{
 	type = "LOOK_AROUND",
 	group = "actions",
 	name = "Look around",
+}
+
+defineAction{
+	default = { "sym:_HOME:true:false:false:false"},
+	type = "CENTER_ON_PLAYER",
+	group = "actions",
+	name = "Center the view on the player",
 }
 
 defineAction{

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -233,9 +233,11 @@ newEntity{
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 		who:teleportRandom(who.x, who.y, self:getCharmPower(who))
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
+		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_add_name = true, do_color = true, no_count=true})
 		return {id=true, used=true}
-	end),
+	end,
+	"T_GLOBAL_CD",
+	{no_npc_use = true}),  --would be very irritating to have npc's teleporting away
 }
 
 --[[ Disabled pending revamp of concept which will probably never come
@@ -315,13 +317,12 @@ newEntity{
 	keywords = {murder=true},
 	level_range = {30, 50},
 	greater_ego = 1,
-	rarity = 16,
+	rarity = 20,
 	cost = 40,
 	wielder = {
-		combat_physcrit = resolvers.mbonus_material(3, 3),
 		combat_critical_power = resolvers.mbonus_material(10, 10),
 		combat_atk = resolvers.mbonus_material(5, 5),
-		combat_apr = resolvers.mbonus_material(4, 4),
+		combat_apr = resolvers.mbonus_material(10, 10),
 	},
 }
 

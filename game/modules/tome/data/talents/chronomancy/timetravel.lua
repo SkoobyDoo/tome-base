@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,13 +50,20 @@ newTalent{
 		self:project(tg, x, y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
+			
 			-- Refresh talent
-			for tid, cd in pairs(self.talents_cd) do
+			local tids = {}
+			for tid, _ in pairs(self.talents_cd) do
 				local tt = self:getTalentFromId(tid)
 				if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-					self:alterTalentCoolingdown(tt, - cdr)
+					tids[#tids+1] = tt
 				end
 			end
+			if #tids > 0 then
+				local tid = rng.tableRemove(tids)
+				self:alterTalentCoolingdown(tid, - cdr)
+			end
+			
 			DamageType:get(DamageType.TEMPORAL).projector(self, x, y, DamageType.TEMPORAL, dam)
 		end)
 		
@@ -77,12 +84,16 @@ newTalent{
 						src:project({type="hit", selffire=false, talent=talent}, self.x, self.y, DT.TEMPORAL, dam)
 
 						-- Refresh talent
-						for tid, cd in pairs(src.talents_cd) do
+						local tids = {}
+						for tid, _ in pairs(src.talents_cd) do
 							local tt = src:getTalentFromId(tid)
 							if tt.type[1]:find("^chronomancy/") and not tt.fixed_cooldown then
-								src:alterTalentCoolingdown(tt, - self.def.cdr)
-								break
+								tids[#tids+1] = tt
 							end
+						end
+						if #tids > 0 then
+							local tid = rng.tableRemove(tids)
+							src:alterTalentCoolingdown(tid, - self.def.cdr)
 						end
 					end
 				end,
@@ -111,7 +122,7 @@ newTalent{
 	require = chrono_req2,
 	points = 5,
 	cooldown = 6,
-	paradox = function (self, t) return getParadoxCost(self, t, 10) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
 	tactical = { ATTACK = {TEMPORAL = 1}, DISABLE = 1 },
 	range = 10,
 	direct_hit = true,
@@ -214,7 +225,7 @@ newTalent{
 	type = {"chronomancy/timetravel", 3},
 	require = chrono_req3,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 40) end,
 	cooldown = 40,
 	no_npc_use = true,
 	fixed_cooldown = true,
@@ -276,6 +287,12 @@ newTalent{
 			game.logPlayer(game.player, "#STEEL_BLUE#You time travel to a quiet place.")
 			game.nicer_tiles:postProcessLevelTiles(game.level)
 
+			if not game.state.temporal_reprieve_lore and rng.percent(5) then
+				game.state.temporal_reprieve_lore = true
+				require("engine.ui.Dialog"):simpleLongPopup("What the... ugh.", "Some rookie paradox mage is about to find out that the standard-issue Temporal Reprieve takes you to a random safe-zone, not a fixed one, and left the contents of their pack strewn about the place. Nearly all of it is equipment that your transmutation chest won't process and is unusable by anything with less than twelve limbs, so you kick most of it into the void, but a crumpled note catches your eye...", 500, function()
+					game.party:learnLore("galsame-orientation-notes")
+				end)
+			end
 		end)
 
 		self:setEffect(self.EFF_TEMPORAL_REPRIEVE, t.getDuration(self, t), {x=self.x, y=self.y})
@@ -294,7 +311,7 @@ newTalent{
 	type = {"chronomancy/timetravel", 4},
 	require = chrono_req4,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	cooldown = 12,
 	tactical = { ATTACKAREA = {TEMPORAL = 2} },
 	range = 0,
@@ -329,7 +346,7 @@ newTalent{
 		local percent = t.getPercent(self, t) * 100
 		local radius = self:getTalentRadius(t)
 		local damage = t.getDamage(self, t)
-		return ([[Creates a temporal echo in a radius of %d around you.  Affected target take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
+		return ([[Creates a temporal echo in a radius of %d around you.  Affected targets take %0.2f temporal damage, as well as up to %d%% of the difference between their current life and max life as additional temporal damage.
 		The additional damage will be divided by the target's rank and the damage scales with your Spellpower.]]):
 		format(radius, damDesc(self, DamageType.TEMPORAL, damage), percent)
 	end,

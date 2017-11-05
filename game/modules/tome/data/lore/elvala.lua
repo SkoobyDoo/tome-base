@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ The burly man stared hard and long into Ephinias’ eyes, before turning to his 
 
 Neira was the first to respond, and there was colour in her cheeks and emotion in her voice.  “I deem this Shaloren king remote and proud.  Sympathy he talks of whilst using our mother’s memory as a tool.  Understanding he proclaims, yet how can any truly know the subtlety behind these Sher’Tul relics?  Untouched they be for millennia, and their original power is still unknown.  What pride lets ye think ye can toy with them now?  It be folly to use a weapon that ye know not how to wield.”
 
-The room went quiet, and I could see Ephinias was silently fuming.  He was not accustomed to such open criticism.  Then Linaniil began to speak, and her voice was low and cool, yet all ears hung on her words.  “Many have been the works of pride over the years that have arisen in splendour.  Wherefore have come our great artworks, our grand cities, or the arcane weavings that shape our societies?  No meekness be found in their crafting.  There be no shame in acting out of pride, and we gain nothing from misplaced humility.  Too long have the powers of the Sher’Tul been left untapped by fearful and timid hearts.”  I could see then her eyes light up with excitement.  “Think of the glories we could unlock!  This war with the orcs would be but the beginning.  Great benefit could be brought to us all.  To leave these powers buried would be a crime, I say.”
+The room went quiet, and I could see Ephinias was silently fuming.  He was not accustomed to such open criticism.  Then Linaniil began to speak, and her voice was low and cool, yet all ears hung on her words.  “Many have been the works of pride over the years that have arisen in splendour.  Whence have come our great artworks, our grand cities, or the arcane weavings that shape our societies?  No meekness be found in their crafting.  There be no shame in acting out of pride, and we gain nothing from misplaced humility.  Too long have the powers of the Sher’Tul been left untapped by fearful and timid hearts.”  I could see then her eyes light up with excitement.  “Think of the glories we could unlock!  This war with the orcs would be but the beginning.  Great benefit could be brought to us all.  To leave these powers buried would be a crime, I say.”
 
 Turthel paused reflectively before nodding his head slowly, and it was clear that Linaniil’s words aligned better with his own thoughts.  “Very well,” he slowly announced, looking directly at Ephinias.  “We are with you.”  Neira stayed silent with brooding concern, but a flash of satisfaction crossed her sister’s eyes.]],
 	on_learn = function(who) world:gainAchievement("SPELLBLAZE_LORE") end,

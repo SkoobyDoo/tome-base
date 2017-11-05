@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -142,12 +142,20 @@ newTalent{
 	require = psi_wil_req3,
 	psi= 10,
 	cooldown = 10,
-	tactical = { ESCAPE = 1, CLOSEIN = 1 },
+	tactical = { SELF = {ESCAPE = 2},
+		CLOSEIN = function(self, t, target)
+			return (target and target:attr("sleep") or game.zone.is_dream_scape) and 2 or 1
+		end
+	},
 	range = 7,
 	radius = function(self, t) return math.max(0, 7 - math.floor(self:getTalentLevel(t))) end,
-	requires_target = true,
 	target = function(self, t)
-		return {type="hit", range=self:getTalentRange(t)}
+		local range=self:getTalentRange(t)
+		local tg = {talent=t, type="hit", nolock=true, pass_terrain=false, nowarning=true, range=range}
+		if not self.player then
+			tg.grid_params = {want_range=self.ai_state.tactic == "escape" and self:getTalentCooldown(t) + 11 or self.ai_tactic.safe_range or 0, max_delta=-1}
+		end
+		return tg
 	end,
 	direct_hit = true,
 	is_teleport = true,
@@ -156,7 +164,7 @@ newTalent{
 		local x, y, target = self:getTarget(tg)
 		if not x or not y then return nil end
 		if not self:hasLOS(x, y) or game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then
-			game.logPlayer(self, "You do not have line of sight to this location.")
+			game.logPlayer(self, "You may only dream walk to an open space within your line of sight.")
 			return nil
 		end
 		local __, x, y = self:canProject(tg, x, y)
@@ -169,7 +177,7 @@ newTalent{
 		game.level.map:particleEmitter(x, y, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})
 
 		if not self:teleportRandom(x, y, teleport) then
-			game.logSeen(self, "The dream walk fizzles!")
+			game.logSeen(self, "Your dream walk fails!")
 		end
 
 		game.level.map:particleEmitter(self.x, self.y, 1, "generic_teleport", {rm=0, rM=0, gm=180, gM=255, bm=180, bM=255, am=35, aM=90})
@@ -179,7 +187,8 @@ newTalent{
 	end,
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
-		return ([[You move through the dream world, reappearing near the target location (%d teleport accuracy).  If the target is a sleeping creature, you'll instead appear as close to them as possible.]]):format(radius)
+		return ([[You move through the dream world, reappearing at a nearby location.
+		If there is a sleeping creature at the target location, you'll appear as close to them as possible, otherwise, you'll appear within %d tiles of your intended destination.]]):format(radius)
 	end,
 }
 
@@ -191,31 +200,34 @@ newTalent{
 	mode = "sustained",
 	sustain_psi = 40,
 	cooldown = function(self, t) return math.floor(self:combatTalentLimit(t, 0, 45, 25)) end, -- Limit > 0
-	tactical = { DISABLE = function(self, t, target) if target and target:attr("sleep") then return 4 else return 0 end end},
+	tactical = { DISABLE = function(self, t, target)
+			if target and target:attr("sleep") then return 2 else return 0 end
+		end,
+	},
 	range = 7,
 	requires_target = true,
 	target = function(self, t)
 		return {type="ball", radius=self:getTalentRange(t), range=0}
 	end,
 	direct_hit = true,
-	getDrain = function(self, t) return 5 - math.min(4, self:getTalentLevel(t)/2) end,
 	remove_on_zero = true,
+	getDrain = function(self, t) return self:combatTalentLimit(t, 1, 5, 2.5) end,
+	drain_psi = function(self, t)
+		local max_psi = self:getMaxPsi() + (self:isTalentActive(t.id) and t.sustain_psi or 0)
+		return t.getDrain(self, t)*max_psi/100
+	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")
-		local drain = self:getMaxPsi() * t.getDrain(self, t) / 100
-		local ret = {
-			drain = self:addTemporaryValue("psi_regen", -drain),
-		}
-		return ret
+		return {}
 	end,
 	deactivate = function(self, t, p)
-		self:removeTemporaryValue("psi_regen", p.drain)
+		if p.drain then self:removeTemporaryValue("psi_regen", p.drain) end -- compatibility with older versions of this talent
 		return true
 	end,
 	info = function(self, t)
 		local drain = t.getDrain(self, t)
 		return ([[Imprisons all sleeping targets within range in their dream state, effectively extending sleeping effects for as long as Dream Prison is maintainted.
-		This powerful effect constantly drains %0.2f%% of your maximum Psi per turn, and is considered a psionic channel; as such it will break if you move.
+		This powerful effect constantly drains %0.2f%% of your maximum Psi (excluding this talent) per turn, and is considered a psionic channel; as such it will break if you move.
 		(Note that sleeping effects that happen each turn, such as Nightmare's damage and Sleep's contagion, will cease to function for the duration of the effect.)]]):format(drain)
 	end,
 }

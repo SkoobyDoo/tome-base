@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ function _M:generateList()
 	for i, curse in pairs(curses) do
 		list[#list+1] = {name=self.actor.tempeffect_def[curse].desc, curse=curse}
 	end
-	print("* CAS", #list, list[1].name, list[5].name)
+	-- print("* CAS", #list, list[1].name, list[5].name)
 	
 	local chars = {}
 	for i, v in ipairs(list) do

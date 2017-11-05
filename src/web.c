@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -198,8 +198,13 @@ static int lua_web_inject_key(lua_State *L) {
 static int lua_web_download_action(lua_State *L) {
 	web_view_type *view = (web_view_type*)auxiliar_checkclass(L, "web{view}", 1);
 	long id = lua_tonumber(L, 2);
-	if (lua_isstring(L, 3)) te4_web_download_action(view, id, lua_tostring(L, 3));
-	else te4_web_download_action(view, id, NULL);
+	if (lua_isstring(L, 3)) {
+		const char *path = lua_tostring(L, 3);
+		if (!physfs_check_allow_path(L, path)) return 0;
+		te4_web_download_action(view, id, path);
+	} else {
+		te4_web_download_action(view, id, NULL);
+	}
 	return 0;
 }
 
@@ -563,6 +568,18 @@ void te4_web_load() {
 #endif
 	printf("WebCore config: library(%s) spawn(%s)\n", libname ? libname : "--", spawnname ? spawnname : "--");
 	printf("Loading WebCore: %s\n", web ? "loaded!" : SDL_GetError());
+
+#if defined(SELFEXE_LINUX) || defined(SELFEXE_BSD)
+	// Hack to fix a strange bug when it fails to load the library on some linux version it core dumps. So we restart a new process and tell it to not even try
+	if (!web) {
+		char **newargs = calloc(g_argc + 2, sizeof(char*));
+		int i;
+		for (i = 0; i < g_argc; i++) newargs[i] = g_argv[i];
+		newargs[g_argc] = strdup("--no-web");
+		newargs[g_argc+1] = NULL;
+		execv(get_self_executable(g_argc, g_argv), newargs);
+	}
+#endif
 
 	if (web) {
 		webcore = TRUE;

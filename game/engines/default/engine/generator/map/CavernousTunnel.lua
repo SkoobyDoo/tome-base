@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 require "engine.class"
 local Map = require "engine.Map"
 require "engine.Generator"
+
+--- @classmod engine.generator.map.CavernousTunnel
 module(..., package.seeall, class.inherit(engine.Generator))
 
 function _M:init(zone, map, level, data)

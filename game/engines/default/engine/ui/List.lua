@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ local Focusable = require "engine.ui.Focusable"
 local Slider = require "engine.ui.Slider"
 
 --- A generic UI list
+-- @classmod engine.ui.List
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)

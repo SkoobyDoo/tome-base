@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ uberTalent{
 	requires_target = true,
 	range = 10,
 	fixed_cooldown = true,
-	tactical = { BUFF = 2 },
+	tactical = { DEFEND = 1}, -- instant talent
 	action = function(self, t)
 		self:setEffect(self.EFF_DRACONIC_WILL, 5, {})
 		return true
@@ -130,10 +130,12 @@ uberTalent{
 		self.inc_damage_actor_type = self.inc_damage_actor_type or {}
 		self.inc_damage_actor_type.construct = (self.inc_damage_actor_type.construct or 0) + 1000
 		self.inc_damage_actor_type.humanoid = (self.inc_damage_actor_type.humanoid or 0) + 20
+		self.inc_damage_actor_type.humanoid = (self.inc_damage_actor_type.giant or 0) + 20
 	end,
 	on_unlearn = function(self, t)
 		self.inc_damage_actor_type.construct = (self.inc_damage_actor_type.construct or 0) - 1000
 		self.inc_damage_actor_type.humanoid = (self.inc_damage_actor_type.humanoid or 0) - 20
+		self.inc_damage_actor_type.humanoid = (self.inc_damage_actor_type.giant or 0) - 20
 	end,
 	require = { special={desc="Possess and wear two of Garkul's artifacts and know all about Garkul's life", fct=function(self)
 		local o1 = self:findInAllInventoriesBy("define_as", "SET_GARKUL_TEETH")
@@ -147,7 +149,7 @@ uberTalent{
 			))
 	end} },
 	info = function(self, t)
-		return ([[Garkul's spirit is with you. You now deal 1000%% more damage to constructs and 20%% more damage to humanoids.]])
+		return ([[Garkul's spirit is with you. You now deal 1000%% more damage to constructs and 20%% more damage to humanoids and giants.]])
 		:format()
 	end,
 }
@@ -156,7 +158,14 @@ uberTalent{
 	name = "Hidden Resources",
 	cooldown = 15,
 	no_energy = true,
-	tactical = { BUFF = 2 },
+	tactical = function(self, t, aitarget) -- build a tactical table for all defined resources the first time this is called.
+		local tacs = {special = -1}
+		for i, res_def in ipairs(self.resources_def) do
+			if res_def.talent then tacs[res_def.short_name] = 0.5 end
+		end
+		t.tactical = tacs
+		return tacs
+	end,
 	action = function(self, t)
 		self:setEffect(self.EFF_HIDDEN_RESOURCES, 5, {})
 		return true
@@ -169,7 +178,6 @@ uberTalent{
 	end,
 }
 
-
 uberTalent{
 	name = "Lucky Day",
 	mode = "passive",
@@ -177,13 +185,15 @@ uberTalent{
 	on_learn = function(self, t)
 		self.inc_stats[self.STAT_LCK] = (self.inc_stats[self.STAT_LCK] or 0) + 40
 		self:onStatChange(self.STAT_LCK, 40)
+		self:attr("phase_shift", 0.1)
 	end,
 	on_unlearn = function(self, t)
 		self.inc_stats[self.STAT_LCK] = (self.inc_stats[self.STAT_LCK] or 0) - 40
 		self:onStatChange(self.STAT_LCK, -40)
+		self:attr("phase_shift", -0.1)
 	end,
 	info = function(self, t)
-		return ([[Every day is your lucky day! You gain a permanent +40 luck bonus.]])
+		return ([[Every day is your lucky day! You gain a permanent +40 luck bonus and 10%% to move out of the way of every attack.]])
 		:format()
 	end,
 }
@@ -234,7 +244,7 @@ uberTalent{
 	mode = "sustained",
 	require = { },
 	cooldown = 20,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = 3 },
 	require = { special={desc="Have dealt over 50000 mind damage", fct=function(self) return 
 		self.damage_log and (
 			(self.damage_log[DamageType.MIND] and self.damage_log[DamageType.MIND] >= 50000)

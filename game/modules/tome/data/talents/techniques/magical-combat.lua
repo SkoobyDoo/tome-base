@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,10 +24,41 @@ newTalent{
 	points = 5,
 	require = techs_req1,
 	sustain_stamina = 20,
+	no_sustain_autoreset = true,
 	no_energy = true,
 	cooldown = 5,
 	tactical = { BUFF = 2 },
 	getChance = function(self, t) return self:combatLimit(self:getTalentLevel(t) * (1 + self:getCun(9, true)), 100, 20, 0, 70, 50) end, -- Limit < 100%
+	canUseTalent = function(self, t, proc) -- Returns true if the actor can currently trigger the "proc" talent with Arcane Combat
+		local talent = self:getTalentFromId(proc)
+		if not talent or not talent.allow_for_arcane_combat then return false end
+		if not self:knowTalent(talent) then return false end
+		if self:isTalentCoolingDown(talent) then return false end
+		if not self:attr("force_talent_ignore_ressources") then
+			-- Check all possible resource types and see if the talent has an associated cost
+			for _, res_def in ipairs(self.resources_def) do
+				local rname = res_def.short_name
+				local cost = talent[rname]
+				if cost then
+					cost = (util.getval(cost, self, talent) or 0) * (util.getval(res_def.cost_factor, self, talent) or 1)
+					if cost ~= 0 then
+						local rmin, rmax = self[res_def.getMinFunction](self), self[res_def.getMaxFunction](self)
+						-- Return false if we can't afford the talent cost
+						if res_def.invert_values then
+							if rmax and self[res_def.getFunction](self) + cost > rmax then
+								return false
+							end
+						else
+							if rmin and self[res_def.getFunction](self) - cost < rmin then
+								return false
+							end
+						end
+					end
+				end
+			end
+		end
+		return true
+	end,
 	do_trigger = function(self, t, target)
 		if self.x == target.x and self.y == target.y then return nil end
 
@@ -35,14 +66,27 @@ newTalent{
 		if self:hasShield() then chance = chance * 0.75
 		elseif self:hasDualWeapon() then chance = chance * 0.5
 		end
-
+		
 		if rng.percent(chance) then
-			local spells = {}
 			local fatigue = (100 + 2 * self:combatFatigue()) / 100
 			local mana = self:getMana() - 1
-			if self:knowTalent(self.T_FLAME) and not self:isTalentCoolingDown(self.T_FLAME)and mana > self:getTalentFromId(self.T_FLAME).mana * fatigue then spells[#spells+1] = self.T_FLAME end
-			if self:knowTalent(self.T_LIGHTNING) and not self:isTalentCoolingDown(self.T_LIGHTNING)and mana > self:getTalentFromId(self.T_LIGHTNING).mana * fatigue then spells[#spells+1] = self.T_LIGHTNING end
-			if self:knowTalent(self.T_EARTHEN_MISSILES) and not self:isTalentCoolingDown(self.T_EARTHEN_MISSILES)and mana > self:getTalentFromId(self.T_EARTHEN_MISSILES).mana * fatigue then spells[#spells+1] = self.T_EARTHEN_MISSILES end
+			local spells = {}
+			-- Load previously selected spell
+			local p = self:isTalentActive(t.id)
+			if p and p.talent then
+				local talent = self:getTalentFromId(p.talent)
+				if t.canUseTalent(self, t, talent) then
+					spells[1] = talent.id
+				end
+			end
+			-- If no appropriate spell is selected, pick a random spell
+			if #spells < 1 and (not p or not p.talent) then
+				for _, talent in pairs(self.talents_def) do
+					if t.canUseTalent(self, t, talent) then
+						spells[#spells+1] = talent.id
+					end
+				end
+			end
 			local tid = rng.table(spells)
 			if tid then
 				local l = self:lineFOV(target.x, target.y)
@@ -73,18 +117,53 @@ newTalent{
 		end
 	end,
 	activate = function(self, t)
-		return {}
+		if self ~= game.player then return {} end
+		local talent, use_random = self:talentDialog(require("mod.dialogs.talents.MagicalCombatArcaneCombat").new(self))
+		if use_random then
+			return {}
+		elseif talent then
+			return {talent = talent}
+		else
+			return nil
+		end
 	end,
 	deactivate = function(self, t, p)
+		p.talent = nil
 		return true
 	end,
 	info = function(self, t)
-		return ([[Allows you to use a melee weapon to focus your spells, granting a %d%% chance per melee attack to deliver a Flame, Lightning or Earthen Missiles spell as a free action on the target.
-		When using a shield the chance is reduced by one fourth.
-		When dual wielding or using a shield the chance is halved for each weapon.
-		Delivering the spell this way will not trigger a spell cooldown, but only works if the spell is not cooling down.
-		The chance increases with your Cunning.]]):
-		format(t.getChance(self, t))
+		local talent_list = ""
+		local build_string = {}
+		for _, talent in pairs(self.talents_def) do
+			if talent.allow_for_arcane_combat and talent.name then
+				if #build_string > 0 then build_string[#build_string+1] = ", " end
+				build_string[#build_string+1] = talent.name
+			end
+		end
+		if #build_string > 0 then talent_list = table.concat(build_string) end
+		
+		local talent_selected = ""
+		if self:isTalentActive(t.id) then
+			local talent = self:getTalentFromId(self:isTalentActive(t.id).talent)
+			if talent and talent.name then
+				talent_selected = [[
+				
+				Currently selected spell: ]] .. talent.name
+			else
+				talent_selected = [[
+				
+				Currently selected spell: Random]]
+			end
+		end
+		return ([[Allows you to use melee weapons to focus your spells, granting a %d%% chance per melee attack to cast an offensive spell as a free action on the target.
+		Delivering the spell this way will not trigger a spell cooldown, but only works if the spell is not already cooling down.
+		You may select an allowed spell to trigger this way, or choose to have one randomly selected for each attack.
+		While wielding a shield, the chance is reduced by one quarter.
+		While dual wielding, the chance is reduced by half for both weapons.
+		The chance increases with your Cunning.
+
+		Allowed spells: %s %s]]):
+		format(t.getChance(self, t), talent_list, talent_selected)
 	end,
 }
 
@@ -144,14 +223,14 @@ newTalent{
 	getDamMult = function(self, t) return self:combatTalentScale(t, 0.5, 1.1, 1) end,
 	getSPMult = function(self, t) return self:combatTalentScale(t, 1/7, 5/7) end,
 	info = function(self, t)
-		return ([[Raw magical damage channels through the caster's weapon, increasing Physical Power by %d.
+		return ([[Raw magical damage channels through the caster's weapon, increasing raw Physical Power by %0.2f of your Magic (current bonus: %d).
 		Each time you crit with a melee blow, you will unleash a radius %d ball of either fire, lightning or arcane damage, doing %0.2f.
 		The bonus scales with your Spellpower and talent level.
 		If you are using a shield this will only occur 75%% of the time.
 		If you are dual wielding this will only occur 50%% of the time.
 		At level 5 the ball becomes radius 2.
 		]]):
-		format(self:combatSpellpower() * t.getSPMult(self, t), self:getTalentRadius(t), self:combatSpellpower() * 2 * t.getDamMult(self, t))
+		format(t.getSPMult(self, t), self:getMag() * t.getSPMult(self, t), self:getTalentRadius(t), self:combatSpellpower() * 2 * t.getDamMult(self, t))
 	end,
 }
 

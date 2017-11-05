@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -96,15 +96,20 @@ newTalent{
 	equilibrium = 2,
 	cooldown = 10,
 	range = 5,
-	is_summon = true,
+	radius = 5, -- used by the the AI as additional range to the target
 	requires_target = true,
-	tactical = { DEFEND = 2, PROTECT = 2 },
+	is_summon = true,
+	target = SummonTarget,
+	onAIGetTarget = onAIGetTargetSummon,
+	aiSummonGrid = aiSummonGridRanged,
+	tactical = { DEFEND = 2, PROTECT = 2 }, -- handle healing?
 	on_pre_use = function(self, t, silent)
 		if not self:canBe("summon") and not silent then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
 		return not checkMaxSummon(self, silent)
 	end,
+	on_pre_use_ai = aiSummonPreUse,
 	on_detonate = function(self, t, m)
-		local tg = {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, x=m.x, y=m.y}
+		local tg = {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, x=m.x, y=m.y, ignore_nullify_all_friendlyfire=true}
 		self:project(tg, m.x, m.y, function(px, py)
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target or self:reactionToward(target) < 0 then return end
@@ -139,7 +144,7 @@ newTalent{
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, _, _, tx, ty = self:canProject(tg, tx, ty)
-		target = game.level.map(tx, ty, Map.ACTOR)
+		target = self.ai_target.actor
 		if target == self then target = nil end
 
 		-- Find space
@@ -208,13 +213,18 @@ newTalent{
 	equilibrium = 5,
 	cooldown = 10,
 	range = 5,
+	radius = 5, -- used by the the AI as additional range to the target
+	requires_target = true,
 	is_summon = true,
-	tactical = { ATTACK = 1, DISABLE = { pin = 2 } },
+	target = SummonTarget,
+	onAIGetTarget = onAIGetTargetSummon,
+	aiSummonGrid = aiSummonGridRanged,
+	tactical = { ATTACK = {NATURE = 1}, DISABLE = { pin = 1 } },
 	on_pre_use = function(self, t, silent)
 		if not self:canBe("summon") and not silent then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
 		return not checkMaxSummon(self, silent)
 	end,
-	requires_target = true,
+	on_pre_use_ai = aiSummonPreUse,
 	on_detonate = function(self, t, m)
 		local tg = {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t, x=m.x, y=m.y}
 		self:project(tg, m.x, m.y, function(px, py)
@@ -244,7 +254,7 @@ newTalent{
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, _, _, tx, ty = self:canProject(tg, tx, ty)
-		target = game.level.map(tx, ty, Map.ACTOR)
+		target = self.ai_target.actor
 		if target == self then target = nil end
 
 		-- Find space
@@ -310,8 +320,9 @@ newTalent{
 	points = 5,
 	equilibrium = 5,
 	cooldown = 25,
-	requires_target = true,
 	no_energy = true,
+	on_pre_use_ai = aiSummonPreUse,
+	aiSummonGrid = aiSummonGridRanged,
 	tactical = { BUFF = 0.2 },
 	getReduc = function(self, t) return self:combatTalentLimit(t, 100, 25, 75)  end, -- Limit <100%
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 25, 2.7, 5.6)) end, -- Limit <25

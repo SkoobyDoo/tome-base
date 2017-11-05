@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ return function(gen, id)
 					gen.map(i-1+x, j-1+y, Map.TERRAIN, gen:resolve('#'))
 					doors[#doors+1] = {i-1+x, j-1+y}
 				else
+					gen.map.room_map[i-1+x][j-1+y].special = true
 					local e = gen.zone:makeEntity(gen.level, "actor", filter, nil, true)
 					if e then 
 						gen:roomMapAddEntity(i-1+x, j-1+y, "actor", e) 
@@ -58,5 +59,7 @@ return function(gen, id)
 		end
 		local door = rng.table(doors)
 		gen.map(door[1], door[2], Map.TERRAIN, gen:resolve('+'))
+		gen.map.room_map[door[1]][door[2]].can_open = true
+		return door[1], door[2]
 	end}
 end

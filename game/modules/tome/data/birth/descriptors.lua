@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,13 +44,6 @@ newBirthDescriptor{
 			["Maj'Eyal"] = "allow",
 			Infinite = "allow",
 			Arena = "allow",
-			Ents = "disallow",
-			Spydre = "disallow",
-			Orcs = "disallow",
-			Trolls = "disallow",
-			Nagas = "disallow",
-			Undeads = "disallow",
-			Faeros = "disallow",
 		},
 		class =
 		{
@@ -147,6 +140,7 @@ newBirthDescriptor{
 	type = "difficulty",
 	name = "Easy",
 	display_name = "Easier",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Easy",
 	desc =
 	{
 		"#GOLD##{bold}#Easier mode#WHITE##{normal}#",
@@ -155,6 +149,7 @@ newBirthDescriptor{
 		"All damage done to the player decreased by 30%",
 		"All healing for the player increased by 30%",
 		"All detrimental status effects durations reduced by 50%",
+		"Player starts with 15 gold",
 		"Achievements are not granted.",
 	},
 	descriptor_choices =
@@ -170,11 +165,13 @@ newBirthDescriptor{
 newBirthDescriptor{
 	type = "difficulty",
 	name = "Normal",
-	selection_default = true,
+	selection_default = (config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Normal") or (not config.settings.tome.default_birth) or (config.settings.tome.default_birth and not config.settings.tome.default_birth.difficulty),
 	desc =
 	{
 		"#GOLD##{bold}#Normal mode#WHITE##{normal}#",
 		"Provides the normal level of challenges.",
+		"Player starts with 15 gold",
+		"Stairs can not be used for 2 turns after a kill.",
 	},
 	descriptor_choices =
 	{
@@ -189,12 +186,17 @@ newBirthDescriptor{
 newBirthDescriptor{
 	type = "difficulty",
 	name = "Nightmare",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Nightmare",
 	desc =
 	{
 		"#GOLD##{bold}#Nightmare mode#WHITE##{normal}#",
 		"Unfair game setting",
-		"All zone levels increased by 50% + 3",
+		"All zone levels increased by 50% by the time Player reaches level 10",
 		"All creature talent levels increased by 30%",
+		"All enemies have 50% more life",
+		"Rare creatures are slightly more frequent",
+		"Stairs can not be used for 3 turns after a kill.",
+		"Player starts with 50 gold",
 		"Player can earn Nightmare version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -205,6 +207,10 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 3,
+		money = 50,
+	},
+	game_state = {
+		default_random_rare_chance = 15,
 	},
 }
 newBirthDescriptor{
@@ -212,15 +218,18 @@ newBirthDescriptor{
 	name = "Insane",
 	locked = function() return profile.mod.allow_build.difficulty_insane end,
 	locked_desc = "Easy is for the weak! Normal is for the weak! Nightmare is too easy! Bring on the true pain!",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Insane",
 	desc =
 	{
 		"#GOLD##{bold}#Insane mode#WHITE##{normal}#",
 		"Similar rules to Nightmare, but with more random bosses!",
-		"All zone levels increased by 50% + 6",
-		"All creature talent levels increased by 50%",
+		"All zone levels increased by 50% + 1 by the time Player reaches level 10",
+		"All creature talent levels increased by 80%",
+		"All enemies have 100% more life",
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Nonrandom bosses will have randomly selected talents",
-		"All enemies have 20% more life",
+		"Stairs can not be used for 5 turns after a kill.",
+		"Player starts with 100 gold",
 		"Player can earn Insane version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -231,6 +240,7 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 4,
+		money = 100,
 	},
 	game_state = {
 		default_random_rare_chance = 3,
@@ -242,15 +252,19 @@ newBirthDescriptor{
 	name = "Madness",
 	locked = function() return profile.mod.allow_build.difficulty_madness end,
 	locked_desc = "Insane is for the weak! Bring on the true mind-shattering experience!",
+	selection_default = config.settings.tome.default_birth and config.settings.tome.default_birth.difficulty == "Madness",
 	desc =
 	{
 		"#GOLD##{bold}#Madness mode#WHITE##{normal}#",
 		"Absolutely unfair game setting.  You are really mentally ill and wish to get worse to play this mode!",
-		"All zone levels increased by 150% + 10",
+		"All zone levels increased by 150% + 2 by the time Player reaches level 10",
 		"All creature talent levels increased by 170%",
+		"All enemies have 200% more life",
 		"Rare creatures are far more frequent and random bosses start to appear",
 		"Bosses will have randomly selected talents",
+		"Stairs can not be used for 9 turns after a kill.",
 		"Player is being hunted! Randomly all foes in a radius will get a feeling of where she/he is",
+		"Player starts with 150 gold",
 		"Player can earn Madness version of achievements if also playing in Roguelike or Adventure permadeath mode.",
 	},
 	descriptor_choices =
@@ -264,6 +278,7 @@ newBirthDescriptor{
 	copy = {
 		instakill_immune = 1,
 		__game_difficulty = 5,
+		money = 150,
 	},
 	game_state = {
 		default_random_rare_chance = 3,

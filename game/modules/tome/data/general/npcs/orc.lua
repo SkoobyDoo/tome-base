@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(5,12), atk=2, apr=6, physspeed=2 },
 
-	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
+	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1, TOOL=1 },
 	resolvers.drops{chance=20, nb=1, {} },
 	resolvers.drops{chance=10, nb=1, {type="money"} },
 	infravision = 10,
@@ -53,6 +53,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	level_range = {10, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(70,80),
+	resolvers.auto_equip_filters("Bulwark"),
 	resolvers.equip{
 		{type="weapon", subtype="waraxe", autoreq=true},
 		{type="armor", subtype="shield", autoreq=true},
@@ -82,6 +83,7 @@ newEntity{ base = "BASE_NPC_ORC",
 
 	autolevel = "archer",
 	resolvers.inscriptions(1, "infusion"),
+	resolvers.auto_equip_filters("Archer"),
 	resolvers.equip{
 		{type="weapon", subtype="longbow", autoreq=true},
 		{type="ammo", subtype="arrow", autoreq=true},
@@ -119,6 +121,7 @@ newEntity{ base = "BASE_NPC_ORC", define_as = "ORC_FIRE_WYRMIC",
 	life_rating = 10,
 	resolvers.equip{
 		{type="weapon", subtype="battleaxe", autoreq=true},
+		{type="charm", subtype="totem"}
 	},
 	combat_armor = 2, combat_def = 0,
 
@@ -148,6 +151,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	life_rating = 10,
 	resolvers.equip{
 		{type="weapon", subtype="battleaxe", autoreq=true},
+		{type="charm", subtype="totem"}
 	},
 	combat_armor = 2, combat_def = 0,
 
@@ -174,6 +178,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	rarity = 3,
 	infravision = 10,
 	combat_armor = 2, combat_def = 12,
+	resolvers.auto_equip_filters("Rogue"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", autoreq=true},
 		{type="weapon", subtype="dagger", autoreq=true},
@@ -184,7 +189,7 @@ newEntity{ base = "BASE_NPC_ORC",
 		[Talents.T_STEALTH]=5,
 		[Talents.T_LETHALITY]=4,
 		[Talents.T_SHADOWSTRIKE]={base=3, every=6, max=5},
-		[Talents.T_VILE_POISONS]={base=2, every=8, max=5},
+		[Talents.T_APPLY_POISON]={base=2, every=8, max=5},
 		[Talents.T_VENOMOUS_STRIKE]={last=15, base=0, every=6, max=5},
 	},
 	max_life = resolvers.rngavg(80,100),
@@ -203,10 +208,12 @@ newEntity{ base = "BASE_NPC_ORC",
 	rank = 3,
 	infravision = 10,
 	combat_armor = 2, combat_def = 18,
+	resolvers.auto_equip_filters("Rogue"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
-		{type="armor", subtype="light", autoreq=true}
+		{type="armor", subtype="light", autoreq=true},
+		{type="charm"}
 	},
 
 	ai = "tactical",
@@ -217,7 +224,7 @@ newEntity{ base = "BASE_NPC_ORC",
 		[Talents.T_STEALTH]=5,
 		[Talents.T_LETHALITY]=4,
 		[Talents.T_SHADOWSTRIKE]=5,
-		[Talents.T_HIDE_IN_PLAIN_SIGHT]={base=2, every=6, max=5},
+		[Talents.T_APPLY_POISON]={base=2, every=6, max=5},
 		[Talents.T_VILE_POISONS]={base=3, every=8, max=5},
 		[Talents.T_VENOMOUS_STRIKE]={base=1, every=6, max=5},
 	},
@@ -236,10 +243,12 @@ newEntity{ base = "BASE_NPC_ORC",
 	rank = 3,
 	infravision = 10,
 	combat_armor = 2, combat_def = 18,
+	resolvers.auto_equip_filters("Rogue"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
-		{type="armor", subtype="light", autoreq=true}
+		{type="armor", subtype="light", autoreq=true},
+		{type="charm"}
 	},
 
 	ai = "tactical",
@@ -251,11 +260,10 @@ newEntity{ base = "BASE_NPC_ORC",
 		[Talents.T_LETHALITY]={base=4, every=5, max=6},
 		[Talents.T_DEADLY_STRIKES]={base=3, every=5, max=6},
 		[Talents.T_SHADOWSTRIKE]=5,
-		[Talents.T_HIDE_IN_PLAIN_SIGHT]={base=3, every=5, max=5},
-		[Talents.T_UNSEEN_ACTIONS]={base=3, every=5, max=5},
+		[Talents.T_SHADOW_DANCE]={base=3, every=5, max=5},
+		[Talents.T_APPLY_POISON]={base=3, every=7, max=5},
 		[Talents.T_VILE_POISONS]={base=3, every=8, max=5},
 		[Talents.T_VENOMOUS_STRIKE]={base=2, every=6, max=5},
-		[Talents.T_EMPOWER_POISONS]={base=3, every=7, max=5},
 	},
 	max_life = resolvers.rngavg(80,100),
 
@@ -276,10 +284,11 @@ newEntity{ base = "BASE_NPC_ORC",
 	max_life = resolvers.rngavg(600, 800),
 	life_rating = 22,
 	move_others=true,
-
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{
 		{type="weapon", subtype="battleaxe", defined="GAPING_MAW", random_art_replace={chance=75}, autoreq=true},
 		{type="armor", subtype="massive", tome_drops="boss", autoreq=true},
+		{type="charm", forbid_power_source={arcane=true}, autoreq=true}
 	},
 	resolvers.drops{chance=100, nb=2, {tome_drops="boss"} },
 

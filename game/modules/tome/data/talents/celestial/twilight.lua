@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ newTalent{
 	points = 5,
 	cooldown = 6,
 	positive = 15,
-	tactical = { BUFF = 1 },
+	tactical = { NEGATIVE = 2, POSITIVE = -0.5 },
 	range = 10,
 	getRestValue = function(self, t) return self:combatTalentLimit(t, 50, 20.5, 34.5) end, -- Limit < 50%
 	getNegativeGain = function(self, t) return math.max(0, self:combatScale(self:getTalentLevel(t) * self:getCun(40, true), 24, 4, 220, 200, nil, nil, 40)) end,
@@ -204,14 +204,16 @@ newTalent{
 	points = 5,
 	cooldown = 30,
 	negative = 10,
-	tactical = { DISABLE = 2 },
+	tactical = { ATTACK = 2 },
 	requires_target = true,
 	range = 5,
-	no_npc_use = true,
+--	no_npc_use = true,
+	unlearn_on_clone = true,
+	target = function(self, t) return {type="bolt", range=self:getTalentRange(t), talent=t} end,
 	getDuration = function(self, t) return math.floor(self:combatScale(self:getTalentLevel(t)+self:getCun(10), 3, 0, 18, 15)) end,
-	getPercent = function(self, t) return self:combatScale(self:getCun(10, true) * self:getTalentLevel(t), 0, 0, 50, 50) end,
+	getPercent = function(self, t) return self:combatLimit(self:getCun(10, true)*self:getTalentLevel(t), 90, 0, 0, 50, 50) end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t}
+		local tg = self:getTalentTarget(t)
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, tx, ty = self:canProject(tg, tx, ty)
@@ -232,7 +234,7 @@ newTalent{
 
 		local allowed = 2 + math.ceil(self:getTalentLevelRaw(t) / 2 )
 
-		if target.rank >= 3.5 or -- No boss
+		if target.rank >= 3.5 or -- No bosses
 			target:reactionToward(self) >= 0 or -- No friends
 			target.size_category > allowed
 			then
@@ -242,32 +244,22 @@ newTalent{
 
 		local modifier = t.getPercent(self, t)
 
-		local m = target:cloneFull{
+		local m = target:cloneActor{
 			shader = "shadow_simulacrum",
-			no_drops = true, keep_inven_on_death = false,
+			name=target.name.."'s shadow simulacrum",
 			faction = self.faction,
 			summoner = self, summoner_gain_exp=true,
 			summon_time = t.getDuration(self, t),
+			life=target.life*modifier/100, max_life=target.max_life*modifier/100, die_at=target.die_at*modifier/100,
+			exp_worth=0, forceLevelup=function() end,
 			ai_target = {actor=target},
 			ai = "summoned", ai_real = target.ai,
-			resists = { all = modifier, [DamageType.DARKNESS] = 50, [DamageType.LIGHT] = - 50, },
-			desc = [[A dark, shadowy shape whose form resembles the humanoid creature it was taken from. It is not a perfect replica, though, and it makes you feel uneasy to look at it.]],
+			desc = [[A dark, shadowy shape whose form resembles the creature it was copied from. It is not a perfect replica, though, and it makes you feel uneasy to look at it.]],
 		}
-		m:removeAllMOs()
-		m.make_escort = nil
-		m.on_added_to_level = nil
-
-		m.energy.value = 0
-		m.life = m.life*modifier/100
-		m.forceLevelup = function() end
-		-- Handle special things
-		m.on_die = nil
-		m.puuid = nil
-		m.on_acquire_target = nil
-		m.seen_by = nil
-		m.can_talk = nil
-		m.exp_worth = 0
-		m.clone_on_hit = nil
+		table.mergeAdd(m.resists, {all = modifier, [DamageType.DARKNESS]=50, [DamageType.LIGHT]=- 50})
+		m:removeTimedEffectsOnClone()
+		m:unlearnTalentsOnClone()
+		
 		if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
 		if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
 
@@ -289,7 +281,7 @@ newTalent{
 			size = "huge"
 		end
 		return ([[Creates a shadowy copy of a hostile target of up to %s size. The copy will attack its progenitor immediately and lasts for %d turns.
-		The duplicate has %d%% of the target's life, %d%% all damage resistance, +50%% darkness resistance and -50%% light resistance.
+		The duplicate has %d%% of the target's life, +%d%% all damage resistance, +50%% darkness resistance and -50%% light resistance.
 		The duration, life and all damage resistance scale with your Cunning and this ability will not work on bosses.]]):
 		format(size, duration, t.getPercent(self, t), t.getPercent(self, t))
 	end,

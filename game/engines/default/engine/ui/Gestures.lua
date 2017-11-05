@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 require "engine.class"
 local KeyBind = require "engine.KeyBind"
 
+--- @classmod engine.ui.Gestures
 module(..., package.seeall, class.make)
 
 function _M:init(text, key_source, force_all)
@@ -240,7 +241,7 @@ function _M:update()
 end
 
 function _M:display(display_x, display_y, nb_keyframes)
-	if config.settings.hide_gestures then return end
+	if config.settings.hide_gestures or not nb_keyframes then return end
 
 	local intensity = 0.6
 	if self.gestures[self.gesture] then intensity = 1 end

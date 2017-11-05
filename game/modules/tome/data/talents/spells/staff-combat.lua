@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local DamageType = require "engine.DamageType"
+
 newTalent{
 	name = "Channel Staff",
 	type = {"spell/staff-combat", 1},
@@ -33,6 +35,7 @@ newTalent{
 			friendlyblock=false,
 		}
 	end,
+	on_pre_use = function(self, t, silent) if not self:hasStaffWeapon() then if not silent then game.logPlayer(self, "You need a staff to use this spell.") end return false end return true end,
 	getDamageMod = function(self, t) return self:combatTalentWeaponDamage(t, 0.4, 1.1) end,
 	action = function(self, t)
 		local weapon = self:hasStaffWeapon()
@@ -46,7 +49,7 @@ newTalent{
 		local particle = "bolt_fire"
 		local explosion = "flame"
 
-		local damtype = combat.element or combat.damtype or engine.DamageType.PHYSICAL
+		local damtype = combat.element or combat.damtype or DamageType.ARCANE
 
 		if     damtype == DamageType.FIRE then      explosion = "flame"               particle = "bolt_fire"      trail = "firetrail"
 		elseif damtype == DamageType.COLD then      explosion = "freeze"              particle = "ice_shards"     trail = "icetrail"
@@ -58,7 +61,7 @@ newTalent{
 		elseif damtype == DamageType.BLIGHT then    explosion = "slime"               particle = "bolt_slime"     trail = "slimetrail"
 		elseif damtype == DamageType.PHYSICAL then  explosion = "dark"                particle = "stone_shards"   trail = "earthtrail"
 		elseif damtype == DamageType.TEMPORAL then  explosion = "light"				  particle = "temporal_bolt"  trail = "lighttrail"
-		else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" damtype = DamageType.ARCANE
+		else                                        explosion = "manathrust"          particle = "bolt_arcane"    trail = "arcanetrail" --damtype = DamageType.ARCANE
 		end
 
 		local tg = self:getTalentTarget(t)
@@ -93,8 +96,8 @@ newTalent{
 	mode = "passive",
 	require = spells_req2,
 	points = 5,
-	getDamage = function(self, t) return self:getTalentLevel(t) * 10 end,
-	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 2 end,
+	getDamage = function(self, t) return 0 end,
+	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 1.5 end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local inc = t.getPercentInc(self, t)
@@ -145,6 +148,7 @@ newTalent{
 	tactical = { ATTACK = 1, DISABLE = 2, ESCAPE = 1 },
 	range = 1,
 	requires_target = true,
+	on_pre_use = function(self, t, silent) if not self:hasStaffWeapon() then if not silent then game.logPlayer(self, "You need a staff to use this spell.") end return false end return true end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t)}
 	end,

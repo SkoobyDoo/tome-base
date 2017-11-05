@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -127,6 +127,17 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 90,
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", subtype="staff"},
+			OFFHAND = {special=function(e, filter) -- only allow if there is a 1H weapon in MAINHAND
+				local who = filter._equipping_entity
+				if who then
+					local mh = who:getInven(who.INVEN_MAINHAND) mh = mh and mh[1]
+					if mh and (not mh.slot_forbid or not who:slotForbidCheck(e, who.INVEN_MAINHAND)) then return true end
+				end
+				return false
+			end}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
 			{type="armor", subtype="cloth", name="linen robe", autoreq=true, ego_chance=-1000},
@@ -200,6 +211,15 @@ newBirthDescriptor{
 	},
 	copy = {
 		max_life = 100,
+		resolvers.auto_equip_filters{MAINHAND = {type="weapon", subtype="longbow"},
+			OFFHAND = {type="none"},
+			QUIVER={properties={"archery_ammo"}, special=function(e, filter) -- must match the MAINHAND weapon, if any
+				local mh = filter._equipping_entity and filter._equipping_entity:getInven(filter._equipping_entity.INVEN_MAINHAND)
+				mh = mh and mh[1]
+				if not mh or mh.archery == e.archery_ammo then return true end
+			end},
+			QS_MAINHAND = {type="weapon", not_properties={"twohanded"}},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
@@ -211,6 +231,9 @@ newBirthDescriptor{
 		resolvers.inventorybirth{ id=true, inven="QS_OFFHAND",
 			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},	
 		},
+		resolvers.generic(function(e)
+			e.auto_shoot_talent = e.T_SHOOT
+		end),
 	},
 	copy_add = {
 		life_rating = 2,

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ newEntity{ define_as = "THE_MASTER",
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, NECK=1, },
+	resolvers.auto_equip_filters("Berzerker"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="greatsword", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="heavy", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
@@ -141,6 +142,7 @@ newEntity{ define_as = "PALE_DRAKE",
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, NECK=1, },
+	resolvers.auto_equip_filters("Archmage"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, force_drop=true, tome_drops="boss", autoreq=true},
@@ -210,6 +212,7 @@ What proud hero of renown was this before he was condemned to such a terrible fa
 	stats = { str=30, dex=20, con=30 },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, HANDS=1, FEET=1, },
+	resolvers.auto_equip_filters("Bulwark"),
 	equipment = resolvers.equip{
 		{type="weapon", subtype="mace", ego_chance=100, autoreq=true, forbid_power_source={antimagic=true}, force_drop=true,},
 		{type="armor", subtype="shield", ego_chance=100, autoreq=true, forbid_power_source={antimagic=true}, force_drop=true,},
@@ -240,7 +243,7 @@ What proud hero of renown was this before he was condemned to such a terrible fa
 		[Talents.T_SHIELD_EXPERTISE]=6,
 
 		[Talents.T_THICK_SKIN]={base=3, every=5, max=5},
-		[Talents.T_ARMOUR_TRAINING]={base=2, every=8, max=5},
+		[Talents.T_ARMOUR_TRAINING]={base=3, every=8, max=5},
 		[Talents.T_WEAPONS_MASTERY]={base=2, every=10, max=5},
 		[Talents.T_WEAPON_COMBAT]={base=2, every=10, max=5},
 
@@ -348,6 +351,7 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 	level_range = {20, nil}, exp_worth = 2,
 	max_life = 250, life_rating = 15, fixed_rating = true,
 	max_stamina = 200,
+	stamina_regen = 1,
 	rank = 3.5,
 	rarity = 50,
 	size_category = 3,
@@ -355,6 +359,11 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 	stats = { str=20, dex=20, cun=10, wil=40 },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, QUIVER=1  },
+	resolvers.auto_equip_filters{
+		MAINHAND = {type="weapon", subtype="sling"},
+		OFFHAND = {type="weapon", subtype="dagger"},
+		QUIVER={type="ammo", subtype="shot"}
+	},
 	equipment = resolvers.equip{
 		{type="weapon", subtype="sling", defined="HARESKIN_SLING", random_art_replace={chance=0}, autoreq=true, tome_drops="boss"},
 		{type="weapon", subtype="dagger", ego_chance=100, autoreq=true, forbid_power_source={antimagic=true}, force_drop=true},
@@ -373,8 +382,10 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 
 	resolvers.talents{
 		[Talents.T_SHOOT]=1,
-		[Talents.T_INERTIAL_SHOT]=3,
+		[Talents.T_SLING_MASTERY]={base=2, every=10, max=5},
+		[Talents.T_INERTIAL_SHOT]={base=0, every=8, max=5},
 
+		[Talents.T_TRAP_MASTERY]={base=1, every=6, max=5},
 		[Talents.T_STEALTH]={base=5, every=6, max=7},
 		[Talents.T_SHADOWSTRIKE]={base=1, every=6, max=7},
 		[Talents.T_HIDE_IN_PLAIN_SIGHT]={base=1, every=6, max=7},
@@ -400,13 +411,16 @@ There is a cunning air to his hollow skull, and his empty sockets reveal nothing
 
 	autolevel = "slinger",
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
-	ai_tactic = resolvers.tactic"survivor",
+	ai_tactic = resolvers.tactic"ranged",
 	resolvers.inscriptions(1, {"invisibility rune",}),
 
-	on_move = function(self, x, y, self, force)
+	on_move = function(self, x, y, self, force) -- leave a trail of traps behind!
 		if not force and rng.percent(10) then
+			print(self.name, "Placing automatic trap", x, y)
+			self._breaking_stealth = true -- prevents automatic trap from breaking stealth
 			local traps = { self.T_BEAR_TRAP, self.T_CATAPULT_TRAP }
-			self:forceUseTalent(rng.table(traps), {ignore_energy=true, ignore_ressources=true, ignore_cd=true, force_target=self})
+			self:forceUseTalent(rng.table(traps), {ignore_energy=true, ignore_ressources=true, ignore_cd=true, silent=true, force_target=self})
+			self._breaking_stealth = nil
 		end
 	end,
 }

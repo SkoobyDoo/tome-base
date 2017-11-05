@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -177,6 +177,7 @@ newTalent{
 	range = 10,
 	tactical = { ATTACK = 2, },
 	requires_target = true,
+	unlearn_on_clone = true,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 30, 4, 8.1)) end, -- Limit <30
 	getHealth = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 20, 500), 1.0, 0.2, 0, 0.58, 384) end,  -- Limit health < 100%
 	getDam = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 500), 1.40, 0.4, 0, 0.76, 361) end,  -- Limit damage < 140%
@@ -187,40 +188,24 @@ newTalent{
 			game.logPlayer(self, "Not enough space to summon!")
 			return
 		end
-
-		local m = require("mod.class.NPC").new(self:cloneFull{
+		local hfct = t.getHealth(self, t)
+		local m = require("mod.class.NPC").new(self:cloneActor{
 			shader = "shadow_simulacrum",
-			no_drops = true,
-			faction = self.faction,
-			summoner = self, summoner_gain_exp=true,
-			summon_time = t.getDuration(self, t),
-			ai_target = {actor=nil},
+			faction = self.faction, exp_worth = 0,
+			max_life = self.max_life*hfct, die_at = self.die_at*hfct,
+			life = util.bound(self.life*hfct, self.die_at*hfct, self.max_life*hfct),
+			max_level = self.level,
+			summoner = self, summoner_gain_exp=true, summon_time = t.getDuration(self, t),
+			
+			ai_target = {actor=table.NIL_MERGE},
 			ai = "summoned", ai_real = "tactical",
 			name = "Forgery of Haze ("..self.name..")",
-			desc = [[A dark shadowy shape whose form resembles yours.]],
+			desc = ([[A dark shadowy shape whose form resembles %s.]]):format(self.name),
 		})
-		m:removeAllMOs()
-		m.make_escort = nil
-		m.on_added_to_level = nil
 
-		m.energy.value = 0
-		m.player = nil
-		m.max_life = m.max_life * t.getHealth(self, t)
-		m.life = util.bound(m.life, 0, m.max_life)
-		m.forceLevelup = function() end
-		m.die = nil
-		m.on_die = nil
-		m.on_acquire_target = nil
-		m.seen_by = nil
-		m.can_talk = nil
-		m.puuid = nil
-		m.on_takehit = nil
-		m.exp_worth = 0
-		m.no_inventory_access = true
-		m.clone_on_hit = nil
-		m:unlearnTalentFull(m.T_CREATE_MINIONS)
-		m:unlearnTalentFull(m.T_FORGERY_OF_HAZE)
-		m.remove_from_party_on_death = true
+		m:removeTimedEffectsOnClone()
+		m:unlearnTalentsOnClone()
+
 		m.inc_damage.all = ((100 + (m.inc_damage.all or 0)) * t.getDam(self, t)) - 100
 
 		game.zone:addEntity(game.level, m, "actor", x, y)
@@ -254,13 +239,13 @@ newTalent{
 	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { BUFF = 2 },
-	getDarknessDamageIncrease = function(self, t) return self:getTalentLevelRaw(t) * 2 end,
+	getDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
 	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 17, 50, true) end,  -- Limit to < 100%
 	getAffinity = function(self, t) return self:combatTalentLimit(t, 100, 10, 50) end, -- Limit < 100%
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic")
 		local ret = {
-			dam = self:addTemporaryValue("inc_damage", {[DamageType.DARKNESS] = t.getDarknessDamageIncrease(self, t), [DamageType.COLD] = t.getDarknessDamageIncrease(self, t)}),
+			dam = self:addTemporaryValue("inc_damage", {[DamageType.DARKNESS] = t.getDamageIncrease(self, t), [DamageType.COLD] = t.getDamageIncrease(self, t)}),
 			resist = self:addTemporaryValue("resists_pen", {[DamageType.DARKNESS] = t.getResistPenalty(self, t)}),
 			affinity = self:addTemporaryValue("damage_affinity", {[DamageType.DARKNESS] = t.getAffinity(self, t)}),
 		}
@@ -283,10 +268,10 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		local damageinc = t.getDarknessDamageIncrease(self, t)
+		local damageinc = t.getDamageIncrease(self, t)
 		local ressistpen = t.getResistPenalty(self, t)
 		local affinity = t.getAffinity(self, t)
-		return ([[Surround yourself with Frostdusk, increasing all your darkness and cold damage by %d%%, and ignoring %d%% of the darkness resistance of your targets.
+		return ([[Surround yourself with Frostdusk, increasing all your darkness and cold damage by %0.1f%%, and ignoring %d%% of the darkness resistance of your targets.
 		In addition, all darkness damage you take heals you for %d%% of the damage.]])
 		:format(damageinc, ressistpen, affinity)
 	end,

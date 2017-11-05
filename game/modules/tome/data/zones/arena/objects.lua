@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -124,7 +124,6 @@ newEntity{ define_as = "ARENA_BOW", name = "elm longbow of piercing arrows",
 	max_power = 10, power_regen = 1,
 	combat = {
 		range = 8,
-		physspeed = 0.8,
 	},
 }
 
@@ -144,6 +143,5 @@ newEntity{ define_as = "ARENA_SLING", name = "rough leather sling of flare",
 	max_power = 25, power_regen = 1,
 	combat = {
 		range = 8,
-		physspeed = 0.8,
 	},
 }

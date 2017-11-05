@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ newTalent{
 	require = psi_wil_req3,
 	mode = "passive",
 	getSleepPowerBonus = function(self, t) return self:combatTalentLimit(t, 2, 1.1, 1.5) end, -- Limit < 2
-	getInsomniaPower = function(self, t) return self:combatTalentLimit(t, 20, 3, 10) end, -- Limit to <20%
+	getInsomniaPower = function(self, t) return self:combatTalentLimit(t, 12, 3, 10) end, -- Limit to <20%
 	info = function(self, t)
 		local power_bonus = t.getSleepPowerBonus(self, t) - 1
 		local insomnia = t.getInsomniaPower(self, t)
@@ -206,6 +206,7 @@ newTalent{
 			target.dream_plane_on_die = target.on_die
 			target.on_die = function(self, ...)
 				self.dream_plane_trapper:removeEffect(self.EFF_DREAMSCAPE)
+				self.dream_plane_trapper = nil
 				local args = {...}
 				game:onTickEnd(function()
 					if self.dream_plane_on_die then self:dream_plane_on_die(unpack(args)) end

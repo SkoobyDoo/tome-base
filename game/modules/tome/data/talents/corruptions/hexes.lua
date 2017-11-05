@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,11 +26,11 @@ newTalent{
 	vim = 30,
 	range = 10,
 	radius = 2,
-	tactical = { DISABLE = 2 },
+	tactical = { DISABLE = {stun = 2} },
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
 	end,
 	getchance = function(self,t)
 		return self:combatLimit(self:combatTalentSpellDamage(t, 30, 50), 100, 0, 0, 36.8, 36.8) -- Limit <100%
@@ -64,11 +64,11 @@ newTalent{
 	vim = 30,
 	range = 10,
 	radius = 2,
-	tactical = { DISABLE = 2 },
+	tactical = { DISABLE = 2, ATTACK = {FIRE = 1} },
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t}
+		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), talent=t, friendlyfire=false}
 	end,
 	getCDincrease = function(self, t) return self:combatTalentScale(t, 0.15, 0.5) end,
 	action = function(self, t)
@@ -102,7 +102,7 @@ newTalent{
 	vim = 30,
 	range = 10,
 	radius = 2,
-	tactical = { DISABLE = 2 },
+	tactical = { ATTACK = 2 },
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
@@ -141,7 +141,7 @@ newTalent{
 	direct_hit = true,
 	requires_target = true,
 	target = function(self, t)
-		return {type="hit", range=self:getTalentRange(t), talent=t}
+		return {type="hit", range=self:getTalentRange(t), talent=t, friendlyfire=false}
 	end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
 	action = function(self, t)

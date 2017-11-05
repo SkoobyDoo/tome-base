@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ on_status_change = function(self, who, status, sub)
 				game:addEntity(game.level, o, "object")
 				o:identify(true)
 				who:addObject(who.INVEN_INVEN, o)
-				require("engine.ui.Dialog"):simplePopup("Thanks", ("You saved %s of us, please take this has a reward. (They give you %s)"):format(self.lumberjacks_died == 0 and "all" or "most", o:getName{do_color=true}))
+				require("engine.ui.Dialog"):simplePopup("Thanks", ("You saved %s of us, please take this as a reward. (They give you %s)"):format(self.lumberjacks_died == 0 and "all" or "most", o:getName{do_color=true}))
 			end
 		end
 		who:setQuestStatus(self.id, engine.Quest.DONE)

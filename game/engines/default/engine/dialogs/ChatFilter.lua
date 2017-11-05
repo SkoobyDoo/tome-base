@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@ local Dialog = require "engine.ui.Dialog"
 local Checkbox = require "engine.ui.Checkbox"
 local Textzone = require "engine.ui.Textzone"
 
+--- Chat filters
+-- @classmod engine.dialogs.ChatFilter
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(adds)
@@ -36,6 +38,7 @@ function _M:init(adds)
 		{name = "Other achievements", kind = "achievement_other"},
 	}
 	for i, l in ipairs(adds or {}) do list[#list+1] = l end
+	self:triggerHook{"ChatFilters:list", list=list}
 
 	local c_desc = Textzone.new{width=self.iw - 10, height=1, auto_height=true, text="Select which types of chat events to see or not."}
 	local uis = { {left=0, top=0, ui=c_desc} }

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ newEntity{ define_as = "HORNED_HORROR",
 	no_breath = 1,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HANDS=1, },
+	resolvers.auto_equip_filters("Brawler"),
 	resolvers.equip{
 		{type="armor", subtype="hands", defined="STORM_BRINGER_GAUNTLETS", random_art_replace={chance=75}, autoreq=true},
 	},
@@ -113,6 +114,7 @@ newEntity{ define_as = "MINOTAUR_MAZE",
 	instakill_immune = 1,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, },
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{
 		{type="weapon", subtype="battleaxe", force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="head", defined="HELM_OF_GARKUL", random_art_replace={chance=75}, autoreq=true},

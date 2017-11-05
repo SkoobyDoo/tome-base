@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,6 +81,10 @@ newEntity{ define_as = "RANTHA_THE_WORM",
 		game.state:activateBackupGuardian("MASSOK", 4, 43, "I have heard there is a dragon hunter in the Daikara that is unhappy about the wyrm being already dead.")
 		game.player:resolveSource():grantQuest("starter-zones")
 		game.player:resolveSource():setQuestStatus("starter-zones", engine.Quest.COMPLETED, "daikara")
+		
+		if game.player:knowTalentType("cunning/trapping") then
+			game.party:learnLore("daikara-dragonsfire-trap")
+		end
 	end,
 }
 
@@ -134,6 +138,10 @@ newEntity{ define_as = "VARSHA_THE_WRITHING",
 		game.player:resolveSource():grantQuest("starter-zones")
 		game.player:resolveSource():setQuestStatus("starter-zones", engine.Quest.COMPLETED, "daikara")
 		game.player:resolveSource():setQuestStatus("starter-zones", engine.Quest.COMPLETED, "daikara-volcano")
+		
+		if game.player:knowTalentType("cunning/trapping") then
+			game.party:learnLore("daikara-freezing-trap")
+		end
 	end,
 }
 
@@ -165,7 +173,7 @@ newEntity{ base="BASE_NPC_ORC_GRUSHNAK", define_as = "MASSOK",
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, FEET=1, FINGER=2, NECK=1 },
 
 	resists = { [DamageType.COLD] = 100 },
-
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{
 		{type="weapon", subtype="battleaxe", force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="massive", force_drop=true, tome_drops="boss", autoreq=true},

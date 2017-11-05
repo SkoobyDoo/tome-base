@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,6 +51,11 @@ function useDreamHammer(self)
 	return combat
 end
 
+-- tactical value (between 1 and 3) for a Dream-Forge Hammer attack, accounting for various talent enhancements
+function hammer_tactical(self, t)
+	return "PHYSICAL", 1 + util.bound(self:getTalentLevelRaw(self.T_DREAM_HAMMER) + self:getTalentLevelRaw(self.T_HAMMER_TOSS)/2 + self:getTalentLevelRaw(self.T_FORGE_ECHOES)/2, 0, 10)/5
+end
+
 newTalent{
 	name = "Dream Smith's Hammer",
 	short_name = "DREAM_HAMMER",
@@ -61,7 +66,7 @@ newTalent{
 	psi = 5,
 	range = 1,
 	requires_target = true,
-	tactical = { ATTACK = { weapon = 2 } },
+	tactical = { ATTACK = { [hammer_tactical] = 1 } },
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1.4, 2.1) end,
 	getBaseDamage = function(self, t) return self:combatTalentMindDamage(t, 0, 60) end,
 	getBaseAtk = function(self, t) return self:combatTalentMindDamage(t, 0, 20) end,
@@ -106,7 +111,7 @@ newTalent{
 		local weapon_atk = useDreamHammer(self).atk
 		local weapon_apr = useDreamHammer(self).apr
 		local weapon_crit = useDreamHammer(self).physcrit
-		return ([[Smith a hammer from the dream forge and strike a nearby foe, inflicting %d%% weapon damage.  If the attack hits, it will bring one random Dream Smith talent off cooldown.
+		return ([[Craft a hammer from the dream forge and strike an adjacent foe, inflicting %d%% weapon damage.  If the attack hits, it will bring one random Dream Smith talent off cooldown.
 		At talent level 5, you'll bring a second random talent off cooldown.
 		The base power, Accuracy, Armour penetration, and critical strike chance of the weapon will scale with your Mindpower.
 
@@ -128,7 +133,7 @@ newTalent{
 	require = psi_wil_req2,
 	cooldown = 8,
 	psi = 10,
-	tactical = { ATTACKAREA = { weapon = 2 } },
+	tactical = { ATTACKAREA = { [hammer_tactical] = 1 } },
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 6, 10)) end,
 	requires_target = true,
 	proj_speed = 10,
@@ -193,7 +198,7 @@ newTalent{
 	cooldown = 12,
 	psi = 10,
 	requires_target = true,
-	tactical = { ATTACK = { weapon = 2 }, DISABLE = { stun = 2 } },
+	tactical = { ATTACK = { [hammer_tactical] = 1 }, DISABLE = { stun = 2 } },
 	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 1, 1.5) end,
 	getMasteryDamage = function(self, t) return self:getTalentLevel(t) * 10 end,
 	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 2 end,
@@ -241,9 +246,13 @@ newTalent{
 	require = psi_wil_req4,
 	cooldown = 24,
 	psi = 20,
-	tactical = { ATTACKAREA = { weapon = 3 } },
+	tactical = { ATTACK = {[hammer_tactical] = 1}, ATTACKAREA = { MIND = 0.5, FIRE = 0.5} },
 	radius = function(self, t) return math.floor(self:combatTalentScale(t, 1.5, 3.5)) end,
 	requires_target = true,
+	on_pre_use_ai = function(self, t, silent, fake) --only usable on melee targets (in spite of radius)
+		local aitarget = self.ai_target.actor
+		return aitarget and core.fov.distance(self.x, self.y, aitarget.x, aitarget.y) <= 1
+	end,
 	target = function(self, t)
 		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), friendlyfire=false }
 	end,
@@ -257,7 +266,7 @@ newTalent{
 		local speed, hit = self:attackTargetWith(target, useDreamHammer(self), nil, t.getDamage(self, t))
 		game.level.map:particleEmitter(target.x, target.y, 1, "dreamhammer", {tile="shockbolt/object/dream_hammer", tx=target.x, ty=target.y, sx=self.x, sy=self.y})
 
-		-- Forge Echoe
+		-- Forge Echo
 		if hit then
 			local tg = self:getTalentTarget(t)
 			self:project(tg, target.x, target.y, function(px, py, tg, self)
@@ -279,7 +288,7 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local radius = self:getTalentRadius(t)
 		local project = t.getProject(self, t) /2
-		return ([[Strike the target with a mighty blow from the forge, inflicting %d%% weapon damage.  If the attack hits, the echo of the attack will lash out at all enemies in a %d radius.
+		return ([[Strike an adjacent target with a mighty blow from the forge, inflicting %d%% weapon damage.  If the attack hits, the echo of the attack will lash out at all enemies in a %d radius of the impact.
 		Learning this talent adds %0.2f mind damage and %0.2f burning damage to your Dream Hammer strikes.
 		The mind and fire damage will scale with your Mindpower.]]):format(damage * 100, radius, damDesc(self, DamageType.MIND, project), damDesc(self, DamageType.FIRE, project))
 	end,

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,4 +44,9 @@ newEntity{ base = "BASE_STAFF",
 		combat_critical_power = 20,
 		confusion_immune = 0.2,
 	},
+	set_list = { {"define_as","GEM_TELOS"}, {"define_as","TELOS_TOP_HALF"} },
+	on_set_complete = function(self, who)
+	end,
+	on_set_broken = function(self, who)
+	end,
 }

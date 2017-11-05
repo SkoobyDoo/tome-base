@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ return {
 
 	min_material_level = 3,
 	max_material_level = 4,
-	store_levels_by_restock = { 8, 40, 50 },
+	store_levels_by_restock = { 40, 40, 45, 45, 50, 60 },
 	nicer_tiler_overlay = "DungeonWallsGrass",
 	generator =  {
 		map = {

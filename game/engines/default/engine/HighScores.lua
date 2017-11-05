@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,39 +20,47 @@
 require "engine.class"
 local Map = require "engine.Map"
 
---- Define high score table support
----
---- This will eventually actually generate a GUI table and handle
---- filtering etc but for now it just generates a text string which
---- represents the list of high scores.
-
+--- Define high score table support  
+-- This will eventually actually generate a GUI table and handle
+-- filtering etc but for now it just generates a text string which
+-- represents the list of high scores.
+-- @classmod engine.HighScores
 module(..., package.seeall, class.make)
 
---- to call these you need to have profile.mod pointing at the right module
---- that's normally automatic? But the code which runs from the 'boot'
---- module sets it up carefully
+--- to call these you need to have profile.mod pointing at the right module  
+-- that's normally automatic? But the code which runs from the 'boot' module sets it up carefully
 
--- register a highscore against a campaign
+--- register a highscore against a campaign
+-- @param[type=World] world the world
+-- @param[type=table] details
 function registerScore(world,details)
 	details.type = "dead"
 
 	profile:saveModuleProfile("scores", details)
 end
 
--- scores of living players are stored against their name
+--- scores of living players are stored against their name
+--- register a highscore against a campaign
+-- @param[type=World] world the world
+-- @string name name of the character
+-- @param[type=table] details
 function noteLivingScore(world,name,details)
 	details.type = "alive"
 
 	profile:saveModuleProfile("scores", details)
 end
 
--- and should be removed when the char dies
+--- and should be removed when the char dies
+-- @param[type=World] world the world
+-- @string name
 function clearLivingScore(world,name)
 	-- don't know how to write this
 	-- don't know how to remove from the profile
 end
 
-
+--- Format the highscore table as a string
+-- @param[type=World] world the world
+-- @param[type=table] formatters
 function createHighScoreTable(world,formatters)
 	local highscores = ""
 	print ("createHighScoreTable called with world : ",world)

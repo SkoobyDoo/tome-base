@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -152,7 +152,7 @@ newTalent{
 		local trigger = t.getTrigger(self, t) * 100
 		local cooldown = self:getTalentCooldown(t)
 		local talent = self:isTalentActive(t.id) and self:getTalentFromId(self:isTalentActive(t.id).talent).name or "None"
-		return ([[Choose an activatable spell that affects only you and does not require a target.  When you take damage that reduces your life below %d%% the spell will automatically cast.
+		return ([[Choose an activatable spell that affects only you, does not require a target, and does not have a fixed cooldown.  When you take damage that reduces your life below %d%% the spell will automatically cast.
 		This spell will cast even if it is currently on cooldown, will not consume a turn or resources, and uses the talent level of Contingency or its own, whichever is lower.
 		This effect can only occur once every %d turns and takes place after the damage is resolved.
 

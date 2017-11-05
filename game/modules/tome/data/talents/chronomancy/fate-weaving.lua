@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ newTalent{
 	type = {"chronomancy/fate-weaving", 4},
 	require = chrono_req4,
 	points = 5,
-	paradox = function (self, t) return getParadoxCost(self, t, 20) end,
+	paradox = function (self, t) return getParadoxCost(self, t, 24) end,
 	cooldown = 12,
 	tactical = { BUFF = 2, DEFEND = 2 },
 	getPower = function(self, t) return self:combatTalentLimit(t, 50, 10, 30)/100 end, -- Limit < 50%

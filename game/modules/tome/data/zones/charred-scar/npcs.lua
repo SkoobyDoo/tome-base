@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ newEntity{
 
 	combat = { dam=resolvers.rngavg(1,2), atk=2, apr=0, dammod={str=0.4} },
 
+	resolvers.auto_equip_filters("Sun Paladin"),
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, QUIVER=1 },
 	lite = 3,
 
@@ -77,7 +78,7 @@ newEntity{ base = "BASE_NPC_SUNWALL_DEFENDER", define_as = "SUN_PALADIN_DEFENDER
 }
 
 newEntity{ base = "BASE_NPC_SUNWALL_DEFENDER", define_as = "SUN_PALADIN_DEFENDER_RODMOUR",
-	name = "High Sun-Paladin Rodmour", color=colors.VIOLET,
+	name = "High Sun-Paladin Rodmour", color=colors.VIOLET, unique = true,
 	desc = [[A Human in shiny plate armour.]],
 	level_range = {70, nil}, exp_worth = 1,
 	rank = 3,

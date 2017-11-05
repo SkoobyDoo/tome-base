@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ local Dialog = require "engine.ui.Dialog"
 local Button = require "engine.ui.Button"
 local Numberbox = require "engine.ui.Numberbox"
 
+--- Generic popup for getting quantity
+-- @classmod engine.dialogs.GetQuantity
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, prompt, default, max, action, min)

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,30 +24,43 @@ local Button = require "engine.ui.Button"
 local Textzone = require "engine.ui.Textzone"
 local Separator = require "engine.ui.Separator"
 
+--- Allows you to create characters using a GUI
+-- @classmod engine.Birther
 module(..., package.seeall, class.inherit(Dialog))
 
+--- Where descriptors are stored
+-- @static
 _M.birth_descriptor_def = {}
+--- If a descriptor is automatic it gets stored here
+-- @static
 _M.birth_auto = {}
+--- Names for the steps
+-- @static
 _M.step_names = {}
 
---- Defines birth descriptors
--- Static!
-function _M:loadDefinition(file)
-	local f, err = util.loadfilemods(file, setmetatable({
+--- Defines birth descriptors from specified lua file
+-- @static
+-- @string file the lua file containing the descriptor
+function _M:loadDefinition(file, env)
+	env = env or setmetatable({
 		ActorTalents = require("engine.interface.ActorTalents"),
 		newBirthDescriptor = function(t) self:newBirthDescriptor(t) end,
 		getBirthDescriptor = function(type, name) return self:getBirthDescriptor(type, name) end,
 		setAuto = function(type, v) self.birth_auto[type] = v end,
 		setStepNames = function(names) self.step_names = names end,
-		load = function(f) self:loadDefinition(f) end
-	}, {__index=_G}))
+		load = function(f) self:loadDefinition(f, env) end,
+		Birther = self,
+	}, {__index=getfenv(2)})
+	local f, err = util.loadfilemods(file, env)
 	if not f and err then error(err) os.exit() end
 	local ok, err = pcall(f)
 	if not ok and err then error(err) end
 end
 
 --- Defines one birth descriptor
--- Static!
+-- @{birth_descriptor.lua|Example Birth Descriptor}
+-- @static
+-- @param[type=table] t the birth descriptor
 function _M:newBirthDescriptor(t)
 	assert(t.name, "no birth name")
 	assert(t.type, "no birth type")
@@ -67,14 +80,23 @@ function _M:newBirthDescriptor(t)
 end
 
 --- Get one birth descriptor
--- Static!
+-- @static
+-- @string type type of descriptor
+-- @string name the name of the descriptor
 function _M:getBirthDescriptor(type, name)
 	if not self.birth_descriptor_def[type] then return nil end
 	return self.birth_descriptor_def[type][name]
 end
 
 
---- Instanciates a birther for the given actor
+--- Instantiates a birther for the given actor
+-- @string title dialog title
+-- @param[type=Actor] actor the actor we're birthing
+-- @param[type=table] order the order to display birth descriptors in, referenced by names
+-- @func[opt] at_end function to call when finished birthing
+-- @param[type=?boolean] quickbirth do we `quickBirth`??
+-- @int[opt=600] w width of dialog
+-- @int[opt=400] h height of dialog
 function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self.quickbirth = quickbirth
 	self.actor = actor
@@ -143,6 +165,7 @@ Mouse: #00FF00#Left click#FFFFFF# to accept; #00FF00#right click#FFFFFF# to go b
 	}
 end
 
+--- Automatically called after using @{engine.Game.registerDialog} for this class
 function _M:on_register()
 	self:next()
 	self:select(self.list[self.c_list.sel])
@@ -165,6 +188,8 @@ function _M:on_register()
 	end
 end
 
+--- Quickly birth the actor using predefined settings.
+-- 
 function _M:quickBirth()
 	if not self.do_quickbirth then return end
 	-- Abort quickbirth if stage not found
@@ -184,6 +209,9 @@ function _M:quickBirth()
 	self.do_quickbirth = false
 end
 
+--- Populates the dialog with all of the choices for the specified type
+-- 
+-- @string type birth descriptor type
 function _M:selectType(type)
 	local default = 1
 	self.list = {}
@@ -219,6 +247,9 @@ function _M:selectType(type)
 	self.c_list:onSelect()
 end
 
+--- Used internally to transform indices into letters for column selection
+-- 
+-- @int letter
 function _M:makeKey(letter)
 	if letter >= 26 then
 		return string.char(string.byte('A') + letter - 26)
@@ -227,6 +258,8 @@ function _M:makeKey(letter)
 	end
 end
 
+--- Called after `selectType` to actually put the generated descriptor values into the list 
+-- 
 function _M:updateList()
 	self.list.chars = {}
 	for i, item in ipairs(self.list) do
@@ -239,6 +272,8 @@ function _M:updateList()
 	self.c_list:generate()
 end
 
+--- Returns to the previous birth descriptor specified in order
+-- 
 function _M:prev()
 	if self.cur_order == 1 then
 		if #self.list == 1 and self.birth_auto[self.current_type] ~= false  then self:next() end
@@ -257,6 +292,9 @@ function _M:prev()
 	end
 end
 
+--- Stores the value of the current selected birth descriptor, 
+-- then proceeds to the next birth descriptor specified in order
+-- 
 function _M:next()
 	self.changed = true
 	if self.list then
@@ -298,31 +336,38 @@ function _M:next()
 	end
 end
 
+--- Randomly selects an option for the current birth descriptor,
+-- then goes to the next one in the order automatically
+-- 
 function _M:randomSelect()
 	self.sel = rng.range(1, #self.list)
 	game.log("Randomly selected %s.", self.list[self.sel].name)
 	self:next()
 end
 
+--- Used by the list that stores birth descriptors, selects the correct item
+-- 
+-- @param item
 function _M:select(item)
 	if item and self.uis and self.uis[2] then
 		self.uis[2].ui = item.zone
 	end
 end
 
---- Apply all birth options to the actor
+--- Tries to apply all birth options to the actor. Should only be called once, at the end of creation
+-- 
 function _M:apply()
 	self.actor.descriptor = {}
 	local stats, inc_stats = {}, {}
 	for i, d in ipairs(self.descriptors) do
-		print("[BIRTHER] Applying descriptor "..(d.name or "none"))
+		print("[BIRTHER] Applying descriptor "..(d.type or "untyped").."."..(d.name or "none"))
 		self.actor.descriptor[d.type or "none"] = (d.name or "none")
 
 		if d.copy then
 			local copy = table.clone(d.copy, true)
 			-- Append array part
 			while #copy > 0 do
-				local f = table.remove(copy)
+				local f = table.remove(copy, 1)
 				table.insert(self.actor, f)
 			end
 			-- Copy normal data
@@ -332,7 +377,7 @@ function _M:apply()
 			local copy = table.clone(d.copy_add, true)
 			-- Append array part
 			while #copy > 0 do
-				local f = table.remove(copy)
+				local f = table.remove(copy, 1)
 				table.insert(self.actor, f)
 			end
 			-- Copy normal data
@@ -365,6 +410,7 @@ function _M:apply()
 		end
 		if d.talents then
 			for tid, lev in pairs(d.talents) do
+				print("[BIRTHER} learning talent", tid, lev)
 				for i = 1, lev do
 					self.actor:learnTalent(tid, true)
 				end
@@ -385,4 +431,5 @@ function _M:apply()
 	for stat, inc in pairs(inc_stats) do
 		self.actor:incIncStat(stat, inc)
 	end
+	self.actor.__stats_resolved = true
 end

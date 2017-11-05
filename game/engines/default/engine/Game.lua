@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,13 +23,14 @@ require "engine.DebugConsole"
 local tween = require "tween"
 local Shader = require "engine.Shader"
 
---- Represent a game
+--- Represents a game  
 -- A module should subclass it and initialize anything it needs to play inside
+-- @classmod engine.Game
 module(..., package.seeall, class.make)
 
---- Constructor
--- Sets up the default keyhandler.
+--- Sets up the default keyhandler
 -- Also requests the display size and stores it in "w" and "h" properties
+-- @param[type=Key] keyhandler the default keyhandler for this game
 function _M:init(keyhandler)
 	self.key = keyhandler
 	self.level = nil
@@ -48,19 +49,35 @@ function _M:init(keyhandler)
 	self:defaultMouseCursor()
 end
 
-function _M:log() end
-function _M:logSeen() end
+--- Log a message
+-- Redefine as needed
+function _M.log(style, ...) end
+
+--- Log something associated with an entity that is seen by the player
+-- Redefine as needed
+function _M.logSeen(e, style, ...) end
+
+--- Log something associated with an entity if it is the player
+-- Redefine as needed
+function _M.logPlayer(e, style, ...) end
 
 --- Default mouse cursor
 function _M:defaultMouseCursor()
 	local UIBase = require "engine.ui.Base"
-	if fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..UIBase.ui.."-ui/mouse-down.png") then
-		self:setMouseCursor("/data/gfx/"..UIBase.ui.."-ui/mouse.png", "/data/gfx/"..UIBase.ui.."-ui/mouse-down.png", -4, -4)
+	local ui = UIBase.ui or "dark"
+
+	if fs.exists("/data/gfx/"..ui.."-ui/mouse.png") and fs.exists("/data/gfx/"..ui.."-ui/mouse-down.png") then
+		self:setMouseCursor("/data/gfx/"..ui.."-ui/mouse.png", "/data/gfx/"..ui.."-ui/mouse-down.png", -4, -4)
 	else
 		self:setMouseCursor("/data/gfx/ui/mouse.png", "/data/gfx/ui/mouse-down.png", -4, -4)
 	end
 end
 
+--- Sets the mouse cursor
+-- @string mouse image for mouse
+-- @string[opt] mouse_down image for mouse click
+-- @number offsetx
+-- @number offsety
 function _M:setMouseCursor(mouse, mouse_down, offsetx, offsety)
 	if type(mouse) == "string" then mouse = core.display.loadImage(mouse) end
 	if type(mouse_down) == "string" then mouse_down = core.display.loadImage(mouse_down) end
@@ -74,6 +91,7 @@ function _M:setMouseCursor(mouse, mouse_down, offsetx, offsety)
 	end
 end
 
+--- Called whenever the cursor needs updating
 function _M:updateMouseCursor()
 	if self.__cursor then
 		if config.settings.mouse_cursor then
@@ -84,6 +102,7 @@ function _M:updateMouseCursor()
 	end
 end
 
+--- Called when the game is loaded
 function _M:loaded()
 	self.w, self.h, self.fullscreen = core.display.size()
 	self.dialogs = {}
@@ -97,6 +116,8 @@ function _M:loaded()
 end
 
 --- Defines the default fields to be saved by the savefile code
+-- @param[type=table] t additional definitions to save
+-- @return table of definitions
 function _M:defaultSavedFields(t)
 	local def = {
 		w=true, h=true, zone=true, player=true, level=true, entities=true,
@@ -112,12 +133,13 @@ function _M:defaultSavedFields(t)
 end
 
 --- Sets the player name
+-- @string name
 function _M:setPlayerName(name)
 	self.save_name = name
 	self.player_name = name
 end
 
---- Do not touch
+--- Do not touch!!
 function _M:prerun()
 	if self.__persistent_hooks then for _, h in ipairs(self.__persistent_hooks) do
 		self:bindHook(h.hook, h.fct)
@@ -129,13 +151,14 @@ end
 function _M:run()
 end
 
---- Checks if the current character is "tainted" by cheating
+--- Checks if the current character is "tainted" by cheating  
+-- @return false by default
 function _M:isTainted()
 	return false
 end
 
 --- Sets the current level
--- @param level an engine.Level (or subclass) object
+-- @param level a `Level` (or subclass) object
 function _M:setLevel(level)
 	self.level = level
 end
@@ -186,13 +209,15 @@ function _M:display(nb_keyframes)
 end
 
 --- Register a timer
--- The callback function will be called in the given number of seconds
+-- @int seconds will be called in the given number of seconds
+-- @func cb the callback function
 function _M:registerTimer(seconds, cb)
 	self._timers_cb = self._timers_cb or {}
 	self._timers_cb[cb] = seconds * 30
 end
 
 --- Called when the game is focused/unfocused
+-- @param[type=boolean] focus are we focused?
 function _M:idling(focus)
 	self.has_os_focus = focus
 --	print("Game got focus/unfocus", focus)
@@ -209,7 +234,8 @@ function _M:handleEvents()
 end
 
 --- Receives a profile event
--- Usualy this just transfers it to the PlayerProfile class but you can overload it to handle special stuff
+-- Usually this just transfers it to the PlayerProfile class but you can overload it to handle special stuff
+-- @param evt the event
 function _M:handleProfileEvent(evt)
 	return profile:handleEvent(evt)
 end
@@ -218,24 +244,28 @@ end
 -- Reimplement it in your module, this can just return nil if you dont want/need
 -- the engine adjusting stuff to the player or if you have many players or whatever
 -- @param main if true the game should try to return the "main" player, if any
+-- @return nil by default
 function _M:getPlayer(main)
 	return nil
 end
 
 --- Returns current "campaign" name
--- Defaults to "default"
+-- @return "default" by default
 function _M:getCampaign()
 	return "default"
 end
 
 --- Says if this savefile is usable or not
 -- Reimplement it in your module, returning false when the player is dead
+-- @return true by default
 function _M:isLoadable()
 	return true
 end
 
 --- Gets/increment the savefile version
--- @param token if "new" this will create a new allowed save token and return it. Otherwise this checks the token against the allowed ones and returns true if it is allowed
+-- @param[opt] token if "new" this will create a new allowed save token and return it. Otherwise this checks the token against the allowed ones and returns true if it is allowed
+-- @return uuid
+-- @return true
 function _M:saveVersion(token)
 	if token == "new" then
 		token = util.uuid()
@@ -247,9 +277,12 @@ end
 
 --- This is the "main game loop", do something here
 function _M:tick()
-	-- Check out any possible errors
+	-- If any errors have occurred, save them and open the error dialog
 	local errs = core.game.checkError()
 	if errs then
+		if not self.errors or self.errors.turn ~= self.turn then self.errors = {turn=self.turn, first_error = errs} end
+		self.errors.last_error = errs table.insert(self.errors, (#self.errors%10) + 1, errs)
+		if config.settings.cheat then for id = #self.dialogs, 1, -1 do self:unregisterDialog(self.dialogs[id]) end end
 		self:registerDialog(require("engine.dialogs.ShowErrorStack").new(errs))
 	end
 
@@ -281,7 +314,7 @@ function _M:tick()
 end
 
 --- Run all registered tick end functions
--- Usualy jsut let the engine call it
+-- Usually just let the engine call it
 function _M:onTickEndExecute()
 	if self.on_tick_end and #self.on_tick_end > 0 then
 		local fs = self.on_tick_end
@@ -292,6 +325,8 @@ function _M:onTickEndExecute()
 end
 
 --- Register things to do on tick end
+-- @func f function to do on tick end
+-- @string name callback to reference the function
 function _M:onTickEnd(f, name)
 	self.on_tick_end = self.on_tick_end or {}
 
@@ -302,10 +337,20 @@ function _M:onTickEnd(f, name)
 	end
 
 	self.on_tick_end[#self.on_tick_end+1] = f
+	core.game.requestNextTick()
+end
+
+--- Returns a registered function to do on tick end by name
+-- @string name callback to reference the function
+function _M:onTickEndGet(name)
+	if not self.on_tick_end_names then return end
+	return self.on_tick_end_names[name]
 end
 
 --- Called when a zone leaves a level
--- Going from "old_lev" to "lev", leaving level "level"
+-- @param level the level we're leaving
+-- @param lev the new level
+-- @param old_lev the old level (probably same value as level)
 function _M:leaveLevel(level, lev, old_lev)
 end
 
@@ -319,13 +364,16 @@ function _M:onExit()
 	core.game.exit_engine()
 end
 
---- Sets up a text flyers
+--- Sets up a `FlyingText` for general use
+-- @param[type=FlyingText] fl 
 function _M:setFlyingText(fl)
 	self.flyers = fl
 end
 
 --- Registers a dialog to display
+-- @param[type=Dialog] d
 function _M:registerDialog(d)
+	if d.__refuse_dialog then return end
 	table.insert(self.dialogs, d)
 	self.dialogs[d] = #self.dialogs
 	d.__stack_id = #self.dialogs
@@ -335,9 +383,9 @@ function _M:registerDialog(d)
 	if self.onRegisterDialog then self:onRegisterDialog(d) end
 end
 
---- Registers a dialog to display somewher in the stack
--- @param d the dialog
--- @param pos the stack position (1=top, 2=second, ...)
+--- Registers a dialog to display somewhere in the stack
+-- @param[type=Dialog] d
+-- @int pos the stack position (1=top, 2=second, ...)
 function _M:registerDialogAt(d, pos)
 	if pos == 1 then return self:registerDialog(d) end
 	table.insert(self.dialogs, #self.dialogs - (pos - 2), d)
@@ -350,7 +398,9 @@ function _M:registerDialogAt(d, pos)
 	if self.onRegisterDialog then self:onRegisterDialog(d) end
 end
 
---- Replaces a dialog to display with an other
+--- Replaces a dialog to display with another
+-- @param[type=Dialog] src old dialog
+-- @param[type=Dialog] dest new dialog
 function _M:replaceDialog(src, dest)
 	local id = src.__stack_id
 
@@ -371,6 +421,7 @@ function _M:replaceDialog(src, dest)
 end
 
 --- Undisplay a dialog, removing its own keyhandler if needed
+-- @param[type=Dialog] d
 function _M:unregisterDialog(d)
 	if not self.dialogs[d] then return end
 	table.remove(self.dialogs, self.dialogs[d])
@@ -388,17 +439,20 @@ function _M:unregisterDialog(d)
 end
 
 --- Do we have a specific dialog
+-- @param[type=Dialog] d
 function _M:hasDialog(d)
 	return self.dialogs[d] and true or false
 end
 
---- Do we have a dialog running
+--- Do we have a dialog(s) running
+-- @int[opt=0] nb how many dialogs minimum
 function _M:hasDialogUp(nb)
 	nb = nb or 0
 	return #self.dialogs > nb
 end
 
 --- The C core gives us command line arguments
+-- @param[type=table] args filled in by the C core
 function _M:commandLineArgs(args)
 	for i, a in ipairs(args) do
 		print("Command line: ", a)
@@ -406,6 +460,7 @@ function _M:commandLineArgs(args)
 end
 
 --- Called by savefile code to describe the current game
+-- @return table
 function _M:getSaveDescription()
 	return {
 		name = "player",
@@ -414,6 +469,8 @@ function _M:getSaveDescription()
 end
 
 --- Save a settings file
+-- @string file
+-- @param data
 function _M:saveSettings(file, data)
 	core.game.resetLocale()
 	local restore = fs.getWritePath()
@@ -441,6 +498,9 @@ available_resolutions =
 --	["1200x1024 Fullscreen"] = {1200, 1024, true},
 --	["1600x1200 Fullscreen"] = {1600, 1200, true},
 }
+--- Get the available display modes for the monitor from the core
+-- @function list
+-- @local
 local list = core.display.getModesList()
 for _, m in ipairs(list) do
 	local ms = m.w.."x"..m.h.." Fullscreen"
@@ -450,6 +510,8 @@ for _, m in ipairs(list) do
 end
 
 --- Change screen resolution
+-- @string res should be in format like "800x600 Windowed"
+-- @param[type=boolean] force try to force the resolution if it can't find it
 function _M:setResolution(res, force)
 	local r = available_resolutions[res]
 	if force and not r then
@@ -475,14 +537,14 @@ function _M:setResolution(res, force)
 
 	-- Change the window size
 	print("setResolution: switching resolution to", res, r[1], r[2], r[3], r[4], force and "(forced)")
-	local old_w, old_h, old_f, old_b = self.w, self.h, self.fullscreen, self.borderless
-	core.display.setWindowSize(r[1], r[2], r[3], r[4])
+	local old_w, old_h, old_f, old_b, old_rw, old_rh = self.w, self.h, self.fullscreen, self.borderless
+	core.display.setWindowSize(r[1], r[2], r[3], r[4], config.settings.screen_zoom)
 	
 	-- Don't write self.w/h/fullscreen yet
-	local new_w, new_h, new_f, new_b = core.display.size()
+	local new_w, new_h, new_f, new_b, new_rw, new_rh = core.display.size()
 
 	-- Check if a resolution change actually happened
-	if new_w ~= old_w or new_h ~= old_h or new_f ~= old_f or new_b ~= old_b then
+	if new_w ~= old_w or new_h ~= old_h or new_rw ~= old_rw or new_rh ~= old_rh or new_f ~= old_f or new_b ~= old_b then
 		print("setResolution: performing onResolutionChange...\n")
 		self:onResolutionChange()
 		-- onResolutionChange saves settings...
@@ -503,11 +565,13 @@ function _M:onResolutionChange()
 	end
 	
 	-- Get new resolution and save
-	self.w, self.h, self.fullscreen, self.borderless = core.display.size()
-	config.settings.window.size = ("%dx%d%s"):format(self.w, self.h, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
+	local realw, realh
+	self.w, self.h, self.fullscreen, self.borderless, realw, realh = core.display.size()
+	realw, realh = realw or self.w, realh or self.h
+	config.settings.window.size = ("%dx%d%s"):format(realw, realh, self.fullscreen and " Fullscreen" or (self.borderless and " Borderless" or " Windowed"))	
 	
 	self:saveSettings("resolution", ("window.size = '%s'\n"):format(config.settings.window.size))
-	print("onResolutionChange: resolution changed to ", self.w, self.h, "from", ow, oh)
+	print("onResolutionChange: resolution changed to ", realw, realh, "from", ow, oh)
 
 	-- We do not even have a game yet
 	if not game then
@@ -560,11 +624,17 @@ function _M:onResolutionChange()
 end
 
 --- Checks if we must reload to change resolution
+-- @int w width
+-- @int h height
+-- @int ow original width
+-- @int oh original height
 function _M:checkResolutionChange(w, h, ow, oh)
 	return false
 end
 
 --- Called when the game window is moved around
+-- @int x x coordinate
+-- @int y y coordinate
 function _M:onWindowMoved(x, y)
 	config.settings.window.pos = config.settings.window.pos or {}
 	config.settings.window.pos.x = x
@@ -576,12 +646,12 @@ function _M:onWindowMoved(x, y)
 end
 
 --- Update any registered video options dialogs with the latest changes.
+--
+-- Note: If the title of the video options dialog changes, this
+-- functionality will break.
 function _M:updateVideoDialogs()
 	-- Update the video settings dialogs if any are registered.
 	-- We don't know which dialog (if any) is VideoOptions, so iterate through.
-	--
-	-- Note: If the title of the video options dialog changes, this
-	-- functionality will break.
 	for i, v in ipairs(self.dialogs) do
 		if v.title == "Video Options" then
 			v.c_list:drawTree()
@@ -591,13 +661,18 @@ end
 
 --- Sets the gamma of the window
 -- By default it uses SDL gamma settings, but it can also use a fullscreen shader if available
+-- @param gamma
 function _M:setGamma(gamma)
-	if self.support_shader_gamma and self.full_fbo_shader then
-		-- Tell the shader which gamma to use
-		self.full_fbo_shader:setUniform("gamma", gamma)
-		-- Remove SDL gamma correction
-		core.display.setGamma(1)
-		print("[GAMMA] Setting gamma correction using fullscreen shader", gamma)
+	if self.support_shader_gamma and core.shader.active() then
+		if self.full_fbo_shader then
+			-- Tell the shader which gamma to use
+			self.full_fbo_shader:setUniform("gamma", gamma)
+			-- Remove SDL gamma correction
+			core.display.setGamma(1)
+			print("[GAMMA] Setting gamma correction using fullscreen shader", gamma)
+		else
+			print("[GAMMA] Not setting gamma correction yet, no fullscreen shader found", gamma)
+		end
 	else
 		core.display.setGamma(gamma)
 		print("[GAMMA] Setting gamma correction using SDL", gamma)
@@ -614,18 +689,22 @@ end
 
 --- Add a coroutine to the pool
 -- Coroutines registered will be run each game tick
+-- @param id the id
+-- @thread co the coroutine
 function _M:registerCoroutine(id, co)
 	print("[COROUTINE] registering", id, co)
 	self.__coroutines[id] = co
 end
 
 --- Get the coroutine corresponding to the id
+-- @param id the id
 function _M:getCoroutine(id)
 	return self.__coroutines[id]
 end
 
 --- Ask a registered coroutine to cancel
 -- The coroutine must accept a "cancel" action
+-- @param id the id
 function _M:cancelCoroutine(id)
 	local co = self.__coroutines[id]
 	if not co then return end
@@ -642,7 +721,8 @@ function _M:cancelCoroutine(id)
 end
 
 --- Take a screenshot of the game
--- @param for_savefile The screenshot will be used for savefile display
+-- @param[type=boolean] for_savefile The screenshot will be used for savefile display
+-- @return screenshot
 function _M:takeScreenshot(for_savefile)
 	if for_savefile then
 		self.suppressDialogs = true
@@ -656,8 +736,7 @@ function _M:takeScreenshot(for_savefile)
 	end
 end
 
---- Take a screenshot of the game
--- @param for_savefile The screenshot will be used for savefile display
+--- Take a screenshot of the game and saves it to the screenshots folder
 function _M:saveScreenshot()
 	local s = self:takeScreenshot()
 	if not s then return end
@@ -681,6 +760,8 @@ end
 
 --- Register a hook that will be saved in the savefile
 -- Obviously only run it once per hook per save
+-- @string hook the hook to run on
+-- @func fct the function to run
 function _M:registerPersistentHook(hook, fct)
 	self.__persistent_hooks = self.__persistent_hooks or {}
 	table.insert(self.__persistent_hooks, {hook=hook, fct=fct})
@@ -688,6 +769,15 @@ function _M:registerPersistentHook(hook, fct)
 end
 
 -- get a text-compatible texture for a game entity (overload in module)
+-- @param[type=Entity] en
+-- @return ""
 function _M:getGenericTextTiles(en)
 	return "" 
+end
+
+--- Checks the presence of a specific addon
+function _M:isAddonActive(name)
+	if not self.__mod_info then return end
+	if not self.__mod_info.addons then return end
+	return game.__mod_info.addons[name]
 end

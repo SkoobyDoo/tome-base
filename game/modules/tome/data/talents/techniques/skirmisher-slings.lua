@@ -13,15 +13,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local sling_equipped = function(self, silent)
-	if not self:hasArcheryWeapon("sling") then
-		if not silent then
-			game.logPlayer(self, "You must wield a sling!")
-		end
-		return false
-	end
-	return true
-end
+local archerPreUse = Talents.archerPreUse
 
 -- Currently just a copy of Sling Mastery.
 newTalent {
@@ -32,8 +24,8 @@ newTalent {
 	points = 5,
 	require = { stat = { dex=function(level) return 12 + level * 6 end }, },
 	mode = "passive",
-	getDamage = function(self, t) return self:getTalentLevel(t) * 10 end,
-	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 2 end,
+	getDamage = function(self, t) return 0 end,
+	getPercentInc = function(self, t) return math.sqrt(self:getTalentLevel(t) / 5) / 1.5 end,
 	ammo_mastery_reload = function(self, t)
 		return math.floor(self:combatTalentScale(t, 0, 2.7, "log"))
 	end,
@@ -57,12 +49,12 @@ newTalent {
 	points = 5,
 	no_energy = "fake",
 	random_ego = "attack",
-	tactical = {ATTACK = {weapon = 2}},
+	tactical = {ATTACK = {archery = 2}},
 	range = archery_range,
 	cooldown = 5,
 	stamina = 15,
 	requires_target = true,
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	getDamage = function(self, t)
 		return self:combatTalentWeaponDamage(t, 0.4, 1.6)
 	end,
@@ -73,17 +65,14 @@ newTalent {
 		end
 	end,
 	speed = function(self, t) return self:getSpeed('archery') * 0.5 end,
+	getAttackSpeed = function(self,t) return self:combatTalentLimit(t, 40, 10, 25) end,
 	display_speed = function(self, t)
 		return ("Double Archery (#LIGHT_GREEN#%d%%#LAST# of a turn)"):
 			format(self:getSpeed('archery') * 50)
 	end,
 	action = function(self, t)
-		local old_speed = self.combat_physspeed
-		self.combat_physspeed = old_speed * 2
-
-		local targets = self:archeryAcquireTargets(nil, {one_shot=true})
+		local targets = self:archeryAcquireTargets(nil, {one_shot=true, add_speed=self.combat_physspeed})
 		if not targets then
-			self.combat_physspeed = old_speed
 			return
 		end
 
@@ -94,13 +83,14 @@ newTalent {
 		if hurricane_cd then
 			self.talents_cd["T_SKIRMISHER_HURRICANE_SHOT"] = math.max(0, hurricane_cd - 1)
 		end
-
-		self.combat_physspeed = old_speed
+		
+		self:setEffect(self.EFF_SWIFT_SHOT, 5, {src=self, speed=t.getAttackSpeed(self,t)/100})
 		return true
 	end,
 	info = function(self, t)
-		return ([[Fire off a quick sling bullet for %d%% damage, at double your normal attack speed. Moving lowers the cooldown by 1.]])
-			:format(t.getDamage(self, t) * 100)
+		return ([[Fire off a quick sling bullet for %d%% damage at double your normal attack speed, as well as increasing your attack speed by %d%% for 5 turns.
+		Each time you move, the cooldown of this talent is reduced by 1.]])
+			:format(t.getDamage(self, t) * 100, t.getAttackSpeed(self,t))
 	end,
 }
 
@@ -113,7 +103,7 @@ newTalent {
 	no_energy = "fake",
 	speed = "archery",
 	random_ego = "attack",
-	tactical = {ATTACKALL = {weapon = 3}},
+	tactical = {ATTACKAREA = {weapon = 3}},
 	range = 0,
 	radius = archery_range,
 	cooldown = 7,
@@ -129,13 +119,13 @@ newTalent {
 			--cone_angle = 50, -- degrees
 		}
 	end,
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	damage_multiplier = function(self, t)
-		return self:combatTalentWeaponDamage(t, 0.2, 0.8)
+		return self:combatTalentWeaponDamage(t, 0.4, 1.2)
 	end,
 	-- Maximum number of shots fired.
 	limit_shots = function(self, t)
-		return math.floor(self:combatTalentScale(t, 6, 11, "log"))
+		return math.floor(self:combatTalentScale(t, 9, 16, "log"))
 	end,
 	action = function(self, t)
 		-- Get list of possible targets, possibly doubled.
@@ -181,9 +171,7 @@ newTalent {
 		return fired
 	end,
 	info = function(self, t)
-		return ([[Take aim and unload up to %d shots for %d%% weapon damage each against random enemies inside a cone. Each enemy can only be hit once (twice for talent level 3 and higher). Using Swift Shot lowers the cooldown by 1.]])
-			:format(t.limit_shots(self, t),
-							t.damage_multiplier(self, t) * 100)
+		return ([[Take aim and unload up to %d shots for %d%% weapon damage each against random enemies inside a cone. Each enemy can only be hit once (twice for talent level 3 and higher). Using Swift Shot lowers the cooldown by 1.]]):format(t.limit_shots(self, t),	t.damage_multiplier(self, t) * 100)
 	end,
 }
 
@@ -197,8 +185,8 @@ newTalent {
 	points = 5,
 	mode = "sustained",
 	no_energy = true,
-	tactical = { BUFF = 2 },
-	on_pre_use = function(self, t, silent) return sling_equipped(self, silent) end,
+	tactical = { BUFF = 2, STAMINA = -2 },
+	on_pre_use = function(self, t, silent) return archerPreUse(self, t, silent, "sling") end,
 	cooldown = function(self, t)
 		return 10
 	end,
@@ -214,7 +202,7 @@ newTalent {
 	activate = function(self, t) return {} end,
 	deactivate = function(self, t, p) return true end,
 	info = function(self, t)
-		return ([[While activated, your basic Shot talent now fires %d sling bullets, each dealing %d%% Ranged damage, at a cost of %d Stamina per attack.]])
+		return ([[While activated, your basic Shot talent now fires %d times, with each attack dealing %d%% Ranged damage, at a cost of %d Stamina per attack.]])
 		:format(t.bullet_count(self, t), t.damage_multiplier(self, t) * 100, t.shot_stamina(self, t))
 	end,
 }

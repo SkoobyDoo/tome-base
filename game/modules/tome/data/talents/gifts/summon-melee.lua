@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,13 +27,19 @@ newTalent{
 	equilibrium = 3,
 	cooldown = 15,
 	range = 5,
+	radius = 5, -- used by the the AI as additional range to the target
 	requires_target = true,
 	is_summon = true,
+	target = SummonTarget,
+	onAIGetTarget = onAIGetTargetSummon,
+	aiSummonGrid = aiSummonGridMelee,
 	tactical = { ATTACK = { PHYSICAL = 2 } },
+--	detonate_tactical = {attack = -1, attackarea = {PHYSICAL = 2}} -- WIP for use with detonate
 	on_pre_use = function(self, t, silent)
 		if not self:canBe("summon") and not silent then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
 		return not checkMaxSummon(self, silent)
 	end,
+	on_pre_use_ai = aiSummonPreUse,
 	on_detonate = function(self, t, m)
 		local tg = {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t, x=m.x, y=m.y}
 		self:project(tg, m.x, m.y, DamageType.PHYSICAL, self:mindCrit(self:combatTalentMindDamage(t, 30, 250)), {type="flame"})
@@ -55,19 +61,18 @@ newTalent{
 	end,
 	action = function(self, t)
 		local tg = {type="bolt", nowarning=true, range=self:getTalentRange(t), nolock=true, talent=t}
+		--print("war hound targeting:") table.print(tg) -- debugging
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, _, _, tx, ty = self:canProject(tg, tx, ty)
-		target = game.level.map(tx, ty, Map.ACTOR)
+		target = self.ai_target.actor
 		if target == self then target = nil end
-
 		-- Find space
 		local x, y = util.findFreeGrid(tx, ty, 5, true, {[Map.ACTOR]=true})
 		if not x then
 			game.logPlayer(self, "Not enough space to summon!")
 			return
 		end
-
 		local NPC = require "mod.class.NPC"
 		local m = NPC.new{
 			type = "animal", subtype = "canine",
@@ -107,7 +112,7 @@ newTalent{
 		return ([[Summon a War Hound for %d turns to attack your foes. War hounds are good basic melee attackers.
 		It will get %d Strength, %d Dexterity and %d Constitution.
 		Your summons inherit some of your stats: increased damage%%, stun/pin/confusion/blindness resistance, armour penetration.
-		Their Strength and Dexterity will increase with your Mindpower.]])
+		The hound's Strength and Dexterity will increase with your Mindpower.]])
 		:format(t.summonTime(self, t), incStats.str, incStats.dex, incStats.con)
 	end,
 }
@@ -122,13 +127,18 @@ newTalent{
 	equilibrium = 2,
 	cooldown = 10,
 	range = 5,
+	radius = 1, -- used by the the AI as additional range to the target
 	requires_target = true,
 	is_summon = true,
+	target = SummonTarget,
+	onAIGetTarget = onAIGetTargetSummon,
+	aiSummonGrid = aiSummonGridMelee,
 	tactical = { ATTACK = { NATURE = 1 }, EQUILIBRIUM = 1, },
 	on_pre_use = function(self, t, silent)
 		if not self:canBe("summon") and not silent then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
 		return not checkMaxSummon(self, silent)
 	end,
+	on_pre_use_ai = aiSummonPreUse,
 	on_detonate = function(self, t, m)
 		local tg = {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t, x=m.x, y=m.y}
 		self:project(tg, m.x, m.y, DamageType.SLIME, self:mindCrit(self:combatTalentMindDamage(t, 30, 200)), {type="flame"})
@@ -151,7 +161,7 @@ newTalent{
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, _, _, tx, ty = self:canProject(tg, tx, ty)
-		target = game.level.map(tx, ty, Map.ACTOR)
+		target = self.ai_target.actor
 		if target == self then target = nil end
 
 		-- Find space
@@ -193,7 +203,7 @@ newTalent{
 				local p = value * 0.10
 				if self.summoner and not self.summoner.dead then
 					self.summoner:incEquilibrium(-p)
-					self:logCombat(self.summoner, "#GREEN##Source# absorbs part of the blow. #Target# is closer to nature.")
+					game:delayedLogMessage(self.summoner, self, "jelly", "#GREEN##Target# absorbs some damage. #Source# is closer to nature.")
 				end
 				return value - p
 			end,
@@ -211,7 +221,7 @@ newTalent{
 		return ([[Summon a Jelly for %d turns to attack your foes. Jellies do not move, but your equilibrium will be reduced by 10%% of all damage received by the jelly.
 		It will get %d Constitution and %d Strength.
 		Your summons inherit some of your stats: increased damage%%, stun/pin/confusion/blindness resistance, armour penetration.
-		Their Constitution stat will increase with your Mindpower.]])
+		The jelly's Constitution will increase with your Mindpower.]])
 		:format(t.summonTime(self, t), incStats.con, incStats.str)
        end,
 }
@@ -226,13 +236,18 @@ newTalent{
 	equilibrium = 10,
 	cooldown = 15,
 	range = 5,
+	radius = 5, -- used by the the AI as additional range to the target
 	is_summon = true,
+	target = SummonTarget,
+	onAIGetTarget = onAIGetTargetSummon,
+	aiSummonGrid = aiSummonGridMelee,
 	requires_target = true,
 	tactical = { ATTACK = { PHYSICAL = 2 }, DISABLE = { confusion = 1, stun = 1 } },
 	on_pre_use = function(self, t, silent)
 		if not self:canBe("summon") and not silent then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
 		return not checkMaxSummon(self, silent)
 	end,
+	on_pre_use_ai = aiSummonPreUse,
 	on_detonate = function(self, t, m)
 		local tg = {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t, x=m.x, y=m.y}
 		self:project(tg, m.x, m.y, DamageType.BLEED, self:mindCrit(self:combatTalentMindDamage(t, 30, 350)), {type="flame"})
@@ -257,7 +272,7 @@ newTalent{
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, _, _, tx, ty = self:canProject(tg, tx, ty)
-		target = game.level.map(tx, ty, Map.ACTOR)
+		target = self.ai_target.actor
 		if target == self then target = nil end
 
 		-- Find space
@@ -312,7 +327,7 @@ newTalent{
 		return ([[Summon a Minotaur for %d turns to attack your foes. Minotaurs cannot stay summoned for long, but they deal a lot of damage.
 		It will get %d Strength, %d Constitution and %d Dexterity.
 		Your summons inherit some of your stats: increased damage%%, stun/pin/confusion/blindness resistance, armour penetration.
-		Their Strength and Dexterity will increase with your Mindpower.]])
+		The minotaur's Strength and Dexterity will increase with your Mindpower.]])
 		:format(t.summonTime(self,t), incStats.str, incStats.con, incStats.dex)
 	end,
 }
@@ -323,16 +338,21 @@ newTalent{
 	require = gifts_req4,
 	points = 5,
 	random_ego = "attack",
-	message = "@Source@ summons an Stone Golem!",
+	message = "@Source@ summons a Stone Golem!",
 	equilibrium = 15,
 	cooldown = 20,
 	range = 5,
+	radius = 5, -- used by the the AI as additional range to the target
 	is_summon = true,
-	tactical = { ATTACK = { PHYSICAL = 3 }, DISABLE = { knockback = 1 } },
+	target = SummonTarget,
+	onAIGetTarget = onAIGetTargetSummon,
+	aiSummonGrid = aiSummonGridMelee,
+	tactical = { ATTACK = { PHYSICAL = 2 }, DISABLE = { knockback = 1, stun = 1 } },
 	on_pre_use = function(self, t, silent)
 		if not self:canBe("summon") and not silent then game.logPlayer(self, "You cannot summon; you are suppressed!") return end
 		return not checkMaxSummon(self, silent)
 	end,
+	on_pre_use_ai = aiSummonPreUse,
 	on_detonate = function(self, t, m)
 		local tg = {type="ball", range=self:getTalentRange(t), friendlyfire=false, radius=self:getTalentRadius(t), talent=t, x=m.x, y=m.y}
 		self:project(tg, m.x, m.y, DamageType.PHYSKNOCKBACK, {dam=self:mindCrit(self:combatTalentMindDamage(t, 30, 150)), dist=4}, {type="flame"})
@@ -357,7 +377,7 @@ newTalent{
 		local tx, ty, target = self:getTarget(tg)
 		if not tx or not ty then return nil end
 		local _ _, _, _, tx, ty = self:canProject(tg, tx, ty)
-		target = game.level.map(tx, ty, Map.ACTOR)
+		target = self.ai_target.actor
 		if target == self then target = nil end
 
 		-- Find space
@@ -414,7 +434,7 @@ newTalent{
 		return ([[Summon a Stone Golem for %d turns to attack your foes. Stone golems are formidable foes that can become unstoppable.
 		It will get %d Strength, %d Constitution and %d Dexterity.
 		Your summons inherit some of your stats: increased damage%%, stun/pin/confusion/blindness resistance, armour penetration.
-		Their Strength and Dexterity will increase with your Mindpower.]])
+		The golem's Strength and Dexterity will increase with your Mindpower.]])
 		:format(t.summonTime(self, t), incStats.str, incStats.con, incStats.dex)
 	end,
 }

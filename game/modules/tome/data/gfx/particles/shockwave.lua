@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,7 +21,11 @@
 -- Advanced shaders
 --------------------------------------------------------------------------------------
 if core.shader.allow("distort") and allow then
-use_shader = {type="distort"} alterscreen = true
+if distort_color then
+	use_shader = {type="distortcolor", distort_color=distort_color} alterscreen = true
+else
+	use_shader = {type="distort"} alterscreen = true
+end
 base_size = 64
 local nb = 0
 

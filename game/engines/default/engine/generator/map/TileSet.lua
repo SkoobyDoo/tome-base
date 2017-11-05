@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 require "engine.class"
 local Map = require "engine.Map"
 require "engine.Generator"
+
+--- @classmod engine.generator.map.TileSet
 module(..., package.seeall, class.inherit(engine.Generator))
 
 -- Deactivate too many prints
@@ -168,7 +170,7 @@ function _M:roomAlloc(bx, by, bw, bh, rid)
 	if bx + bw - 1 > self.cols or by + bh - 1 > self.rows then return false end
 	if bx < 0 or by < 0 then return false end
 
-	-- Do we stomp ?
+	-- Don't overlap other rooms
 	for i = bx, bx + bw - 1 do
 		for j = by, by + bh - 1 do
 			if self.room_map[i][j] then return false end

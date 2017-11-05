@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--- Utility functionality used by a lot of the base classes
+-- @script engine.utils
+
 local lpeg = require "lpeg"
 
 function math.decimals(v, nb)
@@ -26,12 +29,24 @@ end
 
 -- Rounds to nearest multiple
 -- (round away from zero): math.round(4.65, 0.1)=4.7, math.round(-4.475, 0.01) = -4.48
--- num = rouding multiplier to compensate for numerical rounding (default 1000000 for 6 digits accuracy)
+-- num = rounding multiplier to compensate for numerical rounding (default 1000000 for 6 digits accuracy)
 function math.round(v, mult, num)
 	mult = mult or 1
 	num = num or 1000000
 	v, mult = v*num, mult*num
 	return v >= 0 and math.floor((v + mult/2)/mult) * mult/num or math.ceil((v - mult/2)/mult) * mult/num
+end
+
+-- convert a number to a string with a limited number of significant figures (after the decimal)
+-- @param[type=number] num -- number to format
+-- @param[type=number] sig_figs -- significant figures to display, default 3 (truncates only the fractional portion)
+-- @param[type=string] pre_format -- first component of the format field (use "+" to force display of the sign)
+-- @return[1][type=string] a string representation of the number with a limited fractional component
+-- @return[2][type=string] the format used to display the number
+function string.limit_decimals(num, sig_figs, pre_format)
+	sig_figs = (sig_figs or 3) - 1
+	local fmt = ("%%%s.%df"):format(pre_format or "", util.bound(sig_figs-math.floor(math.log10(math.abs(num))), 0, sig_figs))
+	return (fmt):format(num), fmt
 end
 
 function math.scale(i, imin, imax, dmin, dmax)
@@ -48,6 +63,30 @@ end
 function table.concatNice(t, sep, endsep)
 	if not endsep or #t == 1 then return table.concat(t, sep) end
 	return table.concat(t, sep, 1, #t - 1)..endsep..t[#t]
+end
+
+---Convert a table (non-recursively) to a table of strings for each key/value pair
+-- @param src <table> = source table
+-- @param fmt <string, optional, default "[%s]=%s"> = format to use for each key-value pair
+-- @return <table> table containing a string for each key in the source table
+table.to_strings = function(src, fmt)
+	if type(src) ~= "table" then return {tostring(src)} end
+	local tt = {}
+	fmt = fmt or "[%s]=%s"
+	for label, val in pairs(src) do
+		tt[#tt+1] = (fmt):format(label, tostring(val))
+	end
+	return tt
+end
+
+function ripairs(t)
+	local i = #t
+	return function()
+		if i == 0 then return nil end
+		local oi = i
+		i = i - 1
+		return oi, t[oi]
+	end
 end
 
 function table.count(t)
@@ -133,7 +172,7 @@ end
 
 --- Returns a clone of a table
 -- @param tbl The original table to be cloned
--- @param deep Boolean to determine if recursive cloning occurs
+-- @param deep Boolean allow recursive cloning (unless .__ATOMIC or .__CLASSNAME is defined)
 -- @param k_skip A table containing key values set to true if you want to skip them.
 -- @return The cloned table.
 function table.clone(tbl, deep, k_skip)
@@ -156,27 +195,27 @@ end
 table.NIL_MERGE = {}
 
 --- Merges two tables in-place.
--- The table.NIL_MERGE is a special value that will nil out the corresponding dst key.
 -- @param dst The destination table, which will have all merged values.
 -- @param src The source table, supplying values to be merged.
 -- @param deep Boolean that determines if tables will be recursively merged.
 -- @param k_skip A table containing key values set to true if you want to skip them.
 -- @param k_skip_deep Like k_skip, except this table is passed on to the deep recursions.
 -- @param addnumbers Boolean that determines if two numbers will be added rather than replaced.
+-- assign the special value table.NIL_MERGE in src to set the corresponding dst field to nil.
+-- subtables containing .__ATOMIC or .__CLASSNAME will be copied by reference.
 function table.merge(dst, src, deep, k_skip, k_skip_deep, addnumbers)
 	k_skip = k_skip or {}
 	k_skip_deep = k_skip_deep or {}
 	for k, e in pairs(src) do
 		if not k_skip[k] and not k_skip_deep[k] then
 			-- Recursively merge tables
-			if deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
+			if e == table.NIL_MERGE then -- remove corresponding field
+				dst[k] = nil
+			elseif deep and dst[k] and type(e) == "table" and type(dst[k]) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				table.merge(dst[k], e, deep, nil, k_skip_deep, addnumbers)
 			-- Clone tables if into the destination
 			elseif deep and not dst[k] and type(e) == "table" and not e.__ATOMIC and not e.__CLASSNAME then
 				dst[k] = table.clone(e, deep, nil, k_skip_deep)
-			-- Nil out any NIL_MERGE entries
-			elseif e == table.NIL_MERGE then
-				dst[k] = nil
 			-- Add number entries if "add" is set
 			elseif addnumbers and not dst.__no_merge_add and dst[k] and type(dst[k]) == "number" and type(e) == "number" then
 				dst[k] = dst[k] + e
@@ -259,6 +298,45 @@ function table.values(t)
 	return tt
 end
 
+--- Check if 2 tables are equivalent
+-- tables are equivalent if they are identical or contain the same values assigned to the same keys
+-- search stops after the first difference is found
+-- @param t1, t2 tables to compare
+-- @param recurse [type=boolean or table] set to recursively check non-identical sub-tables for equivalence
+--		if recurse is a table, the keys pointing to the difference will be stored in it in order
+--		differing values: table.get(t1, unpack(recurse)), table.get(t2, unpack(recurse))
+-- @return[1] [type=boolean] true if the tables are equivalent
+-- @return[2] nil (if tables are equivalent)
+-- @return[2], first key found holding different value (if recurse == true)
+-- @return[2], recurse (if recurse is a table)
+function table.equivalence(t1, t2, recurse)
+	local save_keys = type(recurse) == "table"
+	if t1 ~= t2 then
+		if not (t1 and t2) then return false end
+		for k1, v1 in pairs(t1) do
+			if t2[k1] ~= v1 and not (recurse and type(v1) == "table" and type(t2[k1]) == "table" and table.equivalence(t2[k1], v1, recurse)) then
+				if save_keys then table.insert(recurse, 1, k1) return false, recurse else return false, k1 end
+			end
+		end
+		for k2, v2 in pairs(t2) do
+			if t1[k2] ~= v2 and not (recurse and type(v2) == "table" and type(t1[k2]) == "table" and table.equivalence(t1[k2], v2, recurse)) then
+				if save_keys then table.insert(recurse, 1, k2) return false, recurse else return false, k2 end
+			end
+		end
+	end
+	return true
+end
+
+--- Check (non-recursively) if 2 indexed tables contain all of the same values
+-- @param t1, t2 tables to compare
+-- @return true if all values in t1 are also in t2 and visa versa
+function table.extract_field(t, field, iterator)
+	iterator = iterator or pairs
+	local tt = {}
+	for k, e in iterator(t) do tt[k] = e[field] end
+	return tt
+end
+
 function table.same_values(t1, t2)
 	for _, e1 in ipairs(t1) do
 		local ok = false
@@ -281,6 +359,11 @@ function table.from_list(t, k, v)
 	local tt = {}
 	for i, e in ipairs(t) do tt[e[k or 1]] = e[v or 2] end
 	return tt
+end
+
+function table.hasInList(t, v)
+	for i = #t, 1, -1 do if t[i] == v then return true end end
+	return false
 end
 
 function table.removeFromList(t, ...)
@@ -361,6 +444,29 @@ function table.mapv(f, source)
 		result[k] = f(v)
 	end
 	return result
+end
+
+-- Make a new list with each k, v = k, f(v) in the original.
+function table.maplist(f, source)
+	local result = {}
+	for i, v in ipairs(source) do
+		local v2 = f(i, v)
+		if v2 then result[#result+1] = v2 end
+	end
+	return result
+end
+
+-- Make a new list with each k, v = k, f(v) in the original.
+function table.splitlist(f, source)
+	local results = {}
+	for i, v in ipairs(source) do
+		local id, v2 = f(i, v)
+		if id and v2 then
+			results[id] = results[id] or {}
+			table.insert(results[id], v2)
+		end
+	end
+	return results
 end
 
 -- Find the keys that are only in left, only in right, and are common
@@ -617,7 +723,6 @@ function table.ruleMergeAppendAdd(dst, src, rules, state)
 	table.applyRules(dst, src, rules, state)
 end
 
-
 function string.ordinal(number)
 	local suffix = "th"
 	number = tonumber(number)
@@ -651,7 +756,7 @@ end
 
 function string.his_her(actor)
 	if actor.female then return "her"
-	elseif actor.neuter then return "it"
+	elseif actor.neuter then return "its"
 	else return "his"
 	end
 end
@@ -704,6 +809,16 @@ function string.lpegSub(s, patt, repl)
 	patt = lpeg.P(patt)
 	patt = lpeg.Cs((patt / repl + 1)^0)
 	return lpeg.match(patt, s)
+end
+
+function string.prefix(s, p)
+	if s:sub(1, #p) == p then return true end
+	return false
+end
+
+function string.suffix(s, p)
+	if s:sub(#s - #p + 1) == p then return true end
+	return false
 end
 
 -- Those matching patterns are used both by splitLine and drawColorString*
@@ -766,6 +881,95 @@ function string.splitLines(str, max_width, font)
 		end
 	end
 	return lines
+end
+
+--- create a textual abbreviation for a function
+--	@param fct the function
+--	@param fmt output format for filepath, line number, first line of code
+--		(default: "\"<function( defined: %s, line %s): %s>\"" )
+--	@return string using the format provided
+function string.fromFunction(fct, fmt)
+	local info = debug.getinfo(fct, "S")
+	local fpath = string.gsub(info.source,"@","")
+	local firstline = ""
+	fmt = fmt or "\"<function( defined: %s, line %s): %s>\""
+	if not fs.exists(fpath) then
+		fpath = "no file path"
+		firstline = info.short_src
+	else
+		local f = fs.open(fpath, "r")
+		local line_num = 0
+		while true do -- could continue with body here
+			firstline = f:readLine()
+			if firstline then
+				line_num = line_num + 1
+				if line_num == info.linedefined then break end
+			end
+		end
+	end
+	return (fmt):format(fpath, info.linedefined, tostring(firstline))
+end
+
+--- Create a textual representation of a value
+-- similar to tostring, but includes special handling of tables and functions
+--	surrounds non-numbers/booleans/nils/functions with ""
+-- @param v: the value
+-- @param recurse: the recursion level for string.fromTable, set < 0 for basic tostring
+-- @param offset, prefix, suffix: inputs to string.fromTable for converting tables
+function string.fromValue(v, recurse, offset, prefix, suffix)
+	recurse, offset, prefix, suffix = recurse or 0, offset or ", ", prefix or "{", suffix or "}"
+	local vt, vs = type(v)
+	if vt == "table" then
+		if recurse < 0 then vs = tostring(v)
+		elseif v.__ATOMIC or v.__CLASSNAME then -- create entity/atomic label
+			local abv = {}
+			if v.__CLASSNAME then abv[#abv+1] = "__CLASSNAME="..tostring(v.__CLASSNAME) end
+			if v.__ATOMIC then abv[#abv+1] = "ATOMIC" end
+			vs = ("%s\"%s%s%s\"%s"):format(prefix, v, v.__CLASSNAME and ", __CLASSNAME="..tostring(v.__CLASSNAME) or "", v.__ATOMIC and ", ATOMIC" or "", suffix)
+		elseif recurse > 0 then -- get recursive string
+			vs = string.fromTable(v, recurse - 1, offset, prefix, suffix)
+		else vs = prefix.."\""..tostring(v).."\""..suffix
+		end
+	elseif vt == "function" then
+		vs = recurse >= 0 and string.fromFunction(v) or tostring(v)
+	elseif not (vt == "number" or vt == "boolean" or vt == "nil") then
+		vs = "\""..tostring(v).."\""
+	end
+	return vs or tostring(v)
+end
+
+--- Create a textual representation of a table
+--	This is like reverse-interpreting back to lua code, compatible for strings, numbers, and tables
+--	@param src: source table
+--	@param recurse: recursion level for subtables (default 0)
+--	@param offset: string to insert between table fields (default: ", ")
+--	@param prefix: prefix for the table and subtables (default: "{")
+--	@param suffix: suffix for the table and subtables (default: "}")
+--	@param sort: optional sort function(a, b) to sort results (by key, set == true for ascending order)
+--  @param key_recurse the recursion level for keys that are tables (default 0)
+--	@return[1] single line text representation of src
+--		non-string table.keys are surrounded by "[", "]"
+--	@return[2] indexed table containing strings for each key/value pair in src (@recursion level 0)
+--		recursed subtables are converted and embedded
+--		subtables containing .__ATOMIC or .__CLASSNAME are never converted, but are noted
+--		functions are converted to embedded strings using string.fromFunction
+function string.fromTable(src, recurse, offset, prefix, suffix, sort, key_recurse)
+	if type(src) ~= "table" then print("string.fromTable has no table:", src) return tostring(src) end
+	local tt = {}
+	recurse, offset, prefix, suffix = recurse or 0, offset or ", ", prefix or "{", suffix or "}"
+	for k, v in pairs(src) do
+		local kt, vt = type(k), type(v)
+		local ks, vs
+		if kt ~= "string" then
+			ks = "["..string.fromValue(k, key_recurse, offset, prefix, suffix).."]"
+		end
+		vs = string.fromValue(v, recurse, offset, prefix, suffix)
+		tt[#tt+1] = ("%s=%s"):format(ks or tostring(k), vs or tostring(v))
+	end
+	if sort == true then sort = function(a, b) return a < b end end
+	if sort then table.sort(tt, sort) end
+	-- could sort here if desired
+	return prefix..table.concat(tt, offset)..suffix, tt
 end
 
 -- Split a string by the given character(s)
@@ -2075,7 +2279,7 @@ function core.fov.set_permissiveness(val)
 end
 
 --- Sets the FoV vision size of the source actor (if applicable to the chosen FoV algorithm).
--- @param should be any number between 0.0 and 1.0 (smallest to largest).  Default is 1.
+-- @param val should be any number between 0.0 and 1.0 (smallest to largest).  Default is 1.
 -- val = 1.0 will result in symmetric vision and targeting (i.e., I can see you if and only if you can see me)
 --           for applicable fov algorithms ("large_ass").
 function core.fov.set_actor_vision_size(val)
@@ -2105,7 +2309,7 @@ function core.fov.set_algorithm(val)
 end
 
 --- Sets the vision shape or distance metric for field of vision, talent ranges, AoEs, etc.
--- @param should be a string: circle, circle_round (same as circle), circle_floor, circle_ceil, circle_plus1, octagon, diamond, square.
+-- @param val should be a string: circle, circle_round (same as circle), circle_floor, circle_ceil, circle_plus1, octagon, diamond, square.
 -- See "src/fov/fov.h" to see how each shape calculates distance and height.
 -- "circle_round" is aesthetically pleasing, "octagon" is a traditional roguelike FoV shape, and "circle_plus1" is similar to both "circle_round" and "octagon"
 -- Default is "circle_round"
@@ -2223,6 +2427,37 @@ function rng.poissonProcess(k, turn_scale, rate)
 	return math.exp(-rate*turn_scale) * ((rate*turn_scale) ^ k)/ util.factorial(k)
 end
 
+--- Randomly select a table from a list of tables based on rarity
+-- @param t <table> indexed table containing the tables to choose from
+-- @param rarity_field <string, default "rarity">, field in each table containing its rarity value
+--		rarity values are numbers > 0, such that higher values reduce the chance to be selected
+-- @raturn the table selected, index
+function rng.rarityTable(t, rarity_field)
+	if #t == 0 then return end
+	local rt = {}
+	rarity_field = rarity_field or "rarity"
+	local total, val = 0
+	for i, e in ipairs(t) do
+		val = e[rarity_field]; val = val and 1/val or 0
+		total = total + val
+		rt[i] = total
+	end
+	val = rng.float(0, total)
+	for i, total in ipairs(rt) do
+		if total >= val then
+			return t[i], i
+		end
+	end
+end
+
+function util.show_function_calls()
+	debug.sethook(function(event, line)
+		local t = debug.getinfo(2)
+		local tp = debug.getinfo(3) or {}
+		print(tostring(t.short_src) .. ":" .. tostring(t.name).."@"..tostring(t.linedefined), "<from>", tostring(tp.short_src) .. ":" .. tostring(tp.name).."@"..tostring(tp.linedefined))
+	end, "c")
+end
+
 function util.show_backtrace()
 	local level = 2
 
@@ -2267,25 +2502,10 @@ function util.browserOpenUrl(url, forbid_methods)
 
 	if core.webview and not forbid_methods.webview then local d = require("engine.ui.Dialog"):webPopup(url) if d then return "webview", d end end
 	if core.steam and not forbid_methods.steam and core.steam.openOverlayUrl(url) then return "steam", true end
+	
 	if forbid_methods.native then return false end
+	if core.game.openBrowser(url) then return "native", true end
 
-	local tries = {
-		"rundll32 url.dll,FileProtocolHandler %s",	-- Windows
-		"open %s",	-- OSX
-		"xdg-open %s",	-- Linux - portable way
-		"gnome-open %s",  -- Linux - Gnome
-		"kde-open %s",	-- Linux - Kde
-		"firefox %s",  -- Linux - try to find something
-		"mozilla-firefox %s",  -- Linux - try to find something
-		"google-chrome-stable %s",  -- Linux - try to find something
-		"google-chrome %s",  -- Linux - try to find something
-	}
-	while #tries > 0 do
-		local urlbase = table.remove(tries, 1)
-		urlbase = urlbase:format(url)
-		print("Trying to run URL with command: ", urlbase)
-		if os.execute(urlbase) == 0 then return "native", true end
-	end
 	return false
 end
 
@@ -2307,16 +2527,16 @@ function util.removeForceSafeBoot()
 	if restore then fs.setWritePath(restore) end
 end
 
--- Alias os.exit to our own exit method for cleanliness
+--- Alias os.exit to our own exit method for cleanliness
 os.crash = os.exit
 os.exit = core.game.exit_engine
 
--- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
+--- Ultra weird, this is used by the C serialization code because I'm too dumb to make lua_dump() work on windows ...
 function __dump_fct(f)
 	return string.format("%q", string.dump(f))
 end
 
--- Tries to load a lua module from a list, returns the first available
+--- Tries to load a lua module from a list, returns the first available
 function require_first(...)
 	local list = {...}
 	for i = 1, #list do
@@ -2329,6 +2549,7 @@ function require_first(...)
 	return nil
 end
 
+--- Is steamcloud available?
 function util.steamCanCloud()
 	if core.steam and core.steam.isCloudEnabled(true) and core.steam.isCloudEnabled(false) and not savefile_pipe.disable_cloud_saves then return true end
 end

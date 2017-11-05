@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ local UIContainer = require "engine.ui.UIContainer"
 local Map = require "engine.Map"
 
 --- A generic tooltip
+-- @classmod engine.Tooltip
 module(..., package.seeall, class.inherit(Base))
 
 tooltip_bound_x1 = function() return 0 end
@@ -263,6 +264,7 @@ end
 -- @param my the screen coordinate to display at, if nil it will be computed from tmy
 -- @param text a text to display, if nil it will interrogate the map under the mouse using the "tooltip" property
 -- @param force forces tooltip to refresh
+-- @param nb_keyframes number of keyframes
 function _M:displayAtMap(tmx, tmy, mx, my, text, force, nb_keyframes)
 	if not mx then
 		mx, my = game.level.map:getTileToScreen(tmx, tmy)

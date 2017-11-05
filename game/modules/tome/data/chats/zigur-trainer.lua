@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,12 +81,20 @@ newChat{ id="testko",
 	}
 }
 
+local ogretext = ""
+if player.descriptor and player.descriptor.subrace == "Ogre" then
+	ogretext = "\nWorry not, though, Ogre - we can replace your unclean runes with a newly-discovered mixture of infusions, eliminating your dependence on them.  The process will feel...  unpleasant, and will dramatically shorten your lifespan, but you will finally be free from the addictive grip of the arcane!\n"
+	if player.descriptor.subclass == "Oozemancer" then
+		ogretext = ogretext.."We'll also reinforce the infusions you've been granted to replace your runes - the newest mixture should give you about five years of your life that the initial mixture took from you.\n"
+	end
+end
+
 newChat{ id="testok",
-	text = [[Very well. Before you start, we will make sure no magic can help you:
+	text = ([[Very well. Before you start, we will make sure no magic can help you:
 - You will not be able to use any spells or magical devices
 - Any worn objects that are powered by the arcane will be unequipped
-
-Are you ready, or do you wish to prepare first?]],
+%s
+Are you ready, or do you wish to prepare first?]]):format(ogretext),
 	answers = {
 		{"I am ready", jump="test", action=remove_magic},
 		{"I need to prepare."},

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ local forceprint = print
 local print = function() end
 
 --- Defines a zone: a set of levels, with depth, npcs, objects, level generator, ...
+-- @classmod engine.Zone
 module(..., package.seeall, class.make)
 
 _no_save_fields = {temp_memory_levels=true, _tmp_data=true}
@@ -96,6 +97,7 @@ end
 
 --- Loads a zone definition
 -- @param short_name the short name of the zone to load, if should correspond to a directory in your module data/zones/short_name/ with a zone.lua, npcs.lua, grids.lua and objects.lua files inside
+-- @param dynamic
 function _M:init(short_name, dynamic)
 	__zone_store[self] = true
 
@@ -261,11 +263,30 @@ function _M:computeRarities(type, list, level, filter, add_level, rarity_field)
 end
 
 --- Checks an entity against a filter
-function _M:checkFilter(e, filter, type)
-	if e.unique and game.uniques[e.__CLASSNAME.."/"..e.unique] then print("refused unique", e.name, e.__CLASSNAME.."/"..e.unique) return false end
+--	@param e: the entity to check
+--	@param filter: the filter to use, a table specifying the checks to perform on the entity
+--	@param typ: the type of entity, one of "actor", "projectie", "object", "trap", "terrain", "grid", "trigger"
+--	@return true if the entity passes all of the filter checks
+--	filter fields interpreted:
+--		allow_uniques: don't reject existing uniques
+--		unique: e[unique] must be defined
+--		ignore: a filter specifying what entities to be specifically rejected
+--		type: e[type] must match exactly
+--		subtype: e[subtype] must match exactly
+--		name: e[name] must match exactly
+--		define_as: e.define_as must match exactly
+--		properties: table of keys, e[key] MUST BE defined for all
+--		not_properties: table of keys, e[key] MUST NOT BE defined for all
+--		special: function(e, filter) that must return true
+--		max_ood: perform an Out of Depth check (requires resolvers.current_level + max_ood > e.level_range[1])
+--	Rejects existing uniques
+--	If it is defined, e.checkFilter(filter) must return true
+--	If it is defined, self:check_filter(e, filter, typ) must return true
+function _M:checkFilter(e, filter, typ)
+	if e.unique and not (filter and filter.allow_uniques) and game.uniques[e.__CLASSNAME.."/"..e.unique] then print("refused unique", e.name, e.__CLASSNAME.."/"..e.unique) return false end
 
 	if not filter then return true end
-	if filter.ignore and self:checkFilter(e, filter.ignore, type) then return false end
+	if filter.ignore and self:checkFilter(e, filter.ignore, typ) then return false end
 
 	print("Checking filter", filter.type, filter.subtype, "::", e.type,e.subtype,e.name)
 	if filter.type and filter.type ~= e.type then return false end
@@ -280,8 +301,8 @@ function _M:checkFilter(e, filter, type)
 		for i = 1, #filter.not_properties do if e[filter.not_properties[i]] then return false end end
 	end
 	if e.checkFilter and not e:checkFilter(filter) then return false end
-	if filter.special and not filter.special(e) then return false end
-	if self.check_filter and not self:check_filter(e, filter, type) then return false end
+	if filter.special and not filter.special(e, filter) then return false end
+	if self.check_filter and not self:check_filter(e, filter, typ) then return false end
 	if filter.max_ood and resolvers.current_level and e.level_range and resolvers.current_level + filter.max_ood < e.level_range[1] then print("Refused max_ood", e.name, e.level_range[1]) return false end
 
 	if e.unique then print("accepted unique", e.name, e.__CLASSNAME.."/"..e.unique) end
@@ -289,18 +310,14 @@ function _M:checkFilter(e, filter, type)
 	return true
 end
 
---- Return a string describing the filter
-function _M:filterToString(filter)
-	local ps = ""
-	for what, check in pairs(filter) do
-		ps = ps .. what.."="..check..","
-	end
-	return ps
+--- Return a string summary of a filter
+function _M:filterToString(filter, ...)
+	return string.fromTable(filter, ...)
 end
 
 --- Picks an entity from a computed probability list
 function _M:pickEntity(list)
-	if #list == 0 then return nil end
+	if not list or #list == 0 then return nil end
 	local r = rng.range(1, list.total)
 	for i = 1, #list do
 --		print("test", r, ":=:", list[i].genprob)
@@ -349,13 +366,17 @@ function _M:getEntities(level, type)
 	return list
 end
 
---- Picks and resolve an entity
+--- Picks and resolves an entity
 -- @param level a Level object to generate for
--- @param type one of "object" "terrain" "actor" "trap"
--- @param filter a filter table
+-- @param type one of "object" "terrain" "actor" "trap" or a table of entities with __real_type defined
+-- @param filter a filter table with optional fields:
+--		base_list: an entities list (table) or a specifier to load the entities list from a file, format: <classname>:<file path> (takes priority over type)
+--		special_rarity: alternate field for entity rarity field (default 'rarity')
+--		nb_tries: maximum number of attempts to randomly pick the entity from the list
 -- @param force_level if not nil forces the current level for resolvers to this one
 -- @param prob_filter if true a new probability list based on this filter will be generated, ensuring to find objects better but at a slightly slower cost (maybe)
--- @return the fully resolved entity, ready to be used on a level. Or nil if a filter was given an nothing found
+-- @return[1] nil if a filter was given an nothing found
+-- @return[2] the fully resolved entity, ready to be used on a level
 function _M:makeEntity(level, type, filter, force_level, prob_filter)
 	resolvers.current_level = self.base_level + level.level - 1
 	if force_level then resolvers.current_level = force_level end
@@ -364,10 +385,15 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 	if filter == nil then filter = util.getval(self.default_filter, self, level, type) end
 	if filter and self.alter_filter then filter = util.getval(self.alter_filter, self, level, type, filter) end
 
+	local list
+	if _G.type(type) == "table" then -- use the provided list
+		list = type
+		type = type.__real_type or ""
+	end
 	local e
 	-- No probability list, use the default one and apply filter
 	if not prob_filter then
-		local list = self:getEntities(level, type)
+		list = list or self:getEntities(level, type)
 		local tries = filter and filter.nb_tries or 500
 		-- CRUDE ! Brute force ! Make me smarter !
 		while tries > 0 do
@@ -378,7 +404,7 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 		if tries == 0 then return nil end
 	-- Generate a specific probability list, slower to generate but no need to "try and be lucky"
 	elseif filter then
-		local base_list = nil
+		local base_list = list
 		if filter.base_list then
 			if _G.type(filter.base_list) == "table" then base_list = filter.base_list
 			else
@@ -387,17 +413,21 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 					base_list = require(class):loadList(file)
 				end
 			end
+			type = base_list and base_list.__real_type or type
+		elseif base_list then -- type = base_list.__real_type
 		elseif type == "actor" then base_list = self.npc_list
 		elseif type == "object" then base_list = self.object_list
 		elseif type == "trap" then base_list = self.trap_list
-		else base_list = self:getEntities(level, type) if not base_list then return nil end end
+		elseif not base_list then 
+			base_list = self:getEntities(level, type)
+		end
+		if not base_list then return nil end
 		local list = self:computeRarities(type, base_list, level, function(e) return self:checkFilter(e, filter, type) end, filter.add_levels, filter.special_rarity)
 		e = self:pickEntity(list)
 		print("[MAKE ENTITY] prob list generation", e and e.name, "from list size", #list)
 		if not e then return nil end
-	-- No filter
-	else
-		local list = self:getEntities(level, type)
+	else -- No filter
+		list = list or self:getEntities(level, type)
 		local tries = filter and filter.nb_tries or 50 -- A little crude here too but we only check 50 times, this is simply to prevent duplicate uniques
 		while tries > 0 do
 			e = self:pickEntity(list)
@@ -417,8 +447,20 @@ function _M:makeEntity(level, type, filter, force_level, prob_filter)
 	return e
 end
 
---- Find a given entity and resolve it
--- @return the fully resolved entity, ready to be used on a level. Or nil if a filter was given an nothing found
+--- Find a specific entity and resolve it
+-- @param level a Level object to generate for
+-- @param type defines where to find the entity definition:
+--		a table is searched directly as a list of entities
+--		"object" -- look in zone.object_list
+--		"terrain", "grid", "trigger" -- look in zone.grid_list
+--		"actor" -- look in zone.npc_list
+--		"trap" -- look in zone.trap_list
+--		other strings -- specifier to load the entities list from a file, format: <classname>:<file path>
+-- @param name the name of the entity to find (must match entity.define_as exactly)
+-- @param force_unique if not set, duplicate uniques will not be generated
+-- @return[1] nil if the entity could not be found or was a pre-existing unique
+-- @return[2] the fully resolved entity, ready to be used on a level
+-- @return[2] boolean true if the entity was a pre-existing unique
 function _M:makeEntityByName(level, type, name, force_unique)
 	resolvers.current_level = self.base_level + level.level - 1
 
@@ -426,9 +468,18 @@ function _M:makeEntityByName(level, type, name, force_unique)
 	if _G.type(type) == "table" then e = type[name] type = type.__real_type or type
 	elseif type == "actor" then e = self.npc_list[name]
 	elseif type == "object" then e = self.object_list[name]
-	elseif type == "grid" or type == "terrain" then e = self.grid_list[name]
+	elseif type == "grid" or type == "terrain" or type == "trigger" then e = self.grid_list[name]
 	elseif type == "trap" then e = self.trap_list[name]
+	else
+		local base_list
+		local _, _, class, file = type:find("(.*):(.*)")
+		if class and file then
+			base_list = require(class):loadList(file)
+			type = base_list.__real_type or type
+		end
+		e = base_list and base_list[name]
 	end
+	
 	if not e then return nil end
 
 	local forced = false
@@ -494,7 +545,7 @@ function _M:applyEgo(e, ego, type, no_name_change)
 	ego.level_range = nil
 	-- Merge according to Object's ego rules.
 	table.ruleMergeAppendAdd(e, ego, self.ego_rules[type] or {})
-	
+
 	e.name = newname
 	if not ego.fake_ego then
 		e.egoed = true
@@ -506,7 +557,7 @@ end
 
 -- WARNING the thing may be in need of re-identifying after this
 local function reapplyEgos(self, e)
-	if not e.__original then return e end
+	if not e.__original then e.__original = e:clone() end
 	local id = e.isIdentified and e:isIdentified()
 	local brandNew = e.__original -- it will be cloned upon first ego application
 	if e.ego_list and #e.ego_list > 0 then
@@ -675,28 +726,31 @@ function _M:finishEntity(level, type, e, ego_filter)
 end
 
 --- Do the various stuff needed to setup an entity on the level
--- Grids do not really need that, this is mostly done for traps, objects and actors<br/>
+-- Grids do not really need this, it is mostly done for traps, objects and actors<br/>
 -- This will do all the correct initializations and setup required
--- @param level the level on which to add the entity
--- @param e the entity to add
--- @param typ the type of entity, one of "actor", "object", "trap" or "terrain"
--- @param x the coordinates where to add it. This CAN be null in which case it wont be added to the map
--- @param y the coordinates where to add it. This CAN be null in which case it wont be added to the map
+-- @param level: the level on which to add the entity
+-- @param e: the entity to add
+-- @param typ: the type of entity, one of "actor", "projectile", "object", "trap", "terrain", "grid", "trigger"
+-- @param x:  x coordinate. This CAN be null in which case it wont be added to the map
+-- @param y: y coordinate.  This CAN be null in which case it wont be added to the map
+-- @param no_added: set true to prevent calling e:added()
+--	checks e.addedToLevel then e.on_added after adding the entity
 function _M:addEntity(level, e, typ, x, y, no_added)
 	if typ == "actor" then
-		-- We are additing it, this means there is no old position
+		-- We are adding it, this means there is no old position
 		e.x = nil
 		e.y = nil
 		if x and y then e:move(x, y, true) end
 		level:addEntity(e, nil, true)
 		if not no_added then e:added() end
 		-- Levelup ?
-		if self.actor_adjust_level and e.forceLevelup then
+		if self.actor_adjust_level and e.forceLevelup and not e._actor_adjust_level_applied then
 			local newlevel = self:actor_adjust_level(level, e)
 			e:forceLevelup(newlevel + (e.__forced_level or 0))
+			e._actor_adjust_level_applied = true
 		end
 	elseif typ == "projectile" then
-		-- We are additing it, this means there is no old position
+		-- We are adding it, this means there is no old position
 		e.x = nil
 		e.y = nil
 		if x and y then e:move(x, y, true) end
@@ -711,6 +765,8 @@ function _M:addEntity(level, e, typ, x, y, no_added)
 		if not no_added then e:added() end
 	elseif typ == "terrain" or typ == "grid" then
 		if x and y then level.map(x, y, Map.TERRAIN, e) end
+	elseif typ == "trigger" then
+		if x and y then level.map(x, y, Map.TRIGGER, e) end
 	end
 	e:check("addedToLevel", level, x, y)
 	e:check("on_added", level, x, y)
@@ -749,11 +805,13 @@ function _M:load(dynamic)
 
 		for k, e in pairs(data) do self[k] = e end
 		self:onLoadZoneFile(self:getBaseName())
+		self:triggerHook{"Zone:create", dynamic=dynamic}
 		if self.on_loaded then self:on_loaded() end
 	elseif not data and dynamic then
 		data = dynamic
 		ret = false
 		for k, e in pairs(data) do self[k] = e end
+		self:triggerHook{"Zone:create", dynamic=dynamic}
 		if self.on_loaded then self:on_loaded() end
 	else
 		for k, e in pairs(data) do self[k] = e end
@@ -812,9 +870,21 @@ function _M:leaveLevel(no_close, lev, old_lev)
 	end
 end
 
+function _M:getLoadTips()
+	if self.load_tips then
+		local l = rng.table(self.load_tips)
+		return "#{italic}##ANTIQUE_WHITE#"..l.text.."#WHITE##{normal}#"
+	else
+		return nil
+	end
+end
+
 --- Asks the zone to generate a level of level "lev"
--- @param lev the level (from 1 to zone.max_level)
--- @return a Level object
+-- @param game which `Game`?
+-- @param lev the level number going to (from 1 to zone.max_level)
+-- @param old_lev level number leaving from
+-- @param no_close pass to `leaveLevel`
+-- @return a `Level` object
 function _M:getLevel(game, lev, old_lev, no_close)
 	self:leaveLevel(no_close, lev, old_lev)
 
@@ -826,7 +896,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	-- Load persistent level?
 	if type(level_data.persistent) == "string" and level_data.persistent == "zone_temporary" then
 		forceprint("Loading zone temporary level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		self.temp_memory_levels = self.temp_memory_levels or {}
@@ -837,12 +907,12 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "zone" and not self.save_per_level then
 		forceprint("Loading zone persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		self.memory_levels = self.memory_levels or {}
@@ -853,12 +923,12 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif type(level_data.persistent) == "string" and level_data.persistent == "memory" then
 		forceprint("Loading memory persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		game.memory_levels = game.memory_levels or {}
@@ -869,12 +939,12 @@ function _M:getLevel(game, lev, old_lev, no_close)
 			game:setLevel(level)
 			-- Recreate the map because it could have been saved with a different tileset or whatever
 			-- This is not needed in case of a direct to file persistance becuase the map IS recreated each time anyway
-			level.map:recreate()
+			if level.map then level.map:recreate() end
 		end
 		popup:done()
 	elseif level_data.persistent then
 		forceprint("Loading level persistance level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Loading level", "Please wait while loading the level... ", self:getLoadTips(), nil, 10000)
 		core.display.forceRedraw()
 
 		-- Try to load from a savefile
@@ -887,12 +957,13 @@ function _M:getLevel(game, lev, old_lev, no_close)
 		popup:done()
 	end
 
-	-- In any cases, make one if none was found
+	-- In any case, make one if none was found
 	if not level then
 		forceprint("Creating level", self.short_name, lev)
-		local popup = Dialog:simpleWaiter("Generating level", "Please wait while generating the level...", nil, 10000)
+		local popup = Dialog:simpleWaiterTip("Generating level", "Please wait while generating the level... ", self:getLoadTips(), nil, 10000)
+		
 		core.display.forceRedraw()
-
+		self._level_generation_count = 0
 		level = self:newLevel(level_data, lev, old_lev, game)
 		new_level = true
 
@@ -903,7 +974,7 @@ function _M:getLevel(game, lev, old_lev, no_close)
 	collectgarbage("collect")
 
 	-- Re-open the level if needed (the method does the check itself)
-	level.map:reopen()
+	if level and level.map then level.map:reopen() end
 
 	return level, new_level
 end
@@ -912,6 +983,7 @@ function _M:getGenerator(what, level, spots)
 	assert(level.data.generator[what], "requested zone generator of type "..tostring(what).." but it is not defined")
 	assert(level.data.generator[what].class, "requested zone generator of type "..tostring(what).." but it has no class field")
 	print("[GENERATOR] requiring", what, level.data.generator and level.data.generator[what] and level.data.generator[what].class)
+	package.loaded[level.data.generator and level.data.generator[what] and level.data.generator[what].class] = nil
 	if not level.data.generator[what].zoneclass then
 		return require(level.data.generator[what].class).new(
 			self,
@@ -922,7 +994,9 @@ function _M:getGenerator(what, level, spots)
 	else
 		local base = require(level.data.generator[what].class)
 		local c = class.inherit(base){}
-		local name = self:getBaseName().."generator"..what:capitalize()..".lua"
+		local append = ""
+		if type(level.data.generator[what].zoneclass) == "string" then append = level.data.generator[what].zoneclass end
+		local name = self:getBaseName().."generator"..what:capitalize()..append..".lua"
 		print("[ZONE] Custom zone generator for "..what.." loading from "..name)
 		local add = loadfile(name)
 		setfenv(add, setmetatable({
@@ -942,7 +1016,18 @@ function _M:getGenerator(what, level, spots)
 	end
 end
 
+_M._level_generation_count = 0
+_M._max_level_generation_count = 50 -- newLevel will return the last level generated after this many attempts at generation. Modules should check ._level_generation_count to be sure level generation was successful
+
 function _M:newLevel(level_data, lev, old_lev, game)
+	self._level_generation_count = self._level_generation_count + 1
+	forceprint("[Zone:newLevel]", self.short_name, "beginning level generation, count:", self._level_generation_count)
+	if self._level_generation_count > self._max_level_generation_count then
+		forceprint("[Zone:newLevel] ABORTING level generation after too many failures.")
+		return game.level -- returns the (last generated, failed) level
+	end
+
+	resolvers.current_level = self.base_level + lev - 1
 	local map = self.map_class.new(level_data.width, level_data.height)
 	map.updateMap = function() end
 	if level_data.all_lited then map:liteAll(0, 0, map.w, map.h) end
@@ -950,10 +1035,12 @@ function _M:newLevel(level_data, lev, old_lev, game)
 
 	-- Setup the entities list
 	local level = self.level_class.new(lev, map)
+	level._generation_count = self._level_generation_count
 	level:setEntitiesList("actor", self:computeRarities("actor", self.npc_list, level, nil))
 	level:setEntitiesList("object", self:computeRarities("object", self.object_list, level, nil))
 	level:setEntitiesList("trap", self:computeRarities("trap", self.trap_list, level, nil))
-
+	local zoneelists = {grid_list = self.grid_list, npc_list = self.npc_list, object_list = self.object_list, trap_list = self.trap_list}
+	
 	-- Save level data
 	level.data = level_data or {}
 	level.id = self.short_name.."-"..lev
@@ -963,8 +1050,11 @@ function _M:newLevel(level_data, lev, old_lev, game)
 
 	-- Generate the map
 	local generator = self:getGenerator("map", level, level_data.generator.map)
+	
 	local ux, uy, dx, dy, spots = generator:generate(lev, old_lev)
 	if level.force_recreate then
+
+		forceprint("[Zone:newLevel] map generator "..generator.__CLASSNAME.." forced recreation: ",level.force_recreate)
 		level:removed()
 		return self:newLevel(level_data, lev, old_lev, game)
 	end
@@ -989,14 +1079,20 @@ function _M:newLevel(level_data, lev, old_lev, game)
 	-- Add the entities we are told to
 	for i = 0, map.w - 1 do for j = 0, map.h - 1 do
 		if map.room_map[i] and map.room_map[i][j] and map.room_map[i][j].add_entities then
-			for z = 1, #map.room_map[i][j].add_entities do
-				local ae = map.room_map[i][j].add_entities[z]
-				self:addEntity(level, ae[2], ae[1], i, j, true)
+			local ae = map.room_map[i][j].add_entities
+			for z = 1, #ae do
+				if ae[z].elists then -- use the specified entity lists
+					table.merge(self, ae[z].elists)
+					self:addEntity(level, ae[z][2], ae[z][1], i, j, true)
+					table.merge(self, zoneelists)
+				else
+					self:addEntity(level, ae[z][2], ae[z][1], i, j, true)
+				end
 			end
 		end
 	end end
 
-	-- Now update it all in one go (faster than letter the generators do it since they usualy overlay multiple terrains)
+	-- Now update it all in one go (faster than letting the generators do it since they usually overlay multiple terrains)
 	map.updateMap = nil
 	map:redisplay()
 
@@ -1031,19 +1127,17 @@ function _M:newLevel(level_data, lev, old_lev, game)
 		end
 	end
 
-	-- Delete the room_map, now useless
-	map.room_map = nil
-
 	-- Check for connectivity from entrance to exit
 	local a = Astar.new(map, game:getPlayer())
 	if not level_data.no_level_connectivity then
 		print("[LEVEL GENERATION] checking entrance to exit A*", ux, uy, "to", dx, dy)
-		if ux and uy and dx and dy and (ux ~= dx or uy ~= dy)  and not a:calc(ux, uy, dx, dy) then
-			forceprint("Level unconnected, no way from entrance to exit", ux, uy, "to", dx, dy)
+		if ux and uy and dx and dy and (ux ~= dx or uy ~= dy) and not a:calc(ux, uy, dx, dy) then
+			forceprint("Level unconnected, no way from entrance", ux, uy, "to exit", dx, dy)
 			level:removed()
 			return self:newLevel(level_data, lev, old_lev, game)
 		end
 	end
+	-- Check for connectivity for spots that request it
 	for i = 1, #spots do
 		local spot = spots[i]
 		if spot.check_connectivity then
@@ -1055,11 +1149,30 @@ function _M:newLevel(level_data, lev, old_lev, game)
 
 			print("[LEVEL GENERATION] checking A*", spot.x, spot.y, "to", cx, cy)
 			if spot.x and spot.y and cx and cy and (spot.x ~= cx or spot.y ~= cy) and not a:calc(spot.x, spot.y, cx, cy) then
-				forceprint("Level unconnected, no way from", spot.x, spot.y, "to", cx, cy)
+				forceprint("Level unconnected, no way from spot", spot.type, spot.subtyp, "at", spot.x, spot.y, "to", cx, cy, spot.check_connectivity)
 				level:removed()
 				return self:newLevel(level_data, lev, old_lev, game)
 			end
 		end
 	end
+	-- Delete the room_map if it's no longer needed
+	if not self._retain_level_room_map then map.room_map = nil end
+
+	-- Call a "post" finisher
+	if level_data.post_process_end then level_data.post_process_end(level, self) end
+
 	return level
+end
+
+--- Modules should call this method when done generating a level to run any callbacks registered by generators
+function _M:runPostGeneration(level)
+	if not level then return end
+
+	if level.post_gen_callbacks then
+		for _, fct in ipairs(level.post_gen_callbacks) do
+			fct(self, level, level.map)
+		end
+	end
+
+	level.map.room_map = nil -- delete the room map
 end

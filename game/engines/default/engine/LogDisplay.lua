@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ local Mouse = require "engine.Mouse"
 local Slider = require "engine.ui.Slider"
 
 --- Module that handles message history in a mouse wheel scrollable zone
+-- @classmod engine.LogDisplay
 module(..., package.seeall, class.inherit(engine.ui.Base))
 
 --- Creates the log zone
@@ -85,7 +86,7 @@ function _M:resize(x, y, w, h)
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event) self:mouseEvent(button, x, y, xrel, yrel, bx, by, event) end)
 end
 
---- Returns the full log
+--- Returns a clone of the full log
 function _M:getLog(extra, timestamp)
 	local log = {}
 	for i = 1, #self.log do
@@ -139,9 +140,9 @@ function _M:call(str, ...)
 	self.changed = true
 end
 
---- Gets the last log line
+--- Gets the newest log line
 function _M:getNewestLine()
-	if self.log[1] then return self.log[1].str end
+	if self.log[1] then return self.log[1].str, self.log[1] end
 	return nil
 end
 
@@ -152,7 +153,35 @@ function _M:empty()
 	self.changed = true
 end
 
---- Get Last Lines From Log
+--- Remove some lines from the log, starting with the newest
+-- @param line = number of lines to remove (default 1) or the last line (table, reference) to leave in the log
+-- @param [type=table, optional] ret table in which to append removed lines
+-- @param [type=number, optional] timestamp of the oldest line to remove
+-- @return the table of removed lines or nil
+function _M:rollback(line, ret, timestamp)
+	local nb = line or 1
+	if type(line) == "table" then
+		nb = 0
+		for i, ln in ipairs(self.log) do
+			if ln == line then nb = i - 1 break end
+		end
+	end
+	if nb > 0 then
+		for i = 1, nb do
+			local removed = self.log[1]
+			if not timestamp or removed.timestamp >= timestamp then
+				print("[LOG][remove]", removed.timestamp, removed.str)
+				table.remove(self.log, 1)
+				if ret then ret[#ret+1] = removed end
+			else break
+			end
+		end
+		self.changed = true
+	end
+	return ret
+end
+
+--- Get the oldest lines from the log
 -- @param number number of lines to retrieve
 function _M:getLines(number)
 	local from = number
@@ -181,7 +210,7 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 		end
 		if citem then
 			local sub_es = {}
-			for di = 1, #citem.item._dduids do sub_es[#sub_es+1] = citem.item._dduids[di].e end
+			for e, _ in pairs(citem.item._dduids) do sub_es[#sub_es+1] = e end
 
 			if citem.url and button == "left" and event == "button" then
 				util.browserOpenUrl(citem.url, {is_external=true})
@@ -214,7 +243,7 @@ function _M:display()
 			self.cache[tstr] = gen
 		end
 		for i = #gen, 1, -1 do
-			self.dlist[#self.dlist+1] = {item=gen[i], date=math.max(self.log.reset_fade or self.log[z].timestamp, self.log[z].timestamp), url=self.log[z].url}
+			self.dlist[#self.dlist+1] = {item=gen[i], date=self.log[z].reset_fade or self.log[z].timestamp, url=self.log[z].url}
 			h = h + self.fh
 			if h > self.h - self.fh then stop=true break end
 		end
@@ -257,7 +286,7 @@ function _M:toScreen()
 		end
 		item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
 		if self.shadow and shader then shader:use(false) end
-		for di = 1, #item._dduids do item._dduids[di].e:toScreen(nil, self.display_x + item._dduids[di].x, h, item._dduids[di].w, item._dduids[di].w, fade, false, false) end
+		for e, d in pairs(item._dduids) do e:toScreen(nil, self.display_x + d.x, h, d.w, d.w, fade, false, false) end
 		h = h - self.fh
 	end
 
@@ -282,5 +311,7 @@ function _M:resetFade()
 	local log = self.log
 
 	-- Reset fade
-	log.reset_fade = core.game.getTime()
+	for i = 1,#log do
+		log[i].reset_fade = core.game.getTime()
+	end
 end

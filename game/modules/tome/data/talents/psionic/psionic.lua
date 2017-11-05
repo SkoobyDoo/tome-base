@@ -41,7 +41,6 @@ newTalentType{ allow_random=true, is_mind=true, autolearn_mindslayer=true, type=
 -- Solipsist Talent Trees
 newTalentType{ allow_random=true, is_mind=true, type="psionic/discharge", name = "discharge", description = "Project feedback on the world around you." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/distortion", name = "distortion", description = "Distort reality with your mental energy." }
-newTalentType{ allow_random=true, is_mind=true, type="psionic/dream-forge", generic = true, name = "Dream Forge", description = "Master the dream forge to create powerful armor and effects." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/dream-smith", name = "Dream Smith", description = "Call the dream-forge hammer to smite your foes." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/nightmare", name = "nightmare", description = "Manifest your enemies nightmares." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/psychic-assault", name = "Psychic Assault", description = "Directly attack your opponents minds." }
@@ -50,6 +49,7 @@ newTalentType{ allow_random=true, is_mind=true, type="psionic/solipsism", name =
 newTalentType{ allow_random=true, is_mind=true, type="psionic/thought-forms", name = "Thought-Forms", description = "Manifest your thoughts as psionic summons." }
 
 -- Generic Solipsist Trees
+newTalentType{ allow_random=true, is_mind=true, type="psionic/dream-forge", generic = true, name = "Dream Forge", description = "Master the dream forge to create powerful armor and effects." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/dreaming", generic = true, name = "dreaming", description = "Manipulate the sleep cycles of yourself and your enemies." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/mentalism", generic = true, name = "mentalism", description = "Various mind based effects." }
 newTalentType{ allow_random=true, is_mind=true, type="psionic/feedback", generic = true, name = "feedback", description = "Store feedback as you get damaged and use it to protect and heal your body." }
@@ -152,17 +152,6 @@ psi_cun_high4 = {
 
 
 -- Useful definitions for psionic talents
-function getGemLevel(self)
-	local gem_level = 0
-	if self:getInven("PSIONIC_FOCUS") then
-		local tk_item = self:getInven("PSIONIC_FOCUS")[1]
-		if tk_item and ((tk_item.type == "gem") or (tk_item.subtype == "mindstar") or tk_item.combat.is_psionic_focus == true) then
-			gem_level = tk_item.material_level or 5
-		end
-	end
-	return gem_level
-end
-
 -- Cancel Thought Forms, we do this here because we use it for dreamscape and projection as well as thought-forms
 function cancelThoughtForms(self, id)
 	local forms = {self.T_TF_DEFENDER, self.T_TF_WARRIOR, self.T_TF_BOWMAN}

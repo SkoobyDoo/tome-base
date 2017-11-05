@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 
 --- Interface to add a bloodyDeath() method to actors
 -- When this method is called, the floor or walls around the late actor is covered in blood
+-- @classmod engine.generator.interface.BloodyDeath
 module(..., package.seeall, class.make)
 
 --- Makes the bloody death happen

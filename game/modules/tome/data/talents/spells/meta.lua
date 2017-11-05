@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,9 +25,30 @@ newTalent{
 	random_ego = "utility",
 	mana = 40,
 	cooldown = 7,
-	tactical = { DISABLE = 2 },
+	tactical = { CURE = function(self, t, aitarget)
+			local nb = 0
+			for eff_id, p in pairs(self.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "magical" and e.status == "detrimental" then nb = nb + 1 end
+			end
+			return nb
+		end,
+		DISABLE = function(self, t, aitarget)
+			local nb = 0
+			for eff_id, p in pairs(aitarget.tmp) do
+				local e = self.tempeffect_def[eff_id]
+				if e.type == "magical" and e.status == "beneficial" then nb = nb + 1 end
+			end
+			for tid, act in pairs(aitarget.sustain_talents) do
+				if act then
+					local talent = aitarget:getTalentFromId(tid)
+					if talent.is_spell then nb = nb + 1 end
+				end
+			end
+			return nb^0.5
+		end},
 	direct_hit = true,
-	requires_target = function(self, t) return self:getTalentLevel(t) >= 3 end,
+	requires_target = function(self, t) return self:getTalentLevel(t) >= 3 and (self.player or t.tactical.cure(self, t) <= 0) end,
 	range = 10,
 	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	action = function(self, t)
@@ -159,7 +180,18 @@ newTalent{
 	mana = 70,
 	cooldown = 50,
 	fixed_cooldown = true,
-	tactical = { BUFF = 2 },
+	tactical = { BUFF = function(self, t, aitarget)
+		local maxcount, maxlevel = t.getTalentCount(self, t), t.getMaxLevel(self, t)
+		local count, tt = 0, nil
+		for tid, _ in pairs(self.talents_cd) do
+			tt = self:getTalentFromId(tid)
+			if tt.is_spell and not tt.fixed_cooldown and tt.type[2] <= maxlevel then
+				count = count + 1
+			end
+			if count >= maxcount then break end
+		end
+		return count ^.5
+	end },
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,
 	getMaxLevel = function(self, t) return self:getTalentLevel(t) end,
 	action = function(self, t)
@@ -184,7 +216,7 @@ newTalent{
 	info = function(self, t)
 		local talentcount = t.getTalentCount(self, t)
 		local maxlevel = t.getMaxLevel(self, t)
-		return ([[Your mastery of the arcane flows allow you to reset the cooldown of %d of most of your spells of tier %d or less.]]):
+		return ([[Your mastery of arcane flows allow you to reset the cooldown of up to %d of your spells (that don't have a fixed cooldown) of tier %d or less.]]):
 		format(talentcount, maxlevel)
 	end,
 }

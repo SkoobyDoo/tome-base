@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -68,6 +68,8 @@ local credits = {
 	{"Hetdegon"},
 	{"John 'Benli' Truchard"},
 	{"Nicolas 'DarkGod' Casalini"},
+	{"Ben 'Razakai' Pope"},
+	{"StarKeep"},
 	{"Simon 'HousePet' Curtis"},
 	{"Shoob"},
 	{"Taylor 'PureQuestion' Miller"},
@@ -80,6 +82,7 @@ local credits = {
 	{"Matt 'Amagad' Hill"},
 	{"Jeffrey 'Jotwebe' Buschhorn"},
 	{"Raymond 'Shockbolt' Gaustadnes"},
+	{"Richard 'Swoosh So Fast' Pallo"},
 	false,
 	false,
 
@@ -120,6 +123,7 @@ local credits = {
 	{"Madmonk"},
 	{"Mark 'Marson' Carpente"},
 	{"Neil Stevens"},
+	{"Samuel 'Effigy' Wegner"},
 	{"Sebastian 'Sebsebeleb' Vråle"},
 	{"Shani"},
 	{"Shibari"},
@@ -133,7 +137,9 @@ local credits = {
 	{"Faeryan"},
 	{"Erik 'Lord Xandor' Tillford"},
 	{"Michael 'Dekar' Olscher"},
+	{"Rob 'stuntofthelitter' Stites"},
 	{"Reenen 'Canderel' Laurie"},
+	{"Sheila"},
 	{"The Revanchist"},
 	{"Yottle"},
 	false,

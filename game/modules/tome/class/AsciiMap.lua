@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,6 +18,9 @@
 -- darkgod@te4.org
 
 local ffi = require "ffi"
+local pairs = pairs
+local loadstring = loadstring
+local table = table
 local _M = require "engine.Map"
 setfenv(1, _M)
 

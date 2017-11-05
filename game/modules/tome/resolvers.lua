@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,236 +17,436 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+--local Birther = require "engine.Birther"
 local Talents = require "engine.interface.ActorTalents"
 
---- Resolves equipment creation for an actor
-function resolvers.equip(t)
-	return {__resolver="equip", __resolve_last=true, t}
+--- General object resolver function (for Actors or other entities using the inventory interface)
+-- creates a single object according to a filter, possibly equipping it
+-- @param e: entity to resolve for (to which the object is added)
+-- @param filter: filter to use when generating the object
+-- @param do_wear: set true to wear the object if possible (Actors only), set false to not add the object to e
+--		calls obj:wornLocations to find appropriate spots to wear
+--		worn objects must be antimagic compatible with the wearing entity
+-- @param tries: number of attempts allowed to generate the object, default 2 (5 if do_wear is set)
+-- @return obj: the resolved object
+--	Objects not worn are placed in main inventory (unless do_wear == false)
+--	Objects are added to the game when resolved (affects uniques)
+-- Additional filter fields interpreted by this resolver:
+--		_use_object: object to use (skips random generation)
+--		base_list: list of entities or specifier to load the list from a file (format: <classname>:<file path>)
+--		defined: specific name (matching obj.DEFINE_AS) for an object
+--		replace_unique (requires defined): filter to replace specific object if it cannot be generated
+--			set true to use (most) fields from the main filter
+--		random_art_replace (requires defined): table of parameters for replacement object when dropping as loot
+--			chance: chance to drop in place of the unique object (previously existing uniques are always replaced)
+--			filter: object filter for replacement object (defaults to a unique, non-lore object)
+--		alter: a function(obj, e) to modify the object (called after generation, before adding to e)
+--		check_antimagic: force checking antimagic compatibility
+--		autoreq: set true to force gaining talents, stats, levels to equip the object (requires do_wear)
+--		force_inven: force adding the object to this inventory id (requires do_wear, skips normal checks)
+--		force_item: force adding the object to this inventory slot (requires do_wear, force_inven)
+--		force_drop: always drop the object on death (by default, only uniques are dropped)
+--		never_drop: never drop the object on death
+-- Additional filter fields are interpreted by other functions that can affect equipment generation:
+-- @see engine.zone:checkFilter: type, subtype, name, define_as, unique, properties, not_properties,
+--		check_filter, special, max_ood
+-- @see engine.zone:makeEntity: special_rarity
+-- @see game.state:entityFilterAlter: force_tome_drops, no_tome_drops, tome, tome_mod
+-- @see game.state:entityFilter: ignore_material_restriction, tome_mod, forbid_power_source, power_source
+-- @see game.state:entityFilterPost: random_object
+-- @see game.state:egoFilter: automatically creates/updates the ego_filter field to check power_source compatibility
+function resolvers.resolveObject(e, filter, do_wear, tries)
+	if do_wear then do_wear = e.__is_actor and do_wear end
+	filter = filter and table.clone(filter) or {}
+	tries = tries or do_wear and 5 or 2
+	print("[resolveObject] CREATE FOR", e.uid, e.name, "do_wear/tries:", do_wear, tries, "filter:\n", (string.fromTable(filter, -1)))
+	local o = filter._use_object
+	if o then -- filter contains the object to use
+		print("[resolveObject] using pre-generated object", o.uid, o.name)
+	else
+		--print("[resolveObject]", e.name, "filter:", filter) table.print(filter, "\t")
+		local base_list
+		if filter.base_list then -- load the base list defined for makeEntityByName
+			if type(filter.base_list) == "table" then base_list = filter.base_list
+			else
+				local _, _, class, file = filter.base_list:find("(.*):(.*)")
+				if class and file then
+					base_list = require(class):loadList(file)
+					if base_list then
+						base_list.__real_type = "object"
+					else
+						print("[resolveObject] COULD NOT LOAD base_list:", filter.base_list)
+					end
+				end
+			end
+			filter.base_list = nil
+		end
+		repeat
+			local ok = true
+			tries = tries - 1
+			if filter.defined then -- make a specific object
+				local forced
+				o, forced = game.zone:makeEntityByName(game.level, base_list or "object", filter.defined, filter.random_art_replace and true or false)
+				if forced then -- If generation was forced, object is a previously existing unique
+					print("[resolveObject] FORCING UNIQUE (replaced on drop):", filter.defined, o.uid, o.name)
+					table.set(filter, "random_art_replace", "chance", 100)
+				elseif not o and filter.replace_unique then -- Replace with another object
+					local rpl_filter = filter.replace_unique
+					if type(rpl_filter) ~= "table" then
+						rpl_filter = table.clone(filter)
+						rpl_filter.ignore_material_restriction, rpl_filter.defined, rpl_filter.replace_unique = true, nil, nil
+					end
+					o = game.zone:makeEntity(game.level, base_list or "object", rpl_filter, nil, true)
+					if o then print("[resolveObject] REPLACING UNIQUE:", filter.defined, o.uid, o.name)
+					end
+				end
+				if not o then break end
+			else -- make an object using the normal probabilities after applying the filter
+				o = game.zone:makeEntity(game.level, base_list or "object", filter, nil, true)
+			end
+			-- check for incompatible equipment
+			if (do_wear or filter.check_antimagic) and not game.state:checkPowers(e, o, nil, "antimagic_only") then
+				ok = false
+				print("[resolveObject] for ", e.uid, e.name ," -- incompatible equipment ", o.name, "retrying", tries, "self.not_power_source:", e.not_power_source and table.concat(table.keys(e.not_power_source), ","), "filter forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source), ","), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
+			end
+		until o and ok or tries <= 0
+	end
+
+	if o then
+		print("[resolveObject] CREATED OBJECT:", o.uid, o.name, "tries left:", tries)
+		if filter.alter then filter.alter(o, e) end
+		-- curse (done here to ensure object attributes get applied correctly, good place for a talent callback?)
+		if do_wear ~= false and e.knowTalent and e:knowTalent(e.T_DEFILING_TOUCH) then
+			e:callTalent(e.T_DEFILING_TOUCH, "curseItem", o)
+		end
+
+		if do_wear then
+			if filter.autoreq then -- Auto alloc talents, stats, and levels to be able to wear the object
+				local req, oldreq = e:updateObjectRequirements(o)
+				if req then
+					if req.level and e.level < req.level then
+						print("[resolveObject] autoreq: LEVELUP to", req.level)
+						e:forceLevelup(req.level)
+					end
+					if req.talent then -- learn (forced) talents first (may affect stats)
+						for _, tid in ipairs(req.talent) do
+							local levls = 0
+							if type(tid) == "table" then
+								levls = tid[2] - e:getTalentLevelRaw(tid[1])
+								if levls > 0 then
+									print("[resolveObject] autoreq: LEARNING TALENT", tid[1], levls)
+									e:learnTalent(tid[1], true, levls)
+								end
+							else
+								if not e:knowTalent(tid) then
+									levls = 1
+									print("[resolveObject] autoreq: LEARNING TALENT", tid)
+									e:learnTalent(tid, true, levls)
+								end
+							end
+							if levls > 0 then
+								local tal = e:getTalentFromId(tid[1])
+								if tal and tal.generic then e.unused_generics = e.unused_generics - levls else e.unused_talents = e.unused_talents - levls end
+							end
+						end
+					end
+					if req.stat then
+						for s, v in pairs(req.stat) do
+							local gain = v - e:getStat(s)
+							if gain > 0 then
+								print("[resolveObject] autoreq: GAINING STAT", s, gain)
+								e.unused_stats = e.unused_stats - gain
+								e:incStat(s, gain)
+							end
+						end
+					end
+				end
+				o.require = oldreq
+			end
+
+			local worn, invens
+			-- select inventories where object may be worn
+			if filter.force_inven then
+				invens = e:getInven(filter.force_inven)
+				if invens then invens = {{inv=invens, slot=filter.force_item, force=true}} end
+			else
+				 -- checks inventory equipment filters, sorts possible locations by object "power"
+				invens = o:wornLocations(e, nil, nil)
+			end
+			if invens then
+				for i, worn_inv in ipairs(invens) do
+					--print("[resolveObject] trying inventory", worn_inv.inv.name, worn_inv.slot, "for", o.uid, o.name, worn_inv.force and "FORCED" or "unforced")
+					worn = e:wearObject(o, true, false, worn_inv.inv, worn_inv.slot)
+					if worn == false then
+						if worn_inv.force then  -- force adding the object
+							print("[resolveObject]", o.uid, o.name, "FORCING INVENTORY", worn_inv.inv.name, worn_inv.inv.id, "slot", worn_inv.slot)
+							local ro = e:removeObject(worn_inv.inv, worn_inv.slot or 1)
+							e:addObject(worn_inv.inv, o, true, worn_inv.slot)
+							if ro and e:addObject(e.INVEN_INVEN, ro) then  -- replaced object to main inventory
+								print("\t\t moved replaced object to main inventory:", ro.uid, ro.name)
+							end
+							worn = true break
+						else
+							print("[resolveObject]", o.uid, o.name, "NOT WORN in", worn_inv.name, worn_inv.id)
+						end
+					else
+						print("[resolveObject]", o.uid, o.name, "added to inventory", worn_inv.inv.name)
+						 --put a replaced object in main inventory
+						if type(worn) == "table" and e:addObject(e.INVEN_INVEN, worn) then
+							print("\t\t moved replaced object to main inventory:", worn.uid, worn.name)
+						end	
+						break
+					end
+				end
+			end
+			if not worn then print("General Object resolver]", o.uid, o.name, "COULD NOT BE WORN") end
+		end
+		-- if not worn, add to main inventory unless do_wear == false
+		if do_wear ~= false then
+			if not o.wielded then
+				print("[resolveObject] adding to main inventory:", o.uid, o.name)
+				e:addObject(e.INVEN_INVEN, o)
+			end
+			game.zone:addEntity(game.level, o, "object") -- updates uniques list to prevent duplicates
+		end
+
+		-- Set the object drop status (only drop uniques by default)
+		if not o.unique then o.no_drop = true end
+		if filter.force_drop then o.no_drop = false end
+		if filter.never_drop then o.no_drop = true end
+
+		if filter.random_art_replace then
+			o.__special_boss_drop = filter.random_art_replace
+		end
+	else
+		print("[resolveObject] **FAILED** for", e.uid, e.name, "filter:", (string.fromTable(filter, 2)))
+--		game.log("[%s] %s #YELLOW_GREEN#Object resolver FAILED#LAST# \n#AQUAMARINE#filter:%s#LAST#", e.uid, e.name, string.fromTable(filter, 2)) -- debugging
+	end
+	return o
 end
+
+--- Resolves equipment creation for an actor
+-- @param t a table of object filters (resolvers.resolveObject is called for each)
+--	additional filter fields interpreted:
+--		id: identify the object
+-- Objects that cannot be equipped are added to main inventory instead
+function resolvers.equip(t)
+	return {__resolver="equip", __resolve_last=true, t, _allow_random_boss=true}
+end
+
+--- Resolves equipment creation for an actor at birth (ignores material restrictions)
 function resolvers.equipbirth(t)
 	for i, filter in ipairs(t) do
 		filter.ignore_material_restriction = true
 	end
-	return {__resolver="equip", __resolve_last=true, t}
+	return {__resolver="equip", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the equipment creation
+
+--- Actually create and equip objects
+--  Creates the objects according to the filters and equips them if possible
+-- @param t the resolver table created by resolvers.equip
+-- @param e the entity (Actor) to add the equipment to
 function resolvers.calc.equip(t, e)
---	print("Equipment resolver for", e.name)
-	-- Iterate over object requests, try to create them and equip them
+	-- Iterate over object filters, trying to create and equip each
 	for i, filter in ipairs(t[1]) do
---		print("Equipment resolver", e.name, filter.type, filter.subtype, filter.defined, filter.random_art_replace)
-		local o
-		local tries = 0
-		repeat
-			local ok = true
-			tries = tries + 1
-			if not filter.defined then
-				o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-			else
-				local forced
-				o, forced = game.zone:makeEntityByName(game.level, "object", filter.defined, filter.random_art_replace and true or false)
-				-- If we forced the generation this means it was already found
-				if forced then
---					print("Serving unique "..o.name.." but forcing replacement drop")
-					filter.random_art_replace.chance = 100
-				end
-			end
-			if o and o.power_source and (o.power_source.antimagic and e:attr("has_arcane_knowledge") or o.power_source.arcane and e:attr("forbid_arcane")) then -- check antimagic restrictions
---			if o and not filter.no_power_restrictions and not game.state:checkPowers(e, o) then -- Check power restrictions
-				ok = false
-				print("  Equipment resolver for ", e.name ," -- incompatible equipment ", o.name, "retrying", tries, "forbid ps:", filter.forbid_power_source and table.concat(table.keys(filter.forbid_power_source, ",")), "vs ps", o.power_source and table.concat(table.keys(o.power_source), ","))
-			end
-		until ok or tries > 4
+		--print("[resolvers.equip]", e.uid, e.name, (string.fromTable(filter, 1)))
+		local o = resolvers.resolveObject(e, filter, true, 5)
 		if o then
----		print("Zone made us an equipment according to filter!", o:getName())
-			-- curse (done here to ensure object attributes get applied correctly)
-			if e:knowTalent(e.T_DEFILING_TOUCH) then
-				local t = e:getTalentFromId(e.T_DEFILING_TOUCH)
-				t.curseItem(e, t, o)
-			end
-
-			-- Auto alloc some stats to be able to wear it
-			if filter.autoreq and rawget(o, "require") and rawget(o, "require").stat then
---				print("Autorequire stats")
-				for s, v in pairs(rawget(o, "require").stat) do
-					if e:getStat(s) < v then
-						e.unused_stats = e.unused_stats - (v - e:getStat(s))
-						e:incStat(s, v - e:getStat(s))
-					end
-				end
-			end
-
-			if e:wearObject(o, true, false, filter.force_inven or nil, filter.force_item or nil) == false then
-				if filter.force_inven and e:getInven(filter.force_inven) then  -- we just really want it
-					e:addObject(filter.force_inven, o, true, filter.force_item)
-				else
-					e:addObject(e.INVEN_INVEN, o)
-				end
-			end
-
-			-- Do not drop it unless it is an ego or better
-			if not o.unique then o.no_drop = true --[[print(" * "..o.name.." => no drop")]] end
-			if filter.force_drop then o.no_drop = nil end
-			if filter.never_drop then o.no_drop = true end
-			game.zone:addEntity(game.level, o, "object")
-
+			o._resolver_type = t.__resolver
 			if t[1].id then o:identify(t[1].id) end
+		end
+	end
+	return nil -- Deletes the origin field
+end
 
-			if filter.random_art_replace then
-				o.__special_boss_drop = filter.random_art_replace
+--- Sets filters by inventory name controlling which objects may be automatically equipped by an entity (Actor)
+-- Actors (NPCs) will not auto equip items that don't pass the filter (or removed any equipped items)
+-- @see Object:wornLocations
+-- @param[1] t: a table of filters indexed by inventory name, format:
+--		{[inven_def.name1] = {equipment filter 1}, [inven_def.name2] = {equipment filter 2}, ...}
+--		filter.ignore_material_restriction and filter.allow_uniques are set true if not defined
+--	Use the e._equipping_entity variable set by Object:wornLocations for the equipping actor within filter special functions
+-- @param[2] t: a string matching the name of a Birther subclass ("Rogue", "Bulwark", ...)
+--		the autoequip filters for the subclass will be copied
+-- @param readonly set true to prevent the inventory filters from being overwritten by later applications
+function resolvers.auto_equip_filters(t, readonly)
+	return {__resolver="auto_equip_filters", __resolve_instant=true, t, readonly=readonly, _allow_random_boss=true}
+end
+
+--- Resolves the auto-equip filters for an actor by inventory slot
+--function resolvers.calc.auto_equip_filters(t, e, readonly)
+function resolvers.calc.auto_equip_filters(t, e, readonly)
+	local filters = t[1]
+	if type(filters) == "string" then -- get subclass filters
+		local c_name, ok = filters
+		local cc = table.get(engine.Birther.birth_descriptor_def, "subclass", c_name, "copy")
+		if cc then
+			 print("[resolvers.auto_equip_filters] using birth descriptor for subclass:", c_name)
+			for i, res in ipairs(cc) do
+				if type(res) == "table" and res.__resolver == "auto_equip_filters" then
+					res = table.clone(res, true)
+					res.readonly = t.readonly or res.readonly
+					resolvers.calc.auto_equip_filters(res, e) ok = true
+				end
+			end
+		end
+		if not ok then print("[resolvers.auto_equip_filters] NO BIRTH auto_equip_filter for subclass:", c_name) end
+		return
+	end
+	for inv, filter in pairs(filters) do
+		local inven = e:getInven(inv)
+		if inven then
+			if not inven.auto_equip_filter or not inven.auto_equip_filter.readonly then
+				local aef = table.clone(filter, true)
+				if aef.ignore_material_restriction == nil then aef.ignore_material_restriction = true end
+				if aef.allow_uniques == nil then aef.allow_uniques = true end
+				aef.readonly = t.readonly
+				inven.auto_equip_filter = aef
 			end
 		end
 	end
-	-- Delete the origin field
-	return nil
 end
 
-
---- Resolves equipment creation for an actor
+--- Resolves tinkers and attaches them to appropriate worn objects if possible
+-- @param t a table of object filters (resolvers.resolveObject is called for each)
+--	additional filter fields interpreted:
+--		keep_object: place the tinker in main inventory if not attached (default is to discard it)
+--		id: identify the tinker
+-- a tinker already attached to the worn object is automatically placed in main inventory
 function resolvers.attachtinker(t)
-	return {__resolver="attachtinker", __resolve_last=true, t}
+	return {__resolver="attachtinker", __resolve_last=true, t, keep_object=t.keep_object, _allow_random_boss=true}
 end
+
+--- As resolvers.attachtinker but ignores material restrictions
 function resolvers.attachtinkerbirth(t)
 	for i, filter in ipairs(t) do
 		filter.ignore_material_restriction = true
 	end
-	return {__resolver="attachtinker", __resolve_last=true, t}
+	return {__resolver="attachtinker", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the equipment creation
+
+--- Actually create and attach the tinker
+-- @param t the resolver table created by resolvers.attachtinker
+-- @param e the entity (Actor) to add the tinker to
 function resolvers.calc.attachtinker(t, e)
-	print("Tinker resolver for", e.name)
-	-- Iterate of object requests, try to create them and equip them
+	-- Iterate over object filters, trying to create and attach each
 	for i, filter in ipairs(t[1]) do
-		print("Tinker resolver", e.name, filter.type, filter.subtype, filter.defined)
-		local o
-		if not filter.defined then
-			o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-		else
-			local forced
-			o, forced = game.zone:makeEntityByName(game.level, "object", filter.defined, filter.random_art_replace and true or false)
-			-- If we forced the generation this means it was already found
-			if forced then
---				print("Serving unique "..o.name.." but forcing replacement drop")
-				filter.random_art_replace.chance = 100
-			end
-		end
+		--print("[resolvers.attachtinker]", e.uid, e.name, (string.fromTable(filter, 1)))
+		local o = resolvers.resolveObject(e, filter, false, 5)
 		if o then
-			print("Zone made us an Tinker according to filter!", o:getName())
-			-- Auto alloc some stats to be able to wear it
-			if filter.autoreq and rawget(o, "require") and rawget(o, "require").stat then
---				print("Autorequire stats")
-				for s, v in pairs(rawget(o, "require").stat) do
-					if e:getStat(s) < v then
-						e.unused_stats = e.unused_stats - (v - e:getStat(s))
-						e:incStat(s, v - e:getStat(s))
-					end
+			o._resolver_type = t.__resolver
+			--print("[resolvers.attachtinker] created tinker:", o.uid, o:getName())
+			local base_inven, base_item = e:findTinkerSpot(o)
+			local base_o = base_inven and base_item and base_inven[base_item]
+			local ok
+			if base_o then
+				ok = e:doWearTinker(nil, nil, o, base_inven, base_item, base_o, true)
+				if t[1].id then o:identify(t[1].id) end
+				print("[resolvers.attachtinker]", o.uid, o.name, ok and "ATTACHED:" or "FAILED TO ATTACH:", base_inven.name, base_item, base_o and base_o:getName())
+			else
+				print("[resolvers.attachtinker]", o.uid, o.name, "No tinker attach spot", base_inven, base_item)
+			end
+			if not ok then
+				if (t.keep_object or filter.keep_object) and e:addObject(e.INVEN_INVEN, o) then
+					print("    --- added to main inventory") ok = true 
 				end
 			end
-
-			local base_inven, base_item = e:findTinkerSpot(o)
-			if base_inven and base_item then
-				local base_o = base_inven[base_item]
-				e:doWearTinker(nil, nil, o, base_inven, base_item, base_o, true)
-				if t[1].id then o:identify(t[1].id) end
-			end
+			if ok then game.zone:addEntity(game.level, o, "object") end -- updates uniques list to prevent duplicates		
 		end
 	end
-	-- Delete the origin field
-	return nil
+	return nil -- Deletes the origin field
 end
 
 --- Resolves inventory creation for an actor
+--  Similar to resolvers.equip, but places each object in a specific inventory slot
+--  No checks are made for wearability (worn objects will not be replaced)
+-- @param t a table of object filters (resolvers.resolveObject is called for each)
+--	additional filter fields interpreted:
+--		inven: inventory id of the inventory to add to (defaults to t.inven or main inventory)
+--		keep_object: set true to try main inventory if the object cannot be added to the specified inventory
+--		id: identify the object (defaults to t.id)
+--		transmo: set true to designate the object for transmutation (defaults to t.transmo or nil)
 function resolvers.inventory(t)
-	return {__resolver="inventory", __resolve_last=true, t}
+	return {__resolver="inventory", __resolve_last=true, t, _allow_random_boss=true}
 end
+
+--- Resolves inventory creation for an actor at birth (ignores material restrictions)
 function resolvers.inventorybirth(t)
 	for i, filter in ipairs(t) do
 		filter.ignore_material_restriction = true
 	end
-	return {__resolver="inventory", __resolve_last=true, t}
+	return {__resolver="inventory", __resolve_last=true, t, _allow_random_boss=true}
 end
+
 --- Actually resolve the inventory creation
+-- @param t the resolver table created by resolvers.inventory
+-- @param e the entity (Actor) to add the objects to
 function resolvers.calc.inventory(t, e)
-	-- Iterate of object requests, try to create them and equip them
+	-- Iterate over object requests, try to create them and add them
 	for i, filter in ipairs(t[1]) do
-		print("Inventory resolver", e.name, e.filter, filter.type, filter.subtype)
-		local o
-		if not filter.defined then
-			o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-		else
-			if filter.base_list then
-				local _, _, class, file = filter.base_list:find("(.*):(.*)")
-				if class and file then
-					local base_list = require(class):loadList(file)
-					base_list.__real_type = "object"
-					o = game.zone:makeEntityByName(game.level, base_list, filter.defined)
+		--print("[resolvers.inventory]", e.uid, e.name, (string.fromTable(filter, 1)))
+		local o = resolvers.resolveObject(e, filter, false)
+		
+		if o then
+			o._resolver_type = t.__resolver
+			local inven = filter.inven or t[1].inven
+			print("[resolvers.inventory] created object:", o.uid, o:getName(), "inventory:", inven, "keep:", filter.keep_object)
+			if inven then inven = e:getInven(inven) or filter.keep_object and e.INVEN_INVEN
+			else inven = e.INVEN_INVEN
+			end
+			if inven then
+				local id = t[1].id
+				if filter.id ~= nil then id = filter.id end
+				if e:addObject(inven, o) or filter.keep_object and inven.id ~= e.INVEN_INVEN and e:addObject(e.INVEN_INVEN, o) then
+					game.zone:addEntity(game.level, o, "object")
+					if id ~= nil then o:identify(id) end
+					if filter.transmo or t[1].transmo then o.__transmo = true end
+				else
+					print("[resolvers.inventory] created object:", o.uid, o:getName(), "NOT ADDED")
 				end
-			else
-				o = game.zone:makeEntityByName(game.level, "object", filter.defined)
 			end
 		end
-		if o then
---			print("Zone made us an inventory according to filter!", o:getName())
-			e:addObject(t[1].inven and e:getInven(t[1].inven) or e.INVEN_INVEN, o)
-			game.zone:addEntity(game.level, o, "object")
-
-			if t[1].id then o:identify(t[1].id) end
-			if t[1].transmo then o.__transmo = true end
-		end
 	end
-	e:sortInven()
-	-- Delete the origin field
-	return nil
+	return nil -- Delete the origin field
 end
 
 --- Resolves drops creation for an actor
+-- 	Places objects in main inventory and marks them to be dropped on death
+-- @param t a table of object filters to be randomly selected from (resolvers.resolveObject is called for each)
+-- 	additional fields for t:
+--		chance = percent chance for drops (all or none, default 100)
+--		nb = number of drops (default 1)
+--		id: set the identify status of each object
 function resolvers.drops(t)
-	return {__resolver="drops", __resolve_last=true, t}
+	return {__resolver="drops", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the drops creation
+
+--- Actually resolve the drops creation adding each object to main inventory
+-- @param t the resolver table created by resolvers.drops
+-- @param e the entity (Actor) to add the objects to
 function resolvers.calc.drops(t, e)
 	t = t[1]
 	if not rng.percent(t.chance or 100) then return nil end
 	if t.check and not t.check(e) then return nil end
 
-	-- Iterate of object requests, try to create them and drops them
+	-- Iterate over object requests, adding each object to main inventory and marking it to be dropped
 	for i = 1, (t.nb or 1) do
-		local filter = t[rng.range(1, #t)]
-		filter = table.clone(filter)
-
+		local filter = table.clone(t[rng.range(1, #t)])
 		-- Make sure if we request uniques we do not get lore, it would be kinda deceptive
 		if filter.unique then
 			filter.not_properties = filter.not_properties or {}
 			filter.not_properties[#filter.not_properties+1] = "lore"
 		end
-
---		print("Drops resolver", e.name, filter.type, filter.subtype, filter.defined)
-		local o
-		if not filter.defined then
-			o = game.zone:makeEntity(game.level, "object", filter, nil, true)
-		else
-			local forced
-			o, forced = game.zone:makeEntityByName(game.level, "object", filter.defined, filter.random_art_replace and true or false)
-			-- If we forced the generation this means it was already found
-			if forced then
---				print("Serving unique "..o.name.." but forcing replacement drop")
-				filter.random_art_replace.chance = 100
-			end
-		end
+		--print("[resolvers.drops]", e.uid, e.name, (string.fromTable(filter, 1)))
+		local o = resolvers.resolveObject(e, filter, nil)
+		
 		if o then
---			print("Zone made us a drop according to filter!", o:getName())
-			e:addObject(e.INVEN_INVEN, o)
-			game.zone:addEntity(game.level, o, "object")
-
-			if t.id then o:identify(t.id) end
-
-			if filter.random_art_replace then
-				o.__special_boss_drop = filter.random_art_replace
-			end
+			o._resolver_type = "drops"
+			o.no_drop = false -- make sure it is dropped
+			if t.id ~= nil then o:identify(t.id) end
 		end
 	end
-	-- Delete the origin field
-	return nil
+	return nil -- Deletes the origin field
 end
 
 -- Resolves material level based on actor level
@@ -257,7 +457,7 @@ function resolvers.matlevel(base, base_level, spread, mn, mx)
 	return {__resolver="matlevel", base, base_level, spread, mn, mx}
 end
 function resolvers.calc.matlevel(t, e)
-	local mean = math.min(e.level/10+1,t[1] * (e.level/t[2])^.5) -- I5 material level scales up with sqrt of actor level or level/10
+	local mean = math.min(e.level/10+1,t[1] * (e.level/t[2])^.5) -- material level scales up with sqrt of actor level or level/10
 	local spread = math.max(t[3],mean/5) -- spread out probabilities at high level
 	local mn = t[4] or 1
 	local mx = t[5] or 5
@@ -276,46 +476,53 @@ local function actor_final_level(e)
 	end
 end
 
---- Resolves drops creation for an actor; drops a created on the fly randart
+--- Creates a randart and adds it to inventory (to be dropped on death)
+-- 	@param t table of data to generate the randart:
+--	@field t._use_object: object to use (bypasses random generation)
+--	@field t.filter: optional filter for the base object
+--		(defaults to a random, plain object with material level 2 or more)
+-- 	@field t.data: data to pass to game.state:generateRandart
+--		(defaults to {lev=resolvers.current_level})
+-- 	@field t.id: set to identify the randart
+--	@field t.no_add: set true to not add the randart to inventory (return it instead when resolved)
 function resolvers.drop_randart(t)
-	return {__resolver="drop_randart", __resolve_last=true, t}
+	return {__resolver="drop_randart", __resolve_last=true, t, _allow_random_boss=true}
 end
---- Actually resolve the drops creation
+
+--- Actually resolve the randart
+-- @param t the resolver table created by resolvers.drop_randart
+-- @param e the entity (Actor) to add the randart to
 function resolvers.calc.drop_randart(t, e)
 	t = t[1]
-	local filter = t.filter
-
- 	local matresolver = resolvers.matlevel(5,50,1,2) -- Min material level 2
-   
---	game.log("#LIGHT_BLUE#Calculating randart drop for %s (uid %d, est level %d)",e.name,e.uid,actor_final_level(e))
-	if not filter then
-		filter = {ignore_material_restriction=true, no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, special=function(eq)
-			local matlevel = resolvers.calc.matlevel(matresolver,{level = actor_final_level(e)})
---			game.log("Checking equipment %s against material level %d for %s (final level %d)",eq.name,matlevel,e.name, actor_final_level(e))
-			return (not eq.unique and eq.randart_able) and eq.material_level == matlevel and true or false
-		end}
+	local o = t._use_object
+	if not o then
+		local data = t.data or {lev=resolvers.current_level}
+		if not data.base then -- generate a base object
+			local filter = t.filter
+			if not filter then
+				local matresolver = resolvers.matlevel(5,50,1,2) -- Min material level 2
+				filter = {ignore_material_restriction=true, no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, special=function(eq)
+					local matlevel = resolvers.calc.matlevel(matresolver,{level = actor_final_level(e)})
+					return (not eq.unique and eq.randart_able) and eq.material_level == matlevel and true or false
+				end}
+			end
+			print("[resolvers.drop_randart]", e.uid, e.name, "generating base object using filter:", (string.fromTable(filter, 1)))
+			data.base = resolvers.resolveObject(e, filter, false, 5)
+		end
+		print("[resolvers.drop_randart]", e.uid, e.name, "using data:", (string.fromTable(data, 2)))
+		o = game.state:generateRandart(data)
 	end
-
---	print("Randart Drops resolver")
-	local base = nil
-	if filter then
-		if not filter.defined then
-			base = game.zone:makeEntity(game.level, "object", filter, nil, true)
+	if o then
+		o._resolver_type = "drop_randart"
+		o.no_drop = false
+		if t.id then o:identify(t.id) end
+		if t.no_add then
+			return o
 		else
-			base = game.zone:makeEntityByName(game.level, "object", filter.defined)
+			e:addObject(e.INVEN_INVEN, o)
+			game.zone:addEntity(game.level, o, "object")
 		end
 	end
-
-	local o = game.state:generateRandart{base=base, lev=resolvers.current_level}
-	if o then
---		print("Zone made us a randart drop according to filter!", o:getName{force_id=true})
-		e:addObject(e.INVEN_INVEN, o)
-		game.zone:addEntity(game.level, o, "object")
-
-		if t.id then o:identify(t.id) end
-	end
-	-- Delete the origin field
-	return nil
 end
 
 --- Resolves drops creation for an actor
@@ -352,7 +559,7 @@ end
 function resolvers.chatfeature(def, faction)
 	return {__resolver="chatfeature", def, faction}
 end
---- Actually resolve the drops creation
+--- Actually resolve the chat creation
 function resolvers.calc.chatfeature(t, e)
 	e.chat_faction = t[2]
 	t = t[1]
@@ -382,7 +589,7 @@ resolvers.mbonus_max_level = 90
 --- Random bonus based on level and material quality
 resolvers.current_level = 1
 function resolvers.mbonus_material(max, add, pricefct)
-	return {__resolver="mbonus_material", max, add, pricefct}
+	return {__resolver="mbonus_material",  __resolve_instant=true, max, add, pricefct}
 end
 function resolvers.calc.mbonus_material(t, e)
 	local ml = e.material_level or 1
@@ -408,7 +615,7 @@ end
 --- Random bonus based on level, more strict
 resolvers.current_level = 1
 function resolvers.mbonus_level(max, add, pricefct, step)
-	return {__resolver="mbonus_level", max, add, step or 10, pricefct}
+	return {__resolver="mbonus_level",  __resolve_instant=true, max, add, step or 10, pricefct}
 end
 function resolvers.calc.mbonus_level(t, e)
 	local max = resolvers.mbonus_max_level
@@ -433,7 +640,7 @@ end
 --- Random bonus based on level
 resolvers.current_level = 1
 function resolvers.mbonus(max, add, pricefct)
-	return {__resolver="mbonus", max, add, pricefct}
+	return {__resolver="mbonus",  __resolve_instant=true, max, add, pricefct}
 end
 function resolvers.calc.mbonus(t, e)
 	local v = rng.mbonus(t[1], resolvers.current_level, resolvers.mbonus_max_level) + (t[2] or 0)
@@ -453,7 +660,7 @@ end
 -- result is (base +/- spread)*(current_level/base_level)^power
 -- min = optional minimum value
 function resolvers.clscale(base, base_level, spread, power, min)
-	return {__resolver="clscale", base, base_level, spread, power or 0.75, min}
+	return {__resolver="clscale",  __resolve_instant=true, base, base_level, spread, power or 0.75, min}
 end
 function resolvers.calc.clscale(t, e)
 	return math.max(math.ceil((t[1] + (t[3] and rng.range(-t[3],t[3]) or 0))*(resolvers.current_level/t[2])^t[4]),t[5] or t[1])
@@ -499,15 +706,20 @@ function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
 	e.max_power = cd
 	e.power = e.max_power
-	e.use_power = {name=tt[1], power=cd, use=tt[3], __no_merge_add=true}
+	e.use_power = table.merge(e.use_power or {}, {name=tt[1], power=cd, use=tt[3], __no_merge_add=true})
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
 	if tt[5] then table.merge(e.use_power, tt[5], true) end
 	return
 end
 
 --- Charms talent resolver
-function resolvers.charmt(tid, tlvl, cd, tcd)
-	return {__resolver="charmt", tid, tlvl, cd, tcd}
+-- @param tid = talent id
+-- @param tlvl = (raw) talent level (mastery is based on user)
+-- @param cd = cooldown
+-- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
+-- @param use_params = parameters to merge into self.use_talent table
+function resolvers.charmt(tid, tlvl, cd, tcd, use_params)
+	return {__resolver="charmt", tid, tlvl, cd, tcd, use_params}
 end
 function resolvers.calc.charmt(tt, e)
 	local cd = tt[3]
@@ -516,6 +728,7 @@ function resolvers.calc.charmt(tt, e)
 	local lvl = util.getval(tt[2], e)
 	e.use_talent = {id=tt[1], power=cd, level=lvl, __no_merge_add=true}
 	if e.talent_cooldown == nil then e.talent_cooldown = tt[4] or "T_GLOBAL_CD" end
+	if tt[5] then table.merge(e.use_talent, tt[5], true) end
 	return
 end
 
@@ -541,39 +754,42 @@ end
 function resolvers.calc.moddable_tile(t, e)
 	local slot = t[1]
 	local r, r2
-	if slot == "cloak" then r = {"cloak_%s_01","cloak_%s_02","cloak_%s_03","cloak_%s_04","cloak_%s_05"}
+	if slot == "cloak" then r = {"cloak_%s_07","cloak_%s_08","cloak_%s_08","cloak_%s_09","cloak_%s_09"}
 	elseif slot == "massive" then
 		r = {"upper_body_20","upper_body_21","upper_body_22","upper_body_24","upper_body_23",}
 		r2 = {"lower_body_09","lower_body_10","lower_body_11","lower_body_13","lower_body_12",}
 	elseif slot == "heavy" then
 		r = {"upper_body_25","upper_body_11","upper_body_26","upper_body_28","upper_body_27",}
-		r2 = {"lower_body_08","lower_body_08","lower_body_08","lower_body_08","lower_body_08",}
+		r2 = {"lower_body_16","lower_body_08","lower_body_17","lower_body_18","lower_body_19",}
 	elseif slot == "light" then
-		r = {"upper_body_05","upper_body_06","upper_body_07","upper_body_08","upper_body_19",}
-		r2 = {"lower_body_03","lower_body_04","lower_body_05","lower_body_06","lower_body_06",}
-	elseif slot == "robe" then r = {"upper_body_18","upper_body_16","upper_body_13","upper_body_15","upper_body_17",}
-	elseif slot == "shield" then r = {"%s_hand_10","%s_hand_11","%s_hand_11","%s_hand_12","%s_hand_12",}
-	elseif slot == "staff" then r = {{"%s_hand_08",true}}
-	elseif slot == "leather_boots" then r = {"feet_03","feet_04","feet_04","feet_05","feet_05",}
+		r = {"upper_body_29","upper_body_30","upper_body_31","upper_body_32","upper_body_33",}
+		r2 = {"lower_body_03","lower_body_04","lower_body_05","lower_body_14","lower_body_15",}
+	elseif slot == "robe" then r = {"upper_body_34","upper_body_35","upper_body_36","upper_body_37","upper_body_38",}
+	elseif slot == "shield" then r = {"%s_hand_10_01","%s_hand_11_01","%s_hand_11_02","%s_hand_12_01","%s_hand_12_02",}
+	elseif slot == "staff" then r = {"%s_hand_08_01", "%s_hand_08_03", "%s_hand_08_02", "%s_hand_08_04", "%s_hand_08_05"} -- 03 & 02 are reversed due to an error in gfx, don't change it!
+	elseif slot == "leather_boots" then r = {"feet_04","feet_10","feet_10","feet_11","feet_11",}
 	elseif slot == "heavy_boots" then r = {"feet_06","feet_06","feet_07","feet_09","feet_08",}
 	elseif slot == "gauntlets" then r = {"hands_03","hands_04","hands_05","hands_07","hands_06",}
-	elseif slot == "gloves" then r = {"hands_02",}
-	elseif slot == "sword" then r = {"%s_hand_04",}
-	elseif slot == "2hsword" then r = {"%s_2hsword",}
-	elseif slot == "wizard_hat" then r = {{"head_11",true},{"head_13",true},{"head_17",true},{"head_12",true},{"head_15",true},}
-	elseif slot == "trident" then r = {{"%s_hand_13",true}}
+	elseif slot == "gloves" then r = {"hands_02","hands_02","hands_08","hands_08","hands_09"}
+	elseif slot == "sword" then r = {"%s_hand_04_01", "%s_hand_04_02", "%s_hand_04_03", "%s_hand_04_04", "%s_hand_04_05"}
+	elseif slot == "2hsword" then r = {"%s_2hsword_01", "%s_2hsword_02", "%s_2hsword_03", "%s_2hsword_04", "%s_2hsword_05"}
+	elseif slot == "wizard_hat" then r = {"head_21","head_21","head_22","head_22","head_23"}
+	elseif slot == "trident" then r = {"%s_hand_13_01", "%s_hand_13_02", "%s_hand_13_03", "%s_hand_13_04", "%s_hand_13_05"}
 	elseif slot == "whip" then r = {"%s_hand_09"}
-	elseif slot == "mace" then r = {"%s_hand_05"}
-	elseif slot == "2hmace" then r = {"%s_2hmace"}
-	elseif slot == "axe" then r = {"%s_hand_06"}
-	elseif slot == "2haxe" then r = {"%s_2haxe"}
-	elseif slot == "bow" then r = {"%s_hand_01"}
-	elseif slot == "sling" then r = {"%s_hand_02"}
-	elseif slot == "dagger" then r = {"%s_hand_03"}
+	elseif slot == "mace" then r = {"%s_hand_05_01", "%s_hand_05_02", "%s_hand_05_03", "%s_hand_05_04", "%s_hand_05_05"}
+	elseif slot == "2hmace" then r = {"%s_2hmace_01", "%s_2hmace_02", "%s_2hmace_03", "%s_2hmace_04", "%s_2hmace_05"}
+	elseif slot == "axe" then r = {"%s_hand_06_01", "%s_hand_06_02", "%s_hand_06_03", "%s_hand_06_04", "%s_hand_06_05"}
+	elseif slot == "2haxe" then r = {"%s_2haxe_01", "%s_2haxe_02", "%s_2haxe_03", "%s_2haxe_04", "%s_2haxe_05"}
+	elseif slot == "bow" then r = {"%s_hand_01_01", "%s_hand_01_02", "%s_hand_01_03", "%s_hand_01_04", "%s_hand_01_05"}
+	elseif slot == "sling" then r = {"%s_hand_02_01", "%s_hand_02_02", "%s_hand_02_03", "%s_hand_02_04", "%s_hand_02_05"}
+	elseif slot == "dagger" then r = {"%s_hand_03_01", "%s_hand_03_02", "%s_hand_03_03", "%s_hand_03_04", "%s_hand_03_05"}
 	elseif slot == "mindstar" then r = {{"mindstar_mossy_%s_01",true},{"mindstar_vines_%s_01",true},{"mindstar_thorn_%s_01",true},{"mindstar_pulsing_%s_01",true},{"mindstar_living_%s_01",true},}
 	elseif slot == "helm" then r = {"head_05","head_06","head_08","head_10","head_09",}
-	elseif slot == "leather_cap" then r = {"head_03"}
+	elseif slot == "leather_cap" then r = {"head_03","head_03","head_19","head_19","head_20"}
 	elseif slot == "mummy_wrapping" then r = {{"special/mummy_wrappings",true}}
+	elseif slot == "quiver" then r = {"quiver_01","quiver_02","quiver_03","quiver_04","quiver_05"}
+	elseif slot == "shotbag" then r = {"shotbag_01","shotbag_02","shotbag_03","shotbag_04","shotbag_05"}
+	elseif slot == "gembag" then r = {"gembag_01","gembag_02","gembag_03","gembag_04","gembag_05"}
 	end
 	local ml = e.material_level or 1
 	r = r[util.bound(ml, 1, #r)]
@@ -594,8 +810,7 @@ function resolvers.calc.sustains_at_birth(_, e)
 			local t = self:getTalentFromId(tid)
 			if t and t.mode == "sustained" then
 				self.energy.value = game.energy_to_act
---				print("===== activating sustain", self.name, tid)
-				self:useTalent(tid)
+				self:useTalent(tid, nil, nil, nil, nil, true)
 			end
 		end
 	end
@@ -610,11 +825,11 @@ function resolvers.calc.randartmax(t, e)
 end
 
 --- Inscription resolver
-function resolvers.inscription(name, data)
-	return {__resolver="inscription", name, data}
+function resolvers.inscription(name, data, force_id)
+	return {__resolver="inscription", name, data, force_id, _allow_random_boss=true}
 end
 function resolvers.calc.inscription(t, e)
-	e:setInscription(nil, t[1], t[2], false, false, nil, true, true)
+	e:setInscription(t[3] or nil, t[1], t[2], false, false, nil, true, true)
 	return nil
 end
 
@@ -622,14 +837,14 @@ end
 local inscriptions_max = {
 	heal = 1,
 	protect = 1,
-	attack = 4,
+	attack = 1,  -- Reduce instant cast NPC bursts
 	movement = 1,
 	utility = 6,
 	teleport = 0, -- Annoying
 }
 
 function resolvers.inscriptions(nb, list, kind, ignore_limits)
-	return {__resolver="inscriptions", nb, list, kind, ignore_limits}
+	return {__resolver="inscriptions", nb, list, kind, ignore_limits, _allow_random_boss=true}
 end
 function resolvers.calc.inscriptions(t, e)
 	local kind = nil
@@ -689,42 +904,57 @@ function resolvers.calc.tactic(t, e)
 	return {}
 end
 
+-- consider revising this system to allow 0 as a default weight wt
+-- i.e. actual weight = val + 1 (val > 0) or 1/(1-val) (val < 0)
+-- this would allow tempvalues to be used for various tactical weights
+-- So Wild Speed effect could deter but not eliminate talent use,
+-- Spatial Tether could deemphasize movement, etc..
+
 --- Resolve tactical ai weights based on talents known
 --	mostly to make sure randbosses have sensible ai_tactic tables
 --	this tends to make npc's slightly more aggressive/defensive depending on their talents
 --	@param method = function to be applied to generating the ai_tactic table <not implemented>
--- 	@param tactic_total = total tactical weights desired <10>
+-- 	@param tactic_emphasis = average weight of favored tactics <1.5>
 --	@param weight_power = smoothing factor to balance out weights <0.5>
 --	applied with "on_added_to_level"
-function resolvers.talented_ai_tactic(method, tactic_total, weight_power)
+function resolvers.talented_ai_tactic(method, tactic_emphasis, weight_power)
 	local method = method or "simple_recursive"
-	return {__resolver="talented_ai_tactic", method, tactic_total, weight_power, __resolve_last=true,
+	return {__resolver="talented_ai_tactic", method, tactic_emphasis or 1.5, weight_power, __resolve_last=true,
 	}
 end
 
 -- Extra recursive methods not handled yet
 function resolvers.calc.talented_ai_tactic(t, e)
-	local old_on_added_to_level = e.on_added_to_level
-	e.__ai_compute = t
+	if not e.__ai_tactic_resolver then
+		t.old_on_added_to_level = e.on_added_to_level
+		e.__ai_tactic_resolver = t
+	end
+	--print("talented_ai_tactic resolver setting up on_added_to_level function")
+	--print(debug.traceback())
 	e.on_added_to_level = function(e, level, x, y)
-		local t = e.__ai_compute
-		if old_on_added_to_level then old_on_added_to_level(e, level, x, y) end
+		print("running talented_ai_tactic resolver on_added_to_level function for", e.uid, e.name)
+		local t = e.__ai_tactic_resolver
+		e.__ai_tactic_resolver = nil
+		if t.old_on_added_to_level then t.old_on_added_to_level(e, level, x, y) end
+		
+		if type(t[1]) == "function" then
+		print("running talented_ai_tactic resolver custom function from on_added_to_level")
+			return t[1](t, e, level)
+		end
 		-- print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
-		local tactic_total = t[2] or t.tactic_total or 10 --want tactic weights to total 10
+		local tactic_emphasis = t[2] or t.tactic_emphasis or 2 --want average tactic weight to be 2
 		local weight_power = t[3] or t.weight_power or 0.5 --smooth out tactical weights
-		local tacs_offense = {attack=1, attackarea=1}
+		local tacs_offense = {attack=1, attackarea=1, areaattack=1}
 		local tacs_close = {closein=1, go_melee=1}
 		local tacs_defense = {escape=1, defend=1, heal=1, protect=1, disable = 1}
---		local tac_types = {type="melee",type = "ranged", type="tank", type="survivor"}
 		local tactic, tactical = {}, {total = 0} 
---		local count = {talents = 0, atk_count = 0, atk_value = 0, total_range = 0,
---			atk_melee = 0, melee_value = 0, range_value = 0, atk_range = 0, 
---			escape = 0, close = 0, def_count = 0, def_value = 0, disable=0}
 		local do_count, counted, count_talent, val
 		local tac_count = #table.keys(tacs_offense) + #table.keys(tacs_close) + #table.keys(tacs_defense)
-		local count = {tal_count = 0, atk_count = 0, total_range = 0,
+		local count = {resolver = t, tal_count = 0, atk_count = 0, total_range = 0,
 			atk_melee = 0, melee_value = 0, range_value = 0, atk_range = 0, 
-			escape = 0, close = 0, tac_count = tac_count}
+			escape = 0, close = 0, tac_count = tac_count,
+			ranged_values={}, -- obsolete
+			atk_range_values={}}
 		-- go through all talents, adding up all the tactical weights from the tactical tables
 		local tal
 		local function get_weight(wt)
@@ -744,93 +974,120 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		
 		for tid, tl in pairs(e.talents) do
 			tal = e:getTalentFromId(tid)
-			local range, radius = e:getTalentRange(tal), e:getTalentRadius(tal)
---			if range > 0 then range = range + radius*2/3 end
+			tl = util.getval(tal.ai_level, e, tal) or tl
 			count_talent = false, false
-			if tal and tal.tactical then
-	-- print("   #- tactical table for talent", tal.name, "range", range, "radius", radius)
---	table.print(tal.tactical)
+			local tactics = tal.tactical
+			if type(tactics) == "function" then tactics = tactics(e, tal) end
+			if tactics then
+				local range, radius = e:getTalentRange(tal), e:getTalentRadius(tal)
+				local eff_range = range + radius*2/3
+				print("   #- checking tactical table for talent", tal.id, "level", tl, "range:", range, "radius:", radius, "effective:", eff_range)
+				--	table.print(tal.tactical)
 				do_count = false
-				for tt, wt in pairs(tal.tactical) do
-					val = get_weight(wt, e)
-	-- print("   --- ", tt, "wt=", val)
+				for tt, wt in pairs(tactics) do
+					val = get_weight(wt, e) * (1 + (e.AI_TACTICAL_TALENT_LEVEL_BONUS or 0.2)*tl)
+					-- print("   --- ", tt, "wt=", val)
 					tactical[tt] = (tactical[tt] or 0) + val -- sum up all the input weights
 					if tacs_offense[tt] then
 						do_count = true
 						count.atk_count = count.atk_count + 1
 						val = val * tacs_offense[tt]
---						count.atk_value = count.atk_value + val
-						if range >= 2 or radius > 2 then
+						count.atk_range_values[range+radius] = (count.ranged_values[range+radius] or 0) + val
+						if eff_range >= 2 and not util.getval(tal.is_melee, e, tal) then
 							count.atk_range = count.atk_range + 1
 							count.range_value = count.range_value + val
+							count.ranged_values[range+radius] = (count.ranged_values[range+radius] or 0) + val
 						else
 							count.atk_melee = count.atk_melee + 1
 							count.melee_value = count.melee_value + val
 						end
-						count.total_range = count.total_range + range + radius*2/3
+						count.total_range = count.total_range + eff_range
 					end
 					if tacs_defense[tt] then
 						do_count = true
 						if tt == "escape" then count.escape = count.escape + 1 end
 						if tt == "disable" then -- for range average only
 							count.atk_count = count.atk_count + 1
-							count.total_range = count.total_range + range + radius*2/3
+							count.atk_range_values[range+radius] = (count.ranged_values[range+radius] or 0) + val
+							if eff_range >= 2 then
+								count.range_value = count.range_value + val
+								count.ranged_values[range+radius] = (count.ranged_values[range+radius] or 0) + val
+								count.total_range = count.total_range + eff_range
 						end
+					end
 					end
 					if tacs_close[tt] then
 						do_count = true
 						count.close = count.close + 1
+						count.range_value = count.range_value - val
 					end
 					if do_count then -- sum up only relevant weights
 						count_talent = true
---						tactical.total = tactical.total + val
 						tactic[tt] = (tactic[tt] or 0) + val
 					end
 				end
 				if count_talent then
 					count.tal_count = count.tal_count + 1
---					table.print(count, "--")
+					-- table.print(count, "--")
 				end
 			end
 		end
 
 		-- normalize weights
 		count.avg_attack_range = count.total_range/count.atk_count
-		local norm_total = 0
+		local norm_total, tact_count = 0, 0
 		for tt, wt in pairs(tactic) do
 			local ave_weight = (tactic[tt]+count.tal_count)/count.tal_count
 			local ave_xweight = ave_weight^weight_power - 1
 			if ave_xweight > 1/tac_count then
+				tact_count = tact_count + 1
 				tactic[tt] = ave_weight
 				norm_total = norm_total + ave_weight
 			else
 				tactic[tt] = nil -- defaults to a weight of 1 in the tactical ai
 			end
 		end
+		--table.print(tactic, "\t_raw_tact_ ")
+		--print("norm_total:", norm_total)
 		for tt, _ in pairs(tactic) do
-			tactic[tt] = tactic[tt]*tactic_total/norm_total
+			tactic[tt] = tactic[tt]*tactic_emphasis*tact_count/norm_total
 			if tactic[tt] < 1 then tactic[tt] = nil end -- defaults to a weight of 1 in the tactical ai
 		end
-		
 		-- NPC's with predominantly ranged attacks will want to stay at range.
-		if count.atk_range + count.escape > count.atk_melee + count.close and count.range_value /(count.melee_value + 1) > 1.5 then
-			tactic.safe_range = math.max(2, math.ceil(count.avg_attack_range/2))
+		if count.atk_range + count.escape > count.atk_melee + count.close and count.range_value/(count.melee_value + 1) > 1.5 then
+			tactic.old_safe_range = util.bound(math.ceil(count.avg_attack_range/2), 2, e.sight) -- debugging
+			local sum, break_pt, n, keys = 0, (count.range_value+count.melee_value)/3, 0, {} -- safe_range <= range of 2/3 of all attacks by value
+			for range, ct in pairs(count.atk_range_values) do
+				n = n + 1; keys[n] = range
+			end
+			table.sort(keys)
+			local last_range, last_ct, ct = 0, 0, 0
+			for i, range in ipairs(keys) do
+				ct = count.atk_range_values[range]
+				--	print("processing range, ct:", range, ct)
+				if sum + ct >= break_pt then
+					tactic.safe_range = util.bound(math.floor((last_range*last_ct + range*(break_pt - sum))/(last_ct + break_pt - sum)), 2, e.sight)
+--if config.settings.cheat then game.log("#LIGHT_BLUE#%s[%s] at (%s, %s): tactical safe_range=%s(vs. old:%s)", e.name, e.uid, x, y, tactic.safe_range, tactic.old_safe_range) end -- debugging
+					break
+				end
+				sum = sum + ct
+				last_range, last_ct = range, ct
+			end
 		end
 		
 		tactic.tactical_sum=tactical
 		tactic.count = count
 		tactic.level = e.level
 		tactic.type = "computed"
--- print("  ### ai_tactic table:")
--- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
+		--- print("### talented_ai_tactic resolver ai_tactic table:")
+		--- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
-		e.__ai_compute = nil
+--		e.__ai_tactic_resolver = nil
 		return tactic
 	end
 end
 
 --- Racial Talents resolver
-
 local racials = {
 	halfling = {
 		T_HALFLING_LUCK = {last=10, base=0, every=4, max=5},
@@ -945,26 +1202,42 @@ function resolvers.calc.shooter_capacity(t, e)
 	return nil
 end
 
---- Give staves a flavor, appropriate damage type, spellpower, spellcrit, and the ability to teach the command staff talent
-function resolvers.staff_wielder(name)
-	return {__resolver="staff_wielder", name}
+--- Give staves a flavor, appropriate damage type, and the ability to teach the command staff talent
+function resolvers.staff_element(name)
+	return {__resolver="staff_element", name}
 end
-function resolvers.calc.staff_wielder(t, e)
-	local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
-	e.flavor_name = e["flavor_names"][staff_type]
-	if staff_type == 2 then
-		e.combat.element = rng.table{engine.DamageType.FIRE, engine.DamageType.COLD, engine.DamageType.LIGHTNING, engine.DamageType.ARCANE }
-		e.modes = {"fire", "cold", "lightning", "arcane"}
-		e.name = e.name:gsub(" staff", " magestaff")
-	elseif staff_type == 3 then
-		e.combat.element = rng.table{engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL,  engine.DamageType.PHYSICAL }
-		e.modes = {"light", "darkness", "temporal", "physical"}
-		e.name = e.name:gsub(" staff", " starstaff")
-	elseif staff_type == 4 then
-		e.combat.element = rng.table{engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE,}
-		e.modes = {"darkness", "blight", "acid", "fire"}
-		e.name = e.name:gsub(" staff", " vilestaff")
+function resolvers.calc.staff_element(t, e)
+	local command_flavor, command_lement = nil, nil
+	if not e.flavor_name then
+		if not e.flavors then -- standard
+			local staff_type = rng.table{2, 2, 2, 2, 3, 3, 3, 4, 4, 4}
+			command_flavor = e["flavor_names"][staff_type]
+		else
+			command_flavor = rng.tableIndex(e.flavors)
+		end
 	end
-	e.combat.damtype = engine.DamageType.PHYSICAL
-	return 	{ inc_damage = {[e.combat.element] = e.combat.dam}, combat_spellpower = e.material_level * 3, combat_spellcrit = e.material_level, learn_talent = {[Talents.T_COMMAND_STAFF] = 1}, }
+	if not e.combat.element then
+		command_element = rng.table(e:getStaffFlavor(e.flavor_name or command_flavor))
+	end
+
+	e.combat.damtype = e.combat.damtype or engine.DamageType.PHYSICAL
+	if not e.no_command then 
+		e.wielder = e.wielder or {}
+		e.wielder.learn_talent = e.wielder.learn_talent or {}
+		e.wielder.learn_talent[Talents.T_COMMAND_STAFF] = 1
+	end
+
+	if command_flavor or command_element then e:commandStaff(command_element, command_flavor) end
+
+	-- hee hee
+	if not e.unique and rng.percent(0.1 * (e.material_level or 1) - 0.3) then
+		e.combat.sentient = rng.table{"default", "agressive", "fawning"}
+	end
+end
+
+function resolvers.command_staff()
+	return {__resolver = "command_staff", __resolve_last = true}
+end
+function resolvers.calc.command_staff(t, e)
+	e:commandStaff()
 end

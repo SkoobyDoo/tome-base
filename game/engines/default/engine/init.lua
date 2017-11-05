@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
+
+--- @script init.lua
 
 -- load some utility functions
 dofile("/engine/utils.lua")
@@ -42,7 +44,13 @@ fs.mkdir(fs.getHomePath())
 fs.mkdir(fs.getHomePath().."/4.0/")
 fs.mkdir(fs.getHomePath().."/4.0/profiles/")
 fs.mkdir(fs.getHomePath().."/4.0/settings/")
-fs.setWritePath(fs.getHomePath())
+
+fs.setPathAllowed(engine.homepath)
+fs.setPathAllowed(fs.getRealPath("/addons/"))
+if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/")) end
+fs.setPathAllowed(fs.getRealPath("/modules/"))
+fs.doneSettingPathAllowed()
+fs.setWritePath(engine.homepath)
 
 -- Loads default config & user config
 fs.mount(engine.homepath, "/")
@@ -56,11 +64,13 @@ shaders_active = true
 shaders_kind_distort = true
 shaders_kind_adv = true
 shaders_kind_volumetric = false
+screen_zoom = 1
 particles_density = 100
 background_saves = true
 mouse_cursor = true
 display_fps = 30
 gamma_correction = 120
+font_scale = 100
 mouse_move = true
 censor_boot = true
 chat.filter = {}
@@ -125,7 +135,7 @@ end
 
 fs.umount(engine.homepath)
 
--- Staem cloud saves, disabled until the user chooses otherwise
+-- Steam cloud saves, disabled until the user chooses otherwise
 if core.steam and not config.settings.steam_cloud_choose then
 	print("[STEAM] Disabling cloud saves until the user elects to use them")
 	core.steam.cloudEnable(false)
@@ -141,7 +151,7 @@ game = false
 -- Setup resolution
 engine.Game:setResolution(config.settings.window.size, true)
 core.display.setTextBlended(config.settings.aa_text)
-core.display.setGamma(config.settings.gamma_correction / 100)
+-- core.display.setGamma(config.settings.gamma_correction / 100)
 if not config.settings.fbo_active then core.display.disableFBO() print("Disabling FBO") end
 if not config.settings.shaders_active then core.shader.disable() print("Disabling Shaders") end
 

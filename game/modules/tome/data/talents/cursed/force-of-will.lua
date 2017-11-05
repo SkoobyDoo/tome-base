@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -156,23 +156,37 @@ newTalent{
 	tactical = { DEFEND = 2 },
 	no_sustain_autoreset = true,
 	getMaxDamage = function(self, t)
-		return self:combatTalentMindDamage(t, 0, 240)
+		return self:combatTalentMindDamage(t, 0, 400)
 	end,
 	getDisplayName = function(self, t, p)
 		return ("Deflection (%d)"):format(p.value)
 	end,
+	iconOverlay = function(self, t, p)
+		local val = p.value or 0
+		if val <= 0 then return "" end
+		local fnt = "buff_font_small"
+		if val >= 1000 then fnt = "buff_font_smaller" end
+		return tostring(math.ceil(val)), fnt
+	end,
 	critpower = function(self, t) return self:combatTalentScale(t, 4, 15) end,
+	getRechargeRate = function(self, t) return self:combatTalentLimit(t, 5, 35, 10) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
-		return {
+		local ret = {
 			value = 0,
 			__update_display = true,
 		}
+		self:talentParticles(ret, {type="perfect_strike", args={radius=1, img="spinningwinds_doomed_deflection"}})
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		if p.particles then self:removeParticles(p.particles) end
 		p.particles = nil
 		return true
+	end,
+	callbackOnRest = function(self, t)
+		local p = self.sustain_talents[t.id]
+		if not p or p.value < t.getMaxDamage(self, t) then return true end
 	end,
 	callbackOnActBase = function(self, t)
 		local p = self:isTalentActive(t.id)
@@ -180,7 +194,7 @@ newTalent{
 		if p.value < maxDamage and self.hate >= 0.2 then
 			self:incHate(-0.2)
 
-			p.value = math.min(p.value + maxDamage / 35, maxDamage)
+			p.value = math.min(p.value + maxDamage / t.getRechargeRate(self, t), maxDamage)
 			p.__update_display = true
 
 			t.updateParticles(self, t, p)
@@ -214,9 +228,10 @@ newTalent{
 	end,
 	info = function(self, t)
 		local maxDamage = t.getMaxDamage(self, t)
-		return ([[Create a barrier that siphons hate from you at the rate of 0.2 a turn. The barrier will deflect 50%% of incoming damage with the force of your will, up to %d damage. The barrier charges at a rate of 1/35th of its maximum charge per turn.
+		local recharge_rate = t.getRechargeRate(self, t)
+		return ([[Create a barrier that siphons hate from you at the rate of 0.2 a turn. The barrier will deflect 50%% of incoming damage with the force of your will, up to %d damage. The barrier charges at a rate of 1/%d of its maximum charge per turn.
 		In addition, your ability to channel force with this talent increases all critical damage by %d%% (currently: %d%%)
-		The maximum damage deflected increases with your Mindpower.]]):format(maxDamage, t.critpower(self, t),self.combat_critical_power or 0)
+		The maximum damage deflected increases with your Mindpower.]]):format(maxDamage, recharge_rate, t.critpower(self, t),self.combat_critical_power or 0)
 	end,
 }
 
@@ -320,7 +335,7 @@ newTalent{
 		return tLevel
 	end,
 	getSecondHitChance = function(self, t)
-		return self:combatTalentScale(t.getAdjustedTalentLevel(self, t), 15, 35)
+		return self:combatTalentScale(t, 25, 150)
 	end,
 	action = function(self, t)
 		local secondchance = t.getSecondHitChance(self, t)

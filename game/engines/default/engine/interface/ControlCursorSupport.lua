@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ tiles = engine.Tiles.new(16, 16)
 
 --- Handles control Cursor
 -- This should work for anything that has a surface and x,y,w,h,font properties.
+-- @classmod engine.generator.interface.ControlCursorSupport
 module(..., package.seeall, class.make)
 
 function _M:startCursor()

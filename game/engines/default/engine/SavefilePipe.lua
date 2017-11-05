@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ local Dialog = require "engine.ui.Dialog"
 -- Creates a savefile pipe, savefiles requests can be pushed into it, it will execute them
 -- in order and, as much as possible, as a background process, thus not preventing the game from running.<br/>
 -- There can only be one pipe! DO NOT TRY TO MAKE MORE
+-- @classmod engine.SavefilePipe
 module(..., package.seeall, class.make)
 
 _M.current = nil

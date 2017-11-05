@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -71,6 +71,7 @@ end
 
 newEntity{
 	define_as = "HARDMOUNTAIN_WALL",
+	type = "rockwall", subtype = "rock",
 	name = "hard rocky mountain", image = "terrain/rocky_mountain.png",
 	display = '#', color=colors.UMBER, back_color=colors.LIGHT_UMBER,
 	always_remember = true,
@@ -90,6 +91,7 @@ for i = 1, 6 do newEntity{ base="HARDMOUNTAIN_WALL", define_as = "HARDMOUNTAIN_W
 -----------------------------------------
 newEntity{
 	define_as = "ROCKY_UP_WILDERNESS",
+	type = "floor", subtype = "rock",
 	name = "exit to the worldmap", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/worldmap.png"}},
 	display = '<', color_r=255, color_g=0, color_b=255,
 	always_remember = true,
@@ -100,6 +102,7 @@ newEntity{
 
 newEntity{
 	define_as = "ROCKY_UP8",
+	type = "floor", subtype = "rock",
 	name = "way to the previous level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_8.png"}},
 	display = '<', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -108,6 +111,7 @@ newEntity{
 }
 newEntity{
 	define_as = "ROCKY_UP2",
+	type = "floor", subtype = "rock",
 	name = "way to the previous level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_2.png"}},
 	display = '<', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -116,6 +120,7 @@ newEntity{
 }
 newEntity{
 	define_as = "ROCKY_UP4",
+	type = "floor", subtype = "rock",
 	name = "way to the previous level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_4.png"}},
 	display = '<', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -124,6 +129,7 @@ newEntity{
 }
 newEntity{
 	define_as = "ROCKY_UP6",
+	type = "floor", subtype = "rock",
 	name = "way to the previous level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_6.png"}},
 	display = '<', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -133,6 +139,7 @@ newEntity{
 
 newEntity{
 	define_as = "ROCKY_DOWN8",
+	type = "floor", subtype = "rock",
 	name = "way to the next level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_8.png"}},
 	display = '>', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -141,6 +148,7 @@ newEntity{
 }
 newEntity{
 	define_as = "ROCKY_DOWN2",
+	type = "floor", subtype = "rock",
 	name = "way to the next level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_2.png"}},
 	display = '>', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -149,6 +157,7 @@ newEntity{
 }
 newEntity{
 	define_as = "ROCKY_DOWN4",
+	type = "floor", subtype = "rock",
 	name = "way to the next level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_4.png"}},
 	display = '>', color_r=255, color_g=255, color_b=0,
 	notice = true,
@@ -157,6 +166,7 @@ newEntity{
 }
 newEntity{
 	define_as = "ROCKY_DOWN6",
+	type = "floor", subtype = "rock",
 	name = "way to the next level", image = "terrain/rocky_ground.png", add_displays = {class.new{image="terrain/way_next_6.png"}},
 	display = '>', color_r=255, color_g=255, color_b=0,
 	notice = true,

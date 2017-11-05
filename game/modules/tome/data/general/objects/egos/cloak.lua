@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -321,7 +321,7 @@ newEntity{
 	power_source = {technique=true},
 	name = "murderer's ", prefix=true, instant_resolve=true,
 	keywords = {murderer=true},
-	level_range = {20, 50},
+	level_range = {10, 50},
 	greater_ego = 1,
 	rarity = 20,
 	cost = 40,
@@ -423,7 +423,7 @@ newEntity{
 	},
 	charm_power_def = {add=5, max=10, floor=true},
 	resolvers.charm("blink randomly (up to range 8) within 2 spaces of a target hostile creature", 10, function(self, who)
-		local tg = {type="hit", range=8, friendlyfire = false}
+		local tg = self.use_power.target(self, who)
 		local x, y = who:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, x, y = who:canProject(tg, x, y)
@@ -433,17 +433,21 @@ newEntity{
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
 		who:teleportRandom(target.x, target.y, 2)
 		game.level.map:particleEmitter(who.x, who.y, 1, "teleport")
-		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_count=true})
+		game.logSeen(who, "%s uses %s!", who.name:capitalize(), self:getName{no_add_name=true, do_color=true})
 		return {id=true, used=true}
-		end),
+		end,
+		"T_GLOBAL_CD",
+		{tactical = {CLOSEIN = 2},
+		range = 8,
+		requires_target = true,
+		target = function(self, who) return {type="hit", range=self.use_power.range, friendlyfire = false} end}),
 }
-
 
 newEntity{
 	power_source = {technique=true},
 	name = " of backstabbing", suffix=true, instant_resolve=true,
 	keywords = {backstab=true},
-	level_range = {40, 50},
+	level_range = {30, 50},
 	greater_ego = 1,
 	rarity = 35,
 	cost = 70,

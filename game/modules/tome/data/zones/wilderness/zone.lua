@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -52,7 +52,9 @@ return {
 					game.level.map.attrs(x, y, "world-encounter")[z.subtype] = true
 				end end
 			elseif z.type == "block_fortress" then
-				game.level.map.attrs(x, y, "block_fortress", true)
+				for x = z.x1, z.x2 do for y = z.y1, z.y2 do
+					game.level.map.attrs(x, y, "block_fortress", true)
+				end end
 			end
 		end
 
@@ -88,7 +90,7 @@ return {
 	end,
 	on_enter_list = {},
 	on_enter = function(_, _, newzone)
-		if game.player.level >= 14 and game.player.level <= 22 and not game.player:hasQuest("lightning-overload") then
+		if game.player.level >= 14 and game.player.level <= 22 and not game.player:hasQuest("lightning-overload") and game:isCampaign("Maj'Eyal") then
 			game.player:grantQuest("lightning-overload")
 		elseif game.player:hasQuest("lightning-overload") then
 			game.player:hasQuest("lightning-overload"):on_wilderness()

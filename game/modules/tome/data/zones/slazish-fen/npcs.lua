@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -65,10 +65,12 @@ newEntity{ base = "BASE_NPC_NAGA", define_as = "NAGA_TIDEWARDEN",
 	level_range = {1, nil}, exp_worth = 3,
 	rarity = 1,
 	max_life = resolvers.rngavg(100,120), life_rating = 13,
+	resolvers.auto_equip_filters{MAINHAND = {subtype="trident"},},
 	resolvers.equip{
 		{type="weapon", subtype="trident", autoreq=true, force_drop=true, special_rarity="trident_rarity"},
 	},
 	resolvers.talents{
+		[Talents.T_EXOTIC_WEAPONS_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=1, every=10, max=5},
 	},
 }
@@ -81,26 +83,30 @@ newEntity{ base = "BASE_NPC_NAGA", define_as = "NAGA_TIDECALLER",
 	rarity = 1,
 	max_life = resolvers.rngavg(50,60), life_rating = 10,
 	autolevel = "caster",
+	resolvers.auto_equip_filters("Archmage"),
 	resolvers.equip{
 		{type="weapon", subtype="staff", autoreq=true},
 	},
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=2, every=7, max=5},
 		[Talents.T_WATER_JET]={base=2, every=7, max=5},
 	},
 }
 
 newEntity{ base = "BASE_NPC_NAGA",
-	name = "naga nereid", color=colors.YELLOW,
+	name = "naga nereid", color=colors.YELLOW, resolvers.nice_tile{tall=1},
 	desc = [[Green eyes stare out from behind strands of long, golden hair, which falls down in waves over smooth, pale skin. Your eyes are drawn to the bare flesh, but as they look further they see dark scales stretching out into a long serpent's tail. You look up as she moves, her hair parting to reveal a slim and beautiful face with high cheekbones and full lips. Yet for all the allure of this wondrous creature the terror of the serpentine tail sends shivers down your spine.]],
 	level_range = {2, nil}, exp_worth = 3, female = true,
 	rarity = 1,
 	max_life = resolvers.rngavg(80,90), life_rating = 11,
 	autolevel = "caster",
+	resolvers.auto_equip_filters("Archmage"),
 	resolvers.equip{
 		{type="weapon", subtype="staff", autoreq=true},
 	},
 	resolvers.talents{
+		[Talents.T_STAFF_MASTERY]={base=0, every=8, max=5},
 		[Talents.T_SPIT_POISON]={base=2, every=7, max=5},
 		[Talents.T_MIND_SEAR]={base=2, every=7, max=5},
 		[Talents.T_TELEKINETIC_BLAST]={base=2, every=7, max=5},
@@ -126,9 +132,10 @@ newEntity{ base="BASE_NPC_NAGA", define_as = "ZOISLA",
 	move_others=true,
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
+	resolvers.auto_equip_filters{MAINHAND = {subtype="trident"},},
 	resolvers.equip{
-		{type="weapon", subtype="staff", autoreq=true},
-		{defined="ROBES_DEFLECTION", autoreq=true},
+		{type="weapon", subtype="trident", autoreq=true, force_drop=true, special_rarity="trident_rarity"},
+		{defined="ROBES_DEFLECTION", replace_unique={type="armor", subtype="cloth"}, autoreq=true},
 	},
 	resolvers.drops{chance=100, nb=1, {unique=true, not_properties={"lore"}} },
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your skin drips with acid, damaging all that hit you for %0.1f Acid damage.
+		return ([[Your skin drips with acid, damaging all that hit you for %0.1f disarming acid damage.
 		The damage increases with your Mindpower.]]):format(damDesc(self, DamageType.ACID, t.getDamage(self, t)))
 	end,
 }
@@ -163,7 +163,7 @@ newTalent{
 		local list = {}
 		for tid, cd in pairs(self.talents_cd) do 
 			local tt = self:getTalentFromId(tid)
-			if tt.mode ~= "passive" and not tt.uber then list[#list+1] = tid end
+			if tt.mode ~= "passive" and not tt.fixed_cooldown and not tt.uber then list[#list+1] = tid end
 		end
 		while #list > 0 and nb > 0 do
 			self.talents_cd[rng.tableRemove(list)] = nil

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -92,6 +92,36 @@ newEntity{ base = "BONE_DOOR", define_as = "BONE_DOOR_HORIZ", z=3, image = "terr
 newEntity{ base = "BONE_DOOR_OPEN", define_as = "BONE_DOOR_HORIZ_OPEN", image = "terrain/sandfloor.png", add_displays = {class.new{image="terrain/bone/bone_door1_open.png", z=17}, class.new{image="terrain/bone/bonewall_8_1.png", z=18, display_y=-1}}, door_closed = "BONE_DOOR_HORIZ"}
 newEntity{ base = "BONE_DOOR", define_as = "BONE_DOOR_VERT", image = "terrain/sandfloor.png", add_displays = {class.new{image="terrain/bone/bone_door1_vert.png", z=17}, class.new{image="terrain/bone/bone_door1_vert_north.png", z=18, display_y=-1}}, door_opened = "BONE_DOOR_OPEN_VERT", dig = "BONE_DOOR_OPEN_VERT"}
 newEntity{ base = "BONE_DOOR_OPEN", define_as = "BONE_DOOR_OPEN_VERT", image = "terrain/sandfloor.png", add_displays = {class.new{image="terrain/bone/bone_door1_open_vert.png", z=17}, class.new{image="terrain/bone/bone_door1_open_vert_north.png", z=18, display_y=-1}}, door_closed = "BONE_DOOR_VERT"}
+
+newEntity{
+	define_as = "BONE_VAULT_DOOR",
+	type = "wall", subtype = "bone",
+	name = "door", image="terrain/bone/bone_door1.png",
+	display = '+', color_r=238, color_g=154, color_b=77, back_color=colors.DARK_UMBER,
+	nice_tiler = { method="door3d", north_south="BONE_VAULT_DOOR_VERT", west_east="BONE_VAULT_DOOR_HORIZ" },
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	block_sense = true,
+	block_esp = true,
+	is_door = true,
+	door_player_check = "This door seems to have been sealed off. You think you can open it.",
+	door_opened = "BONE_VAULT_DOOR_OPEN",
+	dig = "BONEFLOOR",
+}
+newEntity{
+	define_as = "BONE_VAULT_DOOR_OPEN",
+	type = "wall", subtype = "bone",
+	name = "open door", image="terrain/bone/bone_door1_open.png",
+	display = "'", color_r=238, color_g=154, color_b=77, back_color=colors.DARK_GREY,
+	always_remember = true,
+	is_door = true,
+	door_closed = "BONE_VAULT_DOOR",
+}
+newEntity{ base = "BONE_VAULT_DOOR", define_as = "BONE_VAULT_DOOR_HORIZ", z=3, image = "terrain/sandfloor.png", add_mos={{image="terrain/bone/bone_door1.png"}}, add_displays = {class.new{image="terrain/bone/bonewall_8_1.png", z=18, display_y=-1}}, door_opened = "BONE_VAULT_DOOR_HORIZ_OPEN"}
+newEntity{ base = "BONE_VAULT_DOOR_OPEN", define_as = "BONE_VAULT_DOOR_HORIZ_OPEN", image = "terrain/sandfloor.png", add_displays = {class.new{image="terrain/bone/bone_door1_open.png", z=17}, class.new{image="terrain/bone/bonewall_8_1.png", z=18, display_y=-1}}, door_closed = "BONE_VAULT_DOOR_HORIZ"}
+newEntity{ base = "BONE_VAULT_DOOR", define_as = "BONE_VAULT_DOOR_VERT", image = "terrain/sandfloor.png", add_displays = {class.new{image="terrain/bone/bone_door1_vert.png", z=17}, class.new{image="terrain/bone/bone_door1_vert_north.png", z=18, display_y=-1}}, door_opened = "BONE_VAULT_DOOR_OPEN_VERT", dig = "BONE_VAULT_DOOR_OPEN_VERT"}
+newEntity{ base = "BONE_VAULT_DOOR_OPEN", define_as = "BONE_VAULT_DOOR_OPEN_VERT", image = "terrain/sandfloor.png", add_displays = {class.new{image="terrain/bone/bone_door1_open_vert.png", z=17}, class.new{image="terrain/bone/bone_door1_open_vert_north.png", z=18, display_y=-1}}, door_closed = "BONE_VAULT_DOOR_VERT"}
 
 -----------------------------------------
 -- Levers & such tricky tings

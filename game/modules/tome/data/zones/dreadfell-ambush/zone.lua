@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ return {
 --	persistent = true,
 	ambient_music = "Hold the Line.ogg",
 	min_material_level = 3,
-	max_material_level = 5,
+	max_material_level = 4,
 	generator =  {
 		map = {
 			class = "engine.generator.map.Static",

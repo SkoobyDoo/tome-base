@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -91,8 +91,8 @@ newTalent{
 	info = function(self, t)
 		local ratio = t.getPercent(self, t)
 		local duration = t.getDuration(self, t)
-		return ([[While active 30%% of all damage you take is converted into %0.2f Paradox damage.
-		The Paradox damage is taken over three turns.]]):
+		return ([[While active 30%% of all damage you take is converted into %0.2f Paradox per point.
+		The Paradox is gained over three turns.]]):
 		format(ratio, duration)
 	end,
 }
@@ -125,9 +125,9 @@ newTalent{
 			local target = game.level.map(px, py, Map.ACTOR)
 			if not target then return end
 			if target:isTalentActive(target.T_REALITY_SMEARING) then
-				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self})
+				target:setEffect(target.EFF_ATTENUATE_BEN, t.getDuration(self, t), {power=(damage/4)*0.4, src=self})
 			else
-				target:setEffect(target.EFF_ATTENUATE, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
+				target:setEffect(target.EFF_ATTENUATE_DET, t.getDuration(self, t), {power=damage/4, src=self, apply_power=getParadoxSpellpower(self, t)})
 			end
 		end)
 
@@ -162,17 +162,24 @@ newTalent{
 			eff.twisted = twist
 			local anom = self:getTalentFromId(eff.talent)
 			
+			-- make it real obvious for the player
+			game.logPlayer(self, "#STEEL_BLUE#Casts %s.", anom.name)
+			if self == game.player then
+				game.bignews:saySimple(180, "#STEEL_BLUE#Targeting %s", anom.name)
+			end
+			
 			-- Call the anomoly action function directly
 			anom.action(self, anom)
 			self:incParadox(-eff.paradox)
 		end
-		
+			
 		self:removeEffect(self.EFF_TWIST_FATE)
 	end,
 	setEffect = function(self, t, talent, paradox)
 		game.logPlayer(self, "#STEEL_BLUE#You take control of %s.", self:getTalentFromId(talent).name or nil)
 		self:setEffect(self.EFF_TWIST_FATE, t.getDuration(self, t), {talent=talent, paradox=paradox})
 		
+		game:playSoundNear(self, "talents/echo")
 	end,
 	action = function(self, t)
 		t.doTwistFate(self, t, true)

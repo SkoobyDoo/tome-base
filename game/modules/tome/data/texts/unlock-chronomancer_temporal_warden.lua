@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ You have been taught the ways of chronomancy by a Temporal Warden and can now cr
 
 Temporal Wardens are warriors proficient in both ranged and hand-to-hand combat.
 Class features:#YELLOW#
-- Duel-wield a medium sized and a small weapon or attack from afar with your ranged weapon skills
+- Dual-wield a medium sized and a small weapon or attack from afar with your ranged weapon skills
 - Manipulate space and time to speed yourself up, create wormholes, or even throw an opponent into the future
 - See into the future or even travel into the past#WHITE#
 

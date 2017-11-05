@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,14 +25,22 @@ newEntity{ define_as = "TRAP_TELEPORT",
 
 newEntity{ base = "TRAP_TELEPORT",
 	name = "teleport trap", auto_id = true, image = "trap/trap_teleport_01.png",
-	desc = [[Now you know why nobody ever got close enough to disarm this trap...]],
+	desc = [[Teleports the victim away.  How does anyone get close enough to disarm this trap...?]],
 	detect_power = resolvers.mbonus(5, 40), disarm_power = resolvers.mbonus(10, 50),
-	rarity = 5, level_range = {5, 50},
+	rarity = 5, level_range = {5, nil},
 	color=colors.UMBER,
-	message = "@Target@ is teleported away.",
 	pressure_trap = true,
+	message = "@Target@ shimmers briefly.",
+	unided_name = "shimmering floor switch",
 	triggered = function(self, x, y, who)
-		game:onTickEnd(function()who:teleportRandom(x, y, 100)end)
-		return true
+		if who:canBe("teleport") then
+			game:onTickEnd(function()
+					game.logSeen(who, "%s is teleported away!", who.name:capitalize())
+					who:teleportRandom(x, y, 100) 
+				end)
+			return true
+		else
+			game.logSeen(who, "%s resists being teleported!", who.name:capitalize())
+		end
 	end
 }

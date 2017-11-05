@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -48,6 +48,12 @@ function _M:addMember(actor, def)
 		print("[PARTY] error trying to add existing actor: ", actor.uid, actor.name)
 		return false
 	end
+
+	-- Notify existing party members (but not the new one) that a new member is joining
+	for i, pm in ipairs(self.m_list) do
+		pm:fireTalentCheck("callbackOnPartyAdd", actor, def)
+	end
+
 	if type(def.control) == "nil" then def.control = "no" end
 	def.title = def.title or "Party member"
 	self.members[actor] = def
@@ -88,6 +94,7 @@ function _M:removeMember(actor, silent)
 		end
 		return false
 	end
+	local olddef = self.members[actor]
 	table.remove(self.m_list, self.members[actor].index)
 	self.members[actor] = nil
 
@@ -96,6 +103,11 @@ function _M:removeMember(actor, silent)
 	-- Update indexes
 	for i = 1, #self.m_list do
 		self.members[self.m_list[i]].index = i
+	end
+
+	-- Notify existing party members (but not the old one) that a new member is leaving
+	for i, pm in ipairs(self.m_list) do
+		pm:fireTalentCheck("callbackOnPartyRemove", actor, def)
 	end
 
 	-- Notify the UI
@@ -437,3 +449,48 @@ function _M:findInAllPartyInventoriesBy(prop, value)
 	end
 end
 _M.findInAllInventoriesBy = _M.findInAllPartyInventoriesBy 
+
+function _M:goToEidolon(actor)
+	if not actor then actor = self:findMember{main=true} end
+
+	local oldzone = game.zone
+	local oldlevel = game.level
+	local zone = mod.class.Zone.new("eidolon-plane")
+	local level = zone:getLevel(game, 1, 0)
+
+	level.data.eidolon_exit_x = actor.x
+	level.data.eidolon_exit_y = actor.y
+
+	local acts = {}
+	for act, _ in pairs(game.party.members) do
+		if not act.dead then
+			acts[#acts+1] = act
+			if oldlevel:hasEntity(act) then oldlevel:removeEntity(act) end
+		end
+	end
+
+	level.source_zone = oldzone
+	level.source_level = oldlevel
+	game.zone = zone
+	game.level = level
+	game.zone_name_s = nil
+
+	for _, act in ipairs(acts) do
+		local x, y = util.findFreeGrid(23, 25, 20, true, {[Map.ACTOR]=true})
+		if x then
+			level:addEntity(act)
+			act:move(x, y, true)
+			act.changed = true
+			game.level.map:particleEmitter(x, y, 1, "teleport")
+		end
+	end
+
+	for uid, act in pairs(game.level.entities) do
+		if act.setEffect then
+			if game.level.data.zero_gravity then act:setEffect(act.EFF_ZERO_GRAVITY, 1, {})
+			else act:removeEffect(act.EFF_ZERO_GRAVITY, nil, true) end
+		end
+	end
+
+	return zone
+end

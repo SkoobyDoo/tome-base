@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ newBirthDescriptor{
 	talents_types = function(birth)
 		local tts = {}
 		for _, class in ipairs(birth.all_classes) do
-			for _, sclass in ipairs(class.nodes) do if sclass.id ~= "Adventurer" and sclass.def and not sclass.def.not_on_random_boss then
+			for _, sclass in ipairs(class.nodes) do if sclass.id ~= "Adventurer" and sclass.def and ((not sclass.def.not_on_random_boss) or (sclass.id == "Stone Warden" and birth.descriptors_by_type.race == "Dwarf")) then
 				if birth.birth_descriptor_def.subclass[sclass.id].talents_types then
 					local tt = birth.birth_descriptor_def.subclass[sclass.id].talents_types
 					if type(tt) == "function" then tt = tt(birth) end
@@ -79,6 +79,7 @@ newBirthDescriptor{
 				end
 			end end
 		end
+		tts["technique/combat-training"] = {true, 0}
 		return tts
 	end,
 	copy_add = {
@@ -92,9 +93,12 @@ newBirthDescriptor{
 			{type="weapon", subtype="dagger", name="iron dagger", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="longsword", name="iron longsword", ego_chance=-1000, ego_chance=-1000},
 			{type="weapon", subtype="longsword", name="iron longsword", ego_chance=-1000, ego_chance=-1000},
+			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="weapon", subtype="staff", name="elm staff", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
+			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
+			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="hands", name="iron gauntlets", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="hands", name="rough leather gloves", ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="light", name="rough leather armour", ego_chance=-1000, ego_chance=-1000},
@@ -104,6 +108,7 @@ newBirthDescriptor{
 			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="sling", name="rough leather sling", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="shot", name="pouch of iron shots", autoreq=true, ego_chance=-1000},
+			{type="armor", subtype="cloak", name="linen cloak", autoreq=true, ego_chance=-1000},
 		},
 		chooseCursedAuraTree = true,
 	},

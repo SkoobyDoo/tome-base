@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -65,7 +65,8 @@ newTalent{
 	require = psi_wil_req2,
 	psi = 15,
 	cooldown = function(self, t) return math.max(10, 20 - self:getTalentLevelRaw(t) * 2) end,
-	tactical = { BUFF = 1, CURE = function(self, t, target)
+	no_energy = true,
+	tactical = { DEFEND = 0, CURE = function(self, t, target)
 		local nb = 0
 		for eff_id, p in pairs(self.tmp) do
 			local e = self.tempeffect_def[eff_id]
@@ -75,7 +76,9 @@ newTalent{
 		end
 		return nb
 	end,},
-	no_energy = true,
+	on_pre_use_ai = function(self, t)
+		return not self:hasEffect(self.EFF_CLEAR_MIND)
+	end,
 	getRemoveCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5, "log")) end,
 	action = function(self, t)
 		local effs = {}
@@ -109,8 +112,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		local count = t.getRemoveCount(self, t)
-		return ([[Clears your mind of current mental effects, and blocks additional ones over 6 turns.  At most, %d mental effects will be affected.
-		This talent takes no time to use.]]):format(count)
+		return ([[Clears your mind of current mental effects, and blocks additional ones over 6 turns.  At most, %d mental effects will be affected.]]):format(count)
 	end,
 }
 
@@ -122,6 +124,7 @@ newTalent{
 	psi = 20,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 0, 17.5, 9.5)) end, -- Limit >0
 	no_npc_use = true, -- this can be changed if the AI is improved.  I don't trust it to be smart enough to leverage this effect.
+	unlearn_on_clone = true,
 	getPower = function(self, t) return math.ceil(self:combatTalentMindDamage(t, 5, 40)) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 6, 14)) end,
 	action = function(self, t)
@@ -132,57 +135,29 @@ newTalent{
 			return
 		end
 		
-		local m = self:cloneFull{
-			no_drops = true, keep_inven_on_death = false,
-			faction = self.faction,
-			summoner = self, summoner_gain_exp=true,
-			summon_time = t.getDuration(self, t),
-			ai_target = {actor=nil},
+		local m = self:cloneActor{
+			summoner=self, summoner_gain_exp=true, summon_time = t.getDuration(self, t), exp_worth=0,
+			_rst_full=true, can_change_level=table.NIL_MERGE, can_change_zone=table.NIL_MERGE,
+			life = util.bound(self.life, self.die_at, self.max_life),
+			max_level=self.level,
+			ai_target={actor=table.NIL_MERGE},
 			ai = "summoned", ai_real = "tactical",
 			subtype = "ghost", is_psychic_projection = 1,
 			name = "Projection of "..self.name,
 			desc = [[A ghostly figure.]],
+			lite=0,
 		}
-		m:removeAllMOs()
-		m.make_escort = nil
-		m.on_added_to_level = nil
-		m._rst_full = true
-
-		m.energy.value = 0
-		m.player = nil
-		m.max_life = m.max_life
-		m.life = util.bound(m.life, 0, m.max_life)
-		m.forceLevelup = function() end
-		m.die = nil
-		m.on_die = nil
-		m.on_acquire_target = nil
-		m.seen_by = nil
-		m.puuid = nil
-		m.on_takehit = nil
-		m.can_talk = nil
-		m.clone_on_hit = nil
-		m.exp_worth = 0
-		m.no_inventory_access = true
-		m.can_change_level = false
-		m.remove_from_party_on_death = true
-		for i = 1, 10 do
-			m:unlearnTalent(m.T_AMBUSCADE)	-- no recurssive projections
-			m:unlearnTalent(m.T_PROJECTION)		
-			m:unlearnTalent(m.T_THOUGHT_FORMS)
-		end
-				
-		m.can_pass = {pass_wall=70}
-		m.no_breath = 1
-		m.invisible = (m.invisible or 0) + t.getPower(self, t)/2
-		m.see_invisible = (m.see_invisible or 0) + t.getPower(self, t)
-		m.see_stealth = (m.see_stealth or 0) + t.getPower(self, t)
-		m.lite = 0
-		m.infravision = (m.infravision or 0) + 10
-		m.avoid_pressure_traps = 1
+		m:removeTimedEffectsOnClone()
+		m:unlearnTalentsOnClone() -- unlearn certain talents (no recursive projections)
+		table.mergeAdd(m, {can_pass = {pass_wall=70}}, true)
+		m:attr("invisible", t.getPower(self, t)/2)
+		m:attr("see_invisible", t.getPower(self, t)/2)
+		m:attr("see_stealth", t.getPower(self, t)/2)
+		m:attr("lite", -10)
+		m:attr("no_breath", 1)
+		m:attr("infravision", 10)
+		m:attr("avoid_pressure_traps", 1)
 		
-		
-		-- Connection to the summoner functions
-		local summon_time = t.getDuration(self, t)
 		--summoner takes hit
 		m.on_takehit = function(self, value, src) self.summoner:takeHit(value, src) return value end
 		--pass actors targeting us back to the summoner to prevent super cheese

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local Button = require "engine.ui.Button"
+local Checkbox = require "engine.ui.Checkbox"
 local Textbox = require "engine.ui.Textbox"
 local Textzone = require "engine.ui.Textzone"
 
@@ -64,6 +65,8 @@ function _M:init(dialogdef, profile_help_text)
 		self.c_pass = Textbox.new{title="Password: ", size_title=pwa, text="", chars=30, max_len=20, hide=true, filter=pass_filter, fct=function(text) self:okclick() end}
 		self.c_pass2 = Textbox.new{title=pwa, text="", size_title=pwa, chars=30, max_len=20, hide=true, filter=pass_filter, fct=function(text) self:okclick() end}
 		self.c_email = Textbox.new{title="Email: ", size_title=pwa, text="", chars=30, max_len=60, filter=pass_filter, fct=function(text) self:okclick() end}
+		self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=true, fct=function() self:okclick() end}
+		self.c_news2 = Textzone.new{text="about important game events from us.", width=self.iw - 20, auto_height=true}
 		local ok = require("engine.ui.Button").new{text="Create", fct=function() self:okclick() end}
 		local cancel = require("engine.ui.Button").new{text="Cancel", fct=function() self:cancelclick() end}
 
@@ -73,6 +76,8 @@ function _M:init(dialogdef, profile_help_text)
 			{left=0, top=self.c_desc.h+self.c_login.h+5, ui=self.c_pass},
 			{left=0, top=self.c_desc.h+self.c_login.h+self.c_pass.h+5, ui=self.c_pass2},
 			{left=0, top=self.c_desc.h+self.c_login.h+self.c_pass.h+self.c_pass2.h+10, ui=self.c_email},
+			{left=0, top=self.c_desc.h+self.c_login.h+self.c_pass.h+self.c_pass2.h+self.c_email.h+10, ui=self.c_news},
+			{left=0, top=self.c_desc.h+self.c_login.h+self.c_pass.h+self.c_pass2.h+self.c_email.h+self.c_news2.h+10, ui=self.c_news2},
 			{left=0, bottom=0, ui=ok},
 			{right=0, bottom=0, ui=cancel},
 		}
@@ -105,7 +110,7 @@ function _M:okclick()
 	end
 
 	game:unregisterDialog(self)
-	game:createProfile({create=self.c_email and true or false, login=self.c_login.text, pass=self.c_pass.text, email=self.c_email and self.c_email.text})
+	game:createProfile({create=self.c_email and true or false, login=self.c_login.text, pass=self.c_pass.text, email=self.c_email and self.c_email.text, news=self.c_news and self.c_news.checked})
 end
 
 function _M:cancelclick()

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,8 +41,16 @@ newTalentType{ allow_random=true, type="technique/combat-techniques-active", nam
 newTalentType{ allow_random=true, type="technique/combat-techniques-passive", name = "combat veteran", description = "Generic combat oriented techniques." }
 newTalentType{ allow_random=true, type="technique/combat-training", name = "combat training", generic = true, description = "Teaches to use various armours, weapons and improves health." }
 newTalentType{ allow_random=true, no_silence=true, is_spell=true, type="technique/magical-combat", name = "magical combat", description = "The blending together of magic and melee prowess." }
-newTalentType{ allow_random=true, type="technique/mobility", name = "mobility", generic = true, description = "Controlling your movements on the battlefields is the sure way to victory." }
+newTalentType{ allow_random=true, type="technique/mobility", name = "mobility", generic = true, description = "Training and techniques to improve mobility and evade your enemies.  On the battlefield, positioning is paramount." }
 newTalentType{ allow_random=true, type="technique/thuggery", name = "thuggery", generic = true, description = "Whatever wins the day, wins the day." }
+newTalentType{ allow_random=true, type="technique/assassination", name = "assassination", min_lev=10, description = "Bring death from the shadows." }
+newTalentType{ allow_random=true, type="technique/throwing-knives", name = "throwing knives", description = "Master the art of throwing knives to fight from a distance." }
+newTalentType{ allow_random=true, type="technique/duelist", name = "duelist", description = "Use your dual weapons to parry and counter." }
+newTalentType{ allow_random=true, type="technique/marksmanship", name = "marksmanship", description = "Training in the use of bows and slings." }
+newTalentType{ allow_random=true, type="technique/reflexes", name = "reflexes", description = "Use your reflexes to evade and counter." }
+newTalentType{ allow_random=true, type="technique/munitions", min_lev = 10, name = "munitions", description = "Equip specialised ammunition." }
+newTalentType{ allow_random=true, type="technique/agility", min_lev = 10, name = "agility", description = "Take advantage of speed and shield to fight in close quarters." }
+newTalentType{ allow_random=true, type="technique/sniper", min_lev = 10, name = "sniper", description = "Stealth and specialised long range archery techniques." }
 
 -- Skirmisher
 newTalentType {
@@ -78,7 +86,7 @@ newTalentType {
 newTalentType{ is_unarmed=true, allow_random=true, type="technique/pugilism", name = "pugilism", description = "Unarmed Boxing techniques that may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ is_unarmed=true, allow_random=true, type="technique/finishing-moves", name = "finishing moves", description = "Finishing moves that use combo points and may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ is_unarmed=true, allow_random=true, type="technique/grappling", name = "grappling", description = "Grappling techniques that may not be practiced in massive armor or while a weapon or shield is equipped." }
-newTalentType{ is_unarmed=true, allow_random=true, type="technique/unarmed-discipline", name = "unarmed discipline", description = "Advanced unarmed techniques including kicks and throw that may not be practiced in massive armor or while a weapon or shield is equipped." }
+newTalentType{ is_unarmed=true, allow_random=true, type="technique/unarmed-discipline", name = "unarmed discipline", description = "Advanced unarmed techniques including kicks and blocks that may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ is_unarmed=true, allow_random=true, generic = true, type="technique/unarmed-training", name = "unarmed training", description = "Teaches various martial arts techniques that may not be practiced in massive armor or while a weapon or shield is equipped." }
 newTalentType{ allow_random=true, type="technique/conditioning", name = "conditioning", generic = true, description = "Physical conditioning." }
 
@@ -260,19 +268,6 @@ techs_wil_req5 = {
 	level = function(level) return 16 + (level-1)  end,
 }
 
--- Archery range talents
-archery_range = function(self, t)
-	local weapon, ammo, offweapon = self:hasArcheryWeapon()
-	if not weapon or not weapon.combat then 
-		if self:attr("warden_swap") and self:hasArcheryWeaponQS() then
-			weapon, ammo, offweapon = self:hasArcheryWeaponQS()
-		else
-			return 1
-		end
-	end
-	return math.min(weapon.combat.range or 6, offweapon and offweapon.combat and offweapon.combat.range or 40)
-end
-
 -- Unarmed stance changes and stance damage bonuses
 getStrikingStyle = function(self, dam)
 	local dam = 0
@@ -304,14 +299,26 @@ end
 
 -- Use the appropriate amount of stamina. Return false if we don't have enough.
 use_stamina = function(self, cost)
-  cost = cost * (1 + self:combatFatigue() * 0.01)
-  local available = self:getStamina()
-  if self:hasEffect("EFF_ADRENALINE_SURGE") then
-	  available = available + self.life
-  end
-  if cost > available then return end
-  self:incStamina(-cost)
-  return true
+	cost = cost * (1 + self:combatFatigue() * 0.01)
+	local available = self:getStamina()
+	if self:hasEffect("EFF_ADRENALINE_SURGE") then
+		available = available + self.life
+	end
+	if cost > available then return end
+	self:incStamina(-cost)
+	return true
+end
+
+venomous_throw_check = function(self)
+	if not self:knowTalent(self.T_VENOMOUS_THROW) then
+		if self:knowTalent(self.T_VENOMOUS_STRIKE) and self:knowTalent(self.T_THROWING_KNIVES) then
+			self:learnTalent(self.T_VENOMOUS_THROW, true, nil, {no_unlearn=true})
+		end
+	else
+		if not self:knowTalent(self.T_VENOMOUS_STRIKE) or not self:knowTalent(self.T_THROWING_KNIVES) then
+			self:unlearnTalent(self.T_VENOMOUS_THROW)
+		end
+	end
 end
 
 load("/data/talents/techniques/2hweapon.lua")
@@ -326,13 +333,22 @@ load("/data/talents/techniques/battle-tactics.lua")
 load("/data/talents/techniques/field-control.lua")
 load("/data/talents/techniques/combat-techniques.lua")
 load("/data/talents/techniques/combat-training.lua")
+load("/data/talents/techniques/archery.lua")
 load("/data/talents/techniques/bow.lua")
 load("/data/talents/techniques/sling.lua")
-load("/data/talents/techniques/archery.lua")
 load("/data/talents/techniques/excellence.lua")
 load("/data/talents/techniques/magical-combat.lua")
 load("/data/talents/techniques/mobility.lua")
 load("/data/talents/techniques/thuggery.lua")
+load("/data/talents/techniques/assassination.lua")
+load("/data/talents/techniques/throwing-knives.lua")
+load("/data/talents/techniques/duelist.lua")
+load("/data/talents/techniques/marksmanship.lua")
+load("/data/talents/techniques/reflexes.lua")
+load("/data/talents/techniques/sniper.lua")
+load("/data/talents/techniques/agility.lua")
+load("/data/talents/techniques/munitions.lua")
+
 
 load("/data/talents/techniques/skirmisher-slings.lua")
 load("/data/talents/techniques/buckler-training.lua")

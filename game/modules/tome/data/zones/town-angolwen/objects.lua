@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,5 +35,17 @@ newEntity{ base = "BASE_LORE",
 	desc = [[Lecture on the nature of magic by Archmage Tarelion.]],
 	rarity = false,
 	cost = 2,
+}
+
+-- Reward for killing Urkis
+newEntity{ base = "BASE_RUNE",
+	name = "Rune of Dissipation", unique=true, define_as="RUNE_DISSIPATION",
+	level_range = {5, 50},
+	cost = 20,
+	inscription_kind = "protect",
+	inscription_data = {
+		cooldown = 20,
+	},
+	inscription_talent = "RUNE:_DISSIPATION",
 }
 

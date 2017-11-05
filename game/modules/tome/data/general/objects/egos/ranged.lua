@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -65,7 +65,8 @@ newEntity{
 	cost = 15,
 	wielder={
 		combat_atk = resolvers.mbonus_material(10, 5),
-		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1},
+		combat_physcrit = resolvers.mbonus_material(6, 1), -- give it some crit instead, this ego should prob be reworked now though
+--		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1}, --this is a bit too strong with how steady shot works now
 	},
 }
 
@@ -284,9 +285,12 @@ newEntity{
 	charm_power_def = {add=50, max=200, floor=true},
 	resolvers.charm("regenerate %d life over 5 turns", 20,
 		function(self, who)
+			game.logSeen(who, "%s uses %s %s!", who.name:capitalize(), who:his_her(), self:getName{no_add_name=true, do_color=true})
 			who:setEffect(who.EFF_REGENERATION, 5, {power=self:getCharmPower(who)/5})
 			return {id=true, used=true}
-		end
+		end,
+		"T_GLOBAL_CD",
+		{tactical = { HEAL = 2 }}
 	),
 }
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 local x, y = game.state:findEventGrid(level)
 if not x then return false end
 
+print("[EVENT] Placing event conclave-vault at", x, y)
 local Talents = require("engine.interface.ActorTalents")
 
 local skeletons = mod.class.NPC:loadList("/data/general/npcs/skeleton.lua")

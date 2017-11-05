@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@ require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local Slider = require "engine.ui.Slider"
 
+--- Show Log
+-- @classmod engine.dialogs.ShowLog
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init(title, shadow, log)

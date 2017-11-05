@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ newTalent{
 	points = 5,
 	cooldown = 0,
 	no_energy = true,
+	sustain_hate = 0, -- make sure hate pool is learned
 	tactical = { BUFF = 5 },
 	activate = function(self, t)
 		return {
@@ -252,6 +253,6 @@ newTalent{
 		return ([[Let hate fuel your movements. While active, you gain %d%% movement speed. The recklessness of your movement brings you bad luck (Luck -3).
 		Cleave, Repel and Surge cannot be active simultaneously, and activating one will place the others in cooldown.
 		The speed of your movements, combined with the balance and utility of two weapons, gives you %d extra Defense while dual-wielding.
-		Movement speed and dual-wielding Defense both increase with with the Willpower stat.]]):format(movementSpeedChange * 100, defenseChange)
+		Movement speed and dual-wielding Defense both increase with the Willpower stat.]]):format(movementSpeedChange * 100, defenseChange)
 	end,
 }

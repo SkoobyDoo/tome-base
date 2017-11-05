@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ newTalent{
 	reflectable = true,
 	proj_speed = 20,
 	requires_target = true,
+	allow_for_arcane_combat = true,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 20, 200) end,
 	action = function(self, t)
 		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="arrow", particle_args={tile="particles_images/earthen_missiles"}}}
@@ -62,7 +63,7 @@ newTalent{
 			count = count + 1
 		end
 		local damage = t.getDamage(self, t)
-		return ([[Conjures %d missile shaped rocks that you target individually at any target or targets in range.  Each missile deals %0.2f physical damage, and an additional %0.2f bleeding damage every turn for 5 turns.
+		return ([[Conjures %d missile-shaped rocks that you target individually at any target or targets in range.  Each missile deals %0.2f physical damage, and an additional %0.2f bleeding damage every turn for 5 turns.
 		At talent level 5, you can conjure one additional missile.
 		The damage will increase with your Spellpower.]]):format(count,damDesc(self, DamageType.PHYSICAL, damage/2), damDesc(self, DamageType.PHYSICAL, damage/12))
 	end,
@@ -183,7 +184,7 @@ newTalent{
 	sustain_mana = 50,
 	cooldown = 30,
 	tactical = { BUFF = 2 },
-	getPhysicalDamageIncrease = function(self, t) return self:getTalentLevelRaw(t) * 2 end,
+	getPhysicalDamageIncrease = function(self, t) return self:combatTalentScale(t, 2.5, 10) end,
 	getResistPenalty = function(self, t) return self:combatTalentLimit(t, 100, 17, 50, true) end,  -- Limit to < 100%
 	getSaves = function(self, t) return self:getTalentLevel(t) * 5 end,
 	activate = function(self, t)
@@ -214,7 +215,7 @@ newTalent{
 		local damageinc = t.getPhysicalDamageIncrease(self, t)
 		local ressistpen = t.getResistPenalty(self, t)
 		local saves = t.getSaves(self, t)
-		return ([[Concentrate on maintaining a Crystalline Focus, increasing all your physical damage by %d%% and ignoring %d%% physical resistance of your targets.
+		return ([[Concentrate on maintaining a Crystalline Focus, increasing all your physical damage by %0.1f%% and ignoring %d%% physical resistance of your targets.
 		Also raises your physical and magical saves by %d.]])
 		:format(damageinc, ressistpen, saves)
 	end,

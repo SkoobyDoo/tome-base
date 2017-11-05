@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,35 +25,32 @@ newTalent{
 	random_ego = "attack",
 	cooldown = 5,
 	hate =  5,
-	range = 2,
-	tactical = { ATTACKAREA = { MIND = 2 } },
+	range = 3,
+	requires_target = true,
+	tactical = { ATTACKAREA = { MIND = 1.5 } },
 	getDamage = function(self, t)
-		return self:combatTalentMindDamage(t, 0, 280)
+		return self:combatTalentMindDamage(t, 0, 320)
 	end,
-	getSpreadFactor = function(self, t)
-		return 0.80
-	end,
+	getSpreadFactor = function(self, t) return self:combatTalentLimit(t, .95, .75, .85) end,
+	target = function(self, t) return {type="ball", radius=self:getTalentRange(t), range=0, friendlyfire=false} end,
 	action = function(self, t)
-		local targets = {}
-		local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
-		for x, yy in pairs(grids) do
-			for y, _ in pairs(grids[x]) do
-				local target = game.level.map(x, y, Map.ACTOR)
+		local tg, targets = self:getTalentTarget(t), {}
+
+		self:project(tg, self.x, self.y, function(px, py, t)
+			local target = game.level.map(px, py, Map.ACTOR)
 				if target and self:reactionToward(target) < 0 then
 					targets[#targets + 1] = target
 				end
-			end
-		end
-
+			
+			end, 0)
 		if #targets == 0 then return false end
 
 		local damage = self:mindCrit(t.getDamage(self, t))
-		if #targets > 1 then
-			local spreadFactor = t.getSpreadFactor(self, t)
-			damage = damage * math.pow(spreadFactor, #targets - 1)
-		end
-		for i, t in ipairs(targets) do
+		local spreadFactor = t.getSpreadFactor(self, t)
+
+		for i, t in ipairs(table.shuffle(targets)) do
 			self:project({type="hit", talent=t, x=t.x,y=t.y}, t.x, t.y, DamageType.MIND, { dam=damage, crossTierChance=25 })
+			damage = damage * spreadFactor
 			game.level.map:particleEmitter(t.x, t.y, 1, "reproach", { dx = self.x - t.x, dy = self.y - t.y })
 		end
 
@@ -78,7 +75,7 @@ newTalent{
 	cooldown = 10,
 	hate =  12,
 	range = 5,
-	tactical = { ATTACK = { MIND = 2 } },
+	tactical = { ATTACK = { MIND = 2 }, HATE = 1 },
 	direct_hit = true,
 	requires_target = true,
 	getDuration = function(self, t)
@@ -88,7 +85,7 @@ newTalent{
 		return self:combatTalentMindDamage(t, 0, 300)
 	end,
 	getJumpRange = function(self, t)
-		return math.min(6, math.sqrt(self:getTalentLevel(t) * 2))
+		return math.ceil(math.min(6, math.sqrt(self:getTalentLevel(t) * 2)))
 	end,
 	getJumpCount = function(self, t)
 		return math.min(3, self:getTalentLevelRaw(t))
@@ -100,7 +97,7 @@ newTalent{
 		return 30
 	end,
 	getHateGain = function(self, t)
-		return 2
+		return self:combatTalentScale(t, 1, 5)
 	end,
 	action = function(self, t)
 		local range = self:getTalentRange(t)

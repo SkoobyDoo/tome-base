@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@ local Map = require "engine.Map"
 local BSP = require "engine.BSP"
 require "engine.Generator"
 local RoomsLoader = require "engine.generator.map.RoomsLoader"
+
+--- @classmod engine.generator.map.Town
 module(..., package.seeall, class.inherit(engine.Generator, RoomsLoader))
 
 function _M:init(zone, map, level, data)
@@ -131,11 +133,32 @@ function _M:generate(lev, old_lev)
 	self.spots = spots
 
 	local nb_room = util.getval(self.data.nb_rooms or 0)
-	local rooms = {}
-	while nb_room > 0 do
+	local rooms = self.map.room_map.rooms
+	
+	-- Place required rooms
+	if #self.required_rooms > 0 then
+		for i, rroom in ipairs(self.required_rooms) do
+			local ok = false
+			if type(rroom) == "table" and rroom.chance_room then
+				if rng.percent(rroom.chance_room) then rroom = rroom[1] ok = true end
+			else ok = true
+			end
+
+			if ok then
+				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
+				if r then nb_room = nb_room - 1
+				else self.level.force_recreate = "required_room "..tostring(rroom) return end
+			end
+		end
+	end
+	
+	-- Place normal, random rooms
+	local tries = nb_room * 1.5 -- allow for extra attempts for difficult to place rooms
+	while tries > 0 and nb_room > 0 do
 		local rroom
 		while true do
 			rroom = self.rooms[rng.range(1, #self.rooms)]
+			print("[Town] picked random room", rroom)
 			if type(rroom) == "table" and rroom.chance_room then
 				if rng.percent(rroom.chance_room) then rroom = rroom[1] break end
 			else
@@ -144,10 +167,10 @@ function _M:generate(lev, old_lev)
 		end
 
 		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
-		if r then rooms[#rooms+1] = r end
-		nb_room = nb_room - 1
+		if r then nb_room = nb_room -1 end
+		tries = tries - 1
 	end
-
+	
 	local bsp = BSP.new(self.map.w, self.map.h, self.max_building_w, self.max_building_h)
 	bsp:partition()
 

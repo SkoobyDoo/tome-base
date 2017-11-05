@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -95,6 +95,7 @@ function _M:generateList()
 			local mod_string = ("%s-%d.%d.%d"):format(m.short_name, save.module_version and save.module_version[1] or -1, save.module_version and save.module_version[2] or -1, save.module_version and save.module_version[3] or -1)
 			save.module_string = mod_string
 			local mod = list[mod_string]
+			if not mod and save.module_version and m.versions and m.versions[1] and m.versions[1].version and engine.version_patch_same(m.versions[1].version, save.module_version) then mod = m.versions[1] end
 			if not mod and self.c_compat.checked and m.versions and m.versions[1] then mod = m.versions[1] end
 			if mod and save.loadable then
 				local laddons = mod_addons[mod]
@@ -181,18 +182,20 @@ function _M:playSave(ignore_mod_compat)
 		Dialog:yesnoLongPopup("Incompatible savefile", [[Due to huge changes in 1.2.0 all previous savefiles will not work with it.
 This savefile requires a game version lower than 1.2.0 and thus can not be loaded.
 
-But despair not, if you wish to finish it you can simply download the old version corresponding to the savefile on #{italic}##LIGHT_BLUE#http://te4.org/download#WHITE##{normal}#.
+But despair not, if you wish to finish it you can simply download the old version corresponding to the savefile on #{italic}##LIGHT_BLUE#https://te4.org/download#WHITE##{normal}#.
 
 We apologize for the annoyance, most of the time we try to keep compatibility but this once it was simply not possible.]],
 			700, function(ret) if ret then
-				util.browserOpenUrl("http://te4.org/download", {webview=true, steam=true})
+				util.browserOpenUrl("https://te4.org/download", {webview=true, steam=true})
 			end end, "Go to download in your browser", "Cancel"
 		)
 		return
 	end
 
-	if not ignore_mod_compat and self.save_sel.module_string ~= self.save_sel.mod.version_string then
-		Dialog:yesnocancelLongPopup("Original game version not found", "This savefile was created with game version %s. You can try loading it with the current version if you wish or download the data files of the old version to ensure compatibility (this is a big download but only required once).", 500, function(ret, cancel)
+	local save_v = engine.version_from_string(self.save_sel.module_string)
+	local save_m = engine.version_from_string(self.save_sel.mod.version_string)
+	if not ignore_mod_compat and not engine.version_patch_same(save_m, save_v) and save_m.name == save_v.name then
+		Dialog:yesnocancelLongPopup("Original game version not found", ("This savefile was created with game version %s. You can try loading it with the current version if you wish or download the data files of the old version to ensure compatibility (this is a big download but only required once).\nIf the data files are not available you can retry and use the newer version."):format(self.save_sel.module_string), 500, function(ret, cancel)
 			if cancel then return end
 			if ret then
 				self:installOldGame(self.save_sel.module_string)
@@ -241,9 +244,17 @@ function _M:installOldGame(version_string)
 	local dls = {}
 	-- Later on we can request the server for a list, but heh
 	if version_string == "tome-1.2.5" then
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
+	elseif version_string == "tome-1.3.3" then
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3-gfx.team", name="tome-1.3.3-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3-music.team", name="tome-1.3.3-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3.team", name="tome-1.3.3.team"}
+	elseif version_string == "tome-1.4.9" then
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9-gfx.team", name="tome-1.4.9-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9-music.team", name="tome-1.4.9-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9.team", name="tome-1.4.9.team"}
 	end
 
 	if #dls == 0 then
@@ -260,7 +271,7 @@ function _M:installOldGame(version_string)
 		local ok = d:start()
 		if ok then
 			local wdir = fs.getWritePath()
-			local _, _, dir, name = modfile:find("(.+)/([^/]+)$")
+			local _, _, dir, name = modfile:find("(.+/)([^/]+)$")
 			if dir then
 				fs.setWritePath(fs.getRealPath(dir))
 				fs.delete(name)

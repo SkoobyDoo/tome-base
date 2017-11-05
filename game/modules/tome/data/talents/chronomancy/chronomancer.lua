@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -153,7 +153,9 @@ load("/data/talents/chronomancy/anomalies.lua")
 -- Caps at -50% and +50%
 getParadoxModifier = function (self)
 	local paradox = self:getParadox()
-	local pm = util.bound(math.sqrt(paradox / 300), 0.5, 1.5)
+	local pm = math.sqrt(paradox / 300)
+	if paradox < 300 then pm = paradox/300 end
+	pm = util.bound(pm, 0.5, 1.5)
 	return pm
 end
 
@@ -184,16 +186,23 @@ end
 
 -- Extension Spellbinding
 getExtensionModifier = function(self, t, value)
+	local pm = getParadoxModifier(self)
 	local mod = 1
+	
 	local p = self:isTalentActive(self.T_EXTENSION)
 	if p and p.talent == t.id then
 		mod = mod + self:callTalent(self.T_EXTENSION, "getPower")
 	end
+	
+	-- paradox modifier rounds down
+	value = math.floor(value * pm)
+	-- extension modifier rounds up
 	value = math.ceil(value * mod)
-	return value
+	
+	return math.max(1, value)
 end
 
--- Tunes paradox
+-- Tunes paradox towards the preferred value
 tuneParadox = function(self, t, value)
 	local dox = self:getParadox() - (self.preferred_paradox or 300)
 	local fix = math.min( math.abs(dox), value )
@@ -208,47 +217,50 @@ end
 -- Checks for weapons in main and quickslot
 doWardenPreUse = function(self, weapon, silent)
 	if weapon == "bow" then
-		if not self:hasArcheryWeapon("bow") and not self:hasArcheryWeaponQS("bow") then
-			return false
+		local bow, ammo, oh, pf_bow= self:hasArcheryWeapon("bow")
+		if not bow and not pf_bow then
+			bow, ammo, oh, pf_bow= self:hasArcheryWeapon("bow", true)
 		end
+		return bow or pf_bow, ammo
 	end
 	if weapon == "dual" then
-		if not self:hasDualWeapon() and not self:hasDualWeaponQS() then
-			return false
+		local mh, oh = self:hasDualWeapon()
+		if not mh then
+			mh, oh = self:hasDualWeaponQS()
 		end
+		return mh, oh
 	end
-	return true
 end
 
 -- Swaps weapons if needed
 doWardenWeaponSwap = function(self, t, type, silent)
 	local swap = false
-	local warden_weapon
-
+	local mainhand, offhand, ammo, pf_weapon
+	
 	if type == "blade" then
-		local mainhand, offhand = self:hasDualWeapon()
-		if not mainhand or self:hasArcheryWeapon("bow") then  -- weird but this is lets ogers offhanding daggers still swap
+		mainhand, offhand = self:hasDualWeapon()
+		if not mainhand and self:hasDualWeapon(nil, nil, true) then  -- weird but this is lets ogers offhanding daggers still swap
+		
 			swap = true
-			warden_weapon = "blade"
 		end
 	end
 	if type == "bow" then
-		if not self:hasArcheryWeapon("bow") then
-			swap = true
-			warden_weapon = "bow"
+		mainhand, offhand, ammo, pf_weapon = self:hasArcheryWeapon("bow")
+		if not mainhand and not pf_weapon then
+			mainhand, offhand, ammo, pf_weapon = self:hasArcheryWeapon("bow", true)
+			if mainhand or pf_weapon then swap = true end
 		end
 	end
 	
 	if swap == true then
-		local old_inv_access = self.no_inventory_access				-- Make sure clones can swap
+		local old_inv_access = self.no_inventory_access -- Make sure clones can swap
 		self.no_inventory_access = nil
 		self:attr("no_sound", 1)
 		self:quickSwitchWeapons(true, "warden", silent)
 		self:attr("no_sound", -1)
 		self.no_inventory_access = old_inv_access
 	end
-	
-	return swap, dam
+	return swap
 end
 
 -- Target helper function for focus fire
@@ -262,90 +274,68 @@ checkWardenFocus = function(self)
 end
 
 -- Spell functions
-makeParadoxClone = function(self, target, duration)
 
-	-- Don't clone particles or inventory on short lived clones
-	local restore = false
-	local old_particles, old_inven
+--- Creates a temporal clone
+-- @param[type=table] self  Actor doing the cloning. Not currently used.
+-- @param[type=table] target  Actor to be cloned.
+-- @param[type=int] duration  How many turns the clone lasts. Zero is allowed.
+-- @param[type=table] alt_nodes  Optional, these nodes will use a specified key/value on the clone instead of copying from the target.
+-- @  Table keys should be the nodes to skip/replace (field name or object reference).
+-- @  Each key should be set to false (to skip assignment entirely) or a table with up to two nodes:
+-- @    k = a name/ref to substitute for instances of this field,
+-- @      or nil to use the default name/ref as keys on the clone
+-- @    v = the value to assign for instances of this node,
+-- @      or nil to use the default assignent value
+-- @return a reference to the clone on success, or nil on failure
+makeParadoxClone = function(self, target, duration, alt_nodes)
+	if not target or not duration then return nil end
+	if duration < 0 then duration = 0 end
+
+	-- Don't copy certain fields from the target
+	alt_nodes = alt_nodes or {}
+--	if target:getInven("INVEN") then alt_nodes[target:getInven("INVEN")] = false end -- Skip main inventory; equipped items are still copied
+
+	-- Don't copy some additional fields for short-lived clones
 	if duration == 0 then
-		old_particles = target.__particles 
-		old_inventory = target.inven[target.INVEN_INVEN]
-		target.__particles = {}
-		target.inven[target.INVEN_INVEN] = nil
-		restore = true	
+		alt_nodes.__particles = {v = {} }
+		alt_nodes.hotkey = false
+		alt_nodes.talents_auto = {v = {} }
+		alt_nodes.talents_confirm_use = {}
 	end
 
-	-- Clone them
-	local m = target:cloneFull{
-		no_drops = true,
-		keep_inven_on_death = false,
-		faction = target.faction,
-		summoner = target, summoner_gain_exp=true,
-		summon_time = duration,
-		ai_target = {actor=nil},
-		ai = "summoned", ai_real = "tactical",
-		name = ""..target.name.."'s temporal clone",
+	-- force some values in the clone
+	local clone_copy = {name=""..target.name.."'s temporal clone",
 		desc = [[A creature from another timeline.]],
+		faction=target.faction, exp_worth=0,
+		life=util.bound(target.life, target.die_at, target.max_life),
+		summoner=target, summoner_gain_exp=true, summon_time=duration,
+		max_level=target.level,
+		ai_target={actor=table.NIL_MERGE}, ai="summoned",
+		ai_real="tactical", ai_tactic={escape=0}, -- Clones never flee because they're awesome
 	}
 	
-	-- restore values if needed
-	if restore then
-		target.__particles = old_particles
-		target.inven[target.INVEN_INVEN] = old_inventory
-	end
-	
-	-- remove some values
-	m:removeAllMOs()
-	m.make_escort = nil
-	m.on_added_to_level = nil
-	m.on_added = nil
+	-- Clone the target (Note: inventory access is disabled by default)
+	local m = target:cloneActor(clone_copy, alt_nodes)
 
 	mod.class.NPC.castAs(m)
+	engine.interface.ActorFOV.init(m)
 	engine.interface.ActorAI.init(m, m)
 
-	-- change some values
-	m.exp_worth = 0
-	m.energy.value = 0
-	m.player = nil
-	m.max_life = m.max_life
-	m.life = util.bound(m.life, 0, m.max_life)
-	m.forceLevelup = function() end
-	m.on_die = nil
-	m.die = nil
-	m.puuid = nil
-	m.on_acquire_target = nil
-	m.no_inventory_access = true
-	m.no_levelup_access = true
-	m.on_takehit = nil
-	m.seen_by = nil
-	m.can_talk = nil
-	m.clone_on_hit = nil
-	m.self_resurrect = nil
-	m.escort_quest = nil
-	m.unused_talents = 0
-	m.unused_generics = 0
-	if m.talents.T_SUMMON then m.talents.T_SUMMON = nil end
-	if m.talents.T_MULTIPLY then m.talents.T_MULTIPLY = nil end
-	
-	-- Clones never flee because they're awesome
-	m.ai_tactic = m.ai_tactic or {}
-	m.ai_tactic.escape = 0
-
-	-- Remove some talents
+	-- Remove some unallowed talents
 	local tids = {}
 	for tid, _ in pairs(m.talents) do
 		local t = m:getTalentFromId(tid)
-		if (t.no_npc_use and not t.allow_temporal_clones) or t.remove_on_clone then tids[#tids+1] = t end
+		if (t.no_npc_use or t.unlearn_on_clone) and not t.allow_temporal_clones then tids[#tids+1] = t end
 	end
 	for i, t in ipairs(tids) do
 		if t.mode == "sustained" and m:isTalentActive(t.id) then m:forceUseTalent(t.id, {ignore_energy=true, silent=true}) end
 		m:unlearnTalentFull(t.id)
 	end
 
-	-- remove timed effects
+	-- Remove some timed effects
 	m:removeTimedEffectsOnClone()
 	
-	-- reset folds for our Warden clones
+	-- Reset folds for Temporal Warden clones
 	for tid, cd in pairs(m.talents_cd) do
 		local t = m:getTalentFromId(tid)
 		if t.type[1]:find("^chronomancy/manifold") and m:knowTalent(tid) then
@@ -353,8 +343,11 @@ makeParadoxClone = function(self, target, duration)
 		end
 	end
 	
-	-- And finally, a bit of sanity in case anyone decides they should blow up the world..
+	-- A bit of sanity in case anyone decides they should blow up the world..
 	if m.preferred_paradox and m.preferred_paradox > 600 then m.preferred_paradox = 600 end
+
+	-- Prevent respawning
+	m.self_resurrect = nil
 	
 	return m
 end

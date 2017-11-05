@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ function _M:setInscription(id, name, data, cooldown, vocal, src, bypass_max_same
 	-- Check allowance
 	local t = self:getTalentFromId(self["T_"..name.."_1"])
 	if self.inscription_restrictions and not self.inscription_restrictions[t.type[1]] then
+		if vocal then game.logPlayer(self, "You are unable to use this kind of inscription.") end
+		return
+	end
+	if self.inscription_forbids and self.inscription_forbids[t.type[1]] then
 		if vocal then game.logPlayer(self, "You are unable to use this kind of inscription.") end
 		return
 	end
@@ -85,8 +89,10 @@ function _M:setInscription(id, name, data, cooldown, vocal, src, bypass_max_same
 	local oldname = self.inscriptions[id]
 	local oldpos = nil
 	if oldname then
-		for i = 1, 12 * self.nb_hotkey_pages do
-			if self.hotkey[i] and self.hotkey[i][1] == "talent" and self.hotkey[i][2] == "T_"..oldname then oldpos = i break end
+		if self.nb_hotkey_pages then
+			for i = 1, 12 * self.nb_hotkey_pages do
+				if self.hotkey[i] and self.hotkey[i][1] == "talent" and self.hotkey[i][2] == "T_"..oldname then oldpos = i break end
+			end
 		end
 		self:unlearnTalent(self["T_"..oldname])
 		self.inscriptions_data[oldname] = nil
@@ -99,7 +105,7 @@ function _M:setInscription(id, name, data, cooldown, vocal, src, bypass_max_same
 	if src and src.obj then data.item_name = src.obj:getName{do_color=true, no_count=true}:toTString() end
 	self.inscriptions_data[name] = data
 	self.inscriptions[id] = name
---	print("Inscribing on "..self.name..": "..tostring(name))
+	-- print("Inscribing on "..self.name.."("..self:getClassName()..")"..": "..tostring("T_"..name).." => "..tostring(self["T_"..name]))
 	self:learnTalent(self["T_"..name], true, 1, {no_unlearn=true})
 	local t = self:getTalentFromId(self["T_"..name])
 	if cooldown then self:startTalentCooldown(t) end

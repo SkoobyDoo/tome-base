@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
+
+use_ui = "quest-main"
 
 -- Ruysh Charred scar
 name = "The Doom of the World!"
@@ -73,5 +75,4 @@ start_fyrk = function(self)
 		world:gainAchievement("CHARRED_SCAR_SUCCESS", game.player)
 	end
 	game.player:setQuestStatus("charred-scar", engine.Quest.COMPLETED)
-	game.state:storesRestock()
 end

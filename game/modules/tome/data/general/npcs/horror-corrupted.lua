@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ newEntity{
 	body = { INVEN = 10 },
 	autolevel = "warrior",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=3, },
+	faction = "horrors",
 
 	combat_armor = 0, combat_def = 0,
 	combat = { atk=2, dammod={str=0.6} },

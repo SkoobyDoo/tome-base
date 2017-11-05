@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,20 +19,26 @@
 
 require "engine.class"
 local Map = require "engine.Map"
+local RoomsLoader = require "engine.generator.map.RoomsLoader"
 require "engine.Generator"
-module(..., package.seeall, class.inherit(engine.Generator))
+
+--- @classmod engine.generator.map.Cavern
+module(..., package.seeall, class.inherit(engine.Generator, RoomsLoader))
 
 function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	self.data = data
 	self.grid_list = zone.grid_list
-	self.zoom = data.zoom or 12
+	self.zoom = data.zoom or 12 -- periodicity rate for "open" spaces when generating the cavern, lower values make open spaces wider
 	self.hurst = data.hurst or 0.2
 	self.lacunarity = data.lacunarity or 4
 	self.octave = data.octave or 1
 	self.door_chance = data.door_chance or nil
 	self.min_floor = data.min_floor or 900
 	self.noise = data.noise or "simplex"
+	self.spots = {}
+
+	RoomsLoader.init(self, data)
 end
 
 function _M:generate(lev, old_lev)
@@ -103,11 +109,78 @@ function _M:generate(lev, old_lev)
 		return self:generate(lev, old_lev)
 	end
 
+	local nb_room = util.getval(self.data.nb_rooms or 0)
+	self.required_rooms = self.required_rooms or {}
+	local rooms = self.map.room_map.rooms
+	
+	-- Place required rooms
+	if #self.required_rooms > 0 then
+		for i, rroom in ipairs(self.required_rooms) do
+			local ok = false
+			if type(rroom) == "table" and rroom.chance_room then
+				if rng.percent(rroom.chance_room) then rroom = rroom[1] ok = true end
+			else ok = true
+			end
+
+			if ok then
+				local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev)
+				if r then nb_room = nb_room - 1
+				else self.level.force_recreate = "required_room "..tostring(rroom) return end
+			end
+		end
+	end
+
+	-- Place random rooms
+	while nb_room > 0 do
+		local rroom
+		while true do
+			rroom = self.rooms[rng.range(1, #self.rooms)]
+			print("[Cavern] picked random room", rroom)
+			if type(rroom) == "table" and rroom.chance_room then
+				if rng.percent(rroom.chance_room) then rroom = rroom[1] break end
+			else
+				break
+			end
+		end
+
+		local r = self:roomAlloc(rroom, #rooms+1, lev, old_lev) -- Will not attempt to replace failed random rooms
+		nb_room = nb_room - 1
+	end
+
+	-- Did any rooms request a tunnel ?
+	for i, spot in ipairs(self.spots) do if spot.make_tunnel then
+		local es = {}
+		if spot.tunnel_dir then
+			core.fov.calc_beam(spot.x, spot.y, self.map.w, self.map.h, 100, spot.tunnel_dir, 90,
+				function(_, lx, ly) return false end,
+				function(_, lx, ly)
+					if (lx ~= spot.x or ly ~= spot.y) and not self.map:checkEntity(lx, ly, Map.TERRAIN, "block_move") then es[#es+1] = {x=lx, y=ly} end
+				end,
+			nil)
+		else
+			core.fov.calc_circle(spot.x, spot.y, self.map.w, self.map.h, 100,
+				function(_, lx, ly) return false end,
+				function(_, lx, ly)
+					if (lx ~= spot.x or ly ~= spot.y) and not self.map:checkEntity(lx, ly, Map.TERRAIN, "block_move") then es[#es+1] = {x=lx, y=ly} end
+				end,
+			nil)
+		end
+
+		local ex, ey = math.floor(self.map.w / 2), math.floor(self.map.h / 2)
+		if #es > 0 then
+			table.sort(es, function(a, b) return core.fov.distance(spot.x, spot.y, a.x, a.y) < core.fov.distance(spot.x, spot.y, b.x, b.y) end)
+			local e = es[1]
+			ex, ey = e.x, e.y
+		end
+
+		self:tunnel(spot.x, spot.y, ex, ey, -i)
+	end end
+
 	if self.door_chance then
 		self:addDoors()
 	end
 
-	return self:makeStairsInside(lev, old_lev, {})
+	return self:makeStairsInside(lev, old_lev, self.spots)
 end
 
 function _M:addDoors()

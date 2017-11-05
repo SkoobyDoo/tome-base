@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ newTalent{
 	equilibrium = 9,
 	cooldown = 25,
 	range = 10,
-	tactical = { BUFF = 5 },
+	tactical = { BUFF = 2 },
 	no_energy = true,
 	on_pre_use = function(self, t, silent)
 		return self:isTalentActive(self.T_MASTER_SUMMONER)

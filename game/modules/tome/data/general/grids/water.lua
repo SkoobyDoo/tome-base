@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -164,9 +164,9 @@ newEntity{
 
 	mindam = resolvers.mbonus(10, 25),
 	maxdam = resolvers.mbonus(20, 50),
+	DamageType = engine.DamageType.NATURE, -- used for resistance calculations only
 	on_stand = function(self, x, y, who)
-		if self.faction and who:reactionToward(self.faction) >= 0 then return end
-
+		if self.faction and who:reactionToward(self) >= 0 then return end
 		local DT = engine.DamageType
 		local dam = DT:get(DT.POISON).projector(self, x, y, DT.POISON, rng.range(self.mindam, self.maxdam))
 		self.x, self.y = x, y

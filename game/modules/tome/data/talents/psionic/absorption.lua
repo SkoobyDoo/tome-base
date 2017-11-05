@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009, 2010, 2011, 2012, 2013 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 --
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
-
 
 -- Note: This is consistent with raw damage but is applied after damage multipliers
 local function getShieldStrength(self, t)
@@ -94,7 +93,7 @@ local function shieldOnDamage(self, t, elementTest, transcendId, dam)
 	local absorbable_dam = getEfficiency(self, t) * total_dam
 	local strength = getShieldStrength(self, t)
 	if self:hasEffect(transcendId) then
-		absorbable = total_dam
+		absorbable_dam = total_dam
 		strength = strength * 2
 	end
 	local guaranteed_dam = total_dam - absorbable_dam
@@ -327,13 +326,26 @@ newTalent{
 	sustain_psi = 30,
 	cooldown = 40,
 	no_energy = true,
-	tactical = { BUFF = 2, HEAL = 4 },
+	tactical = { DEFEND = 3, PSI = -3 },
+	on_pre_use_ai = function(self, t, silent, fake)
+		local is_active = self.sustain_talents[t.id]
+		local combat = self.ai_target.actor and self:reactionToward(self.ai_target.actor) < 0
+		if is_active then -- can always turn off with 2 turns or less time
+			if not combat then return true end
+			local turns = (self.psi - self.min_psi)/math.max(0.1, t.getDrain(self, t) - self.psi_regen)
+			return rng.chance(math.max(0, turns - 1))
+		else -- can always turn on with >= 4 turns of use possible (~50% of max psi depending on regen)
+			if not combat then return false end
+			local turn4ratio = (math.min(self.psi, self.max_psi - t.sustain_psi) - self.min_psi)/math.max(0.1, t.getDrain(self, t, 2.5)*4 - self.psi_regen)
+			return rng.float(turn4ratio - 1, turn4ratio) > 0
+		end
+	end,
+	getDrain = function(self, t, timer)
+		return self.max_psi*(timer or self.forcefield_timer or 0)/20
+	end,
 	range = 0,
 	radius = 1,
 	getResist = function(self, t) return self:combatTalentLimit(t, 80, 30, 65) end,
-	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=self:getTalentRadius(t), selffire=false, talent=t}
-	end,
 	activate = function(self, t)
 		self.forcefield_timer = 1
 		local ret = {}
@@ -363,8 +375,10 @@ newTalent{
 		self.forcefield_timer = self.forcefield_timer + 1
 	end,
 	info = function(self, t)
+		local drain = t.getDrain(self, t)
 		return ([[Surround yourself with a forcefield, reducing all incoming damage by %d%%.
-		Such a shield is very expensive to maintain, and will drain 5%% of your maximum psi each turn and 5%% more for each turn you have it maintained. For example, on turn 2 it will drain 10%%.]]):
-		format(t.getResist(self,t))
+		Such a shield is very expensive to maintain, draining 5%% of your maximum psi per turn initially plus an addition 5%% for each turn it has been maintained. For example, on turn 2 it will drain 10%%.
+		Current drain rate: %0.1f psi/turn]]):
+		format(t.getResist(self,t), drain)
 	end,
 }

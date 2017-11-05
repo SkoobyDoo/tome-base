@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ local Map = require "engine.Map"
 --- Handles actors field of view
 -- When an actor moves it computes a field of view and stores it in self.fov<br/>
 -- When an other actor moves it can update the fov of seen actors
+-- @classmod engine.generator.interface.ActorFOV
 module(..., package.seeall, class.make)
 
 _M.__do_distance_map = false
@@ -43,7 +44,7 @@ end
 -- @param block the property to look for FOV blocking, defaults to "block_sight"
 -- @param apply an apply function that will be called on each seen grids, defaults to nil
 -- @param force set to true to force a regeneration even if we did not move
--- @param no_store do not store FOV informations
+-- @param no_store do not store FOV informations (such as actors in FOV)
 -- @param cache if true it will use the cache given by the map, for the map actor. It can be used for other actors is they have the same block settings
 function _M:computeFOV(radius, block, apply, force, no_store, cache)
 	-- If we did not move, do not update
@@ -205,6 +206,11 @@ function _M:updateFOV(a, sqdist)
 	self.fov_last_y = -1
 end
 
+--- Retrieve/Update the distance map
+--	The distance map value increases with how recently the actor had LOS to the grid and how close it was
+--	@param x, y coordinates
+--	@param [type = int, optional] set the distance map value
+--  @return distance map value at x, y
 function _M:distanceMap(x, y, v)
 	if v == nil then
 		return self.distance_map[x + y * game.level.map.w]

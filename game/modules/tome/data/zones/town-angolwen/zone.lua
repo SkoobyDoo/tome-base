@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ return {
 	allow_respec = "limited",
 	min_material_level = function() return game.state:isAdvanced() and 3 or 1 end,
 	max_material_level = function() return game.state:isAdvanced() and 4 or 3 end,
-	store_levels_by_restock = { 20, 35, 45 },
+	store_levels_by_restock = { 10, 20, 35, 45, 50, 60 },
 
 	generator =  {
 		map = {

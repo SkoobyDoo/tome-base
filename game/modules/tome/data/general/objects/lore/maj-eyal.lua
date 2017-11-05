@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,6 +18,19 @@
 -- darkgod@te4.org
 
 for i = 3, 10 do
+local l = mod.class.interface.PartyLore.lore_defs["races-"..i]
+newEntity{ base = "BASE_LORE_RANDOM",
+	define_as = "RACES_NOTE"..i,
+	subtype = "analysis", unique=true,
+	name = l.name, lore="races-"..i,
+	level_range = {20, 50},
+	rarity = 40,
+	encumberance = 0,
+	cost = 2,
+}
+end
+
+for _, i in ipairs{"ogre"} do
 local l = mod.class.interface.PartyLore.lore_defs["races-"..i]
 newEntity{ base = "BASE_LORE_RANDOM",
 	define_as = "RACES_NOTE"..i,

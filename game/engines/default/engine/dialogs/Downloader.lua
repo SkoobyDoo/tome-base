@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
 --- A web browser
+-- @classmod engine.dialogs.Downloader
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
@@ -35,7 +36,7 @@ function _M:init(t)
 	if fs.exists(self.dest) then
 		self.dest = fs.getRealPath(self.dest)
 	else
-		local _, _, dir, name = self.dest:find("(.+)/([^/]+)$")
+		local _, _, dir, name = self.dest:find("(.+/)([^/]+)$")
 		if dir then
 			self.dest = fs.getRealPath(dir)..fs.getPathSeparator()..name
 		end

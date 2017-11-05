@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ newBirthDescriptor{
 			Summoner = "allow",
 			Wyrmic = "allow",
 			Oozemancer = "allow",
+			["Stone Warden"] = "allow",
 		},
 	},
 	copy = {
@@ -136,11 +137,11 @@ newBirthDescriptor{
 		["wild-gift/higher-draconic"]={false, 0.3},
 		["wild-gift/fungus"]={true, 0.1},
 		["cunning/survival"]={false, 0},
-		["technique/shield-offense"]={true, 0.1},
-		["technique/2hweapon-assault"]={true, 0.1},
-		["technique/combat-techniques-active"]={false, 0},
-		["technique/combat-techniques-passive"]={true, 0},
-		["technique/combat-training"]={true, 0},
+		["technique/shield-offense"]={true, 0.2},
+		["technique/2hweapon-assault"]={true, 0.2},
+		["technique/combat-techniques-active"]={false, 0.2},
+		["technique/combat-techniques-passive"]={true, 0.2},
+		["technique/combat-training"]={true, 0.3},
 	},
 	talents = {
 		[ActorTalents.T_ICE_CLAW] = 1,
@@ -219,6 +220,10 @@ newBirthDescriptor{
 	copy = {
 		forbid_arcane = 2,
 		max_life = 90,
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", subtype="mindstar"},
+			OFFHAND = {type="weapon", subtype="mindstar"},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
 			{type="weapon", subtype="mindstar", name="mossy mindstar", autoreq=true, ego_chance=-1000},
@@ -227,5 +232,69 @@ newBirthDescriptor{
 	},
 	copy_add = {
 		life_rating = -3,
+	},
+}
+
+local shield_special = function(e) -- allows any object with shield combat
+	local combat = e.shield_normal_combat and e.combat or e.special_combat
+	return combat and combat.block
+end
+
+newBirthDescriptor{
+	type = "subclass",
+	name = "Stone Warden",
+	locked = function() return profile.mod.allow_build.wilder_stone_warden end,
+	locked_desc = "The Spellblaze's scars may be starting to heal,\nbut little can change how the partisans feel.\nNature and arcane could bridge their divide -\nand when it comes down to it, gold won't take sides...",
+	desc = {
+		"Stone Wardens are dwarves trained in both the eldritch arts and the worship of nature.",
+		"While other races are stuck in their belief that arcane forces and natural forces are meant to oppose, dwarves have found a way to combine them in harmony.",
+		"Stone Wardens are armoured fighters, dual wielding shields to channel many of their powers.",
+		"#GOLD#Stat modifiers:",
+		"#LIGHT_BLUE# * +2 Strength, +0 Dexterity, +0 Constitution",
+		"#LIGHT_BLUE# * +4 Magic, +3 Willpower, +0 Cunning",
+		"#GOLD#Life per level:#LIGHT_BLUE# +2",
+	},
+	special_check = function(birth)
+		if birth.descriptors_by_type.race ~= "Dwarf" then return false end
+		return true
+	end,
+	power_source = {nature=true, arcane=true},
+	not_on_random_boss = true,
+	stats = { str=2, wil=3, mag=4, },
+	talents_types = {
+		["wild-gift/call"]={true, 0.2},
+		["wild-gift/earthen-power"]={true, 0.3},
+		["wild-gift/earthen-vines"]={true, 0.3},
+		["wild-gift/dwarven-nature"]={true, 0.3},
+		["spell/stone-alchemy"]={false, 0.3},
+		["spell/eldritch-stone"]={false, 0.3},
+		["spell/eldritch-shield"]={true, 0.3},
+		["spell/deeprock"]={false, 0.3},
+		["spell/earth"]={true, 0.2},
+		["spell/stone"]={false, 0.2},
+		["cunning/survival"]={true, 0},
+		["technique/combat-training"]={true, 0},
+	},
+	talents = {
+		[ActorTalents.T_STONE_VINES] = 1,
+		[ActorTalents.T_STONESHIELD] = 1,
+		[ActorTalents.T_ELDRITCH_BLOW] = 1,
+		[ActorTalents.T_ARMOUR_TRAINING] = 3,
+		[ActorTalents.T_WEAPON_COMBAT] = 1,
+	},
+	copy = {
+		max_life = 110,
+		resolvers.auto_equip_filters{
+			MAINHAND = {special=shield_special},
+			OFFHAND = {special=shield_special}
+		},
+		resolvers.equipbirth{ id=true,
+			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
+			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
+			{type="armor", subtype="heavy", name="iron mail armour", autoreq=true, ego_chance=-1000, ego_chance=-1000}
+		},
+	},
+	copy_add = {
+		life_rating = 2,
 	},
 }

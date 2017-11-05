@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,10 +21,14 @@ if q and q:isStatus(q.COMPLETED, "saved") then
 
 local p = game:getPlayer(true)
 
+local trap = p:knowTalentType("cunning/trapping") and not game.state:unlockTalentCheck(player.T_AMBUSH_TRAP, player)
+local poison = p:getTalentFromId(p.T_STONING_POISON)
+local poison = poison and p:knowTalentType("cunning/poisons") and not p:knowTalent(poison) and p:canLearnTalent(poison)
 newChat{ id="welcome",
 	text = [[Ah, my #{italic}#good#{normal}# friend @playername@!
 Thanks to you I made it safely to this great city! I am planning to open my most excellent boutique soon, but since I am in your debt, perhaps I could open early for you if you are in need of rare goods.]]
-..((p:knowTalent(p.T_TRAP_MASTERY) and not p:knowTalent(p.T_FLASH_BANG_TRAP)) and "\nDuring our escape I found the plans for a #YELLOW#Flash Bang Trap#LAST#, you would not happen to be interested by any chance?" or "")
+..((trap or poison) and ("\nBy the way, "..((trap and "during our escape I found the plans for an #YELLOW#Ambush Trap#LAST#" or "")
+..(poison and (trap and " and while" or "while").. " organizing my inventory, I came across some #YELLOW#Smelly Toxin#LAST# that a colleague claimed could actually turn creatures to stone.  Truly exotic!" or ".")).."\nYou would not happen to be interested, by any chance?") or "")
 ..((game.state:isAdvanced() and "\nOh my friend, good news! As I told you I can now request a truly #{italic}#unique#{normal}# object to be crafted just for you. For a truly unique price..." or "\nI eventually plan to arrange a truly unique service for the most discerning of customers. If you come back later when I'm fully set up I shall be able to order for you something quite marvellous. For a perfectly #{italic}#suitable#{normal}# price, of course.")),
 	answers = {
 		{"Yes please, let me see your wares.", action=function(npc, player)
@@ -32,7 +36,8 @@ Thanks to you I made it safely to this great city! I am planning to open my most
 			npc.store:interact(player)
 		end},
 		{"What about the unique object?", cond=function(npc, player) return game.state:isAdvanced() end, jump="unique1"},
-		{"Flash Bang Trap ? Sounds useful.", cond=function(npc, player) return p:knowTalent(p.T_TRAP_MASTERY) and not p:knowTalent(p.T_FLASH_BANG_TRAP) end, jump="trap"},
+		{"Ambush Trap?  Sounds useful.", cond=function(npc, player) return trap end, jump="trap"},
+		{"Smelly Toxin?  What kind of smell?", cond=function(npc, player) return poison end, jump="poison"},
 		{"Sorry, I have to go!"},
 	}
 }
@@ -50,9 +55,27 @@ newChat{ id="traplearn",
 	text = [[Nice doing business with you my friend. There you go!]],
 	answers = {
 		{"Thanks.", action=function(npc, player)
-			p:learnTalent(p.T_FLASH_BANG_TRAP, 1, nil, {no_unlearn=true})
-			p:incMoney(-3000)
-			game.log("#LIGHT_GREEN#You learn the schematic, you can now create flash bang traps!")
+			game.state:unlockTalent(player.T_AMBUSH_TRAP, player)
+			player:incMoney(-3000)
+		end},
+	}
+}
+
+newChat{ id="poison",
+	text = [[Ungrol told me this substance contains some exceedingly rare components.
+"More Toxin than Medicine" he said.  Allas, he had not the funds to buy it.  On the other hand, because of our special relationship, I'm willing to let you have it #{italic}#at cost#{normal}# -- only 1500 gold pieces!]],
+	answers = {
+		{"Fairly pricey, but seems useful.  We have a deal!", cond=function(npc, player) return player.money >= 1500 end, jump="poisonlearn"},
+		{"That price ... er stuff really stinks ..."},
+	}
+}
+
+newChat{ id="poisonlearn",
+	text = [[Here you are.  Just be sure not to get any on yourself!]],
+	answers = {
+		{"Thanks.", action=function(npc, player)
+			player:incMoney(-1500)
+			player:learnTalent(player.T_STONING_POISON, true, 1)
 		end},
 	}
 }
@@ -131,7 +154,9 @@ local maker_list = function()
 				repeat
 					o = game.zone:makeEntity(game.level, "object", {name=name, ignore_material_restriction=true, no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}}, nil, true)
 					if o then ok = true end
-					if o and o.power_source and player:attr("forbid_arcane") and o.power_source.arcane then ok = false o = nil end
+					if o and not game.state:checkPowers(player, o, nil, "antimagic_only") then
+						ok = false o = nil 
+					end
 					tries = tries - 1
 				until ok or tries < 0
 				if o then
@@ -143,7 +168,9 @@ local maker_list = function()
 						repeat
 							art = game.state:generateRandart{base=o, lev=70, egos=4, force_themes=force_themes, forbid_power_source=not_ps}
 							if art then ok = true end
-							if art and art.power_source and player:attr("forbid_arcane") and art.power_source.arcane then ok = false end
+							if art and not game.state:checkPowers(player, art, nil, "antimagic_only") then
+								ok = false
+							end
 							nb = nb + 1
 							if nb == 40 then break end
 						until ok

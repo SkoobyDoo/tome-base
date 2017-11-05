@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 -- darkgod@te4.org
 
 load("/data/general/grids/basic.lua")
-load("/data/general/grids/underground.lua")
+load("/data/general/grids/underground_slimy.lua")
 load("/data/general/grids/lava.lua")
 load("/data/general/grids/water.lua")
 load("/data/general/grids/forest.lua")

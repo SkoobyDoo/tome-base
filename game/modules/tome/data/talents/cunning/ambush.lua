@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -111,6 +111,7 @@ newTalent{
 	mana = 35,
 	require = cuns_req_high3,
 	requires_target = true,
+	unlearn_on_clone = true,
 	tactical = { ATTACK = {DARKNESS = 3} },
 	getStealthPower = function(self, t) return self:combatScale(self:getCun(15, true) * self:getTalentLevel(t), 25, 0, 100, 75) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 4, 8)) end,
@@ -125,52 +126,25 @@ newTalent{
 			return
 		end
 
-		local m = self:cloneFull{
-			shader = "shadow_simulacrum",
-			no_drops = true, keep_inven_on_death = false,
-			faction = self.faction,
-			summoner = self, summoner_gain_exp=true,
-			summon_time = t.getDuration(self, t),
-			ai_target = {actor=nil},
-			ai = "summoned", ai_real = "tactical",
-			name = "Shadow of "..self.name,
-			desc = [[A dark shadowy shape whose form resembles your own.]],
-		}
-		m:removeAllMOs()
-		m.make_escort = nil
-		m.on_added_to_level = nil
-
-		m.energy.value = 0
-		m.player = nil
+		local m = self:cloneActor({name = "Shadow of "..self.name,
+			desc = ([[A dark shadowy form in the shape of %s.]]):format(self.name),
+			summoner=self, summoner_gain_exp=true, exp_worth=0,
+			summon_time=t.getDuration(self, t),
+			ai_target={actor=nil}, ai="summoned", ai_real="tactical",
+			forceLevelup = function() end,
+			on_die = function(self) self:removeEffect(self.EFF_ARCANE_EYE,true) end,
+			cant_teleport=true,	stealth = t.getStealthPower(self, t),
+			force_melee_damage_type = DamageType.DARKNESS,
+		
+		})
+		m:removeTimedEffectsOnClone()
+		m:unlearnTalentsOnClone() -- unlearn certain talents (no recursive projections)
+		m:unlearnTalentFull(m.T_STEALTH)
+		m:unlearnTalentFull(m.T_HIDE_IN_PLAIN_SIGHT)
 		m.max_life = m.max_life * t.getHealth(self, t)
-		m.life = util.bound(m.life, 0, m.max_life)
-		m.forceLevelup = function() end
-		m.die = nil
-		m.on_die = function(self) self:removeEffect(self.EFF_ARCANE_EYE,true) end
-		m.on_acquire_target = nil
-		m.seen_by = nil
-		m.puuid = nil
-		m.on_takehit = nil
-		m.can_talk = nil
-		m.clone_on_hit = nil
-		m.exp_worth = 0
-		m.no_inventory_access = true
-		m.no_levelup_access = true
-		m.cant_teleport = true
-		m:unlearnTalent(m.T_AMBUSCADE,m:getTalentLevelRaw(m.T_AMBUSCADE))
-		m:unlearnTalent(m.T_PROJECTION,m:getTalentLevelRaw(m.T_PROJECTION)) -- no recurssive projections
-		m:unlearnTalent(m.T_STEALTH,m:getTalentLevelRaw(m.T_STEALTH))
-		m:unlearnTalent(m.T_HIDE_IN_PLAIN_SIGHT,m:getTalentLevelRaw(m.T_HIDE_IN_PLAIN_SIGHT))
-		m.stealth = t.getStealthPower(self, t)
-
-		self:removeEffect(self.EFF_SHADOW_VEIL) -- Remove shadow veil from creator
-		m.remove_from_party_on_death = true
-		m.resists[DamageType.LIGHT] = -100
-		m.resists[DamageType.DARKNESS] = 130
-		m.resists.all = -30
+		table.mergeAdd(m.resists, {[DamageType.LIGHT]=-70, [DamageType.DARKNESS]=130, all=-30})
 		m.inc_damage.all = ((100 + (m.inc_damage.all or 0)) * t.getDam(self, t)) - 100
-		m.force_melee_damage_type = DamageType.DARKNESS
-
+		m.life = util.bound(m.life, 0, m.max_life)
 		m.on_act = function(self)
 			if self.summoner.dead or not self:hasLOS(self.summoner.x, self.summoner.y) then
 				if not self:hasEffect(self.EFF_AMBUSCADE_OFS) then
@@ -183,6 +157,7 @@ newTalent{
 			end
 		end,
 
+		self:removeEffect(self.EFF_SHADOW_VEIL) -- Remove shadow veil from creator
 		game.zone:addEntity(game.level, m, "actor", x, y)
 		game.level.map:particleEmitter(x, y, 1, "shadow")
 
@@ -210,8 +185,9 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You take full control of your own shadow for %d turns.
-		Your shadow possesses your talents and stats, has %d%% life and deals %d%% damage, -30%% all resistances, -100%% light resistance and 100%% darkness resistance.
+		Your shadow possesses your talents and stats, has %d%% life and deals %d%% damage, -30%% all resistances, -100%% light resistance and +100%% darkness resistance.
 		Your shadow is permanently stealthed (%d power), and all melee damage it deals is converted to darkness damage.
+		The shadow cannot teleport.
 		If you release control early or if it leaves your sight for too long, your shadow will dissipate.]]):
 		format(t.getDuration(self, t), t.getHealth(self, t) * 100, t.getDam(self, t) * 100, t.getStealthPower(self, t))
 	end,
@@ -243,7 +219,6 @@ newTalent{
 		local res = t.getDamageRes(self, t)
 		return ([[You veil yourself in shadows for %d turns, and let them control you.
 		While veiled, you become immune to status effects and gain %d%% all damage reduction. Each turn, you blink to a nearby foe (within range %d), hitting it for %d%% darkness weapon damage.
-		The shadow cannot teleport.
 		While this goes on, you cannot be stopped unless you are killed, and you cannot control your character.]]):
 		format(duration, res, t.getBlinkRange(self, t) ,100 * damage)
 	end,

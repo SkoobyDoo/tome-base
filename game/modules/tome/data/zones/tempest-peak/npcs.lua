@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -57,23 +57,25 @@ newEntity{ define_as = "URKIS",
 	resists = { [DamageType.LIGHTNING] = 100, },
 
 	resolvers.talents{
-		[Talents.T_FREEZE]=4,
-		[Talents.T_ICE_SHARDS]=4,
-		[Talents.T_LIGHTNING]=5,
-		[Talents.T_SHOCK]=4,
-		[Talents.T_HURRICANE]=4,
-		[Talents.T_NOVA]=4,
-		[Talents.T_THUNDERSTORM]=5,
-		[Talents.T_TEMPEST]=5,
+		[Talents.T_STAFF_MASTERY]= {base=2, every=8, max=6},
+		[Talents.T_FREEZE]={base=4, every=8, max=6},
+		[Talents.T_ICE_SHARDS]={base=4, every=8, max=6},
+		[Talents.T_LIGHTNING]={base=5, every=6, max=8},
+		[Talents.T_SHOCK]={base=4, every=6, max=8},
+		[Talents.T_HURRICANE]={base=4, every=6, max=7},
+		[Talents.T_NOVA]={base=4, every=6, max=7},
+		[Talents.T_THUNDERSTORM]={base=5, every=6, max=8},
+		[Talents.T_TEMPEST]={base=5, every=6, max=6},
 	},
 
 	autolevel = "warriormage",
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
 	resolvers.inscriptions(1, "rune"),
 	resolvers.inscriptions(1, {"manasurge rune"}),
+	resolvers.sustains_at_birth(),
 
 	on_die = function(self, who)
-		game.player:resolveSource():setQuestStatus("lightning-overload", engine.Quest.COMPLETED)
+		game.player:resolveSource():setQuestStatus("lightning-overload", engine.Quest.COMPLETED, "tempest-urkis-slain")
 		game:unlockBackground("urkis", "Urkis, the High Tempest")
 	end,
 }

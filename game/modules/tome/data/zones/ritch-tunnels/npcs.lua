@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ newEntity{ base = "BASE_NPC_RITCH_REL",
 
 -- Screw it just die, die, die
 newEntity{ base = "BASE_NPC_RITCH_REL", define_as = "HIVE_MOTHER",
-	unique = true,
+	unique = true, female = true,
 	name = "Ritch Great Hive Mother", image = "npc/insect_ritch_ritch_hive_mother.png",
 	display = "I", color=colors.VIOLET,
 	desc = [[This huge ritch seems to be the mother of all those here. Her sharp, fiery, claws dart toward you!]],
@@ -118,11 +118,11 @@ newEntity{ base = "BASE_NPC_RITCH_REL", define_as = "HIVE_MOTHER",
 
 	resists = { [DamageType.BLIGHT] = 40 },
 
-	body = { INVEN = 10, BODY=1 },
+	body = { INVEN = 10, BODY=1, HANDS=1 },
 
 	inc_damage = {all=-70},
 
-	resolvers.drops{chance=100, nb=1, {defined="FLAMEWROUGHT", random_art_replace={chance=75}}, },
+	resolvers.equip{{defined="FLAMEWROUGHT", random_art_replace={chance=75}, autoreq=true}},
 	resolvers.drops{chance=100, nb=3, {tome_drops="boss"} },
 
 	resolvers.talents{

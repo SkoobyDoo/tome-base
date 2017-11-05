@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,25 +21,40 @@ local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
 newEntity{ base = "BASE_STAFF",
-	power_source = {arcane=true},
+	power_source = {arcane=true, nature=true},
 	unique = true,
 	name = "Penitence",
-	flavor_name = "starstaff",
+	flavor_name = "harmonystaff",
 	unided_name = "glowing staff", image = "object/artifact/staff_penitence.png",
 	level_range = {10, 18},
 	color=colors.VIOLET,
 	rarity = 200,
-	desc = [[A powerful staff sent in secret to Angolwen by the Shaloren, to aid their fighting of the plagues following the Spellblaze.]],
+	desc = [[A powerful staff sent in secret to Angolwen by the Shaloren, to aid their fighting of the plagues following the Spellblaze. Its power is not to harm, but to heal and protect.]],
 	cost = 200,
 	material_level = 2,
 
+	flavors = {
+		magestaff = true,
+		starstaff = true,
+		harmonystaff = {DamageType.PHYSICAL, DamageType.MIND, DamageType.NATURE, DamageType.ARCANE},
+	},
+
+	command_staff = {
+		inc_damage = false,  -- its power is not to harm...
+		damage_affinity = {add=20, mult=0},  -- ...but to heal...
+		resists = 1,  -- ... and protect.
+	},
+
 	require = { stat = { mag=24 }, },
 	combat = {
-		--sentient = "penitent", -- commented out for now...  how many sentient staves do we need?
+		sentient = "penitent", -- how many sentient staves do we need? more than one!
 		dam = 15,
+		staff_power = 30,  -- it roocks
 		apr = 4,
 		dammod = {mag=1.2},
-		damtype = DamageType.NATURE, -- Note this is odd for a staff; it's intentional and it's also why the damage type can't be changed.  Blight on this staff would be sad :(
+		damtype = DamageType.NATURE, -- Note this is odd for a staff; it's intentional.
+		element = DamageType.NATURE,
+		-- melee_element = true, -- always melee nature :>
 	},
 	wielder = {
 		combat_spellpower = 15,
@@ -50,18 +65,32 @@ newEntity{ base = "BASE_STAFF",
 		damage_affinity={
 			[DamageType.NATURE] = 20,
 		},
+		combat_spellresist = 15,
+		learn_talent = {[Talents.T_COMMAND_STAFF] = 1,},
 	},
 	max_power = 60, power_regen = 1,
 	use_power = {
 		name = function(self, who) return ("cure up to %d diseases or poisons (based on Magic)"):format(self.use_power.cures(self, who)) end,
 		power = 10,
+		tactical = {CURE = function(who, t, aitarget) -- count number of disease and poisons
+			local nb = 0
+			for eff_id, p in pairs(who.tmp) do
+				local e = who.tempeffect_def[eff_id]
+				if e.status == "detrimental" then
+					nb = nb + (e.subtype.poison and 1 or 0)
+					nb = nb + (e.subtype.disease and 1.5 or 0)
+				end
+			end
+			if nb > 0 then return nb end
+		end
+		},
 		cures = function(self, who) return math.floor(who:combatStatScale("mag", 2.5, 6, "log")) end, --Not that many kinds of poisons/disease can be contracted at one time
 		use = function(self, who)
 			local target = who
 			local effs = {}
 			local known = false
 
-			game.logSeen(who, "%s uses %s, curing %s afflictions!", who.name:capitalize(), self:getName({no_add_name = true}), who:his_her())
+			game.logSeen(who, "%s uses %s %s, curing %s afflictions!", who.name:capitalize(), who:his_her(), self:getName({do_color=true, no_add_name = true}), who:his_her())
 			-- Create list of poison/disease effects
 			for eff_id, p in pairs(target.tmp) do
 				local e = target.tempeffect_def[eff_id]
@@ -92,14 +121,17 @@ newEntity{ base = "BASE_STAFF",
 			game.logPlayer(who, "#DARK_GREEN#You feel the cleansing power of Penitence attune to you.")
 		end
 	end,
+
+	resolvers.command_staff(), -- I'm too lazy to write out resists and affinities
 }
 
-newEntity{ base = "BASE_STAFF",
+newEntity{ base = "BASE_STAFF", define_as = "STAFF_TARELION",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Lost Staff of Archmage Tarelion", image = "object/artifact/staff_lost_staff_archmage_tarelion.png",
 	unided_name = "shining staff",
 	flavor_name = "magestaff",
+	flavors = {magestaff=true},
 	level_range = {37, 50},
 	color=colors.VIOLET,
 	rarity = 250,
@@ -108,13 +140,11 @@ newEntity{ base = "BASE_STAFF",
 	material_level = 5,
 
 	require = { stat = { mag=48 }, },
-	modes = {"fire", "cold", "lightning", "arcane"},
 	combat = {
 		is_greater = true,
 		dam = 30,
 		apr = 4,
 		dammod = {mag=1.5},
-		damtype = DamageType.ARCANE,
 	},
 	wielder = {
 		inc_stats = { [Stats.STAT_WIL] = 7, [Stats.STAT_MAG] = 8 },
@@ -132,6 +162,8 @@ newEntity{ base = "BASE_STAFF",
 		},
 		learn_talent = {[Talents.T_COMMAND_STAFF] = 1,},
 	},
+	-- choose element randomly
+	resolvers.staff_element(),
 }
 
 newEntity{ base = "BASE_AMULET",
@@ -215,7 +247,7 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 5,
 	combat = {
 		range = 10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 		apr = 12,
 	},
 	wielder = {
@@ -248,7 +280,6 @@ newEntity{ base = "BASE_LONGBOW",
 	material_level = 2,
 	combat = {
 		range = 7,
-		physspeed = 0.8,
 	},
 	wielder = {
 		disease_immune = 0.5,
@@ -278,31 +309,35 @@ newEntity{ base = "BASE_LONGSWORD",
 	unided_name = "glowing long sword",
 	moddable_tile = "special/%s_weapon_spellblade",
 	moddable_tile_big = true,
-	level_range = {40, 45},
+	level_range = {35, 50},
 	color=colors.AQUAMARINE,
 	rarity = 250,
 	desc = [[Mages sometimes have funny ideas. Archmage Varil once learned how to handle a sword and found he preferred wielding it instead of his staff.]],
 	on_id_lore = "spellblade",
 	cost = 1000,
 
-	require = { stat = { mag=28, str=28, dex=28 }, },
+	require = { stat = { mag=28, str=28 }, },
 	material_level = 5,
 	combat = {
 		dam = 50,
-		apr = 2,
 		physcrit = 5,
 		dammod = {str=1},
 	},
 	wielder = {
 		lite = 1,
-		combat_spellpower = 20,
+		combat_spellpower = 25,
 		combat_spellcrit = 9,
 		inc_damage={
-			[DamageType.PHYSICAL] = 18,
-			[DamageType.FIRE] = 18,
-			[DamageType.LIGHT] = 18,
+			[DamageType.ARCANE] = 30,
+			[DamageType.FIRE] = 30,
+			[DamageType.LIGHTNING] = 30,
 		},
-		inc_stats = { [Stats.STAT_MAG] = 4, [Stats.STAT_STR] = 4, },
+		inc_stats = { [Stats.STAT_MAG] = 8, [Stats.STAT_STR] = 4, },
+	},
+	talent_on_spell = {
+		{chance=12, talent=Talents.T_MANATHRUST, level=5},
+		{chance=12, talent=Talents.T_FLAME, level=5},
+		{chance=12, talent=Talents.T_LIGHTNING, level=5},
 	},
 }
 
@@ -339,6 +374,7 @@ newEntity{ base = "BASE_STAFF",
 	power_source = {arcane=true},
 	unique = true,
 	name = "Bolbum's Big Knocker", image = "object/artifact/staff_bolbums_big_knocker.png",
+	moddable_tile = "special/%s_staff_bolbums_big_knocker",
 	unided_name = "thick staff",
 	level_range = {20, 35},
 	color=colors.UMBER,
@@ -421,12 +457,12 @@ newEntity{ base = "BASE_SLING",
 	material_level = 3,
 	combat = {
 		range = 10,
-		physspeed = 0.7,
+		physspeed = 0.9,
 	},
 	wielder = {
 		inc_stats = { [Stats.STAT_DEX] = 4, [Stats.STAT_CUN] = 3,  },
 		inc_damage={ [DamageType.PHYSICAL] = 15 },
-		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_EYE_SHOT]=2},
+		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_SCATTER_SHOT]=2},
 	},
 }
 
@@ -578,13 +614,18 @@ newEntity{ base = "BASE_ROD",
 	use_power = { power = 50,
 		damage = function(self, who) return 300 + who:getMag() * 2 end,
 		radius = 5,
+		range = 0,
+		requires_target = true,
+		target = function(self, who) return {type="cone", range=self.use_power.range, radius=self.use_power.radius} end,
+		tactical = {ATTACKAREA = {FIRE = 2}},
 		name = function(self, who)
 			return ("shoot a cone of flames (radius %d) for %0.2f fire damage (based on Magic)"):format(self.use_power.radius, engine.interface.ActorTalents.damDesc(who, engine.DamageType.FIRE, self.use_power.damage(self, who)))
 		end,
 		use = function(self, who)
-			local tg = {type="cone", range=0, radius=5}
+			local tg = self.use_power.target(self, who)
 			local x, y = who:getTarget(tg)
 			if not x or not y then return nil end
+			game.logSeen(who, "%s activates %s %s!", who.name:capitalize(), who:his_her(), self:getName({no_add_name = true, do_color = true}))
 			who:project(tg, x, y, engine.DamageType.FIRE, self.use_power.damage(self, who), {type="flame"})
 			return {id=true, used=true}
 		end
@@ -596,7 +637,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "viciously sharp battle axe",
 	name = "Drake's Bane", image = "object/artifact/axe_drakes_bane.png",
-	moddable_tile = "special/axe_drakes_bane",
+	moddable_tile = "special/%s_axe_drakes_bane",
 	moddable_tile_big = true,
 	color = colors.RED,
 	desc = [[The killing of Kroltar, mightiest of wyrms, took seven months and the lives of 20,000 dwarven warriors.  Finally the beast was worn down and mastersmith Gruxim, standing atop the bodies of his fallen comrades, was able slit its throat with this axe crafted purely for the purpose of penetrating the wyrm's hide.]],
@@ -665,6 +706,11 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'BLIGHT',
+		alt_damage_type = 'DRAINLIFE',
+		particle = 'slime',
+	},
 	carrier = {
 		lite = 2,
 	},
@@ -674,6 +720,7 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		confusion_immune = 0.3,
 		fear_immune = 0.3,
 		resists={[DamageType.MIND] = 30,},
+		sentient_telos = 1,
 	},
 	imbue_powers = {
 		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_DEX] = 5, [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 5, [Stats.STAT_CON] = 5, },
@@ -700,7 +747,9 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 				voice.combat = o.combat
 				voice.combat.dam = math.floor(voice.combat.dam * 1.4)
 				voice.combat.sentient = "telos"
-				voice.wielder.inc_damage[voice.combat.damtype] = voice.combat.dam
+				voice.flavors = o.flavors
+				voice.command_staff = o.command_staff
+				voice:commandStaff()
 				voice:identify(true)
 				o:replaceWith(voice)
 				who:sortInven()
@@ -713,6 +762,28 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		end)
 		return {id=true, used=true}
 	end },
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","TELOS_TOP_HALF"} },
+	on_set_complete = function(self, who)
+		local DamageType = require "engine.DamageType"
+		self:specialSetAdd({"wielder","spell_cooldown_reduction"}, 0.1)
+		self:specialWearAdd({"wielder","melee_project"}, { [engine.DamageType.DRAINLIFE] = 50 } )
+		game.logSeen(game.player, "#CRIMSON#Telos's gem seems to flare and glows an unearthly colour.")
+	end,
+	on_set_broken = function(self, who)
+		game.logPlayer(game.player, "#CRIMSON#The unearthly glow fades away.")
+	end,
+	on_wear = function(self, who)
+		if who.is_alchemist_golem then
+			self.old_golem_name = who.name
+			who.name = "Telos Golem (reluctant follower of "..who.summoner.name..")"
+			game.log("#ROYAL_BLUE#The golem decides to change it's name to #{bold}#%s#{normal}#.", who.name)
+		end
+	end,
+	on_takeoff = function(self, who)
+		if who.is_alchemist_golem then
+			who.name = self.old_golem_name or "I feel lost!"
+		end
+	end,
 }
 
 -- The staff that goes with the crystal above, it will not be generated randomly it is created by the crystal
@@ -729,7 +800,7 @@ newEntity{ base = "BASE_STAFF", define_as = "VOICE_TELOS",
 
 	require = { stat = { mag=45 }, },
 	-- This is replaced by the creation process
-	combat = { dam = 1, damtype = DamageType.ARCANE, },
+	combat = { dam = 1, damtype = DamageType.ARCANE,},
 	wielder = {
 		combat_spellpower = 30,
 		combat_spellcrit = 15,

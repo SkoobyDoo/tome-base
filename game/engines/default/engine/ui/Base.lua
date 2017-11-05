@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ local KeyBind = require "engine.KeyBind"
 local Mouse = require "engine.Mouse"
 
 --- A generic UI element
+-- @classmod engine.ui.base
 module(..., package.seeall, class.make)
 
 local gfx_prefix = "/data/gfx/"
@@ -38,8 +39,8 @@ _M.font_bold = core.display.newFont("/data/font/DroidSans-Bold.ttf", 12)
 _M.font_bold_h = _M.font_bold:lineSkip()
 
 -- Default UI
-_M.ui = "metal"
-_M.defaultui = "metal"
+_M.ui = "dark"
+_M.defaultui = "dark"
 
 sounds = {
 	button = "ui/subtle_button_sound",
@@ -49,10 +50,26 @@ _M.ui_conf = {}
 
 function _M:loadUIDefinitions(file)
 	local f, err = loadfile(file)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = self.ui_conf
 	setfenv(f, self.ui_conf)
 	local ok, err = pcall(f)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = nil
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
+end
+
+function _M:uiExists(ui)
+	return self.ui_conf[ui]
+end
+
+function _M:changeDefault(ui)
+	if not self:uiExists(ui) then return end
+	self.ui = ui
+	for name, c in pairs(package.loaded) do
+		if type(c) == "table" and c.isClassName and c:isClassName(self._NAME) then
+			c.ui = ui
+		end
+	end
 end
 
 function _M:inherited(base)
@@ -85,7 +102,7 @@ function _M:init(t, no_gen)
 	
 	if t.ui then self.ui = t.ui end
 
-	if not self.ui_conf[self.ui] then self.ui = "metal" end
+	if not self.ui_conf[self.ui] then self.ui = "dark" end
 
 	if not no_gen then self:generate() end
 end
@@ -127,14 +144,14 @@ end
 function _M:textureToScreen(tex, x, y, r, g, b, a, allow_uid)
 	local res = tex.t:toScreenFull(x, y, tex.w, tex.h, tex.tw, tex.th, r, g, b, a)
 	if tex.dduids and allow_uid then
-		for di, dduid in ipairs(tex.dduids) do
-			dduid.e:toScreen(nil, x + dduid.x, y, dduid.w, dduid.w, 1, false, false)
+		for e, dduid in pairs(tex.dduids) do
+			e:toScreen(nil, x + dduid.x, y, dduid.w, dduid.w, 1, false, false)
 		end
 	end
 	return res
 end
 
-function _M:makeFrame(base, w, h)
+function _M:makeFrame(base, w, h, iw, ih)
 	local f = {}
 	if base then
 		f.b7 = self:getUITexture(base.."7.png")
@@ -146,6 +163,8 @@ function _M:makeFrame(base, w, h)
 		f.b2 = self:getUITexture(base.."2.png")
 		f.b6 = self:getUITexture(base.."6.png")
 		f.b5 = self:getUITexture(base.."5.png")
+		if not w then w = iw + f.b4.w + f.b6.w end
+		if not h then h = ih + f.b8.h + f.b2.h end
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)

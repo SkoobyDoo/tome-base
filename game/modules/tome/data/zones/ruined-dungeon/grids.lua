@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ newEntity{
 				end
 			end)
 		else
-			require("engine.ui.Dialog"):simplePopup("Infinite Dungeon", "You should not go there, there is no way back. Ever. Maybe later when you did all you must do.")
+			require("engine.ui.Dialog"):simplePopup("Infinite Dungeon", "You should not go there. There is no way back. Ever. Maybe later when you have done all you must do.")
 		end
 	end,
 }

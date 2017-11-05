@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ return {
 	-- Apply a darkish tint to all the map
 	color_shown = {0.7, 0.7, 0.7, 1},
 	color_obscure = {0.7*0.6, 0.7*0.6, 0.7*0.6, 0.6},
-	min_material_level = 3,
+	min_material_level = 4,
 	max_material_level = 4,
 	generator =  {
 		map = {

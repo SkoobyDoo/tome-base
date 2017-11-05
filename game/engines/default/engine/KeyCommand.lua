@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ require "engine.class"
 require "engine.Key"
 
 --- Receives keypresses and acts upon them
+-- @classmod engine.KeyCommand
 module(..., package.seeall, class.inherit(engine.Key))
 
 function _M:init()
@@ -80,14 +81,20 @@ function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
 			handled = true
 		end
 	elseif not isup and self.commands[sym] and self.commands[sym].plain then
-		self.commands[sym].plain(sym, ctrl, shift, alt, meta, unicode)
+		self.commands[sym].plain(sym, ctrl, shift, alt, meta, unicode, key)
 		handled = true
 	elseif not isup and self.commands[self.__DEFAULT] and self.commands[self.__DEFAULT].plain then
 		self.commands[self.__DEFAULT].plain(sym, ctrl, shift, alt, meta, unicode, key)
 		handled = true
 	end
 
-	if not isup and self.atLast then self.atLast(sym, ctrl, shift, alt, meta, unicode, key) handled = true  end
+	if not handled and self.atLast then
+		if type(self.atLast) == "function" then
+			handled = self.atLast(sym, ctrl, shift, alt, meta, unicode, isup, key)
+		else
+			handled = self.atLast:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
+		end
+	end
 	return handled
 end
 
@@ -101,6 +108,7 @@ end
 -- @param sym the key to handle
 -- @param mods a table with the mod keys needed, i.e: {"ctrl", "alt"}
 -- @param fct the function to call when the key is pressed
+-- @param anymod allow any modifier
 function _M:addCommand(sym, mods, fct, anymod)
 	if type(sym) == "string" then sym = self[sym] end
 	if not sym then return end
@@ -108,13 +116,19 @@ function _M:addCommand(sym, mods, fct, anymod)
 	if sym == self.__TEXTINPUT then return self:setTextInput(mods) end
 
 	self.commands[sym] = self.commands[sym] or {}
-	if not fct then
-		self.commands[sym].plain = mods
+	local plain = false
+	if not fct or not mods then
+		plain = true
+		self.commands[sym].plain = fct or mods
 	else
 		table.sort(mods)
 		self.commands[sym][table.concat(mods,',')] = fct
 	end
-	if anymod then self.commands[sym].anymod = true end
+	if anymod or plain then
+		self.commands[sym].anymod = true
+	else -- added a keycombo for a specific set of mods
+		self.commands[sym].anymod = false
+	end
 end
 
 --- Adds a key to be fully ignored

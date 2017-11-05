@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -59,23 +59,27 @@ newEntity{ define_as = "SHADE_OF_TELOS",
 	resists = {all = 25, [DamageType.COLD] = 100, [DamageType.ACID] = 100},
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, },
+	resolvers.auto_equip_filters("Archmage"),
 	resolvers.equip{
 		{type="weapon", subtype="staff", defined="TELOS_TOP_HALF", random_art_replace={chance=75}, autoreq=true},
-		{type="weapon", subtype="staff", defined="TELOS_BOTTOM_HALF", autoreq=true},
+		{type="weapon", subtype="staff", defined="TELOS_BOTTOM_HALF", autoreq=true,
+			replace_unique={not_properties={"slot_forbid"}, forbid_power_source={antimagic=true}, special=function(e) return e.slot == "OFFHAND" or e.offslot == "OFFHAND" end}
+		},
 	},
 	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
 
 	resolvers.talents{
-		[Talents.T_ICE_SHARDS]=5,
-		[Talents.T_FREEZE]=5,
-		[Talents.T_TIDAL_WAVE]=5,
-		[Talents.T_ICE_STORM]=5,
-		[Talents.T_UTTERCOLD]=8,
-		[Talents.T_FROZEN_GROUND]=5,
-		[Talents.T_SHATTER]=5,
-		[Talents.T_GLACIAL_VAPOUR]=5,
-		[Talents.T_CURSE_OF_IMPOTENCE]=5,
-		[Talents.T_VIRULENT_DISEASE]=5,
+		[Talents.T_STAFF_MASTERY]= {base=4, every=8, max=6},
+		[Talents.T_ICE_SHARDS]={base=5, every=8, max=6},
+		[Talents.T_FREEZE]={base=5, every=8, max=6},
+		[Talents.T_TIDAL_WAVE]={base=5, every=8, max=6},
+		[Talents.T_ICE_STORM]={base=5, every=8, max=6},
+		[Talents.T_UTTERCOLD]={base=8, every=8, max=10},
+		[Talents.T_FROZEN_GROUND]={base=5, every=8, max=6},
+		[Talents.T_SHATTER]={base=5, every=8, max=6},
+		[Talents.T_GLACIAL_VAPOUR]={base=5, every=8, max=6},
+		[Talents.T_CURSE_OF_IMPOTENCE]={base=5, every=8, max=6},
+		[Talents.T_VIRULENT_DISEASE]={base=5, every=8, max=6},
 	},
 
 	autolevel = "caster",
