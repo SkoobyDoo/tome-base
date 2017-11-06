@@ -2833,7 +2833,8 @@ function _M:onTakeHit(value, src, death_note)
 end
 
 function _M:takeHit(value, src, death_note)
-	self:enterCombatStatus()
+	self:enterCombatStatus(src)
+	if src.enterCombatStatus then src:enterCombatStatus(self) end
 
 	for eid, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eid]
@@ -7020,15 +7021,17 @@ function _M:postFOVCombatCheck()
 	if self.fov and self.fov.actors_dist then
 		for i = 1, #self.fov.actors_dist do
 			local act = self.fov.actors_dist[i]
-			if act and act.x and not act.dead and self:reactionToward(act) < 0 then
-				self:enterCombatStatus()
+			if act and act.x and not act.dead and not act.ignore_from_combat_compute and self:reactionToward(act) < 0 then
+				self:enterCombatStatus(act)
 				break
 			end
 		end
 	end
 end
 
-function _M:enterCombatStatus()
+function _M:enterCombatStatus(src)
+	if src and src.ignore_from_combat_compute then return end
+	
 	if not self.in_combat then -- Start combat mode
 		self.in_combat = game.turn
 		self:updateInCombatStatus()
@@ -7043,7 +7046,9 @@ function _M:checkStillInCombat()
 
 	-- FOV needs no recheck, it's always updating
 
-	-- Damage needs no recheck, it's always update
+	-- Damage taken needs no recheck, it's always updating
+
+	-- Damage done needs no recheck, it's always updating
 
 	-- Status effects need rechecking
 	for eff_id, p in pairs(self.tmp) do
