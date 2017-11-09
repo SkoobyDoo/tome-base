@@ -996,6 +996,7 @@ end
 function fs.iterate(path, filter)
 	local list = fs.list(path)
 	if filter then
+		if type(filter) == "string" then local fstr = filter filter = function(f) f:find(fstr) return  end end
 		for i = #list, 1, -1 do if not filter(list[i]) then
 			table.remove(list, i)
 		end end
@@ -1023,7 +1024,7 @@ function fs.getRealPath(path)
 end
 
 function fs.readAll(file)
-	local f = fs:open(file, "r")
+	local f = fs.open(file, "r")
 	if not f then return nil, "file not found" end
 	local data = f:read(10485760)
 	f:close()

@@ -92,6 +92,7 @@ int requested_fps = 30;
 int requested_fps_idle = DEFAULT_IDLE_FPS;
 /* The currently "saved" fps, used for idle transitions. */
 int requested_fps_idle_saved = 0;
+bool forbid_idle_mode = FALSE;
 
 SDL_TimerID display_timer_id = 0;
 SDL_TimerID realtime_timer_id = 0;
@@ -1307,6 +1308,8 @@ void cleanupTimerLock(SDL_mutex *lock, SDL_TimerID *timer
 /* Handles game idle transition.  See function declaration for more info. */
 void handleIdleTransition(int goIdle)
 {
+	if (forbid_idle_mode) return;
+
 	/* Only allow if a display timer is already running. */
 	if (display_timer_id) {
 		if (goIdle) {
