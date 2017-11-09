@@ -1774,6 +1774,10 @@ function _M:getRankSaveAdjust()
 	end
 end
 
+function _M:allowedRanks()
+	return { 1, 2, 3, 3.2, 3.5, 4, 5, 10 }
+end
+
 function _M:TextRank()
 	local rank, color = "normal", "#ANTIQUE_WHITE#"
 	if self.rank == 1 then rank, color = "critter", "#C0C0C0#"
