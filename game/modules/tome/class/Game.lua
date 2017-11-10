@@ -710,6 +710,28 @@ function _M:updateCurrentChar()
 	if not self.party then return end
 	local player = self.party:findMember{main=true}
 	profile:currentCharacter(self.__mod_info.full_version_string, ("%s the level %d %s %s"):format(player.name, player.level, player.descriptor.subrace, player.descriptor.subclass), player.__te4_uuid)
+	if core.discord and self.zone then
+		local info = {}
+		info.zone = self:getZoneName()
+		info.char = ("Lvl %d %s %s"):format(player.level, player.descriptor.subrace, player.descriptor.subclass)
+		info.splash = "default"
+		info.splash_text = ("%s playing on %s %s; died %d time%s!"):format(player.name, player.descriptor.permadeath, player.descriptor.difficulty, player.died_times and #player.died_times or 0, (player.died_times and #player.died_times == 1) and "" or "s")
+		-- info.icon = "archmage"
+		-- info.icon_text = "lol"
+
+		-- Determine which dlc it originates from
+		local _, _, addon = self.zone.short_name:find("^([^+]+)%+(.*)$")
+		if addon then
+			local addon_data = self.__mod_info.addons[addon]
+			if addon_data and addon_data.id_dlc then
+				info.splash = addon
+			end
+		end
+		-- Let the DLC override it in a more smart way
+		self:triggerHook{"Discord:check", info=info}
+
+		core.discord.updatePresence{state=info.zone, details=info.char, large_image=info.splash, large_image_text=info.splash_text, small_image=info.icon, small_image_text=info.icon_text}
+	end
 end
 
 function _M:getSaveDescription()
@@ -1386,10 +1408,7 @@ function _M:chronoRestore(name, remove)
 	return true
 end
 
---- Update the zone name, if needed
-function _M:updateZoneName()
-	if not self.zone_font then return end
-	local name
+function _M:getZoneName()
 	if self.zone.display_name then
 		name = self.zone.display_name()
 	else
@@ -1401,6 +1420,13 @@ function _M:updateZoneName()
 			name = ("%s (%d)"):format(self.zone.name, lev)
 		end
 	end
+	return name
+end
+
+--- Update the zone name, if needed
+function _M:updateZoneName()
+	if not self.zone_font then return end
+	local name = self:getZoneName()
 	if self.zone_name_s and self.old_zone_name == name then return end
 
 	local s = core.display.drawStringBlendedNewSurface(self.zone_font, name, unpack(colors.simple(colors.GOLD)))
