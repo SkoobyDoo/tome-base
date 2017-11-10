@@ -23,6 +23,8 @@
 
 colors = {}
 colors_simple = {}
+r_colors = {}
+r_colors_simple = {}
 
 --- Define Color
 -- @string name
@@ -35,6 +37,8 @@ colors_simple = {}
 function defineColor(name, r, g, b, br, bg, bb)
 	colors[name] = {r=r, g=g, b=b, br=br, bg=bg, bb=bb}
 	colors_simple[name] = {r, g, b}
+	r_colors[colors[name]] = name
+	r_colors_simple[colors_simple[name]] = name
 end
 
 --- color -> foreground table

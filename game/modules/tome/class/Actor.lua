@@ -601,6 +601,8 @@ function _M:actBase()
 
 	-- Cooldown talents after effects, because some of them involve breaking sustains.
 	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
+
+	self:checkStillInCombat()
 end
 
 -- General entry point for Actors to act, called by NPC:act or Player:act
@@ -1772,6 +1774,10 @@ function _M:getRankSaveAdjust()
 	end
 end
 
+function _M:allowedRanks()
+	return { 1, 2, 3, 3.2, 3.5, 4, 5, 10 }
+end
+
 function _M:TextRank()
 	local rank, color = "normal", "#ANTIQUE_WHITE#"
 	if self.rank == 1 then rank, color = "critter", "#C0C0C0#"
@@ -2843,6 +2849,9 @@ function _M:onTakeHit(value, src, death_note)
 end
 
 function _M:takeHit(value, src, death_note)
+	self:enterCombatStatus(src)
+	if src.enterCombatStatus then src:enterCombatStatus(self) end
+
 	for eid, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eid]
 		if e.damage_feedback then
@@ -5183,6 +5192,7 @@ local sustainCallbackCheck = {
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
 	callbackOnWait = "talents_on_wait",
+	callbackOnCombat = "talents_on_combat",
 	callbackOnRun = "talents_on_run",
 	callbackOnLevelup = "talents_on_levelup",
 	callbackOnDeath = "talents_on_death",
@@ -6696,11 +6706,13 @@ end
 function _M:on_temporary_effect_added(eff_id, e, p)
 	self:registerCallbacks(e, eff_id, "effect")
 	self:fireTalentCheck("callbackOnTemporaryEffectAdd", eff_id, e, p)
+	if e.status == "detrimental" then self:enterCombatStatus() end
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
 	self:unregisterCallbacks(e, eff_id)
 	self:fireTalentCheck("callbackOnTemporaryEffectRemove", eff_id, e, p)
+	if e.status == "detrimental" then self:enterCombatStatus() end
 end
 
 --- Called when we are initiating a projection
@@ -7201,4 +7213,66 @@ function _M:findTinkerSpot(tinker)
 		end
 	end)
 	return possible[1].inven, possible[1].item, possible[1].free == 0
+end
+
+function _M:postFOVCombatCheck()
+	if self.fov and self.fov.actors_dist then
+		for i = 1, #self.fov.actors_dist do
+			local act = self.fov.actors_dist[i]
+			if act and act.x and not act.dead and not act.ignore_from_combat_compute and self:reactionToward(act) < 0 then
+				self:enterCombatStatus(act)
+				break
+			end
+		end
+	end
+end
+
+function _M:enterCombatStatus(src)
+	if src and src.ignore_from_combat_compute then return end
+	
+	if not self.in_combat then -- Start combat mode
+		self.in_combat = game.turn
+		self:updateInCombatStatus()
+	else -- Update last turn we started combat mode
+		self.in_combat = game.turn
+	end
+end
+
+function _M:checkStillInCombat()
+	if not self.in_combat then return end -- Not in combat anyway
+	if game.turn - self.in_combat < 50 then return end -- In combat for less than 5 turns, nothing to do
+
+	-- FOV needs no recheck, it's always updating
+
+	-- Damage taken needs no recheck, it's always updating
+
+	-- Damage done needs no recheck, it's always updating
+
+	-- Status effects need rechecking
+	for eff_id, p in pairs(self.tmp) do
+		local e = self:getEffectFromId(eff_id)
+		if e.status == "detrimental" then self:enterCombatStatus() break end
+	end
+
+	if game.turn - self.in_combat < 50 then return end -- Still good?
+
+	-- Ok no more in combat!
+	self.in_combat = nil
+	self:updateInCombatStatus()
+end
+
+function _M:updateInCombatStatus()
+	if config.settings.cheat then
+		if self.in_combat then
+			game.log("#CRIMSON#--- %s IN COMBAT since %d turns", self.name, (game.turn - self.in_combat) / 10)
+		else
+			game.log("#YELLOW#--- %s OUT OF COMBAT", self.name)
+		end
+	end
+
+	if self.in_combat then
+		self:fireTalentCheck("callbackOnCombat", true)
+	else
+		self:fireTalentCheck("callbackOnCombat", false)
+	end
 end

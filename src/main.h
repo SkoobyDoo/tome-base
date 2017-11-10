@@ -69,6 +69,7 @@ extern int g_argc;
 extern char **g_argv;
 extern char *override_home;
 extern float screen_zoom;
+extern bool forbid_idle_mode;
 
 /* Error handling */
 struct lua_err_type_s {

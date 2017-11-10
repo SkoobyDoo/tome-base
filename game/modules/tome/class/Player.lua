@@ -664,6 +664,7 @@ function _M:playerFOV()
 			self:computeFOV(self:attr("blind_sight"), "block_sight", function(x, y, dx, dy, sqdist) game.level.map:applyLite(x, y, 0.6) end, true, true, true)
 		end
 	end
+	self:postFOVCombatCheck()
 end
 
 function _M:doFOV()
