@@ -12,3 +12,13 @@ out.ogv
 te4_log_web.txt
 t-engine
 tengine_doc
+game/modules/pits/
+game/modules/uaws/
+game/modules/bare_minimum/
+game/modules/bone/
+game/modules/demo/
+game/modules/particles_editor/
+steam_appid.txt
+oprofile_data/
+game/modules/tome/data/gfx/ts-gfx*
+game/engines/default/modules/boot/data/gfx/ts-gfx*
