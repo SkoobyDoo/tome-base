@@ -177,7 +177,7 @@ function _M:add(talent)
 
 	self.do_talents:add(talent:get():translate(self.next_x, self.next_y))
 
-	print("!!!!!", self.item.stat, "::", self.next_x, self.next_y, talent.h)
+	-- print("!!!!!", self.item.stat, "::", self.next_x, self.next_y, talent.h)
 	if talent.item.break_line then
 		self.next_x = 0
 		self.next_y = self.next_y + talent.h

@@ -30,6 +30,7 @@ local Textzone = require "engine.ui.Textzone"
 local ImageList = require "engine.ui.ImageList"
 local TextzoneList = require "engine.ui.TextzoneList"
 local Separator = require "engine.ui.Separator"
+local ActorFrame = require "engine.ui.ActorFrame"
 local NameGenerator = require "engine.NameGenerator"
 local NameGenerator2 = require "engine.NameGenerator2"
 local Savefile = require "engine.Savefile"
@@ -60,6 +61,8 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 
 	self.descriptors = {}
 	self.descriptors_by_type = {}
+
+	self.actor_frame = ActorFrame.new{actor=self.actor, w=64, h=64}
 
 	self.c_ok = Button.new{text="     Play!     ", fct=function() self:atEnd("created") end}
 	self.c_random = Button.new{text="Random!", fct=function() self:randomBirth() end}
@@ -159,6 +162,9 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 		{right=0, bottom=0, ui=self.c_cancel},
 
 		{left=0, bottom=self.c_ok, ui=self.c_extra_options},
+
+		
+		{right=0, top=-64, ui=self.actor_frame},
 	}
 	self:setupUI()
 
@@ -1004,15 +1010,6 @@ function _M:on_register()
 	end
 end
 
--- Display the player tile
-function _M:innerDisplay(x, y, nb_keyframes)
-	if self.actor.image then
-		self.actor:toScreen(self.tiles, x + self.iw - 64, y, 64, 64)
-	elseif self.actor.image and self.actor.add_mos then
-		self.actor:toScreen(self.tiles, x + self.iw - 64, y - 64, 128, 64)
-	end
-end
-
 --- Fake a body & starting equipment
 function _M:fakeEquip(v)
 	if not v then
@@ -1116,6 +1113,7 @@ function _M:setTile(f, w, h, last)
 		self:applyCosmeticActor(false)
 		self.actor:updateModdableTile()
 		self:fakeEquip(false)
+		self.actor_frame:setActor(self.actor)
 	else
 		self:applyCosmeticActor(true)
 	end
