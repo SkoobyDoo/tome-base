@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ newEntity{ base = "BASE_NPC_DEMON",
 		[Talents.T_OVERPOWER]={base=1, every=6, max=5},
 		[Talents.T_RUSH]=6,
 	},
+	resolvers.auto_equip_filters("Bulwark"),
 	resolvers.equip{
 		{type="weapon", subtype="longsword", autoreq=true},
 		{type="armor", subtype="shield", autoreq=true},

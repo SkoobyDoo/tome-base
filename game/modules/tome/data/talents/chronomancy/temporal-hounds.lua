@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -152,6 +152,7 @@ newTalent{
 	points = 5,
 	sustain_paradox = 48,
 	no_sustain_autoreset = true,
+	unlearn_on_clone = true,
 	cooldown = function(self, t) return math.ceil(self:combatTalentLimit(t, 10, 45, 15)) end, -- Limit >10
 	tactical = { BUFF = 2 },
 	callbackOnActBase = function(self, t)

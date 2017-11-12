@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ newTalent{
 		return 50 * self:getTalentLevelRaw(t) + self.max_life * self:combatTalentLimit(t, 1, .01, .05)
 	end,
 	activate = function(self, t)
-		if self.player and not self:hasQuest("lichform") and not self:attr("undead") then
+		if self.player and not self:attr("no_lichform_quest") and not self:hasQuest("lichform") and not self:attr("undead") then
 			self:grantQuest("lichform")
 			if game.state.birth.campaign_name ~= "maj-eyal" then self:setQuestStatus("lichform", engine.Quest.DONE) end
 			require("engine.ui.Dialog"):simplePopup("Lichform", "You have mastered the lesser arts of overcoming death, but your true goal is before you: the true immortality of Lichform!")
@@ -46,8 +46,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[The line between life and death blurs for you; you can only die when you reach -%d life.
-		However, when below 0 HP, you cannot see how much life you have left.]]):
+		return ([[The line between life and death blurs for you; you can only die when you reach -%d life.]]):
 		format(t.lifeBonus(self, t))
 	end,
 }
@@ -57,8 +56,8 @@ newTalent{
 	type = {"spell/necrosis",2},
 	require = spells_req2,
 	points = 5,
-	mana = 70,
-	cooldown = 30,
+	mana = 60,
+	cooldown = 25,
 	tactical = { ATTACK = { ARCANE = 3 }, DISABLE = 2 },
 	range = 7,
 	requires_target = true,
@@ -90,8 +89,8 @@ newTalent{
 	require = spells_req3,
 	points = 5,
 	random_ego = "attack",
-	mana = 35,
-	cooldown = 20,
+	mana = 30,
+	cooldown = 18,
 	tactical = { HEAL = 2 },
 	is_heal = true,
 	getHeal = function(self, t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 70), 100, 20, 0,  66.7, 46.7) end, --Limit to <100%
@@ -182,8 +181,8 @@ newTalent{
 		end
 		self.blood_color = colors.GREY
 		self:attr("poison_immune", 1)
-		self:attr("disease_immune", 0.5)
-		self:attr("stun_immune", 0.5)
+		self:attr("disease_immune", 1)
+		self:attr("stun_immune", 1)
 		self:attr("cut_immune", 1)
 		self:attr("fear_immune", 1)
 		self:attr("no_breath", 1)
@@ -217,13 +216,22 @@ newTalent{
 			self:learnTalentType("celestial/star-fury", true)
 			self:setTalentTypeMastery("celestial/star-fury", self:getTalentTypeMastery("celestial/star-fury") - 0.1)
 			self.negative_regen = self.negative_regen + 0.2 + 0.5
-		else
+		elseif level < 7 then
 			self:incIncStat("mag", 6) self:incIncStat("wil", 6) self:incIncStat("cun", 6)
 			self:attr("combat_spellresist", 15) self:attr("combat_mentalresist", 15)
 			self.resists_cap.all = (self.resists_cap.all or 0) + 15
 			self.life_rating = self.life_rating + 3
 			self:learnTalentType("celestial/star-fury", true)
 			self:setTalentTypeMastery("celestial/star-fury", self:getTalentTypeMastery("celestial/star-fury") + 0.1)
+			self.negative_regen = self.negative_regen + 0.2 + 1
+		else -- level 7
+			self:incIncStat("mag", 12) self:incIncStat("wil", 12) self:incIncStat("cun", 12)
+			self:attr("combat_spellresist", 35) self:attr("combat_mentalresist", 35)
+			self.resists_cap.all = (self.resists_cap.all or 0) + 15
+			self.life_rating = self.life_rating + 4
+			self:attr("ignore_direct_crits", 60)
+			self:learnTalentType("celestial/star-fury", true)
+			self:setTalentTypeMastery("celestial/star-fury", self:getTalentTypeMastery("celestial/star-fury") + 0.3)
 			self.negative_regen = self.negative_regen + 0.2 + 1
 		end
 
@@ -254,7 +262,7 @@ newTalent{
 		If you are killed while this spell is active, the arcane forces you unleash will be able to rebuild your body into the desired Lichform.
 		All liches gain the following intrinsics:
 		- Poison, cut, and fear immunity.
-		- 50%% disease and stun resistance.
+		- 100%% disease and stun resistance.
 		- 20%% cold and darkness resistance.
 		- No need to breathe.
 		- Infusions do not work.
@@ -264,7 +272,8 @@ newTalent{
 		At level 3: +3 Magic and Willpower, +1 life rating (not retroactive).
 		At level 4: +3 Magic and Willpower, +2 life rating (not retroactive), +10 spell and mental saves, Celestial/Star Fury category (0.7) and 0.1 negative energies regeneration.
 		At level 5: +5 Magic and Willpower, +2 life rating (not retroactive), +10 spell and mental saves, all resistance caps raised by 10%%, Celestial/Star Fury category (0.9) and 0.5 negative energy regeneration.
-		At level 6: +6 Magic, Willpower and Cunning, +3 life rating (not retroactive), +15 spell and mental saves, all resistance caps raised by 15%%, Celestial/Star Fury category (1.1) and 1.0 negative energy regeneration. Fear my power!
+		At level 6: +6 Magic, Willpower and Cunning, +3 life rating (not retroactive), +15 spell and mental saves, all resistance caps raised by 15%%, Celestial/Star Fury category (1.1) and 1.0 negative energy regeneration.
+		At level 7: #CRIMSON##{bold}#Your power becomes overwhelming!#{normal}##LAST# +12 Magic, Willpower and Cunning, 60%% chance to ignore critical hits, +4 life rating (not retroactive), +35 spell and mental saves, all resistance caps raised by 15%%, Celestial/Star Fury category (1.3) and 1.0 negative energy regeneration.
 		The undead cannot use this talent.
 		While active, it will drain 4 mana per turn.
 		Once you die and turn into a Lich you can not invest any more in this talent.]]):

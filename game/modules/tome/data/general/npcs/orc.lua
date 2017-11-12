@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	level_range = {10, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(70,80),
+	resolvers.auto_equip_filters("Bulwark"),
 	resolvers.equip{
 		{type="weapon", subtype="waraxe", autoreq=true},
 		{type="armor", subtype="shield", autoreq=true},
@@ -82,6 +83,7 @@ newEntity{ base = "BASE_NPC_ORC",
 
 	autolevel = "archer",
 	resolvers.inscriptions(1, "infusion"),
+	resolvers.auto_equip_filters("Archer"),
 	resolvers.equip{
 		{type="weapon", subtype="longbow", autoreq=true},
 		{type="ammo", subtype="arrow", autoreq=true},
@@ -176,6 +178,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	rarity = 3,
 	infravision = 10,
 	combat_armor = 2, combat_def = 12,
+	resolvers.auto_equip_filters("Rogue"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", autoreq=true},
 		{type="weapon", subtype="dagger", autoreq=true},
@@ -205,6 +208,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	rank = 3,
 	infravision = 10,
 	combat_armor = 2, combat_def = 18,
+	resolvers.auto_equip_filters("Rogue"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
@@ -239,6 +243,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	rank = 3,
 	infravision = 10,
 	combat_armor = 2, combat_def = 18,
+	resolvers.auto_equip_filters("Rogue"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
 		{type="weapon", subtype="dagger", ego_chance=20, autoreq=true},
@@ -279,7 +284,7 @@ newEntity{ base = "BASE_NPC_ORC",
 	max_life = resolvers.rngavg(600, 800),
 	life_rating = 22,
 	move_others=true,
-
+	resolvers.auto_equip_filters("Berserker"),
 	resolvers.equip{
 		{type="weapon", subtype="battleaxe", defined="GAPING_MAW", random_art_replace={chance=75}, autoreq=true},
 		{type="armor", subtype="massive", tome_drops="boss", autoreq=true},

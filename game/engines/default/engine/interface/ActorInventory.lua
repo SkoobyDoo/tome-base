@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -66,20 +66,22 @@ function _M:init(t)
 	self:initBody()
 end
 
---- generate inventories according to the body definition table
+--- Generate inventories according to the body definition table
+--	This creates new inventories or updates existing ones
 --	@param self.body = {SLOT_ID = max, ...}
 --	@param max = number of slots if number or table of properties (max = , stack_limit = , ..) merged into definition
 function _M:initBody()
 	if self.body then
-		local def
+		local long_name, def
 		for inven, max in pairs(self.body) do
-			def = self.inven_def[self["INVEN_"..inven]]
-			assert(def, "inventory slot undefined")
-			self.inven[self["INVEN_"..inven]] = {worn=def.is_worn, id=self["INVEN_"..inven], name=inven, stack_limit = def.stack_limit}
+			long_name = "INVEN_"..inven
+			def = self.inven_def[self[long_name]]
+			assert(def, "inventory slot undefined: "..inven)
+			self.inven[self[long_name]] = table.merge(self.inven[self[long_name]] or {}, {worn=def.is_worn, id=self[long_name], name=inven, short_name=def.short_name, stack_limit = def.stack_limit})
 			if type(max) == "table" then
-				table.merge(self.inven[self["INVEN_"..inven]], max, true)
+				table.merge(self.inven[self[long_name]], max, true)
 			else
-				self.inven[self["INVEN_"..inven]].max = max
+				self.inven[self[long_name]].max = max
 			end
 		end
 		self.body = nil
@@ -97,7 +99,7 @@ function _M:getInven(id)
 	end
 end
 
---- Returns the content of an inventory as a table
+--- Returns the inventory definition
 function _M:getInvenDef(id)
 	if type(id) == "number" then
 		return self.inven_def[id]
@@ -445,7 +447,7 @@ function _M:canWearObject(o, try_slot)
 	for id, inven in pairs(self.inven) do
 		if self.inven_def[id].is_worn and (not self.inven_def[id].infos or not self.inven_def[id].infos.etheral) then
 			for i, wo in ipairs(inven) do
-				print("fight: ", o.name, wo.name, "::", wo.slot_forbid, try_slot or o.slot)
+				-- print("fight: ", o.name, wo.name, "::", wo.slot_forbid, try_slot or o.slot)
 				if wo.slot_forbid and self:slotForbidCheck(wo, id) and wo.slot_forbid == (try_slot or o.slot) then
 					print(" impossible => ", o.name, wo.name, "::", wo.slot_forbid, try_slot or o.slot)
 					return nil, "cannot use currently due to an other worn object"

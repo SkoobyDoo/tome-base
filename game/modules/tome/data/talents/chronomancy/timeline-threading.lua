@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -125,7 +125,7 @@ newTalent{
 	cooldown = 24,
 	paradox = function(self, t) return getParadoxCost(self, t, 24) end,
 	tactical = { ATTACK = 2, DISABLE = 2 },
-	remove_on_clone = true,
+	unlearn_on_clone = true,
 	getDuration = function(self, t) return getExtensionModifier(self, t, math.floor(self:combatTalentScale(t, 3, 8))) end,
 	on_pre_use = function(self, t, silent) if self:hasEffect(self.EFF_TEMPORAL_FUGUE) then return false end return true end,
 	action = function(self, t)
@@ -133,16 +133,10 @@ newTalent{
 		
 		 -- Clone the caster
 		local function makeFugueClone(self, t)
-			local sex = game.player.female and "she" or "he"
 			local m = makeParadoxClone(self, self, t.getDuration(self, t))
 			-- Add and change some values
-			m.name = self.name
-			m.desc = [[The real you... or so ]]..sex..[[ says.]]
-			m.shader = nil
-			m.shader_args = nil
-			m.faction = self.faction
-			m.summoner = self
-			m.remove_from_party_on_death = true
+			m.name = self.name.."'s Fugue Clone"
+			m.desc = ([[The real %s... or so %s says.]]):format(self.name, self:he_she())
 			
 			-- Handle some AI stuff
 			m.ai_state = { talent_in=1, ally_compassion=10 }

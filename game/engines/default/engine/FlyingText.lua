@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -33,12 +33,7 @@ function _M:init(fontname, fontsize, bigfontname, bigfontsize)
 	self.bigfont = core.display.newFont(bigfontname or "/data/font/DroidSans-Bold.ttf", bigfontsize or 14)
 	self.font_h = self.font:lineSkip()
 	self.flyers = {}
-	self.renderer = core.renderer.renderer()
-end
-
---- Return the DisplayObject to draw
-function _M:getDO()
-	return self.renderer
+	self.renderer = core.renderer.renderer("stream")
 end
 
 --- Sets a tilt to the texts based on xvel
@@ -74,7 +69,7 @@ function _M:add(x, y, duration, xvel, yvel, str, color, bigfont)
 	f.popout_dur = math.max(3, math.floor(f.duration / 4)),
 	self:applyShadowOutline(f.DO)
 	f.DO:textColor(color[1] / 255, color[2] / 255, color[3] / 255, 1)
-	f.DO:text(str)
+	f.DO:text(str, true)
 	f.DO:center()
 	f.DO:translate(x, y)
 	if self.tilt then f.DO:rotate(0, 0, math.rad(self.tilt * f.xvel / 5)) end
@@ -89,12 +84,24 @@ function _M:empty()
 	self.flyers = {}
 end
 
+--- Return the DisplayObject to draw
+function _M:getDO(full)
+	if not full then
+		return self.renderer
+	else
+		return core.renderer.callback(function(nb_keyframes) self:display(nb_keyframes) end)
+	end
+end
+
 --- Display loop function
 -- @int nb_keyframes
 function _M:display(nb_keyframes)
 	if not next(self.flyers) then return end
 	self.renderer:toScreen()
+	self:update(nb_keyframes)
+end
 
+function _M:update(nb_keyframes)
 	local dels = {}
 
 	for fl, _ in pairs(self.flyers) do

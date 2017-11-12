@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ extern "C" {
 
 static set<IResizable*> to_resize_list;
 static set<IRealtime*> realtime_list;
+static bool realtime_executing = false;
 
 IResizable::IResizable() {
 	to_resize_list.insert(this);
@@ -44,7 +45,7 @@ IResizable::~IResizable() {
 }
 
 void interface_resize(int w, int h) {
-	for (auto it : to_resize_list) {
+	for (auto& it : to_resize_list) {
 		it->onScreenResize(w, h);
 	}
 }
@@ -57,8 +58,27 @@ IRealtime::~IRealtime() {
 	realtime_list.erase(this);
 }
 
-void interface_realtime(int nb_keyframes) {
-	for (auto it : realtime_list) {
-		it->onKeyframe(nb_keyframes);
+void IRealtime::killMe() {
+	// If we are in the loop, we take some extra care
+	if (realtime_executing) {
+		dying = true;
+	} else {
+		delete this;
 	}
+}
+
+extern "C" void interface_realtime(float nb_keyframes);
+void interface_realtime(float nb_keyframes) {
+	realtime_executing = true;
+	for (auto it = realtime_list.begin(); it != realtime_list.end();) {
+		(*it)->onKeyframe(nb_keyframes);
+		if ((*it)->dying) {
+			IRealtime *old = *it;
+			it = realtime_list.erase(it);
+			delete old;
+		} else {
+			++it;
+		}
+	}
+	realtime_executing = false;
 }

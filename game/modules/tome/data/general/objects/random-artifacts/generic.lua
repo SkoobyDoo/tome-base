@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
--- Themes list: physical, mental, spell, defense, misc, fire, lightning, acid, mind, arcane, blight, nature, temporal, light, dark, antimagic
+-- Themes list: physical, mental, spell, defense, misc, fire, lightning, acid, mind, arcane, blight, nature, temporal, light, dark, antimagic, cold
 
 ----------------------------------------------------------------
 -- Spell Themes
@@ -148,25 +148,21 @@ newEntity{ theme={physical=true}, name="improve heal", points = 1, rarity = 15, 
 ----------------------------------------------------------------
 -- Misc
 ----------------------------------------------------------------
-newEntity{ theme={physical=true}, name="decreased fatigue", points = 1, rarity = 15, level_range = {1, 50},
+newEntity{ theme={misc=true}, name="decreased fatigue", points = 1, rarity = 15, level_range = {1, 50},
 	wielder = { fatigue = -2 },
 }
-newEntity{ theme={physical=true}, name="greater max encumbrance", points = 1, rarity = 11, level_range = {1, 50},
-	wielder = { max_encumber = resolvers.randartmax(10, 100), },
-}
-
 ----------------------------------------------------------------
 -- Defense Themes
 ----------------------------------------------------------------
 ----------------------------------------------------------------
 -- Defense
 ----------------------------------------------------------------
-newEntity{ theme={defense=true}, name="def", points = 2, rarity = 8, level_range = {1, 50},
-	wielder = { combat_def = resolvers.randartmax(2, 20),
-				combat_def_ranged = resolvers.randartmax(2, 20), },
+newEntity{ theme={defense=true, physical=true}, name="def", points = 1, rarity = 10, level_range = {1, 50},
+	wielder = { combat_def = resolvers.randartmax(3, 9),
+				combat_def_ranged = resolvers.randartmax(3, 9), },
 }
-newEntity{ theme={defense=true}, name="armor", points = 2, rarity = 8, level_range = {1, 50},
-	wielder = { combat_armor = resolvers.randartmax(2, 20), },
+newEntity{ theme={defense=true, physical=true}, name="armor", points = 1, rarity = 10, level_range = {1, 50},
+	wielder = { combat_armor = resolvers.randartmax(2, 6), },
 }
 ----------------------------------------------------------------
 -- Saves
@@ -189,7 +185,7 @@ newEntity{ theme={defense=true}, name="immune stun", points = 1, rarity = 7, lev
 newEntity{ theme={defense=true}, name="immune knockback", points = 1, rarity = 14, level_range = {1, 50},
 	wielder = { knockback_immune = resolvers.randartmax(0.05, 0.5), },
 }
-newEntity{ theme={defense=true}, name="immune blind", points = 1, rarity = 14, level_range = {1, 50},
+newEntity{ theme={defense=true}, name="immune blind", points = 1, rarity = 7, level_range = {1, 50},
 	wielder = { blind_immune = resolvers.randartmax(0.05, 0.5), },
 }
 newEntity{ theme={defense=true}, name="immune confusion", points = 1, rarity = 14, level_range = {1, 50},
@@ -237,7 +233,7 @@ newEntity{ theme={defense=true, antimagic=true, acid=true}, name="resist acid", 
 newEntity{ theme={defense=true, antimagic=true, lightning=true}, name="resist lightning", points = 1, rarity = 11, level_range = {1, 50},
 	wielder = { resists = { [DamageType.LIGHTNING] = resolvers.randartmax(3, 30), }, },
 }
-newEntity{ theme={defense=true, antimagic=true, arcane=true}, name="resist arcane", points = 5, rarity = 15, level_range = {1, 50},
+newEntity{ theme={defense=true, antimagic=true, arcane=true}, name="resist arcane", points = 1, rarity = 15, level_range = {1, 50},
 	wielder = { resists = { [DamageType.ARCANE] = resolvers.randartmax(5, 5), }, },
 }
 newEntity{ theme={defense=true, antimagic=true, nature=true}, name="resist nature", points = 2, rarity = 11, level_range = {1, 50},
@@ -260,47 +256,6 @@ newEntity{ theme={defense=true, antimagic=true, temporal=true}, name="resist tem
 --- Elemental Themes ---
 ----------------------------------------------------------------
 ----------------------------------------------------------------
--- Elemental Projection
-----------------------------------------------------------------
---[[ Removed for now since the "greater" melee project egos were added 
-newEntity{ theme={physical=true}, name="physical melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.PHYSICAL] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={mind=true, mental=true}, name="mind melee", points = 2, rarity = 24, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.MIND] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={acid=true}, name="acid melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.ACID] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={lightning=true}, name="lightning melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.LIGHTNING] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={fire=true}, name="fire melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.FIRE] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={cold=true}, name="cold melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.COLD] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={light=true}, name="light melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.LIGHT] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={dark=true}, name="dark melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.DARKNESS] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={blight=true, spell=true}, name="blight melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.BLIGHT] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={nature=true}, name="nature melee", points = 2, rarity = 18, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.NATURE] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={arcane=true, spell=true}, name="arcane melee", points = 4, rarity = 24, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.ARCANE] = resolvers.randartmax(2, 20), }, },
-}
-newEntity{ theme={temporal=true}, name="temporal melee", points = 4, rarity = 24, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.TEMPORAL] = resolvers.randartmax(2, 20), }, },
-}
---]]
-
 ----------------------------------------------------------------
 -- Elemental Retribution
 ----------------------------------------------------------------
@@ -384,40 +339,40 @@ newEntity{ theme={temporal=true}, name="inc damage temporal", points = 1, rarity
 ----------------------------------------------------------------
 -- Resist Penetration %
 ----------------------------------------------------------------
-newEntity{ theme={physical=true}, name="resists pen physical", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={physical=true}, name="resists pen physical", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.PHYSICAL] = resolvers.randartmax(5, 25), }, },
 }
-newEntity{ theme={mind=true, mental=true}, name="resists pen mind", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={mind=true, mental=true}, name="resists pen mind", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.MIND] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={fire=true}, name="resists pen fire", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={fire=true}, name="resists pen fire", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.FIRE] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={cold=true}, name="resists pen cold", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={cold=true}, name="resists pen cold", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.COLD] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={acid=true}, name="resists pen acid", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={acid=true}, name="resists pen acid", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.ACID] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={lightning=true}, name="resists pen lightning", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={lightning=true}, name="resists pen lightning", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.LIGHTNING] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={arcane=true, spell=true}, name="resists pen arcane", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={arcane=true, spell=true}, name="resists pen arcane", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.ARCANE] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={nature=true}, name="resists pen nature", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={nature=true}, name="resists pen nature", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.NATURE] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={blight=true, spell=true}, name="resists pen blight", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={blight=true, spell=true}, name="resists pen blight", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.BLIGHT] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={light=true}, name="resists pen light", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={light=true}, name="resists pen light", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.LIGHT] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={dark=true}, name="resists pen darkness", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={dark=true}, name="resists pen darkness", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.DARKNESS] = resolvers.randartmax(5, 25),  }, },
 }
-newEntity{ theme={temporal=true}, name="resists pen temporal", points = 2, rarity = 16, level_range = {1, 50},
+newEntity{ theme={temporal=true}, name="resists pen temporal", points = 1, rarity = 16, level_range = {1, 50},
 	wielder = { resists_pen = { [DamageType.TEMPORAL] = resolvers.randartmax(5, 25),  }, },
 }
 
@@ -427,22 +382,22 @@ newEntity{ theme={temporal=true}, name="resists pen temporal", points = 2, rarit
 ----------------------------------------------------------------
 -- Stats
 ----------------------------------------------------------------
-newEntity{ theme={misc=true, physical=true}, name="stat str", points = 2, rarity = 7, level_range = {1, 50},
+newEntity{ theme={misc=true, physical=true}, name="stat str", points = 1, rarity = 7, level_range = {1, 50},
 	wielder = { inc_stats = { [Stats.STAT_STR] = resolvers.randartmax(1, 10), }, },
 }
-newEntity{ theme={misc=true, physical=true}, name="stat dex", points = 2, rarity = 7, level_range = {1, 50},
+newEntity{ theme={misc=true, physical=true}, name="stat dex", points = 1, rarity = 7, level_range = {1, 50},
 	wielder = { inc_stats = { [Stats.STAT_DEX] = resolvers.randartmax(1, 10), }, },
 }
-newEntity{ theme={misc=true, spell=true}, name="stat mag", points = 2, rarity = 7, level_range = {1, 50},
+newEntity{ theme={misc=true, spell=true}, name="stat mag", points = 1, rarity = 7, level_range = {1, 50},
 	wielder = { inc_stats = { [Stats.STAT_MAG] = resolvers.randartmax(1, 10), }, },
 }
-newEntity{ theme={misc=true, spell=true, mental=true}, name="stat wil", points = 2, rarity = 7, level_range = {1, 50},
+newEntity{ theme={misc=true, spell=true, mental=true}, name="stat wil", points = 1, rarity = 7, level_range = {1, 50},
 	wielder = { inc_stats = { [Stats.STAT_WIL] = resolvers.randartmax(1, 10), }, },
 }
-newEntity{ theme={misc=true, mental=true}, name="stat cun", points = 2, rarity = 7, level_range = {1, 50},
+newEntity{ theme={misc=true, mental=true}, name="stat cun", points = 1, rarity = 7, level_range = {1, 50},
 	wielder = { inc_stats = { [Stats.STAT_CUN] = resolvers.randartmax(1, 10), }, },
 }
-newEntity{ theme={misc=true, physical=true}, name="stat con", points = 2, rarity = 7, level_range = {1, 50},
+newEntity{ theme={misc=true, physical=true}, name="stat con", points = 1, rarity = 7, level_range = {1, 50},
 	wielder = { inc_stats = { [Stats.STAT_CON] = resolvers.randartmax(1, 10), }, },
 }
 ----------------------------------------------------------------
@@ -475,19 +430,19 @@ newEntity{ theme={misc=true, mental=true}, name="demon telepathy", points = 2, r
 ----------------------------------------------------------------
 newEntity{ theme={blight=true}, name="corrupted blood melee", points = 2, rarity = 25, level_range = {1, 50},
 	wielder = { 
-		melee_project = {[DamageType.ITEM_BLIGHT_DISEASE] = resolvers.randartmax(10, 30), }, 
+		melee_project = {[DamageType.ITEM_BLIGHT_DISEASE] = resolvers.randartmax(10, 20), }, 
 		--ranged_project = {[DamageType.ITEM_BLIGHT_DISEASE] = resolvers.randartmax(10, 30), }, 
 	}
 }
 
 newEntity{ theme={acid=true}, name="acid corrode melee", points = 2, rarity = 20, level_range = {1, 50},
-	wielder = { melee_project = {[DamageType.ITEM_ACID_CORRODE] = resolvers.randartmax(15, 40), },
+	wielder = { melee_project = {[DamageType.ITEM_ACID_CORRODE] = resolvers.randartmax(15, 30), },
 				--ranged_project = {[DamageType.ITEM_ACID_CORRODE] = resolvers.randartmax(15, 40), }, 
 			}
 	 }
 newEntity{ theme={light=true}, name="light blind melee", points = 2, rarity = 20, level_range = {1, 50},
 	wielder = { 
-		melee_project = {[DamageType.ITEM_LIGHT_BLIND] = resolvers.randartmax(15, 40), }, 
+		melee_project = {[DamageType.ITEM_LIGHT_BLIND] = resolvers.randartmax(15, 30), }, 
 		--ranged_project = {[DamageType.ITEM_LIGHT_BLIND] = resolvers.randartmax(15, 40), }, 
 	},
 }
@@ -499,34 +454,35 @@ newEntity{ theme={temporal=true}, name="temporal energize melee", points = 2, ra
 }
 newEntity{ theme={lightning=true}, name="lightning daze melee", points = 2, rarity = 20, level_range = {1, 50},
 	wielder = { 
-		melee_project = {[DamageType.ITEM_LIGHTNING_DAZE] = resolvers.randartmax(15, 40), }, 
+		melee_project = {[DamageType.ITEM_LIGHTNING_DAZE] = resolvers.randartmax(15, 30), }, 
 		--ranged_project = {[DamageType.ITEM_LIGHTNING_DAZE] = resolvers.randartmax(15, 40), }, 
 
 	},
 }
 newEntity{ theme={antimagic=true}, name="manaburn melee", points = 2, rarity = 18, level_range = {1, 50},
 	wielder = { 
-		melee_project = {[DamageType.ITEM_ANTIMAGIC_MANABURN] = resolvers.randartmax(10, 40), }, 
+		melee_project = {[DamageType.ITEM_ANTIMAGIC_MANABURN] = resolvers.randartmax(10, 20), }, 
 		--ranged_project = {[DamageType.ITEM_ANTIMAGIC_MANABURN] = resolvers.randartmax(10, 40), }, 
 	},
 }
 newEntity{ theme={nature=true, antimagic=true}, name="slime melee", points = 2, rarity = 18, level_range = {1, 50},
 	wielder = { 
-		melee_project = {[DamageType.ITEM_NATURE_SLOW] = resolvers.randartmax(15, 40), },
+		melee_project = {[DamageType.ITEM_NATURE_SLOW] = resolvers.randartmax(15, 30), },
 		--ranged_project = {[DamageType.ITEM_NATURE_SLOW] = resolvers.randartmax(15, 40), }, 
 
 	},
 }
 newEntity{ theme={dark=true}, name="dark numbing melee", points = 2, rarity = 24, level_range = {1, 50},
 	wielder = { 
-		melee_project = {[DamageType.ITEM_DARKNESS_NUMBING] = resolvers.randartmax(15, 40), }, 
+		melee_project = {[DamageType.ITEM_DARKNESS_NUMBING] = resolvers.randartmax(15, 30), }, 
 		--ranged_project = {[DamageType.ITEM_DARKNESS_NUMBING] = resolvers.randartmax(15, 40), }, 
 	},
 
 }
 
 ----------------------------------------------------------------
--- High level -- Hesitant to put an offensive ones here because of how good this set is for offense already
+-- High level -- These help PCs (mostly) scale various important stats that tend to fall behind late game or are of particular importance late game
+-- We can safely assume that highly scaled PCs use a lot of randart gear
 ----------------------------------------------------------------
 
 -- The ultimate Ghoul buff
@@ -534,30 +490,30 @@ newEntity{ theme={physical=true, defense=true}, name="die at greater", points = 
 	wielder = { die_at = resolvers.randartmax(-20, -80), },
 }
 
-newEntity{ theme={physical = true, misc = true, defense=true}, name="ignore crit greater", points = 1, rarity = 15, level_range = {20, 50},
+newEntity{ theme={defense=true, misc=true}, name="ignore crit greater", points = 1, rarity = 15, level_range = {30, 50},
 	wielder = { ignore_direct_crits = resolvers.randartmax(5, 15), },
 }
 
 -- High level partly for power but mostly because you need to assemble some tools before this is useful
-newEntity{ theme={defense=true, spell=true}, name="void", points = 2, rarity = 16, level_range = {20, 50},
+newEntity{ theme={defense=true, spell=true, temporal=true}, name="void", points = 2, rarity = 20, level_range = {20, 50},
 	wielder = { defense_on_teleport = resolvers.randartmax(5, 15), 
-				resist_all_on_teleport = resolvers.randartmax(2, 15), 
-				effect_reduction_on_teleport = resolvers.randartmax(10, 25)
+				resist_all_on_teleport = resolvers.randartmax(5, 15), 
+				effect_reduction_on_teleport = resolvers.randartmax(5, 15)
 	},
 }
 
-
--- These save powers are a somewhat hacky way to help player resists continue scaling in higher difficulty/ID/whatever
--- With a min level of 30 and high rarity they won't have a dramatic impact on normal
-newEntity{ theme={defense=true, physical=true}, name="save physical", points = 1, rarity = 18, level_range = {30, 50},
-	wielder = { combat_physresist = resolvers.randartmax(10, 25), },
+newEntity{ theme={defense=true, physical=true}, name="save physical greater", points = 1, rarity = 18, level_range = {30, 50},
+	wielder = { combat_physresist = resolvers.randartmax(10, 30), },
 }
-newEntity{ theme={defense=true, spell=true, antimagic=true}, name="save spell", points = 1, rarity = 18, level_range = {30, 50},
-	wielder = { combat_spellresist = resolvers.randartmax(10, 25), },
+newEntity{ theme={defense=true, spell=true, antimagic=true}, name="save spell greater", points = 1, rarity = 18, level_range = {30, 50},
+	wielder = { combat_spellresist = resolvers.randartmax(10, 30), },
 }
-newEntity{ theme={defense=true, mental=true}, name="save mental", points = 1, rarity = 18, level_range = {30, 50},
-	wielder = { combat_mentalresist = resolvers.randartmax(10, 25), },
+newEntity{ theme={defense=true, mental=true}, name="save mental greater", points = 1, rarity = 18, level_range = {30, 50},
+	wielder = { combat_mentalresist = resolvers.randartmax(10, 30), },
 }
 
+newEntity{ theme={defense=true, physical=true}, name="armor greater", points = 2, rarity = 10, level_range = {30, 50},
+	wielder = { combat_armor = resolvers.randartmax(2, 14), },
+}
 
 

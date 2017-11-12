@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,13 +19,12 @@
 
 require "engine.class"
 local Block = require "engine.ui.blocks.Block"
-local tween = require "tween"
 
 --- An entry for any kind of lists and such
 -- @classmod engine.ui.blocks.block
 module(..., package.seeall, class.inherit(Block))
 
-function _M:init(t, text, color, w, h, offset, default_unseen)
+function _M:init(t, text, color, w, h, offset, max_lines, default_unseen)
 	color = color or {255,255,255}
 	self.color = color
 	self.offset = offset
@@ -38,6 +37,13 @@ function _M:init(t, text, color, w, h, offset, default_unseen)
 	t = t or {}
 	self.t = t
 	self.w, self.h = w, h
+	self.max_lines = max_lines or 1
+
+	if self.max_lines > 1 then
+		local list = text:splitLines(self.w, self.parent.font)
+		self.max_lines = #list
+		self.h = self.h + (#list - 1) * self.font_h
+	end
 
 	if default_unseen then
 		self:shown(false)
@@ -56,9 +62,10 @@ function _M:generateContainer()
 	self.cur_frame = self.frame
 
 	self.max_text_w = w - self.frame.b4.w - self.frame.b6.w
-	self.up_text_h = (h - self.font_h) / 2
-	self.text = core.renderer.text(self.parent.font)
-	self.text:maxLines(1)
+	self.up_text_h = (h - self.font_h * self.max_lines) / 2
+	self.text = core.renderer.text(self.parent.font):translate(0, 0, 10)
+	self.text:maxLines(self.max_lines)
+	if self.max_lines > 1 then self.text:maxWidth(self.max_text_w) end
 	self.text:textColor(self.color[1] / 255, self.color[2] / 255, self.color[3] / 255, 1)
 
 	self.text_container = core.renderer.container()
@@ -148,7 +155,8 @@ function _M:select(v)
 		self:startScrolling()
 	else
 		self:stopScrolling()
-		self.cur_frame.container:colorTween("selected", 8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
+		-- self.cur_frame.container:shown(false)
+		self.cur_frame.container:tween(8, "a", nil, 0, "linear", function() self.cur_frame.container:shown(false) end)
 	end
 end
 
@@ -164,7 +172,7 @@ function _M:startScrolling()
 	else
 		dirm, dirM = -(w - self.max_text_w + 10), 0
 	end
-	self.text:translateTween("scroll", 4 * #self.str, "x", dirm, dirM, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
+	self.text:tween(4 * #self.str, "x", dirm, dirM, "inOutQuad", function() self.invert_scroll = not self.invert_scroll self:startScrolling() end)
 end
 
 function _M:stopScrolling()
@@ -172,7 +180,7 @@ function _M:stopScrolling()
 	if not self.frame then return end
 
 	self.invert_scroll = false
-	self.text:translateTween("scroll", 8, "x", nil, 0, "inOutQuad")
+	self.text:tween(8, "x", nil, 0, "inOutQuad")
 end
 
 function _M:shown(v)

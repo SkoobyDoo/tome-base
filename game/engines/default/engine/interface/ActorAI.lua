@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -190,8 +190,8 @@ function _M:aiSeeTargetPos(target)
 			if LSeen.GCache_x then -- update guess with new random position. Could use util.findFreeGrid here at cost of speed
 				tx = math.floor(LSeen.GCache_x + (tx-LSeen.GCache_x)/2)
 				ty = math.floor(LSeen.GCache_y + (ty-LSeen.GCache_y)/2)
-				if not target:canMove(tx, ty, true) then -- find a reasonable spot if target can't be at that position
-					local nx, ny = util.findFreeGrid(tx, ty, spread, false)
+				if (target.canMove and not target:canMove(tx, ty, true)) or (tx == self.x and ty == self.y) then -- find a reasonable spot if target can't be at that position
+					local nx, ny = util.findFreeGrid(tx, ty, math.max(1, spread), false)
 					if nx then tx, ty = nx, ny end
 				end
 			end

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ local ListColumns = require "engine.ui.ListColumns"
 local TextzoneList = require "engine.ui.TextzoneList"
 local Image = require "engine.ui.Image"
 local Separator = require "engine.ui.Separator"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog))
 
@@ -31,6 +32,8 @@ function _M:init(l, w, force_height)
 	self.color = l.text_color or {r=0x3a, g=0x35, b=0x33}
 
 	self.ui = l.special_ui or "parchment"
+	self.font = FontPackage:get("lore")
+	self.font_h = self.font:height()
 
 	Dialog.init(self, "Lore found: #0080FF#"..l.name, 1, 1)
 
@@ -61,9 +64,11 @@ function _M:init(l, w, force_height)
 	local required_h = self.font:height() + self.font_h * (#list - 1)
 	local h = math.min(force_height and (force_height * game.h) or 999999999, required_h)
 	local c_text = require("engine.ui.Textzone").new{
+		font = self.font,
+		config=function(self) self:setTextOutline(false) self:setTextShadow(false) end,
 		width=w+10, height=h, scrollbar=(h < required_h) and true or false, text=text, color=self.color,
-	}
-	c_text:setTextShadow(false)
+		-- width=w+10, height=h, scrollbar=(h < required_h) and true or false, text="#{bold}#"..text, color=self.color,
+	}	
 
 	local uis = { {left = 3, top = 3, ui=c_text} }
 	local image

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -243,8 +243,10 @@ end
 -- @param w, h = width and height of the dialog (in pixels, optional: dialog sized to its elements by default)
 -- @param no_leave set true to force a selection
 -- @param escape = the default choice (number) to select if escape is pressed
-function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape)
+-- @param default = the default choice (number) to select (highlight) when the dialog opens, default 1
+function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape, default)
 	escape = escape or 1
+	default = default or 1
 	-- compute display limits
 	local max_w, max_h = w or game.w*.75, h or game.h*.75
 
@@ -256,7 +258,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	
 	local d = new(title, w or 1, h or 1)
 --print(("[multiButtonPopup] initialized: (w:%s,h:%s), (maxw:%s,maxh:%s) "):format(w, h, max_w, max_h))
-	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d) game:unregisterDialog(d) choice_fct(button_list[escape]) end) end
+	if not no_leave then d.key:addBind("EXIT", function() game:unregisterDialog(d)
+			if choice_fct then choice_fct(button_list[escape]) end
+		end)
+	end
 
 	local num_buttons = math.min(#button_list, 50)
 	local buttons, buttons_width, button_height = {}, 0, 0
@@ -298,7 +303,7 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	local width = w or math.min(max_w, math.max(text_width + 20, max_buttons_width + 20))
 	local height = h or math.min(max_h, text_height + 10 + nrow*button_height)
 	local uis = {
-		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text}}
+		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text, can_focus=false}}
 	}
 	-- actually place the buttons in the dialog
 	top = math.max(text_height, text_height + (height - text_height - nrow*button_height - 5)/2)
@@ -312,7 +317,10 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 		end
 	end
 	d:loadUI(uis)
-	if uis[escape + 1] then d:setFocus(uis[escape + 1]) end
+	-- set default focus if possible
+	if uis[default + 1] then d:setFocus(uis[default + 1])
+	elseif uis[escape + 1] then d:setFocus(uis[escape + 1])
+	end
 	d:setupUI(not w, not h)
 	game:registerDialog(d)
 	return d
@@ -350,7 +358,7 @@ function _M:init(title, w, h, x, y, alpha, font, showup, skin)
 	if showup ~= nil then
 		self.__showup = showup
 	else
-		self.__showup = 2
+		self.__showup = "outQuint"
 	end
 	self.color = self.color or {r=255, g=255, b=255}
 	if skin then self.ui = skin end
@@ -380,12 +388,14 @@ function _M:init(title, w, h, x, y, alpha, font, showup, skin)
 	self.frame.oy2 = self.frame.oy2 or conf.frame_oy2
 
 	if self.frame.dialog_h_middles then
-		self.frame.b8 = "ui/dialogframe_8_middle.png"
-		self.frame.b8l = "ui/dialogframe_8_left.png"
-		self.frame.b8r = "ui/dialogframe_8_right.png"
-		self.frame.b2 = "ui/dialogframe_2_middle.png"
-		self.frame.b2l = "ui/dialogframe_2_left.png"
-		self.frame.b2r = "ui/dialogframe_2_right.png"
+		local t = type(self.frame.dialog_h_middles) == "table" and table.clone(self.frame.dialog_h_middles) or {}
+		table.merge(t, self.dialog_h_middles_alter or {})
+		self.frame.b8 = t.b8 or "ui/dialogframe_8_middle.png"
+		self.frame.b8l = t.b8l or "ui/dialogframe_8_left.png"
+		self.frame.b8r = t.b8r or "ui/dialogframe_8_right.png"
+		self.frame.b2 = t.b2 or "ui/dialogframe_2_middle.png"
+		self.frame.b2l = t.b2l or "ui/dialogframe_2_left.png"
+		self.frame.b2r = t.b2r or "ui/dialogframe_2_right.png"
 	end
 
 	self.particles = {}
@@ -445,11 +455,13 @@ function _M:generate()
 	local r, g, b, a = self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a
 	local w, h = self.frame.w, self.frame.h
 
-	self.renderer = core.renderer.renderer()
+	self.renderer = core.renderer.renderer():setRendererName(self:getClassName()):countDraws(false)
+	self.full_container = core.renderer.container()
+	self.renderer:add(self.full_container)
 	self.renderer:zSort(true)
 	self.do_container = core.renderer.container()
 	self.do_container:translate(self.display_x, self.display_y, -100)
-	self.renderer:add(self.do_container)
+	self.full_container:add(self.do_container)
 
 	local b7 = self:getAtlasTexture(self.frame.b7)
 	local b9 = self:getAtlasTexture(self.frame.b9)
@@ -464,18 +476,18 @@ function _M:generate()
 	local cx, cy = self.frame.ox1, self.frame.oy1
 	self.frame_container = core.renderer.container()
 	self.frame_container:translate(self.display_x, self.display_y, -101)
-	self.renderer:add(self.frame_container)
+	self.full_container:add(self.frame_container)
 
 	self.frame_container:add(fromTextureTable(b5, cx + b4.w, cy + b8.h, w - b6.w - b4.w, h - b8.h - b2.h, true, r, g, b, a))
 
-	self.frame_container:add(fromTextureTable(b7, cx + 0, cy + 0, nil, nil, nil, r, g, b, a))
-	self.frame_container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, nil, nil, nil, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b7, cx + 0, cy + 0, b7.w, b7.h, nil, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b9, cx + w-b9.w, cy + 0, b9.w, b9.h, nil, r, g, b, a))
 
-	self.frame_container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, nil, nil, false, r, g, b, a))
-	self.frame_container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, nil, nil, false, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b1, cx + 0, cy + h-b1.h, b1.w, b1.h, false, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b3, cx + w-b3.w, cy + h-b3.h, b3.w, b3.h, false, r, g, b, a))
 
-	self.frame_container:add(fromTextureTable(b4, cx + 0, cy + b7.h, nil, h - b7.h - b1.h, true, r, g, b, a))
-	self.frame_container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, nil, h - b9.h - b3.h, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b4, cx + 0, cy + b7.h, b4.w, h - b7.h - b1.h, true, r, g, b, a))
+	self.frame_container:add(fromTextureTable(b6, cx + w-b6.w, cy + b9.h, b6.w, h - b9.h - b3.h, true, r, g, b, a))
 
 	if self.frame.dialog_h_middles then
 		local mw = math.floor(self.frame.w / 2)
@@ -490,9 +502,9 @@ function _M:generate()
 		local b2hw = math.floor(b2.w / 2)
 		local b2l = self:getAtlasTexture(self.frame.b2l)
 		local b2r = self:getAtlasTexture(self.frame.b2r)
-		self.frame_container:add(fromTextureTable(b2l, cx + b1.w, cy, mw - b1.w - b2hw, nil, true, r, g, b, a))
-		self.frame_container:add(fromTextureTable(b2r, cx + mw + b2hw, cy, mw - b3.w - b2hw, nil, true, r, g, b, a))
-		self.frame_container:add(fromTextureTable(b2, cx + mw - b2hw, cy, nil, nil, false, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2l, cx + b1.w, cy + h - b2.h, mw - b1.w - b2hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2r, cx + mw + b2hw, cy + h - b2.h, mw - b3.w - b2hw, nil, true, r, g, b, a))
+		self.frame_container:add(fromTextureTable(b2, cx + mw - b2hw, cy + h - b2.h, nil, nil, false, r, g, b, a))
 	else
 		self.frame_container:add(fromTextureTable(b8, cx + b7.w, cy + 0, w - b7.w - b9.w, nil, true, r, g, b, a))
 		self.frame_container:add(fromTextureTable(b2, cx + b1.w, cy + h - b2.h, w - b1.w - b3.w, nil, true, r, g, b, a))
@@ -501,9 +513,9 @@ function _M:generate()
 	-- Overlays
 	self.overs = {}
 	if #(self.frame.overlays or {}) > 0 then
-		local overs_container = core.renderer.do_container()
+		local overs_container = core.renderer.container()
 		overs_container:translate(0, 0, 1)
-		self.renderer:add(overs_container)
+		self.full_container:add(overs_container)
 
 		for i, o in ipairs(self.frame.overlays) do
 			local ov = self:getAtlasTexture(o.image)
@@ -545,7 +557,7 @@ function _M:updateTitle(title)
 	if type(title)=="function" then title = title() end
 
 	if not self.title_do then
-		self.title_do = core.renderer.text(self.font_bold)
+		self.title_do = core.renderer.text(self.font_bold):scale(1.15, 1.15, 1)
 		self.do_container:add(self.title_do)
 	else
 		self.title_do:removeFromParent()
@@ -556,7 +568,7 @@ function _M:updateTitle(title)
 	if self.title_shadow then self.title_do:outline(1) end
 	-- if self.title_shadow then self.title_do:shadow(self.font_bold_h / 10, self.font_bold_h / 10, 0, 0, 0, 0.7) end
 	self.title_do:text(title)
-	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats()) / 2, self.frame.title_y, 10)
+	self.title_do:translate(self.frame.title_x + (self.w - self.title_do:getStats() * 1.15) / 2, self.frame.title_y, 10)
 	self.font_bold:setStyle("normal")
 end
 
@@ -580,11 +592,13 @@ function _M:loadUI(t)
 end
 
 function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
+	local gamew, gameh = core.display.size()
 	local mw, mh = nil, nil
 
 	local padding = 3 -- to not glue stuff to each other
 
 --	resizex, resizey = true, true
+	local nw, nh
 	if resizex or resizey then
 		mw, mh = 0, 0
 		local addw, addh = 0, 0
@@ -616,11 +630,20 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		mh = mh + addh + 5 + 22 + 3 + (addmh or 0) + th + padding
 
 		if on_resize then on_resize(resizex and mw or self.w, resizey and mh or self.h) end
-		self:resize(resizex and mw or self.w, resizey and mh or self.h)
+		nw, nh = resizex and mw or self.w, resizey and mh or self.h
 	else
 		if on_resize then on_resize(self.w, self.h) end
-		self:resize(self.w, self.h)
+		nw, nh = self.w, self.h
 	end
+
+	local disx = math.floor(self.force_x or (gamew - nw) / 2)
+	local disy = math.floor(self.force_y or (gameh - nh) / 2)
+	if self.no_offscreen == "bottom" then if disy + nh >= gameh then self.force_y = gameh - nh end
+	elseif self.no_offscreen == "top" then if disy + nh < 0 then self.force_y = 0 end
+	elseif self.no_offscreen == "right" then if disx + nw >= gamew then self.force_x = gamew - nw end
+	elseif self.no_offscreen == "left" then if disx + nw < 0 then self.force_x = 0 end
+	end
+	self:resize(nw, nh)
 
 	self.do_container:clear()
 
@@ -726,6 +749,14 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 
 	self:updateTitle(self.title)
+
+	local mw, mh = self.display_x + math.floor(self.w / 2), self.display_y + math.floor(self.h / 2)
+	self.renderer:translate(mw, mh)
+	self.full_container:translate(-mw, -mh)
+
+	if self.__showup then
+		self.renderer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup)
+	end
 
 	self.setuped = true
 end
@@ -844,77 +875,78 @@ function _M:cleanup()
 	end
 end
 
-function _M:drawFrame(x, y, r, g, b, a)
-	x = x + self.frame.ox1
-	y = y + self.frame.oy1
+-- DGDGDGDG some stuff to steal still, blood & such
+-- function _M:drawFrame(x, y, r, g, b, a)
+-- 	x = x + self.frame.ox1
+-- 	y = y + self.frame.oy1
 
-	-- Sides
-	if self.frame.dialog_h_middles then
-		local mw = math.floor(self.frame.w / 2)
-		local b8hw = math.floor(self.b8.w / 2)
-		self.b8l.t:toScreenFull(x + self.b7.w, y, mw - self.b7.w - b8hw, self.b8l.h, self.b8l.tw, self.b8l.th, r, g, b, a)
-		self.b8r.t:toScreenFull(x + mw + b8hw, y, mw - self.b9.w - b8hw, self.b8r.h, self.b8r.tw, self.b8r.th, r, g, b, a)
-		self.b8.t:toScreenFull(x + mw - b8hw, y, self.b8.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+-- 	-- Sides
+-- 	if self.frame.dialog_h_middles then
+-- 		local mw = math.floor(self.frame.w / 2)
+-- 		local b8hw = math.floor(self.b8.w / 2)
+-- 		self.b8l.t:toScreenFull(x + self.b7.w, y, mw - self.b7.w - b8hw, self.b8l.h, self.b8l.tw, self.b8l.th, r, g, b, a)
+-- 		self.b8r.t:toScreenFull(x + mw + b8hw, y, mw - self.b9.w - b8hw, self.b8r.h, self.b8r.tw, self.b8r.th, r, g, b, a)
+-- 		self.b8.t:toScreenFull(x + mw - b8hw, y, self.b8.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
 
-		local b2hw = math.floor(self.b2.w / 2)
-		self.b2l.t:toScreenFull(x + self.b1.w, y + self.frame.h - self.b3.h, mw - self.b1.w - b2hw, self.b2l.h, self.b2l.tw, self.b2l.th, r, g, b, a)
-		self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
-		self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
-	else
-		self.b8.t:toScreenFull(x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
-		self.b2.t:toScreenFull(x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
-	end
-	self.b4.t:toScreenFull(x, y + self.b7.h, self.b4.w, self.frame.h - self.b7.h - self.b1.h, self.b4.tw, self.b4.th, r, g, b, a)
-	self.b6.t:toScreenFull(x + self.frame.w - self.b9.w, y + self.b7.h, self.b6.w, self.frame.h - self.b7.h - self.b1.h, self.b6.tw, self.b6.th, r, g, b, a)
+-- 		local b2hw = math.floor(self.b2.w / 2)
+-- 		self.b2l.t:toScreenFull(x + self.b1.w, y + self.frame.h - self.b3.h, mw - self.b1.w - b2hw, self.b2l.h, self.b2l.tw, self.b2l.th, r, g, b, a)
+-- 		self.b2r.t:toScreenFull(x + mw + b2hw, y + self.frame.h - self.b3.h, mw - self.b3.w - b2hw, self.b2r.h, self.b2r.tw, self.b2r.th, r, g, b, a)
+-- 		self.b2.t:toScreenFull(x + mw - b2hw, y + self.frame.h - self.b3.h, self.b2.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+-- 	else
+-- 		self.b8.t:toScreenFull(x + self.b7.w, y, self.frame.w - self.b7.w - self.b9.w, self.b8.h, self.b8.tw, self.b8.th, r, g, b, a)
+-- 		self.b2.t:toScreenFull(x + self.b7.w, y + self.frame.h - self.b3.h, self.frame.w - self.b7.w - self.b9.w, self.b2.h, self.b2.tw, self.b2.th, r, g, b, a)
+-- 	end
+-- 	self.b4.t:toScreenFull(x, y + self.b7.h, self.b4.w, self.frame.h - self.b7.h - self.b1.h, self.b4.tw, self.b4.th, r, g, b, a)
+-- 	self.b6.t:toScreenFull(x + self.frame.w - self.b9.w, y + self.b7.h, self.b6.w, self.frame.h - self.b7.h - self.b1.h, self.b6.tw, self.b6.th, r, g, b, a)
 
-	-- Corners
-	self.b1.t:toScreenFull(x, y + self.frame.h - self.b1.h, self.b1.w, self.b1.h, self.b1.tw, self.b1.th, r, g, b, a)
-	self.b7.t:toScreenFull(x, y, self.b7.w, self.b7.h, self.b7.tw, self.b7.th, r, g, b, a)
-	self.b9.t:toScreenFull(x + self.frame.w - self.b9.w, y, self.b9.w, self.b9.h, self.b9.tw, self.b9.th, r, g, b, a)
-	self.b3.t:toScreenFull(x + self.frame.w - self.b3.w, y + self.frame.h - self.b3.h, self.b3.w, self.b3.h, self.b3.tw, self.b3.th, r, g, b, a)
+-- 	-- Corners
+-- 	self.b1.t:toScreenFull(x, y + self.frame.h - self.b1.h, self.b1.w, self.b1.h, self.b1.tw, self.b1.th, r, g, b, a)
+-- 	self.b7.t:toScreenFull(x, y, self.b7.w, self.b7.h, self.b7.tw, self.b7.th, r, g, b, a)
+-- 	self.b9.t:toScreenFull(x + self.frame.w - self.b9.w, y, self.b9.w, self.b9.h, self.b9.tw, self.b9.th, r, g, b, a)
+-- 	self.b3.t:toScreenFull(x + self.frame.w - self.b3.w, y + self.frame.h - self.b3.h, self.b3.w, self.b3.h, self.b3.tw, self.b3.th, r, g, b, a)
 
-	-- Body
-	self.b5.t:toScreenFull(x + self.b7.w, y + self.b7.h, self.frame.w - self.b7.w - self.b3.w , self.frame.h - self.b7.h - self.b3.h, self.b5.tw, self.b5.th, r, g, b, a)
+-- 	-- Body
+-- 	self.b5.t:toScreenFull(x + self.b7.w, y + self.b7.h, self.frame.w - self.b7.w - self.b3.w , self.frame.h - self.b7.h - self.b3.h, self.b5.tw, self.b5.th, r, g, b, a)
 
-	-- Overlays
-	for i = 1, #self.overs do
-		local ov = self.overs[i]
-		ov.t:toScreenFull(x + ov.x, y + ov.y, ov.w , ov.h, ov.tw, ov.th, r, g, b, a * ov.a)
-	end
+-- 	-- Overlays
+-- 	for i = 1, #self.overs do
+-- 		local ov = self.overs[i]
+-- 		ov.t:toScreenFull(x + ov.x, y + ov.y, ov.w , ov.h, ov.tw, ov.th, r, g, b, a * ov.a)
+-- 	end
 
-	if self.frame.particles then
-		for i, pdef in ipairs(self.frame.particles) do
-			if rng.chance(pdef.chance) then
-				local p = Particles.new(pdef.name, 1, pdef.args)
-				local pos = {x=0, y=0}
-				if pdef.position.base == 7 then
-					pos.x = pdef.position.ox
-					pos.y = pdef.position.oy
-				elseif pdef.position.base == 9 then
-					pos.x = self.w + pdef.position.ox + self.b9.w
-					pos.y = pdef.position.oy
-				elseif pdef.position.base == 1 then
-					pos.x = pdef.position.ox
-					pos.y = self.h + pdef.position.oy + self.b1.h
-				elseif pdef.position.base == 3 then
-					pos.x = self.w + pdef.position.ox + self.b3.w
-					pos.y = self.h + pdef.position.oy + self.b3.h
-				end
-				self.particles[p] = pos
-			end
-		end
-	end
+-- 	if self.frame.particles then
+-- 		for i, pdef in ipairs(self.frame.particles) do
+-- 			if rng.chance(pdef.chance) then
+-- 				local p = Particles.new(pdef.name, 1, pdef.args)
+-- 				local pos = {x=0, y=0}
+-- 				if pdef.position.base == 7 then
+-- 					pos.x = pdef.position.ox
+-- 					pos.y = pdef.position.oy
+-- 				elseif pdef.position.base == 9 then
+-- 					pos.x = self.w + pdef.position.ox + self.b9.w
+-- 					pos.y = pdef.position.oy
+-- 				elseif pdef.position.base == 1 then
+-- 					pos.x = pdef.position.ox
+-- 					pos.y = self.h + pdef.position.oy + self.b1.h
+-- 				elseif pdef.position.base == 3 then
+-- 					pos.x = self.w + pdef.position.ox + self.b3.w
+-- 					pos.y = self.h + pdef.position.oy + self.b3.h
+-- 				end
+-- 				self.particles[p] = pos
+-- 			end
+-- 		end
+-- 	end
 
-	if next(self.particles) then
-		for p, pos in pairs(self.particles) do
-			if p.ps:isAlive() then
-				p.ps:toScreen(x + pos.x, y + pos.y, true, 1)
-			else
-				self.particles[p] = nil
-			end
-		end
-	end
-end
+-- 	if next(self.particles) then
+-- 		for p, pos in pairs(self.particles) do
+-- 			if p.ps:isAlive() then
+-- 				p.ps:toScreen(x + pos.x, y + pos.y, true, 1)
+-- 			else
+-- 				self.particles[p] = nil
+-- 			end
+-- 		end
+-- 	end
+-- end
 
 function _M:innerDisplayBack(x, y, nb_keyframes)
 end
@@ -934,51 +966,9 @@ function _M:toScreen(x, y, nb_keyframes)
 
 	-- local shader = self.shadow_shader
 
-	-- local zoom = 1
-	-- if self.__showup then
-	-- 	local eff = self.__showup_effect or "pop"
-	-- 	if eff == "overpop" then
-	-- 		zoom = self.__showup / 7
-	-- 		if self.__showup >= 9 then
-	-- 			zoom = (9 - (self.__showup - 9)) / 7 - 1
-	-- 			zoom = 1 + zoom * 0.5
-	-- 		end
-	-- 		self.__showup = self.__showup + nb_keyframes
-	-- 		if self.__showup >= 11 then self.__showup = nil end
-	-- 	else
-	-- 		zoom = self.__showup / 7
-	-- 		self.__showup = self.__showup + nb_keyframes
-	-- 		if self.__showup >= 7 then self.__showup = nil end
-	-- 	end
-	-- end
-
-	-- -- We translate and scale opengl matrix to make the popup effect easily
 	local ox, oy = x, y
-	-- local hw, hh = math.floor(self.w / 2), math.floor(self.h / 2)
-	-- local tx, ty = x + hw, y + hh
-	-- x, y = -hw, -hh
-	-- core.display.glTranslate(tx, ty, 0)
-	-- if zoom < 1 then core.display.glScale(zoom, zoom, zoom) end
 
-	-- -- Draw the frame and shadow
-	-- if self.frame.shadow then self:drawFrame(x + self.frame.shadow.x, y + self.frame.shadow.y, 0, 0, 0, self.frame.shadow.a) end
-	-- self:drawFrame(x, y, self.frame.darkness, self.frame.darkness, self.frame.darkness, self.frame.a)
-
-	-- -- Title
-	-- if self.title then
-	-- 	if self.title_shadow then
-	-- 		if shader then
-	-- 			shader:use(true)
-	-- 			shader:uniOutlineSize(self.shadow_power, self.shadow_power)
-	-- 			shader:uniTextSize(self.title_tex.tw, self.title_tex.th)
-	-- 		else
-	-- 			self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + 3 + self.frame.title_x, y + 3 + self.frame.title_y, 0, 0, 0, 0.5)
-	-- 		end
-	-- 	end
-	-- 	self:textureToScreen(self.title_tex, x + (self.w - self.title_tex.w) / 2 + self.frame.title_x, y + self.frame.title_y)
-	-- 	if self.title_shadow and shader then shader:use(false) end
-	-- end
-
+	-- DGDGDGDG
 	-- self:innerDisplayBack(x, y, nb_keyframes, tx, ty)
 
 	-- UI elements
@@ -987,15 +977,11 @@ function _M:toScreen(x, y, nb_keyframes)
 		if not ui.hidden then ui.ui:display(x + ui.x, y + ui.y, nb_keyframes, ox + ui.x, oy + ui.y) end
 	end
 
+	-- DGDGDGDG
 	-- self:innerDisplay(x, y, nb_keyframes, tx, ty)
 
+	-- DGDGDGDG
 	-- if self.first_display then self:firstDisplay() self.first_display = false end
 
-	-- -- Restore normal opengl matrix
-	-- if zoom < 1 then core.display.glScale() end
-	-- core.display.glTranslate(-tx, -ty, 0)
-
--- print("=====<", self:getClassName()) core.display.countDraws()
 	self.renderer:toScreen()
--- print("=====>", core.display.countDraws())
 end

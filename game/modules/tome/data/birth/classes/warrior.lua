@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -54,6 +54,12 @@ newBirthDescriptor{
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
 		"#GOLD#Life per level:#LIGHT_BLUE# +3",
 	},
+	birth_example_particles = {
+		function(actor) if core.shader.active() then
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1.5, img="tentacles_shader/berserker_aura_2"}, {type="tentacles", wobblingType=0, appearTime=0.3, time_factor=500, noup=2.0}))
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, img="tentacles_shader/berserker_aura_2"}, {type="tentacles", wobblingType=0, appearTime=0.3, time_factor=500, noup=1.0}))
+		end end,
+	},
 	power_source = {technique=true},
 	stats = { str=5, con=3, dex=1, },
 	talents_types = {
@@ -67,7 +73,6 @@ newBirthDescriptor{
 		["technique/conditioning"]={true, 0.3},
 		["technique/superiority"]={false, 0.3},
 		["technique/warcries"]={false, 0.3},
-		["technique/field-control"]={false, 0},
 		["technique/bloodthirst"]={false, 0.2},
 		["cunning/survival"]={true, 0},
 		["cunning/dirty"]={false, 0},
@@ -79,6 +84,10 @@ newBirthDescriptor{
 		[ActorTalents.T_ARMOUR_TRAINING] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", properties={"twohanded"}},
+			OFFHAND = {type="none"}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="greatsword", name="iron greatsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="heavy", name="iron mail armour", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -88,6 +97,11 @@ newBirthDescriptor{
 		life_rating = 3,
 	},
 }
+
+local shield_special = function(e) -- allows any object with shield combat
+	local combat = e.shield_normal_combat and e.combat or e.special_combat
+	return combat and combat.block
+end
 
 newBirthDescriptor{
 	type = "subclass",
@@ -99,7 +113,13 @@ newBirthDescriptor{
 		"#GOLD#Stat modifiers:",
 		"#LIGHT_BLUE# * +5 Strength, +2 Dexterity, +2 Constitution",
 		"#LIGHT_BLUE# * +0 Magic, +0 Willpower, +0 Cunning",
-		"#GOLD#Life per level:#LIGHT_BLUE# +2",
+		"#GOLD#Life per level:#LIGHT_BLUE# +6",
+	},
+	birth_example_particles = {
+		function(actor) if core.shader.active() then
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=true,  size_factor=1, img="rotating_shield"}, {type="rotatingshield", noup=2.0, appearTime=0.2}))
+			actor:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1, img="rotating_shield"}, {type="rotatingshield", noup=1.0, appearTime=0.2}))
+		end end,
 	},
 	power_source = {technique=true},
 	stats = { str=5, con=2, dex=2, },
@@ -115,7 +135,6 @@ newBirthDescriptor{
 		["technique/superiority"]={false, 0.3},
 		["technique/warcries"]={false, 0.3},
 		["technique/battle-tactics"]={false, 0.3},
-		["technique/field-control"]={false, 0},
 		["cunning/survival"]={true, 0},
 		["cunning/dirty"]={false, 0},
 	},
@@ -127,6 +146,11 @@ newBirthDescriptor{
 		[ActorTalents.T_WEAPONS_MASTERY] = 1,
 	},
 	copy = {
+		resolvers.auto_equip_filters{
+			MAINHAND = {type="weapon", not_properties={"twohanded"}},
+			OFFHAND = {special=shield_special},
+			BODY = {type="armor", special=function(e) return e.subtype=="heavy" or e.subtype=="massive" end},
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longsword", name="iron longsword", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="shield", name="iron shield", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -134,7 +158,7 @@ newBirthDescriptor{
 		},
 	},
 	copy_add = {
-		life_rating = 2,
+		life_rating = 6,
 	},
 }
 
@@ -156,29 +180,35 @@ newBirthDescriptor{
 	talents_types = {
 		["technique/archery-training"]={true, 0.3},
 		["technique/archery-utility"]={true, 0.3},
-		["technique/archery-bow"]={true, 0.3},
-		["technique/archery-sling"]={true, 0.3},
-		["technique/archery-excellence"]={false, 0.3},
-		["technique/combat-techniques-active"]={false, -0.1},
-		["technique/combat-techniques-passive"]={true, -0.1},
+		["technique/marksmanship"]={true, 0.3},
+		["technique/reflexes"]={true, 0.3},
+		["technique/combat-techniques-active"]={true, 0},
+		["technique/combat-techniques-passive"]={true, 0},
+		["technique/munitions"]={false, 0.3},
+		["technique/sniper"]={false, 0.3},
+		["technique/agility"]={false, 0.3},
 		["technique/combat-training"]={true, 0.3},
-		["technique/field-control"]={true, 0},
 		["cunning/trapping"]={false, 0.2},
 		["cunning/survival"]={true, 0},
-		["cunning/dirty"]={false, 0},
-	},
-	unlockable_talents_types = {
-		["cunning/poisons"]={false, 0.2, "rogue_poisons"},
+		["technique/mobility"]={true, 0.2},
+		["technique/conditioning"]={false, 0},
 	},
 	talents = {
-		[ActorTalents.T_FLARE] = 1,
+		[ActorTalents.T_MASTER_MARKSMAN] = 1,
 		[ActorTalents.T_STEADY_SHOT] = 1,
-		[ActorTalents.T_BOW_MASTERY] = 1,
-		[ActorTalents.T_SLING_MASTERY] = 1,
+		[ActorTalents.T_HEADSHOT] = 1,
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
+		[ActorTalents.T_DISENGAGE] = 1,
 	},
 	copy = {
 		max_life = 110,
+		resolvers.auto_equip_filters{MAINHAND = {type="weapon", properties={"archery"}},
+			QUIVER={properties={"archery_ammo"}, special=function(e, filter) -- must match the MAINHAND weapon, if any
+				local mh = filter._equipping_entity and filter._equipping_entity:getInven(filter._equipping_entity.INVEN_MAINHAND)
+				mh = mh and mh[1]
+				if not mh or mh.archery == e.archery_ammo then return true end
+			end}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="weapon", subtype="longbow", name="elm longbow", autoreq=true, ego_chance=-1000},
 			{type="ammo", subtype="arrow", name="quiver of elm arrows", autoreq=true, ego_chance=-1000},
@@ -288,9 +318,8 @@ newBirthDescriptor{
 	talents_types = {
 		["cunning/dirty"]={false, 0},
 		["cunning/tactical"]={true, 0.3},
-		["cunning/survival"]={false, 0},
+		["cunning/survival"]={true, 0},
 		["technique/combat-training"]={true, 0.1},
-		["technique/field-control"]={true, 0},
 		["technique/combat-techniques-active"]={true, 0.1},
 		["technique/combat-techniques-passive"]={true, 0.1},
 		["technique/pugilism"]={true, 0.3},
@@ -309,6 +338,9 @@ newBirthDescriptor{
 		[ActorTalents.T_UNARMED_MASTERY] = 1, -- early game is absolutely stupid without this
 	},
 	copy = {
+		resolvers.auto_equip_filters{-- will not try to equip weapons
+			MAINHAND = {type="none"}, OFFHAND = {type="none"}
+		},
 		resolvers.equipbirth{ id=true,
 			{type="armor", subtype="hands", name="iron gauntlets", autoreq=true, ego_chance=-1000, ego_chance=-1000},
 			{type="armor", subtype="light", name="rough leather armour", autoreq=true, ego_chance=-1000, ego_chance=-1000},
@@ -321,6 +353,4 @@ newBirthDescriptor{
 		life_rating = 2,
 	},
 }
-
-
 

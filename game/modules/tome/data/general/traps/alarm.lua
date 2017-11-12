@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ newEntity{ define_as = "TRAP_ALARM",
 
 newEntity{ base = "TRAP_ALARM",
 	name = "intruder alarm", auto_id = true, image = "trap/trap_intruder_alarm_01.png",
-	detect_power = resolvers.clscale(36,50,8),
-	disarm_power = resolvers.clscale(20,50,8),
+	detect_power = resolvers.clscale(26,25,8,0.5),
+	disarm_power = resolvers.clscale(30,25,8,0.5),
 	rarity = 3, level_range = {1, 50},
 	color=colors.UMBER,
 	message = "@Target@ triggers an alarm!",
@@ -55,8 +55,8 @@ newEntity{ base = "TRAP_ALARM",
 
 newEntity{ base = "TRAP_ALARM",
 	name = "summoning alarm", auto_id = true, image = "trap/trap_summoning_alarm_01.png",
-	detect_power = resolvers.clscale(30,50,8),
-	disarm_power = resolvers.clscale(46,50,8),
+	detect_power = resolvers.clscale(30,25,8,0.5),
+	disarm_power = resolvers.clscale(46,25,8,0.5),
 	rarity = 3, level_range = {10, 50},
 	color=colors.DARK_UMBER,
 	nb_summon = resolvers.mbonus(3, 2),

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -40,7 +39,7 @@ function _M:init(t)
 	self.custom_calls = t.custom_calls or {}
 	if self.allow_login == nil then self.allow_login = true end
 
-	if self.allow_login and self.url:find("^http://te4%.org/") and profile.auth then
+	if self.allow_login and (self.url:find("^http://te4%.org/") or self.url:find("^https://te4%.org/")) and profile.auth then
 		local param = "_te4ah="..profile.auth.hash.."&_te4ad="..profile.auth.drupid
 
 		local first = self.url:find("?", 1, 1)
@@ -48,7 +47,7 @@ function _M:init(t)
 		else self.url = self.url.."?"..param end
 	end
 
-	if self.url:find("^http://te4%.org/")  then
+	if self.url:find("^http://te4%.org/") or self.url:find("^https://te4%.org/") then
 		local param = "_te4"
 
 		local first = self.url:find("?", 1, 1)
@@ -176,11 +175,11 @@ end
 
 function _M:startLoadingSpin()
 	self.loading_icon:shown(true)
-	self.loading_icon:rotateTween("spinner", 25, "z", 0, math.rad(360), "linear", function() self:startLoadingSpin() end)
+	self.loading_icon:tween(25, "rot_z", 0, math.rad(360), "linear", function() self:startLoadingSpin() end)
 end
 function _M:stopLoadingSpin()
 	self.loading_icon:shown(false)
-	self.loading_icon:cancelTween("spinner")
+	self.loading_icon:cancelTween("rot_z")
 end
 
 function _M:on_focus(v)
@@ -216,7 +215,7 @@ function _M:onDownload(handlers)
 	local Dialog = require "engine.ui.Dialog"
 
 	handlers.on_download_request = function(downid, url, file, mime)
-		if mime == "application/t-engine-addon" and self.allow_downloads.addons and url:find("^http://te4%.org/") then
+		if mime == "application/t-engine-addon" and self.allow_downloads.addons and (url:find("^http://te4%.org/") or url:find("^https://te4%.org/")) then
 			local path = fs.getRealPath("/addons/")
 			if path then
 				local name = file
@@ -234,7 +233,7 @@ function _M:onDownload(handlers)
 				end)
 				return
 			end
-		elseif mime == "application/t-engine-module" and self.allow_downloads.modules and url:find("^http://te4%.org/") then
+		elseif mime == "application/t-engine-module" and self.allow_downloads.modules and (url:find("^http://te4%.org/") or url:find("^https://te4%.org/")) then
 			local path = fs.getRealPath("/modules/")
 			if path then
 				local name = file

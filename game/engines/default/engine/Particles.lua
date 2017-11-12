@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,12 +51,12 @@ function _M:cloned()
 	self:loaded()
 end
 
-local foo = {}
 function _M:loaded()
 	if not self.args then self.args = {} end
 	local base_size = nil
 	local gl = nil
 	local islast = false
+	local allow_bloom = false
 	local sub_particle = self.args.sub_particle
 	local sub_particle_args = self.args.sub_particle_args
 	if type(self.def) == "string" then	
@@ -75,6 +75,7 @@ function _M:loaded()
 
 		if t.use_shader then self.shader = t.use_shader end
 		if t.alterscreen then islast = true end
+		if t.allow_bloom then allow_bloom = true end
 		if t.toback then self.toback = true end
 		if t.sub_particle then sub_particle = t.sub_particle end
 		if t.sub_particle_args then sub_particle_args = t.sub_particle_args end
@@ -83,8 +84,8 @@ function _M:loaded()
 	end
 
 	gl = gl or "particle"
-	if not __particles_gl[gl] then local s = core.display.loadImage("/data/gfx/"..gl..".png") if s then __particles_gl[gl] = s:glTexture() end end
-	if not __particles_gl[gl] then __particles_gl[gl] = core.display.loadImage("/data/gfx/particle.png"):glTexture() end
+	if not __particles_gl[gl] then __particles_gl[gl] = core.loader.png("/data/gfx/"..gl..".png", false, false, true) end
+	if not __particles_gl[gl] then __particles_gl[gl] = core.loader.png("/data/gfx/particle.png", false, false, true) end
 	gl = __particles_gl[gl]
 
 	-- Zoom accordingly
@@ -99,15 +100,20 @@ function _M:loaded()
 
 	local sha = nil
 	if self.shader then
-		if not self._shader then
-			local Shader = require 'engine.Shader'
-			self._shader = Shader.new(self.shader.type, self.shader)
-		end
+		if self.shader.__CLASSNAME == "engine.Shader" then
+			sha = self.shader.shad
+		else
+			if not self._shader then
+				local Shader = require 'engine.Shader'
+				self._shader = Shader.new(self.shader.type, self.shader)
+			end
 
-		sha = self._shader.shad
+			sha = self._shader.shad
+		end
 	end
 
-	self.ps = core.particles.newEmitter("/data/gfx/particles/"..self.def..".lua", args, self.zoom, config.settings.particles_density or 100, gl, sha, islast)
+	if islast and allow_bloom then error("Particle defined with both bloom and alterscreen") end
+	self.ps = core.particles.newEmitter("/data/gfx/particles/"..self.def..".lua", args, self.zoom, config.settings.particles_density or 100, gl, sha, islast, allow_bloom)
 	self.gl_texture = gl
 
 	if sub_particle then
@@ -140,8 +146,13 @@ function _M:checkDisplay()
 	self:loaded()
 end
 
-function _M:dieDisplay()
+function _M:onDie(fct)
+	self.on_die = fct
+end
+
+function _M:dieDisplay(no_callback)
 	if not self.ps then return end
+	if not no_callback and self.on_die then self:on_die() end
 	self.ps:die()
 	self.ps = nil
 end

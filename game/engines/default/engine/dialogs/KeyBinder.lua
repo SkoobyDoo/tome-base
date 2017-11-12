@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -82,8 +82,8 @@ function _M:use(item)
 		local title = "      Press a key (escape to cancel, backspace to remove) for: "..tostring(t.name)
 		local font = self.font
 		local w, h = font:size(title:removeColorCodes())
-		local d = engine.Dialog.new(title, w + 20, h + 25, nil, nil, nil, font)
-		d:keyCommands{__DEFAULT=function(sym, ctrl, shift, alt, meta, unicode)
+		local d = engine.ui.Dialog.new(title, w + 20, h + 25)
+		d.key:addCommands{__DEFAULT=function(sym, ctrl, shift, alt, meta, unicode)
 			-- Modifier keys are not treated
 			if not t.single_key and (sym == KeyBind._LCTRL or sym == KeyBind._RCTRL or
 			   sym == KeyBind._LSHIFT or sym == KeyBind._RSHIFT or
@@ -95,18 +95,20 @@ function _M:use(item)
 			if sym == KeyBind._BACKSPACE then
 				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
 				KeyBind.binds_remap[t.type][curcol] = nil
+				KeyBind:changed()
 			elseif sym ~= KeyBind._ESCAPE then
 				local ks = KeyBind:makeKeyString(sym, ctrl, shift, alt, meta, unicode)
 				print("Binding", t.name, "to", ks, "::", curcol)
 
 				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
 				KeyBind.binds_remap[t.type][curcol] = ks
+				KeyBind:changed()
 			end
 			self.c_tree:drawItem(item)
 			game:unregisterDialog(d)
 		end}
 
-		d:mouseZones{ norestrict=true,
+		d.mouse:registerZones{ norestrict=true,
 			{ x=0, y=0, w=game.w, h=game.h, fct=function(button, x, y, xrel, yrel, tx, ty)
 				if xrel or yrel then return end
 				if button == "right" then return end
@@ -122,14 +124,15 @@ function _M:use(item)
 
 				KeyBind.binds_remap[t.type] = KeyBind.binds_remap[t.type] or t.k.default
 				KeyBind.binds_remap[t.type][curcol] = ks
+				KeyBind:changed()
 				self.c_tree:drawItem(item)
 				game:unregisterDialog(d)
 			end },
 		}
 
-		d.drawDialog = function(self, s)
-			s:drawColorStringBlendedCentered(self.font, curcol == 1 and "Bind key" or "Bind alternate key", 2, 2, self.iw - 2, self.ih - 2)
-		end
+		-- d.drawDialog = function(self, s)
+		-- 	s:drawColorStringBlendedCentered(self.font, curcol == 1 and "Bind key" or "Bind alternate key", 2, 2, self.iw - 2, self.ih - 2)
+		-- end
 		game:registerDialog(d)
 	elseif curcol == 3 then
 		local title = "Make gesture (using right mouse button) or type it (or escape) for: "..tostring(t.name)

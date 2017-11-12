@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,10 +18,13 @@
 -- darkgod@te4.org
 
 load("/data/general/grids/basic.lua")
-load("/data/general/grids/forest.lua")
 load("/data/general/grids/water.lua")
 
 if not currentZone.is_crystaline then
+	load("/data/general/grids/forest.lua", function(e)
+		if e.nice_editer and e.nice_editer.def == "grass" then e.nice_editer.def = "dark_grass" end
+		if e.image == "terrain/grass.png" then e.image = "terrain/grass/dark_grass_main_01.png" end
+	end)
 	local grass_editer = { method="borders_def", def="dark_grass"}
 
 	newEntity{
@@ -36,43 +39,42 @@ if not currentZone.is_crystaline then
 	for i = 1, 14 do newEntity{ base = "GRASS", define_as = "GRASS_PATCH"..i, image = ("terrain/grass/dark_grass_main_%02d.png"):format(i) } end
 
 	local treesdef = {
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_02", {"foliage_summer_%02d",3,3}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_03", {"foliage_summer_%02d",4,4}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_02", {"foliage_summer_%02d",3,3}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_03", {"foliage_summer_%02d",4,4}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_02", {"foliage_summer_%02d",3,3}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_03", {"foliage_summer_%02d",4,4}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_02", {"foliage_summer_%02d",3,3}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_03", {"foliage_summer_%02d",4,4}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_02", {"foliage_summer_%02d",3,3}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_03", {"foliage_summer_%02d",4,4}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_01", {"foliage_summer_%02d",1,2}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_02", {"foliage_summer_%02d",3,3}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_03", {"foliage_summer_%02d",4,4}}},
-
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
+		{"small_oldforest_tree_01_trunk_01_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_02_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_03_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_03_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_01_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_02_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_03_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_03_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_01_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_02_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_03_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_03_foliage_summer_%02d", 1, 4, tall=0},
+		{"oldforest_tree_01_trunk_01_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_01_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_02_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_02_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_03_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_03_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_01_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_01_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_02_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_02_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_03_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_03_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_01_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_01_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_02_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_02_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_03_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_03_foliage_summer_%02d", 1, 4, tall=-1},
 	}
 
 	newEntity{
@@ -126,46 +128,65 @@ if not currentZone.is_crystaline then
 	}
 
 else -- Crystaline
+	load("/data/general/grids/forest.lua")
 	local grass_editer = { method="borders_def", def="grass"}
-
 	local treesdef = {
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_01", {"foliage_spring_%02d",1,2}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_02", {"foliage_spring_%02d",3,3}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_03", {"foliage_spring_%02d",4,4}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_01", {"foliage_spring_%02d",1,2}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_02", {"foliage_spring_%02d",3,3}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_03", {"foliage_spring_%02d",4,4}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_01", {"foliage_spring_%02d",1,2}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_02", {"foliage_spring_%02d",3,3}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_03", {"foliage_spring_%02d",4,4}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_01", {"foliage_spring_%02d",1,2}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_02", {"foliage_spring_%02d",3,3}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_03", {"foliage_spring_%02d",4,4}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_01", {"foliage_spring_%02d",1,2}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_02", {"foliage_spring_%02d",3,3}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_03", {"foliage_spring_%02d",4,4}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_01", {"foliage_spring_%02d",1,2}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_02", {"foliage_spring_%02d",3,3}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_03", {"foliage_spring_%02d",4,4}}},
-
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"oldforest_tree_01", {tall=-1, "shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"oldforest_tree_02", {tall=-1, "shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"oldforest_tree_03", {tall=-1, "shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"small_oldforest_tree_01", {"shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"small_oldforest_tree_02", {"shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_01", {"foliage_bare_%02d",1,2}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_02", {"foliage_bare_%02d",3,3}}},
-		{"small_oldforest_tree_03", {"shadow", "trunk_03", {"foliage_bare_%02d",4,4}}},
+		{"oak_trunk_01_foliage_bare_%02d", 1, 3, tall=-1},
+		{"oak_trunk_01_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oak_trunk_02_foliage_bare_%02d", 1, 3, tall=-1},
+		{"oak_trunk_02_foliage_summer_%02d", 1, 4, tall=-1},
+		{"small_oak_trunk_01_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_01_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_01_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_01_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oak_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oak_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oak_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oak_trunk_02_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_02_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_02_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_02_foliage_bare_%02d", 1, 3, tall=0},
+		{"small_oak_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oak_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oak_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oak_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_01_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_02_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_03_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_01_trunk_03_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_01_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_02_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_03_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_02_trunk_03_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_01_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_01_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_02_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_02_foliage_summer_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_03_foliage_bare_%02d", 1, 4, tall=0},
+		{"small_oldforest_tree_03_trunk_03_foliage_summer_%02d", 1, 4, tall=0},
+		{"oldforest_tree_01_trunk_01_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_01_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_02_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_02_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_03_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_01_trunk_03_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_01_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_01_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_02_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_02_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_03_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_02_trunk_03_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_01_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_01_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_02_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_02_foliage_summer_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_03_foliage_bare_%02d", 1, 4, tall=-1},
+		{"oldforest_tree_03_trunk_03_foliage_summer_%02d", 1, 4, tall=-1},
 	}
 
 	newEntity{

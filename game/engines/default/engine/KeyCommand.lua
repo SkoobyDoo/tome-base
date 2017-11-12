@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,6 +45,9 @@ function _M:setupProfiler()
 			print("Stopped profiler")
 		end
 	end)
+	self:addCommand(self._c, {"ctrl","alt","shift"}, function()
+		if core.game.CProfiler then core.game.CProfiler("luastarted.profiler.prof") end
+	end)
 end
 
 --- Adds the game reboot keybind (ctrl, alt, shift, r/n)
@@ -58,6 +61,18 @@ function _M:setupRebootKeys()
 		if not config.settings.cheat then return end
 		util.showMainMenu(false, engine.version[4], engine.version[1].."."..engine.version[2].."."..engine.version[3], game.__mod_info.short_name, game.save_name, true)
 	end)
+	self:addCommand(self._f, {"ctrl","alt","shift"}, function()
+		if not config.settings.cheat then return end
+		require("engine.Game").fps_shown = not require("engine.Game").fps_shown
+	end)
+	local toggle_infinite = false
+	self:addCommand(self._u, {"ctrl","alt","shift"}, function()
+		if not config.settings.cheat then return end
+		require("engine.Game").fps_shown = true
+		if toggle_infinite then core.game.setFPS(config.settings.display_fps)
+		else core.game.setFPS(0) end
+		toggle_infinite = not toggle_infinite
+	end)
 end
 
 function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
@@ -69,7 +84,7 @@ function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
 
 	if not self.commands[sym] and not self.commands[self.__DEFAULT] then
 		if self.on_input and unicode then self.on_input(unicode) handled = true end
-	elseif not isup and self.commands[sym] and (ctrl or shift or alt or meta) and not self.commands[sym].anymod then
+	elseif (self.allow_down or not isup) and self.commands[sym] and (ctrl or shift or alt or meta) and not self.commands[sym].anymod then
 		local mods = {}
 		if alt then mods[#mods+1] = "alt" end
 		if ctrl then mods[#mods+1] = "ctrl" end
@@ -77,14 +92,14 @@ function _M:receiveKey(sym, ctrl, shift, alt, meta, unicode, isup, key)
 		if shift then mods[#mods+1] = "shift" end
 		mods = table.concat(mods,',')
 		if self.commands[sym][mods] then
-			self.commands[sym][mods](sym, ctrl, shift, alt, meta, unicode)
+			self.commands[sym][mods](sym, ctrl, shift, alt, meta, unicode, isup)
 			handled = true
 		end
-	elseif not isup and self.commands[sym] and self.commands[sym].plain then
-		self.commands[sym].plain(sym, ctrl, shift, alt, meta, unicode, key)
+	elseif (self.allow_down or not isup) and self.commands[sym] and self.commands[sym].plain then
+		self.commands[sym].plain(sym, ctrl, shift, alt, meta, unicode, isup, key)
 		handled = true
-	elseif not isup and self.commands[self.__DEFAULT] and self.commands[self.__DEFAULT].plain then
-		self.commands[self.__DEFAULT].plain(sym, ctrl, shift, alt, meta, unicode, key)
+	elseif (self.allow_down or not isup) and self.commands[self.__DEFAULT] and self.commands[self.__DEFAULT].plain then
+		self.commands[self.__DEFAULT].plain(sym, ctrl, shift, alt, meta, unicode, isup, key)
 		handled = true
 	end
 

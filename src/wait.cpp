@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,13 +20,12 @@
 */
 
 extern "C" {
+#include "display.h"
 #include "lua.h"
 #include "types.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "core_lua.h"
-#include "tSDL.h"
-#include "tgl.h"
 #include "main.h"
 #include "lua_externs.h"
 }
@@ -52,7 +51,6 @@ static int draw_last_frame(lua_State *L)
 	if (!wait_vbo) return 0;
 
 	wait_vbo->toScreen(0, 0, 0, 1, 1);
-	printf("!!!!\n");
 	return 0;
 }
 
@@ -65,7 +63,7 @@ static void hook_wait_display(lua_State *L, lua_Debug *ar)
 
 	static int last_tick = 0;
 	int now = SDL_GetTicks();
-	if (now - last_tick < (3000 / requested_fps)) return;
+	if (now - last_tick < (3000 / (requested_fps ? requested_fps : NORMALIZED_FPS))) return;
 	last_tick = now;
 	on_redraw();
 }
@@ -112,17 +110,19 @@ static int enable(lua_State *L)
 		if (lua_isfunction(L, 2))
 		{
 			lua_pushvalue(L, 2);
-			lua_call(L, 0, 1);
+			if (lua_pcall(L, 0, 1, 0)) {
+				printf("Waiter error: %s\n", lua_tostring(L, -1));
+			}
 			wait_draw_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 		}
 
 		wait_vbo = new VBO(VBOMode::STATIC);
 		wait_vbo->setTexture(bkg_t);
 		wait_vbo->addQuad(
-			0, 0, 0, 0,
-			w / screen_zoom, 0, 1, 0,
-			w / screen_zoom, h / screen_zoom, 1, 1,
-			0, h / screen_zoom, 1, 1,
+			0, 0, 0, 1,
+			w / screen_zoom, 0, 1, 1,
+			w / screen_zoom, h / screen_zoom, 1, 0,
+			0, h / screen_zoom, 0, 0,
 			1, 1, 1, 1
 		);
 
@@ -219,14 +219,14 @@ bool draw_waiting(lua_State *L)
 {
 	if (!waiting) return FALSE;
 
-	// DGDGDGDG reenable me
-	printf("===FAKE DRAWING WAIT===\n");
-	// if (wait_draw_ref != LUA_NOREF)
-	// {
-	// 	lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);
-	// 	lua_call(L, 0, 0);
-	// }
-	// else draw_last_frame(L);
+	if (wait_draw_ref != LUA_NOREF)
+	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, wait_draw_ref);
+		if (lua_pcall(L, 0, 0, 0)) {
+			printf("Waiter error: %s\n", lua_tostring(L, -1));
+		}
+	}
+	else draw_last_frame(L);
 
 	return TRUE;
 }

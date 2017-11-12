@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,11 +24,14 @@ require "engine.class"
 -- @classmod engine.Mouse
 module(..., package.seeall, class.make)
 
+_M.CAPTURE_ALL = 100000
+
 function _M:init()
 	self.areas = {}
 	self.areas_name = {}
 	self.status = {}
 	self.last_pos = { x = 0, y = 0 }
+	self.scale = 1
 end
 
 function _M:allowDownEvent(v)
@@ -47,15 +50,15 @@ function _M:receiveMouse(button, x, y, isup, force_name, extra)
 	self.status[button] = not isup
 	if not self.allow_down and not isup then return end
 
-	if _M.drag then
+	if _M.drag and button ~= "drag-start-global" then
 		if _M.drag.prestart then _M.drag = nil
 		else return self:endDrag(x, y) end
 	end
 
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
-		if (not m.mode or m.mode.button) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / m.scale, (y-m.y1) / m.scale, isup and "button" or "button-down", extra)
+		if not m.disabled and (not m.mode or m.mode.button) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
+			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / self:getScale(m), (y-m.y1) / self:getScale(m), isup and "button" or "button-down", extra)
 			if r ~= false then break end
 		end
 	end
@@ -63,6 +66,10 @@ end
 
 function _M:getPos()
 	return self.last_pos.x, self.last_pos.y
+end
+
+function _M:getScale(m)
+	return self.scale * (m and m.scale or 1)
 end
 
 function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
@@ -74,8 +81,8 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 	local cur_m = nil
 	for i  = 1, #self.areas do
 		local m = self.areas[i]
-		if (not m.mode or m.mode.move) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
-			local r = m.fct(button, x, y, xrel, yrel, (x-m.x1) / m.scale, (y-m.y1) / m.scale, "motion", extra)
+		if not m.disabled and (not m.mode or m.mode.move) and (x >= m.x1 and x < m.x2 and y >= m.y1 and y < m.y2) and (not force_name or force_name == m.name) then
+			local r = m.fct(button, x, y, xrel, yrel, (x-m.x1) / self:getScale(m), (y-m.y1) / self:getScale(m), "motion", extra)
 			if r ~= false then
 				cur_m = m
 				break
@@ -83,9 +90,23 @@ function _M:receiveMouseMotion(button, x, y, xrel, yrel, force_name, extra)
 		end
 	end
 	if self.last_m and self.last_m.allow_out_events and self.last_m ~= cur_m then
-		self.last_m.fct("none", x, y, xrel, yrel, (x-self.last_m.x1) / self.last_m.scale, (y-self.last_m.y1) / self.last_m.scale, "out", extra)
+		self.last_m.fct("none", x, y, xrel, yrel, (x-self.last_m.x1) / self:getScale(self.last_m), (y-self.last_m.y1) / self:getScale(self.last_m), "out", extra)
 	end
 	self.last_m = cur_m
+end
+
+function _M:receiveMouseGlobal(button, x, y, event, force_name, extra)
+	self.last_pos = { x = x, y = y }
+
+	for i  = 1, #self.areas do
+		local m = self.areas[i]
+		if not m.disabled and (not m.mode or m.mode.button) and (not force_name or force_name == m.name) then
+			local r = m.fct(button, x, y, nil, nil, (x-m.x1) / self:getScale(m), (y-m.y1) / self:getScale(m), event, extra)
+			if r ~= false then
+				break
+			end
+		end
+	end
 end
 
 --- Delegate an event from an other mouse handler
@@ -98,6 +119,7 @@ function _M:delegate(button, mx, my, xrel, yrel, bx, by, event, name, extra)
 	if event == "button" then self:receiveMouse(button, mx, my, true, name, extra)
 	elseif event == "button-down" then self:receiveMouse(button, mx, my, false, name, extra)
 	elseif event == "motion" then self:receiveMouseMotion(button, mx, my, xrel, yrel, name, extra)
+	elseif event == "drag-start-global" or event == "drag-end-global" or event == "out" then self:receiveMouseGlobal(button, mx, my, event, name, extra)
 	end
 end
 
@@ -121,8 +143,8 @@ function _M:updateZone(name, x, y, w, h, fct, scale)
 	m.scale = scale or m.scale
 	m.x1 = x
 	m.y1 = y
-	m.x2 = x + w * m.scale
-	m.y2 = y + h * m.scale
+	m.x2 = x + w * self:getScale(m)
+	m.y2 = y + h * self:getScale(m)
 	m.fct = fct or m.fct
 	return true
 end
@@ -137,6 +159,13 @@ function _M:registerZone(x, y, w, h, fct, mode, name, allow_out_events, scale)
 	if name then self.areas_name[name] = d end
 end
 
+--- Registers or updates a zone
+function _M:replaceZone(x, y, w, h, fct, mode, name, allow_out_events, scale)
+	if not self:updateZone(name, x, y, w, h, fct, scale) then
+		self:registerZone(x, y, w, h, fct, mode, name, allow_out_events, scale)
+	end
+end
+
 function _M:registerZones(t)
 	for i, z in ipairs(t) do
 		self:registerZone(z.x, z.y, z.w, z.h, z.fct, z.mode, z.name, z.out_events)
@@ -149,10 +178,34 @@ function _M:unregisterZone(fct)
 			local m = self.areas[i]
 			if m.fct == fct then local m = table.remove(self.areas, i) if m.name then self.areas_name[m.name] = nil end break end
 		end
-	else
+	elseif type(fct) == "string" then
 		for i  = #self.areas, 1, -1 do
 			local m = self.areas[i]
 			if m.name == fct then local m = table.remove(self.areas, i) if m.name then self.areas_name[m.name] = nil end end
+		end
+	elseif fct == true then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			local m = table.remove(self.areas, i) if m.name then self.areas_name[m.name] = nil end
+		end
+	end
+end
+
+function _M:enableZone(fct, v)
+	if type(fct) == "function" then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			if m.fct == fct then m.disabled = not v break end
+		end
+	elseif type(fct) == "string" then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			if m.name == fct then m.disabled = not v end
+		end
+	elseif fct == true then
+		for i  = #self.areas, 1, -1 do
+			local m = self.areas[i]
+			m.disabled = not v
 		end
 	end
 end
@@ -162,13 +215,16 @@ function _M:reset()
 	self.areas_name = {}
 end
 
+local drag_listeners = setmetatable({}, {__mode="k"})
+function _M:dragListener(v)
+	drag_listeners[self] = v and true or nil
+end
+
 function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 	local start = function()
 		_M.drag.prestart = nil
 		if _M.drag.cursor then
-			local w, h = _M.drag.cursor:getSize()
-			_M.drag.cursor = _M.drag.cursor:glTexture()
-			core.mouse.setMouseDrag(_M.drag.cursor, w, h)
+			core.mouse.setMouseDrag(_M.drag.cursor, 32, 32) -- DGDGDGDG hardcoded 32 size, bad bad bad !
 		end
 		print("[MOUSE] enabling drag from predrag")
 	end
@@ -183,6 +239,11 @@ function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 	_M.drag = {start_x=x, start_y=y, payload=payload, on_done=on_done, on_move=on_move, prestart=true, cursor=cursor}
 	print("[MOUSE] pre starting drag'n'drop")
 	if no_prestart then start() end
+	for m, _ in pairs(drag_listeners) do m:receiveMouseGlobal("drag-start-global", x, y, true, nil, {drag=_M.drag}) end
+end
+
+function _M:isDragging()
+	return _M.drag and true or false
 end
 
 function _M:endDrag(x, y)
@@ -194,6 +255,7 @@ function _M:endDrag(x, y)
 	_M.current:receiveMouse("drag-end", x, y, true, nil, {drag=drag})
 	if drag.on_done then drag.on_done(drag, drag.used) end
 	_M.dragged = nil
+	for m, _ in pairs(drag_listeners) do m:receiveMouseGlobal("drag-end-global", x, y, true, nil, {drag=drag}) end
 end
 
 function _M:usedDrag()

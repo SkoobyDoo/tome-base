@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ extern "C" {
 
 #include "map.hpp"
 #include "renderer-moderngl/TileMap.hpp"
+#include <algorithm>
 
 static const char IS_HEX_KEY = 'k';
 
@@ -89,6 +90,7 @@ static int map_object_new(lua_State *L)
 	obj->textures_is3d = (bool*)calloc(nb_textures, sizeof(bool));
 	obj->nb_textures = nb_textures;
 	obj->uid = uid;
+	obj->hide = false;
 
 	obj->displayobject = NULL;
 	obj->do_ref = LUA_NOREF;
@@ -101,7 +103,7 @@ static int map_object_new(lua_State *L)
 	obj->anim_max = 0;
 	obj->flip_x = obj->flip_y = false;
 
-	obj->cb_ref = LUA_NOREF;
+	obj->cb = NULL;
 
 	obj->mm_r = -1;
 	obj->mm_g = -1;
@@ -159,10 +161,9 @@ static int map_object_free(lua_State *L)
 		obj->do_ref = LUA_NOREF;
 	}
 
-	if (obj->cb_ref != LUA_NOREF)
+	if (obj->cb)
 	{
-		luaL_unref(L, LUA_REGISTRYINDEX, obj->cb_ref);
-		obj->cb_ref = LUA_NOREF;
+		delete obj->cb;
 	}
 
 	if (obj->shader_ref != LUA_NOREF) {
@@ -177,9 +178,20 @@ static int map_object_free(lua_State *L)
 static int map_object_cb(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
-	if (obj->cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, obj->cb_ref);
-	if (lua_isfunction(L, 2)) obj->cb_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	else obj->cb_ref = LUA_NOREF;
+
+	if (lua_isfunction(L, 2)) {
+		if (!obj->cb) obj->cb = new DORCallbackMap();
+		lua_pushvalue(L, 2);
+		obj->cb->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+	}
+	// if (lua_isfunction(L, 2)) {
+	// 	if (!obj->cb) obj->cb = new DORCallbackMap();
+	// 	lua_pushvalue(L, 2);
+	// 	obj->cb->setCallback(luaL_ref(L, LUA_REGISTRYINDEX));
+	// } else {
+	// 	delete obj->cb;
+	// 	obj->cb = NULL;
+	// }
 	return 0;
 }
 
@@ -191,6 +203,13 @@ static int map_object_chain(lua_State *L)
 	obj->next = obj2;
 	lua_pushvalue(L, 2);
 	obj->next_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	return 0;
+}
+
+static int map_object_hide(lua_State *L)
+{
+	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
+	obj->hide = true;
 	return 0;
 }
 
@@ -307,9 +326,9 @@ static int map_object_flip_x(lua_State *L)
 		while (lua_next(L, 4) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	return 0;
 }
@@ -326,9 +345,9 @@ static int map_object_flip_y(lua_State *L)
 		while (lua_next(L, 4) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	return 0;
 }
@@ -372,9 +391,9 @@ static int map_object_reset_move_anim(lua_State *L)
 		while (lua_next(L, 3) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	return 0;
 }
@@ -417,9 +436,9 @@ static int map_object_set_move_anim(lua_State *L)
 		while (lua_next(L, 11) != 0) {
 			int z = lua_tonumber(L, -1) - 1;
 			z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-			map->z_changed[z] = true;
 			lua_pop(L, 1);
 		}		
+		map->changed = true;
 	}
 	
 	return 0;
@@ -559,26 +578,17 @@ static int map_new(lua_State *L)
 	map->shown_r = map->shown_g = map->shown_b = 1;
 	map->shown_a = 1;
 
+	map->tint_r = map->tint_g = map->tint_b = map->tint_a = 1;
+
 	map->default_shader_ref = LUA_NOREF;
 	map->default_shader = NULL;
-
-	map->minimap = NULL;
-	map->mm_texture = 0;
-	map->mm_w = map->mm_h = 0;
-
-	map->minimap_gridsize = 4;
-	map->old_minimap_gridsize = 0;
 
 	map->is_hex = (is_hex > 0);
 	lua_pushlightuserdata(L, (void *)&IS_HEX_KEY); // push address as guaranteed unique key
 	lua_pushnumber(L, map->is_hex);
 	lua_settable(L, LUA_REGISTRYINDEX);
 
-	map->vertices = (GLfloat*)calloc(2*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 2 coords, 4 vertices per particles
-	map->colors = (GLfloat*)calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat)); // 4 color data, 4 vertices per particles
-	map->texcoords = (GLfloat*)calloc(4*6*QUADS_PER_BATCH, sizeof(GLfloat));
-
-	map->displayed_x = map->displayed_y = 0;
+	map->scroll_x = map->scroll_y = 0;
 	map->w = w;
 	map->h = h;
 	map->zdepth = zdepth;
@@ -588,9 +598,8 @@ static int map_new(lua_State *L)
 
 	// Compute line grids array for fast drawing
 	map->nb_grid_lines_vertices = 0;
-	map->grid_lines_vertices = NULL;
-	map->grid_lines_textures = NULL;
-	map->grid_lines_colors = NULL;
+	map->grid_lines_renderer = NULL;
+	map->grid_lines = NULL;
 
 	// Make up the map objects list, thus we can iterate them later
 	lua_newtable(L);
@@ -614,6 +623,9 @@ static int map_new(lua_State *L)
 	map->my = my;
 	map->mwidth = mwidth;
 	map->mheight = mheight;
+	map->sort_mos = new map_object_sort*[w * h * zdepth];
+	for (int i = 0; i < w * h * zdepth; i++) map->sort_mos[i] = new map_object_sort;
+	map->sort_mos_max = 0;
 	map->grids = (map_object****)calloc(w, sizeof(map_object***));
 	map->grids_ref = (int***)calloc(w, sizeof(int**));
 	map->grids_seens = (float*)calloc(w * h, sizeof(float));
@@ -645,22 +657,21 @@ static int map_new(lua_State *L)
 	map->z_callbacks = (int*)calloc(zdepth, sizeof(int));
 	for (i = 0; i < zdepth; i++) map->z_callbacks[i] = LUA_NOREF;
 
-	map->z_changed = (bool*)calloc(zdepth, sizeof(bool));
-	for (i = 0; i < zdepth; i++) map->z_changed[i] = true;
+	map->changed = true;
+	map->minimap_changed = true;
 
-	map->z_renderers = (RendererGL**)calloc(zdepth, sizeof(RendererGL*));
-	for (i = 0; i < zdepth; i++) {
-		map->z_renderers[i] = new RendererGL();
-		char *name = (char*)calloc(20, sizeof(char));
-		sprintf(name, "map-layer-%d", i);
-		map->z_renderers[i]->setRendererName(name, false);
-		map->z_renderers[i]->setManualManagement(true);
-	}
+	map->renderer = new RendererGL(VBOMode::STREAM);
+	char *name = strdup("map-layer");
+	map->renderer->setRendererName(name, false);
+	map->renderer->setManualManagement(true);
+	// map->renderer->countDraws(true);
 
 	map->shader_to_shaderkind = new unordered_map<string, float>;
 
 	map->seens_vbo = NULL;
-	map->mm_vbo = NULL;
+
+	map->map_dos = new unordered_set<DORTileMap*>;
+	map->minimap_dos = new unordered_set<DORTileMiniMap*>;
 
 	return 1;
 }
@@ -684,6 +695,8 @@ static int map_free(lua_State *L)
 		free(map->grids_lites[i]);
 		free(map->grids_important[i]);
 	}
+	for (int i = 0; i < map->w * map->h * map->zdepth; i++) delete map->sort_mos[i];
+	delete[] map->sort_mos;
 	free(map->grids);
 	free(map->grids_ref);
 	free(map->grids_seens);
@@ -691,49 +704,42 @@ static int map_free(lua_State *L)
 	free(map->grids_lites);
 	free(map->grids_important);
 
-	for (i = 0; i < map->zdepth; i++) {
-		if (map->z_callbacks[i] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map->z_callbacks[i]);
-		delete map->z_renderers[i];
-	}
+	delete map->renderer;
 	free(map->z_callbacks);
-	free(map->z_changed);
-	free(map->z_renderers);
 
 	delete map->shader_to_shaderkind;
 
-	free(map->colors);
-	free(map->texcoords);
-	free(map->vertices);
-
-	if (map->grid_lines_vertices) free(map->grid_lines_vertices);
-	if (map->grid_lines_colors) free(map->grid_lines_colors);
-	if (map->grid_lines_textures) free(map->grid_lines_textures);
+	if (map->grid_lines_renderer) {
+		map->grid_lines_renderer->remove(map->grid_lines);
+		delete map->grid_lines_renderer;
+		delete map->grid_lines;
+	}
 
 	luaL_unref(L, LUA_REGISTRYINDEX, map->mo_list_ref);
 
 	glDeleteTextures(1, &map->seens_texture);
 	free(map->seens_map);
 
-	if (map->minimap) free(map->minimap);
-	if (map->mm_texture) glDeleteTextures(1, &map->mm_texture);
-
 	if (map->seens_vbo) delete map->seens_vbo;
-	if (map->mm_vbo) delete map->mm_vbo;
+
+	for (auto &it : *map->map_dos) it->mapDeath(map);
+	for (auto &it : *map->minimap_dos) it->mapDeath(map);
+	delete map->map_dos;
+	delete map->minimap_dos;
 
 	lua_pushnumber(L, 1);
 	return 1;
 }
 
+extern int gl_tex_white;
 static int map_define_grid_lines(lua_State *L) {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 	int size = luaL_checknumber(L, 2);
 	if (!size) {
-		if (map->grid_lines_vertices) free(map->grid_lines_vertices);
-		if (map->grid_lines_colors) free(map->grid_lines_colors);
-		if (map->grid_lines_textures) free(map->grid_lines_textures);
-		map->grid_lines_vertices = NULL;
-		map->grid_lines_colors = NULL;
-		map->grid_lines_textures = NULL;
+		if (map->grid_lines_renderer) delete map->grid_lines_renderer;
+		if (map->grid_lines) delete map->grid_lines;
+		map->grid_lines_renderer = NULL;
+		map->grid_lines = NULL;
 		map->nb_grid_lines_vertices = 0;
 		return 0;
 	}
@@ -743,9 +749,8 @@ static int map_define_grid_lines(lua_State *L) {
 	float b = luaL_checknumber(L, 5);
 	float a = luaL_checknumber(L, 6);
 
-	if (map->grid_lines_vertices) free(map->grid_lines_vertices);
-	if (map->grid_lines_colors) free(map->grid_lines_colors);
-	if (map->grid_lines_textures) free(map->grid_lines_textures);
+	if (map->grid_lines_renderer) delete map->grid_lines_renderer;
+	if (map->grid_lines) delete map->grid_lines;
 
 	int mwidth = map->mwidth;
 	int mheight = map->mheight;
@@ -754,43 +759,31 @@ static int map_define_grid_lines(lua_State *L) {
 	int grid_w = 1 + mwidth;
 	int grid_h = 1 + mheight;
 	map->nb_grid_lines_vertices = grid_w + grid_h;
-	map->grid_lines_vertices = (GLfloat*)calloc(2 * 4 * map->nb_grid_lines_vertices, sizeof(GLfloat)); // 4 coords per lines
-	map->grid_lines_textures = (GLfloat*)calloc(2 * 4 * map->nb_grid_lines_vertices, sizeof(GLfloat)); // 4 coords per lines
-	map->grid_lines_colors = (GLfloat*)calloc(4 * 4 * map->nb_grid_lines_vertices, sizeof(GLfloat)); // 4 coords per lines
+	map->grid_lines = new DORVertexes();
+	map->grid_lines->setTexture(gl_tex_white, LUA_NOREF);
+	map->grid_lines_renderer = new RendererGL(VBOMode::STATIC);
+	map->grid_lines_renderer->add(map->grid_lines);
+
 	int vi = 0, ci = 0, ti = 0, i;
 	// Verticals
 	for (i = 0; i < grid_w; i++) {
-		map->grid_lines_vertices[vi++] = i * tile_w - size / 2;	map->grid_lines_vertices[vi++] = 0;
-		map->grid_lines_vertices[vi++] = i * tile_w + size / 2;	map->grid_lines_vertices[vi++] = 0;
-		map->grid_lines_vertices[vi++] = i * tile_w + size / 2;	map->grid_lines_vertices[vi++] = mheight * tile_h;
-		map->grid_lines_vertices[vi++] = i * tile_w - size / 2;	map->grid_lines_vertices[vi++] = mheight * tile_h;
-
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-
-		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 0; 
-		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 0; 
-		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 1; 
-		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 1; 
+		map->grid_lines->addQuad(
+			i * tile_w - size / 2, 0, 0, 0,
+			i * tile_w + size / 2, 0, 1, 0,
+			i * tile_w + size / 2, mheight * tile_h, 1, 1,
+			i * tile_w - size / 2, mheight * tile_h, 0, 1,
+			r, g, b, a
+		);
 	}
 	// Horizontals
 	for (i = 0; i < grid_h; i++) {
-		map->grid_lines_vertices[vi++] = 0;			map->grid_lines_vertices[vi++] = i * tile_h - size / 2;
-		map->grid_lines_vertices[vi++] = 0;			map->grid_lines_vertices[vi++] = i * tile_h + size / 2;
-		map->grid_lines_vertices[vi++] = mwidth * tile_w;	map->grid_lines_vertices[vi++] = i * tile_h + size / 2;
-		map->grid_lines_vertices[vi++] = mwidth * tile_w;	map->grid_lines_vertices[vi++] = i * tile_h - size / 2;
-
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-		map->grid_lines_colors[ci++] = r; map->grid_lines_colors[ci++] = g; map->grid_lines_colors[ci++] = b; map->grid_lines_colors[ci++] = a; 
-
-		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 0; 
-		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 0; 
-		map->grid_lines_textures[ti++] = 1; map->grid_lines_textures[ti++] = 1; 
-		map->grid_lines_textures[ti++] = 0; map->grid_lines_textures[ti++] = 1; 
+		map->grid_lines->addQuad(
+			0,		 i * tile_h - size / 2, 0, 0,
+			0,		 i * tile_h + size / 2, 1, 0,
+			mwidth * tile_w, i * tile_h + size / 2, 1, 1,
+			mwidth * tile_w, i * tile_h - size / 2, 0, 1,
+			r, g, b, a
+		);
 	}
 	return 0;
 }
@@ -806,6 +799,24 @@ static int map_set_z_callback(lua_State *L)
 		lua_pushvalue(L, 3);
 		map->z_callbacks[z] = luaL_ref(L, LUA_REGISTRYINDEX);
 	}
+	return 0;
+}
+
+static int map_set_sort_start(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	map->zdepth_sort_start = lua_tonumber(L, 2);
+	return 0;
+}
+
+
+static int map_set_tint(lua_State *L)
+{
+	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	map->tint_r = lua_tonumber(L, 2);
+	map->tint_g = lua_tonumber(L, 3);
+	map->tint_b = lua_tonumber(L, 4);
+	map->tint_a = lua_tonumber(L, 5);
 	return 0;
 }
 
@@ -884,15 +895,6 @@ static int map_set_shown(lua_State *L)
 	return 0;
 }
 
-static int map_set_minimap_gridsize(lua_State *L)
-{
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
-	float s = luaL_checknumber(L, 2);
-	map->old_minimap_gridsize = map->minimap_gridsize;
-	map->minimap_gridsize = s;
-	return 0;
-}
-
 static int map_set_grid(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
@@ -940,7 +942,9 @@ static int map_set_grid(lua_State *L)
 
 		// Note that the layer changed so that we rebuild DisplayLists for this layer
 		if (map->grids[x][y][i] != old) {
-			map->z_changed[i] = true;
+			// printf("Invalidagin layer %d at %dx%d because %lx != %lx\n", i,x,y, old, map->grids[x][y][i]);
+			map->changed = true;
+			map->minimap_changed = true;
 		}
 
 		// Set the object in the mo list
@@ -968,6 +972,7 @@ static int map_set_seen(lua_State *L)
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_seens[y*map->w+x] = v;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -981,6 +986,7 @@ static int map_set_remember(lua_State *L)
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_remembers[x][y] = v;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -994,6 +1000,7 @@ static int map_set_lite(lua_State *L)
 	if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 0;
 	map->grids_lites[x][y] = v;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1019,6 +1026,7 @@ static int map_clean_seen(lua_State *L)
 		for (j = 0; j < map->h; j++)
 			map->grids_seens[j*map->w+i] = 0;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1031,6 +1039,7 @@ static int map_clean_remember(lua_State *L)
 		for (j = 0; j < map->h; j++)
 			map->grids_remembers[i][j] = false;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1043,6 +1052,7 @@ static int map_clean_lite(lua_State *L)
 		for (j = 0; j < map->h; j++)
 			map->grids_lites[i][j] = false;
 	map->seen_changed = true;
+	map->minimap_changed = true;
 	return 0;
 }
 
@@ -1218,7 +1228,6 @@ static int map_draw_seen_texture(lua_State *L)
 	if (!map->seens_vbo) return 0;
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
-	int nb_keyframes = 0;
 	int mx = map->mx;
 	int my = map->my;
 	x += -map->tile_w * 5;
@@ -1250,6 +1259,10 @@ static int map_set_scroll(lua_State *L)
 	int y = luaL_checknumber(L, 3);
 	int smooth = luaL_checknumber(L, 4);
 
+	if (map->mx != x || map->my != y) {
+		map->changed = true;
+	}
+
 	if (smooth)
 	{
 		// Not moving, use starting point
@@ -1276,8 +1289,6 @@ static int map_set_scroll(lua_State *L)
 	map->mx = x;
 	map->my = y;
 	map->seen_changed = true;
-
-	for (int z = 0; z < map->zdepth; z++) map->z_changed[z] = true;
 	return 0;
 }
 
@@ -1289,7 +1300,7 @@ static int map_get_scroll(lua_State *L)
 	return 2;
 }
 
-static inline void do_quad(lua_State *L, const map_object *m, const map_object *dm, const map_type *map, int z,
+static inline void do_quad(lua_State *L, const map_object *m, const map_object *dm, map_type *map, int z,
 		float anim, float dx, float dy, float tldx, float tldy, float
 		dw, float dh, float r, float g, float b, float a, int i, int j)
 {
@@ -1306,46 +1317,63 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 		y1 = dy; y2 = map->tile_h * dh * dm->scale + dy;
 	}
 
-	if (dm->displayobject) {
-		vec4 color = {r, g, b, a};
-		mat4 model = mat4();
-		model = glm::translate(model, glm::vec3(x1, y1, 0));
-		dm->displayobject->render(map->z_renderers[z], model, color);
-		if (!dm->displayobject->independantRenderer()) {
-			map->z_changed[z] = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
-		}
-	} else {
-		float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
-		float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
-
-		float shaderkind = 0;
-		shader_type *shader = default_shader;
-		if (dm->shader) shader = dm->shader;
-		else if (m->shader) shader = m->shader;
-		else if (map->default_shader) shader = map->default_shader;
-
-		// DGDGDGDG: perhaps need to optimize here? chagning shader->name to a string instead of a char* ?
-		if (shader != map->default_shader && !map->shader_to_shaderkind->empty()) {
-			auto kind = map->shader_to_shaderkind->find(shader->name);
-			if (kind != map->shader_to_shaderkind->end()) {
-				shaderkind = kind->second;
-				shader = map->default_shader;
+	if (!dm->hide) {
+		if (dm->displayobject) {
+			// DGDGDGDG: integrate that as a chained DO perhaps
+			vec4 color = {r, g, b, a};
+			mat4 model = mat4();
+			model = glm::translate(model, glm::vec3(x1, y1, 0));
+			dm->displayobject->render(map->renderer, model, color, true);
+			if (!dm->displayobject->independantRenderer()) {
+				map->changed = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
 			}
+		} else {
+			float tx1 = dm->tex_x[0] + anim, tx2 = dm->tex_x[0] + anim + dm->tex_factorx[0];
+			float ty1 = dm->tex_y[0] + anim, ty2 = dm->tex_y[0] + anim + dm->tex_factory[0];
+
+			float shaderkind = 0;
+			shader_type *shader = default_shader;
+			if (dm->shader) shader = dm->shader;
+			else if (m->shader) shader = m->shader;
+			else if (map->default_shader) shader = map->default_shader;
+
+			// DGDGDGDG: perhaps need to optimize here? chagning shader->name to a string instead of a char* ?
+			// if (shader != map->default_shader && !map->shader_to_shaderkind->empty()) {
+			// 	auto kind = map->shader_to_shaderkind->find(shader->name);
+			// 	if (kind != map->shader_to_shaderkind->end()) {
+			// 		shaderkind = kind->second;
+			// 		shader = map->default_shader;
+			// 	}
+			// }
+
+			// printf("MO using %dx%dx%d tex %d shader %s : %lx\n", (int)dx, (int)dy, z, dm->textures[0], shader->name, shader);
+			auto dl = getDisplayList(map->renderer, {dm->textures[0], 0, 0}, shader);
+		
+			// Make sure we do not have to reallocate each step
+			// DGDGDGDG: actually do it
+
+			// Put it directly into the DisplayList
+			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
+			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
+			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
+			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, x2, y2}, shaderkind});
 		}
-
-		// printf("MO using %dx%dx%d shader %s : %lx\n", (int)dx, (int)dy, z, shader->name, shader);
-		auto dl = getDisplayList(map->z_renderers[z], dm->textures[0], shader);
-
-		// Make sure we do not have to reallocate each step
-		// DGDGDGDG: actually do it
-
-		// Put it directly into the DisplayList
-		dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-		dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-		dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
-		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, {r, g, b, a}, {dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0]}, {dx, dy, map->tile_w, map->tile_h}, shaderkind});
 	}
 
+	if (L && dm->cb)
+	{
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		auto dl = getDisplayList(map->renderer);
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		dm->cb->dx = dx - map->scroll_x;
+		dm->cb->dy = dy - map->scroll_y;
+		dm->cb->dw = map->tile_w * (dw) * (dm->scale);
+		dm->cb->dh = map->tile_h * (dh) * (dm->scale);
+		dm->cb->scale = dm->scale;
+		dm->cb->tldx = tldx - map->scroll_x;
+		dm->cb->tldy = tldy - map->scroll_y;
+		dl->sub = dm->cb;
+	}
 	// DGDGDGDG: this needs to be done smartly, no actual CB here, but creation of a callback put into the DisplayList
 	/*
 	if (L && dm->cb_ref != LUA_NOREF)
@@ -1371,13 +1399,10 @@ static inline void do_quad(lua_State *L, const map_object *m, const map_object *
 }
 
 // static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show) ALWAYS_INLINE;
-static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, int nb_keyframes, bool always_show)
+static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, int scrolly, int bdx, int bdy, int dz, map_object *m, int i, int j, float a, float seen, float nb_keyframes, bool always_show)
 {
 	map_object *dm;
 	float r, g, b;
-	GLfloat *vertices = map->vertices;
-	GLfloat *colors = map->colors;
-	GLfloat *texcoords = map->texcoords;
 	bool up_important = false;
 	float anim;
 	int zc;
@@ -1449,7 +1474,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 
 	if (m->move_max)
 	{
-		map->z_changed[dz] = true;
+		map->changed = true;
 		m->move_step += nb_keyframes;
 		if (m->move_step >= m->move_max) m->move_max = 0; // Reset once in place
 		// if (m->display_last == DL_NONE) m->display_last = DL_TRUE;
@@ -1470,34 +1495,28 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 					{
 						animdx = tlanimdx = map->tile_w * (adx * step / (float)m->move_max - adx);
 						animdy = tlanimdy = map->tile_h * (ady * step / (float)m->move_max - ady);
+						float dmpeel = 0;
 						dm = m;
 						while (dm)
 						{
-						 	// if (m != dm && dm->shader) {
-								// unbatchQuads((*vert_idx), (*col_idx));
-								// // printf(" -- unbatch3\n");
-
-								// for (zc = dm->nb_textures - 1; zc > 0; zc--)
-								// {
-								// 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
-								// 	tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
-								// }
-								// if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
-
-						 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-						 	// }
-
-							do_quad(L, m, dm, map, dz,
-								0,
-								dx + dm->dx * map->tile_w + animdx,
-								dy + dm->dy * map->tile_h + animdy,
-								dx + dm->dx * map->tile_w + tlanimdx,
-								dy + dm->dy * map->tile_h + tlanimdy,
-								dm->dw,
-								dm->dh,
-								r, g, b, a,
-								i, j);
+							map_object_sort *so = map->sort_mos[map->sort_mos_max++];
+							so->m = m;
+							so->dm = dm;
+							so->z = dz;
+							so->anim = 0;
+							so->dx = dx + dm->dx * map->tile_w + animdx;
+							so->dy = dy + dm->dy * map->tile_h + animdy;
+							so->dy_sort = j + dm->dy + animdy + ((float)dz / (map->zdepth)) + dm->dh + dmpeel;
+							so->tldx = dx + dm->dx * map->tile_w + tlanimdx;
+							so->tldy = dy + dm->dy * map->tile_h + tlanimdy;
+							so->r = r;
+							so->g = b;
+							so->b = b;
+							so->a = ((dm->dy < 0) && up_important) ? a / 3 : a;
+							so->i = i;
+							so->j = j;
 							dm = dm->next;
+							dmpeel += 0.001;
 						}
 					}
 				}
@@ -1528,8 +1547,9 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	/********************************************************
 	 ** Display the entity
 	 ********************************************************/
+	float dmpeel = 0;
 	dm = m;
-	tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
+	// tglBindTexture(GL_TEXTURE_2D, m->textures[0]);
 	while (dm)
 	{
 		if (!dm->anim_max) anim = 0;
@@ -1542,7 +1562,7 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 				else if (dm->anim_loop > 0) dm->anim_loop--;
 			}
 			anim = (float)anim_step / dm->anim_max;
-			map->z_changed[dz] = true;
+			map->changed = true;
 		}
 		dm->world_x = bdx + (dm->dx + animdx) * map->tile_w;
 		dm->world_y = bdy + (dm->dy + animdy) * map->tile_h;
@@ -1561,19 +1581,26 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 	 	// 	useShader(dm->shader, dx, dy, map->tile_w, map->tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
 	 	// }
 
-		do_quad(L, m, dm, map, dz,
-			anim,
-			dx + (dm->dx + animdx) * map->tile_w,
-			dy + (dm->dy + animdy) * map->tile_h,
-			dx + (dm->dx + tlanimdx) * map->tile_w,
-			dy + (dm->dy + tlanimdy) * map->tile_h,
-			dm->dw,
-			dm->dh,
-			r, g, b, ((dm->dy < 0) && up_important) ? a / 3 : a,
-			i, j);
+		map_object_sort *so = map->sort_mos[map->sort_mos_max++];
+		so->m = m;
+		so->dm = dm;
+		so->z = dz;
+		so->anim = anim;
+		so->dx = dx + (dm->dx + animdx) * map->tile_w;
+		so->dy = dy + (dm->dy + animdy) * map->tile_h;
+		so->dy_sort = j + dm->dy + animdy + ((float)dz / (map->zdepth)) + dm->dh + dmpeel;
+		so->tldx = dx + (dm->dx + tlanimdx) * map->tile_w;
+		so->tldy = dy + (dm->dy + tlanimdy) * map->tile_h;
+		so->r = r;
+		so->g = b;
+		so->b = b;
+		so->a = ((dm->dy < 0) && up_important) ? a / 3 : a;
+		so->i = i;
+		so->j = j;
 		dm->animdx = animdx;
 		dm->animdy = animdy;
 		dm = dm->next;
+		dmpeel += 0.001;
 	}
 
 	/********************************************************
@@ -1584,7 +1611,16 @@ static inline void display_map_quad(lua_State *L, map_type *map, int scrollx, in
 
 #define MIN(a,b) ((a < b) ? a : b)
 
-void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, bool always_show, mat4 model, vec4 color)
+static bool sort_mos_shader(map_object_sort *i, map_object_sort *j) {
+	return i->dm->shader < j->dm->shader;
+}
+
+static bool sort_mos(map_object_sort *i, map_object_sort *j) {
+	if (i->dy_sort == j->dy_sort) return i->dx < j->dx;
+	else return i->dy_sort < j->dy_sort;
+}
+
+void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color)
 {
 	bool changed = false;
 	int i = 0, j = 0, z = 0;
@@ -1621,35 +1657,102 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 	float scrolly = map->tile_h * (animdy + map->oldmy);
 	map->used_animdx = animdx;
 	map->used_animdy = animdy;
-	map->displayed_x = x - scrollx;
-	map->displayed_y = y - scrolly;
+	map->scroll_x = scrollx;
+	map->scroll_y = scrolly;
 
+	float tim = SDL_GetTicks() / 1500.0;
 	mat4 scrollmodel = mat4();
+	// scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx + map->w / 2 * map->tile_w * cos(tim), -scrolly + map->h / 2 * map->tile_w * sin(tim), 0));
 	scrollmodel = glm::translate(scrollmodel, glm::vec3(-scrollx, -scrolly, 0));
 	model = model * scrollmodel;
+
+	color *= vec4(map->tint_r, map->tint_g, map->tint_b, map->tint_a);
 
 	map->used_mx = mx;
 	map->used_my = my;
 
-	int mini = mx - 1, maxi = mx + map->mwidth + 2, minj =  my - 1, maxj = my + map->mheight + 2;
-	if(mini < 0)
-		mini = 0;
-	if(minj < 0)
-		minj = 0;
-	if(maxi > map->w)
-		maxi = map->w;
-	if(maxj > map->h)
-		maxj = map->h;
+	// DGDGDGDG: make a different map caching system, split each layer into 16x16 blocks:
+	// do not have them fixd on scrolling but on map coords so constant scrolling will not invalidate stuff
 
+	// int mini = mx, maxi = mx + 2, minj =  my, maxj = my + 2;
+	int mini = mx - 1, maxi = mx + map->mwidth + 2, minj =  my - 1, maxj = my + map->mheight + 2;
+	// int mini = mx - 50, maxi = mx + map->mwidth + 50, minj =  my - 50, maxj = my + map->mheight + 50;
+	// int mini = mx - 10, maxi = mx + map->mwidth + 10, minj =  my - 10, maxj = my + map->mheight + 10;
+	if(mini < 0) mini = 0;
+	if(minj < 0) minj = 0;
+	if(maxi > map->w) maxi = map->w;
+	if(maxj > map->h) maxj = map->h;
+
+	RendererGL *render = map->renderer;
+	if (map->changed) {
+		render->resetDisplayLists();
+		render->setChanged(true);
+
+		int start_sort = 0;
+		map->sort_mos_max = 0;
+		for (z = 0; z < map->zdepth; z++) {
+			// DGDGDGDG add z-callbacks as DORCallbacks
+			if (z == map->zdepth_sort_start) { start_sort = map->sort_mos_max; }
+			for (j = minj; j < maxj; j++) {
+				for (i = mini; i < maxi; i++) {
+					map_object *mo = map->grids[i][j][z];
+					if (!mo) continue;
+					int dx = i * map->tile_w;
+					int dy = j * map->tile_h + (i & map->is_hex) * map->tile_h / 2;
+
+					if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && (always_show || map->grids_remembers[i][j])) || mo->on_unknown)
+					{
+						if (map->grids_seens[j*map->w+i])
+						{
+							display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, map->grids_seens[j*map->w+i], nb_keyframes, always_show);
+						}
+						else
+						{
+							display_map_quad(L, map, x, y, dx, dy, z, mo, i, j, 1, 0, nb_keyframes, always_show);
+						}
+					}
+				}
+			}
+		}
+		// stable_sort(map->sort_mos, map->sort_mos + start_sort, sort_mos_shader);
+		sort(map->sort_mos + start_sort, map->sort_mos + map->sort_mos_max, sort_mos);
+		// printf("sorted %d mos\n", map->sort_mos_max - start_sort);
+
+		for (int spos = 0; spos < map->sort_mos_max; spos++) {
+			map_object_sort *so = map->sort_mos[spos];
+			do_quad(L, so->m, so->dm, map, so->z,
+				so->anim,
+				so->dx,
+				so->dy,
+				so->tldx,
+				so->tldy,
+				so->dm->dw,
+				so->dm->dh,
+				so->r, so->g, so->b, so->a,
+				so->i, so->j);
+
+		}
+
+		// map->changed = false;
+	}
+	render->toScreen(model, color);
+
+	if (map->minimap_changed) {
+		map->minimap_changed = false;
+		for (auto &it : *map->minimap_dos) it->redrawMiniMap();
+	}
+
+	/*
 	// Always display some more of the map to make sure we always see it all
 	for (z = 0; z < map->zdepth; z++)
 	{
 		auto render = map->z_renderers[z];
-		if (map->z_changed[z]) {
-			// printf("map layer %d is invalid\n", z);
+		if (map->z_changed[z] || map->z_offs[z].x != mini || map->z_offs[z].y != minj) {
+			// printf("map layer %d is invalid, start %dx%d from %dx%d\n", z, mini, minj, (int)map->z_offs[z].x, (int)map->z_offs[z].y);
 			render->resetDisplayLists();
-			render->setChanged();
+			render->setChanged(true);
 			map->z_changed[z] = false;
+			map->z_offs[z] = {mini, minj};
 
 			for (j = minj; j < maxj; j++)
 			{
@@ -1692,6 +1795,7 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, int nb_keyframes, b
 			lua_pop(L, 1);
 		}
 	}
+	*/
 
 	// "Decay" displayed status for all mos
 	if (L) {
@@ -1727,7 +1831,7 @@ static int lua_map_toscreen(lua_State *L)
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
-	int nb_keyframes = luaL_checknumber(L, 4);
+	float nb_keyframes = luaL_checknumber(L, 4);
 	bool always_show = lua_toboolean(L, 5);
 
 	vec4 color = {1, 1, 1, 1};
@@ -1738,161 +1842,18 @@ static int lua_map_toscreen(lua_State *L)
 	return 0;
 }
 
-extern int gl_tex_white;
 static int map_line_grids(lua_State *L) {
-#if 0 /* DGDGDGDG */
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
-	if (!map->grid_lines_vertices) return 0;
+	if (!map->grid_lines_renderer) return 0;
 
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
 
-	if (lua_isuserdata(L, 4))
-	{
-		texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 4);
-		tglBindTexture(GL_TEXTURE_2D, t->tex);
-	}
-	else if (lua_toboolean(L, 4))
-	{
-		// Do nothing, we keep the currently bound texture
-	}
-	else
-	{
-		tfglBindTexture(GL_TEXTURE_2D, gl_tex_white);
-	}
-
-	glTranslatef(x - map->used_animdx * map->tile_w, y - map->used_animdy * map->tile_h, 0);
-	glVertexPointer(2, GL_FLOAT, 0, map->grid_lines_vertices);
-	glColorPointer(4, GL_FLOAT, 0, map->grid_lines_colors);
-	glTexCoordPointer(2, GL_FLOAT, 0, map->grid_lines_textures);
-	glDrawArrays(GL_QUADS, 0, map->nb_grid_lines_vertices * 4);
-	glTranslatef(-x + map->used_animdx * map->tile_w, -y + map->used_animdy * map->tile_h, 0);
-#endif
+	// glTranslatef(x - map->used_animdx * map->tile_w, y - map->used_animdy * map->tile_h, 0);
+	mat4 model = mat4();
+	model = glm::translate(model, vec3(x, y, 0));
+	map->grid_lines_renderer->toScreen(model, {1, 1, 1, 1});
 	return 0;	
-}
-
-static void minimap_update(map_type *map, int mdx, int mdy, int mdw, int mdh, float transp) {
-	int z = 0, i = 0, j = 0;
-	int vert_idx = 0;
-	int col_idx = 0;
-	GLfloat r, g, b, a;
-
-	if (!map->mm_vbo) map->mm_vbo = new VBO(VBOMode::STATIC);
-
-	int f = (map->is_hex & 1);
-	// Create/recreate the minimap data if needed
-	if (map->mm_w != mdw || map->mm_h != mdh || map->old_minimap_gridsize != map->minimap_gridsize)
-	{
-		if (map->mm_texture) glDeleteTextures(1, &(map->mm_texture));
-		if (map->minimap) free(map->minimap);
-
-		// In case we can't support NPOT textures round up to nearest POT
-		int realw=1;
-		int realh=1;
-		while (realw < mdw) realw *= 2;
-		while (realh < f + (1+f)*mdh) realh *= 2;
-
-		glGenTextures(1, &(map->mm_texture));
-		map->mm_w = mdw;
-		map->mm_h = mdh;
-		map->mm_rw = realw;
-		map->mm_rh = realh;
-		printf("C Map minimap texture: %d (%dx%d; %dx%d)\n", map->mm_texture, mdw, mdh, realw, realh);
-		tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, 4, realw, realh, 0, TE4_MAP_GL_TYPE, GL_UNSIGNED_BYTE, NULL);
-		map->minimap = (GLubyte*)calloc(realw*realh*4, sizeof(GLubyte));
-
-		map->mm_vbo->setTexture(map->mm_texture);
-		map->mm_vbo->addQuad(
-			0, 0, 0, 0,
-			0, mdh * map->minimap_gridsize, 0, (float)((1+f)*mdh)/(float)map->mm_rh,
-			mdw * map->minimap_gridsize, mdh * map->minimap_gridsize, (float)mdw/(float)map->mm_rw, (float)((1+f)*mdh)/(float)map->mm_rh,
-			mdw * map->minimap_gridsize, 0, (float)mdw/(float)map->mm_rw, 0,
-			1, 1, 1, 1
-		);
-		map->old_minimap_gridsize = map->minimap_gridsize;
-	}
-
-	int ptr;
-	GLubyte *mm = map->minimap;
-	memset(mm, 0, map->mm_rh * map->mm_rw * 4 * sizeof(GLubyte));
-
-	int mini = mdx, maxi = mdx + mdw, minj = mdy, maxj = mdy + mdh;
-
-	if(mini < 0)
-		mini = 0;
-	if(minj < 0)
-		minj = 0;
-	if(maxi > map->w)
-		maxi = map->w;
-	if(maxj > map->h)
-		maxj = map->h;
-
-	for (z = 0; z < map->zdepth; z++)
-	{
-		for (j = minj; j < maxj; j++)
-		{
-			for (i = mini; i < maxi; i++)
-			{
-				map_object *mo = map->grids[i][j][z];
-				if (!mo || mo->mm_r < 0) continue;
-				ptr = (((1+f)*(j-mdy) + (i & f)) * map->mm_rw + (i-mdx)) * 4;
-
-				if ((mo->on_seen && map->grids_seens[j*map->w+i]) || (mo->on_remember && map->grids_remembers[i][j]) || mo->on_unknown)
-				{
-					if (map->grids_seens[j*map->w+i])
-					{
-						r = mo->mm_r; g = mo->mm_g; b = mo->mm_b; a = transp;
-					}
-					else
-					{
-						r = mo->mm_r * 0.6; g = mo->mm_g * 0.6; b = mo->mm_b * 0.6; a = transp * 0.6;
-					}
-					mm[ptr] = b * 255;
-					mm[ptr+1] = g * 255;
-					mm[ptr+2] = r * 255;
-					mm[ptr+3] = a * 255;
-					if (f) {
-						ptr += 4 * map->mm_rw;
-						mm[ptr] = b * 255;
-						mm[ptr+1] = g * 255;
-						mm[ptr+2] = r * 255;
-						mm[ptr+3] = a * 255;
-					}
-				}
-			}
-		}
-	}
-	tglBindTexture(GL_TEXTURE_2D, map->mm_texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->mm_rw, map->mm_rh, TE4_MAP_GL_TYPE, GL_UNSIGNED_BYTE, mm);
-}
-
-static int lua_minimap_to_screen(lua_State *L)
-{
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
-	int x = luaL_checknumber(L, 2);
-	int y = luaL_checknumber(L, 3);
-	int mdx = luaL_checknumber(L, 4);
-	int mdy = luaL_checknumber(L, 5);
-	int mdw = luaL_checknumber(L, 6);
-	int mdh = luaL_checknumber(L, 7);
-	float transp = luaL_checknumber(L, 8);
-
-	minimap_update(map, mdx, mdy, mdw, mdh, transp);
-
-	map->mm_vbo->toScreen(x, y, 0, 1, 1);
-	return 0;
-}
-
-void minimap_toscreen(map_type *map, mat4 model, int gridsize, int mdx, int mdy, int mdw, int mdh, float transp) {
-	map->old_minimap_gridsize = map->minimap_gridsize;
-	map->minimap_gridsize = gridsize;
-	minimap_update(map, mdx, mdy, mdw, mdh, transp);
-	map->mm_vbo->toScreen(model);
 }
 
 static int map_get_display_object(lua_State *L)
@@ -1901,7 +1862,6 @@ static int map_get_display_object(lua_State *L)
 
 	DORTileMap *tm = new DORTileMap();
 	tm->setMap(map);
-	tm->setMode(TileMapMode::MAP);
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = tm;
@@ -1913,13 +1873,12 @@ static int map_get_display_object_mm(lua_State *L)
 {
 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 
-	DORTileMap *tm = new DORTileMap();
+	DORTileMiniMap *tm = new DORTileMiniMap();
 	tm->setMap(map);
-	tm->setMode(TileMapMode::MINIMAP);
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = tm;
-	auxiliar_setclass(L, "gl{tilemap}", -1);
+	auxiliar_setclass(L, "gl{tileminimap}", -1);
 	return 1;
 }
 
@@ -1938,7 +1897,9 @@ static const struct luaL_Reg map_reg[] =
 	{"updateSeensTexture", map_update_seen_texture_lua},
 	{"bindSeensTexture", map_bind_seen_texture},
 	{"drawSeensTexture", map_draw_seen_texture},
+	{"setSortStart", map_set_sort_start},
 	{"setZoom", map_set_zoom},
+	{"setTint", map_set_tint},
 	{"setShown", map_set_shown},
 	{"setObscure", map_set_obscure},
 	{"setGrid", map_set_grid},
@@ -1955,10 +1916,8 @@ static const struct luaL_Reg map_reg[] =
 	{"setScroll", map_set_scroll},
 	{"getScroll", map_get_scroll},
 	{"toScreen", lua_map_toscreen},
-	{"toScreenMiniMap", lua_minimap_to_screen},
 	{"toScreenLineGrids", map_line_grids},
 	{"setupGridLines", map_define_grid_lines},
-	{"setupMiniMapGridSize", map_set_minimap_gridsize},
 	{"getMapDO", map_get_display_object},
 	{"getMinimapDO", map_get_display_object_mm},
 	{NULL, NULL},
@@ -1977,6 +1936,7 @@ static const struct luaL_Reg map_object_reg[] =
 	{"invalidate", map_object_invalid},
 	{"isValid", map_object_is_valid},
 	{"onSeen", map_object_on_seen},
+	{"hide", map_object_hide},
 	{"minimap", map_object_minimap},
 	{"resetMoveAnim", map_object_reset_move_anim},
 	{"setMoveAnim", map_object_set_move_anim},

@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2015 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -77,14 +77,6 @@ static int lua_is_touch_enabled(lua_State *L)
 	return 1;
 }
 
-static int lua_is_gamepad_enabled(lua_State *L)
-{
-	if (!SDL_NumJoysticks()) return 0;
-	const char *str = SDL_JoystickNameForIndex(0);
-	lua_pushstring(L, str);
-	return 1;
-}
-
 int mouse_cursor_s_ref = LUA_NOREF;
 int mouse_cursor_down_s_ref = LUA_NOREF;
 SDL_Surface *mouse_cursor_s = NULL;
@@ -144,7 +136,9 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 {
 	if (lua_isnil(L, 1))
 	{
-		mouse_renderer->clear();
+		if (mouse_renderer) {
+			mouse_renderer->clear();
+		}
 		mouse_drag_set = false;
 		if (mouse_drag_do) {
 			delete mouse_drag_do;
@@ -156,7 +150,7 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 		mouse_drag_w = luaL_checknumber(L, 2);
 		mouse_drag_h = luaL_checknumber(L, 3);
 
-		if (!mouse_renderer) mouse_renderer = new RendererGL();
+		if (!mouse_renderer) mouse_renderer = new RendererGL(VBOMode::STATIC);
 		DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 		mouse_drag_do = c->clone();
 		// mouse_drag_do->setLuaState(NULL); // Lua state ? where we are going we don't need a lua state!
@@ -169,7 +163,6 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 static const struct luaL_Reg mouselib[] =
 {
 	{"touchCapable", lua_is_touch_enabled},
-	{"gamepadCapable", lua_is_gamepad_enabled},
 	{"setMouseCursor", sdl_set_mouse_cursor},
 	{"setMouseDrag", sdl_set_mouse_cursor_drag},
 	{"show", lua_mouse_show},

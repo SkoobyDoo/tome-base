@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ local Map = require "engine.Map"
 
 module(..., package.seeall, class.inherit(Tooltip))
 
-tooltip_bound_y2 = function() return game.uiset.map_h_stop_tooltip end
+tooltip_bound_y2 = function() return game.uiset.map_h_stop_tooltip or 0 end
 
 --- Gets the tooltips at the given map coord
 function _M:getTooltipAtMap(tmx, tmy, mx, my)

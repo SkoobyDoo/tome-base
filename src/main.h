@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@
 #else
 #define _te4_export
 #endif
+
+#define NORMALIZED_FPS 30
 
 extern int resizeWindow(int width, int height);
 
@@ -69,6 +71,8 @@ extern int g_argc;
 extern char **g_argv;
 extern char *override_home;
 extern float screen_zoom;
+extern float current_fps;
+extern float ticks_per_frame;
 
 /* Error handling */
 struct lua_err_type_s {
@@ -86,6 +90,9 @@ extern int traceback (lua_State *L);
 
 extern void physfs_reset_dir_allowed(lua_State *L);
 extern bool physfs_check_allow_path(lua_State *L, const char *path);
+
+extern void run_physic_simulation(float nb_keyframes);
+extern void reset_physic_simulation();
 
 extern int luaopen_font(lua_State *L);
 

@@ -65,6 +65,25 @@ error:
     return 1;
 }
 
+
+/*-------------------------------------------------------------------------*\
+* Prints the value of a class in a nice way
+\*-------------------------------------------------------------------------*/
+const char* auxiliar_getclassname(lua_State *L, int pos) {
+    if (!lua_getmetatable(L, pos)) goto error;
+    lua_pushstring(L, "__index");
+    lua_gettable(L, -2);
+    if (!lua_istable(L, -1)) goto error;
+    lua_pushstring(L, "class");
+    lua_gettable(L, -2);
+    if (!lua_isstring(L, -1)) goto error;
+    return lua_tostring(L, -1);
+error:
+    lua_pushstring(L, "invalid object passed to 'auxiliar.c:__tostring'");
+    lua_error(L);
+    return NULL;
+}
+
 /*-------------------------------------------------------------------------*\
 * Insert class into group
 \*-------------------------------------------------------------------------*/

@@ -18,6 +18,10 @@ extern int luaopen_socket_core(lua_State *L);
 extern int luaopen_sound(lua_State *L);
 extern int luaopen_struct(lua_State *L);
 extern int luaopen_zlib (lua_State *L);
+extern int luaopen_colors (lua_State *L);
+
+extern int luaopen_loader(lua_State *L);
+extern void loader_tick();
 
 extern int luaopen_wait(lua_State *L);
 extern bool draw_waiting(lua_State *L);
@@ -25,5 +29,7 @@ extern bool is_waiting();
 
 extern void create_particles_thread();
 extern void free_particles_thread();
-extern void thread_particle_new_keyframes(int nb_keyframes);
 extern void free_profile_thread();
+
+extern void copy_surface_to_texture(SDL_Surface *s);
+extern GLenum sdl_gl_texture_format(SDL_Surface *s);

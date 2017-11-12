@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -35,10 +35,20 @@ newEntity{
 		ranged_project={
 			[DamageType.BLEED] = resolvers.mbonus_material(15, 5)
 		},
-		special_on_crit = {desc="wounds the target", fct=function(combat, who, target)
-			local dam = 5 + (who:combatPhysicalpower()/5)
+		special_on_crit = {
+		desc=function(self, who, special)
+			local dam, hf = special.wound(self.combat, who)
+			return ("wounds the target for 7 turns: %d bleeding, %d%% reduced healing"):format(dam, hf)
+		end,
+		wound=function(combat, who)
+			local dam = 5 + (who:combatPhysicalpower(nil, combat)/5)
+			local hf = 150*dam/(dam + 25) -- limit healing loss < 150%
+			return dam, hf
+		end,
+		fct=function(combat, who, target, dam, special)
 			if target:canBe("cut") then
-				target:setEffect(target.EFF_DEEP_WOUND, 7, {src=who, heal_factor=dam * 2, power=dam, apply_power=who:combatAttack()})
+				local dam, hf = special.wound(combat, who)
+				target:setEffect(target.EFF_DEEP_WOUND, 7, {src=who, heal_factor=hf, power=dam, apply_power=who:combatAttack()})
 			end
 		end},
 	},

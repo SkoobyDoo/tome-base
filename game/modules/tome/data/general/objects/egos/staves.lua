@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -651,6 +651,9 @@ newEntity{
 	level_range = {1, 50},
 	rarity = 15,
 	cost = 25,
+	combat = {
+		accuracy_effect_scale = 0.5,
+	},
 	wielder = {
 	},
 	resolvers.genericlast(function(e)
@@ -670,6 +673,9 @@ newEntity{
 	greater_ego = 1,
 	rarity = 35,
 	cost = 60,
+	combat = {
+		accuracy_effect_scale = 0.5,
+	},
 	wielder = {
 		combat_atk = resolvers.mbonus_material(10, 5),
 		combat_dam = resolvers.mbonus_material(10, 5),

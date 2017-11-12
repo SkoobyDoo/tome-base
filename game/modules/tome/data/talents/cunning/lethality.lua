@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,12 +23,18 @@ newTalent{
 	mode = "passive",
 	points = 5,
 	require = cuns_req1,
-	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.75) end,
+	critpower = function(self, t) return self:combatTalentScale(t, 7.5, 20, 0.1) end,
+	-- called by _M:combatCrit in mod.class.interface.Combat.lua
+	getCriticalChance = function(self, t) return self:combatTalentScale(t, 2.3, 7.5, 0.1) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "combat_critical_power", t.critpower(self, t))
+	end,
 	info = function(self, t)
 		local critchance = t.getCriticalChance(self, t)
-		return ([[You are trained to strike critical areas when fighting, and have a %d%% increased critical strike chance.
-		Also, when using knives, you use your Cunning instead of your Strength for bonus damage.]]):
-		format(critchance)
+		local power = t.critpower(self, t)
+		return ([[You have learned to find and hit weak spots. All your strikes have a %0.1f%% greater chance to be critical hits, and your critical hits do %0.1f%% more damage.
+		Also, when using knives and throwing knives, you now use your Cunning instead of your Strength for bonus damage.]]):
+		format(critchance, power)
 	end,
 }
 
@@ -40,35 +46,48 @@ newTalent{
 	cooldown = 10,
 	stamina = 15,
 	require = cuns_req2,
-	tactical = { ATTACK = {weapon = 2} },
+	tactical = { ATTACK = {weapon = 2}, BUFF = 1 },
 	requires_target = true,
 	is_melee = true,
 	range = 1,
+	message = false,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.4) end,
-	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 8)) end, --Limit to <12
-	getBonusDamage = function(self, t) return 4 + self:combatTalentStatDamage(t, "cun", 4, 40) end,
+	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.8, 1.1) end,
+	getAPR = function(self, t) return math.floor(self:combatTalentScale(t, 4, 10, 0.75)) end,
+	getAccuracy = function(self, t) return self:combatTalentScale(t, 2, 5) + self:combatStatScale("cun", 2, 5) end,
+	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 4, 7)) end, --Limit to <10
+	getBonusDamage = function(self, t) return 4 + self:combatTalentStatDamage(t, "cun", 4, 20) end,
+	penetration = function(self, t) return self:combatTalentLimit(t, 50, 10, 25) end,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "combat_apr", t.getAPR(self, t))
+	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local _, x, y = self:canProject(tg, self:getTarget(tg))
 		local target = game.level.map(x, y, game.level.map.ACTOR)
 		if not target then return nil end
 
+		-- Note: this has a built in advantage for dual wielders
+		self:setEffect(self.EFF_EXPOSE_WEAKNESS, t.getDuration(self, t), {target=target, power=t.getBonusDamage(self, t), penetration=t.penetration(self, t), accuracy=t.getAccuracy(self, t)})
+		
+		local eff = self:hasEffect(self.EFF_EXPOSE_WEAKNESS)
+
+		self:logCombat(target, "#Source# #GOLD#tests the defenses#LAST# of #target#.")
 		local hitted = self:attackTarget(target, nil, t.getDamage(self, t), true)
 
-		if hitted then
-			target:setEffect(target.EFF_EXPOSE_WEAKNESS, t.getDuration(self,t), {src = self, power=t.getBonusDamage(self,t), apply_power=self:combatAttack()})
-		end
+		eff.find_weakness = false -- stop accumulating bonuses
 
 		return true
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
-		local bonus = t.getBonusDamage(self, t)
+		local bonus = damDesc(self, DamageType.PHYSICAL, t.getBonusDamage(self, t))
 		local duration = t.getDuration(self, t)
-		return ([[Attack your target with both weapons for %d%% damage, exposing flaws in their defences for %d turns. Exposed targets have their armor hardiness reduced by 50%%, and your attacks gain 50%% resistance penetration and deal a bonus %0.2f physical damage. 
-		The bonus damage will increase with your Cunning, and the chance to expose will increase with your Accuracy.]]):
-		format(100 * damage, duration, damDesc(self, DamageType.PHYSICAL, bonus))
+		return ([[Focus on a single target and perform a probing attack to find flaws in its defences, striking with your melee weapon(s) for %d%% damage.
+		For %d turns thereafter, your attacks against that target gain %d (effective) accuracy for each probing strike that missed, plus %0.1f (effective) bonus weapon damage and %d%% additional weapon resistance penetration for each probing strike that hit.
+		Learning this technique allows you to permanently gain %d armour penetration with all melee and archery attacks.
+		The bonuses to accuracy and damage increase with Cunning.]]):
+		format(100 * damage, duration, t.getAccuracy(self, t), bonus, t.penetration(self, t), t.getAPR(self, t))
 	end,
 }
 
@@ -81,15 +100,20 @@ newTalent{
 	cooldown = 30,
 	sustain_stamina = 50,
 	tactical = { BUFF = 2 },
-	drain_stamina = 6,
+	drain_stamina = 4,
 	no_break_stealth = true,
 	no_energy = true,
-	getSpeed = function(self, t) return self:combatTalentScale(t, 0.14, 0.45, 0.75) end,
-	getDamage = function(self, t) return self:combatTalentWeaponDamage(t, 0.2, 0.6) end,
+	getSpeed = function(self, t) return self:combatTalentScale(t, 0.10, 0.30, 0.75) end,
+	getDamage = function(self, t) return 1 end,
 	activate = function(self, t)
-		return {
+		local ret = {
 			combat_physspeed = self:addTemporaryValue("combat_physspeed", t.getSpeed(self, t)),
 		}
+		if core.shader.active(4) then
+			self:talentParticles(ret, {type="shader_shield", args={toback=true,  size_factor=1.2, img="blade_flurry_shieldwall"}, shader={type="rotatingshield", noup=2.0, time_factor=500, appearTime=0.8}})
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1.2, img="blade_flurry_shieldwall"}, shader={type="rotatingshield", noup=1.0, time_factor=500, appearTime=0.8}})
+		end
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		self:removeTemporaryValue("combat_physspeed", p.combat_physspeed)
@@ -118,7 +142,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[Become a whirling storm of blades, increasing attack speed by %d%% and causing melee attacks to strike an additional adjacent target other than your primary target for %d%% weapon damage. 
-This talent is exhausting to use, draining -6 stamina each turn.]]):format(t.getSpeed(self, t)*100, t.getDamage(self,t)*100)
+This talent is exhausting to use, draining 6 stamina each turn.]]):format(t.getSpeed(self, t)*100, t.getDamage(self,t)*100)
 	end,
 }
 
@@ -127,12 +151,12 @@ newTalent{
 	type = {"cunning/lethality",4},
 	require = cuns_req4,
 	points = 5,
-	stamina = 50,
-	cooldown = 50,
+	stamina = 25,
+	cooldown = 30,
 	tactical = { BUFF = 1 },
 	fixed_cooldown = true,
 	getTalentCount = function(self, t) return math.floor(self:combatTalentScale(t, 2, 7, "log")) end,
-	getMaxLevel = function(self, t) return self:getTalentLevel(t) end,
+	getMaxLevel = function(self, t) return math.max(1, self:getTalentLevelRaw(t)) end,
 	speed = "combat",
 	action = function(self, t)
 		local tids = {}

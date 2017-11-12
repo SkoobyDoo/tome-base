@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	self.uis = {}
 
@@ -83,7 +84,7 @@ function _M:generate()
 			for _, lt in ipairs(_M._last_tabs) do if lt.kind then last_kinds[lt.kind] = true end end
 			for j, row in ipairs(self.c_tabs.dlist) do for i, item in ipairs(row) do
 				if sel_all or last_kinds[item.data.kind] then
-					item.selected = true
+					self.c_tabs:setSelected(item, true)
 					found_tab = true
 					self.c_tabs.sel_i, self.c_tabs.sel_j = i, j
 					if sel_all and item.data.filter=="all" then _M._last_tabs_i = i end
@@ -92,7 +93,7 @@ function _M:generate()
 		end
 		if not found_tab then
 			self.c_tabs.sel_i, self.c_tabs.sel_j = 1, 1
-			self.c_tabs.dlist[1][1].selected = true
+			self.c_tabs:setSelected(self.c_tabs.dlist[1][1], true)
 		end
 
 		self.uis[#self.uis+1] = {x=0, y=0, ui=self.c_tabs}
@@ -104,36 +105,10 @@ function _M:generate()
 		end
 	end
 
-	local direct_draw= function(item, x, y, w, h, total_w, total_h, loffset_x, loffset_y, dest_area)
-		-- if there is object and is withing visible bounds
-		if item.object and total_h + h > loffset_y and total_h < loffset_y + dest_area.h then
-			local clip_y_start, clip_y_end = 0, 0
-			-- if it started before visible area then compute its top clip
-			if total_h < loffset_y then
-				clip_y_start = loffset_y - total_h
-			end
-			-- if it ended after visible area then compute its bottom clip
-			if total_h + h > loffset_y + dest_area.h then
-				clip_y_end = total_h + h - loffset_y - dest_area.h
-			end
-			-- get entity texture with everything it has i.e particles
-			
-			-- DGDGDGDG getEntityFinalTexture doesnt exist anymore
-			return 0, 0, 0, 0, 0, 0
-			--[[
-			local texture = item.object:getEntityFinalTexture(nil, h, h)
-			if not texture then return 0, 0, 0, 0, 0, 0 end
-			local one_by_tex_h = 1 / h
-			texture:toScreenPrecise(x, y, h, h - clip_y_start - clip_y_end, 0, 1, clip_y_start * one_by_tex_h, (h - clip_y_end) * one_by_tex_h)
-			return h, h, 0, 0, clip_y_start, clip_y_end
-			]]
-		end
-		return 0, 0, 0, 0, 0, 0
-	end
 
-	self.c_inven = ListColumns.new{width=self.w, height=self.h - (self.c_tabs and self.c_tabs.h or 0), sortable=true, scrollbar=true, columns=self.columns or {
+	self.c_inven = ListColumns.new{width=self.w, height=self.h - (self.c_tabs and self.c_tabs.h or 0), floating_headers=true, sortable=true, scrollbar=true, columns=self.columns or {
 		{name="", width={33,"fixed"}, display_prop="char", sort="id"},
-		{name="", width={24,"fixed"}, display_prop="object", sort="sortname", direct_draw=direct_draw},
+		{name="", width={24,"fixed"}, display_prop="object", sort="sortname", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
 		{name="Inventory", width=72, display_prop="name", sort="sortname"},
 		{name="Category", width=20, display_prop="cat", sort="cat"},
 		{name="Enc.", width=8, display_prop="encumberance", sort="encumberance"},
@@ -166,6 +141,10 @@ function _M:generate()
 				[{'_F'..i,"ctrl"}] = function() self.c_tabs.sel_j = 1 self.c_tabs.sel_i = i self.c_tabs:onUse("left", true) self.c_tabs:onSelect("key") end,
 			}
 		end
+	end
+
+	for _, ui in ipairs(self.uis) do
+		self.do_container:add(ui.ui.do_container:translate(ui.x, ui.y))
 	end
 
 	self.c_inven:onSelect()
@@ -235,6 +214,7 @@ function _M:updateTabFilterList(list)
 		if item.data.filter == "all" then
 			is_all = true
 			for i, row in ipairs(self.c_tabs.dlist) do for j, item in ipairs(row) do item.selected = item.data.filter ~= "all" end end
+			self.c_tabs:updateSelection()
 			list = self.c_tabs:getAllSelected()
 		end
 	end
@@ -291,7 +271,19 @@ function _M:generateList(no_update)
 			local enc = 0
 			o:forAllStack(function(o) enc=enc+o.encumber end)
 
-			list[#list+1] = { id=#list+1, char=char, name=o:getName(), sortname=o:getName():toString():removeColorCodes(), color=o:getDisplayColor(), object=o, inven=self.actor.INVEN_INVEN, item=item, cat=o.subtype, encumberance=enc, special_bg=self.special_bg }
+			list[#list+1] = {
+				id=#list+1,
+				char=char,
+				name=o:getName(),
+				sortname=o:getName():toString():removeColorCodes(),
+				color=o:getDisplayColor(),
+				object=o,
+				inven=self.actor.INVEN_INVEN,
+				item=item,
+				cat=o.subtype,
+				encumberance=enc,
+				special_bg=self.special_bg,
+			}
 			chars[char] = #list
 			i = i + 1
 		end
@@ -306,6 +298,9 @@ end
 
 function _M:display(x, y, nb_keyframes, ox, oy)
 	self._last_x, _last_y, self._last_ox, self._last_oy = x, y, ox, oy
+
+	self.last_display_x = ox
+	self.last_display_y = oy
 
 	-- UI elements
 	for i = 1, #self.uis do

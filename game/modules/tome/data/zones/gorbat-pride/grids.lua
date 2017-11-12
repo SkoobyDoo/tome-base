@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,3 +22,9 @@ load("/data/general/grids/forest.lua")
 load("/data/general/grids/sand.lua")
 load("/data/general/grids/water.lua")
 load("/data/general/grids/mountain.lua")
+
+newEntity{ base = "GENERIC_LEVER",
+	define_as = "GENERIC_LEVER_SAND",
+	subtype = "sand",
+	image = "terrain/sandfloor.png",
+}

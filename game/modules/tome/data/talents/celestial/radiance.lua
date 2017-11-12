@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,11 +18,7 @@
 -- darkgod@te4.org
 
 function radianceRadius(self)
-	if self:hasEffect(self.EFF_RADIANCE_DIM) then
-		return 1
-	else
-		return self:getTalentRadius(self:getTalentFromId(self.T_RADIANCE))
-	end
+	return self:getTalentRadius(self:getTalentFromId(self.T_RADIANCE))
 end
 
 newTalent{
@@ -31,7 +27,7 @@ newTalent{
 	mode = "passive",
 	require = divi_req1,
 	points = 5,
-	radius = function(self, t) return self:combatTalentScale(t, 3, 7) end,
+	radius = function(self, t) return self:combatTalentLimit(t, 14, 3, 10) end,
 	getResist = function(self, t) return self:combatTalentLimit(t, 100, 25, 75) end,
 	passives = function(self, t, p)
 		self:talentTemporaryValue(p, "radiance_aura", radianceRadius(self))
@@ -57,20 +53,22 @@ newTalent{
 	callbackOnActBase = function(self, t)
 		local radius = radianceRadius(self)
 		local grids = core.fov.circle_grids(self.x, self.y, radius, true)
+		local ss = self:isTalentActive(self.T_SEARING_SIGHT)
+		local ss_talent = self:getTalentFromId(self.T_SEARING_SIGHT)
+		local damage = ss_talent.getDamage(self, ss_talent)
+		local daze = ss_talent.getDaze(self, ss_talent)
+
 		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do local target = game.level.map(x, y, Map.ACTOR) if target and self ~= target then
 			if (self:reactionToward(target) < 0) then
 				target:setEffect(target.EFF_ILLUMINATION, 1, {power=t.getPower(self, t), def=t.getDef(self, t)})
-				local ss = self:isTalentActive(self.T_SEARING_SIGHT)
-				if ss then
-					local dist = core.fov.distance(self.x, self.y, target.x, target.y) - 1
-					local coeff = math.max(0.1, 1 - (0.1*dist)) -- 10% less damage per distance
-					DamageType:get(DamageType.LIGHT).projector(self, target.x, target.y, DamageType.LIGHT, ss.dam * coeff)
-					if ss.daze and rng.percent(ss.daze) and target:canBe("stun") then
-						target:setEffect(target.EFF_DAZED, 3, {apply_power=self:combatSpellpower()})
+				if ss and not target:hasEffect(target.EFF_DAZED) then
+					DamageType:get(DamageType.LIGHT).projector(self, target.x, target.y, DamageType.LIGHT, damage)
+					if daze and rng.percent(ss.daze) and target:canBe("stun") then
+						target:setEffect(target.EFF_DAZED, 5, {apply_power=self:combatSpellpower()})
 					end
 				end
 		end
-		end end end		
+		end end end
 	end,
 	info = function(self, t)
 		return ([[The light of your Radiance allows you to see that which would normally be unseen.
@@ -81,8 +79,6 @@ newTalent{
 	end,
 }
 
--- This doesn't work well in practice.. Its powerful but it leads to cheesy gameplay, spams combat logs, maybe even lags
--- It can stay like this for now but may be worth making better
 newTalent{
 	name = "Searing Sight",
 	type = {"celestial/radiance",3},
@@ -94,7 +90,7 @@ newTalent{
 	tactical = { ATTACKAREA = {LIGHT=1} },
 	sustain_positive = 10,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 1, 35) end,
-	getDaze = function(self, t) return self:combatTalentLimit(t, 35, 5, 20) end,
+	getDaze = function(self, t) return self:combatTalentLimit(t, 35, 5, 25) end,
 	updateParticle = function(self, t)
 		local p = self:isTalentActive(self.T_SEARING_SIGHT)
 		if not p then return end
@@ -102,12 +98,9 @@ newTalent{
 		p.particle = self:addParticles(Particles.new("circle", 1, {toback=true, oversize=1, a=20, appear=4, speed=-0.2, img="radiance_circle", radius=self:getTalentRange(t)}))
 	end,
 	activate = function(self, t)
-		local daze = nil
-		if self:getTalentLevel(t) >= 4 then daze = t.getDaze(self, t) end
 		return {
 			particle = self:addParticles(Particles.new("circle", 1, {toback=true, oversize=1, a=20, appear=4, speed=-0.2, img="radiance_circle", radius=self:getTalentRange(t)})),
-			dam=t.getDamage(self, t),
-			daze=daze,
+			daze=t.getDaze(self, t),
 		}
 	end,
 	deactivate = function(self, t, p)
@@ -115,8 +108,8 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[Your Radiance is so powerful it burns all foes caught in it, doing up to %0.1f light damage (reduced with distance) to all foes caught inside.
-		At level 4 the light is so bright it has %d%% chance to daze them for 3 turns.
+		return ([[Your Radiance is so powerful it burns all foes caught in it, doing %0.1f light damage to all non-dazed foes caught inside.
+		Each enemy effected has a %d%% chance of being dazed for 5 turns.
 		The damage increases with your Spellpower.]]):
 		format(damDesc(self, DamageType.LIGHT, t.getDamage(self, t)), t.getDaze(self, t))
 	end,
@@ -163,14 +156,11 @@ newTalent{
 			)
 			game.zone:addEntity(game.level, proj, "projectile", self.x, self.y)
 		end)
-		
-		-- EFF_RADIANCE_DIM does nothing by itself its just used by radianceRadius
-		self:setEffect(self.EFF_RADIANCE_DIM, 5, {})
 
 		return true
 	end,
 	info = function(self, t)
-		return ([[Fire a glowing orb of light at each enemy within your Radiance.  Each orb will slowly follow its target until it connects dealing %d light damage to anything else it contacts along the way.  When the target is reached the orb will explode dealing %d light damage and healing you for 50%% of the damage dealt.  This powerful ability will dim your Radiance, reducing its radius to 1 for 5 turns.]]):
+		return ([[Fire a glowing orb of light at each enemy within your Radiance.  Each orb will slowly follow its target until it connects dealing %d light damage to anything else it contacts along the way.  When the target is reached the orb will explode dealing %d light damage in radius 1 and healing you for 50%% of the damage dealt.]]):
 		format(t.getMoveDamage(self, t), t.getExplosionDamage(self, t))
 	end,
 }

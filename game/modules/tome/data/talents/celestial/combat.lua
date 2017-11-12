@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ newTalent{
 	range = 10,
 	getDamage = function(self, t) return 7 + self:combatSpellpower(0.092) * self:combatTalentScale(t, 1, 7) end,
 	getShieldFlat = function(self, t)
-		return t.getDamage(self, t) / 2
+		return t.getDamage(self, t)
 	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
@@ -45,7 +45,9 @@ newTalent{
 		return true
 	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
+		if self.turn_procs.weapon_of_light then return end
 		if hitted and self:hasEffect(self.EFF_DAMAGE_SHIELD) and (self:reactionToward(target) < 0) then
+			self.turn_procs.weapon_of_light = true
 			-- Shields can't usually merge, so change the parameters manually
 			local shield = self:hasEffect(self.EFF_DAMAGE_SHIELD)
 			local shield_power = t.getShieldFlat(self, t)
@@ -56,6 +58,7 @@ newTalent{
 			shield.dur = math.max(2, shield.dur)
 
 			-- Limit the number of times a shield can be extended, Bathe in Light also uses this code
+			-- The shield is removed instead of just blocking the extension to prevent scenarios such as maxing it out of combat then engaging, but there are likely better ways
 			if shield.dur_extended then
 				shield.dur_extended = shield.dur_extended + 1
 				if shield.dur_extended >= 20 then
@@ -64,13 +67,12 @@ newTalent{
 				end
 			else shield.dur_extended = 1 end
 		end
-
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)
 		local shieldflat = t.getShieldFlat(self, t)
 		return ([[Infuse your weapon with the power of the Sun, adding %0.1f light damage on each melee hit.
-		Additionally, if you have a temporary damage shield active, melee attacks will increase its power by %d.
+		Additionally, if you have a temporary damage shield active, melee hits will increase its power by %d once per turn.
 		If the same shield is refreshed 20 times it will become unstable and explode, removing it.
 		The damage dealt and shield bonus will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.LIGHT, damage), shieldflat)
@@ -176,7 +178,8 @@ newTalent{
 		local damagepct = t.getLifeDamage(self, t)
 		local damage = t.getDamage(self, t)
 		return ([[Your weapon attacks burn with righteous fury, dealing %d%% of your lost HP as additional Fire damage (up to %d, Current:  %d).
-		Targets struck are also afflicted with a Martyrdom effect that causes them to take %d%% of all damage they deal for 4 turns.]]):
+		Targets struck are also afflicted with a Martyrdom effect that causes them to take %d%% of all damage they deal for 4 turns.
+		The bonus damage can only occur once per turn.]]):
 		format(damagepct*100, t.getMaxDamage(self, t, 10, 400), damage, martyr)
 	end,
 }

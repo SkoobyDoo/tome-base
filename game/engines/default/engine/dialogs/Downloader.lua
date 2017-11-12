@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ function _M:init(t)
 	if fs.exists(self.dest) then
 		self.dest = fs.getRealPath(self.dest)
 	else
-		local _, _, dir, name = self.dest:find("(.+)/([^/]+)$")
+		local _, _, dir, name = self.dest:find("(.+/)([^/]+)$")
 		if dir then
 			self.dest = fs.getRealPath(dir)..fs.getPathSeparator()..name
 		end

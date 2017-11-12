@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ function _M:init(chat, id, width)
 	self.chat = chat
 	self.npc = chat.npc
 	self.player = chat.player
+	self.no_offscreen = "bottom"
 	Dialog.init(self, self.npc.name, width or 500, 400)
 
 	local xoff = 0

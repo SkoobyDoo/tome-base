@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -55,6 +55,7 @@ newEntity{ base = "BASE_NPC_NAGA",
 	level_range = {30, nil}, exp_worth = 1,
 	rarity = 1,
 	max_life = resolvers.rngavg(120,150), life_rating = 16,
+	resolvers.auto_equip_filters{MAINHAND = {subtype="trident"},},
 	resolvers.equip{
 		{type="weapon", subtype="trident", autoreq=true, force_drop=true, special_rarity="trident_rarity"},
 	},
@@ -77,6 +78,9 @@ newEntity{ base = "BASE_NPC_NAGA",
 	rank = 3,
 	female = true,
 	max_life = resolvers.rngavg(110,130), life_rating = 14,
+	resolvers.auto_equip_filters{MAINHAND = {subtype="longbow"},
+		QUIVER = {subtype="arrow"},
+	},
 	resolvers.equip{
 		{type="weapon", subtype="longbow", autoreq=true},
 		{type="ammo", subtype="arrow", autoreq=true},

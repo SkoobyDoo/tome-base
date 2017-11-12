@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -390,6 +390,7 @@ newEffect{
 	parameters = {},
 	activate = function(self, eff)
 		local effStalker = eff.src:hasEffect(eff.src.EFF_STALKER)
+		if not effStalker then game:onTickEnd(function() self:removeEffect(self.EFF_STALKED, true, true) end) return end
 		eff.particleBonus = effStalker.bonus
 		eff.particle = self:addParticles(Particles.new("stalked", 1, { bonus = eff.particleBonus }))
 	end,
@@ -1600,90 +1601,13 @@ newEffect{
 		if rng.percent(chance) then
 			if self:attr("sleep") or self:checkHit(eff.src:combatMindpower(), self:combatMentalResist(), 0, 95, 5) then
 				t.summon_inner_demons(eff.src, self, t)
+				self:removeEffectsFilter({subtype={["sleep"] = true}}, 3) -- Allow the player to actually react to one of the biggest threats in the game before 50 more spawn
 			else
 				eff.dur = 0
 			end
 		end
 	end,
 }
-
-newEffect{
-	name = "PACIFICATION_HEX", image = "talents/pacification_hex.png",
-	desc = "Pacification Hex",
-	long_desc = function(self, eff) return ("The target is hexed, granting it %d%% chance each turn to be dazed for 3 turns."):format(eff.chance) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = {chance=10, power=10},
-	on_gain = function(self, err) return "#Target# is hexed!", "+Pacification Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Pacification Hex" end,
-	-- Damage each turn
-	on_timeout = function(self, eff)
-		if not self:hasEffect(self.EFF_DAZED) and rng.percent(eff.chance) and self:canBe("stun") then
-			self:setEffect(self.EFF_DAZED, 3, {})
-			if not self:checkHit(eff.power, self:combatSpellResist(), 0, 95, 15) then eff.dur = 0 end
-		end
-	end,
-	activate = function(self, eff)
-		if self:canBe("stun") then
-			self:setEffect(self.EFF_DAZED, 3, {})
-		end
-	end,
-}
-
-newEffect{
-	name = "BURNING_HEX", image = "talents/burning_hex.png",
-	desc = "Burning Hex",
-	long_desc = function(self, eff) return ("The target is hexed.  Each time it uses an ability it takes %0.2f fire damage, and talent cooldowns are increased by %s plus 1 turn."):
-		format(eff.dam, eff.power and ("%d%%"):format((eff.power-1)*100) or "")
-	end,
-	type = "mental",
-	subtype = { hex=true, fire=true },
-	status = "detrimental",
-	-- _M:getTalentCooldown(t) in mod.class.Actor.lua references this table to compute cooldowns
-	parameters = {dam=10, power = 1},
-	on_gain = function(self, err) return "#Target# is hexed!", "+Burning Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Burning Hex" end,
-}
-
-newEffect{
-	name = "EMPATHIC_HEX", image = "talents/empathic_hex.png",
-	desc = "Empathic Hex",
-	long_desc = function(self, eff) return ("The target is hexed, creating an empathic bond with its victims. It takes %d%% feedback damage from all damage done."):format(eff.power) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = { power=10 },
-	on_gain = function(self, err) return "#Target# is hexed.", "+Empathic Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Empathic hex" end,
-	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("martyrdom", eff.power)
-	end,
-	deactivate = function(self, eff)
-		self:removeTemporaryValue("martyrdom", eff.tmpid)
-	end,
-}
-
-newEffect{
-	name = "DOMINATION_HEX", image = "talents/domination_hex.png",
-	desc = "Domination Hex",
-	long_desc = function(self, eff) return ("The target is hexed, temporarily changing its faction to %s."):format(engine.Faction.factions[eff.faction].name) end,
-	type = "mental",
-	subtype = { hex=true, dominate=true },
-	status = "detrimental",
-	parameters = {},
-	on_gain = function(self, err) return "#Target# is hexed.", "+Domination Hex" end,
-	on_lose = function(self, err) return "#Target# is free from the hex.", "-Domination hex" end,
-	activate = function(self, eff)
-		self:setTarget() -- clear ai target
-		eff.olf_faction = self.faction
-		self.faction = eff.src.faction
-	end,
-	deactivate = function(self, eff)
-		self.faction = eff.olf_faction
-	end,
-}
-
 
 newEffect{
 	name = "DOMINATE_ENTHRALL", image = "talents/yeek_will.png",
@@ -1735,6 +1659,7 @@ newEffect{
 	activate = function(self, eff)
 		eff.tmpid = self:addTemporaryValue("combat_atk", eff.power)
 		eff.bid = self:addTemporaryValue("blind_fight", 1)
+		self:effectParticles(eff, {type="perfect_strike", args={radius=1}})
 	end,
 	deactivate = function(self, eff)
 		self:removeTemporaryValue("combat_atk", eff.tmpid)
@@ -2979,10 +2904,12 @@ newEffect{
 	parameters = { power=10 },
 	activate = function(self, eff)
 		self:effectTemporaryValue(eff, "die_at", -eff.power)
-		eff.particle = self:addParticles(Particles.new("darkness_power", 1))
+		self:effectParticles(eff, {type="darkness_power"})
+		if core.shader.active() then
+			self:effectParticles(eff, {type="circle", args={shader=true, oversize=1.5, a=225, appear=8, speed=0, img="shadow_decoy_aura", base_rot=0, radius=0}})
+		end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
 	end,
 }
 
@@ -3031,7 +2958,7 @@ newEffect{
 					self:attackTargetWith(target, o.combat, nil, t.getWeaponDamage(self, t))
 				end
 			end
-			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarmed") then
+			if self:getTalentLevelRaw(t) >= 3 and target:canBe("disarm") then
 				target:setEffect(target.EFF_DISARMED, 3, {apply_power=self:combatMindpower()})
 			end
 		end
@@ -3063,7 +2990,7 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		self:removeParticles(eff.particle)
+		if eff.particle then self:removeParticles(eff.particle) end
 	end,
 }
 
@@ -3343,5 +3270,55 @@ newEffect{
 			[Stats.STAT_WIL] = eff.dur,
 			[Stats.STAT_CUN] = eff.dur,
 		})
+	end,
+}
+
+newEffect{
+	name = "EXPOSE_WEAKNESS", image = "talents/expose_weakness.png",
+	desc = "Exploiting Weaknesses",
+	long_desc = function(self, eff)
+		local bonuses = {}
+		if eff.bonus_accuracy > 0 then table.insert(bonuses, ("have %+d accuracy"):format(eff.bonus_accuracy)) end
+		if eff.bonus_power > 0 then table.insert(bonuses, ("deal %+0.1f damage"):format(eff.bonus_power)) end
+		if eff.bonus_pen > 0 then table.insert(bonuses, ("have %+d%% resistance penetration"):format(eff.bonus_pen)) end
+		if #bonuses > 0 then bonuses = table.concatNice(bonuses, ", ", " and ") else bonuses = "are not affected" end
+		return ("You are focused on weaknesses you have found in your target's defences.  Your melee attacks against %s %s."):format(eff.target and eff.target.name:capitalize() or "noone", bonuses)
+	end,
+	type = "mental",
+	subtype = { tactical=true},
+	status = "beneficial",
+	parameters = {power=10, hardiness=10, penetration=10, accuracy=0, find_weakness=true},
+	on_gain = function(self, eff) return ("#Target# #GOLD#focuses on weaknesses#LAST# in %s's defenses!"):format(eff.target and eff.target.name:capitalize() or self:his_her().." target"), "+Expose Weakness" end,
+	on_lose = function(self, eff) return "#Target#'s attacks are less focused.", "-Expose Weakness" end,
+	on_timeout = function(self, eff)
+		eff.find_weakness = false
+		if not eff.target or eff.target.dead or not game.level:hasEntity(eff.target) then
+			self:removeEffect(eff.effect_id)
+		end
+	end,
+	activate = function(self, eff)
+		eff.bonus_power = 0
+		eff.bonus_accuracy = 0
+		eff.bonus_pen = 0
+	end,
+	deactivate = function(self, eff)
+	end,
+	-- pre attack: assign bonuses already set up  Note: This is post rescaleCombatStats (i.e. applied directly)
+	callbackOMeleeAttackBonuses = function(self, eff, hd)
+		if not eff.find_weakness then
+			hd.atk = hd.atk + eff.bonus_accuracy
+			hd.dam = hd.dam + eff.bonus_power
+		end
+	end,
+	-- after attack, accumulate weakness bonuses (1 turn only) based on combat result
+	callbackOnMeleeAttack = function(self, eff, target, hitted, crit, weapon, damtype, mult, dam)
+		if eff.find_weakness then -- compile bonuses
+			if hitted then
+				eff.bonus_power = eff.bonus_power + eff.power
+				eff.bonus_pen = eff.bonus_pen + eff.penetration
+			else -- missed, add accuracy
+				eff.bonus_accuracy = eff.bonus_accuracy + eff.accuracy
+			end
+		end
 	end,
 }

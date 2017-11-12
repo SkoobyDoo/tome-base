@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -172,10 +172,12 @@ newTalent{
 	getRechargeRate = function(self, t) return self:combatTalentLimit(t, 5, 35, 10) end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/spell_generic2")
-		return {
+		local ret = {
 			value = 0,
 			__update_display = true,
 		}
+		self:talentParticles(ret, {type="perfect_strike", args={radius=1, img="spinningwinds_doomed_deflection"}})
+		return ret
 	end,
 	deactivate = function(self, t, p)
 		if p.particles then self:removeParticles(p.particles) end

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ function _M:init(t)
 	self.on_number_change = on_change
 	self.min = t.min or 0
 	self.max = t.max or 9999999
+	self.step = t.step or 1
 	self.first = true
 end
 
@@ -44,36 +45,43 @@ function _M:generate()
 
 	self.key:addIgnore("_UP", false)
 	self.key:addIgnore("_DOWN", false)
-	self.key:addBind("ACCEPT", function() self.fct(self.number) end)
+	self.key:addBind("ACCEPT", function()
+		local old = self.number
+		self:updateText(0)
+		if old == self.number then
+			self.fct(self.number)
+		end
+	end)
 
 	self.key:addCommands{
-		_UP = function() self:updateText(1) end,
-		_DOWN = function() self:updateText(-1) end,
+		_UP = function() self:updateText(self.step) end,
+		_DOWN = function() self:updateText(-self.step) end,
 		__TEXTINPUT = function(c)
 			if self.first then self.first = false self.tmp = {} self.cursor = 1 end
-			if #self.tmp and ((self.cursor == 1 and c == '-') or (c >= '0' and c <= '9')) then
+			if #self.tmp and ((self.cursor == 1 and c == '-') or (c >= '0' and c <= '9') or c == '.') then
 				table.insert(self.tmp, self.cursor, c)
 				self.cursor = self.cursor + 1
 				self.scroll = util.scroll(self.cursor, self.scroll, self.max_display)
-				self:updateText()
+				self:updateText(nil, true)
 			end
 		end,
 	}
 end
 
-function _M:updateText(v)
+function _M:updateText(v, no_limits)
 	self.first = false
 	local old = self.number
 	if not v then
-		self.number = self.tmp and tonumber(table.concat(self.tmp)) or 0
-		self.number = util.bound(self.number, self.min, self.max)
+		self.number = self.tmp and tonumber(table.concat(self.tmp)) or self.min
+		if not no_limits then self.number = util.bound(self.number, self.min, self.max) end
 		Textbox.updateText(self)
 	else
-		self.number = self.number or 0
-		self.number = util.bound(self.number + v, self.min, self.max)
+		self.number = tonumber(self.number) or self.min
+		if not no_limits then self.number = util.bound(self.number + v, self.min, self.max) end
 		text = tostring(self.number)
 		Textbox.setText(self, text)
 	end
 
 	if self.on_number_change and old ~= self.number then self.on_number_change(self.number) end
 end
+

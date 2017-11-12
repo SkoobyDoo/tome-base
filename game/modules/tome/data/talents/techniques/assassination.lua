@@ -66,25 +66,24 @@ newTalent{
 			end
 		end
 
-		if target.dead then
+		if target.dead and self:knowTalent(self.T_STEALTH) then
 			game:onTickEnd(function()
-				if self:knowTalent(self.T_STEALTH) and not self:isTalentActive(self.T_STEALTH)  then
+				if not self:isTalentActive(self.T_STEALTH) then
 					self.hide_chance = 1000
-					self.talents_cd[self.T_STEALTH] = 0
+					self.talents_cd["T_STEALTH"] = 0
+					game.logSeen(self, "#GREY#%s slips into shadow.", self.name:capitalize())
 					self:forceUseTalent(self.T_STEALTH, {ignore_energy=true, silent = true})
 					self.hide_chance = nil
 				end
 			end)
 		end
-
 		return true
-
 	end,
 	info = function(self, t)
 		dam = t.getDamage(self,t)*100
 		perc = t.getPercent(self,t)*100
-		return ([[Attempt to finish off a wounded enemy, striking them with both weapons for %d%% weapon damage, plus additional physical damage for each hit that lands equal to %d%% of their missing life (divided by rank: from 1 (critter) to 5 (elite boss)). 
-		A target brought below 20%% of its maximum life may be instantly slain, which you may take advantage of to slip back into stealth if it's not on cooldown.]]):
+		return ([[Attempt to finish off a wounded enemy, striking them with both weapons for %d%% weapon damage, plus additional physical damage for each hit that lands equal to %d%% of their missing life (divided by rank: from 1 (critter) to 5 (elite boss)).  A target brought below 20%% of its maximum life may be instantly slain.
+		You may take advantage of finishing your foe this way to activate stealth (if known).]]):
 		format(dam, perc)
 	end,
 }
@@ -108,8 +107,9 @@ newTalent{
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
 		local duration = t.getDuration(self,t)
-		return ([[When you exit stealth, you reveal yourself dramatically, intimitading foes around you. 
-		All enemies that witness you leaving stealth within radius %d will be stricken with terror, which randomly inflicts stun, slow (40%% power), or confusion (50%% power) for %d turns.]])
+		return ([[When you exit stealth, you reveal yourself dramatically, intimidating foes around you. 
+		All foes within radius %d that witness you leaving stealth will be stricken with terror, which randomly inflicts stun, slow (40%% power), or confusion (50%% power) for %d turns.
+		The chance to terrorize improves with your combat accuracy.]])
 		:format(radius, duration)
 	end,
 }
@@ -125,24 +125,32 @@ newTalent{
 	requires_target = true,
 	getDamage = function (self, t) return self:combatTalentWeaponDamage(t, 0.2, 0.6) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 3, 7)) end,
-	getPower = function(self, t) return self:combatTalentLimit(t, 100, 8, 25) end, -- Limit < 100%
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	range = 1,
+	passives = function(self, t, p)
+		self:talentTemporaryValue(p, "show_gloves_combat", 1)
+	end,
 	callbackOnMeleeAttack = function(self, t, target, hitted, crit, weapon, damtype, mult, dam)
 		local dam = t.getDamage(self,t)
-		if target and self:isTalentActive(self.T_STEALTH) and not self:isTalentCoolingDown(t) then
-			if core.fov.distance(self.x, self.y, target.x, target.y) > 1 then return end
-			target:setEffect(target.EFF_GARROTE, t.getDuration(self, t), {power=dam, reduce=t.getPower(self,t), src=self, apply_power=self:combatAttack()})
+		if target and not target.dead and self:isTalentActive(self.T_STEALTH) and not self:isTalentCoolingDown(t) and core.fov.distance(self.x, self.y, target.x, target.y) <= 1 then
 			self:startTalentCooldown(t)
+			-- check takes the place of normal melee hit chance
+			if not self:checkHit(self:combatAttack(), target:combatPhysicalResist()) or not target:canBe("pin") then
+				self:logCombat(target, "#Target# avoids a garrote from #Source#!")
+				return
+			end
+			local silence = target:canBe("silence") and math.ceil(t.getDuration(self, t)/2) or 0
+			target:setEffect(target.EFF_GARROTE, t.getDuration(self, t), {power=dam, src=self, silence=silence})
 		end
 	end,
 	info = function(self, t)
 		local damage = t.getDamage(self, t)*100
 		local dur = t.getDuration(self,t)
-		local reduce = t.getPower(self,t)
-		return ([[On attacking from stealth, you slip a garrote over the target’s neck (or other vulnerable part) and attempt to strangle them for %d turns. Strangled targets are pinned, deal %d%% reduced damage and suffer an automatic unarmed attack for %d%% damage each turn. 
-		This effect ends immediately if you are no longer adjacent to your target.]])
-		:format(dur, reduce, damage)
+		local sdur = math.ceil(t.getDuration(self,t)/2)
+		return ([[When attacking from stealth, you slip a garrote over the target’s neck (or other vulnerable part).  This strangles for %d turns and silences for %d turns.  Strangled targets are pinned and suffer an automatic unarmed attack for %d%% damage each turn. 
+		Your chance to apply the garrote increases with your Accuracy and you must stay adjacent to your target to maintain it.
+		This talent has a cooldown.]])
+		:format(dur, sdur, damage)
 	end,
 }
 
@@ -152,13 +160,13 @@ newTalent{
 	require = techs_dex_req_high4,
 	points = 5,
 	cooldown = 25,
-	stamina = 30,
 	range = 10,
+	stamina = 30,
 	requires_target = true,
 	no_break_stealth = true,
 	tactical = { ATTACK = { PHYSICAL = 2 }, BUFF = 1},
-	getPower = function(self, t) return self:combatTalentScale(t, 10, 25) end,
-	getPercent = function(self, t) return self:combatTalentLimit(t, 100, 5, 25) end,
+	getPower = function(self, t) return self:combatTalentScale(t, 15, 40) end,
+	getPercent = function(self, t) return self:combatTalentLimit(t, 50, 10, 40) end,
 	getDamage = function(self,t) return self:combatTalentStatDamage(t, "dex", 15, 180) end,
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t), talent=t}
@@ -166,12 +174,12 @@ newTalent{
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
-		if not x or not y then return nil end
+		if not (x and y) or not self:canProject(tg, x, y) then return nil end
 		
 		self:project(tg, x, y, function(px, py)
 		    target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return end
-				target:setEffect(target.EFF_MARKED_FOR_DEATH, 6, {src=self, power=t.getPower(self,t), perc=t.getPercent(self,t)/100, dam = t.getDamage(self,t), stam = t.stamina, max_dur=6})
+				target:setEffect(target.EFF_MARKED_FOR_DEATH, 4, {src=self, power=t.getPower(self,t), perc=t.getPercent(self,t)/100, dam = t.getDamage(self,t), stam = t.stamina, max_dur=4})
 		end)
 
 		return true
@@ -180,10 +188,10 @@ newTalent{
 		power = t.getPower(self,t)
 		perc = t.getPercent(self,t)
 		dam = t.getDamage(self,t)
-		return ([[You mark a target for death for 6 turns, causing them to take %d%% increased damage from all sources. When this effect ends they will immediately take physical damage equal to %0.2f plus %d%% of all damage taken while marked.
+		return ([[You mark a target for death for 4 turns, causing them to take %d%% increased damage from all sources. When this effect ends they will immediately take physical damage equal to %0.2f plus %d%% of all damage taken while marked.
 		If a target dies while marked, the cooldown of this ability is reset and the cost refunded.
 		This ability can be used without breaking stealth.
 		The base damage dealt will increase with your Dexterity.]]):
-		format(power, damDesc(self, DamageType.DARKNESS, dam), perc)
+		format(power, damDesc(self, DamageType.PHYSICAL, dam), perc)
 	end,
 }

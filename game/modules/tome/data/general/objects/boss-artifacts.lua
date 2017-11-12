@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	define_as = "KHULMANAR_WRATH",
 	name = "Khulmanar's Wrath", color = colors.DARK_RED, image = "object/artifact/hellfire.png",
 	unided_name = "firey blackened battleaxe", unique = true,
-	moddable_tile = "special/hellfire",
+	moddable_tile = "special/%s_hellfire",
 	moddable_tile_big = true,
 	desc = [[Blackened with soot and covered in spikes, this battleaxe roars with the flames of the Fearscape. Given by Urh'Rok himself to his general, this powerful weapon can burn even the most resilient of foes.]],
 	level_range = {37, 50},
@@ -169,7 +169,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	define_as = "GAPING_MAW",
 	name = "The Gaping Maw", color = colors.SLATE, image = "object/artifact/battleaxe_the_gaping_maw.png",
 	unided_name = "huge granite battleaxe", unique = true,
-	moddable_tile = "special/battleaxe_the_gaping_maw",
+	moddable_tile = "special/%s_battleaxe_the_gaping_maw",
 	moddable_tile_big = true,
 	desc = [[This huge granite battleaxe is as much mace as it is axe.  The shaft is made of blackened wood tightly bound in drakeskin leather and the sharpened granite head glistens with a viscous green fluid.]],
 	level_range = {38, 50},

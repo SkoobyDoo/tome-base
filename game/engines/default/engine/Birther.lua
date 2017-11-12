@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -267,9 +267,8 @@ function _M:updateList()
 		item.char = self:makeKey(i-1)
 		self.list.chars[item.char] = i
 	end
-	self.c_list.list = self.list
 	self.c_list.columns[2].name = (self.step_names[self.current_type] or self.current_type:capitalize())
-	self.c_list:generate()
+	self.c_list:setList(self.list)
 end
 
 --- Returns to the previous birth descriptor specified in order
@@ -360,14 +359,14 @@ function _M:apply()
 	self.actor.descriptor = {}
 	local stats, inc_stats = {}, {}
 	for i, d in ipairs(self.descriptors) do
-		print("[BIRTHER] Applying descriptor "..(d.name or "none"))
+		print("[BIRTHER] Applying descriptor "..(d.type or "untyped").."."..(d.name or "none"))
 		self.actor.descriptor[d.type or "none"] = (d.name or "none")
 
 		if d.copy then
 			local copy = table.clone(d.copy, true)
 			-- Append array part
 			while #copy > 0 do
-				local f = table.remove(copy)
+				local f = table.remove(copy, 1)
 				table.insert(self.actor, f)
 			end
 			-- Copy normal data
@@ -377,7 +376,7 @@ function _M:apply()
 			local copy = table.clone(d.copy_add, true)
 			-- Append array part
 			while #copy > 0 do
-				local f = table.remove(copy)
+				local f = table.remove(copy, 1)
 				table.insert(self.actor, f)
 			end
 			-- Copy normal data
@@ -410,6 +409,7 @@ function _M:apply()
 		end
 		if d.talents then
 			for tid, lev in pairs(d.talents) do
+				print("[BIRTHER} learning talent", tid, lev)
 				for i = 1, lev do
 					self.actor:learnTalent(tid, true)
 				end

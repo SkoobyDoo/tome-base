@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ local NPC = require "mod.class.NPC"
 local DebugConsole = require "engine.DebugConsole"
 local FlyingText = require "engine.FlyingText"
 local Tooltip = require "mod.class.Tooltip"
-local BigNews = require "mod.class.BigNews"
+local BigNews = require "engine.BigNews"
 
 local Calendar = require "engine.Calendar"
 local Gestures = require "engine.ui.Gestures"
@@ -111,6 +111,7 @@ function _M:runReal()
 	game:setFlyingText(self.flyers)
 
 	self.bignews = BigNews.new(FontPackage:getFont("bignews"))
+	self.bignews:setTextOutline(0.7)
 
 	self.nicer_tiles = NicerTiles.new()
 
@@ -151,9 +152,9 @@ function _M:runReal()
 	end)
 
 	-- Create the map scroll text overlay
-	self.caps_scroll = core.renderer.renderer():color(1, 1, 1, 0.7)
+	self.caps_scroll = core.renderer.renderer("static"):color(1, 1, 1, 0.7)
 	local lfont = FontPackage:get("bignews", true)
-	local txt = core.renderer.text(lfont):text("#GOLD#<Scroll mode, press direction keys to scroll, press again to exit>"):center()
+	local txt = core.renderer.text(lfont):outline(1):text("#GOLD#<Scroll mode, press direction keys to scroll, press again to exit>"):center()
 	self.caps_scroll:add(txt)
 
 	self.inited = true
@@ -236,11 +237,15 @@ function _M:newGame()
 	else
 		self.always_target = config.settings.tome.tactical_mode
 	end
-	local nb_unlocks, max_unlocks = self:countBirthUnlocks()
+	local nb_unlocks, max_unlocks, categories = self:countBirthUnlocks()
+	local unlocks_order = { class=1, race=2, cometic=3, other=4 }
+	local unlocks = {}
+	for cat, d in pairs(categories) do unlocks[#unlocks+1] = {desc=d.nb.."/"..d.max.." "..cat, order=unlocks_order[cat] or 99} end
+	table.sort(unlocks, "order")
 	self.creating_player = true
 	self.extra_birth_option_defs = {}
 	self:triggerHook{"ToME:extraBirthOptions", options = self.extra_birth_option_defs}
-	local birth; birth = Birther.new("Character Creation ("..nb_unlocks.."/"..max_unlocks.." unlocked birth options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
+	local birth; birth = Birther.new("Character Creation ("..table.concat(table.extract_field(unlocks, "desc", ipairs), ", ").." unlocked options)", self.player, {"base", "world", "difficulty", "permadeath", "race", "subrace", "sex", "class", "subclass" }, function(loaded)
 		if not loaded then
 			self.calendar = Calendar.new("/data/calendar_"..(self.player.calendar or "allied")..".lua", "Today is the %s %s of the %s year of the Age of Ascendancy of Maj'Eyal.\nThe time is %02d:%02d.", 122, 167, 11)
 			self.player:check("make_tile")
@@ -593,46 +598,6 @@ function _M:createMapGridLines()
 	if self.level and self.level.map then self.level.map:regenGridLines() end
 end
 
-function _M:createFBOs()
-	print("[GAME] Creating FBOs")
---[[
-	-- Create the framebuffer
-	self.fbo = core.display.newFBO(Map.viewport.width, Map.viewport.height)
-	if self.fbo then
-		self.fbo_shader = Shader.new("main_fbo")
-		self.posteffects = {
-			wobbling = Shader.new("main_fbo/wobbling"),
-			underwater = Shader.new("main_fbo/underwater"),
-			motionblur = Shader.new("main_fbo/motionblur"),
-			blur = Shader.new("main_fbo/blur"),
-			timestop = Shader.new("main_fbo/timestop"),
-			line_grids = Shader.new("main_fbo/line_grids"),
-			gestures = Shader.new("main_fbo/gestures"),
-		}
-		self.posteffects_use = { self.fbo_shader.shad }
-		if not self.fbo_shader.shad then self.fbo = nil self.fbo_shader = nil end
-		self.fbo2 = core.display.newFBO(Map.viewport.width, Map.viewport.height)
-
-		if self.gestures and self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
-	end
-
-	if self.player then self.player:updateMainShader() end
-
-	self.full_fbo = core.display.newFBO(self.w, self.h)
-	if self.full_fbo then self.full_fbo_shader = Shader.new("full_fbo") if not self.full_fbo_shader.shad then self.full_fbo = nil self.full_fbo_shader = nil end end
-
-	if self.fbo and self.fbo2 then core.particles.defineFramebuffer(self.fbo)
-	else core.particles.defineFramebuffer(nil) end
-
-	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
-
-	Map:enableFBORenderer("target_fbo")
-
---	self.mm_fbo = core.display.newFBO(200, 200)
---	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
-]]
-end
-
 function _M:resizeMapViewport(w, h, x, y)
 	x = x and math.floor(x) or Map.display_x
 	y = y and math.floor(y) or Map.display_y
@@ -771,20 +736,41 @@ function _M:onLevelLoadRun()
 	self.on_level_load_fcts[self.zone.short_name.."-"..self.level.level] = nil
 end
 
-function _M:changeLevel(lev, zone, params)
+function _M:noStairsTime()
+	local nb = 2
+	if game.difficulty == game.DIFFICULTY_EASY then nb = 0
+	elseif game.difficulty == game.DIFFICULTY_NIGHTMARE then nb = 3
+	elseif game.difficulty == game.DIFFICULTY_INSANE then nb = 5
+	elseif game.difficulty == game.DIFFICULTY_MADNESS then nb = 9
+	end
+	return nb * 10
+end
+
+function _M:changeLevelCheck(lev, zone, params)
 	params = params or {}
+	if not params.direct_switch and (self:getPlayer(true).last_kill_turn and self:getPlayer(true).last_kill_turn >= self.turn - self:noStairsTime()) and not config.settings.cheat then
+		local left = math.ceil((10 + self:getPlayer(true).last_kill_turn - self.turn + self:noStairsTime()) / 10)
+		self.logPlayer(self.player, "#LIGHT_RED#You may not change level so soon after a kill (%d game turns left to wait)!", left)
+		return false
+	end
 	if not self.player.can_change_level then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not change level without your own body!")
-		return
+		return false
 	end
 	if zone and not self.player.can_change_zone then
 		self.logPlayer(self.player, "#LIGHT_RED#You may not leave the zone with this character!")
-		return
+		return false
 	end
 	if self.player:hasEffect(self.player.EFF_PARADOX_CLONE) or self.player:hasEffect(self.player.EFF_IMMINENT_PARADOX_CLONE) then
 		self.logPlayer(self.player, "#LIGHT_RED#You cannot escape your fate by leaving the level!")
-		return
+		return false
 	end
+	return true
+end
+
+function _M:changeLevel(lev, zone, params)
+	params = params or {}
+	if not self:changeLevelCheck(lev, zone, params) then return end
 
 	-- Transmo!
 	local p = self:getPlayer(true)
@@ -795,8 +781,7 @@ function _M:changeLevel(lev, zone, params)
 		d = self.player:showEquipInven(titleupdator(), nil, function(o, inven, item, button, event)
 			if not o then return end
 			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", self.player, o, item, inven, function(_, _, _, stop)
-				d:generate()
-				d:generateList()
+				d:updateData()
 				d:updateTitle(titleupdator())
 				if stop then self:unregisterDialog(d) end
 			end, true)
@@ -917,7 +902,7 @@ function _M:changeLevelReal(lev, zone, params)
 	end
 
 	-- clear chrono worlds and their various effects
-	if self._chronoworlds then self._chronoworlds = nil end
+	if self._chronoworlds and not params.keep_chronoworlds then self._chronoworlds = nil end
 
 	local left_zone = self.zone
 	local old_lev = (self.level and not zone) and self.level.level or -1000
@@ -1087,15 +1072,15 @@ function _M:changeLevelReal(lev, zone, params)
 			if #list > 0 then x, y = unpack(rng.table(list)) end
 		end
 
-		if self.level.exited then -- use the last location, if defined
-			local turn = 0
-			if self.level.exited.down then
-				x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
-			end
-			if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
-				x, y = self.level.exited.up.x, self.level.exited.up.y
-			end
-		end
+		-- if self.level.exited then -- use the last location, if defined
+		-- 	local turn = 0
+		-- 	if self.level.exited.down then
+		-- 		x, y, turn = self.level.exited.down.x, self.level.exited.down.y, self.level.exited.down.turn or 0
+		-- 	end
+		-- 	if self.level.exited.up and (self.level.exited.up.turn or 0) > turn then
+		-- 		x, y = self.level.exited.up.x, self.level.exited.up.y
+		-- 	end
+		-- end
 
 		if not x then -- Default to stairs
 			if lev > old_lev and not params.force_down and self.level.default_up then x, y = self.level.default_up.x, self.level.default_up.y
@@ -1342,9 +1327,11 @@ function _M:updateZoneName()
 			name = ("%s (%d)"):format(self.zone.name, lev)
 		end
 	end
-	self.zone_name = name
-	self.old_zone_name = self.zone_name -- For compatibility
-	print("Updating zone name", name)
+	if self.zone_name ~= name then
+		self.zone_name = name
+		self.old_zone_name = self.zone_name -- For compatibility
+		print("Updating zone name", name)
+	end
 end
 
 function _M:tick()
@@ -1543,7 +1530,7 @@ end
 
 --- Queue combat damage values and messages for later display with displayDelayedLogDamage
 -- @param src: source (primary) actor dealing the damage
--- @param target: target (secondary) actor recieving the damage
+-- @param target: target (secondary) actor receiving the damage
 -- @param dam: [type=number] damage effectively dealt, added to total
 --		negative dam is counted as healing and summed separately
 -- @param desc: [type=string] text description of damage dealth, passed directly to log message
@@ -1595,6 +1582,67 @@ function _M:updateFOV()
 	self.player:playerFOV()
 end
 
+function _M:createFBOs()
+	print("[GAME] Creating FBOs")
+--[[
+	Map:enableFBORenderer("target_fbo")
+
+--	self.mm_fbo = core.display.newFBO(200, 200)
+--	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end
+]]
+	local effs = { 
+		{ "wobbling", "main_fbo/wobbling" }, 
+		{ "underwater", "main_fbo/underwater" }, 
+		{ "motionblur", "main_fbo/motionblur" }, 
+		{ "blur", "main_fbo/blur" }, 
+		{ "timestop", "main_fbo/timestop" }, 
+		{ "main", "main_fbo" }, 
+		-- line_grids = "main_fbo/line_grids", 
+		-- gestures = "main_fbo/gestures",1
+	}
+	self.posteffects = {}
+	local w, h = core.display.size()
+	local seffs = {}
+	for i, d in ipairs(effs) do
+		local s = Shader.new(d[2])
+		if s.shad then
+			s:setUniform("screenSize", {w, h})
+			seffs[#seffs+1] = {d[1], s.shad}
+			self.posteffects[d[1]] = s.shad
+			if d[1] == "main" then self.fbo_shader = s end
+		end
+	end
+
+	-- local bloom_shader = Shader.new("bloom/bloom")
+	-- local hblur_shader = Shader.new("bloom/hblur") hblur_shader:setUniform("texSize", {w, h})
+	-- local vblur_shader = Shader.new("bloom/vblur") vblur_shader:setUniform("texSize", {w, h})
+	-- local combine_shader = Shader.new("bloom/combine")
+
+	self.full_fbo_shader = Shader.new("full_fbo")
+
+	-- self.fbobloom = core.renderer.target()
+	-- self.fbobloom:bloomMode(20, bloom_shader.shad, hblur_shader.shad, vblur_shader.shad, combine_shader.shad)
+	-- self.fbobloomrenderer = core.renderer.renderer("static"):add(self.fbobloom)
+	-- core.particles.defineBloomFBO(self.fbobloom)
+
+	self.fbo2 = core.renderer.target()
+	self.fbo_posteffects = self.fbo2:postEffectsMode(unpack(seffs))
+	self.fbo_posteffects:enable("main", true)
+	self.fbo2renderer = core.renderer.renderer("static"):add(self.fbo2):enableBlending(false)
+	core.particles.defineAlterFBO(self.fbo2)
+
+	self.fbo = core.renderer.target()
+	self.fborenderer = core.renderer.renderer("static"):add(self.fbo):enableBlending(false)
+
+	self.full_fbo = core.renderer.target()
+	self.full_fbo:shader(self.full_fbo_shader)
+	self.full_fborenderer = core.renderer.renderer("static"):add(self.full_fbo)
+
+	if self.target then self.target:enableFBORenderer("ui/targetshader.png", "target_fbo") end
+
+	if self.player then self.player:updateMainShader() end
+end
+
 function _M:displayMap(nb_keyframes)
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
@@ -1613,44 +1661,32 @@ function _M:displayMap(nb_keyframes)
 		end
 
 		-- Display using Framebuffer, so that we can use shaders and all
-		if self.fbo then
-			if self.level.data.display_prepare then self.level.data.display_prepare(self.level, 0, 0, nb_keyframes) end
-			self.fbo:use(true)
-				if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
-				map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov, self.fbo)
-				if self.level.data.foreground then self.level.data.foreground(self.level, 0, 0, nb_keyframes) end
-				if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
-				if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
-			self.fbo:use(false, self.full_fbo)
-
-			-- 2nd pass to apply distorting particles
-			self.fbo2:use(true)
-				self.fbo:toScreen(0, 0, map.viewport.width, map.viewport.height)
-				core.particles.drawAlterings()
-				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
-				map._map:toScreenLineGrids(map.display_x, map.display_y)
-				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-				if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
-			self.fbo2:use(false, self.full_fbo)
-
-			_2DNoise:bind(1, false)
-			self.fbo2:postEffects(self.fbo, self.full_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
-			if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
-
-		-- Basic display; no FBOs
-		else
-			if self.level.data.background then self.level.data.background(self.level, map.display_x, map.display_y, nb_keyframes) end
-			map:display(nil, nil, nb_keyframes, config.settings.tome.smooth_fov, nil)
-			if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
-			if self.level.data.foreground then self.level.data.foreground(self.level, map.display_x, map.display_y, nb_keyframes) end
+		if self.level.data.display_prepare then self.level.data.display_prepare(self.level, 0, 0, nb_keyframes) end
+		self.fbo:use(true)
+			if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
+			map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov)
+			-- if core.particles.hasBlooms() then
+			-- 	self.fbobloom:use(true) core.particles.drawBlooms() self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+			-- end
+			if self.level.data.foreground then self.level.data.foreground(self.level, 0, 0, nb_keyframes) end
 			if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 			if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
+		self.fbo:use(false, self.full_fbo)
+
+		-- 2nd pass to apply distorting particles
+		self.fbo2:use(true)
+			self.fborenderer:toScreen()
 			core.particles.drawAlterings()
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
 			map._map:toScreenLineGrids(map.display_x, map.display_y)
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(map.display_x, map.display_y, nb_keyframes) end
-		end
+			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
+		self.fbo2:use(false, self.full_fbo)
+
+		-- _2DNoise:bind(1, false)
+		-- self.fbo2:postEffects(self.fbo, self.full_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
+		self.fbo2renderer:toScreen(map.display_x, map.display_y)
+		if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
 
 		-- Handle ambient sounds
 		if self.level.data.ambient_bg_sounds then self.state:playAmbientSounds(self.level, self.level.data.ambient_bg_sounds, nb_keyframes) end
@@ -1661,9 +1697,11 @@ function _M:displayMap(nb_keyframes)
 		map:displayEmotes(nb_keyframe or 1)
 
 		-- Mouse gestures
-		self.gestures:update()
-		-- self.gestures:display(map.display_x, map.display_y + map.viewport.height - self.gestures.font_h - 5)
-		self.gestures:display(map.display_x, map.display_y, nb_keyframes)
+		if self.gestures:update() then
+			-- self.fbobloom:use(true)
+			self.gestures:display(map.display_x, map.display_y, nb_keyframes)
+			-- self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
+		end
 
 		-- Inform the player that map is in scroll mode
 		if self.scroll_lock_enabled then
@@ -1719,7 +1757,7 @@ function _M:display(nb_keyframes)
 
 	if self.full_fbo then
 		self.full_fbo:use(false)
-		self.full_fbo:toScreen(0, 0, self.w, self.h, self.full_fbo_shader.shad)
+		self.full_fbo:toScreen(0, 0)
 	end
 end
 
@@ -1782,7 +1820,7 @@ function _M:setupCommands()
 
 	-- Activate mouse gestures
 	self.gestures = Gestures.new("Gesture: ", self.key, true)
-	if self.posteffects and self.posteffects.gestures and self.posteffects.gestures.shad then self.gestures.shader = self.posteffects.gestures.shad end
+	self.gestures:setTexture("/data/gfx/particles_images/diffuse_point.png")
 
 	-- Helper function to not allow some actions on the wilderness map
 	local not_wild = function(f, bypass) return function(...) if self.zone and (not self.zone.wilderness or (bypass and bypass())) then f(...) else self.logPlayer(self.player, "You cannot do that on the world map.") end end end
@@ -1808,27 +1846,18 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			for _, ip in ipairs{
-				{"armor", "head"},
-			} do
-				for tier = 1, 5 do
-					local special = function(e) return e.material_level == tier and (not ip[3] or ip[3](e)) end
-					local o = game.zone:makeEntity(game.level, "object", {ignore_material_restriction=true, type=ip[1], subtype=ip[2], special=special, not_properties={"unique"}, ego_filter={ego_chance=100}}, nil, true)
-					if o then
-						o:identify(true)
-						game.zone:addEntity(game.level, o, "object", game.player.x, game.player.y)
-					end
-				end
-			end
-do return end
 			self:changeLevel(game.level.level + 1)
+do return end
+			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)
+			local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[Map.ACTOR]=true})
+			if m and x then
+				game.zone:addEntity(game.level, m, "actor", x, y)
+			end
 do return end
 			local f, err = loadfile("/data/general/events/fearscape-portal.lua")
 			print(f, err)
 			setfenv(f, setmetatable({level=self.level, zone=self.zone}, {__index=_G}))
 			print(pcall(f))
-do return end
-			self:registerDialog(require("mod.dialogs.DownloadCharball").new())
 		end end,
 		[{"_f","ctrl"}] = function() if config.settings.cheat then
 			self.player.quests["love-melinda"] = nil
@@ -1989,9 +2018,6 @@ do return end
 		REST = function()
 			self.player:restInit()
 		end,
-		DISARM_TRAP = function()
-			self.player:playerDisarmTrap()
-		end,
 		PICKUP_FLOOR = not_wild(function()
 			if self.player.no_inventory_access then return end
 			self.player:playerPickup()
@@ -2007,8 +2033,7 @@ do return end
 			d = self.player:showEquipInven(titleupdator(), nil, function(o, inven, item, button, event)
 				if not o then return end
 				local ud = require("mod.dialogs.UseItemDialog").new(event == "button", self.player, o, item, inven, function(_, _, _, stop)
-					d:generate()
-					d:generateList()
+					d:updateData()
 					d:updateTitle(titleupdator())
 					if stop then self:unregisterDialog(d) end
 				end)
@@ -2189,18 +2214,7 @@ do return end
 		end,
 
 		SHOW_MAP = function()
-			if config.settings.tome.uiset_mode == "Minimalist" then
-				self.uiset.mm_mode = util.boundWrap((self.uiset.mm_mode or 2) + 1, 1, 3)
-				if self.uiset.mm_mode == 1 then
-					self.uiset.no_minimap = true
-				elseif self.uiset.mm_mode == 2 then
-					self.uiset.no_minimap = false
-				elseif self.uiset.mm_mode == 3 then
-					game:registerDialog(require("mod.dialogs.ShowMap").new(function() self.uiset.mm_mode = 1 self.uiset.no_minimap = true end))
-				end
-			else
-				game:registerDialog(require("mod.dialogs.ShowMap").new())
-			end
+			game:registerDialog(require("mod.dialogs.ShowMap").new())
 		end,
 
 		USERCHAT_SHOW_TALK = function()
@@ -2621,6 +2635,8 @@ unlocks_list = {
 	undead_skeleton = "Race: Skeleton",
 	yeek = "Race: Yeek",
 
+	race_ogre = "Race: Ogre",
+
 	mage = "Class: Archmage",
 	mage_tempest = "Class tree: Storm",
 	mage_geomancer = "Class tree: Stone",
@@ -2639,6 +2655,7 @@ unlocks_list = {
 	wilder_wyrmic = "Class: Wyrmic",
 	wilder_summoner = "Class: Summoner",
 	wilder_oozemancer = "Class: Oozemancer",
+	wilder_stone_warden = "Class: Stone Warden",
 
 	corrupter_reaver = "Class: Reaver",
 	corrupter_corruptor = "Class: Corruptor",
@@ -2661,12 +2678,25 @@ unlocks_list = {
 function _M:countBirthUnlocks()
 	local nb = 0
 	local max = 0
+	local categories = {
+		class = {nb = 0, max = 0},
+		race = {nb = 0, max = 0},
+		cosmetic = {nb = 0, max = 0},
+		other = {nb = 0, max = 0},
+	}
 
-	for name, _ in pairs(self.unlocks_list) do
+	for name, dname in pairs(self.unlocks_list) do
+		local cat = "other"
+		if dname:find("^Class:") then cat = "class"
+		elseif dname:find("^Race:") then cat = "race"
+		elseif dname:find("^Cosmetic:") then cat = "cosmetic"
+		else cat = "other"
+		end
 		max = max + 1
-		if profile.mod.allow_build[name] then nb = nb + 1 end
+		categories[cat].max = categories[cat].max + 1
+		if profile.mod.allow_build[name] then nb = nb + 1 categories[cat].nb = categories[cat].nb + 1 end
 	end
-	return nb, max
+	return nb, max, categories
 end
 
 -- get a text-compatible texture (icon) for an entity

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -480,7 +480,7 @@ newEntity{ base = "BASE_CLOTH_ARMOR", define_as = "FUN_BIKINI",
 
 newEntity{ base = "BASE_CLOTH_ARMOR", define_as = "FUN_MANKINI",
 	unique = true,
-	name = "Mankini", color = colors.RED, image = "object/artifact/bikini.png",
+	name = "Mankini", color = colors.RED, image = "object/artifact/mankini.png",
 	unided_name = "tiny piece of cloth",
 	desc = [[Revealing, green, fun.
 #{bold}#If you never take it off and win you will gain a neat achievement and bragging rights!#{normal}#]],

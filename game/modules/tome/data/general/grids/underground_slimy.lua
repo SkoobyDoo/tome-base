@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,18 +45,18 @@ for i = 1, 5 do newEntity{ base = "UNDERGROUND_CREEP", define_as = "UNDERGROUND_
 
 
 local treesdef = {
-	{"small_slimy_mushroom_01", {"trunk", {"head_%02d", 1, 2}}},
-	{"small_slimy_mushroom_02", {"trunk", {"head_%02d", 1, 6}}},
-	{"small_slimy_mushroom_03", {"trunk", {"head_%02d", 1, 5}}},
-	{"small_slimy_mushroom_04", {"trunk", {"head_%02d", 1, 3}}},
-	{"slimy_mushroom_01", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
-	{"slimy_mushroom_02", {tall=-1, "trunk", {"head_%02d", 1, 3}}},
-	{"slimy_mushroom_03", {tall=-1, "trunk", {"head_%02d", 1, 3}}},
-	{"slimy_mushroom_04", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
-	{"slimy_mushroom_05", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
-	{"slimy_mushroom_06", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
-	{"slimy_mushroom_07", {tall=-1, "trunk", {"head_%02d", 1, 4}}},
-	{"slimy_mushroom_08", {tall=-1, "trunk", {"head_%02d", 1, 4}}},
+	{"slimy_mushroom_01_trunk_head_%02d", 1, 2, tall=-1},
+	{"slimy_mushroom_02_trunk_head_%02d", 1, 3, tall=-1},
+	{"slimy_mushroom_03_trunk_head_%02d", 1, 3, tall=-1},
+	{"slimy_mushroom_04_trunk_head_%02d", 1, 2, tall=-1},
+	{"slimy_mushroom_05_trunk_head_%02d", 1, 2, tall=-1},
+	{"slimy_mushroom_06_trunk_head_%02d", 1, 2, tall=-1},
+	{"slimy_mushroom_07_trunk_head_%02d", 1, 4, tall=-1},
+	{"slimy_mushroom_08_trunk_head_%02d", 1, 4, tall=-1},
+	{"small_slimy_mushroom_01_trunk_head_%02d", 1, 2, tall=0},
+	{"small_slimy_mushroom_02_trunk_head_%02d", 1, 6, tall=0},
+	{"small_slimy_mushroom_03_trunk_head_%02d", 1, 5, tall=0},
+	{"small_slimy_mushroom_04_trunk_head_%02d", 1, 3, tall=0},
 }
 
 newEntity{
@@ -75,6 +75,39 @@ newEntity{
 for i = 1, 30 do
 	newEntity(class:makeNewTrees({base="UNDERGROUND_TREE", define_as = "UNDERGROUND_TREE"..i, image = "terrain/underground_floor.png"}, treesdef, nil, "terrain/mushrooms/"))
 end
+
+newEntity{
+	define_as = "UNDERGROUND_HARDTREE",
+	type = "wall", subtype = "underground",
+	name = "underground thick vegetation",
+	image = "terrain/tree.png",
+	display = '#', color=colors.PURPLE, back_color=colors.UMBER,
+	always_remember = true,
+	can_pass = {pass_tree=1},
+	does_block_move = true,
+	block_sight = true,
+	block_esp = true,
+	block_sense = true,
+	nice_tiler = { method="replace", base={"UNDERGROUND_HARDTREE", 100, 1, 30}},
+}
+for i = 1, 30 do
+	newEntity(class:makeNewTrees({base="UNDERGROUND_HARDTREE", define_as = "UNDERGROUND_HARDTREE"..i, image = "terrain/underground_floor.png"}, treesdef, nil, "terrain/mushrooms/"))
+end
+
+newEntity{
+	define_as = "UNDERGROUND_VAULT",
+	type = "wall", subtype = "underground",
+	name = "huge loose rock", image = "terrain/underground_floor.png", add_mos = {{image="terrain/huge_rock.png"}},
+	display = '+', color=colors.GREY, back_color={r=44,g=95,b=43},
+	notice = true,
+	always_remember = true,
+	block_sight = true,
+	block_sense = true,
+	block_esp = true,
+	is_door = true,
+	door_player_check = "This rock is loose, you think you can move it away.",
+	door_opened = "UNDERGROUND_FLOOR",
+}
 
 newEntity{
 	define_as = "UNDERGROUND_LADDER_DOWN",

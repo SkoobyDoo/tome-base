@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,13 +17,16 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
+
 local points = {}
 
 local basesize = radius * (engine.Map.tile_w + engine.Map.tile_h) / 2
 
 for fork_i = 0, 35 do
-	local tx = math.cos(fork_i * math.pi * 2 / 35) * basesize
-	local ty = math.sin(fork_i * math.pi * 2 / 35) * basesize
+	local rngsize = rng.range(basesize * 0.8, basesize * 1.2)
+	local tx = math.cos(fork_i * math.pi * 2 / 35) * rngsize
+	local ty = math.sin(fork_i * math.pi * 2 / 35) * rngsize
 	local basedir = math.atan2(ty, tx)
 
 	local bc = rng.float(0.8, 1)

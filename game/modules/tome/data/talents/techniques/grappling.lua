@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -283,6 +283,9 @@ newTalent{
 			end
 
 			if game.level.map:checkAllEntities(x, y, "block_move") then return end
+
+			-- local a = util.dirToAngle(util.getDir(grappled.x, self.y, self.x, grappled.y))
+			game.level.map:particleEmitter(grappled.x, grappled.y, 2, "circle", {appear_size=0, base_rot=0, a=250, appear=6, limit_life=4, speed=0, img="hurricane_throw", radius=-0.3})
 
 			local ox, oy = grappled.x, grappled.y
 			grappled:move(x, y, true)

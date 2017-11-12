@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+allow_bloom = true
+
 base_size = 32
 
 return {
@@ -27,8 +29,8 @@ return {
 	life = { 5, 10 },
 	size = { 3, 6 }, sizev = {0, 0}, sizea = {0, 0},
 
-	r = {180, 220}, rv = {0, 0}, ra = {0, 0},
-	g = {240, 255}, gv = {0, 0}, ga = {0, 0},
+	r = {80, 160}, rv = {0, 0}, ra = {0, 0},
+	g = {140, 205}, gv = {0, 0}, ga = {0, 0},
 	b = {220, 240}, bv = {0, 0}, ba = {0, 0},
 	a = {255, 255}, av = {0, 0}, aa = {0, 0},
 
@@ -37,4 +39,5 @@ return {
 	if self.nb < 4 then
 		self.ps:emit(100)
 	end
-end
+end,
+400, "line_particle"

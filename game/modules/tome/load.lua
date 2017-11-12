@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -62,6 +62,7 @@ local DamageType = require "engine.DamageType"
 local Faction = require "engine.Faction"
 local MapEffects = require "mod.class.MapEffects" -- This alters Map
 local Tiles = require "engine.Tiles"
+local HotkeysIcons = require "engine.HotkeysIcons"
 local InventoryUI = require "engine.ui.Inventory"
 local ActorStats = require "engine.interface.ActorStats"
 local ActorResource = require "engine.interface.ActorResource"
@@ -95,12 +96,13 @@ PlayerHotkeys.quickhotkeys_specifics = {
 	end,
 }
 
+HotkeysIcons:loadDefinition("/data/hotkeys/default.lua")
 
 -- Create some noise textures
-local n = core.noise.new(3)
-_3DNoise = n:makeTexture3D(64, 64, 64)
-local n = core.noise.new(2)
-_2DNoise = n:makeTexture2D(64, 64)
+-- local n = core.noise.new(3)
+-- _3DNoise = n:makeTexture3D(64, 64, 64)
+-- local n = core.noise.new(2)
+-- _2DNoise = n:makeTexture2D(64, 64)
 --local n = core.noise.new(3)
 --_2DNoise = n:makeTexture2DStack(64, 64, 64)
 

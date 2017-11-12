@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ newEntity{
 
 	resolvers.racial(),
 	resolvers.talents{ [Talents.T_ARMOUR_TRAINING]=1, },
+	resolvers.auto_equip_filters("Archmage"),
 
 	autolevel = "caster",
 	ai = "dumb_talented_simple", ai_state = { ai_move="move_complex", talent_in=1, },

@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -49,7 +49,6 @@ using namespace std;
 #include "renderer-moderngl/View.hpp"
 #include "renderer-moderngl/DisplayObject.hpp"
 // #include "renderer-moderngl/TextObject.hpp"
-#include "renderer-moderngl/RendererState.hpp"
 #include "renderer-moderngl/RendererGL.hpp"
 //#include "renderer-moderngl/TileMap.hpp"
 

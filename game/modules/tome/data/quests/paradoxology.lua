@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,25 +36,22 @@ on_status_change = function(self, who, status, sub)
 end
 
 generate = function(self, player, x, y)
+	local Talents = require("engine.interface.ActorTalents")
 	local a = mod.class.NPC.new{}
-	a:replaceWith(player:resolveSource():cloneFull())
+	local plr = player:resolveSource()
+	a:replaceWith(plr:cloneActor({rank=4,
+		level_range=self.level_range,
+		faction = "enemies",
+		life=plr.max_life*2, max_life=plr.max_life*2, max_level=table.NIL_MERGE,
+		name = plr.name.." the Paradox Mage",
+		desc = ([[A later (less fortunate?) version of %s, possibly going mad.]]):format(plr.name),
+		killer_message = "but nobody knew why #sex# suddenly became evil",
+		color_r=250, color_g=50, color_b=250,
+		ai = "tactical", ai_state = {talent_in=1},
+		}))
 	mod.class.NPC.castAs(a)
 	engine.interface.ActorAI.init(a, a)
-	a.no_drops = true
-	a.keep_inven_on_death = false
-	a.energy.value = 0
-	a.player = nil
-	a.rank = 4
-	a.name = a.name.." the Paradox Mage"
-	a.color_r = 250 a.color_g = 50 a.color_b = 250
-	a:removeAllMOs()
-	a.ai = "tactical"
-	a.ai_state = {talent_in=1}
-	a.faction = "enemies"
-	a.max_life = a.max_life * 2
-	a.puuid = nil
-	a.life = a.max_life
-
+	
 	-- Remove all talents
 	local tids = {}
 	for tid, _ in pairs(a.talents) do
@@ -62,19 +59,19 @@ generate = function(self, player, x, y)
 		tids[#tids+1] = t
 	end
 	for i, t in ipairs(tids) do
-		if t.mode == "sustained" and a:isTalentActive(t.id) then a:forceUseTalent(t.id, {ignore_energy=true}) end
-		a.talents[t.id] = nil
+		a:unlearnTalentFull(t.id)
 	end
 
-	-- Add talents
-	a:learnTalent(a.T_TEMPORAL_BOLT, true, 3)
-	a:learnTalent(a.T_TIME_SKIP, true, 3)
-	a:learnTalent(a.T_INDUCE_ANOMALY, true, 3)
-	a:learnTalent(a.T_REALITY_SMEARING, true, 3)
-	a:learnTalent(a.T_ASHES_TO_ASHES, true, 4)
-	a:learnTalent(a.T_DUST_TO_DUST, true, 4)
-	a:learnTalent(a.T_SEVER_LIFELINE, true, 5)
-
+	-- And replace them with some paradox talents
+	table.insert(a, resolvers.talents{
+		[Talents.T_TEMPORAL_BOLT]={base=1, every=8, max=5},
+		[Talents.T_TIME_SKIP]={base=1, every=8, max=5},
+		[Talents.T_INDUCE_ANOMALY]={base=1, every=8, max=5},
+		[Talents.T_REALITY_SMEARING]={base=1, every=8, max=5},
+		[Talents.T_ASHES_TO_ASHES]={base=1, every=7, max=6},
+		[Talents.T_DUST_TO_DUST]={base=1, every=7, max=6},
+		[Talents.T_SEVER_LIFELINE]={base=1, every=6, max=7},
+	})
 	a.talent_cd_reduction = a.talent_cd_reduction or {}
 	a.talents_cd[a.T_SEVER_LIFELINE] = 20
 	
@@ -84,12 +81,12 @@ generate = function(self, player, x, y)
 
 	a:incIncStat("wil", 200)
 	a.anomaly_bias = {type = "temporal", chance=100}
-	a.self_resurrect = nil -- In case this is a skeleton player
 	a.on_die = function(self)
 		local o = game.zone:makeEntityByName(game.level, "object", "RUNE_RIFT")
-		o:identify(true)
-		game.zone:addEntity(game.level, o, "object", self.x, self.y)
-
+		if o then
+			o:identify(true)
+			game.zone:addEntity(game.level, o, "object", self.x, self.y)
+		end
 		game.player:setQuestStatus("paradoxology", engine.Quest.COMPLETED, "future-died")
 		world:gainAchievement("PARADOX_FUTURE", p)
 		game.logSeen(self, "#LIGHT_BLUE#Killing your own future self does feel weird, but you know that you can avoid this future. Just do not time travel.")
@@ -126,8 +123,8 @@ generate = function(self, player, x, y)
 			return true
 		end
 	end
-
 	game.zone:addEntity(game.level, a, "actor", x, y)
+	a:resolve()
 
 	local chat = require("engine.Chat").new("paradoxology", a, player)
 	chat:invoke()

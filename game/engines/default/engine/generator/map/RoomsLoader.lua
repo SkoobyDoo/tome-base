@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -576,7 +576,7 @@ function _M:roomCheck(room, zone, level, map)
 		end
 	end
 	if room.roomcheck then 
-		local check, failure = room.roomcheck(room, zone, level, map)
+		local check, failure = room.roomcheck(room, zone, level, map, self)
 		if not check then
 			print("[RoomsLoader:roomCheck] ", room.name, " rejected by roomcheck function:", failure)
 			return false, failure or "roomcheck function"
@@ -669,7 +669,7 @@ function _M:roomPlace(room, id, x, y)
 	self.map.room_map.rooms[#self.map.room_map.rooms+1] = ret -- update the rooms list
 
 	if room.onplace then -- perform any post placement actions
-		room.onplace(room, self.zone, self.level, self.map, ret)
+		room.onplace(room, self.zone, self.level, self.map, ret, self)
 	end
 	
 	return ret

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ _M.iconslist = {
 	{name="tb_lore", file="hotkeys/lore.png", fct=function(button) if button == "left" then game.key:triggerVirtual("SHOW_QUESTS") elseif button == "right" then game:registerDialog(require("mod.dialogs.ShowLore").new("Tales of Maj'Eyal Lore", game.party)) end end, tooltip="Left mouse to show quest log.\nRight mouse to show all known lore."},
 	{name="tb_quest", file="hotkeys/quest.png", fct=function() game.key:triggerVirtual("SHOW_MESSAGE_LOG") end, tooltip="Click to show message/chat log."},
 	{name="tb_mainmenu", file="hotkeys/mainmenu.png", fct=function() game.key:triggerVirtual("EXIT") end, tooltip="Click to show main menu"},
-	{name="tb_padlock_closed", file="padlock_closed.png", fct=function() game.uiset:switchLocked() end, tooltip="Unlock all interface elements so they can be moved and resized."},
-	{name="tb_padlock_open", file="padlock_open.png", no_increment=true, fct=function() game.uiset:switchLocked() end, tooltip="Lock all interface elements so they can not be moved nor resized."},
+	{name="tb_padlock_closed", file="padlock_closed.png", no_increment=true, fct=function() game.uiset:switchLocked() end, tooltip="Unlock all interface elements so they can be moved and resized."},
+	{name="tb_padlock_open", file="padlock_open.png", fct=function() game.uiset:switchLocked() end, tooltip="Lock all interface elements so they can not be moved nor resized."},
 }
 
 function _M:init(minimalist, w, h)
@@ -53,12 +53,13 @@ function _M:init(minimalist, w, h)
 	end
 
 	MiniContainer.init(self, minimalist)
+	self.shutdown_mouse_on_unlock = false
 
 	for _, d in ipairs(self.iconslist) do
 		self.mouse:registerZone(0, 0, self.icon_w, self.icon_h, self:tooltipAll(function(button, mx, my, xrel, yrel, bx, by, event)
 			if event == "button" then d.fct(button)
-			elseif event == "out" then self[d.name]:colorTween("focus", 8, "a", nil, 0.5)
-			elseif event == "motion" then self[d.name]:colorTween("focus", 5, "a", nil, 1)
+			elseif event == "out" then self[d.name]:tween(8, "a", nil, 0.5)
+			elseif event == "motion" then self[d.name]:tween(5, "a", nil, 1)
 			end
 		end, d.tooltip), nil, d.name, true, 1)
 	end
@@ -68,7 +69,7 @@ end
 
 function _M:onFocus(v)
 	if v then return end
-	for _, d in ipairs(self.iconslist) do self[d.name]:colorTween("focus", 8, "a", nil, 0.5) end
+	for _, d in ipairs(self.iconslist) do self[d.name]:tween(8, "a", nil, 0.5) end
 end
 
 function _M:update(nb_keyframes)
@@ -79,11 +80,21 @@ function _M:update(nb_keyframes)
 			self.mouse:updateZone(d.name, x, y, self.icon_w, self.icon_h, nil, self.scale)
 			if not d.no_increment then y = y + self.icon_h end
 		end
+		self.old_orientation = self.orientation
 	end
 	if self.old_locked ~= self.locked then
 		self.tb_padlock_closed:shown(self.locked)
 		self.tb_padlock_open:shown(not self.locked)
+		self.old_locked = self.locked
 	end
+end
+
+function _M:getName()
+	return "Toolbar"
+end
+
+function _M:getMoveHandleLocation()
+	return self.w - self.move_handle_w, 0
 end
 
 function _M:getDefaultGeometry()
@@ -96,7 +107,6 @@ end
 
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
-	self:getDO():translate(x, y, 0)
 end
 
 function _M:resize(w, h)

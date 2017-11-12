@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -476,6 +476,7 @@ newTalent{
 	require = psi_wil_req1,
 	mode = "passive",
 	range = 10,
+	unlearn_on_clone = true,
 	getStatBonus = function(self, t) return self:combatTalentMindDamage(t, 5, 50) end,
 	on_learn = function(self, t)
 		if self:getTalentLevel(t) >= 1 and not self:knowTalent(self.T_TF_BOWMAN) then

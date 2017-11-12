@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ newEntity{ define_as = "DRAEBOR",
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, FEET = 1 },
 	resolvers.drops{chance=100, nb=4, {tome_drops="boss"} },
 	equipment = resolvers.equip{
-		{type="armor", subtype="feet", defined="BOOTS_OF_PHASING", autoreq=true},
+		{type="armor", subtype="feet", defined="BOOTS_OF_PHASING", random_art_replace={chance=75}, autoreq=true},
 	},
 
 	summon = {

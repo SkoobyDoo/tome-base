@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,26 +31,17 @@ function _M:init(t)
 	self.h = assert(t.h, "no actorframe h")
 	self.tiles = t.tiles or Tiles.new(self.w, self.h, nil, nil, true, nil)
 
+	t.request_renderer = true
 	Base.init(self, t)
+	self:setActor(self.actor)
 end
 
 function _M:setActor(actor)
-	self.actor = actor
+	if actor.getDO then
+		self.actor = actor
+		self.do_container:clear():add(self.actor:getDO(self.w, self.h))
+	end
 end
 
 function _M:generate()
-end
-
-function _M:display(x, y, nb_keyframes, ox, oy)
-	local o = self.actor
-	if o and o.toScreen then
-		if o.image then
-			o:toScreen(self.tiles, x, y, self.w, self.h)
-		elseif o.image and o.add_mos then
-			o:toScreen(self.tiles, x, y - h, self.w, self.h * 2)
-		end
-	end
-
-	self.last_display_x = ox
-	self.last_display_y = oy
 end

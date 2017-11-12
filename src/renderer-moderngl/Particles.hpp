@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #define PARTICLES_GL_HPP
 
 #include "renderer-moderngl/Renderer.hpp"
-#include "particles.hpp"
+#include "../particles.hpp"
 
 // This one is a little strange, it is not the master of particles_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around particle code

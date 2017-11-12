@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@ function _M:init()
 	self.generic = {}
 	self.modules = {}
 	self.evt_cbs = {}
+	self.data_log = {log={}}
 	self.stats_fields = {}
 	local checkstats = function(self, field) return self.stats_fields[field] end
 	self.config_settings =
@@ -236,6 +237,7 @@ function _M:loadModuleProfile(short_name, mod_def)
 	-- Delay when we are currently saving
 	if savefile_pipe and savefile_pipe.saving then savefile_pipe:pushGeneric("loadModuleProfile", function() self:loadModuleProfile(short_name) end) return end
 
+	local def = mod_def.profile_defs or {}
 	local function load(online)
 		local pop = self:mountProfile(online, short_name)
 		local d = "/current-profile/modules/"..short_name.."/"
@@ -251,6 +253,12 @@ function _M:loadModuleProfile(short_name, mod_def)
 					else
 						self.modules[short_name][field] = self.modules[short_name][field] or {}
 						self:loadData(f, self.modules[short_name][field])
+						if def[field].incr_only then
+							if not self.modules[short_name][field].incr_only then
+								print("[PROFILE] Old non incremental data for "..field..": discarding")
+								self.modules[short_name][field] = {}
+							end
+						end
 					end
 				end
 			end
@@ -319,6 +327,7 @@ function _M:saveModuleProfile(name, data, nosync, nowrite)
 	if module == "boot" then return end
 	core.game.resetLocale()
 	if not game or not game.__mod_info.profile_defs then return end
+	if game.__mod_info.profile_defs[name].incr_only then print("[PROFILE] data in incr only mode but called with saveModuleProfile", name) return end
 
 	-- Delay when we are currently saving
 	if savefile_pipe and savefile_pipe.saving then savefile_pipe:pushGeneric("saveModuleProfile", function() self:saveModuleProfile(name, data, nosync) end) return end
@@ -364,6 +373,49 @@ function _M:saveModuleProfile(name, data, nosync, nowrite)
 	if not nosync and not game.__mod_info.profile_defs[name].no_sync then self:setConfigs(module, name, data) end
 end
 
+--- Loads the incremental log data
+function _M:incrLoadProfile(mod_def)
+	if not mod_def or not mod_def.short_name then return end
+	local pop = self:mountProfile(true)
+	local file = "/current-profile/modules/"..mod_def.short_name.."/incr.log"
+	if fs.exists(file) then
+		local f, err = loadfile(file)
+		if not f and err then
+			print("Error loading incr log", file, err)
+		else
+			self:loadData(f, self.data_log)
+		end
+	end
+	self:umountProfile(true, pop)
+end
+
+--- Saves a incr profile data
+function _M:incrDataProfile(name, data)
+	if module == "boot" then return end
+	core.game.resetLocale()
+	if not game or not game.__mod_info.profile_defs then return end
+	if not game.__mod_info.profile_defs[name].incr_only then print("[PROFILE] data in non-incr only mode but called with incrDataProfile", name) return end
+
+	-- Delay when we are currently saving
+	if savefile_pipe and savefile_pipe.saving then savefile_pipe:pushGeneric("incrDataProfile", function() self:incrDataProfile(name, data) end) return end
+
+	local module = self.mod_name
+
+	-- Check for readability
+	local dataenv = self.data_log.log
+	dataenv[#dataenv+1] = {module=game.__mod_info.short_name, kind=name, data=data}
+
+	local pop = self:mountProfile(true, module)
+	local f = fs.open("/modules/"..module.."/incr.log", "w")
+	if f then
+		f:write(serialize(self.data_log))
+		f:close()
+	end
+	self:umountProfile(true, pop)
+
+	self:syncIncrData()
+end
+
 function _M:checkFirstRun()
 	local result = self.generic.firstrun
 	if not result then
@@ -386,10 +438,11 @@ function _M:performlogin(login, pass)
 	end
 end
 
-function _M:performloginSteam(token, name, email)
+function _M:performloginSteam(token, name, email, news)
 	self.steam_token = token
 	self.steam_token_name = name
 	if email then self.steam_token_email = email end
+	if news ~= nil then self.steam_token_news = news end
 	print("[ONLINE PROFILE] attempting log in steam", token)
 	self.auth_tried = nil
 	self:tryAuth()
@@ -482,13 +535,22 @@ function _M:waitFirstAuth(timeout)
 	end
 end
 
+function _M:onAuth(fct)
+	if self.auth then fct() return end
+	self.on_auth_cb = self.on_auth_cb or {}
+	self.on_auth_cb[#self.on_auth_cb+1] = fct
+end
+
 function _M:eventAuth(e)
 	self.waiting_auth = false
+	self.connected = true
 	self.auth_tried = (self.auth_tried or 0) + 1
 	if e.ok then
 		self.auth = e.ok:unserialize()
 		print("[PROFILE] Main thread got authed", self.auth.name)
 		self:getConfigs("generic", function(e) self:syncOnline(e.module) end)
+		for _, fct in ipairs(self.on_auth_cb or {}) do fct() end
+		self.on_auth_cb = nil
 	else
 		self.auth_last_error = e.reason or "unknown"
 	end
@@ -499,6 +561,16 @@ function _M:eventGetNews(e)
 		self.evt_cbs.GetNews(e.news:unserialize())
 		self.evt_cbs.GetNews = nil
 	end
+end
+
+function _M:eventIncrLogConsume(e)
+	local module = game.__mod_info.short_name
+	if not module then return end
+	print("[PROFILE] Server accepted our incr log, deleting")
+	local pop = self:mountProfile(true, module)
+	fs.delete("/modules/"..module.."/incr.log")
+	self:umountProfile(true, pop)
+	self.data_log.log = {}
 end
 
 function _M:eventGetConfigs(e)
@@ -540,11 +612,13 @@ end
 
 function _M:eventConnected(e)
 	if game and type(game) == "table" and game.log then game.log("#YELLOW#Connection to online server established.") end
+	print("[PlayerProfile] eventConnected")
 	self.connected = true
 end
 
 function _M:eventDisconnected(e)
 	if game and type(game) == "table" and game.log and self.connected then game.log("#YELLOW#Connection to online server lost, trying to reconnect.") end
+	print("[PlayerProfile] eventDisconnected")
 	self.connected = false
 end
 
@@ -578,7 +652,7 @@ function _M:tryAuth()
 	print("[ONLINE PROFILE] auth")
 	self.auth_last_error = nil
 	if self.steam_token then
-		core.profile.pushOrder(table.serialize{o="SteamLogin", token=self.steam_token, name=self.steam_token_name, email=self.steam_token_email})
+		core.profile.pushOrder(table.serialize{o="SteamLogin", token=self.steam_token, name=self.steam_token_name, email=self.steam_token_email, news=self.steam_token_news})
 	else
 		core.profile.pushOrder(table.serialize{o="Login", l=self.login, p=self.pass})
 	end
@@ -605,14 +679,14 @@ function _M:getConfigs(module, cb, mod_def)
 	if not self.auth then return end
 	self.evt_cbs.GetConfigs = cb
 	if module == "generic" then
-		for k, _ in pairs(generic_profile_defs) do
-			if not _.no_sync then
+		for k, def in pairs(generic_profile_defs) do
+			if not def.no_sync then
 				core.profile.pushOrder(table.serialize{o="GetConfigs", module=module, kind=k})
 			end
 		end
 	else
-		for k, _ in pairs((mod_def or game.__mod_info).profile_defs or {}) do
-			if not _.no_sync then
+		for k, def in pairs((mod_def or game.__mod_info).profile_defs or {}) do
+			if not def.no_sync and not def.incr_only then
 				core.profile.pushOrder(table.serialize{o="GetConfigs", module=module, kind=k})
 			end
 		end
@@ -621,6 +695,15 @@ end
 
 function _M:setConfigsBatch(v)
 	core.profile.pushOrder(table.serialize{o="SetConfigsBatch", v=v and true or false})
+end
+
+function _M:syncIncrData()
+	self:waitFirstAuth()
+	if not self.auth then return end
+	local module = game and game.__mod_info.short_name
+	if not module then return end
+	
+	core.profile.pushOrder(table.serialize{o="SendIncrLog", data=zlib.compress(table.serialize(self.data_log.log))})
 end
 
 function _M:setConfigs(module, name, data)
@@ -658,7 +741,7 @@ function _M:syncOnline(module, mod_def)
 		end
 	else
 		for k, def in pairs((mod_def or game.__mod_info).profile_defs or {}) do
-			if not def.no_sync and def.export and sync[k] then
+			if not def.no_sync and not def.incr_only and def.export and sync[k] then
 				local f = def.export
 				local ret = {}
 				setfenv(f, setmetatable({add=function(d) ret[#ret+1] = d end}, {__index=_G}))
@@ -739,20 +822,22 @@ function _M:sendError(what, err)
 	for _, a in pairs(game.__mod_info.addons or {}) do
 		addons[#addons+1] = a.version_name or "--"
 	end
+	local version = game.__mod_info.version_name
+	if game.__mod_info.version_desc then version = game.__mod_info.version_name.." ("..tostring(game.__mod_info.version_desc)..")" end
 	core.profile.pushOrder(table.serialize{
 		o="SendError",
 		login=self.login,
 		what=what,
 		err=err,
 		module=game.__mod_info.short_name,
-		version=game.__mod_info.version_name,
+		version=version,
 		addons=table.concat(addons, ", "),
 	})
 end
 
 function _M:registerNewCharacter(module)
 	if not self.auth or not self.hash_valid then return end
-	local dialog = Dialog:simpleWaiter("Registering character", "Character is being registered on http://te4.org/")
+	local dialog = Dialog:simpleWaiter("Registering character", "Character is being registered on https://te4.org/")
 	core.display.forceRedraw()
 
 	core.profile.pushOrder(table.serialize{o="RegisterNewCharacter", module=module})
@@ -858,10 +943,10 @@ function _M:currentCharacter(module, title, uuid)
 	print("[ONLINE PROFILE] current character ", title)
 end
 
-function _M:newProfile(Login, Name, Password, Email)
-	print("[ONLINE PROFILE] profile options ", Login, Email, Name)
+function _M:newProfile(Login, Name, Password, Email, Newsletter)
+	print("[ONLINE PROFILE] profile options ", Login, Email, Name, Newsletter)
 
-	core.profile.pushOrder(table.serialize{o="NewProfile2", login=Login, email=Email, name=Name, pass=Password})
+	core.profile.pushOrder(table.serialize{o="NewProfile2", login=Login, email=Email, name=Name, pass=Password, newsletter=Newsletter and 'yes' or 'no'})
 	local id = nil
 	local reason = nil
 	self:waitEvent("NewProfile2", function(e) id = e.uid reason = e.reason end)

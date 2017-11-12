@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,6 +23,38 @@ load("/data/general/objects/lore/sunwall.lua")
 local Stats = require "engine.interface.ActorStats"
 local Talents = require "engine.interface.ActorTalents"
 
+newEntity{ base = "BASE_LORE",
+	define_as = "ARGONIEL_DIAMOND", image = "object/artifact/bloodsoaked_resonating_diamond.png",
+	name = "bloodsoaked diamond", lore="argoniel-1",
+	desc = [[A strangely wet diamond.]],
+	rarity = false,
+	encumberance = 0,
+}
+	
+newEntity{ base = "BASE_LORE",
+	define_as = "ARGONIEL_ATHAME", image = "object/artifact/bloodsoaked_runed_athame.png",
+	name = "bloodsoaked athame", lore="argoniel-2",
+	desc = [[A strangely wet athame.]],
+	rarity = false,
+	encumberance = 0,
+}
+
+newEntity{ base = "BASE_LORE",
+	define_as = "ELANDAR_JOURNAL1",
+	name = "journal", lore="elandar-1", image = "object/artifact/elandars_journal.png",
+	desc = [[A magically-preserved journal.]],
+	rarity = false,
+	encumberance = 0,
+}
+
+newEntity{ base = "BASE_LORE",
+	define_as = "ELANDAR_JOURNAL2",
+	name = "journal", lore="elandar-2", image = "object/artifact/elandars_journal.png",
+	desc = [[A magically-preserved journal.]],
+	rarity = false,
+	encumberance = 0,
+}
+
 -- The staff of absorption, the reason the game exists!
 newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	power_source = {unknown=true},
@@ -35,6 +67,7 @@ newEntity{ define_as = "STAFF_ABSORPTION_AWAKENED", base="BASE_STAFF",
 	display = "\\", color=colors.VIOLET, image = "object/artifact/staff_absorption.png",
 	moddable_tile = "special/%s_awaken_staff_of_absorbtion",
 	encumber = 7,
+	material_level = 5,
 	plot=true,
 	desc = [[Carved with runes of power, this staff seems to have been made long ago, yet it bears no signs of tarnish.
 Light around it seems to dim and you can feel its tremendous power simply by touching it.

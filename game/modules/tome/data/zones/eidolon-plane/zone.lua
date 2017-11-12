@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -56,11 +56,7 @@ return {
 
 		if level.level == 1 then
 			local Map = require "engine.Map"
-			if core.shader.allow("volumetric") then
-				level.starfield_shader = require("engine.Shader").new("starfield", {size={Map.viewport.width, Map.viewport.height}, speed=200})
-			else
-				level.background_particle = require("engine.Particles").new("starfield", 1, {width=Map.viewport.width, height=Map.viewport.height})
-			end
+			level.background_particle = require("engine.Particles").new("starfield", 1, {width=Map.viewport.width, height=Map.viewport.height})
 		end
 
 		game.state:makeWeather(level, 6, {max_nb=1, chance=200, dir=120, speed={0.1, 0.9}, r=0.2, g=0.2, b=0.2, alpha={0.2, 0.4}, particle_name="weather/grey_cloud_%02d"})
@@ -74,12 +70,7 @@ return {
 	background = function(level, x, y, nb_keyframes)
 		if level.level ~= 1 then return end
 
-		local Map = require "engine.Map"
-		if level.starfield_shader and level.starfield_shader.shad then
-			level.starfield_shader.shad:use(true)
-			core.display.drawQuad(x, y, Map.viewport.width, Map.viewport.height, 1, 1, 1, 1)
-			level.starfield_shader.shad:use(false)
-		elseif level.background_particle then
+		if level.background_particle then
 			level.background_particle.ps:toScreen(x, y, true, 1)
 		end
 	end,

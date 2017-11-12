@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -75,7 +75,6 @@ function _M:use(item)
 	elseif act == "change_level" then game.key:triggerVirtual("CHANGE_LEVEL")
 	elseif act == "pickup" then game.key:triggerVirtual("PICKUP_FLOOR")
 	elseif act == "character_sheet" then game:registerDialog(require("mod.dialogs.CharacterSheet").new(item.actor))
-	elseif act == "disarm_trap" then game.player:playerDisarmTrap(self.tmx, self.tmy)
 	elseif act == "quests" then game.key:triggerVirtual("SHOW_QUESTS")
 	elseif act == "levelup" then game.key:triggerVirtual("LEVELUP")
 	elseif act == "inventory" then game.key:triggerVirtual("SHOW_INVENTORY")
@@ -104,8 +103,7 @@ function _M:use(item)
 		d = item.actor:showEquipInven(item.actor.name..": Inventory", nil, function(o, inven, item, button, event)
 			if not o then return end
 			local ud = require("mod.dialogs.UseItemDialog").new(event == "button", actor, o, item, inven, function(_, _, _, stop)
-				d:generate()
-				d:generateList()
+				d:updateData()
 				if stop then game:unregisterDialog(d) end
 			end)
 			game:registerDialog(ud)
@@ -153,8 +151,6 @@ function _M:generateList()
 	if self.on_player then list[#list+1] = {name="Inventory", action="inventory", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if self.on_player then list[#list+1] = {name="Quest Log", action="quests", color=colors.simple(colors.ANTIQUE_WHITE)} end
 	if a then list[#list+1] = {name="Inspect Creature", action="character_sheet", color=colors.simple(colors.ANTIQUE_WHITE), actor=a} end
-	-- check distance?
-	if core.fov.distance(self.tmx, self.tmy, player.x, player.y) <= 1 and player:getTalentLevel(player.T_HEIGHTENED_SENSES) >= 3 or player:attr("can_disarm") then list[#list+1] = {name="Find/Disarm Trap", action="disarm_trap", color=colors.simple(colors.ANTIQUE_WHITE), actor=t} end
 		-- can add extended inspection commands here by including the start tab with the dialog
 	-- space separating inspect from active actions
 	list[#list+1] = {name=" ", action=nil, color=colors.simple(colors.ANTIQUE_WHITE)}

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ local Button = require "engine.ui.Button"
 local Textzone = require "engine.ui.Textzone"
 local Separator = require "engine.ui.Separator"
 local Checkbox = require "engine.ui.Checkbox"
+local Image = require "engine.ui.Image"
 local Savefile = require "engine.Savefile"
 local Downloader = require "engine.dialogs.Downloader"
 
@@ -38,6 +39,14 @@ function _M:init(force_compat)
 	self.c_play = Button.new{text="  Play!  ", fct=function(text) self:playSave() end}
 	self.c_delete = Button.new{text="Delete", fct=function(text) self:deleteSave() end}
 	self.c_desc = Textzone.new{width=math.floor(self.iw / 3 * 2 - 10), height=self.ih - self.c_delete.h - 10, text=""}
+
+	local sw, sh = core.display.size()
+	local r = sw / sh
+	local w = math.min(sw, self.c_desc.w - 20)
+	local h = w / r
+	h = math.min(h, self.ih / 1.7)
+	w = h * r
+	self.c_screenshot = Image.new{width=w, height=h, empty=true}
 
 	self:generateList()
 
@@ -64,6 +73,7 @@ function _M:init(force_compat)
 		{right=0, bottom=0, ui=self.c_delete, hidden=true},
 		{left=0, bottom=0, ui=self.c_play, hidden=true},
 		{left=self.c_tree.w + 5, top=5, ui=sep},
+		{left=self.c_tree.w+sep.w, bottom=0, ui=self.c_screenshot},
 	}
 	if __module_extra_info.show_ignore_addons_not_loading then
 		uis[#uis+1] = {left=self.c_tree.w - self.c_compat.w, bottom=self.c_force_addons.h, ui=self.c_compat}
@@ -73,7 +83,7 @@ function _M:init(force_compat)
 	end
 	self:loadUI(uis)
 	self:setFocus(self.c_tree)
-	self:setupUI(false, true)
+	self:setupUI(false, false)
 
 	self.key:addBinds{
 		EXIT = function() game:unregisterDialog(self) end,
@@ -118,9 +128,13 @@ function _M:generateList()
 					text=("#{bold}##GOLD#%s: %s#WHITE##{normal}#\nGame version: %d.%d.%d\nRequires addons: %s\n\n%s"):format(mod.long_name, save.name, save.module_version and save.module_version[1] or -1, save.module_version and save.module_version[2] or -1, save.module_version and save.module_version[3] or -1, save.addons and table.concat(addons, ", ") or "none", save.description)
 				}
 				if save.screenshot then
-					local w, h = save.screenshot:getSize()
-					save.screenshot = { save.screenshot:glTexture() }
-					save.screenshot.w, save.screenshot.h = w, h
+					local sw, sh = save.screenshot:getSize()
+					local r = sw / sh
+					local w = math.min(sw, self.c_desc.w - 20)
+					local h = w / r
+					h = math.min(h, self.ih / 1.7)
+					w = h * r
+					save.screenshot_do = core.renderer.texture(save.screenshot, 0, 0, w, h)
 				end
 				table.sort(nodes, function(a, b) return (a.timestamp or 0) > (b.timestamp or 0) end)
 				table.insert(nodes, save)
@@ -143,8 +157,7 @@ end
 
 function _M:switch()
 	self:generateList()
-	self.c_tree.tree = self.tree
-	self.c_tree:generate()
+	self.c_tree:setTree(self.tree)
 end
 
 function _M:on_focus(id, ui)
@@ -159,20 +172,14 @@ function _M:select(item)
 	if item and self.uis[2] then
 		self.uis[2].ui = item.zone
 		self.cur_sel = item
+		if item.screenshot_do then
+			self.c_screenshot:setDO(item.screenshot_do:removeFromParent())
+		else
+			self.c_screenshot:setDO(nil)
+		end
 	else
 		self.cur_sel = nil
 	end
-end
-
-function _M:innerDisplay(x, y, nb_keyframes)
-	if not self.cur_sel or not self.cur_sel.screenshot then return end
-	local s = self.cur_sel.screenshot
-	local r = s.w / s.h
-	local w = math.min(s.w, self.c_desc.w - 20)
-	local h = w / r
-	h = math.min(h, self.ih / 1.7)
-	w = h * r
-	s[1]:toScreenFull(x + self.ix + self.iw - self.c_desc.w + 10, y + self.ih - h - 20, w, h, s[2] * w / s.w, s[3] * h / s.h)
 end
 
 function _M:playSave(ignore_mod_compat)
@@ -182,11 +189,11 @@ function _M:playSave(ignore_mod_compat)
 		Dialog:yesnoLongPopup("Incompatible savefile", [[Due to huge changes in 1.2.0 all previous savefiles will not work with it.
 This savefile requires a game version lower than 1.2.0 and thus can not be loaded.
 
-But despair not, if you wish to finish it you can simply download the old version corresponding to the savefile on #{italic}##LIGHT_BLUE#http://te4.org/download#WHITE##{normal}#.
+But despair not, if you wish to finish it you can simply download the old version corresponding to the savefile on #{italic}##LIGHT_BLUE#https://te4.org/download#WHITE##{normal}#.
 
 We apologize for the annoyance, most of the time we try to keep compatibility but this once it was simply not possible.]],
 			700, function(ret) if ret then
-				util.browserOpenUrl("http://te4.org/download", {webview=true, steam=true})
+				util.browserOpenUrl("https://te4.org/download", {webview=true, steam=true})
 			end end, "Go to download in your browser", "Cancel"
 		)
 		return
@@ -244,13 +251,17 @@ function _M:installOldGame(version_string)
 	local dls = {}
 	-- Later on we can request the server for a list, but heh
 	if version_string == "tome-1.2.5" then
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5-gfx.team", name="tome-1.2.5-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5-music.team", name="tome-1.2.5-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.2.5.team", name="tome-1.2.5.team"}
 	elseif version_string == "tome-1.3.3" then
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3-gfx.team", name="tome-1.3.3-gfx.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3-music.team", name="tome-1.3.3-music.team"}
-		dls[#dls+1] = {url="http://te4.org/dl/modules/tome/tome-1.3.3.team", name="tome-1.3.3.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3-gfx.team", name="tome-1.3.3-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3-music.team", name="tome-1.3.3-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.3.3.team", name="tome-1.3.3.team"}
+	elseif version_string == "tome-1.4.9" then
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9-gfx.team", name="tome-1.4.9-gfx.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9-music.team", name="tome-1.4.9-music.team"}
+		dls[#dls+1] = {url="https://te4.org/dl/modules/tome/tome-1.4.9.team", name="tome-1.4.9.team"}
 	end
 
 	if #dls == 0 then
@@ -267,7 +278,7 @@ function _M:installOldGame(version_string)
 		local ok = d:start()
 		if ok then
 			local wdir = fs.getWritePath()
-			local _, _, dir, name = modfile:find("(.+)/([^/]+)$")
+			local _, _, dir, name = modfile:find("(.+/)([^/]+)$")
 			if dir then
 				fs.setWritePath(fs.getRealPath(dir))
 				fs.delete(name)

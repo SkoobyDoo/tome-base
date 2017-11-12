@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@ newEntity{ define_as = "TRAP_WATER",
 
 newEntity{ base = "TRAP_WATER",
 	name = "water jet", auto_id = true, image = "trap/trap_water_jet_01.png",
-	detect_power = resolvers.clscale(6,10,4),
-	disarm_power = resolvers.clscale(16,10,8),
+	detect_power = resolvers.clscale(6,10,4,0.5),
+	disarm_power = resolvers.clscale(16,10,8,0.5),
 	rarity = 3, level_range = {1, 50},
 	color=colors.LIGHT_BLUE,
 	message = "@Target@ triggers a water jet!",
@@ -45,8 +45,8 @@ newEntity{ base = "TRAP_WATER",
 
 newEntity{ base = "TRAP_WATER",
 	name = "water siphon", auto_id = true, image = "trap/trap_water_siphon_01.png",
-	detect_power = resolvers.clscale(8,10,6),
-	disarm_power = resolvers.clscale(4,10,3),
+	detect_power = resolvers.clscale(8,10,6,0.5),
+	disarm_power = resolvers.clscale(4,10,3,0.5),
 	rarity = 3, level_range = {1, 50},
 	color=colors.BLUE,
 	message = "@Target@ is caught by a water siphon!",

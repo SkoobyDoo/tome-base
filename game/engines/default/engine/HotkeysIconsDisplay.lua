@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,10 +22,13 @@ local Shader = require "engine.Shader"
 local Entity = require "engine.Entity"
 local Tiles = require "engine.Tiles"
 local UI = require "engine.ui.Base"
+local HotkeysIcons = require "engine.HotkeysIcons"
 
 --- Display of hotkeys with icons
 -- @classmod engine.HotkeysIconsDisplay
 module(..., package.seeall, class.make)
+
+SEL_FRAME_MAX_ALPHA = 0.313
 
 --- Init
 -- @param[type=Actor] actor
@@ -51,9 +54,10 @@ function _M:init(actor, x, y, w, h, bg_color, fontname, fontsize, icon_w, icon_h
 	self.font_h = self.font:lineSkip()
 	self.dragclics = {}
 	self.clics = {}
-	self.items = {}
 	self.fontname = fontname
 	self.fontsize = fontsize
+
+	self.renderer = core.renderer.renderer("static"):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(false)
 
 	self.frames = {}
 	-- self.makeFrame = function() UI:makeFrame("ui/icon-frame/frame", icon_w + 8, icon_h + 8)  --doesn't really matter since we pass a different size
@@ -96,184 +100,71 @@ function _M:resize(x, y, w, h, iw, ih)
 	self.max_cols = math.floor(self.w / self.frames.w)
 	self.max_rows = math.floor(self.h / self.frames.h)
 
-	self.renderer = core.renderer.renderer():zSort(false):translate(x, y, 0):setRendererName("HotkeysRenderer"):countDraws(false)
+	self.base_frame = UI:makeFrameDO("ui/icon-frame/frame", self.icon_w + 8, self.icon_h + 8)
+
+	self.renderer:clear()
+
 	self.bg_container = core.renderer.container()
 	self.renderer:add(self.bg_container)
 
-	self.icons_layer = core.renderer.container():translate(0, 0, 0) self.renderer:add(self.icons_layer)
-	self.cooldowns_layer = core.renderer.container():translate(0, 0, 10) self.renderer:add(self.cooldowns_layer)
-	self.texts_layer = core.renderer.container():translate(0, 0, 20) self.renderer:add(self.texts_layer)
-	self.frames_layer = core.renderer.container():translate(0, 0, 30) self.renderer:add(self.frames_layer)
+	self.icons_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Icons"):translate(0, 0, 0) self.renderer:add(self.icons_layer)
+	self.cooldowns_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Cooldowns"):translate(0, 0, 10) self.renderer:add(self.cooldowns_layer)
+	self.texts_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Texts"):zSort(true):translate(0, 0, 20) self.renderer:add(self.texts_layer)
+	self.frames_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Frames"):translate(0, 0, 30) self.renderer:add(self.frames_layer)
+	self.sels_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: sels"):translate(0, 0, 40) self.renderer:add(self.sels_layer)
+	self.unseens_layer = core.renderer.renderer("dynamic"):countDraws(false):setRendererName("Hotkeys: Unseen"):zSort(true):translate(0, 0, 0):color(1, 1, 1, 0) self.renderer:add(self.unseens_layer)
+	self.sel_frames = {}
 
 	if self.bg_image then self.bg_container:add(core.renderer.image(self.bg_image, 0, 0, self.w, self.h)) end
 	if self.bg_color then self.bg_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.bg_color))) end
 
-	self.sel_frame = core.renderer.colorQuad(0, 0, self.icon_w, self.icon_h, 0.5, 0.5, 1, 0.313)
-	self.sel_frame:shown(false)
-	self.renderer:add(self.sel_frame)
+	self.dragclics = {}
+	self.clics = {}
+	self.hk_cache = {}
 end
 
-local page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
+_M.page_to_hotkey = {"", "SECOND_", "THIRD_", "FOURTH_", "FIFTH_"}
 
-local frames_colors = {
-	ok = {0.3, 0.6, 0.3, 1},
-	sustain = {0.6, 0.6, 0, 1},
-	cooldown = {0.6, 0, 0, 1},
-	disabled = {0.65, 0.65, 0.65, 1},
-}
+function _M:onKeyBindAltered()
+	for _, hk in pairs(self.hk_cache) do hk:updateKeybind(self, self.actor) end
+end
 
 -- Displays the hotkeys, keybinds & cooldowns
 function _M:display()
 	local a = self.actor
-	if not a or not a.changed then return end
+	-- if not a or not a.changed then return end
 
 	local bpage = a.hotkey_page
 	local spage = bpage
---	if bpage == 1 and core.key.modState("ctrl") then spage = 2 if self.max_cols < 24 then bpage = 2 end
---	elseif bpage == 1 and core.key.modState("shift") then spage = 3 if self.max_cols < 36 then bpage = 3 end
---	end
-
-	self.icons_layer:clear()
-	self.cooldowns_layer:clear()
-	self.texts_layer:clear()
-	self.frames_layer:clear()
 
 	local orient = self.orient or "down"
 	local x = 0
 	local y = 0
 	local col, row = 0, 0
-	self.dragclics = {}
-	self.clics = {}
 	self.items = {}
 	local w, h = self.frames.w, self.frames.h
 
-	for page = bpage, #page_to_hotkey do for i = 1, 12 do
-		local ts = nil
+	for page = bpage, #self.page_to_hotkey do for i = 1, 12 do
 		local bi = i
 		local j = i + (12 * (page - 1))
-		if a.hotkey[j] and a.hotkey[j][1] == "talent" then
-			ts = {a.hotkey[j][2], j, "talent", i, page, i + (12 * (page - bpage))}
-		elseif a.hotkey[j] and a.hotkey[j][1] == "inventory" then
-			ts = {a.hotkey[j][2], j, "inventory", i, page, i + (12 * (page - bpage))}
-		end
-
 		x = self.frames.w * col
 		y = self.frames.h * row
-		self.dragclics[j] = {x,y,w,h}
-
-		if ts then
-			local s
-			local i = ts[2]
-			local lpage = ts[5]
-			local color, angle, txt = nil, 0, nil
-			local display_entity = nil
-			local frame = "ok"
-			if ts[3] == "talent" then
-				local tid = ts[1]
-				local t = a:getTalentFromId(tid)
-				if t then
-					display_entity = t.display_entity
-					if a:isTalentCoolingDown(t) then
-						if not a:preUseTalent(t, true, true) then
-							color = {0.745,0.745,0.745,0.4}
-							frame = "disabled"
-						else
-							frame = "cooldown"
-							color = {1,0,0,0.4}
-							angle = 360 * (1 - (a.talents_cd[t.id] / a:getTalentCooldown(t)))
-						end
-						txt = tostring(a:isTalentCoolingDown(t))
-					elseif a:isTalentActive(t.id) then
-						color = {1,1,0,0.4}
-						frame = "sustain"
-					elseif not a:preUseTalent(t, true, true) then
-						color = {0.745,0.745,0.745,0.4}
-						frame = "disabled"
-					end
-				end
-			elseif ts[3] == "inventory" then
-				local o = a:findInAllInventories(ts[1], {no_add_name=true, force_id=true, no_count=true})
-				local cnt = 0
-				if o then cnt = o:getNumber() end
-				if cnt == 0 then
-					color = {0.745,0.745,0.745,0.4}
-					frame = "disabled"
-				end
-				display_entity = o
-				if o and o.use_talent and o.use_talent.id then
-					local t = a:getTalentFromId(o.use_talent.id)
-					display_entity = t.display_entity
-				end
-				if o and o.talent_cooldown then
-					local t = a:getTalentFromId(o.talent_cooldown)
-					angle = 360
-					if a:isTalentCoolingDown(t) then
-						color = {1,0,0,0.4}
-						angle = 360 * (1 - (a.talents_cd[t.id] / a:getTalentCooldown(t)))
-						frame = "cooldown"
-						txt = tostring(a:isTalentCoolingDown(t))
-					end
-				elseif o and (o.use_talent or o.use_power) then
-					angle = 360 * ((o.power / o.max_power))
-					color = {1,0,0,0.4}
-					local cd = o:getObjectCooldown(a)
-					if cd and cd > 0 then
-						frame = "cooldown"
-						txt = tostring(cd)
-					elseif not cd then
-						frame = "disabled"
-					end
-				end
-				if o and o.wielded then
-					frame = "sustain"
-				end
-			end
-
-			if color then
-				local cdpart = core.renderer.vertexes():plainColorQuad()
-				cdpart:quadPie(0, 0, self.icon_w, self.icon_h, 0, 0, 1, 1, angle, unpack(color))
-				self.cooldowns_layer:add(cdpart:translate(x, y, 0))
-			end
-
-			self.frames_layer:add(UI:makeFrameDO("ui/icon-frame/frame", self.icon_w + 8, self.icon_h + 8).container:translate(x - 4, y - 4, 0):color(unpack(frames_colors[frame])))
-
-			local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
-			local key = core.renderer.text(self.fontbig)
-			self:applyShadowOutline(key)
-			key:textColor(colors.unpack1(colors.ANTIQUE_WHITE)):text(ks):scale(0.5, 0.5, 0.5) -- Scale so we can usethe same atlas for all text
-			local tw, th = key:getStats()
-			self.texts_layer:add(key:translate(x + self.icon_w - tw/2, y + self.icon_h - th/2, 0)) -- /2 because we scale by 0.5
-
-			if txt then
-				local key = core.renderer.text(self.fontbig)
-				self:applyShadowOutline(key)
-				key:text(txt)
-				local tw, th = key:getStats()
-				self.texts_layer:add(key:translate(x + (self.icon_w - tw) / 2, y + (self.icon_h - th) / 2, 0))
-			end
-
-			if display_entity then
-				self.icons_layer:add(display_entity:getEntityDisplayObject(self.tiles, self.icon_w, self.icon_h, false, false):translate(x, y, 0))
-			end
-
-			self.items[#self.items+1] = {i=i, x=x, y=y, e=display_entity or self.default_entity, pagesel=lpage==spage}
-			self.clics[i] = {x,y,w,h}
-		else
-			local i = i + (12 * (page - 1))
-			local angle = 0
-			local color = {190,190,190}
-			local frame = "disabled"
-
-			-- self.font:setStyle("bold")
-			-- local ks = game.key:formatKeyString(game.key:findBoundKeys("HOTKEY_"..page_to_hotkey[page]..bi))
-			-- local key = self.font:draw(ks, self.font:size(ks), colors.ANTIQUE_WHITE.r, colors.ANTIQUE_WHITE.g, colors.ANTIQUE_WHITE.b, true)[1]
-			-- self.font:setStyle("normal")
-
-			-- DGDGDGDG make that work
-
-			self.items[#self.items+1] = {show_on_drag=true, i=i, x=x, y=y, e=nil, color=color, angle=angle, key=key, gtxt=nil, frame=frame}
-			self.clics[i] = {x,y,w,h, fake=true}
+		local has_hk = a.hotkey[j] and a.hotkey[j][1] and true or false
+		if not self.hk_cache[j] then
+			if has_hk then self.hk_cache[j] = HotkeysIcons.new(a.hotkey[j])
+			else self.hk_cache[j] = HotkeysIcons:getEmpty(j) end
+			self.hk_cache[j]:addTo(self, a, page, bi, j, x, y)
+			self.dragclics[j] = {x,y,w,h}
+			self.clics[j] = {x,y,w,h,fake=not has_hk}
+		elseif self.hk_cache[j]:isInvalid(a.hotkey[j] or {"none", j}, x, y) then
+			self.hk_cache[j]:removeFrom(self, a)
+			if has_hk then self.hk_cache[j] = HotkeysIcons.new(a.hotkey[j])
+			else self.hk_cache[j] = HotkeysIcons:getEmpty(j) end
+			self.hk_cache[j]:addTo(self, a, page, bi, j, x, y)
+			self.dragclics[j] = {x,y,w,h}
+			self.clics[j] = {x,y,w,h,fake=not has_hk}
 		end
+		self.hk_cache[j]:update(self, a)
 
 		if orient == "down" or orient == "up" then
 			col = col + 1
@@ -297,52 +188,11 @@ end
 function _M:toScreen()
 	self:display()
 	self.renderer:toScreen()
-
-	-- self:display()
-	-- local shader = Shader.default.textoutline and Shader.default.textoutline.shad
-	-- if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
-	-- for i = 1, #self.items do
-	-- 	local item = self.items[i]
-	-- 	if not item.show_on_drag or (game.mouse and game.mouse.drag) and self.cur_sel then
-	-- 		local key = item.key
-	-- 		local gtxt = item.gtxt
-	-- 		local frame = frames_colors[item.frame]
-	-- 		local pagesel = item.pagesel and 1 or 0.5
-
-	-- 		if item.e then item.e:toScreen(self.tiles, self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h) end
-
-	-- 		if item.color then core.display.drawQuadPart(self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h, item.angle, item.color[1], item.color[2], item.color[3], 100) end
-
-	-- 		if self.cur_sel == item.i then core.display.drawQuad(self.display_x + item.x + self.frames.fx, self.display_y + item.y + self.frames.fy, self.icon_w, self.icon_h, 128, 128, 255, 80) end
-
-	-- --		frame[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, self.frames.w, self.frames.h, frame[2] * self.frames.rw, frame[3] * self.frames.rh, pagesel, pagesel, pagesel, 255)
-	-- --		frame[1]:toScreenFull(self.display_x + item.x, self.display_y + item.y, self.frames.w, self.frames.h, frame[2] * self.frames.rw, frame[3] * self.frames.rh, pagesel, pagesel, pagesel, 255)
-	-- 		UI:drawFrame(self.frames.base, self.display_x + item.x, self.display_y + item.y, frame[1], frame[2], frame[3], 1, self.frames.w, self.frames.h)
-
-	-- 		if self.shadow then
-	-- 			if shader then
-	-- 				shader:use(true)
-	-- 				shader:uniOutlineSize(0.7, 0.7)
-	-- 				shader:uniTextSize(key._tex_w, key._tex_h)
-	-- 			else
-	-- 				key._tex:toScreenFull(self.display_x + item.x + 1 + self.frames.fx + self.icon_w - key.w, self.display_y + item.y + 1 + self.icon_h - key.h, key.w, key.h, key._tex_w, key._tex_h, 0, 0, 0, self.shadow)
-	-- 				if gtxt then gtxt._tex:toScreenFull(self.display_x + item.x + self.frames.fy + 2 + (self.icon_w - gtxt.fw) / 2, self.display_y + item.y + self.frames.fy + 2 + (self.icon_h - gtxt.fh) / 2, gtxt.w, gtxt.h, gtxt._tex_w, gtxt._tex_h, 0, 0, 0, self.shadow) end
-	-- 			end
-	-- 		end
-
-	-- 		key._tex:toScreenFull(self.display_x + item.x + self.frames.fx + self.icon_w - key.w, self.display_y + item.y + self.icon_h - key.h, key.w, key.h, key._tex_w, key._tex_h)
-	-- 		if gtxt then
-	-- 			gtxt._tex:toScreenFull(self.display_x + item.x + self.frames.fx + (self.icon_w - gtxt.fw) / 2, self.display_y + item.y + self.frames.fy + (self.icon_h - gtxt.fh) / 2, gtxt.w, gtxt.h, gtxt._tex_w, gtxt._tex_h)
-	-- 		end
-
-	-- 		if self.shadow and shader then shader:use(false) end
-	-- 	end
-	-- end
 end
 
 --- Call when a mouse event arrives in this zone  
 -- This is optional, only if you need mouse support
--- @string button
+-- @string butto	n
 -- @number mx mouse x
 -- @number my mouse y
 -- @param[type=boolean] click did they click
@@ -359,15 +209,19 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 	elseif button == "wheeldown" and click then
 		a:nextHotkeyPage()
 		return
+	elseif button == "drag-start-global" then
+		self.unseens_layer:tween(7, "a", nil, 1)
+		return
+	elseif button == "drag-end-global" then
+		self.unseens_layer:tween(7, "a", nil, 0)
+		return
 	elseif button == "drag-end" then
 		local drag = game.mouse.dragged.payload
---		print(table.serialize(drag,nil,true))
 		if drag.kind == "talent" or drag.kind == "inventory" then
 			for i, zone in pairs(self.dragclics) do
 				if mx >= zone[1] and mx < zone[1] + zone[3] and my >= zone[2] and my < zone[2] + zone[4] then
 					local old = self.actor.hotkey[i]
-
-					if i <= #page_to_hotkey * 12 then -- Only add this hotkey if we support a valid page for it.
+					if i <= #self.page_to_hotkey * 12 then -- Only add this hotkey if we support a valid page for it.
 						self.actor.hotkey[i] = {drag.kind, drag.id}
 
 						if drag.source_hotkey_slot then
@@ -394,21 +248,17 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 				if on_click(i, a.hotkey[i]) then click = false end
 			end
 			local oldsel = self.cur_sel
+			if oldsel ~= i then
+				if oldsel and self.sel_frames[oldsel] then self.sel_frames[oldsel]:tween(7, "a", nil, 0) end
+				if not zone.fake and self.sel_frames[i] then self.sel_frames[i]:tween(7, "a", nil, SEL_FRAME_MAX_ALPHA) end
+			end
 			self.cur_sel = i
-			if not zone.fake then self.sel_frame:shown(true):translate(zone[1], zone[2], 100)
-			else self.sel_frame:shown(false) end
 			if button == "left" and not zone.fake then
 				if click then
 					a:activateHotkey(i)
 				else
-					if a.hotkey[i][1] == "talent" then
-						local t = self.actor:getTalentFromId(a.hotkey[i][2])
-						local DO = t.display_entity:getEntityDisplayObject(nil, 64, 64)
-						game.mouse:startDrag(mx, my, DO, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
-					elseif a.hotkey[i][1] == "inventory" then
-						local o = a:findInAllInventories(a.hotkey[i][2], {no_add_name=true, force_id=true, no_count=true})
-						local DO = nil
-						if o then DO = o:getEntityDisplayObject(nil, 64, 64) end
+					if self.hk_cache[i] then
+						local DO = self.hk_cache[i]:getDragDO(a)
 						game.mouse:startDrag(mx, my, DO, {kind=a.hotkey[i][1], id=a.hotkey[i][2], source_hotkey_slot=i}, function(drag, used) if not used then self.actor.hotkey[i] = nil self.actor.changed = true end end)
 					end
 				end
@@ -435,6 +285,9 @@ function _M:onMouse(button, mx, my, click, on_over, on_click)
 			return
 		end
 	end
+
 	self.cur_sel = nil
-	self.sel_frame:shown(false)
+	for i, f in ipairs(self.sel_frames) do
+		f:tween(7, "a", nil, 0)
+	end
 end

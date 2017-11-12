@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ newEntity{
 		empty_before_restock = false,
 		filters = {
 			{type="armor", subtype="cloth", id=true, tome_drops="store"},
-			{type="armor", subtype="robe", id=true, tome_drops="store"},
+--			{type="armor", subtype="robe", id=true, tome_drops="store"},
 			{type="armor", subtype="cloak", id=true, tome_drops="store"},
 			{type="armor", subtype="belt", id=true, tome_drops="store"},
 		},
@@ -550,7 +550,7 @@ newEntity{
 			{type="armor", subtype="feet", id=true, tome_drops="boss"},
 			{type="armor", subtype="belt", id=true, tome_drops="boss"},
 			{type="armor", subtype="cloth", id=true, tome_drops="store"},
-			{type="armor", subtype="robe", id=true, tome_drops="store"},
+--			{type="armor", subtype="robe", id=true, tome_drops="store"},
 			{type="armor", subtype="cloak", id=true, tome_drops="store"},
 			{type="armor", subtype="belt", id=true, tome_drops="store"},
 			{type="charm", subtype="torque", id=true, tome_drops="boss"},

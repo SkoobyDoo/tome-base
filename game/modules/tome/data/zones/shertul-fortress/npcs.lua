@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -138,6 +138,7 @@ newEntity{ define_as="TRAINING_DUMMY",
 	max_life = 300000, life_rating = 0,
 	life_regen = 300000,
 	never_move = 1,
+	knockback_immune = 1,
 	training_dummy = 1,
 	on_takehit = function(self, value, src, infos)
 		local data = game.zone.training_dummies

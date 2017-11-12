@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -116,16 +116,15 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 	end
 
 	-- Cancel stealth early if we are noticed
-	if self:isTalentActive(self.T_STEALTH) and target:canSee(self) then
-		self:useTalent(self.T_STEALTH)
-		self.changed = true
+	if self:attr("stealth") and target:canSee(self) then
+		self:breakStealth()
 		if self.player then self:logCombat(target, "#Target# notices you at the last moment!") end
 	end
 
-	if target:isTalentActive(target.T_INTUITIVE_SHOTS) and rng.percent(target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")) then
-		local ret = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
-		if ret then return false end
-	end
+--	if target:isTalentActive(target.T_INTUITIVE_SHOTS) and rng.percent(target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")) then
+--		local ret = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
+--		if ret then return false end
+--	end
 
 	if not target.turn_procs.warding_weapon and target:knowTalent(target.T_WARDING_WEAPON) and target:getTalentLevelRaw(target.T_WARDING_WEAPON) >= 5
 		and rng.percent(target:callTalent(target.T_WARDING_WEAPON, "getChance")) then
@@ -159,6 +158,8 @@ function _M:attackTarget(target, damtype, mult, noenergy, force_unarmed)
 		speed, hit, damtype, mult = hd.speed, hd.hit, hd.damtype, hd.mult
 		if hd.stop then return hit end
 	end
+	-- Could add callback here:
+	-- self:fireTalentCheck("callbackOnMeleeAttackTarget", hd)
 
 	if not speed and self:isTalentActive(self.T_GESTURE_OF_PAIN) then
 		if self.no_gesture_of_pain_recurse then return false end
@@ -273,11 +274,10 @@ end
 
 --- Computes a logarithmic chance to hit, opposing chance to hit to chance to miss
 -- This will be used for melee attacks, physical and spell resistance
-
 function _M:checkHitOld(atk, def, min, max, factor)
 	if atk < 0 then atk = 0 end
 	if def < 0 then def = 0 end
-	print("checkHit", atk, def)
+	print("checkHitOld", atk, def)
 	if atk == 0 then atk = 1 end
 	local hit = nil
 	factor = factor or 5
@@ -292,7 +292,7 @@ function _M:checkHitOld(atk, def, min, max, factor)
 	return rng.percent(hit), hit
 end
 
---Tells the tier difference between two values
+--- Applies crossTierEffects according to the tier difference between power and save
 function _M:crossTierEffect(eff_id, apply_power, apply_save, use_given_e)
 	local q = game.player:hasQuest("tutorial-combat-stats")
 	if q and not q:isCompleted("final-lesson")then
@@ -327,7 +327,12 @@ function _M:getTierDiff(atk, def)
 	def = math.floor(def)
 	return math.max(0, math.max(math.ceil(atk/20), 1) - math.max(math.ceil(def/20), 1))
 end
-
+--[[
+--- Gets the duration for crossTier effects based on the tier difference between atk and def
+function _M:getTierDiff(atk, def)
+	return math.floor(math.max(0, self:combatScale(atk - def, 1, 20, 5, 100)))
+end
+--]]
 --New, simpler checkHit that relies on rescaleCombatStats() being used elsewhere
 function _M:checkHit(atk, def, min, max, factor, p)
 	if atk < 0 then atk = 0 end
@@ -346,10 +351,14 @@ end
 
 --- Try to totally evade an attack
 function _M:checkEvasion(target)
-	if not target:attr("evasion") or self == target then return end
+	local evasion = target:attr("evasion")
+	if target:knowTalent(target.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(target.x, target.y) then
+		evasion = (evasion or 0) + 20
+	end
+
+	if not evasion or self == target then return end
 	if target:attr("no_evasion") then return end
 
-	local evasion = target:attr("evasion")
 	print("checkEvasion", evasion, target.level, self.level)
 	print("=> evasion chance", evasion)
 	return rng.percent(evasion)
@@ -372,8 +381,6 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	-- if insufficient resources, try to use unarmed or cancel attack
 	local unarmed = self:getObjectCombat(nil, "barehand")
 	if (weapon or unarmed).use_resources and not self:useResources((weapon or unarmed).use_resources) then
---	if weapon.use_resources and not self:useResources(weapon.use_resources) then
---		local unarmed = self:getObjectCombat(nil, "barehand")
 		if unarmed == weapon then
 			print("[attackTargetWith] (unarmed) against ", target.name, "unarmed attack fails due to resources")
 			return self:combatSpeed(unarmed), false, 0
@@ -430,7 +437,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	end
 	
 	local dam, apr, armor = force_dam or self:combatDamage(weapon), self:combatAPR(weapon), target:combatArmor()
-	print("[ATTACK] to ", target.name, " :: ", dam, apr, armor, atk, "vs.", def, "::", mult)
+	print("[ATTACK] to ", target.name, "dam/apr/atk/mult ::", dam, apr, atk, mult, "vs. armor/def", armor, def)
 
 	-- check repel
 	local repelled = false
@@ -439,11 +446,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		repelled = t.isRepelled(target, t)
 	end
 
+	-- melee attack bonus hooks/callbacks  Note: These are post rescaleCombatStats
 	local hd = {"Combat:attackTargetWith:attackerBonuses", target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam, apr=apr, atk=atk, def=def, armor=armor}
-	if self:triggerHook(hd) then
-		target, weapon, damtype, mult, dam, apr, atk, def, armor = hd.target, hd.weapon, hd.damtype, hd.mult, hd.dam, hd.apr, hd.atk, hd.def, hd.armor
-		if hd.stop then return end
-	end
+	self:triggerHook(hd)
+	self:fireTalentCheck("callbackOMeleeAttackBonuses", hd)
+	target, weapon, damtype, mult, dam, apr, atk, def, armor = hd.target, hd.weapon, hd.damtype, hd.mult, hd.dam, hd.apr, hd.atk, hd.def, hd.armor
+	if hd.stop then return end
+	print("[ATTACK] after melee attack bonus hooks & callbacks::", dam, apr, atk, mult, "vs. armor/def", armor, def)
 
 	-- If hit is over 0 it connects, if it is 0 we still have 50% chance
 	local hitted = false
@@ -476,6 +485,21 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 	end
 	
+	if target:isTalentActive(target.T_INTUITIVE_SHOTS) then
+		local chance = target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")
+		self.turn_procs.intuitive_shots = self.turn_procs.intuitive_shots or target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
+		if self.turn_procs.intuitive_shots == true then
+			repelled = true
+		end
+	end
+
+	-- Dwarves stoneskin
+	if target:attr("auto_stoneskin") and rng.percent(15) then
+		game.logSeen(target, "#ORCHID#%s instinctively hardens %s skin and ignores the attack!#LAST#", target.name:capitalize(), string.his_her(target))
+		target:setEffect(target.EFF_STONE_SKIN, 5, {power=target:attr("auto_stoneskin")})
+		repelled = true
+	end
+	
 	if repelled then
 		self:logCombat(target, "#Target# repels an attack from #Source#.")
 	elseif self:checkEvasion(target) then
@@ -483,6 +507,13 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		self:logCombat(target, "#Target# evades #Source#.")
 	elseif self.turn_procs.auto_melee_hit or (self:checkHit(atk, def) and (self:canSee(target) or self:attr("blind_fight") or target:attr("blind_fighted") or rng.chance(3))) then
 		local pres = util.bound(target:combatArmorHardiness() / 100, 0, 1)
+		
+		-- Apply weapon damage range
+		-- By doing this first, variable damage is more "smooth" against high armor
+		local damrange = self:combatDamageRange(weapon)
+		dam = rng.range(dam, dam * damrange)
+		print("[ATTACK] HIT:: damrange", damrange, "==> dam/apr::", dam, apr, "vs. armor/hardiness", armor, pres)
+		
 		local eff = target.knowTalent and target:hasEffect(target.EFF_PARRY)
 		-- check if target deflects the blow (deflected blows cannot crit)
 		if eff then
@@ -495,27 +526,24 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 
 		if target.knowTalent and target:hasEffect(target.EFF_GESTURE_OF_GUARDING) and not target:attr("encased_in_ice") then
-			local deflect = math.min(dam, target:callTalent(target.T_GESTURE_OF_GUARDING, "doGuard")) or 0
-			if deflect > 0 then
-				game:delayedLogDamage(self, target, 0, ("%s(%d gestured#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", deflect), false)
-				dam = dam - deflect
+			local g_deflect = math.min(dam, target:callTalent(target.T_GESTURE_OF_GUARDING, "doGuard")) or 0
+			if g_deflect > 0 then
+				game:delayedLogDamage(self, target, 0, ("%s(%d gestured#LAST#)"):format(DamageType:get(damtype).text_color or "#aaaaaa#", g_deflect), false)
+				dam = dam - g_deflect; deflect = deflect + g_deflect
 			end
 			print("[ATTACK] after GESTURE_OF_GUARDING", dam)
 		end
 
 		if self:isAccuracyEffect(weapon, "knife") then
 			local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 0.005, 0.25)
-			print("[ATTACK] dagger accuracy bonus", atk, def, "=", bonus, "previous", apr)
 			apr = apr * bonus
+			print("[ATTACK] dagger accuracy bonus", atk, def, "=", bonus, "apr ==>", apr)
 		end
 
-		print("[ATTACK] raw dam", dam, "versus", armor, pres, "with APR", apr)
 		armor = math.max(0, armor - apr)
 		dam = math.max(dam * pres - armor, 0) + (dam * (1 - pres))
 		print("[ATTACK] after armor", dam)
-		local damrange = self:combatDamageRange(weapon)
-		dam = rng.range(dam, dam * damrange)
-		print("[ATTACK] after range", dam)
+		
 		if deflect == 0 then dam, crit = self:physicalCrit(dam, weapon, target, atk, def) end
 		print("[ATTACK] after crit", dam)
 		dam = dam * mult
@@ -559,27 +587,24 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 
 		if weapon and weapon.crushing_blow then self:attr("crushing_blow", 1) end
 
-		-- Damage conversion?
-		-- Reduces base damage but converts it into another damage type
-		local conv_dam
-		local conv_damtype
+		-- Convert base damage to other types according to weapon
 		local total_conversion = 0
-		if weapon and weapon.convert_damage then
+		local melee_state = {is_melee=true}
+		if weapon and weapon.convert_damage and dam > 0 then
+			local conv_dam
 			for typ, conv in pairs(weapon.convert_damage) do
-				if dam > 0 then
-					conv_dam = math.min(dam, dam * (conv / 100))
-					total_conversion = total_conversion + conv_dam
-					conv_damtype = typ
-					dam = dam - conv_dam
-					if conv_dam > 0 then
-						DamageType:get(conv_damtype).projector(self, target.x, target.y, conv_damtype, math.max(0, conv_dam))
-					end
+				conv_dam = math.min(dam, dam * (conv / 100))
+				print("[ATTACK]\tDamageType conversion%", conv, typ, conv_dam)
+				total_conversion = total_conversion + conv_dam
+				if conv_dam > 0 then
+					DamageType:get(typ).projector(self, target.x, target.y, typ, math.max(0, conv_dam), melee_state)
 				end
 			end
+			dam = dam - total_conversion
+			print("[ATTACK]\t after DamageType conversion dam:", dam)
 		end
-
 		if dam > 0 then
-			DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam))
+			DamageType:get(damtype).projector(self, target.x, target.y, damtype, math.max(0, dam), melee_state)
 		end
 
 		if weapon and weapon.crushing_blow then self:attr("crushing_blow", -1) end
@@ -592,9 +617,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 		end
 
 		-- add damage conversion back in so the total damage still gets passed
-		if total_conversion > 0 then
-			dam = dam + total_conversion
-		end
+		dam = dam + total_conversion
 
 		target:fireTalentCheck("callbackOnMeleeHit", self, dam)
 
@@ -641,20 +664,23 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			self.__attacktargetwith_recursing = self.__attacktargetwith_recursing - 1
 		else
 			self.__attacktargetwith_recursing = weapon.attack_recurse - 1
+			self.__attacktargetwith_recursing_procs_reduce = weapon.attack_recurse_procs_reduce
 		end
 
-		if self.__attacktargetwith_recursing > 0 then
+		if self.__attacktargetwith_recursing > 0 and not self.turn_procs._no_melee_recursion then
 			local _, newhitted, newdam = self:attackTargetWith(target, weapon, damtype, mult, force_dam)
 			hitted = newhitted or hitted
 			dam = math.max(dam, newdam)
 		else
 			self.__attacktargetwith_recursing = nil
+			self.__attacktargetwith_recursing_procs_reduce = nil
 		end
 	end
 
 	return self:combatSpeed(weapon), hitted, dam
 end
 
+--- handle various on hit procs for melee combat
 function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult, atk, def, hitted, crit, evaded, repelled, old_target_life)
 	if self:isAccuracyEffect(weapon, "staff") then
 		local bonus = 1 + self:getAccuracyEffect(weapon, atk, def, 0.025, 2)
@@ -664,6 +690,10 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if self:attr("hit_penalty_2h") then
 		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus or 1
 		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus * 0.5
+	end
+	if self.__attacktargetwith_recursing_procs_reduce then
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus or 1
+		self.__global_accuracy_damage_bonus = self.__global_accuracy_damage_bonus / self.__attacktargetwith_recursing_procs_reduce
 	end
 
 	-- handle stalk targeting for hits (also handled in Actor for turn end effects)
@@ -764,7 +794,7 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if dam > 0 and self:attr("damage_backfire") then
 		local hurt = math.min(dam, old_target_life) * self.damage_backfire / 100
 		if hurt > 0 then
-			self:takeHit(hurt, self)
+			self:takeHit(hurt, self, {cant_die=true})
 		end
 	end
 
@@ -821,13 +851,48 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		end
 	end
 
-	-- Reactive target on hit damage
-	if hitted then for typ, dam in pairs(target.on_melee_hit) do
-		if type(dam) == "number" then if dam > 0 then DamageType:get(typ).projector(target, self.x, self.y, typ, dam) end
-		elseif dam.dam and dam.dam > 0 then DamageType:get(typ).projector(target, self.x, self.y, typ, dam)
-		end
-	end end
-
+	-- Reactive target on_melee_hit damage
+	if hitted then
+		local dr, fa, pct = 0
+		for typ, dam in pairs(target.on_melee_hit) do
+			if not fa then
+				if self:knowTalent(self.T_CLOSE_COMBAT_MANAGEMENT) then
+					fa, pct = self:callTalent(self.T_CLOSE_COMBAT_MANAGEMENT, "reflectArmour", weapon)
+					print("[ATTACK]\tresolving on_melee_hit damage with:", fa, "flat_armor", pct, "% reflect")
+				else fa, pct = 0, 0
+				end
+			end
+			local DT = DamageType:get(typ)
+			if type(dam) == "number" then
+				if dam > 0 then
+					dr = math.min(dam, fa)
+					print("[ATTACK]\ttarget on_melee_hit:", dam, typ, "vs", fa)
+					dam = dam - dr
+					if dam > 0 then	DT.projector(target, self.x, self.y, typ, dam) end
+					if dr > 0 and pct > 0 then
+						dr = math.floor(dr*pct/100)
+						if dr > 0 then
+							print("[ATTACK]\ttarget on_melee_hit", dr, typ, "reflected")
+							DT.projector(self, target.x, target.y, typ, dr)
+						end
+					end
+				end
+			elseif dam.dam and dam.dam > 0 then
+				dr = math.min(dam.dam, fa)
+				print("[ATTACK]\ttarget on_melee_hit:", dam.dam, typ, "vs", fa)
+				if dr > 0 then dam = table.clone(dam); dam.dam = dam.dam - dr end
+				if dam.dam > 0 then DT.projector(target, self.x, self.y, typ, dam) end
+				if dr > 0 and pct > 0 then
+					dr = math.floor(dr*pct/100)
+					if dr > 0 then
+						print("[ATTACK]\ttarget on_melee_hit", dr, typ, "reflected")
+						dam.dam = dr -- only change dam
+						DT.projector(self, target.x, target.y, typ, dam)
+					end
+				end
+			end
+		end 
+	end
 	-- Acid splash
 	if hitted and not target.dead and target:knowTalent(target.T_ACID_BLOOD) then
 		local t = target:getTalentFromId(target.T_ACID_BLOOD)
@@ -844,11 +909,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if hitted and not target.dead and self:knowTalent(self.T_MORTAL_TERROR) then
 		local t = self:getTalentFromId(self.T_MORTAL_TERROR)
 		t.do_terror(self, t, target, dam)
-	end
-
-	-- Dwarves stoneskin
-	if hitted and not target.dead and target:attr("auto_stoneskin") and rng.percent(15) then
-		target:setEffect(target.EFF_STONE_SKIN, 5, {power=target:attr("auto_stoneskin")})
 	end
 
 	-- Psi Auras
@@ -955,8 +1015,8 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if not hitted and not target.dead and target:knowTalent(target.T_COUNTER_ATTACK) and not target:attr("stunned") and not target:attr("dazed") and not target:attr("stoned") and target:knowTalent(target.T_COUNTER_ATTACK) and self:isNear(target.x,target.y, 1) then --Adjacency check
 		local cadam = target:callTalent(target.T_COUNTER_ATTACK,"checkCounterAttack")
 		if cadam then
-			game.logSeen(self, "%s counters the attack!", target.name:capitalize())
-			target:attackTarget(self, nil, cadam, true)
+			local t = target:getTalentFromId(target.T_COUNTER_ATTACK)
+			t.do_counter(target, self, t)
 		end
 	end
 
@@ -970,15 +1030,6 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 	if not hitted and not target.dead and target:knowTalent(target.T_DEFENSIVE_THROW) and not target:attr("stunned") and not target:attr("dazed") and not target:attr("stoned") and target:isNear(self.x,self.y,1) then
 		local t = target:getTalentFromId(target.T_DEFENSIVE_THROW)
 		t.do_throw(target, self, t)
-	end
-
-	-- Greater Weapon Focus
-	local gwf = self:hasEffect(self.EFF_GREATER_WEAPON_FOCUS)
-	if hitted and not target.dead and weapon and gwf and not gwf.inside and rng.percent(gwf.chance) then
-		gwf.inside = true
-		game.logSeen(self, "%s focuses and gains an extra blow!", self.name:capitalize())
-		self:attackTargetWith(target, weapon, damtype, mult)
-		gwf.inside = nil
 	end
 
 	-- Zero gravity
@@ -1077,12 +1128,10 @@ function _M:attackTargetHitProcs(target, weapon, dam, apr, armor, damtype, mult,
 		self.logCombat(target, self, "#Source# counter attacks #Target# with %s shield shards!", string.his_her(target))
 		target:attackTarget(self, DamageType.NATURE, self:combatTalentWeaponDamage(t, 0.4, 1), true)
 	end
-
-	self:fireTalentCheck("callbackOnMeleeAttack", target, hitted, crit, weapon, damtype, mult, dam)
-
+	-- post melee attack hooks/callbacks, not included: apr, armor, atk, def, evaded, repelled, old_target_life
 	local hd = {"Combat:attackTargetWith", hitted=hitted, crit=crit, target=target, weapon=weapon, damtype=damtype, mult=mult, dam=dam}
 	if self:triggerHook(hd) then hitted = hd.hitted end
-
+	self:fireTalentCheck("callbackOnMeleeAttack", target, hitted, crit, weapon, damtype, mult, dam, hd)
 	self.__global_accuracy_damage_bonus = nil
 
 	return hitted
@@ -1095,8 +1144,8 @@ _M.weapon_talents = {
 	knife =   {"T_KNIFE_MASTERY", "T_STRENGTH_OF_PURPOSE"},
 	whip  =   "T_EXOTIC_WEAPONS_MASTERY",
 	trident = "T_EXOTIC_WEAPONS_MASTERY",
-	bow =     {"T_BOW_MASTERY", "T_STRENGTH_OF_PURPOSE"},
-	sling =   {"T_SLING_MASTERY", "T_SKIRMISHER_SLING_SUPREMACY"},
+	bow =     {"T_BOW_MASTERY", "T_STRENGTH_OF_PURPOSE", "T_MASTER_MARKSMAN"},
+	sling =   {"T_SLING_MASTERY", "T_SKIRMISHER_SLING_SUPREMACY", "T_MASTER_MARKSMAN"},
 	staff =   "T_STAFF_MASTERY",
 	mindstar ="T_PSIBLADES",
 	dream =   "T_DREAM_CRUSHER",
@@ -1169,9 +1218,13 @@ end
 --- Fake denotes a check not actually being made, used by character sheets etc.
 function _M:combatDefenseBase(fake)
 	local add = 0
+	local light_armor = self:hasLightArmor()
 	if not self:attr("encased_in_ice") then
 		if self:hasDualWeapon() and self:knowTalent(self.T_DUAL_WEAPON_DEFENSE) then
 			add = add + self:callTalent(self.T_DUAL_WEAPON_DEFENSE,"getDefense")
+		end
+		if light_armor and self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+			add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING,"getDefense")
 		end
 		if not fake then
 			add = add + (self:checkOnDefenseCall("defense") or 0)
@@ -1194,11 +1247,12 @@ function _M:combatDefenseBase(fake)
 	end
 	local d = math.max(0, self.combat_def + (self:getDex() - 10) * 0.35 + (self:getLck() - 50) * 0.4)
 	local mult = 1
-
-	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
-		mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
+	if light_armor then
+		if self:knowTalent(self.T_MOBILE_DEFENCE) then
+			mult = mult + self:callTalent(self.T_MOBILE_DEFENCE,"getDef")
+		end
 	end
-
+	
 	return math.max(0, d * mult + add) -- Add bonuses last to avoid compounding defense multipliers from talents
 end
 
@@ -1234,10 +1288,19 @@ function _M:combatArmor()
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + self:callTalent(self.T_ARMOUR_OF_SHADOWS,"ArmourBonus")
 	end
+	local light_armor = self:hasLightArmor()
+	if light_armor then
+		if self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
+			add = add + self:callTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE, "getArmour")
+		end
+	end
+	if self:knowTalent(self.T_CORRUPTED_SHELL) then
+		add = add + self:getCon() / 3.5
+	end
 	if self:knowTalent(self.T_CARBON_SPIKES) and self:isTalentActive(self.T_CARBON_SPIKES) then
 		add = add + self.carbon_armor
 	end
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then add = add + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getArmorBoost") end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then add = add + self:callTalent(self["T_FORM_AND_FUNCTION"], "getArmorBoost") end
 
 	return self.combat_armor + add
 end
@@ -1247,9 +1310,6 @@ end
 function _M:combatArmorHardiness()
 	local add = 0
 	local multi = 1
-	if self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
-		add = add + self:callTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE, "getHardiness")
-	end
 	if self:hasHeavyArmor() and self:knowTalent(self.T_ARMOUR_TRAINING) then
 		local at = Talents:getTalentFromId(Talents.T_ARMOUR_TRAINING)
 		add = add + at.getArmorHardiness(self, at)
@@ -1258,13 +1318,22 @@ function _M:combatArmorHardiness()
 			add = add + ga.getArmorHardiness(self, ga)
 		end
 	end
-	if self:hasLightArmor() and self:knowTalent(self.T_MOBILE_DEFENCE) then
-		add = add + self:callTalent(self.T_MOBILE_DEFENCE, "getHardiness")
+	local light_armor = self:hasLightArmor()
+	if light_armor then
+		if self:knowTalent(self.T_MOBILE_DEFENCE) then
+			add = add + self:callTalent(self.T_MOBILE_DEFENCE, "getHardiness")
+		end
+		if self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+			add = add + self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getArmorHardiness")
+		end
+		if self:knowTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE) then
+			add = add + self:callTalent(self.T_SKIRMISHER_BUCKLER_EXPERTISE, "getArmorHardiness")
+		end
 	end
 	if self:knowTalent(self.T_ARMOUR_OF_SHADOWS) and not game.level.map.lites(self.x, self.y) then
 		add = add + 50
 	end
-	if self:hasEffect(self.EFF_BREACH) or self:hasEffect(self.EXPOSE_WEAKNESS) then
+	if self:hasEffect(self.EFF_BREACH) then
 		multi = 0.5
 	end
 	return util.bound(30 + self.combat_armor_hardiness + add, 0, 100) * multi
@@ -1273,9 +1342,12 @@ end
 --- Gets the attack
 function _M:combatAttackBase(weapon, ammo)
 	weapon = weapon or self.combat or {}
-	local atk = 4 + self.combat_atk + self:getTalentLevel(Talents.T_WEAPON_COMBAT) * 10 + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
+	local talent = self:callTalent(self.T_WEAPON_COMBAT, "getAttack")
+	local atk = 4 + self.combat_atk + talent + (weapon.atk or 0) + (ammo and ammo.atk or 0) + (self:getLck() - 50) * 0.4
 
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then atk = atk + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon) end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then atk = atk + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
+
+	if self:attr("hit_penalty_2h") then atk = atk * (1 - math.max(0, 20 - (self.size_category - 4) * 5) / 100) end
 
 	return atk
 end
@@ -1445,6 +1517,7 @@ end
 -- raw if true specifies use of raw talent level
 function _M:combatTalentScale(t, low, high, power, add, shift, raw)
 	local tl = type(t) == "table" and (raw and self:getTalentLevelRaw(t) or self:getTalentLevel(t)) or t
+	if tl <= 0 then tl = 0.1 end
 	power, add, shift = power or 0.5, add or 0, shift or 0
 	local x_low, x_high = 1, 5 -- Implied talent levels to fit
 	local x_low_adj, x_high_adj
@@ -1506,6 +1579,7 @@ end
 function _M:combatTalentLimit(t, limit, low, high, raw)
 	local x_low, x_high = 1,5 -- Implied talent levels for low and high values respectively
 	local tl = type(t) == "table" and (raw and self:getTalentLevelRaw(t) or self:getTalentLevel(t)) or t
+	if tl <= 0 then tl = 0.1 end
 	if low then
 		local p = limit*(x_high-x_low)
 		local m = x_high*high - x_low*low
@@ -1579,7 +1653,7 @@ function _M:getDammod(combat)
 		dammod[stat] = (dammod[stat] or 0) + val
 	end
 
-	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.3) end
+	if self:knowTalent(self.T_SUPERPOWER) then add('wil', 0.4) end
 	if self:knowTalent(self.T_ARCANE_MIGHT) then add('mag', 0.5) end
 
 	return dammod
@@ -1599,17 +1673,16 @@ function _M:combatDamage(weapon, adddammod, damage)
 			totstat = totstat + self:getStat(stat) * mod
 		end
 	end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then totstat = totstat + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
-	local power = self:combatDamagePower(damage or weapon)
-	return self:rescaleDamage(0.3*(self:combatPhysicalpower(nil, weapon) + totstat) * power * talented_mod)
+	local power = self:combatDamagePower(damage or weapon, totstat)
+	return self:rescaleDamage(0.3*self:combatPhysicalpower(nil, weapon, totstat) * power * talented_mod)
 end
 
 --- Gets the 'power' portion of the damage
 function _M:combatDamagePower(weapon_combat, add)
 	if not weapon_combat then return 1 end
 	local power = math.max((weapon_combat.dam or 1) + (add or 0), 1)
-
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then power = power + self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getDamBoost", weapon_combat) end
 
 	return (math.sqrt(power / 10) - 1) * 0.5 + 1
 end
@@ -1719,9 +1792,12 @@ end
 function _M:getOffHandMult(combat, mult)
 	if combat and combat.range and not combat.dam then return mult or 1 end --no penalty for ranged shooters
 	local offmult = 1/2
-	-- Take the bigger multiplier from Dual weapon training and Corrupted Strength
+	-- Take the bigger multiplier from Dual weapon training, Dual Weapon Mastery and Corrupted Strength
 	if self:knowTalent(Talents.T_DUAL_WEAPON_TRAINING) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_DUAL_WEAPON_TRAINING,"getoffmult"))
+	end
+	if self:knowTalent(Talents.T_DUAL_WEAPON_MASTERY) then
+		offmult = math.max(offmult,self:callTalent(Talents.T_DUAL_WEAPON_MASTERY,"getoffmult"))
 	end
 	if self:knowTalent(Talents.T_CORRUPTED_STRENGTH) then
 		offmult = math.max(offmult,self:callTalent(Talents.T_CORRUPTED_STRENGTH,"getoffmult"))
@@ -1745,8 +1821,11 @@ function _M:combatFatigue()
 	local min = self.min_fatigue or 0
 	local fatigue = self.fatigue
 
-	if self:knowTalent(self["T_RESHAPE_WEAPON/ARMOUR"]) then fatigue = fatigue - self:callTalent(self["T_RESHAPE_WEAPON/ARMOUR"], "getFatigueBoost") end
+	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then fatigue = fatigue - self:callTalent(self["T_FORM_AND_FUNCTION"], "getFatigueBoost") end
 
+	if self:knowTalent(self.T_LIGHT_ARMOUR_TRAINING) then
+		fatigue = fatigue - self:callTalent(self.T_LIGHT_ARMOUR_TRAINING, "getFatigue")
+	end
 	if fatigue < min then return min end
 	if self:knowTalent(self.T_NO_FATIGUE) then return min end
 	return fatigue
@@ -1810,6 +1889,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 
 	local chance = self:combatCrit(weapon) + (add_chance or 0)
 	crit_power_add = crit_power_add or 0
+	if weapon and weapon.crit_power then crit_power_add = crit_power_add + weapon.crit_power/100 end
 
 	if target and target:hasEffect(target.EFF_DISMAYED) then
 		chance = 100
@@ -1843,7 +1923,7 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 		chance = chance - target:callTalent(target.T_SCOUNDREL,"getCritPenalty")
 	end
 
-	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) and target and not target:canSee(self) then -- bug fix
+	if self:attr("stealth") and self:knowTalent(self.T_SHADOWSTRIKE) and target and not target:canSee(self) then
 		chance = 100
 	end
 
@@ -1878,6 +1958,8 @@ function _M:physicalCrit(dam, weapon, target, atk, def, add_chance, crit_power_a
 	end
 	return dam, crit
 end
+
+-- need to get target for spell/mind crit defense
 
 --- Computes spell crit for a damage
 function _M:spellCrit(dam, add_chance, crit_power_add)
@@ -1981,7 +2063,7 @@ function _M:combatMindpower(mod, add)
 	end
 
 	if self:knowTalent(self.T_SUPERPOWER) then
-		add = add + 50 * self:getStr() / 100
+		add = add + 60 * self:getStr() / 100
 	end
 
 	if self:knowTalent(self.T_GESTURE_OF_POWER) then
@@ -2355,6 +2437,7 @@ function _M:combatShieldBlock()
 	local block = combat1.block or 0
 	if combat2 then block = block + (combat2.block or 0) end
 
+	if self:attr("block_bonus") then block = block + self:attr("block_bonus") end
 	return block
 end
 
@@ -2382,7 +2465,7 @@ function _M:getFreeHands()
 end
 
 --- Check if the actor dual wields melee weapons (use Archery:hasDualArcheryWeapon for ranged)
-function _M:hasDualWeapon(type, quickset)
+function _M:hasDualWeapon(type, offtype, quickset)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
@@ -2393,17 +2476,18 @@ function _M:hasDualWeapon(type, quickset)
 	if not (weapon and weapon.combat and not weapon.archery) or not (offweapon and offweapon.combat and not offweapon.archery) then
 		return nil
 	end
+	offtype = offtype or type
 	if type and weapon.combat.talented ~= type then return nil end
-	if type and offweapon.combat.talented ~= type then return nil end
+	if offtype and offweapon.combat.talented ~= offtype then return nil end
 	return weapon, offweapon
 end
 
 --- Check if the actor dual wields melee weapons in the quick slot
-function _M:hasDualWeaponQS(type)
+function _M:hasDualWeaponQS(type, offtype)
 	if self:attr("disarmed") then
 		return nil, "disarmed"
 	end
-	return self:hasDualWeapon(type, true)
+	return self:hasDualWeapon(type, offtype, true)
 end
 
 --- Check if the actor uses psiblades
@@ -2482,7 +2566,16 @@ function _M:buildCombo()
 
 	if self:knowTalent(self.T_RELENTLESS_STRIKES) then
 		local t = self:getTalentFromId(self.T_RELENTLESS_STRIKES)
-		self:incStamina(t.getStamina(self, t))
+		local sta = t.getStamina(self, t)
+		local p = self:getCombo()
+		if rng.percent(t.getChance(self, t)) then
+			power = 2
+			sta = sta + sta
+		end
+		if p>=5 or (power==2 and p>=4) then 
+			sta = sta + sta 
+		end
+		self:incStamina(sta)
 	end
 
 	self:setEffect(self.EFF_COMBO, duration, {power=power})

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ newTalent{
 	getDuration = function(self, t) return getExtensionModifier(self, t, 2) end,
 	getLifeTrigger = function(self, t) return self:combatTalentLimit(t, 10, 30, 15)	end,
 	getDamageSplit = function(self, t) return self:combatTalentLimit(t, 40, 10, 30)/100 end, -- Limit < 40%
-	remove_on_clone = true,
+	unlearn_on_clone = true,
 	callbackOnHit = function(self, t, cb, src)
 		local split = cb.value * t.getDamageSplit(self, t)
 

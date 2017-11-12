@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -97,6 +97,13 @@ function _M:init(actor, on_finish, on_birth)
 	self:setupUI()
 
 	self.key:addCommands{
+		[{"_p","ctrl"}] = function() if config.settings.cheat then
+			local tid = self.last_drawn_talent
+			if tid then
+				-- package.loaded["mod.dialogs.debug.PlotTalent"] = nil
+				game:registerDialog(require("mod.dialogs.debug.PlotTalent").new(self.actor, self.actor:getTalentFromId(tid)))
+			end
+		end end,
 		__TEXTINPUT = function(c)
 			if self.focus_ui.ui.last_mz then
 				if c == "+" and self.focus_ui and self.focus_ui.ui.onUse then
@@ -190,11 +197,12 @@ function _M:finish()
 	if talents ~= "" then
 		game.logPlayer(self.actor, txt:format(talents))
 	end
+	self.actor.turn_procs.resetting_talents = true
 	for i, tid in ipairs(reset) do
 		self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true})
 		if self.actor:knowTalent(tid) then self.actor:forceUseTalent(tid, {ignore_energy=true, ignore_cd=true, no_talent_fail=true, talent_reuse=true}) end
 	end
-	
+	self.actor.turn_procs.resetting_talents = nil
 	-- Prodigies
 	if self.on_finish_prodigies then
 		for tid, ok in pairs(self.on_finish_prodigies) do if ok then self.actor:learnTalent(tid, true, nil, {no_unlearn=true}) end end
@@ -215,6 +223,20 @@ function _M:finish()
 			local old_lvl = self.actor_dup:getTalentLevel(t_id)
 			local old_lvl_raw = self.actor_dup:getTalentLevelRaw(t_id)
 			t.on_levelup_close(self.actor, t, lvl, old_lvl, lvl_raw, old_lvl_raw, true)
+		end
+	end
+
+	if self.actor.player then
+		if self.actor.descriptor and self.actor.descriptor.race == "Dwarf" then
+			local count_nature, count_spell = 0, 0
+			for tid, lev in pairs(self.actor.talents) do
+				local t = self.actor:getTalentFromId(tid)
+				if t and t.is_spell then count_spell = count_spell + lev end
+				if t and t.is_nature then count_nature = count_nature + lev end
+			end
+			if count_nature >= 10 and count_spell >= 10 then
+				game:setAllowedBuild("wilder_stone_warden", true)
+			end
 		end
 	end
 	return true
@@ -272,7 +294,7 @@ function _M:computeDeps(t)
 
 	-- Check number of talents
 	for id, nt in pairs(self.actor.talents_def) do
-		if nt.type[1] == t.type[1] then
+		if nt.type[1] == t.type[1] and not t.no_levelup_category_deps then
 			d[id] = true
 --			print("Talent deps: ", t.id, "same category as", id)
 		end
@@ -540,19 +562,20 @@ function _M:generateList()
 
 	-- Makes up the stats list
 	local stats = {}
-	self.tree_stats = stats
+	self.tree_stats = {{shown=true, type_stat=true, no_title=true, nodes=stats}}
 
 	for i, sid in ipairs{self.actor.STAT_STR, self.actor.STAT_DEX, self.actor.STAT_CON, self.actor.STAT_MAG, self.actor.STAT_WIL, self.actor.STAT_CUN } do
 		local s = self.actor.stats_def[sid]
 		local e = engine.Entity.new{image="stats/"..s.name:lower()..".png", is_stat=true}
 		e:getMapObjects(game.uiset.hotkeys_display_icons.tiles, {}, 1)
 
-		stats[#stats+1] = {shown=true, nodes={{
+		stats[#stats+1] = {
 			name=s.name,
 			rawname=s.name,
 			entity=e,
 			stat=sid,
 			desc=s.description,
+			break_line=#stats > 0,
 			color=function(item)
 				if self.actor:getStat(sid, nil, nil, true) ~= self.actor_dup:getStat(sid, nil, nil, true) then return {255, 215, 0}
 				elseif self.actor:getStat(sid, nil, nil, true) >= self.actor.level * 1.4 + 20 or
@@ -572,7 +595,7 @@ function _M:generateList()
 					return tstring{{"color", 0x00, 0xFF, 0x00}, ("%d (%d)"):format(self.actor:getStat(sid), self.actor:getStat(sid, nil, nil, true))}
 				end
 			end,
-		}}}
+		}
 	end
 end
 
@@ -664,16 +687,19 @@ function _M:createDisplay()
 	if self.actor.unused_prodigies > 0 then self.b_prodigies.glow = 0.6 end
 	if self.actor.unused_talents_types > 0 and self.b_inscriptions then self.b_inscriptions.glow = 0.6 end
 
+	local font = FontPackage:get("bold")
+
 	local recreate_trees = function()
 		self.c_ctree = TalentTrees.new{
-			font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+			font = font,
 			tiles=game.uiset.hotkeys_display_icons,
 			tree=self.ctree,
 			width=320, height=self.ih-50,
 			tooltip=function(item)
+				if not self.display_x or not self.uis[5] then return end
 				local x = self.display_x + self.uis[5].x - game.tooltip.max
 				if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
-				local ret = self:getTalentDesc(item), x, nil
+				local ret = self:getTalentDesc(item)
 				if self.no_tooltip then
 					self.c_desc:erase()
 					self.c_desc:switchItem(ret, ret)
@@ -687,14 +713,15 @@ function _M:createDisplay()
 		}
 
 		self.c_gtree = TalentTrees.new{
-			font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+			font = font,
 			tiles=game.uiset.hotkeys_display_icons,
 			tree=self.gtree,
 			width=320, height=(self.no_tooltip and self.ih - 50) or self.ih-50 - math.max((not self.b_prodigies and 0 or self.b_prodigies.h + 5), (not self.b_inscriptions and 0 or self.b_inscriptions.h + 5)),
 			tooltip=function(item)
+				if not self.display_x or not self.uis[5] then return end
 				local x = self.display_x + self.uis[8].x - game.tooltip.max
 				if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
-				local ret = self:getTalentDesc(item), x, nil
+				local ret = self:getTalentDesc(item)
 				if self.no_tooltip then
 					self.c_desc:erase()
 					self.c_desc:switchItem(ret, ret)
@@ -709,12 +736,13 @@ function _M:createDisplay()
 	recreate_trees()
 
 	self.c_stat = TalentTrees.new{
-		font = core.display.newFont("/data/font/DroidSans.ttf", 14),
+		font = font,
 		tiles=game.uiset.hotkeys_display_icons,
 		tree=self.tree_stats, no_cross = true,
 		width=50, height=self.ih,
 		dont_select_top = true,
 		tooltip=function(item)
+			if not self.display_x or not self.uis[5] then return end
 			local x = self.display_x + self.uis[2].x + self.uis[2].ui.w
 			if self.display_x + self.w + game.tooltip.max <= game.w then x = self.display_x + self.w end
 			local ret = self:getStatDesc(item), x, nil
@@ -728,7 +756,7 @@ function _M:createDisplay()
 		no_tooltip = self.no_tooltip,
 	}
 
-	self.b_stat = Button.new{can_focus = false, can_focus_mouse=true, text="Stats: "..self.actor.unused_stats, fct=function() end, on_select=function()
+	self.b_stat = Textzone.new{text="Stats: "..self:getColorPoints(self.actor.unused_stats), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_stats
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -737,7 +765,7 @@ function _M:createDisplay()
 			game:tooltipDisplayAtMap(self.b_stat.last_display_x + self.b_stat.w, self.b_stat.last_display_y, str)
 		end
 	end}
-	self.b_class = Button.new{can_focus = false, can_focus_mouse=true, text="Class points: "..self.actor.unused_talents, fct=function() end, on_select=function()
+	self.b_class = Textzone.new{text="Class points: "..self:getColorPoints(self.actor.unused_talents), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_class
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -746,7 +774,7 @@ function _M:createDisplay()
 			game:tooltipDisplayAtMap(self.b_stat.last_display_x + self.b_stat.w, self.b_stat.last_display_y, str)
 		end
 	end}
-	self.b_generic = Button.new{can_focus = false, can_focus_mouse=true, text="Generic points: "..self.actor.unused_generics, fct=function() end, on_select=function()
+	self.b_generic = Textzone.new{text="Generic points: "..self:getColorPoints(self.actor.unused_generics), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_generic
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -755,7 +783,7 @@ function _M:createDisplay()
 			game:tooltipDisplayAtMap(self.b_stat.last_display_x + self.b_stat.w, self.b_stat.last_display_y, str)
 		end
 	end}
-	self.b_types = Button.new{can_focus = false, can_focus_mouse=true, text="Category points: "..self.actor.unused_talents_types, fct=function() end, on_select=function()
+	self.b_types = Textzone.new{text="Category points: "..self:getColorPoints(self.actor.unused_talents_types), auto_width=1, auto_height=1, has_box="ui/heading", fct=function() end, on_select=function()
 		local str = desc_types
 		if self.no_tooltip then
 			self.c_desc:erase()
@@ -775,7 +803,7 @@ function _M:createDisplay()
 	end}
 
 	self.t_messages = StatusBox.new{
-		font = core.display.newFont("/data/font/DroidSans.ttf", 16),
+		font = font,
 		width = math.floor(2 * self.iw / 3), delay = 1,
 	}
 	local vsep1 = Separator.new{dir="horizontal", size=self.ih - self.b_stat.h - 10}
@@ -805,7 +833,7 @@ function _M:createDisplay()
 
 		{right=0, bottom=0, ui=self.b_prodigies},
 
-		{hcenter=self.b_types, top=-self.t_messages.h, ui=self.t_messages},
+		{left=0, top=-self.t_messages.h, ui=self.t_messages},
 	}
 	if self.b_inscriptions then table.insert(ret, {right=self.b_prodigies.w, bottom=0, ui=self.b_inscriptions}) end
 	table.insert(ret, {right=self.b_inscriptions or self.b_prodigies, bottom=0, ui=self.c_hide_unknown})
@@ -839,7 +867,7 @@ function _M:getStatDesc(item)
 		local multi_life = 4 + (self.actor.inc_resource_multi.life or 0)
 		text:add("Max life: ", color, ("%0.2f"):format(diff * multi_life), dc, true)
 		text:add("Physical save: ", color, ("%0.2f"):format(diff * 0.35), dc, true)
-		text:add("Healing mod: ", color, ("%0.1f%%"):format(diff * 0.5), dc, true)
+		text:add("Healing mod: ", color, ("%0.1f%%"):format((self.actor:combatStatLimit("con", 1.5, 0, 0.5) - self.actor_dup:combatStatLimit("con", 1.5, 0, 0.5))*100), dc, true)
 	elseif stat_id == self.actor.STAT_WIL then
 		if self.actor:knowTalent(self.actor.T_MANA_POOL) then
 			local multi_mana = 5 + (self.actor.inc_resource_multi.mana or 0)
@@ -889,6 +917,7 @@ end
 
 
 function _M:getTalentDesc(item)
+	self.last_drawn_talent = item.talent
 	local text = tstring{}
 
  	text:add({"color", "GOLD"}, {"font", "bold"}, util.getval(item.rawname, item), {"color", "LAST"}, {"font", "normal"})
@@ -953,6 +982,10 @@ function _M:getTalentDesc(item)
 	return text
 end
 
+function _M:getColorPoints(v)
+	return (v > 0 and "#LIGHT_GREEN#" or "#GREY#")..v
+end
+
 function _M:onUseTalent(item, inc)
 	if item.type then
 		self:learnType(item.type, inc)
@@ -971,14 +1004,10 @@ function _M:onUseTalent(item, inc)
 		self.c_gtree:redrawAllItems()
 	end
 
-	self.b_stat.text = "Stats: "..self.actor.unused_stats
-	self.b_stat:generate()
-	self.b_class.text = "Class points: "..self.actor.unused_talents
-	self.b_class:generate()
-	self.b_generic.text = "Generic points: "..self.actor.unused_generics
-	self.b_generic:generate()
-	self.b_types.text = "Category points: "..self.actor.unused_talents_types
-	self.b_types:generate()
+	self.b_stat:setText("Stats: "..self:getColorPoints(self.actor.unused_stats))
+	self.b_class:setText("Class points: "..self:getColorPoints(self.actor.unused_talents))
+	self.b_generic:setText("Generic points: "..self:getColorPoints(self.actor.unused_generics))
+	self.b_types:setText("Category points: "..self:getColorPoints(self.actor.unused_talents_types))
 end
 
 function _M:updateTooltip()

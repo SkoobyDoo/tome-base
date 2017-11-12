@@ -38,8 +38,13 @@ using namespace glm;
 using namespace std;
 
 class View;
+class RendererGL;
+class DisplayObject;
+class DORPhysic;
 
 #define DO_STANDARD_CLONE_METHOD(class_name) virtual DisplayObject* clone() { DisplayObject *into = new class_name(); this->cloneInto(into); return into; }
+
+const int DO_MAX_TEX = 3;
 
 typedef struct {
 	vec4 pos;
@@ -54,15 +59,59 @@ typedef struct {
  	float kind;
 } vertex;
 
-class RendererGL;
+struct recomputematrix {
+	mat4 model;
+	vec4 color;
+	bool visible;
+};
+
+enum TweenSlot : unsigned char {
+	TX = 0, TY = 1, TZ = 2, 
+	SX = 3, SY = 4, SZ = 5, 
+	RX = 6, RY = 7, RZ = 8, 
+	R = 9, G = 10, B = 11, A = 12,
+	WAIT = 13,
+	MAX = 14
+};
+
+typedef float (*easing_ptr)(float,float,float);
+
+struct TweenState {
+	easing_ptr easing;
+	float from, to;
+	float cur, time;
+	int on_end_ref, on_change_ref;
+};
+
+class DORTweener : public IRealtime {
+protected:
+	DisplayObject *who = NULL;
+	array<TweenState, (short)TweenSlot::MAX> tweens;
+
+public:
+	DORTweener(DisplayObject *d);
+	virtual ~DORTweener();
+	virtual void killMe();
+	bool hasTween(TweenSlot slot);
+	void setTween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref);
+	void cancelTween(TweenSlot slot);
+	virtual void onKeyframe(float nb_keyframes);
+};
+
 extern int donb;
 /****************************************************************************
  ** Generic display object
  ****************************************************************************/
 class DisplayObject {
+	friend class DORPhysic;
+	friend class DORTweener;
+	friend class View;
+public:
+	static int weak_registry_ref;
+	static bool pixel_perfect;
 protected:
+	int weak_self_ref = LUA_NOREF;
 	int lua_ref = LUA_NOREF;
-	DisplayObject *parent = NULL;
 	// lua_State *L = NULL;
 	mat4 model;
 	vec4 color;
@@ -70,36 +119,40 @@ protected:
 	float x = 0, y = 0, z = 0;
 	float rot_x = 0, rot_y = 0, rot_z = 0;
 	float scale_x = 1, scale_y = 1, scale_z = 1;
-	bool changed = false;
+	bool changed = true;
+	bool changed_children = true;
 	bool stop_parent_recursing = false;
+
+	DORTweener *tweener = NULL;
+	vector<DORPhysic*> physics;
 	
 	virtual void cloneInto(DisplayObject *into);
 public:
-	DisplayObject() {
-		donb++;
-		// printf("+DOs %d\n", donb);
-		model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1;
-	};
-	virtual ~DisplayObject() {
-		donb--;
-		// printf("-DOs %d\n", donb);
-		removeFromParent();
-		if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
-	};
+	DisplayObject *parent = NULL;
+	DisplayObject();
+	virtual ~DisplayObject();
 	virtual const char* getKind() = 0;
 	virtual DisplayObject* clone() = 0;
 
 	// void setLuaState(lua_State *L) { this->L = L; };
+	void setWeakSelfRef(int ref) {weak_self_ref = ref; };
+	int getWeakSelfRef() { return weak_self_ref; };
 	void setLuaRef(int ref) {lua_ref = ref; };
 	int unsetLuaRef() { int ref = lua_ref; lua_ref = LUA_NOREF; return ref; };
 	void setParent(DisplayObject *parent);
 	void removeFromParent();
-	void setChanged();
+	void setChanged(bool force=false);
+	virtual void setSortingChanged();
 	bool isChanged() { return changed; };
-	void resetChanged() { changed = false; };
+	void resetChanged() { changed = false; changed_children = false; };
 	bool independantRenderer() { return stop_parent_recursing; };
 
+	int enablePhysic();
+	DORPhysic *getPhysic(int pid);
+	void destroyPhysic(int pid);
+
 	void recomputeModelMatrix();
+	recomputematrix computeParentCompositeMatrix(DisplayObject *stop_at, recomputematrix cur);
 
 	vec4 getColor() { return color; };
 	void getRotate(float *dx, float *dy, float *dz) { *dx = rot_x; *dy = rot_y; *dz = rot_z; };
@@ -114,20 +167,40 @@ public:
 	void scale(float x, float y, float z, bool increment);
 	void shown(bool v);
 
+	bool hasTween(TweenSlot slot);
+	void tween(TweenSlot slot, easing_ptr easing, float from, float to, float time, int on_end_ref, int on_change_ref);
+	void cancelTween(TweenSlot slot);
+	float getDefaultTweenSlotValue(TweenSlot slot);
+
 	virtual void tick() {}; // Overload that and register your object into a display list's tick to interrupt display list chain and call tick() before your first one is displayed
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color) = 0;
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color) = 0;
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) = 0;
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible) = 0;
+	virtual void sortZ(RendererGL *container, mat4& cur_model) = 0;
+};
+
+/****************************************************************************
+ ** All childs of that can be sorted in fast mode by RendererGl
+ ****************************************************************************/
+class DORFlatSortable : public DisplayObject {
+public:
+	shader_type *sort_shader;
+	array<GLuint, DO_MAX_TEX> sort_tex;
+	float sort_z;
 };
 
 /****************************************************************************
  ** DO that has a vertex list
  ****************************************************************************/
-class DORVertexes : public DisplayObject{
+class DORVertexes : public DORFlatSortable{
 protected:
 	vector<vertex> vertices;
-	int tex_lua_ref = LUA_NOREF;
-	GLuint tex;
+	array<int, DO_MAX_TEX> tex_lua_ref{{ LUA_NOREF, LUA_NOREF, LUA_NOREF}};
+	array<GLuint, DO_MAX_TEX> tex{{0, 0, 0}};
+	int tex_max = 1;
+	bool is_zflat = true;
+	float zflat = 0;
+
 	shader_type *shader;
 
 	virtual void cloneInto(DisplayObject *into);
@@ -135,12 +208,9 @@ protected:
 public:
 	DORVertexes() {
 		vertices.reserve(4);
-		tex = 0;
 		shader = default_shader;
 	};
-	virtual ~DORVertexes() {
-		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);		
-	};
+	virtual ~DORVertexes();
 	DO_STANDARD_CLONE_METHOD(DORVertexes);
 	virtual const char* getKind() { return "DORVertexes"; };
 
@@ -168,15 +238,16 @@ public:
 		float x4, float y4, float z4, float u4, float v4, 
 		float r, float g, float b, float a
 	);
-	virtual void setTexture(GLuint tex, int lua_ref) {
-		if (tex_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref);
-		this->tex = tex;
-		tex_lua_ref = lua_ref;
-	};
-	void setShader(shader_type *s) { shader = s; };
+	int addQuad(vertex v1, vertex v2, vertex v3, vertex v4);
+	void loadObj(const string &filename);
+	GLuint getTexture(int id) { return tex[id]; };
+	virtual void setTexture(GLuint tex, int lua_ref, int id);
+	virtual void setTexture(GLuint tex, int lua_ref) { setTexture(tex, lua_ref, 0); };
+	void setShader(shader_type *s) { shader = s ? s : default_shader; };
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
 /****************************************************************************
@@ -193,24 +264,26 @@ public:
 	virtual bool containerRemove(DisplayObject *dob);
 	virtual void containerClear();
 
-	virtual void containerRender(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void containerRenderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void containerRender(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void containerRenderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void containerSortZ(RendererGL *container, mat4& cur_model);
 };
-class DORContainer : public DisplayObject, public IContainer{
+class DORContainer : public DORFlatSortable, public IContainer{
 protected:
 	virtual void cloneInto(DisplayObject *into);
 public:
 	DORContainer() {};
 	virtual ~DORContainer();
-	DO_STANDARD_CLONE_METHOD(DORVertexes);
+	DO_STANDARD_CLONE_METHOD(DORContainer);
 	virtual const char* getKind() { return "DORContainer"; };
 
 	virtual void add(DisplayObject *dob);
 	virtual void remove(DisplayObject *dob);
 	virtual void clear();
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
 
@@ -233,58 +306,38 @@ public:
 	void setRendererName(const char *name);
 	void setRendererName(char *name, bool copy);
 
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 
 	virtual void toScreenSimple();
 	virtual void toScreen(mat4 cur_model, vec4 color) = 0;
 };
 
+
 /****************************************************************************
- ** A FBO that masquerades as a DORVertexes, draw stuff in it and
- ** then add it to a renderer to use the content generated
+ ** Interface to make a DisplayObject be a sub-renderer: breaking chaining
+ ** and using it's own render method
  ****************************************************************************/
-class DORTarget : public DORVertexes, public IResizable {
+typedef void (*static_sub_cb)(mat4 cur_model, vec4 color);
+class StaticSubRenderer : public  SubRenderer {
 protected:
-	int w, h;
-	GLuint fbo;
-	vector<GLuint> textures;
-	vector<GLenum> buffers;
-	int nbt = 0;
-	float clear_r = 0, clear_g = 0, clear_b = 0, clear_a = 1; 
-	SubRenderer *subrender = NULL;
-	int subrender_lua_ref = LUA_NOREF;
-	View *view;
-
+	static_sub_cb cb;
 	virtual void cloneInto(DisplayObject *into);
-
 public:
-	DORTarget();
-	DORTarget(int w, int h, int nbt);
-	virtual ~DORTarget();
-	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
-	virtual const char* getKind() { return "DORTarget"; };
-	virtual void setTexture(GLuint tex, int lua_ref) { printf("Error, trying to set DORTarget texture.\n"); }; // impossible
-
-	void setClearColor(float r, float g, float b, float a);
-	void displaySize(int w, int h, bool center);
-	void use(bool activate);
-	void setAutoRender(SubRenderer *subrender, int ref);
-
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void tick();
-
-	virtual void onScreenResize(int w, int h);
+	StaticSubRenderer(static_sub_cb cb) : cb(cb) {};
+	virtual void toScreen(mat4 cur_model, vec4 color);
 };
+
 
 /****************************************************************************
  ** A Dummy DO taht displays nothing and instead calls a lua callback
  ****************************************************************************/
-class DORCallback : public SubRenderer {
+class DORCallback : public SubRenderer, public IRealtime {
 protected:
 	int cb_ref = LUA_NOREF;
 	bool enabled = true;
+	float keyframes = 0;
 
 	virtual void cloneInto(DisplayObject *into);
 
@@ -301,6 +354,7 @@ public:
 	void enable(bool v) { enabled = v; setChanged(); };
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
+	virtual void onKeyframe(float nb_keyframes);
 };
 
 #endif

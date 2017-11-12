@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2016 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ typedef struct
 	GLfloat *textures;
 } lua_vertexes;
 
+extern int luaopen_core_gamepad(lua_State *L);
 extern int luaopen_core_mouse(lua_State *L);
 extern int luaopen_core(lua_State *L);
 extern int init_blank_surface();

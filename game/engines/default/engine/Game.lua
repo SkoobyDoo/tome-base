@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,6 +28,12 @@ local Shader = require "engine.Shader"
 -- @classmod engine.Game
 module(..., package.seeall, class.make)
 
+-- A simple FPS counter
+local fps_counter_renderer
+local fps_counter
+local fps_counter_frames = 30
+_M.fps_shown = false
+
 --- Sets up the default keyhandler
 -- Also requests the display size and stores it in "w" and "h" properties
 -- @param[type=Key] keyhandler the default keyhandler for this game
@@ -36,6 +42,7 @@ function _M:init(keyhandler)
 	self.level = nil
 	self.w, self.h, self.fullscreen = core.display.size()
 	self.dialogs = {}
+	self.events_ui = {}
 	self.save_name = ""
 	self.player_name = ""
 
@@ -47,6 +54,12 @@ function _M:init(keyhandler)
 	self.__savefile_version_tokens = {}
 
 	self:defaultMouseCursor()
+
+	local fps_font = core.display.newFont("/data/font/FSEX300.ttf", 14)
+	fps_counter_renderer = core.renderer.renderer():color(1, 1, 1, 1)
+	fps_counter = core.renderer.text(fps_font):outline(1, 0, 0, 0, 1)
+	fps_counter_renderer:add(fps_counter)
+	_M.fps_shown = config.settings.cheat
 end
 
 --- Log a message
@@ -106,6 +119,7 @@ end
 function _M:loaded()
 	self.w, self.h, self.fullscreen = core.display.size()
 	self.dialogs = {}
+	self.events_ui = {}
 	self.key = engine.Key.current
 	self.mouse = engine.Mouse.new()
 	self.mouse:setCurrent()
@@ -144,6 +158,7 @@ function _M:prerun()
 	if self.__persistent_hooks then for _, h in ipairs(self.__persistent_hooks) do
 		self:bindHook(h.hook, h.fct)
 	end end
+	core.display.pauseAnims(false)
 end
 
 --- Starts the game
@@ -206,6 +221,23 @@ function _M:display(nb_keyframes)
 
 	-- Update tweening engine
 	if nb_keyframes > 0 then tween.update(nb_keyframes) end
+
+	if _M.fps_shown then
+		fps_counter_frames = fps_counter_frames + nb_keyframes
+		if fps_counter_frames >= 30 then
+			fps_counter_frames = 0
+			local fps, msframe = core.display.getFPS()
+			fps_counter:text(("%0.1f FPS\n%d draws/frame\n%d ms/frame\n%d mb lua memory"):format(fps, core.display.countDraws(), msframe, collectgarbage("count")/1024))
+		else
+			core.display.countDraws()
+		end
+		fps_counter_renderer:toScreen()
+	end
+end
+
+--- Return the DisplayObject to draw
+function _M:getBaseDisplayDO()
+	return core.renderer.callback(function(nb_keyframes) _M.display(self, nb_keyframes) end)
 end
 
 --- Register a timer
@@ -319,9 +351,9 @@ function _M:onTickEndExecute()
 	if self.on_tick_end and #self.on_tick_end > 0 then
 		local fs = self.on_tick_end
 		self.on_tick_end = {}
+		self.on_tick_end_names = nil
 		for i = 1, #fs do fs[i]() end
 	end
-	self.on_tick_end_names = nil
 end
 
 --- Register things to do on tick end
@@ -370,9 +402,25 @@ function _M:setFlyingText(fl)
 	self.flyers = fl
 end
 
+--- Registers a UI event callback
+-- The handler must have a method "onEventUI"
+function _M:registerEventUI(handler, kind)
+	self.events_ui[kind] = self.events_ui[kind] or setmetatable({}, {__mode='k'})
+	self.events_ui[kind][handler] = true
+end
+
+--- Triggers a UI event
+function _M:triggerEventUI(kind, ...)
+	if not self.events_ui[kind] then return end
+	for h, _ in pairs(self.events_ui[kind]) do
+		h:onEventUI(kind, ...)
+	end
+end
+
 --- Registers a dialog to display
 -- @param[type=Dialog] d
 function _M:registerDialog(d)
+	if d.__refuse_dialog then return end
 	table.insert(self.dialogs, d)
 	self.dialogs[d] = #self.dialogs
 	d.__stack_id = #self.dialogs

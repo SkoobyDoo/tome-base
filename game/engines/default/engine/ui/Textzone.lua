@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -46,6 +46,8 @@ function _M:init(t)
 	self.color = t.color or {r=255, g=255, b=255}
 	if t.can_focus ~= nil then self.can_focus = t.can_focus end
 	self.scroll_inertia = 0
+
+	if t.config then t.config(self) end
 
 	Base.init(self, t)
 end
@@ -163,7 +165,7 @@ function _M:startAutoScrolling()
 	else
 		dirm, dirM = nil, 0
 	end
-	self.text_container:translateTween("autoscroll", h / 3, "y", dirm, dirM, "inOutQuad",
+	self.text_container:tween(h / 3, "y", dirm, dirM, "inOutQuad",
 		function() self.invert_scroll = not self.invert_scroll self:startAutoScrolling() end,
 		function(x, y, z) if self.scrollbar then self.scrollbar:setPos(-y) end end
 	)
@@ -174,15 +176,15 @@ function _M:stopAutoScrolling()
 	self.pingpong = false
 
 	self.invert_scroll = false
-	self.text_container:translateTween("autoscroll", 8, "y", nil, 0, "inOutQuad")
+	self.text_container:tween(8, "y", nil, 0, "inOutQuad")
 end
 
 function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
 	if self.scrollbar then
 		local oldpos = self.scrollbar.pos
 		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
-		if self.scroll_inertia > 0 then self:stopAutoScrolling() self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
-		elseif self.scroll_inertia < 0 then self:stopAutoScrolling() self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+		if self.scroll_inertia > 0 then self:stopAutoScrolling() self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self:stopAutoScrolling() self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
 

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,10 +58,21 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
+	self.old_o = nil
 
-	self.bg = self:getUITexture(self.bg)
-	self.bg_sel = self:getUITexture(self.bg_sel)
-	if self.bg_empty then self.bg_empty = self:getUITexture(self.bg_empty) end
+	self.item_container = core.renderer.renderer()
+
+	self.bg = core.renderer.fromTextureTable(self:getAtlasTexture(self.bg))
+	self.bg_sel = core.renderer.fromTextureTable(self:getAtlasTexture(self.bg_sel))
+	if self.bg_empty then
+		self.bg_empty = core.renderer.fromTextureTable(self:getAtlasTexture(self.bg_empty))
+		self.do_container:add(self.bg_empty:color(1, 1, 1, 0))
+	end
+
+	self.do_container:add(self.bg)
+	self.do_container:add(self.bg_sel:color(1, 1, 1, 0))
+	self.do_container:add(self.item_container:translate(self.f_ix, self.f_iy, 10))
 
 	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
 		if button == "left" and event == "button" then self:onUse(button, event) end
@@ -162,21 +173,38 @@ function _M:forceUpdate()
 	self.last_t = nil
 end
 
+function _M:on_focus_change(status)
+	self.bg_sel:tween(7, "a", nil, 1)
+	self.bg:tween(7, "a", nil, 0)
+end
+
 function _M:display(x, y, nb_keyframes, ox, oy)
-	if self.focused then
-		self.bg_sel.t:toScreenPrecise(x, y, self.w, self.h, 0, self.bg_sel.w/self.bg_sel.tw, 0, self.bg_sel.h/self.bg_sel.th)
-	else
-		self.bg.t:toScreenPrecise(x, y, self.w, self.h, 0, self.bg.w/self.bg.tw, 0, self.bg.h/self.bg.th)
-	end
-
 	local o = self:getItem()
-	if o and o.toScreen then
-		o:toScreen(nil, x + self.f_ix, y + self.f_iy, self.f_iw, self.f_ih)
-	elseif self.bg_empty then
-		self.bg_empty.t:toScreenPrecise(x + self.f_ix, y + self.f_iy, self.f_iw, self.f_ih, 0, self.bg_empty.w/self.bg_empty.tw, 0, self.bg_empty.h/self.bg_empty.th)
+	if self.old_o ~= o then
+		if o then
+			self.item_container:clear():add(o:getEntityDisplayObject(nil, self.f_iw, self.f_ih, 1, false, false, true)):shown(true)
+			if self.bg_empty then self.bg_empty:shown(false) end
+		else
+			self.item_container:clear():shown(false)
+			if self.bg_empty then self.bg_empty:shown(true) end
+		end
+		self.old_o = o
 	end
 
-	self:drawItemShortName(o, x, y)
+	-- if self.focused then
+	-- 	self.bg_sel.t:toScreenPrecise(x, y, self.w, self.h, 0, self.bg_sel.w/self.bg_sel.tw, 0, self.bg_sel.h/self.bg_sel.th)
+	-- else
+	-- 	self.bg.t:toScreenPrecise(x, y, self.w, self.h, 0, self.bg.w/self.bg.tw, 0, self.bg.h/self.bg.th)
+	-- end
+
+	-- local o = self:getItem()
+	-- if o and o.toScreen then
+	-- 	o:toScreen(nil, x + self.f_ix, y + self.f_iy, self.f_iw, self.f_ih)
+	-- elseif self.bg_empty then
+	-- 	self.bg_empty.t:toScreenPrecise(x + self.f_ix, y + self.f_iy, self.f_iw, self.f_ih, 0, self.bg_empty.w/self.bg_empty.tw, 0, self.bg_empty.h/self.bg_empty.th)
+	-- end
+
+	-- self:drawItemShortName(o, x, y)
 
 	self.last_display_x = ox
 	self.last_display_y = oy

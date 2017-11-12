@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -65,7 +65,8 @@ newEntity{
 	cost = 15,
 	wielder={
 		combat_atk = resolvers.mbonus_material(10, 5),
-		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1},
+		combat_physcrit = resolvers.mbonus_material(6, 1), -- give it some crit instead, this ego should prob be reworked now though
+--		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1}, --this is a bit too strong with how steady shot works now
 	},
 }
 

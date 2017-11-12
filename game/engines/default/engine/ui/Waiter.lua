@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ function _M:setTimeout(secs, cb)
 end
 
 function _M:getWaitDisplay(d)
-	d.__showup = false
+	d.__showup = false d.renderer:cancelTween(true)
 	d.unload_wait = rawget(d, "unload")
 	d.unload = function(self)
 		core.wait.disable()
@@ -77,16 +77,46 @@ function _M:getWaitDisplay(d)
 		if has_max then core.wait.addMaxTicks(has_max) end
 		local i, max, dir = 0, has_max or 20, 1
 
-		local left = {core.display.loadImage(self.base_gfx.."/waiter/left_basic.png"):glTexture()}
-		local right = {core.display.loadImage(self.base_gfx.."/waiter/right_basic.png"):glTexture()}
-		local middle = {core.display.loadImage(self.base_gfx.."/waiter/middle.png"):glTexture()}
-		local bar = {core.display.loadImage(self.base_gfx.."/waiter/bar.png"):glTexture()}
+		local left = core.display.loadImage(self.base_gfx.."/waiter/left_basic.png")
+		local right = core.display.loadImage(self.base_gfx.."/waiter/right_basic.png")
+		local middle = core.display.loadImage(self.base_gfx.."/waiter/middle.png")
+		local bar = core.display.loadImage(self.base_gfx.."/waiter/bar.png")
 
+		-- Progressbar
+		local progressbar = core.renderer.renderer()
+
+		local left_w, bar_height = left:getSize()
+		local right_w, _ = right:getSize()
+		local _, middle_h = middle:getSize()
+		local bar_center = dx + dw / 2
+		local bar_width = dw
+		local bar_offset = math.floor(bar_width / 2)
+
+		progressbar:translate(bar_center, dy + dh / 2)
+
+		progressbar:add(core.renderer.fromSurface(left, -bar_offset -left_w, 0))
+		progressbar:add(core.renderer.fromSurface(right, bar_offset, 0))
+		progressbar:add(core.renderer.fromSurface(middle, -bar_offset, (bar_height - middle_h) / 2, bar_width, nil, true))
+		local barcontainer = core.renderer.renderer("stream"):translate(-bar_offset, (bar_height - middle_h) / 2)
+		local bar = core.renderer.fromSurface(bar, 0, 0, 1, middle_h)
+		barcontainer:add(bar)
+		progressbar:add(barcontainer)
+
+		local bartext = nil
+		if has_max then
+			local font_h = font:lineSkip()
+			bartext = core.renderer.text(font):outline(1):center():translate(math.floor(bar_width / 2), math.floor((middle_h - font_h) / 2), 1)
+			barcontainer:add(bartext)
+		end
+
+		local i, max, dir = has_max or 20, has_max or 20, -1
 		return function()
-			-- Background
+			-- -- Background
 			core.wait.drawLastFrame()
 
-			-- Progressbar
+			--------------------------------------------------------------------
+			-- Update bar size
+			--------------------------------------------------------------------
 			local x
 			if has_max then
 				i, max = core.wait.getTicks()
@@ -97,26 +127,43 @@ function _M:getWaitDisplay(d)
 				elseif dir < 0 and i <= -max then dir = 1
 				end
 			end
+			bar:scale(util.bound(bar_width * i / max, 1, bar_width), 1, 1)
+			if bartext then bartext:text(("%d%%"):format(i / max * 100)) end
+			--------------------------------------------------------------------
 
-			local x = dw * (i / max)
-			local x2 = x + dw
-			x = util.bound(x, 0, dw)
-			x2 = util.bound(x2, 0, dw)
-			if has_max then x, x2 = 0, x end
-			local w, h = x2 - x, dh
+			progressbar:toScreen()
 
-			middle[1]:toScreenFull(dx, dy, dw, middle[7], middle[2], middle[3])
-			bar[1]:toScreenFull(dx + x, dy, w, bar[7], bar[2], bar[3])
-			left[1]:toScreenFull(dx - left[6] + 5, dy + (middle[7] - left[7]) / 2, left[6], left[7], left[2], left[3])
-			right[1]:toScreenFull(dx + dw - 5, dy + (middle[7] - right[7]) / 2, right[6], right[7], right[2], right[3])
+			-- -- Progressbar
+			-- local x
+			-- if has_max then
+			-- 	i, max = core.wait.getTicks()
+			-- 	i = util.bound(i, 0, max)
+			-- else
+			-- 	i = i + dir
+			-- 	if dir > 0 and i >= max then dir = -1
+			-- 	elseif dir < 0 and i <= -max then dir = 1
+			-- 	end
+			-- end
 
-			if has_max then
-				self.font:setStyle("bold")
-				local txt = {core.display.drawStringBlendedNewSurface(self.font, math.min(100, math.floor(core.wait.getTicks() * 100 / max)).."%", 255, 255, 255):glTexture()}
-				self.font:setStyle("normal")
-				txt[1]:toScreenFull(dx + (dw - txt[6]) / 2 + 2, dy + (bar[7] - txt[7]) / 2 + 2, txt[6], txt[7], txt[2], txt[3], 0, 0, 0, 0.6)
-				txt[1]:toScreenFull(dx + (dw - txt[6]) / 2, dy + (bar[7] - txt[7]) / 2, txt[6], txt[7], txt[2], txt[3])
-			end
+			-- local x = dw * (i / max)
+			-- local x2 = x + dw
+			-- x = util.bound(x, 0, dw)
+			-- x2 = util.bound(x2, 0, dw)
+			-- if has_max then x, x2 = 0, x end
+			-- local w, h = x2 - x, dh
+
+			-- middle[1]:toScreenFull(dx, dy, dw, middle[7], middle[2], middle[3])
+			-- bar[1]:toScreenFull(dx + x, dy, w, bar[7], bar[2], bar[3])
+			-- left[1]:toScreenFull(dx - left[6] + 5, dy + (middle[7] - left[7]) / 2, left[6], left[7], left[2], left[3])
+			-- right[1]:toScreenFull(dx + dw - 5, dy + (middle[7] - right[7]) / 2, right[6], right[7], right[2], right[3])
+
+			-- if has_max then
+			-- 	self.font:setStyle("bold")
+			-- 	local txt = {core.display.drawStringBlendedNewSurface(self.font, math.min(100, math.floor(core.wait.getTicks() * 100 / max)).."%", 255, 255, 255):glTexture()}
+			-- 	self.font:setStyle("normal")
+			-- 	txt[1]:toScreenFull(dx + (dw - txt[6]) / 2 + 2, dy + (bar[7] - txt[7]) / 2 + 2, txt[6], txt[7], txt[2], txt[3], 0, 0, 0, 0.6)
+			-- 	txt[1]:toScreenFull(dx + (dw - txt[6]) / 2, dy + (bar[7] - txt[7]) / 2, txt[6], txt[7], txt[2], txt[3])
+			-- end
 
 			-- Timeout?
 			if self.timeout and core.game.getTime() - self.timeout_start >= self.timeout then

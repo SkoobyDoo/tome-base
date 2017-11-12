@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -28,6 +28,9 @@ extern "C" {
 #include "freetype-gl/texture-font.h"
 }
 #include <string>
+#include <unordered_map>
+
+using namespace std;
 
 #define DEFAULT_ATLAS_W	1024
 #define DEFAULT_ATLAS_H	1024
@@ -50,6 +53,9 @@ typedef struct
 	float lineskip;
 	ftgl::texture_atlas_t *atlas;
 	ftgl::texture_font_t *font;
+
+	unordered_map<uint32_t, ftgl::texture_glyph_t*> *glyph_map;
+	unordered_map<uint32_t, ftgl::texture_glyph_t*> *glyph_map_outline;
 } font_type;
 
 // extern bool font_add_atlas(font_type *f, int32_t c, font_style style);

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -96,10 +96,11 @@ local function samecolor(c1, c2)
 end
 
 function _M:makeTextureBar(text, nfmt, val, max, reg, x, y, r, g, b, bar_col, bar_bgcol)
+	local oval = val
 	val = util.bound(val, 0, max)
 	local cached = self.tex_cache.texture_bars[text]
 	-- it's a bunch of number comparisons so it's sufficiently fast for jit
-	local cached_ok = cached and (nfmt == cached.nfmt) and (val == cached.val) and (max == cached.max) and (reg == cached.reg) and
+	local cached_ok = cached and (nfmt == cached.nfmt) and (oval == cached.val) and (max == cached.max) and (reg == cached.reg) and
 		(r == cached.r) and (g == cached.g) and (b == cached.b) and samecolor(bar_col, cached.bar_col) and samecolor(bar_bgcol, cached.bar_bgcol)
 	if not cached_ok then
 		local items = {}
@@ -110,14 +111,14 @@ function _M:makeTextureBar(text, nfmt, val, max, reg, x, y, r, g, b, bar_col, ba
 			core.display.drawQuad(disp_x + self.bars_x, disp_y, self.bars_w * val / max, self.font_h, bar_col.r, bar_col.g, bar_col.b, 255)
 		end
 		items[#items+1] = {self.font:draw(text, self.w, r, g, b, true)[1], x=0, y=0}
-		items[#items+1] = {self.font:draw((nfmt or "%d/%s"):format(val, max and math.round(max) or "--"), self.w, r, g, b, true)[1], x=self.bars_x + 5, y=0}
+		items[#items+1] = {self.font:draw((nfmt or "%d/%s"):format(oval, max and math.round(max) or "--"), self.w, r, g, b, true)[1], x=self.bars_x + 5, y=0}
 
 		if reg and reg ~= 0 then
 			local reg_txt = string.limit_decimals(reg, 3, "+")
 			local tex = self.font:draw(reg_txt, self.w, r, g, b, true)[1]
 			items[#items+1] = {tex, x = self.bars_x + self.bars_w - self.font:size(reg_txt) - 3, y=0}
 		end
-		cached = {nfmt=nfmt, val=val, max=max, reg=reg, r=r, g=g, b=b, bar_col=bar_col, bar_bgcol=bar_bgcol, items}
+		cached = {nfmt=nfmt, val=oval, max=max, reg=reg, r=r, g=g, b=b, bar_col=bar_col, bar_bgcol=bar_bgcol, items}
 		self.tex_cache.texture_bars[text] = cached
 	end
 	local items = cached[1]
@@ -292,11 +293,7 @@ function _M:display()
 	self:mouseTooltip(self.TOOLTIP_MAGWILCUN, self:makeTexture(("Mag/Wil/Cun: #00ff00#%3d/%3d/%3d"):format(player:getMag(), player:getWil(), player:getCun()), x, h, 255, 255, 255)) h = h + self.font_h
 	h = h + self.font_h
 
-	if player.life < 0 then
-		self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life    :", nil, player.life, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h	
-	else
-		self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life    :", nil, player.life, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
-	end
+	self:mouseTooltip(self.TOOLTIP_LIFE, self:makeTextureBar("#c00000#Life    :", nil, player.life, player.max_life, player.life_regen * util.bound((player.healing_factor or 1), 0, 2.5), x, h, 255, 255, 255, colors.DARK_RED, colors.VERY_DARK_RED)) h = h + self.font_h
 
 	local shield, max_shield = 0, 0
 	if player:attr("time_shield") then shield = shield + player.time_shield_absorb max_shield = max_shield + player.time_shield_absorb_max end

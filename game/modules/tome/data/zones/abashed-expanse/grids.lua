@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,8 +26,10 @@ newEntity{ base="FLOATING_ROCKS", define_as = "WORMHOLE", nice_tiler = false,
 	name = "unstable wormhole",
 	display = '*', color = colors.GREY,
 	force_clone = true,
-	damage_project = function(self, src, x, y, type, dam)
-		if type ~= engine.DamageType.PHYSICAL and game.party:hasMember(src) and not self.change_level then
+	damage_project = function(self, src, x, y, type, dam, source_talent)
+		local st = nil
+		if source_talent then st = game.player:getTalentFromId(source_talent) end
+		if st and st.is_spell and game.party:hasMember(src) and not self.change_level then
 			self.change_level = 1
 			self.name = "stable wormhole"
 			game.logSeen(src, "#VIOLET#The wormhole absorbs energies and stabilizes. You can now use it to travel.")

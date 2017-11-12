@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ function _M:defineHotkey(id)
 
 	self.actor.hotkey[id] = {"talent", item.talent}
 	self:simplePopup("Hotkey "..id.." assigned", t.name:capitalize().." assigned to hotkey "..id)
-	self.c_list:drawTree()
+	self.c_list:regenerate()
 	self.actor.changed = true
 end
 
@@ -140,7 +140,7 @@ function _M:onDrag(item)
 		game.mouse:startDrag(x, y, DO, {kind="talent", id=t.id}, function(drag, used)
 			local x, y = core.mouse.get()
 			game.mouse:receiveMouse("drag-end", x, y, true, nil, {drag=drag})
-			if drag.used then self.c_list:drawTree() end
+			if drag.used then self.c_list:regenerate() end
 		end)
 	end
 end
@@ -212,12 +212,12 @@ function _M:use(item, button)
 			elseif b.what == "auto-dis" then
 				self.actor:checkSetTalentAuto(item.talent, false)
 			else
-				self:triggerHook{"UseTalents:use", actor=self.actor, talent=t, item=item}
+				self:triggerHook{"UseTalents:use", what=b.what, actor=self.actor, talent=t, item=item}
 			end
-			self.c_list:drawTree()
+			self.c_list:regenerate()
 			self.actor.changed = true
 		end)
-		self.c_list:drawTree()
+		self.c_list:regenerate()
 		return
 	end
 

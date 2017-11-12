@@ -4,7 +4,10 @@ solution "TEngine"
 	configurations { "Debug", "Release" }
 	objdir "obj"
 	defines {"GLEW_STATIC"}
-	if _OPTIONS.force32bits then buildoptions{"-m32"} linkoptions{"-m32"} libdirs{"/usr/lib32"} end
+	if _OPTIONS.force32bits then
+		buildoptions{"-m32"} linkoptions{"-m32"}
+		if not _OPTIONS.wincross then libdirs{"/usr/lib32"} end
+	end
 
 	includedirs {
 		"src",
@@ -39,6 +42,7 @@ solution "TEngine"
 	if _OPTIONS.lua == "default" then includedirs{"src/lua"}
 	elseif _OPTIONS.lua == "jit2" then includedirs{"src/luajit2/src", "src/luajit2/dynasm",}
 	end
+	if _OPTIONS.box2d == "MT" then defines{"BOX2D_MT"} end
 
 if _OPTIONS.steam then
 	dofile("steamworks/build/steam-def.lua")

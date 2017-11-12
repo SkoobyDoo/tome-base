@@ -30,6 +30,14 @@ newoption {
 	}
 }
 newoption {
+	trigger     = "box2d",
+	description = "Box2D engine to use",
+	allowed = {
+		{ "ST",	"Single Threaded: normal Box2D" },
+		{ "MT", "Multi Threaded: faster Box2D (default)" },
+	}
+}
+newoption {
 	trigger     = "profiling",
 	description = "Enables gprof profiling data",
 }
@@ -85,3 +93,4 @@ newoption {
 }
 
 _OPTIONS.lua = _OPTIONS.lua or "jit2"
+_OPTIONS.box2d = _OPTIONS.box2d or "MT"

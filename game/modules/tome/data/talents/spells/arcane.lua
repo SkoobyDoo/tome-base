@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,44 +17,11 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-newTalent{
-	name = "Arcane Power",
-	type = {"spell/arcane", 1},
-	mode = "sustained",
-	require = spells_req1,
-	sustain_mana = 25,
-	points = 5,
-	cooldown = 30,
-	tactical = { BUFF = 2 },
-	use_only_arcane = 1,
-	getSpellpowerIncrease = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
-	getArcaneResist = function(self, t) return 5 + self:combatTalentSpellDamage(t, 10, 500) / 18 end,
-	activate = function(self, t)
-		game:playSoundNear(self, "talents/arcane")
-		return {
-			res = self:addTemporaryValue("resists", {[DamageType.ARCANE] = t.getArcaneResist(self, t)}),
-			display_resist = t.getArcaneResist(self, t),
-			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
-			particle = self:addParticles(Particles.new("arcane_power", 1)),
-		}
-	end,
-	deactivate = function(self, t, p)
-		self:removeParticles(p.particle)
-		self:removeTemporaryValue("combat_spellpower", p.power)
-		self:removeTemporaryValue("resists", p.res)
-		return true
-	end,
-	info = function(self, t)
-		local resist = self.sustain_talents[t.id] and self.sustain_talents[t.id].display_resist or t.getArcaneResist(self, t)
-		return ([[Your mastery of magic allows you to enter a state of deep concentration, increasing your Spellpower by %d and arcane resistance by %d%%.]]):
-		format(t.getSpellpowerIncrease(self, t), resist)
-	end,
-}
 
 newTalent{
 	name = "Manathrust",
-	type = {"spell/arcane", 2},
-	require = spells_req2,
+	type = {"spell/arcane", 1},
+	require = spells_req1,
 	points = 5,
 	random_ego = "attack",
 	mana = 10,
@@ -91,6 +58,40 @@ newTalent{
 		At level 3, it becomes a beam.
 		The damage will increase with your Spellpower.]]):
 		format(damDesc(self, DamageType.ARCANE, damage))
+	end,
+}
+
+newTalent{
+	name = "Arcane Power",
+	type = {"spell/arcane", 2},
+	mode = "sustained",
+	require = spells_req2,
+	sustain_mana = 25,
+	points = 5,
+	cooldown = 30,
+	tactical = { BUFF = 2 },
+	use_only_arcane = 1,
+	getSpellpowerIncrease = function(self, t) return self:combatTalentScale(t, 5, 20, 0.75) end,
+	getArcaneResist = function(self, t) return 5 + self:combatTalentSpellDamage(t, 10, 500) / 18 end,
+	activate = function(self, t)
+		game:playSoundNear(self, "talents/arcane")
+		return {
+			res = self:addTemporaryValue("resists", {[DamageType.ARCANE] = t.getArcaneResist(self, t)}),
+			display_resist = t.getArcaneResist(self, t),
+			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
+			particle = self:addParticles(Particles.new("arcane_power", 1)),
+		}
+	end,
+	deactivate = function(self, t, p)
+		self:removeParticles(p.particle)
+		self:removeTemporaryValue("combat_spellpower", p.power)
+		self:removeTemporaryValue("resists", p.res)
+		return true
+	end,
+	info = function(self, t)
+		local resist = self.sustain_talents[t.id] and self.sustain_talents[t.id].display_resist or t.getArcaneResist(self, t)
+		return ([[Your mastery of magic allows you to enter a state of deep concentration, increasing your Spellpower by %d and arcane resistance by %d%%.]]):
+		format(t.getSpellpowerIncrease(self, t), resist)
 	end,
 }
 

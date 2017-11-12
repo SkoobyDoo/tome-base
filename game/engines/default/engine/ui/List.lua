@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ function _M:drawItem(item)
 	local text = item[self.display_prop]
 
 	if not item._entry then
-		item._entry = Entry.new(nil, "", color, self.fw, self.fh, nil, true)
+		item._entry = Entry.new(nil, "", color, self.fw, self.fh, nil, 1, true)
 		self.do_container:add(item._entry:get())
 	end
 	item._entry:setText(text, item.color, true)

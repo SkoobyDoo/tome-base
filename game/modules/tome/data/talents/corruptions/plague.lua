@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -229,7 +229,7 @@ newTalent{
 	radius = 2,
 	tactical = { ATTACK = {BLIGHT = 2} },
 	requires_target = true,
-	healloss = function(self,t) return self:combatTalentLimit(t, 100, 44, 60) end, -- Limit < 100%
+	healloss = function(self,t) return self:combatTalentLimit(t, 150, 44, 80) end, -- Limit < 150%
 	disfact = function(self,t) return self:combatTalentLimit(t, 100, 36, 60) end, -- Limit < 100%
 	-- Desease spreading handled in mod.data.damage_types.lua for BLIGHT
 	spreadFactor = function(self, t) return self:combatTalentLimit(t, 0.05, 0.35, 0.17) end, -- Based on previous formula: 256 damage gave 100% chance (1500 hps assumed)

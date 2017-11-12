@@ -1,7 +1,5 @@
-
-
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -132,7 +130,7 @@ return {
 			{	id_layout_name = "cavern",
 				desc = " cavern",
 				class = "engine.generator.map.Cavern",
-				zoom = math.random(10, 20),
+				zoom = math.random(12, 20),
 				min_floor = math.floor(rng.range(vx * vy * 0.4 / 2, vx * vy * 0.4)),
 			},
 			{	id_layout_name = "maze",
@@ -159,15 +157,15 @@ return {
 				lite_room_chance = rng.range(0, 100),
 				max_block_w = rng.range(7, 20), max_block_h = rng.range(7, 20),
 				max_building_w = rng.range(4, size/6), max_building_h = rng.range(4, size/6),
-				enemy_count = math.ceil(vx * vy *45/4900) -- more room for enemies and more cover on this map: avg: 31 @ 60x60, 45 @ 70x70, 75 @ 90x90
+				enemy_count = math.ceil(vx * vy *60/4900) -- more room for enemies and more cover on this map: avg: 44 @ 60x60, 60 @ 70x70, 99 @ 90x90
 			},
 			{	id_layout_name = "octopus",
 				desc = ", subsided area",
 				class = "engine.generator.map.Octopus",
-				main_radius = {0.3, 0.4},
+				main_radius = {0.25, 0.35},
 				arms_radius = {0.1, 0.2},
 				arms_range = {0.7, 0.8},
-				nb_rooms = {3, 9},
+				nb_rooms = {5, 10},
 			},
 			{	id_layout_name = "hexa",
 				desc = ", geometrically ordered area",
@@ -211,6 +209,8 @@ return {
 		vgrid = vgrids[vgridN]
 		print("[Infinite Dungeon] using zone layout #", layoutN, layout.id_layout_name) table.print(layout, "\t")
 		print("[Infinite Dungeon] using variable grid set #", vgridN, vgrid.id_grids_name) table.print(vgrid, "\t")
+
+		if layout.rooms and game:isAddonActive("items-vault") then table.insert(layout.rooms, {"!items-vault",3}) end
 		
 		data.generator.map = layout
 		
@@ -245,6 +245,7 @@ return {
 		data.generator.map.down = data.alternate_exit[1].grids.down -- exit matches destination
 		data.generator.map.door = vgrid.door
 		data.generator.map["'"] = vgrid.door
+		data.generator.map.I = "ITEMS_VAULT"
 
 		data.width, data.height = vx, vy
 		data.generator.map.width, data.generator.map.height = vx, vy
@@ -357,8 +358,6 @@ return {
 			level.data.effects = {effid}
 		end
 
-		game.state:infiniteDungeonChallengeFinish(zone, level)
-		
 		if config.settings.cheat then -- gather statistics
 			local block_count = 0
 			for i = 0, level.map.w - 1 do for j = 0, level.map.h - 1 do
@@ -367,6 +366,11 @@ return {
 			local closed = 100*block_count/(level.map.w*level.map.h) local open = 100-closed
 			print(("[Infinite Dungeon] Open space calculation: (%s, %s, %dw x %dh) space -- (open:%2.1f%%, closed:%2.1f%%)"):format(level.data.id_layout_name, level.data.id_grids_name, level.map.w, level.map.h, open, closed))
 		end
+	end,
+	post_process_end = function(level, zone)
+		-- We delay it because at "post_process" the map can STILL decide to regenerate
+		-- and if it does, it's a new level and challenge is considered auto failed (or auto success heh)
+		game.state:infiniteDungeonChallengeFinish(zone, level)
 	end,
 }
 

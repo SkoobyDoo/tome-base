@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ return {
 	name = "Yiilkgur, the Sher'Tul Fortress",
 	display_name = function(x, y)
 		local zn = game.level.map.attrs(x or game.player.x, y or game.player.y, "zonename")
-		if zn then return zn.." (Yiilkgur, the Sher'Tul Fortress)"
+		if zn then return zn.." (Yiilkgur)"
 		else return "Yiilkgur, the Sher'Tul Fortress" end
 	end,
 	variable_zone_name = true,

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 require "engine.class"
+local I18N = require "engine.I18N"
 local Savefile = require "engine.Savefile"
 local UIBase = require "engine.ui.Base"
 local FontPackage = require "engine.FontPackage"
@@ -221,7 +222,7 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 				local def = self:loadSavefileDescription(dir)
 				if def then
 					if def.loadable and fs.exists(dir.."/cur.png") then
-						def.screenshot = core.display.loadImage(dir.."/cur.png")
+						def.screenshot = core.loader.png(dir.."/cur.png")
 					end
 
 					table.insert(lss, def)
@@ -236,7 +237,7 @@ function _M:listSavefiles(incompatible_module, moddir_filter)
 				local def = self:loadSavefileDescription(dir)
 				if def then
 					if def.loadable and fs.exists(dir.."/cur.png") then
-						def.screenshot = core.display.loadImage(dir.."/cur.png")
+						def.screenshot = core.loader.png(dir.."/cur.png")
 					end
 
 					table.insert(lss, def)
@@ -386,7 +387,7 @@ function _M:listBackgrounds(mod)
 	if def.mount then def.mount() end
 	local bkgs = core.display.loadImage(def.name) or core.display.loadImage("/data/gfx/background/tome.png")
 	local logo = nil
-	if def.logo then logo = {(core.display.loadImage(def.logo) or core.display.loadImage("/data/gfx/background/tome-logo.png")):glTexture()} end
+	if def.logo then logo = core.display.loadImage(def.logo) or core.display.loadImage("/data/gfx/background/tome-logo.png") end
 	if def.umount then def.umount() end
 
 	if mod.keep_background_texture then mod.keep_background_texture = bkgs end
@@ -728,131 +729,140 @@ end
 --- Make a module loadscreen
 function _M:loadScreen(mod)
 	core.display.forceRedraw()
-	core.wait.enable(10000, function() -- DGDGDGDG omfg rewrite that with DOs ..
+	core.wait.enable(10000, function()
+		local renderer = core.renderer.renderer("static")
 		local has_max = mod.loading_wait_ticks
 		if has_max then core.wait.addMaxTicks(has_max) end
-		local i, max, dir = has_max or 20, has_max or 20, -1
 		local bkgs, logo = self:listBackgrounds(mod)
 
 		local sw, sh = core.display.size()
 		local bw, bh = bkgs:getSize()
 		local obw, obh = bkgs:getSize()
-		local bkg = {bkgs:glTexture()}
 
-		local pubimg, publisher = nil, nil
-		if mod.publisher_logo then
-			pubimg, publisher = core.display.loadImage("/data/gfx/background/"..mod.publisher_logo..".png"), nil
-		end
-		if pubimg then publisher = {pubimg:glTexture()} end
+		local publisher = nil
+		if mod.publisher_logo then publisher = core.display.loadImage("/data/gfx/background/"..mod.publisher_logo..".png") end
 
 		mod.waiter_load_ui = mod.waiter_load_ui or "dark-ui"
 
-		local left = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/left.png"):glTexture()}
-		local right = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/right.png"):glTexture()}
-		local middle = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/middle.png"):glTexture()}
-		local bar = {core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/bar.png"):glTexture()}
+		local left = core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/left.png")
+		local right = core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/right.png")
+		local middle = core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/middle.png")
+		local bar = core.display.loadImage("/data/gfx/"..mod.waiter_load_ui.."/waiter/bar.png")
 
 		local font = FontPackage:get("small")
 		local bfont = FontPackage:get("default")
 
-		local dw, dh = math.floor(sw / 2), left[7]
-		local dx, dy = math.floor((sw - dw) / 2), sh - dh
-
-		local funfacts = nil
 		local ffdata = profile.funfacts
 
-		local tip = nil
+		-- Background
+		local x, y = 0, 0
+		bw, bh = sw, sh
+		if bw > bh then
+			bh = bw * obh / obw
+			y = (sh - bh) / 2
+			if bh < sh then
+				bh = sh
+				bw = bh * obw / obh
+				x = (sw - bw) / 2
+				y = 0
+			end
+		else
+			bw = bh * obw / obh
+			x = (sw - bw) / 2
+		end
+		-- bkg[1]:toScreenFull(x, y, bw, bh, bw * bkg[2] / obw, bh * bkg[3] / obh)
+		renderer:add(core.renderer.fromSurface(bkgs, x, y, bw, bh))
+
+		-- Logo
+		if logo then renderer:add(core.renderer.surface(logo, 0, 0)) end
+
+		-- Publisher Logo
+		if publisher then
+			local pw, ph = publisher:getSize()
+			renderer:add(core.renderer.surface(publisher, sw - pw, 0))
+		end
+
+		-- Progressbar
+		local progressbar = core.renderer.container()
+		renderer:add(progressbar)
+
+		local left_w, bar_height = left:getSize()
+		local right_w, _ = right:getSize()
+		local _, middle_h = middle:getSize()
+		local bar_center = math.floor(sw / 2)
+		local bar_width = math.floor(sw / 2)
+		local bar_offset = math.floor(bar_width / 2)
+
+		progressbar:translate(bar_center, sh - bar_height)
+
+		progressbar:add(core.renderer.fromSurface(left, -bar_offset -left_w, 0))
+		progressbar:add(core.renderer.fromSurface(right, bar_offset, 0))
+		progressbar:add(core.renderer.fromSurface(middle, -bar_offset, (bar_height - middle_h) / 2, bar_width, nil, true))
+		local barcontainer = core.renderer.renderer("stream"):translate(-bar_offset, (bar_height - middle_h) / 2)
+		local bar = core.renderer.fromSurface(bar, 0, 0, 1, middle_h)
+		barcontainer:add(bar)
+		progressbar:add(barcontainer)
+
+		local bartext = nil
+		if has_max then
+			local font_h = font:lineSkip()
+			bartext = core.renderer.text(font):outline(1):center():translate(math.floor(bar_width / 2), math.floor((middle_h - font_h) / 2), 1)
+			barcontainer:add(bartext)
+		end
+
+		-- Loading tips
 		if mod.load_tips then pcall(function()
 			local l = rng.table(mod.load_tips)
-			local img = nil
+			local img, img_offset = nil, 0
 			if l.image then
 				local i = core.display.loadImage(l.image)
-				if i then img = {i:glTexture()} end
+				if i then img = {i:glTexture()} img_offset = img[6] end
 			end
-			local text = bfont:draw(l.text, dw - (img and img[6] or 0), 255, 255, 255)
-			local text_h = #text * text[1].h
+			local text =  core.renderer.text(bfont):outline(1):maxWidth(bar_width - img_offset):text(l.text)
+			local text_w, text_h = text:getStats()
 
 			local Base = require "engine.ui.Base"
-			local frame = Base:makeFrame("ui/tooltip/", dw + 30, math.max((img and img[7] or 0) + (l.img_y_off or 0), text_h) + 30)
+			local oldui = Base.ui
+			Base.ui = mod.waiter_load_ui
+			local frame = Base:makeFrameDO("ui/tooltip/", bar_width + 30, math.max((img and img[7] or 0) + (l.img_y_off or 0), text_h) + 30)
+			Base.ui = oldui
 
-			tip = function(x, y)
-				y = y - frame.h - 30
-				Base:drawFrame(frame, x+1, y+1, 0, 0, 0, 0.3)
-				Base:drawFrame(frame, x-3, y-3, 1, 1, 1, 0.75)
-				x = x + 10
-				y = y + 10
+			local tip = core.renderer.container():translate(bar_center - frame.w / 2, sh - bar_height - 20 - frame.h)
+			tip:add(frame.container:color(1, 1, 1, 0.75))
+			tip:add(text:translate(img_offset, (frame.h - text_h) / 2, 1))
+			if img then tip:add(core.renderer.texture(img[1], 0, (frame.h - img[7]) / 2)) end
 
-				if img then
-					img[1]:toScreenFull(x, y + (l.img_y_off or 0), img[6], img[7], img[2], img[3])
-					x = x + img[6] + 7
-				end
-
-				y = y - 10 + math.floor((frame.h - text_h) / 2)
-				for i = 1, #text do
-					local item = text[i]
-					if not item then break end
-					item._tex:toScreenFull(x+2, y+2, item.w, item.h, item._tex_w, item._tex_h, 0, 0, 0, 0.8)
-					item._tex:toScreenFull(x, y, item.w, item.h, item._tex_w, item._tex_h)
-					y = y + item.h
-				end
-			end
+			renderer:add(tip)
 		end) end
 
-		local ffw = math.ceil(sw / 4)
 		if ffdata and mod.show_funfacts then
 			local str = self:selectFunFact(ffdata)
 			if str then pcall(function()
-				local text, _, tw = font:draw(str, ffw, 255, 255, 255)
-				local text_h = #text * text[1].h
-				ffw = math.min(ffw, tw)
+				local ffw = math.ceil(sw / 4)
+				local text =  core.renderer.text(bfont):outline(1):maxWidth(ffw):text(str)
+				local text_w, text_h = text:getStats()
+				ffw = math.min(ffw, text_w)
 
 				local Base = require "engine.ui.Base"
-				local frame = Base:makeFrame("ui/tooltip/", ffw + 30, text_h + 30)
-				funfacts = function(x, y)
-					x = x - ffw - 30
-					Base:drawFrame(frame, x+1, y+1, 0, 0, 0, 0.3)
-					Base:drawFrame(frame, x-3, y-3, 1, 1, 1, 0.5)
-					x = x + 10
-					y = y + 10
+				local oldui = Base.ui
+				Base.ui = mod.waiter_load_ui
+				local frame = Base:makeFrameDO("ui/tooltip/", ffw + 30, text_h + 30)
+				Base.ui = oldui
 
-					y = y - 10 + math.floor((frame.h - text_h) / 2)
-					for i = 1, #text do
-						local item = text[i]
-						if not item then break end
-						item._tex:toScreenFull(x+2, y+2, item.w, item.h, item._tex_w, item._tex_h, 0, 0, 0, 0.5)
-						item._tex:toScreenFull(x, y, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, 0.85)
-						y = y + item.h
-					end
-				end
+				local funfacts = core.renderer.container():translate(sw - ffw - 30, 10)
+				funfacts:add(frame.container:color(1, 1, 1, 0.75))
+				funfacts:add(text:translate((frame.w - text_w) / 2, (frame.h - text_h) / 2, 1))
+
+				renderer:add(funfacts)
 			end) end
 		end
 
+		-- Return a display function to be called evry frame
+		local i, max, dir = has_max or 20, has_max or 20, -1
 		return function()
-			-- Background
-			local x, y = 0, 0
-			bw, bh = sw, sh
-			if bw > bh then
-				bh = bw * obh / obw
-				y = (sh - bh) / 2
-				if bh < sh then
-					bh = sh
-					bw = bh * obw / obh
-					x = (sw - bw) / 2
-					y = 0
-				end
-			else
-				bw = bh * obw / obh
-				x = (sw - bw) / 2
-			end
-			bkg[1]:toScreenFull(x, y, bw, bh, bw * bkg[2] / obw, bh * bkg[3] / obh)
-
-			-- Logo
-			if logo then logo[1]:toScreenFull(0, 0, logo[6], logo[7], logo[2], logo[3]) end
-
-			-- Publisher Logo
-			if publisher then publisher[1]:toScreenFull(sw - publisher[6], 0, publisher[6], publisher[7], publisher[2], publisher[3]) end
-
-			-- Progressbar
+			--------------------------------------------------------------------
+			-- Update bar size
+			--------------------------------------------------------------------
 			local x
 			if has_max then
 				i, max = core.wait.getTicks()
@@ -863,29 +873,11 @@ function _M:loadScreen(mod)
 				elseif dir < 0 and i <= -max then dir = 1
 				end
 			end
+			bar:scale(util.bound(bar_width * i / max, 1, bar_width), 1, 1)
+			if bartext then bartext:text(("%d%%"):format(i / max * 100)) end
+			--------------------------------------------------------------------
 
-			local x = dw * (i / max)
-			local x2 = x + dw
-			x = util.bound(x, 0, dw)
-			x2 = util.bound(x2, 0, dw)
-			if has_max then x, x2 = 0, x end
-			local w, h = x2 - x, dh
-
-			middle[1]:toScreenFull(dx, dy, dw, middle[7], middle[2], middle[3])
-			bar[1]:toScreenFull(dx + x, dy, w, bar[7], bar[2], bar[3])
-			left[1]:toScreenFull(dx - left[6] + 5, dy + (middle[7] - left[7]) / 2, left[6], left[7], left[2], left[3])
-			right[1]:toScreenFull(dx + dw - 5, dy + (middle[7] - right[7]) / 2, right[6], right[7], right[2], right[3])
-
-			if has_max then
-				font:setStyle("bold")
-				local txt = {core.display.drawStringBlendedNewSurface(font, math.min(100, math.floor(core.wait.getTicks() * 100 / max)).."%", 255, 255, 255):glTexture()}
-				font:setStyle("normal")
-				txt[1]:toScreenFull(dx + (dw - txt[6]) / 2 + 2, dy + (bar[7] - txt[7]) / 2 + 2, txt[6], txt[7], txt[2], txt[3], 0, 0, 0, 0.6)
-				txt[1]:toScreenFull(dx + (dw - txt[6]) / 2, dy + (bar[7] - txt[7]) / 2, txt[6], txt[7], txt[2], txt[3])
-			end
-
-			if tip then tip(dw / 2, dy) end
-			if funfacts then funfacts(sw, 10) end
+			renderer:toScreen()
 			
 			local errs = core.game.checkError()
 			if errs then
@@ -927,7 +919,9 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	core.game.setRealtime(0)
 
 	-- Disable particles FBO
-	core.particles.defineFramebuffer(nil)
+	core.particles.defineAlterFBO(nil)
+	core.particles.defineBloomFBO(nil)
+	core.particles.defaultShader(nil)
 
 	-- FOV Shape
 	core.fov.set_algorithm("large_ass")
@@ -938,6 +932,12 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	-- Init the module directories
 	fs.mount(engine.homepath, "/")
 	mod.load("setup")
+
+	-- Load localizations
+	if mod.i18n_support then
+		I18N:loadLocale("/data/i18n/"..config.settings.locale..".lua")
+		I18N:setLocale(config.settings.locale or "en_US")
+	end
 
 	-- Load font packages
 	FontPackage:loadDefinition("/data/font/packages/default.lua")
@@ -1036,6 +1036,7 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	profile:addStatFields(unpack(mod.profile_stats_fields or {}))
 	profile:setConfigsBatch(true)
 	profile:loadModuleProfile(mod.short_name, mod)
+	profile:incrLoadProfile(mod)
 	profile:currentCharacter(mod.full_version_string, "game did not tell us")
 
 	UIBase:clearCache()
@@ -1088,28 +1089,30 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	-- Add user chat if needed
 	if mod.allow_userchat and _G.game.key then
 		profile.chat:setupOnGame()
-		if not config.settings.chat or not config.settings.chat.channels or not config.settings.chat.channels[mod.short_name] then
-			if type(mod.allow_userchat) == "table" then
-				for _, chan in ipairs(mod.allow_userchat) do
-					profile.chat:join(chan)
+		profile:onAuth(function()
+			if not config.settings.chat or not config.settings.chat.channels or not config.settings.chat.channels[mod.short_name] then
+				if type(mod.allow_userchat) == "table" then
+					for _, chan in ipairs(mod.allow_userchat) do
+						profile.chat:join(chan)
+					end
+					if mod.allow_userchat[1] then profile.chat:selectChannel(mod.allow_userchat[1]) end
+				else
+					profile.chat:join(mod.short_name)
+					profile.chat:join(mod.short_name.."-spoiler")
+					profile.chat:join("global")
+					profile.chat:selectChannel(mod.short_name)
 				end
-				if mod.allow_userchat[1] then profile.chat:selectChannel(mod.allow_userchat[1]) end
+				print("Joining default channels")
 			else
-				profile.chat:join(mod.short_name)
-				profile.chat:join(mod.short_name.."-spoiler")
-				profile.chat:join("global")
-				profile.chat:selectChannel(mod.short_name)
+				local def = false
+				for c, _ in pairs(config.settings.chat.channels[mod.short_name]) do
+					profile.chat:join(c)
+					if c == mod.short_name then def = true end
+				end
+				if def then profile.chat:selectChannel(mod.short_name) else profile.chat:selectChannel( (next(config.settings.chat.channels[mod.short_name])) ) end
+				print("Joining selected channels")
 			end
-			print("Joining default channels")
-		else
-			local def = false
-			for c, _ in pairs(config.settings.chat.channels[mod.short_name]) do
-				profile.chat:join(c)
-				if c == mod.short_name then def = true end
-			end
-			if def then profile.chat:selectChannel(mod.short_name) else profile.chat:selectChannel( (next(config.settings.chat.channels[mod.short_name])) ) end
-			print("Joining selected channels")
-		end
+		end)
 	end
 
 	-- Disable the profile if ungood
@@ -1125,6 +1128,9 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 
 	-- TODO: Replace this with loading quickhotkeys from the profile.
 	if engine.interface.PlayerHotkeys then engine.interface.PlayerHotkeys:loadQuickHotkeys(mod.short_name, Savefile.hotkeys_file) end
+
+	-- Wait for all ressources
+	core.loader.waitAll()
 
 	core.wait.disable()
 	profile.waiting_auth_no_redraw = false

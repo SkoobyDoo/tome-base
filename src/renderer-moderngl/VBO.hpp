@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -45,15 +45,16 @@ typedef struct {
 } vbo_vertex;
 
 class VBO {
-	VBOMode mode = VBOMode::DYNAMIC;
+	VBOMode mode = VBOMode::STATIC;
 
 	vec4 color = {1, 1, 1, 1};
 
-	GLuint vbo = 0;
+	GLuint vbo = 0, vbo_elements = 0;
 	vector<GLuint> textures;
 	shader_type *shader = NULL;
 
 	vector<vbo_vertex> vertices;
+	vector<GLuint> elements;
 
 	bool changed = true;
 
@@ -66,6 +67,7 @@ public:
 
 	void clear();
 
+	void resetTexture();
 	void setTexture(GLuint tex);
 	void setTexture(GLuint tex, int pos);
 	void setShader(shader_type *shader);

@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -47,11 +47,13 @@ extern "C" void interface_resize(int w, int h);
 
 class IRealtime {
 public:
+	bool dying = false;
 	IRealtime();
 	virtual ~IRealtime();
-	virtual void onKeyframe(int nb_keyframes) = 0;
+	virtual void killMe();
+	virtual void onKeyframe(float nb_keyframes) = 0;
 };
 
-extern "C" void interface_realtime(int nb_keyframes);
+extern "C" void interface_realtime(float nb_keyframes);
 
 #endif

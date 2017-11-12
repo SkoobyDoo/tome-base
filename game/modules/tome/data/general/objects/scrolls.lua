@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -325,7 +325,7 @@ newEntity{ base = "BASE_RUNE",
 
 	inscription_kind = "protect",
 	inscription_data = {
-		cooldown = resolvers.rngrange(14, 24),
+		cooldown = resolvers.rngrange(14, 20),
 		dur = resolvers.mbonus_level(5, 3),
 		power = resolvers.mbonus_level(500, 50, function(e, v) return v * 0.06 end),
 		use_stat_mod = 3,

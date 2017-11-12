@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -54,10 +54,12 @@ _M.ui_conf = {}
 
 function _M:loadUIDefinitions(file)
 	local f, err = loadfile(file)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = self.ui_conf
 	setfenv(f, self.ui_conf)
 	local ok, err = pcall(f)
-	if not f then print("Error while loading UI definition from", file, ":", err) return end
+	self.ui_conf.def = nil
+	if not f then error("Error while loading UI definition from", file, ":", err) return end
 end
 
 function _M:uiExists(ui)
@@ -166,7 +168,7 @@ function _M:checkTileset(image)
 	print("Loading tile from tileset", f)
 	local tex = self.tilesets_texs[d.set]
 	if not tex then
-		tex = core.display.loadImage(d.set):glTexture(true, true)
+		tex = core.loader.png(d.set, true, true)
 		self.tilesets_texs[d.set] = tex
 		print("Loading tileset", d.set)
 	end
@@ -228,27 +230,46 @@ local fromTextureTable = core.renderer.fromTextureTable
 local function resizeFrame(f, w, h, iw, ih)
 	if not w then w = iw + f.b4.w + f.b6.w end
 	if not h then h = ih + f.b8.h + f.b2.h end
-
 	local cx, cy = f.cx, f.cy
-	f.container:clear()
-	f.container:add(fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
 
-	f.container:add(fromTextureTable(f.b7, cx + 0, cy + 0))
-	f.container:add(fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
+	if f.b1.t == f.b2.t and f.b1.t == f.b3.t and f.b1.t == f.b4.t and f.b1.t == f.b5.t and f.b1.t == f.b6.t and f.b1.t == f.b7.t and f.b1.t == f.b8.t and f.b1.t == f.b9.t then
+		if not f.container then f.container = core.renderer.vertexes() end
+		-- print("====MAKING MONO VERTEX FRAME")
+		f.container:clear()
+		fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true, 1, 1, 1, 1, f.container)
 
-	f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h))
-	f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h))
+		fromTextureTable(f.b7, cx + 0, cy + 0, nil, nil, false, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0, nil, nil, false, 1, 1, 1, 1, f.container)
 
-	f.container:add(fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
-	f.container:add(fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+		fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h, nil, nil, false, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h, nil, nil, false, 1, 1, 1, 1, f.container)
 
-	f.container:add(fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true))
-	f.container:add(fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
+		fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true, 1, 1, 1, 1, f.container)
+
+		fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true, 1, 1, 1, 1, f.container)
+		fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true, 1, 1, 1, 1, f.container)
+	else
+		if not f.container then f.container = core.renderer.container() end
+		f.container:clear()
+		f.container:add(fromTextureTable(f.b5, cx + f.b4.w, cy + f.b8.h, w - f.b6.w - f.b4.w, h - f.b8.h - f.b2.h, true))
+
+		f.container:add(fromTextureTable(f.b7, cx + 0, cy + 0))
+		f.container:add(fromTextureTable(f.b9, cx + w-f.b9.w, cy + 0))
+
+		f.container:add(fromTextureTable(f.b1, cx + 0, cy + h-f.b1.h))
+		f.container:add(fromTextureTable(f.b3, cx + w-f.b3.w, cy + h-f.b3.h))
+
+		f.container:add(fromTextureTable(f.b4, cx + 0, cy + f.b7.h, nil, h - f.b7.h - f.b1.h, true))
+		f.container:add(fromTextureTable(f.b6, cx + w-f.b6.w, cy + f.b9.h, nil, h - f.b9.h - f.b3.h, true))
+
+		f.container:add(fromTextureTable(f.b8, cx + f.b7.w, cy + 0, w - f.b7.w - f.b9.w, nil, true))
+		f.container:add(fromTextureTable(f.b2, cx + f.b1.w, cy + h - f.b2.h, w - f.b1.w - f.b3.w, nil, true))
+	end
 end
 
 function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 	local f = {}
-	f.container = core.renderer.container()
 	if base then
 		if type(base) == "string" then
 			f.b7 = self:getAtlasTexture(base.."7.png")
@@ -279,83 +300,34 @@ function _M:makeFrameDO(base, w, h, iw, ih, center, resizable)
 		f.cx, f.cy = cx, cy
 
 		resizeFrame(f, w, h)
+	else
+		f.container = core.renderer.container() -- dummy
 	end
 	f.w = math.floor(w)
 	f.h = math.floor(h)
 	if resizable then f.resize = resizeFrame end
+	return f
+end
 
+function _M:cloneFrameDO(of, resizable)
+	local f = {}
+	f.w, f.h = of.w, of.h
+	f.cx, f.cy = of.cx, of.cy
+	f.b7 = of.b7 f.b9 = of.b9 f.b1 = of.b1 f.b3 = of.b3 f.b8 = of.b8 f.b5 = of.b5 f.b4 = of.b4 f.b2 = of.b2 f.b6 = of.b6
+	resizeFrame(f, f.w, f.h)
+	if resizable then f.resize = resizeFrame end
 	return f
 end
 
 function _M:drawFrame(f, x, y, r, g, b, a, w, h, total_w, total_h, loffset_x, loffset_y, clip_area)
-	if not f.b7 then return 0, 0, 0, 0 end
-	
-	loffset_x = loffset_x or 0
-	loffset_y = loffset_y or 0
-	total_w = total_w or 0
-	total_h = total_h or 0
-	
-	x = math.floor(x)
-	y = math.floor(y)
-	
-	f.w = math.floor(w or f.w)
-	f.h = math.floor(h or f.h)
-	
-	clip_area = clip_area or { h = f.h, w = f.w }
-
-	-- first of all check if anything is visible
-	if total_h + f.h > loffset_y and total_h < loffset_y + clip_area.h then 
-		local clip_y_start = 0
-		local clip_y_end = 0
-		local total_clip_y_start = 0
-		local total_clip_y_end = 0
-
-		-- check if top (top right, top and top left) is visible
-		if total_h + f.b8.h > loffset_y and total_h < loffset_y + clip_area.h then
-			util.clipTexture({_tex = f.b7.t, _tex_w = f.b7.tw, _tex_h = f.b7.th}, x, y, f.b7.w, f.b7.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) --left top
-			_, _, clip_y_start, clip_y_end = util.clipTexture({_tex = f.b8.t, _tex_w = f.b8.tw, _tex_h = f.b8.th}, x + f.b7.w, y, f.w - f.b7.w - f.b9.w, f.b8.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- top
-			util.clipTexture({_tex = f.b9.t, _tex_w = f.b9.tw, _tex_h = f.b9.th}, x + f.w - f.b9.w, y, f.b9.w, f.b9.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- right top
-
-			total_clip_y_start = clip_y_start
-			total_clip_y_end = clip_y_end
-		else
-			total_clip_y_start = f.b8.h
-		end
-		total_h = total_h + f.b8.h
-		local mid_h = math.floor(f.h - f.b2.h - f.b8.h)
-
-		-- check if mid (right, center and left) is visible
-		if total_h + mid_h > loffset_y and total_h < loffset_y + clip_area.h then
-			util.clipTexture({_tex = f.b4.t, _tex_w = f.b4.tw, _tex_h = f.b4.th}, x, y + f.b7.h - total_clip_y_start, f.b4.w, mid_h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- left
-			_, _, clip_y_start, clip_y_end = util.clipTexture({_tex = f.b6.t, _tex_w = f.b6.tw, _tex_h = f.b6.th}, x + f.w - f.b9.w, y + f.b7.h - total_clip_y_start, f.b6.w, mid_h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- center
-			util.clipTexture({_tex = f.b5.t, _tex_w = f.b5.tw, _tex_h = f.b5.th}, x + f.b7.w, y + f.b7.h - total_clip_y_start, f.w - f.b7.w - f.b3.w, mid_h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- right
-
-			total_clip_y_start = total_clip_y_start + clip_y_start
-			total_clip_y_end = total_clip_y_end + clip_y_end
-		else
-			total_clip_y_start = total_clip_y_start + mid_h
-		end
-		total_h = total_h + mid_h
-		
-		-- check if bottom (bottom right, bottom and bottom left) is visible
-		if total_h + f.b2.h > loffset_y and total_h < loffset_y + clip_area.h then
-			util.clipTexture({_tex = f.b1.t, _tex_w = f.b1.tw, _tex_h = f.b1.th}, x, y + f.h - f.b1.h - total_clip_y_start, f.b1.w, f.b1.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- left bottom
-			_, _, clip_y_start, clip_y_end = util.clipTexture({_tex = f.b2.t, _tex_w = f.b2.tw, _tex_h = f.b2.th}, x + f.b7.w, y + f.h - f.b2.h - total_clip_y_start, f.w - f.b7.w - f.b9.w, f.b2.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- bottom
-			util.clipTexture({_tex = f.b3.t, _tex_w = f.b3.tw, _tex_h = f.b3.th}, x + f.w - f.b3.w, y + f.h - f.b3.h - total_clip_y_start, f.b3.w, f.b3.h, 0, total_h, 0, loffset_y, clip_area, r, g, b, a) -- right bottom
-
-			total_clip_y_start = total_clip_y_start + clip_y_start
-			total_clip_y_end = total_clip_y_end + clip_y_end
-		else
-			total_clip_y_start = total_clip_y_start + f.b2.h
-		end
-		
-		return 0, 0, total_clip_y_start, total_clip_y_end
-	end
-	return 0, 0, 0, 0
+	-- DGDGDGDG : replace that!
+	error("replace UI:drawFrame")
 end
 
 function _M:setTextShadow(color, x, y)
-	if type(v) == "table" then -- Already a color, use it
+	if color == false or color == nil then
+		self.text_shadow = nil
+	elseif type(v) == "table" then -- Already a color, use it
 		self.text_shadow = {x=x, y=y or x, color=colors.smart1(v)}
 	else -- Just use a default outline value
 		self.text_shadow = {x=color or 1, y=color or 1, color={0, 0, 0, 0.7}}
@@ -363,7 +335,9 @@ function _M:setTextShadow(color, x, y)
 end
 
 function _M:setTextOutline(v)
-	if type(v) == "table" then -- Already a color, use it
+	if v == false or v == nil then
+		self.text_outline = nil
+	elseif type(v) == "table" then -- Already a color, use it
 		self.text_outline = colors.smart1(v)
 	elseif type(v) == "number" then -- Assuem this is the desired alpha
 		self.text_outline = {0, 0, 0, v}

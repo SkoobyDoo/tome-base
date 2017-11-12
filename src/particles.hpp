@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
-#ifndef _PARTICLES_HPP_
-#define _PARTICLES_HPP_
+#ifndef _PARTICLES_HPP
+#define _PARTICLES_HPP
 
 #include "tgl.h"
 #include "useshader.h"
@@ -36,6 +36,7 @@ typedef struct {
 	float r, g, b, a, rv, gv, bv, av, ra, ga, ba, aa;
 	int life;
 	int trail;
+	float u1, u2, v1, v2;
 } particle_type;
 
 struct s_plist;
@@ -88,13 +89,19 @@ struct s_particles_type {
 
 	int life_min, life_max;
 
+	float shift_x, shift_y;
+
 	int engine, blend_mode;
 
 	float rotate, rotate_v;
 
+	bool allow_bloom;
 	bool fboalter;
 
-	GLuint vbo;
+	float trigger_pass, trigger, trigger_old;
+	int trigger_cb;
+
+	GLuint vbo, vbo_elements;
 
 	struct s_particles_type *sub;
 
@@ -129,6 +136,8 @@ struct s_particle_thread {
 	SDL_Thread *thread;
 	SDL_mutex *lock;
 	SDL_sem *keyframes;
+	float nb_keyframes_to_consume;
+	int nb_keyframes_to_consume_int;
 	plist *list;
 	jmp_buf panicjump;
 };

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,8 +31,29 @@ newEntity{
 for i = 1, 14 do newEntity{ base = "AUTUMN_GRASS", define_as = "AUTUMN_GRASS_PATCH"..i, image = ("terrain/grass/autumn_grass_main_%02d.png"):format(i) } end
 
 local autumn_treesdef = {
-	{"small_elm", {"shadow", "trunk", "foliage_autumn"}},
-	{"elm", {tall=-1, "shadow", "trunk", "foliage_autumn"}},
+	{"elm_trunk_foliage_autumn", tall=-1},
+	{"oak_trunk_01_foliage_autumn_%02d", 1, 4, tall=-1},
+	{"oak_trunk_02_foliage_autumn_%02d", 1, 4, tall=-1},
+	{"small_elm_trunk_foliage_autumn", tall=0},
+	{"small_oak_trunk_01_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_oak_trunk_01_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_oak_trunk_01_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_oak_trunk_01_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_oak_trunk_02_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_oak_trunk_02_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_oak_trunk_02_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_oak_trunk_02_foliage_autumn_%02d", 1, 4, tall=0},
+	{"small_willow_moss_trunk_foliage_autumn", tall=0},
+	{"small_willow_moss_trunk_foliage_autumn", tall=0},
+	{"small_willow_trunk_foliage_autumn", tall=0},
+	{"small_willow_trunk_foliage_autumn", tall=0},
+	{"small_willow_trunk_foliage_autumn", tall=0},
+	{"willow_trunk_foliage_autumn", tall=-1},
+	{"willow_trunk_foliage_autumn", tall=-1},
+	{"willow_trunk_foliage_autumn", tall=-1},
+	{"willow_trunk_foliage_moss_autumn", tall=-1},
+	{"willow_trunk_foliage_moss_autumn", tall=-1},
+	{"willow_trunk_foliage_moss_autumn", tall=-1},
 }
 
 newEntity{

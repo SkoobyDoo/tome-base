@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ extern "C" {
  ** Spriter file stuff
  ****************************************************************************/
 ImageFile * TE4FileFactory::newImageFile(const std::string &initialFilePath, point initialDefaultPivot, atlasdata atlasData) {
-	return new TE4SpriterImageFile(spriter, initialFilePath, initialDefaultPivot, atlasData);
+	return new TE4SpriterImageFile(initialFilePath, initialDefaultPivot, atlasData);
 }
 
 SoundFile * TE4FileFactory::newSoundFile(const std::string &initialFilePath) {
@@ -55,7 +55,7 @@ SpriterFileDocumentWrapper * TE4FileFactory::newScmlDocumentWrapper() {
 /****************************************************************************
  ** Spriter object stuff
  ****************************************************************************/
-TE4ObjectFactory::TE4ObjectFactory(DORSpriter *spriter) : spriter(spriter) {
+TE4ObjectFactory::TE4ObjectFactory() {
 }
 
 PointInstanceInfo * TE4ObjectFactory::newPointInstanceInfo() {
@@ -71,13 +71,13 @@ BoneInstanceInfo * TE4ObjectFactory::newBoneInstanceInfo(point size) {
 }
 
 TriggerObjectInfo *TE4ObjectFactory::newTriggerObjectInfo(std::string triggerName) {
-	return new TE4SpriterTriggerObjectInfo(spriter, triggerName);
+	return new TE4SpriterTriggerObjectInfo(triggerName);
 }
 
 /****************************************************************************
  ** Spriter event trigger stuff
  ****************************************************************************/
-TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(DORSpriter *spriter, std::string triggerName) : triggerName(triggerName), spriter(spriter) {
+TE4SpriterTriggerObjectInfo::TE4SpriterTriggerObjectInfo(std::string triggerName) : triggerName(triggerName) {
 	printf("[SPRITER] trigger defined %s\n", triggerName.c_str());
 }
 void TE4SpriterTriggerObjectInfo::setTriggerCount(int newTriggerCount)
@@ -86,35 +86,38 @@ void TE4SpriterTriggerObjectInfo::setTriggerCount(int newTriggerCount)
 	if (newTriggerCount) playTrigger();
 }
 void TE4SpriterTriggerObjectInfo::playTrigger() {
+	DORSpriter *spriter = DORSpriter::currently_processing;
 	if (spriter->trigger_cb_lua_ref == LUA_NOREF) return;
 
+	lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
 	lua_rawgeti(L, LUA_REGISTRYINDEX, spriter->trigger_cb_lua_ref);
+	lua_rawgeti(L, -2, spriter->getWeakSelfRef());
+	lua_pushstring(L, triggerName.c_str());
 	lua_pushnumber(L, getTriggerCount());
-	if (lua_pcall(L, 1, 0, 0))
+	if (lua_pcall(L, 3, 0, 0))
 	{
 		printf("DORSpriter trigger callback error: %s\n", lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
+	lua_pop(L, 1); // weak registery
 }
 
 /****************************************************************************
  ** Spriter image stuff
  ****************************************************************************/
-TE4SpriterImageFile::TE4SpriterImageFile(DORSpriter *spriter, std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData) : ImageFile(initialFilePath,initialDefaultPivot), spriter(spriter)
-{	
-	if (!atlasData.active) {
-		makeTexture(initialFilePath, &texture, &w, &h);
-		aw = w; ah = h;
+TE4SpriterImageFile::TE4SpriterImageFile(std::string initialFilePath, point initialDefaultPivot, atlasdata atlasData) : ImageFile(initialFilePath,initialDefaultPivot) {	
+	size_t pos = initialFilePath.find_last_of('/');
+	size_t epos = initialFilePath.find_last_of('.');
+	id = initialFilePath.substr(pos+1, epos-pos-1);
+
+	if (!atlasData.active) {		
+		texture = DORSpriterCache::getTexture(initialFilePath);
+		aw = w = texture->tex.w; ah = h = texture->tex.h;
 	} else {
-		if (!spriter->atlas_loaded) {
-			float dummy;
-			string png = spriter->scml;
-			png.replace(png.end() - 4, png.end(), "png");
-			makeTexture(png, &spriter->atlas, &dummy, &dummy);
-			spriter->atlas_loaded =true;
-		}
-		using_atlas = true;
-		texture = spriter->atlas;
+		string png = DORSpriter::currently_processing->scml;
+		png.replace(png.end() - 4, png.end(), "png");
+		texture = DORSpriterCache::getTexture(png);
+
 		xoff = atlasData.xoff;
 		yoff = atlasData.yoff;
 		float ax = atlasData.x;
@@ -124,62 +127,115 @@ TE4SpriterImageFile::TE4SpriterImageFile(DORSpriter *spriter, std::string initia
 		w = atlasData.ow;
 		h = atlasData.oh;
 		if (atlasData.rotated) {
-			tx1 = ax / spriter->atlas.w;
-			ty1 = ay / spriter->atlas.h;
-			tx2 = (ax + ah) / spriter->atlas.w;
-			ty2 = (ay + aw) / spriter->atlas.h;
+			tx1 = ax / texture->tex.w;
+			ty1 = ay / texture->tex.h;
+			tx2 = (ax + ah) / texture->tex.w;
+			ty2 = (ay + aw) / texture->tex.h;
 		} else {
-			tx1 = ax / spriter->atlas.w;
-			ty1 = ay / spriter->atlas.h;
-			tx2 = (ax + aw) / spriter->atlas.w;
-			ty2 = (ay + ah) / spriter->atlas.h;
+			tx1 = ax / texture->tex.w;
+			ty1 = ay / texture->tex.h;
+			tx2 = (ax + aw) / texture->tex.w;
+			ty2 = (ay + ah) / texture->tex.h;
 		}
 		rotated = atlasData.rotated;
 	}
 }
 TE4SpriterImageFile::~TE4SpriterImageFile() {	
-	if (!using_atlas) glDeleteTextures(1, &texture.tex);
-}
-
-bool TE4SpriterImageFile::makeTexture(std::string file, texture_type *t, float *w, float *h) {
-	SDL_Surface *s = IMG_Load_RW(PHYSFSRWOPS_openRead(file.c_str()), TRUE);
-	if (!s) {
-		printf("[SPRITER] texture file not found %s\n", file.c_str());
-		t->tex = 0;
-		return false;
-	}
-
-	glGenTextures(1, &t->tex);
-	tfglBindTexture(GL_TEXTURE_2D, t->tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	GLint nOfColors = s->format->BytesPerPixel;
-	GLenum texture_format = sdl_gl_texture_format(s);
-	glTexImage2D(GL_TEXTURE_2D, 0, nOfColors, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
-
-	*w = t->w = s->w;
-	*h = t->h = s->h;
-	t->no_free = FALSE;
-
-	SDL_FreeSurface(s);
-	printf("[SPRITER] New texture %s = %d\n", file.c_str(), t->tex);
-	return true;
+	DORSpriterCache::releaseTexture(texture);
 }
 
 void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
-	spriter->quads.push_back({
-		texture.tex,
-		{spriteInfo->getPosition().x, spriteInfo->getPosition().y},
-		{aw, ah},
-		{spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff},
-		{spriteInfo->getScale().x, spriteInfo->getScale().y},
-		spriteInfo->getAngle(),
-		{tx1, ty1, tx2, ty2},
-		spriteInfo->getAlpha(),
-		rotated
-	});
+	DORSpriter *spriter = DORSpriter::currently_processing;
+
+	if (!spriter->render_z) {
+		auto dl = getDisplayList(spriter->render_container, {texture->tex.tex, 0, 0}, spriter->shader);
+
+		// Make the matrix corresponding to the shape
+		mat4 qm = mat4();
+		qm = glm::translate(qm, glm::vec3((float)spriteInfo->getPosition().x, (float)spriteInfo->getPosition().y, 0));
+		qm = glm::rotate(qm, (float)spriteInfo->getAngle(), glm::vec3(0, 0, 1));
+		qm = glm::scale(qm, glm::vec3((float)spriteInfo->getScale().x, (float)spriteInfo->getScale().y, 1));
+		qm = spriter->render_model * qm;
+
+		// Make the vertexes, un-rotated & unscaled
+		vec2 origin = {spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff};
+		vec4 color = {1, 1, 1, spriteInfo->getAlpha()};
+		float px1 = -origin.x, py1 = -origin.y;
+		float px2 = aw-origin.x, py2 = ah-origin.y;
+		color = spriter->render_color * color;
+
+		vertex p1;
+		vertex p2;
+		vertex p3;
+		vertex p4;
+		if (rotated) {
+			p1 = {{px1, py1, 0, 1}, {tx2, ty1}, color};
+			p2 = {{px2, py1, 0, 1}, {tx2, ty2}, color};
+			p3 = {{px2, py2, 0, 1}, {tx1, ty2}, color};
+			p4 = {{px1, py2, 0, 1}, {tx1, ty1}, color};
+		} else {
+			p1 = {{px1, py1, 0, 1}, {tx1, ty1}, color};
+			p2 = {{px2, py1, 0, 1}, {tx2, ty1}, color};
+			p3 = {{px2, py2, 0, 1}, {tx2, ty2}, color};
+			p4 = {{px1, py2, 0, 1}, {tx1, ty2}, color};
+		}
+
+		// Now apply the matrix on them
+		p1.pos = qm * p1.pos;
+		p2.pos = qm * p2.pos;
+		p3.pos = qm * p3.pos;
+		p4.pos = qm * p4.pos;
+
+		// And we're done!
+		dl->list.push_back(p1);
+		dl->list.push_back(p2);
+		dl->list.push_back(p3);
+		dl->list.push_back(p4);
+	} else {
+		// Make the matrix corresponding to the shape
+		mat4 qm = mat4();
+		qm = glm::translate(qm, glm::vec3((float)spriteInfo->getPosition().x, (float)spriteInfo->getPosition().y, 0));
+		qm = glm::rotate(qm, (float)spriteInfo->getAngle(), glm::vec3(0, 0, 1));
+		qm = glm::scale(qm, glm::vec3((float)spriteInfo->getScale().x, (float)spriteInfo->getScale().y, 1));
+		qm = spriter->render_model * qm;
+
+		// Make the vertexes, un-rotated & unscaled
+		vec2 origin = {spriteInfo->getPivot().x * w - xoff, spriteInfo->getPivot().y * h - yoff};
+		vec4 color = {1, 1, 1, spriteInfo->getAlpha()};
+		float px1 = -origin.x, py1 = -origin.y;
+		float px2 = aw-origin.x, py2 = ah-origin.y;
+		color = spriter->render_color * color;
+
+		vertex p1;
+		vertex p2;
+		vertex p3;
+		vertex p4;
+		if (rotated) {
+			p1 = {{px1, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
+			p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty2}, color};
+			p3 = {{px2, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
+			p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty1}, color};
+		} else {
+			p1 = {{px1, py1, spriter->render_microz, 1}, {tx1, ty1}, color};
+			p2 = {{px2, py1, spriter->render_microz, 1}, {tx2, ty1}, color};
+			p3 = {{px2, py2, spriter->render_microz, 1}, {tx2, ty2}, color};
+			p4 = {{px1, py2, spriter->render_microz, 1}, {tx1, ty2}, color};
+		}
+
+		// Now apply the matrix on them
+		p1.pos = qm * p1.pos;
+		p2.pos = qm * p2.pos;
+		p3.pos = qm * p3.pos;
+		p4.pos = qm * p4.pos;
+
+		// And we're done!
+		spriter->render_container->zvertices.push_back({p1, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p2, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p3, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+		spriter->render_container->zvertices.push_back({p4, {texture->tex.tex, 0, 0}, spriter->shader, NULL, NULL});
+
+		spriter->render_microz += 0.01;
+	}
 }
 
 /****************************************************************************
@@ -198,14 +254,15 @@ void TE4SpriterImageFile::renderSprite(UniversalObjectInterface *spriteInfo) {
 /****************************************************************************
  ** Spriter Display Object interface
  ****************************************************************************/
+DORSpriter *DORSpriter::currently_processing = NULL;
+
 DORSpriter::DORSpriter() {
 	shader = default_shader;
 	scml = "";
 }
 DORSpriter::~DORSpriter() {
-	if (spritermodel) delete spritermodel;
+	if (spritermodel) DORSpriterCache::releaseModel(spritermodel);
 	if (instance) delete instance;
-	if (atlas_loaded) glDeleteTextures(1, &atlas.tex);
 }
 
 void DORSpriter::cloneInto(DisplayObject* _into) {
@@ -220,129 +277,94 @@ void DORSpriter::setTriggerCallback(int ref) {
 }
 
 void DORSpriter::load(const char *file, const char *name) {
-	printf("[SPRITER] Loading %s (%s)\n", file, name);
+	currently_processing = this;
 	scml = file;
-	spritermodel = new SpriterModel(file, new TE4FileFactory(this), new TE4ObjectFactory(this));
+	spritermodel = DORSpriterCache::getModel(file);
 	instance = spritermodel->getNewEntityInstance(name);
 }
 
-void DORSpriter::startAnim(const char *name) {
-	if (!instance) return;
-	instance->setCurrentAnimation(name);
+void DORSpriter::applyCharacterMap(const char *name) {
+	instance->applyCharacterMap(name);
 }
 
-void DORSpriter::onKeyframe(int nb_keyframe) {
+void DORSpriter::removeCharacterMap(const char *name) {
+	instance->removeCharacterMap(name);
+}
+
+vec2 DORSpriter::getObjectPosition(const char *name) {
+	UniversalObjectInterface *so = instance->getObjectInstance(name);
+	if (so) {
+		float x = so->getPosition().x * scale_x, y = so->getPosition().y * scale_y;
+		float c = cos(rot_z);
+		float s = sin(rot_z);
+		float xnew = x * c - y * s;
+		float ynew = x * s + y * c;
+		return {xnew, ynew};
+	}
+	return {0, 0};
+}
+
+void DORSpriter::startAnim(const char *name, float blendtime, float speed) {
 	if (!instance) return;
-	this->quads.clear();
-	instance->setTimeElapsed(1000.0 * (float)nb_keyframe / KEYFRAMES_PER_SEC);
-	instance->render();
+	currently_processing = this;
+	if (speed) instance->setPlaybackSpeedRatio(speed);
+	else instance->setPlaybackSpeedRatio(1);
+	if (blendtime) instance->setCurrentAnimation(name, blendtime * 1000.0);
+	else instance->setCurrentAnimation(name);
+}
+
+void DORSpriter::onKeyframe(float nb_keyframe) {
+	if (!instance) return;
+	currently_processing = this;
+	instance->setTimeElapsed(1000.0 * nb_keyframe / KEYFRAMES_PER_SEC);
 	setChanged();
+
+	if (instance->animationJustFinished(true)) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
+		lua_rawgeti(L, LUA_REGISTRYINDEX, trigger_cb_lua_ref);
+		lua_rawgeti(L, -2, getWeakSelfRef());
+		lua_pushstring(L, "animStop");
+		lua_pushstring(L, instance->currentAnimationName().c_str());
+		if (lua_pcall(L, 3, 0, 0))
+		{
+			printf("DORSpriter trigger callback error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1); // weak registery
+	}
 }
 
-void DORSpriter::render(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible || !instance) return;
-	cur_model *= model;
-	cur_color *= color;
-	for (auto quad = quads.begin(); quad != quads.end(); quad++) {
-		auto dl = getDisplayList(container, quad->texture, shader);
-
-		// Make the matrix corresponding to the shape
-		mat4 qm = mat4();
-		qm = glm::translate(qm, glm::vec3(quad->pos.x, quad->pos.y, 0));
-		qm = glm::rotate(qm, quad->angle, glm::vec3(0, 0, 1));
-		qm = glm::scale(qm, glm::vec3(quad->scale.x, quad->scale.y, 1));
-		qm = cur_model * qm;
-
-		// Make the vertexes, un-rotated & unscaled
-		vec4 color = {1, 1, 1, quad->alpha};
-		float px1 = -quad->origin.x, py1 = -quad->origin.y;
-		float px2 = quad->size.x-quad->origin.x, py2 = quad->size.y-quad->origin.y;
-		color = cur_color * color;
-
-		vertex p1;
-		vertex p2;
-		vertex p3;
-		vertex p4;
-		if (quad->rotated) {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-		} else {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-		}
-
-		// Now apply the matrix on them
-		p1.pos = qm * p1.pos;
-		p2.pos = qm * p2.pos;
-		p3.pos = qm * p3.pos;
-		p4.pos = qm * p4.pos;
-
-		// And we're done!
-		dl->list.push_back(p1);
-		dl->list.push_back(p2);
-		dl->list.push_back(p3);
-		dl->list.push_back(p4);
-	}
-
+void DORSpriter::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
+	if (!visible || !cur_visible || !instance) return;
+	currently_processing = this;
+	render_z = false;
+	render_model = cur_model * model;
+	render_color = cur_color * color;
+	render_container = container;
+	instance->render();
 	resetChanged();
 }
 
-void DORSpriter::renderZ(RendererGL *container, mat4 cur_model, vec4 cur_color) {
-	if (!visible) return;
-	cur_model *= model;
-	cur_color *= color;
-
-	float microz = 0;
-	for (auto quad = quads.begin(); quad != quads.end(); quad++) {
-		// Make the matrix corresponding to the shape
-		mat4 qm = mat4();
-		qm = glm::translate(qm, glm::vec3(quad->pos.x, quad->pos.y, 0));
-		qm = glm::rotate(qm, quad->angle, glm::vec3(0, 0, 1));
-		qm = glm::scale(qm, glm::vec3(quad->scale.x, quad->scale.y, 1));
-		qm = cur_model * qm;
-
-		// Make the vertexes, un-rotated & unscaled
-		vec4 color = {1, 1, 1, quad->alpha};
-		float px1 = -quad->origin.x, py1 = -quad->origin.y;
-		float px2 = quad->size.x-quad->origin.x, py2 = quad->size.y-quad->origin.y;
-		color = cur_color * color;
-
-		vertex p1;
-		vertex p2;
-		vertex p3;
-		vertex p4;
-		if (quad->rotated) {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-		} else {
-			p1 = {{px1, py1, 0, 1}, {quad->tex.x, quad->tex.y}, color};
-			p2 = {{px2, py1, 0, 1}, {quad->tex.z, quad->tex.y}, color};
-			p3 = {{px2, py2, 0, 1}, {quad->tex.z, quad->tex.w}, color};
-			p4 = {{px1, py2, 0, 1}, {quad->tex.x, quad->tex.w}, color};
-		}
-
-		// Now apply the matrix on them
-		p1.pos = qm * p1.pos;
-		p2.pos = qm * p2.pos;
-		p3.pos = qm * p3.pos;
-		p4.pos = qm * p4.pos;
-
-		// And we're done!
-		container->zvertices.push_back({p1, quad->texture, shader, NULL, NULL});
-		container->zvertices.push_back({p2, quad->texture, shader, NULL, NULL});
-		container->zvertices.push_back({p3, quad->texture, shader, NULL, NULL});
-		container->zvertices.push_back({p4, quad->texture, shader, NULL, NULL});
-
-		microz += 0.01;
-	}
-
+void DORSpriter::renderZ(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
+	if (!visible || !cur_visible || !instance) return;
+	currently_processing = this;
+	render_z = true;
+	render_model = cur_model * model;
+	render_color = cur_color * color;
+	render_container = container; render_microz = 0;
+	instance->render();
 	resetChanged();
+}
+
+void DORSpriter::sortZ(RendererGL *container, mat4& cur_model) {
+	mat4 vmodel = cur_model * model;
+
+	// We take a "virtual" point at 0 coordinates
+	vec4 virtualz = vmodel * vec4(0, 0, 0, 1);
+	sort_z = virtualz.z;
+	sort_shader = shader;
+	sort_tex = {99999,0,0}; // DGDGDGDG UGH we need a wayto find the actual texture
+	container->sorted_dos.push_back(this);
 }
 
 static void spriterErrorHandler(const std::string &err) {

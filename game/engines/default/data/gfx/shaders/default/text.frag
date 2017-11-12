@@ -26,4 +26,5 @@ void main(void)
 
 	// Compute in the requested color alpha
 	gl_FragColor.a *= te4_fragcolor.a;
+	// gl_FragColor = vec4(1.0,0.0,0.0,dist);
 }

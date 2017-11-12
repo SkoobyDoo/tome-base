@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local tween = require "tween"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 
@@ -50,8 +49,6 @@ function _M:generate()
 	-- Draw UI
 	local text = core.renderer.text(self.font)
 	text:text(self.title)
-
-	self.tex = self:drawFontLine(self.font, self.title)
 	local w, h = text:getStats()
 
 	local tick_x, text_x = 0, check.w + 3
@@ -89,7 +86,7 @@ end
 function _M:proxyDataSet(k, v)
 	-- Detect when checked field is changed and update
 	if k == "checked" and self.tickvo then
-		self.tickvo:colorTween("checked", 4, "a", nil, v and 1 or 0, "linear")
+		self.tickvo:tween(4, "a", nil, v and 1 or 0, "linear")
 	end
 	return true
 end

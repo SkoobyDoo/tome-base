@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ newEntity{ base="BASE_NPC_ORC_GRUSHNAK", define_as = "GRUSHNAK",
 	resolvers.inscriptions(4, "infusion"),
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, HEAD=1, FEET=1, FINGER=2, NECK=1, TOOL=1 },
-
+	resolvers.auto_equip_filters("Bulwark"),
 	resolvers.equip{
 		{type="weapon", subtype="waraxe", force_drop=true, tome_drops="boss", autoreq=true},
 		{type="armor", subtype="shield", force_drop=true, tome_drops="boss", autoreq=true},

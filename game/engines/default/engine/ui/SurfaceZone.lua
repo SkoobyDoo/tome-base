@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,14 +42,14 @@ function _M:generate()
 	self.key:reset()
 	self.do_container:clear()
 
-	self.s:updateTexture(self.texture)
+	self.texture = core.renderer.textureTable(self.s)
 
-	if self.text_shadow then self.do:do_container:add(core.renderer.fromSurface(self.s, self.text_shadow.x, self.text_shadow.y, self.w, self.h, false, 0, 0, 0, self.text_shadow)) end
-	self.do:do_container:add(core.renderer.fromSurface(self.s, 0, 0, self.w, self.h))
+	if self.text_shadow then self.do_container:add(core.renderer.fromTextureTable(self.texture, self.text_shadow.x, self.text_shadow.y, self.w, self.h, false, 0, 0, 0, self.text_shadow)) end
+	self.do_container:add(core.renderer.fromTextureTable(self.texture, 0, 0, self.w, self.h))
 
 	self.can_focus = false
 end
 
 function _M:update()
-	self.s:updateTexture(self.texture)
+	self.s:updateTexture(self.texture.t)
 end

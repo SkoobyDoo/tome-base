@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2015 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,8 +27,9 @@ local DOCallback = core.game.getCClass("gl{callback}")
 local DOTileMap = core.game.getCClass("gl{tilemap}")
 local DOTileObject = core.game.getCClass("gl{tileobject}")
 local DOSpriter = core.game.getCClass("gl{spriter}")
-local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOTileObject, DOTileMap, DOSpriter }
-local DOAllContainers = { DORenderer, DOContainer }
+local DOParticles = core.game.getCClass("gl{particles}")
+local DOPhysic = core.game.getCClass("physic{body}")
+local DOAll = { DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOTileObject, DOTileMap, DOSpriter, DOParticles }
 
 -----------------------------------------------------------------------------------
 -- Loaders and initializers
@@ -45,8 +46,9 @@ function DOVertexes:debugQuad()
 	return self
 end
 
-local white = core.display.loadImage("/data/gfx/white.png"):glTexture()
+local white = core.loader.png("/data/gfx/white.png")
 core.renderer.white = white
+core.renderer.plaincolor = white
 
 function DOVertexes:plainColorQuad()
 	self:texture(white)
@@ -70,8 +72,8 @@ function core.renderer.redPoint()
 	return v
 end
 
-function core.renderer.colorQuad(x, y, w, h, r, g, b, a)
-	local v = core.renderer.vertexes()
+function core.renderer.colorQuad(x, y, w, h, r, g, b, a, v)
+	v = v or core.renderer.vertexes()
 	local x1, x2 = x, x + w
 	local y1, y2 = y, y + h
 	local u1, u2 = 0, 1
@@ -88,8 +90,9 @@ function core.renderer.colorQuad(x, y, w, h, r, g, b, a)
 end
 
 function core.renderer.image(file, x, y, w, h, r, g, b, a, v)
-	local s = core.display.loadImage(file)
-	return core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
+	local tex = core.loader.png(file)
+	if not tex then return end
+	return core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 end
 
 function core.renderer.surface(s, x, y, w, h, r, g, b, a, v)
@@ -139,16 +142,43 @@ function core.renderer.texture(tex, x, y, w, h, r, g, b, a, v)
 	return v, w, h
 end
 
+function core.renderer.textureTile(btex, btexx, btexy, w, h, tex_x, tex_y)
+	local t = {tx=tex_x or 0, ty=tex_y or 0}
+	t.w, t.h = w, h
+	t.t = btex
+	t.tw = btexx
+	t.th = btexy
+	return t
+end
+
+function core.renderer.textureTable(s)
+	if type(s) == "string" then
+		local tex = core.loader.png(s)
+		local w, h = tex:getSize()
+
+		local t = {tx=0, ty=0}
+		t.w, t.h = tex:getSize()
+		t.t, t.tw, t.th = tex, t.w, t.h
+		t.tw = 1
+		t.th = 1
+		return t
+	else
+		local t = {tx=0, ty=0}
+		t.w, t.h = s:getSize()
+		t.t, t.tw, t.th = s:glTexture()
+		t.tw = t.w / t.tw
+		t.th = t.h / t.th
+		return t
+	end
+end
+
 function core.renderer.fromSurface(s, x, y, w, h, repeat_quads, r, g, b, a, v)
-	local t = {tx=0, ty=0}
-	t.w, t.h = s:getSize()
-	t.t, t.tw, t.th = s:glTexture()
-	t.tw = t.w / t.tw
-	t.th = t.h / t.th
+	local t = core.renderer.textureTable(s)
 	return core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
 end
 
-function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v)
+function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a, v, safeoffset)
+	safeoffset = safeoffset or 0
 	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
 	x = math.floor(x or 0)
 	y = math.floor(y or 0)
@@ -162,9 +192,9 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 		if not v then v = core.renderer.vertexes() end
 		v:quad(
 			x1, y1, u1, v1,
-			x2+0.1, y1, u2, v1,
-			x2+0.1, y2+0.1, u2, v2,
-			x1, y2+0.1, u1, v2,
+			x2+safeoffset, y1, u2, v1,
+			x2+safeoffset, y2+safeoffset, u2, v2,
+			x1, y2+safeoffset, u1, v2,
 			r, g, b, a
 		)
 		v:texture(t.t)
@@ -191,9 +221,9 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 
 				v:quad(
 					x1, y1, u1, v1,
-					x2+0.1, y1, u2, v1,
-					x2+0.1, y2+0.1, u2, v2,
-					x1, y2+0.1, u1, v2,
+					x2+safeoffset, y1, u2, v1,
+					x2+safeoffset, y2+safeoffset, u2, v2,
+					x1, y2+safeoffset, u1, v2,
 					r, g, b, a
 				)
 			end
@@ -202,162 +232,166 @@ function core.renderer.fromTextureTable(t, x, y, w, h, repeat_quads, r, g, b, a,
 	end
 end
 
+function core.renderer.fromTextureTableCut(t, x, y, w, h, py, ph, r, g, b, a, v, safeoffset)
+	safeoffset = safeoffset or 0.375
+	r = r or 1 g = g or 1 b = b or 1 a = a or 1 
+	x = math.floor(x or 0)
+	y = math.floor(y or 0)
+	local u1, v1 = t.tx, t.ty
+	local u2, v2 = u1 + t.tw, v1 + t.th
+	w = math.floor(w or t.w)
+	h = math.floor(h or t.h)
+
+	if py > 0 then
+		v1 = t.ty + t.th * py
+		y = y + h * py
+	end
+	if ph < 1 then
+		v2 = t.ty + t.th * ph
+		h = h * ph
+	end
+
+	local x1, y1 = x, y
+	local x2, y2 = x + w, y + h
+	if not v then v = core.renderer.vertexes() end
+	v:quad(
+		x1, y1, u1, v1,
+		x2+safeoffset, y1, u2, v1,
+		x2+safeoffset, y2+safeoffset, u2, v2,
+		x1, y2+safeoffset, u1, v2,
+		r, g, b, a
+	)
+	v:texture(t.t)
+	return v, w, h
+end
+
+function core.renderer.line(t, x1, y1, x2, y2, width)
+	local dx, dy = x2 - x1, y2 - y1
+	local a = math.atan2(dy, dx)
+	local d = math.sqrt(dx*dx + dy*dy)
+	local d2 = math.ceil(d / 2)
+	local h = width
+	local h2 = math.ceil(width / 2)
+	local v = core.renderer.fromTextureTable(t, 0, -h2, d, h)
+	v:rotate(0, 0, a):translate(x1,y1)
+	return v
+end
+
+function core.renderer.targetDisplay(target, tid, did)
+	local v = core.renderer.vertexes()
+	local w, h = target:displaySize()
+	local x1, x2 = 0, w
+	local y1, y2 = 0, h
+	local u1, u2 = 0, 1
+	local v1, v2 = 1, 0
+	v:quad(
+		x1, y1, u1, v1,
+		x2, y1, u2, v1,
+		x2, y2, u2, v2,
+		x1, y2, u1, v2,
+		1, 1, 1, 1
+	)
+	v:textureTarget(target, tid, did)
+	return v
+end
+
 -----------------------------------------------------------------------------------
 -- Tweening stuff
 -----------------------------------------------------------------------------------
-local tweenstore = setmetatable({}, {__mode="k"})
-
-function core.renderer.dumpCurrentTweens()
-	print("== Tweenstore ==")
-	for DO, list in pairs(tweenstore) do
-		print("* "..tostring(DO))
-		for tn, tw in pairs(list) do
-			print("  - "..tn.." => "..tostring(tw))
-		end
-	end
-end
-
-local function doCancelAllTweens(self)
-	if not self then return end
-	if self.__getstrong then self = self.__getstrong end
-	if not tweenstore[self] then return end
-	for tn, tw in pairs(tweenstore[self]) do
-		tween.stop(tw)
-	end
-	tweenstore[self] = nil
-end
-
-local function doCancelTween(self, tn)
-	if tn == "toto" then print("!!TOTO CANCEL") util.show_backtrace() end
-	if not self then return end
-	if self.__getstrong then self = self.__getstrong end
-	if not tweenstore[self] or not tweenstore[self][tn] then return end
-	tween.stop(tweenstore[self][tn])
-	tweenstore[self][tn] = nil
-end
-
-local function doColorTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local fr, fg, fb, fa = self:getColor()
-	if component == "r" then
-		from = from or fr
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(v, -1, -1, -1) if on_change then on_change(v, -1, -1, -1) end end end, {from, to}, mode, on_end)
-	elseif component == "g" then
-		from = from or fg
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, v, -1, -1) if on_change then on_change(-1, v, -1, -1) end end end, {from, to}, mode, on_end)
-	elseif component == "b" then
-		from = from or fb
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, v, -1) if on_change then on_change(-1, -1, v, -1) end end end, {from, to}, mode, on_end)
+local tweenslots = {
+	x=0, y=1, z=2,
+	scale_x = 3, scale_y = 4, scale_z = 5, 
+	rot_x = 6, rot_y = 7, rot_z = 8, 
+	r = 9, g = 10, b = 11, a = 12,
+	wait = 13,
+}
+local easings = table.reverse{
+	"linear",
+	"quadraticIn",
+	"quadraticOut",
+	"quadraticInOut",
+	"cubicIn",
+	"cubicOut",
+	"cubicInOut",
+	"quarticIn",
+	"quarticOut",
+	"quarticInOut",
+	"quinticIn",
+	"quinticOut",
+	"quinticInOut",
+	"sinusoidalIn",
+	"sinusoidalOut",
+	"sinusoidalInOut",
+	"exponentialIn",
+	"exponentialOut",
+	"exponentialInOut",
+	"circularIn",
+	"circularOut",
+	"circularInOut",
+	"bounceOut",
+	"bounceIn",
+	"bounceInOut",
+	"elasticIn",
+	"elasticOut",
+	"elasticInOut",
+	"backIn",
+	"backOut",
+	"backInOut",
+}
+local compat_easings = {
+	linear = "linear",
+	inQuad    = "quadraticIn",    outQuad    = "quadraticOut",    inOutQuad    = "quadraticInOut",    --outInQuad    = "outInQuad",
+	inCubic   = "cubicIn",   outCubic   = "cubicOut",   inOutCubic   = "cubicInOut",   --outInCubic   = "outInCubic",
+	inQuart   = "quarticIn",   outQuart   = "quarticOut",   inOutQuart   = "quarticInOut",   --outInQuart   = "outInQuart",
+	inQuint   = "quinticIn",   outQuint   = "quinticOut",   inOutQuint   = "quinticInOut",   --outInQuint   = "outInQuint",
+	inSine    = "sinusoidalIn",    outSine    = "sinusoidalOut",    inOutSine    = "sinusoidalInOut",    --outInSine    = "outInSine",
+	inExpo    = "exponentialIn",    outExpo    = "exponentialOut",    inOutExpo    = "exponentialInOut",    --outInExpo    = "outInExpo",
+	inCirc    = "circularIn",    outCirc    = "circularOut",    inOutCirc    = "circularInOut",    --outInCirc    = "outInCirc",
+	inElastic = "elasticIn", outElastic = "elasticOut", inOutElastic = "elasticInOut", --outInElastic = "outInElastic",
+	inBack    = "backIn",    outBack    = "backOut",    inOutBack    = "backInOut",    --outInBack    = "outInBack",
+	inBounce  = "bounceIn",  outBounce  = "bounceOut",  inOutBounce  = "bounceInOut",  --outInBounce  = "outInBounce",
+}
+local function doTween(self, time, slot, from, to, easing, on_end, on_change)
+	easing = easing or "linear"
+	local slotid = tweenslots[slot]
+	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
+	if slot == "wait" then
+		-- If we use the wait slot, "from", "to", "easing" parameters are useless, so we dont use them
+		-- So from becomes on_end and to becaomes on_change
+		return self:rawtween(slotid, 0, 0, 1, time, from, to)
 	else
-		from = from or fa
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:color(-1, -1, -1, v) if on_change then on_change(-1, -1, -1, v) end end end, {from, to}, mode, on_end)
+		local easingid = easings[compat_easings[easing] or easing]
+		if not easingid then error("tweening on wrong easing: "..tostring(easing)) end
+		return self:rawtween(slotid, easingid-1, from, to, time, on_end, on_change)
 	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
+end
+local function doCancelTween(self, slot)
+	if slot == true then return self:rawcancelTween(true) end
+	local slotid = tweenslots[slot]
+	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
+	return self:rawcancelTween(slotid)
+end
+local function doHasTween(self, slot)
+	if slot == true then
+		for name, slotid in pairs(tweenslots) do if self:rawhasTween(slotid) then return true end end
+		return false
 	end
-	return tw
+	local slotid = tweenslots[slot]
+	if not slotid then error("tweening on wrong slot: "..tostring(slot)) end
+	return self:rawhasTween(slotid)
 end
 
-local function doRotateTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local x, y, z = self:getRotate()
-	if component == "x" then
-		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
-	elseif component == "y" then
-		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
-	else
-		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:rotate(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
-	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
-	end
-	return tw
-end
-
-local function doTranslateTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local x, y, z = self:getTranslate()
-	if component == "x" then
-		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
-	elseif component == "y" then
-		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
-	else
-		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:translate(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
-	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
-	end
-	return tw
-end
-
-local function doScaleTween(self, tn, time, component, from, to, mode, on_end, on_change)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw
-	mode = mode or "linear"
-	local x, y, z = self:getScale()
-	if component == "x" then
-		from = from or x
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(v, y, z) if on_change then on_change(v, y, z) end end end, {from, to}, mode, on_end)
-	elseif component == "y" then
-		from = from or y
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, v, z) if on_change then on_change(x, v, z) end end end, {from, to}, mode, on_end)
-	else
-		from = from or z
-		tw = tween(time, function(v) if weak.__getstrong then weak.__getstrong:scale(x, y, v) if on_change then on_change(x, y, v) end end end, {from, to}, mode, on_end)
-	end
-	if tw then
-		if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-		tweenstore[self][tn] = tw
-	end
-	return tw
-end
-
-local function doWaitTween(self, tn, time, on_end)
-	local weak = class.weakSelf(self)
-	if not tn then tn = rng.range(1, 99999) else doCancelTween(self, tn) end
-	local base_on_end = on_end
-	on_end = function() doCancelTween(weak.__getstrong, tn) if base_on_end then base_on_end(weak.__getstrong) end end
-	local tw = tween(time, function() end, {0, 0}, "linear", on_end)
-	if not tweenstore[self] then tweenstore[self] = setmetatable({}, {__mode="v"}) end
-	tweenstore[self][tn] = tw
-	return tw
-end
-
+-----------------------------------------------------------------------------------
+-- Misc other convenient stuff
+-----------------------------------------------------------------------------------
 local function doShader(self, shader)
 	local t = type(shader)
 	if t == "userdata" or t == "nil" then
-		self:_shader(shader)
+		return self:_shader(shader)
 	elseif t == "table" and shader.__CLASSNAME then
 		if shader:isClassName("engine.Shader") then
 			if shader.shad then
-				self:_shader(shader.shad)
+				return self:_shader(shader.shad)
 			else
 				error("Setting shader without .shad")
 			end
@@ -367,30 +401,34 @@ local function doShader(self, shader)
 	end
 end
 
-for _, DO in pairs(DOAll) do
-	DO.cancelTween = doCancelTween
-	DO.cancelAllTweens = doCancelAllTweens
-	DO.colorTween = doColorTween
-	DO.translateTween = doTranslateTween
-	DO.rotateTween = doRotateTween
-	DO.scaleTween = doScaleTween
-	DO.waitTween = doWaitTween
-	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
-end
-
 local function doContainerAdd(self, d)
 	local t = type(d)
 	if t == "userdata" then
-		self:_add(d)
+		return self:_add(d)
 	elseif t == "table" and d.__CLASSNAME then
 		if d:isClassName("engine.Particles") then
-			self:_add(d:getDO())
+			return self:_add(d:getDO())
 		end
 	else
 		error("Trying to add value of type "..t.." into container "..tostring(self))
 	end
 end
 
-for _, DO in pairs(DOAllContainers) do
-	DO._add, DO.add = DO.add, doContainerAdd
+local function doPhysicEnable(self, t)
+	local pid = self:physicCreate(t)
+	local p = self:physic(pid)
+	p:addFixture(t)
+end
+
+-----------------------------------------------------------------------------------
+-- Alter the DOs metatables to add the new methods
+-----------------------------------------------------------------------------------
+for _, DO in pairs(DOAll) do
+	if DO.shader then DO._shader, DO.shader = DO.shader, doShader end
+	if DO.add then DO._add, DO.add = DO.add, doContainerAdd end
+
+	DO.physicEnable = doPhysicEnable
+	DO.tween = doTween
+	DO.cancelTween = doCancelTween
+	DO.hasTween = doHasTween
 end

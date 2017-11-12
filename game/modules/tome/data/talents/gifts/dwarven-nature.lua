@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -82,50 +82,31 @@ newTalent{
 		if cryst or stone then return false end
 		return true
 	end,
+	unlearn_on_clone = true,
 	action = function(self, t)
 		local nb_halves = 0
 
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
 		if x then
-			local m = require("mod.class.NPC").new(self:clone{
+			local m = require("mod.class.NPC").new(self:cloneActor{
 				shader = "shadow_simulacrum", shader_args = {time_factor=1000, base=0.5, color={0.6, 0.3, 0.6}},
-				no_drops = true,
-				faction = self.faction,
-				summoner = self, summoner_gain_exp=true,
-				summon_time = t.getDuration(self, t),
-				ai_target = {actor=nil},
-				ai = "summoned", ai_real = "tactical",
-				name = "Crystaline Half ("..self.name..")",
-				desc = [[A crystaline structure that has taken your exact form.]],
+				summoner=self, summoner_gain_exp=true, exp_worth=0,
+				max_level=self.level,
+				summon_time=t.getDuration(self, t),
+				ai_target={actor=nil},
+				ai="summoned", ai_real="tactical",
+				name="Crystaline Half ("..self.name..")",
+				desc=([[A crystaline structure that has taken the form of %s.]]):format(self.name),
 			})
-			m:removeAllMOs()
-			m.make_escort = nil
-			m.on_added_to_level = nil
-
-			m.energy.value = 0
-			m.player = nil
-	--		m.max_life = m.max_life * t.getHealth(self, t)
-	--		m.life = util.bound(m.life, 0, m.max_life)
-			m.forceLevelup = function() end
-			m.die = nil
-			m.on_die = nil
-			m.on_acquire_target = nil
-			m.seen_by = nil
-			m.can_talk = nil
-			m.puuid = nil
-			m.on_takehit = nil
-			m.exp_worth = 0
-			m.no_inventory_access = true
-			m.clone_on_hit = nil
 			local tids = table.keys(m.talents)
 			for i, tid in ipairs(tids) do
 				if tid ~= m.T_STONESHIELD and tid ~= m.T_ARMOUR_TRAINING then
-					m:unlearnTalent(tid, m:getTalentLevelRaw(tid))
+					m:unlearnTalentFull(tid)
 				end
 			end
+			
 			m:learnTalent(m.T_DWARVEN_HALF_EARTHEN_MISSILES, true, self:getTalentLevelRaw(t))
-			m.remove_from_party_on_death = true
 
 			if self:knowTalent(self.T_POWER_CORE) then
 				m:learnTalent(m.T_RAIN_OF_SPIKES, true, math.floor(self:getTalentLevel(self.T_POWER_CORE)))
@@ -151,36 +132,16 @@ newTalent{
 		-- Find space
 		local x, y = util.findFreeGrid(self.x, self.y, 1, true, {[Map.ACTOR]=true})
 		if x then
-			local m = require("mod.class.NPC").new(self:clone{
+			local m = require("mod.class.NPC").new(self:cloneActor{
 				shader = "shadow_simulacrum", shader_args = {time_factor=-8000, base=0.5, color={0.6, 0.4, 0.3}},
-				no_drops = true,
-				faction = self.faction,
-				summoner = self, summoner_gain_exp=true,
-				summon_time = t.getDuration(self, t),
-				ai_target = {actor=nil},
-				ai = "summoned", ai_real = "tactical",
-				name = "Stone Half ("..self.name..")",
-				desc = [[A stone structure that has taken your exact form.]],
+				summoner=self, summoner_gain_exp=true, exp_worth=0,
+				max_level=self.level,
+				summon_time=t.getDuration(self, t),
+				ai_target={actor=nil},
+				ai="summoned", ai_real="tactical",
+				name="Stone Half ("..self.name..")",
+				desc=([[A stone structure that has taken the form of %s.]]):format(self.name),
 			})
-			m:removeAllMOs()
-			m.make_escort = nil
-			m.on_added_to_level = nil
-
-			m.energy.value = 0
-			m.player = nil
-	--		m.max_life = m.max_life * t.getHealth(self, t)
-	--		m.life = util.bound(m.life, 0, m.max_life)
-			m.forceLevelup = function() end
-			m.die = nil
-			m.on_die = nil
-			m.on_acquire_target = nil
-			m.seen_by = nil
-			m.can_talk = nil
-			m.puuid = nil
-			m.on_takehit = nil
-			m.exp_worth = 0
-			m.no_inventory_access = true
-			m.clone_on_hit = nil
 			local tids = table.keys(m.talents)
 			for i, tid in ipairs(tids) do
 				if tid ~= m.T_STONESHIELD and tid ~= m.T_ARMOUR_TRAINING then
@@ -189,8 +150,7 @@ newTalent{
 			end
 			m.talent_cd_reduction={[m.T_TAUNT]=3},
 			m:learnTalent(m.T_TAUNT, true, self:getTalentLevelRaw(t))
-			m.remove_from_party_on_death = true
-
+			
 			if self:knowTalent(self.T_POWER_CORE) then
 				m:learnTalent(m.T_STONE_LINK, true, math.floor(self:getTalentLevel(self.T_POWER_CORE)))
 			end
@@ -271,13 +231,15 @@ newTalent{
 		end
 
 		if stone then
-			game.level.map:remove(self.x, self.y, Map.ACTOR)
-			game.level.map:remove(stone.x, stone.y, Map.ACTOR)
-			game.level.map(self.x, self.y, Map.ACTOR, stone)
-			game.level.map(stone.x, stone.y, Map.ACTOR, self)
-			self.x, self.y, stone.x, stone.y = stone.x, stone.y, self.x, self.y
-			game.level.map:particleEmitter(stone.x, stone.y, 1, "teleport")
-			game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+			if self:hasLOS(stone.x, stone.y, 10) then
+				game.level.map:remove(self.x, self.y, Map.ACTOR)
+				game.level.map:remove(stone.x, stone.y, Map.ACTOR)
+				game.level.map(self.x, self.y, Map.ACTOR, stone)
+				game.level.map(stone.x, stone.y, Map.ACTOR, self)
+				self.x, self.y, stone.x, stone.y = stone.x, stone.y, self.x, self.y
+				game.level.map:particleEmitter(stone.x, stone.y, 1, "teleport")
+				game.level.map:particleEmitter(self.x, self.y, 1, "teleport")
+			end
 
 			self:project({type="ball", radius=self:getTalentRadius(t), friendlyfire=false}, self.x, self.y, function(px, py)
 				local target = game.level.map(px, py, Map.ACTOR)
@@ -290,7 +252,7 @@ newTalent{
 	end,
 	info = function(self, t)
 		return ([[You call upon the immediate help of your Halves.
-		Your Stone Half will trade places with you and all creatures currently targetting you in a radius of %d will target it instead.
+		Your Stone Half will trade places (if in sight) with you and all creatures currently targetting you in a radius of %d will target it instead.
 		Your Crystaline Half will instantly fire a volley of level %d earthen missiles at all foes near the stone half (or you if the stone half is dead) in radius %d.
 		In addition, as passive effect, your halves now also learn your level of Combat Accuracy.]]):
 		format(self:getTalentRadius(t), self:getTalentLevelRaw(t), self:getTalentRadius(t))

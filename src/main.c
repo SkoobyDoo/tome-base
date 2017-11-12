@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,17 +54,20 @@
 #define HEIGHT 600
 #define DEFAULT_IDLE_FPS (2)
 #define WINDOW_ICON_PATH ("/engines/default/data/gfx/te4-icon.png")
-#define JOY_DEADZONE 0.21
 
 int start_xpos = -1, start_ypos = -1;
 char *override_home = NULL;
 int g_argc = 0;
 char **g_argv;
-float screen_zoom = 1;
+float screen_zoom = 2;
+bool offscreen_render = FALSE;
+int locked_w = 0, locked_h = 0;
 SDL_Window *window = NULL;
 SDL_Surface *windowIconSurface = NULL;
 SDL_GLContext maincontext; /* Our opengl context handle */
-SDL_Joystick* gamepad = NULL;
+SDL_GameController *gamepad = NULL;
+SDL_Joystick *gamepadjoy = NULL;
+int gamepad_instance_id = -1;
 bool is_fullscreen = FALSE;
 bool is_borderless = FALSE;
 lua_State *L = NULL;
@@ -73,6 +76,7 @@ bool no_debug = FALSE;
 bool safe_mode = FALSE;
 int current_mousehandler = LUA_NOREF;
 int current_keyhandler = LUA_NOREF;
+int current_gamepadhandler = LUA_NOREF;
 int current_game = LUA_NOREF;
 core_boot_type *core_def = NULL;
 bool exit_engine = FALSE;
@@ -87,7 +91,9 @@ float gamma_correction = 1;
 int cur_frame_tick = 0;
 int frame_tick_paused_time = 0;
 /* The currently requested fps for the program */
-int requested_fps = 30;
+float ticks_per_frame = 1;
+float current_fps = NORMALIZED_FPS;
+int requested_fps = NORMALIZED_FPS;
 /* The requested fps for when the program is idle (i.e., doesn't have focus) */
 int requested_fps_idle = DEFAULT_IDLE_FPS;
 /* The currently "saved" fps, used for idle transitions. */
@@ -543,68 +549,60 @@ bool on_event(SDL_Event *event)
 			docall(L, 6, 0);
 		}
 		return TRUE;
-	case SDL_JOYAXISMOTION:
-		if (current_mousehandler != LUA_NOREF)
+	case SDL_CONTROLLERDEVICEADDED:
+		if (current_gamepadhandler != LUA_NOREF)
 		{
-			float v = (float)event->jaxis.value / 32770;
-			if (v > -JOY_DEADZONE && v < JOY_DEADZONE) return FALSE;
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyAxis");
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveDevice");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jaxis.axis);
-			lua_pushnumber(L, MIN(1, MAX(-1, v)));
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushboolean(L, TRUE);
+			lua_pushnumber(L, event->cdevice.which);
 			docall(L, 3, 0);
 		}
 		return TRUE;
-	case SDL_JOYBALLMOTION:
-		if (current_mousehandler != LUA_NOREF)
+
+	case SDL_CONTROLLERDEVICEREMOVED:
+		if (current_gamepadhandler != LUA_NOREF)
 		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyBall");
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveDevice");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jball.ball);
-			lua_pushnumber(L, event->jball.xrel);
-			lua_pushnumber(L, event->jball.yrel);
-			docall(L, 4, 0);
-		}
-		return TRUE;
-	case SDL_JOYHATMOTION:
-		if (current_mousehandler != LUA_NOREF)
-		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushstring(L, "receiveJoyHat");
-			lua_gettable(L, -2);
-			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_mousehandler);
-			lua_pushnumber(L, event->jhat.hat);
-			switch (event->jhat.value) {
-				case SDL_HAT_UP: lua_pushnumber(L, 8); break;
-				case SDL_HAT_DOWN: lua_pushnumber(L, 2); break;
-				case SDL_HAT_LEFT: lua_pushnumber(L, 4); break;
-				case SDL_HAT_RIGHT: lua_pushnumber(L, 6); break;
-				case SDL_HAT_LEFTUP: lua_pushnumber(L, 7); break;
-				case SDL_HAT_LEFTDOWN: lua_pushnumber(L, 1); break;
-				case SDL_HAT_RIGHTUP: lua_pushnumber(L, 9); break;
-				case SDL_HAT_RIGHTDOWN: lua_pushnumber(L, 3); break;
-			}
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushboolean(L, FALSE);
+			lua_pushnumber(L, event->cdevice.which);
 			docall(L, 3, 0);
 		}
 		return TRUE;
-	case SDL_JOYBUTTONDOWN:
-	case SDL_JOYBUTTONUP:
-		if (current_mousehandler != LUA_NOREF)
+
+	case SDL_CONTROLLERBUTTONDOWN:
+	case SDL_CONTROLLERBUTTONUP:
+		if (current_gamepadhandler != LUA_NOREF)
 		{
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushstring(L, "receiveJoyButton");
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveButton");
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
-			lua_rawgeti(L, LUA_REGISTRYINDEX, current_keyhandler);
-			lua_pushnumber(L, event->jbutton.button);
-			lua_pushboolean(L, event->jbutton.state == SDL_RELEASED ? TRUE : FALSE);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, SDL_GameControllerGetStringForButton(event->cbutton.button));
+			lua_pushboolean(L, event->cbutton.state == SDL_RELEASED ? TRUE : FALSE);
+			docall(L, 3, 0);
+		}
+		return TRUE;
+
+	case SDL_CONTROLLERAXISMOTION:
+		if (current_gamepadhandler != LUA_NOREF)
+		{
+			float v = (float)event->caxis.value / 32770;
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, "receiveAxis");
+			lua_gettable(L, -2);
+			lua_remove(L, -2);
+			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
+			lua_pushstring(L, SDL_GameControllerGetStringForAxis(event->caxis.axis));
+			lua_pushnumber(L, v);
 			docall(L, 3, 0);
 		}
 		return TRUE;
@@ -644,19 +642,19 @@ void on_tick()
 	}
 }
 
-extern void interface_realtime(int nb_keyframes); // From renderer-moderngl/Interfaces.hpp
+extern void interface_realtime(float nb_keyframes); // From renderer-moderngl/Interfaces.hpp
 
-void call_draw(int nb_keyframes)
+static void call_draw(float nb_keyframes)
 {
 	if (draw_waiting(L)) return;
 
-	if (nb_keyframes > 30) nb_keyframes = 30;
+	if (nb_keyframes > NORMALIZED_FPS) nb_keyframes = NORMALIZED_FPS;
 
 	// Notify the particles threads that there are new keyframes
 	if (!anims_paused) {
 		thread_particle_new_keyframes(nb_keyframes);
-		interface_realtime(nb_keyframes);
 	}
+	interface_realtime(nb_keyframes);
 
 	if (current_game != LUA_NOREF)
 	{
@@ -672,62 +670,44 @@ void call_draw(int nb_keyframes)
 	mouse_draw_drag();
 }
 
-
-long total_keyframes = 0;
 void on_redraw()
 {
-	static int Frames = 0;
-	static int T0     = 0;
-	static float nb_keyframes = 0;
-	static int last_keyframe = 0;
-	static float reference_fps = 30;
-	static int count_keyframes = 0;
+	static int last_ticks = 0;
+	static int ticks_count = 0;
+	static float keyframes_done = 0;
+	static int frames_done = 0;
+	static float frames_count = 0;
 
-	/* Gather our frames per second */
-	Frames++;
-	if (!is_waiting()) {
-		int t = SDL_GetTicks();
-		if (!anims_paused) cur_frame_tick = t - frame_tick_paused_time;
-		if (t - T0 >= 1000) {
-			float seconds = (t - T0) / 1000.0;
-			float fps = Frames / seconds;
-			reference_fps = fps;
-			printf("%d frames in %g seconds = %g FPS (%d keyframes)\n", Frames, seconds, fps, count_keyframes);
-			T0 = t;
-			Frames = 0;
-			last_keyframe = 0;
-			nb_keyframes = 0;
-			count_keyframes = 0;
-		}
-	}
-	else
-	{
-		// If we are waiting we ignore the fact that we are losing time, this way we never try to "catch up" later
-		T0 = SDL_GetTicks();
-		Frames = 0;
-		last_keyframe = 0;
-		nb_keyframes = 0;
-		count_keyframes = 0;
-	}
+	int ticks = SDL_GetTicks();
+	ticks_count += ticks - last_ticks;
 
+	if (!anims_paused) cur_frame_tick = ticks - frame_tick_paused_time;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//	glLoadIdentity();
 
-	float step = 30 / reference_fps;
-	nb_keyframes += step;
-
-	int nb = ceilf(nb_keyframes);
-	count_keyframes += nb - last_keyframe;
-	total_keyframes += nb - last_keyframe;
-//	printf("keyframes: %f / %f by %f => %d\n", nb_keyframes, reference_fps, step, nb - (last_keyframe));
-	call_draw(nb - last_keyframe);
+	frames_count = ((float)ticks - last_ticks) / ((float)1000.0 / (float)NORMALIZED_FPS);
+	// printf("ticks %d :: %f :: %f\n", ticks - last_ticks, ((float)1000.0 / (float)NORMALIZED_FPS), frames_count);
+	float nb_keyframes = frames_count;
+	run_physic_simulation(nb_keyframes);
+	call_draw(nb_keyframes);
+	keyframes_done += nb_keyframes;
+	frames_done++;
 
 	//SDL_GL_SwapBuffers();
 	SDL_GL_SwapWindow(window);
 
-	last_keyframe = nb;
+	// ticks_per_frame = /;
+	last_ticks = ticks;
 
+	if (ticks_count >= 500) {
+		current_fps = (float)frames_done * 1000.0 / (float)ticks_count;
+		printf("%d frames in %d ms = %0.2f FPS (%f keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
+		ticks_count = 0;
+		frames_done = 0;
+		keyframes_done = 0;
+	}
+
+	loader_tick();
 #ifdef STEAM_TE4
 	if (!no_steam) te4_steam_callbacks();
 #endif
@@ -863,8 +843,12 @@ void setupDisplayTimer(int fps)
 	
 	if (display_timer_id) SDL_RemoveTimer(display_timer_id);
 	requested_fps = fps;
-	display_timer_id = SDL_AddTimer(1000 / fps, redraw_timer, NULL);
-	printf("[ENGINE] Setting requested FPS to %d (%d ms)\n", fps, 1000 / fps);
+	if (requested_fps) {
+		display_timer_id = SDL_AddTimer(1000 / fps, redraw_timer, NULL);
+		printf("[ENGINE] Setting requested FPS to %d (%d ms)\n", fps, 1000 / fps);
+	} else {
+		printf("[ENGINE] Setting requested FPS to unbound\n");
+	}
 	
 	SDL_mutexV(renderingLock);
 
@@ -916,19 +900,15 @@ int resizeWindow(int width, int height)
 #if 0 // DGDGDGDG
 	glViewport( 0, 0, ( GLsizei )width, ( GLsizei )height );
 
-	/* change to the projection matrix and set our viewing volume. */
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
 	/* Set our perspective */
 	//gluPerspective( 45.0f, ratio, 0.1f, 100.0f );
-	glOrtho(0, width / screen_zoom, height / screen_zoom, 0, -1001, 1001);
+	// glOrtho(0, width / screen_zoom, height / screen_zoom, 0, -1001, 1001);
 
 	/* Make sure we're chaning the model view and not the projection */
-	glMatrixMode( GL_MODELVIEW );
+	// glMatrixMode( GL_MODELVIEW );
 
 	/* Reset The View */
-	glLoadIdentity( );
+	// glLoadIdentity( );
 
 //TSDL2	SDL_SetGamma(gamma_correction, gamma_correction, gamma_correction);
 #endif
@@ -994,6 +974,11 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 
 	screen_zoom = zoom;
 
+	if (locked_w && locked_h) {
+		printf("[DO RESIZE] locking size to %dx%d\n", locked_w, locked_h);
+		w = locked_w; h = locked_h;
+	}
+
 	printf("[DO RESIZE] Requested: %dx%d (%d, %d); zoom %d%%\n", w, h, fullscreen, borderless, (int)(zoom * 100));
 
 	/* See if we need to reinitialize the window */
@@ -1013,6 +998,9 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 
 	/* If there is no current window, we have to make one and initialize */
 	if (!window) {
+		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+		// if (SDL_GL_SetSwapInterval(-1)) SDL_GL_SetSwapInterval(1);
+		
 		window = SDL_CreateWindow("TE4",
 				(start_xpos == -1) ? SDL_WINDOWPOS_CENTERED : start_xpos,
 				(start_ypos == -1) ? SDL_WINDOWPOS_CENTERED : start_ypos, w, h,
@@ -1022,7 +1010,7 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 				| (borderless ? SDL_WINDOW_BORDERLESS : 0)
 		);
 		if (window==NULL) {
-			printf("error opening screen: %s\n", SDL_GetError());
+			printf("error opening screen1: %s\n", SDL_GetError());
 			exit(1);
 		}
 		is_fullscreen = fullscreen;
@@ -1037,11 +1025,13 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 #if !defined(USE_GLES2)
 		glewInit();
 #endif
+		printf ("OpenGL version: %s\n", glGetString(GL_VERSION));
 
 		/* Set the window icon. */
 		windowIconSurface = IMG_Load_RW(PHYSFSRWOPS_openRead(WINDOW_ICON_PATH)
 				, TRUE);
 		SDL_SetWindowIcon(window, windowIconSurface);
+		if (offscreen_render) SDL_HideWindow(window);
 
 	} else {
 
@@ -1152,6 +1142,9 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_physfs(L);
 		luaopen_core(L);
 		luaopen_core_mouse(L);
+		luaopen_core_gamepad(L);
+		luaopen_loader(L);
+		luaopen_colors(L);
 		luaopen_font(L);
 		luaopen_fov(L);
 		luaopen_socket_core(L);
@@ -1389,6 +1382,13 @@ int main(int argc, char *argv[])
 		if (!strncmp(arg, "--no-sandbox", 12)) is_zygote = TRUE;
 		if (!strncmp(arg, "--logtofile", 11)) logtofile = TRUE;
 		if (!strncmp(arg, "--no-web", 8)) no_web = TRUE;
+		if (!strncmp(arg, "--offscreen", 11)) offscreen_render = TRUE;
+		if (!strncmp(arg, "--lock-size", 11)) {
+			char *arg = argv[++i];
+			char *next;
+			locked_w = strtol(arg, &next, 10);
+			locked_h = strtol(++next, NULL, 10);
+		}
 	}
 
 #ifdef SELFEXE_WINDOWS
@@ -1400,11 +1400,7 @@ int main(int argc, char *argv[])
 	}
 #ifdef SELFEXE_MACOSX
 	if (!is_zygote) {
-		const char *self = get_self_executable(g_argc, g_argv);
-		const char *name = "../../../te4_log.txt";
-		char *logname = malloc(strlen(self) + strlen(name) + 1);
-		strcpy(logname, self);
-		strcpy(logname + strlen(self), name);
+		const char *logname = "/tmp/te4_log.txt";
 		logfile = freopen(logname, "w", stdout);
 		if (os_autoflush) setlinebuf(logfile);
 	}
@@ -1438,7 +1434,7 @@ int main(int argc, char *argv[])
 	}
 
 	// initialize engine and set up resolution and depth
-	Uint32 flags=SDL_INIT_TIMER | SDL_INIT_JOYSTICK;
+	Uint32 flags=SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER;
 	if (SDL_Init (flags) < 0) {
 		printf("cannot initialize SDL: %s\n", SDL_GetError ());
 		return 1;
@@ -1449,9 +1445,13 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 
-	if (SDL_NumJoysticks() >= 1) {
-		if (gamepad = SDL_JoystickOpen(0)) {
-			printf("Found gamepad, enabling support\n");
+	for (i = 0; i < SDL_NumJoysticks(); i++) {
+		if (SDL_IsGameController(i)) {
+			gamepad = SDL_GameControllerOpen(i);
+			gamepadjoy = SDL_GameControllerGetJoystick(gamepad);
+			gamepad_instance_id = SDL_JoystickInstanceID(gamepadjoy);
+
+			printf("Found gamepad, enabling support: %s\n", SDL_GameControllerMapping(gamepad));
 		}
 	}
 
@@ -1462,7 +1462,7 @@ int main(int argc, char *argv[])
 
 	do_resize(WIDTH, HEIGHT, FALSE, FALSE, screen_zoom);
 	if (screen==NULL) {
-		printf("error opening screen: %s\n", SDL_GetError());
+		printf("error opening screen2: %s\n", SDL_GetError());
 		return 3;
 	}
 
@@ -1489,7 +1489,6 @@ int main(int argc, char *argv[])
 #endif
 	if (safe_mode) printf("Safe mode activated\n");
 
-//	setupDisplayTimer(30);
 	init_blank_surface();
 
 	boot_lua(2, FALSE, argc, argv);
@@ -1499,7 +1498,13 @@ int main(int argc, char *argv[])
 	SDL_Event event;
 	while (!exit_engine)
 	{
-		if (!isActive || tickPaused) SDL_WaitEvent(NULL);
+		int ticks = 0;
+		if (!requested_fps) { // Unbound FPS mode
+			ticks = SDL_GetTicks();
+			on_redraw();
+		} else {
+			if (!isActive || tickPaused) SDL_WaitEvent(NULL);
+		}
 
 #ifdef SELFEXE_WINDOWS
 		if (os_autoflush) _commit(_fileno(stdout));
@@ -1623,6 +1628,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+		if (ticks) ticks_per_frame = ticks - SDL_GetTicks();
 
 		/* draw the scene */
 		// Note: since realtime_timer_id is accessed, have to lock first
@@ -1648,6 +1654,7 @@ int main(int argc, char *argv[])
 			{
 				tickPaused = FALSE;
 				setupRealtime(0);
+				reset_physic_simulation();
 				boot_lua(1, TRUE, argc, argv);
 				boot_lua(2, TRUE, argc, argv);
 			}

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ return {
 		color = color or {1,0,0},
 		p2 = distort or {1, 1},
 		speed = speed or 5000,
-		a = a or 1,
 		amp = amp or 0.2,
 	},
 	clone = false,

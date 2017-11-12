@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -135,6 +135,9 @@ function _M:getFragment(name, def)
 	if self.frags[name] then return self.frags[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".frag")
 	code = self:rewriteShaderFrag(code, def)
+	-- print("====== FRAG")
+	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- print("======")
 	self.frags[name] = core.shader.newShader(code)
 	print("[SHADER] created fragment shader from /data/gfx/shaders/"..name..".frag")
 	return self.frags[name]
@@ -145,6 +148,9 @@ function _M:getVertex(name, def)
 	if self.verts[name] then print("[SHADER] reusing vertex shader from /data/gfx/shaders/"..name..".vert") return self.verts[name] end
 	local code = self:loadFile("/data/gfx/shaders/"..name..".vert")
 	code = self:rewriteShaderVert(code, def)
+	-- print("====== VERT")
+	-- local nb = 1 for line in code:gmatch("([^\n]*)\n") do print(nb, line) nb = nb + 1 end
+	-- print("======")
 	self.verts[name] = core.shader.newShader(code, true)
 	print("[SHADER] created vertex shader from /data/gfx/shaders/"..name..".vert")
 	return self.verts[name]
@@ -225,6 +231,7 @@ function _M:loaded()
 end
 
 function _M:setUniform(k, v)
+	if not self.shad then return self end
 	if type(v) == "number" then
 --		print("[SHADER] setting param", k, v)
 		self.shad:paramNumber(k, v)
@@ -243,11 +250,13 @@ function _M:setUniform(k, v)
 			self.shad:paramNumber4(k, v[1], v[2], v[3], v[4])
 		end
 	end
+	return self
 end
 
 function _M:setResetUniform(k, v)
+	if not self.shad then return self end
 	if type(v) == "number" then
-		print("[SHADER] setting reset param", k, v)
+		-- print("[SHADER] setting reset param", k, v)
 		self.shad:resetParamNumber(k, v)
 	elseif type(v) == "table" then
 		if v.texture then
@@ -260,10 +269,11 @@ function _M:setResetUniform(k, v)
 --			print("[SHADER] setting vec3 param", k, v[1], v[2], v[3])
 			self.shad:resetParamNumber3(k, v[1], v[2], v[3])
 		elseif #v == 4 then
---			print("[SHADER] setting vec4 param", k, v[1], v[2], v[3], v[4])
+			-- print("[SHADER] setting vec4 param", k, v[1], v[2], v[3], v[4])
 			self.shad:resetParamNumber4(k, v[1], v[2], v[3], v[4])
 		end
 	end
+	return self
 end
 
 ----------------------------------------------------------------------------
@@ -278,6 +288,7 @@ function _M:setDefault(kind, name, args)
 	if kind == "text" then core.renderer.defaultTextShader(shad.shad) end
 	print("[SHADER] defining default "..kind.." to ", shad, shad.shad)
 	default[kind] = shad
+	return shad
 end
 
 function _M:getDefault(kind)

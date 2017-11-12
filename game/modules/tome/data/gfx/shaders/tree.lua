@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,8 +18,9 @@
 -- darkgod@te4.org
 
 return {
-	frag = "tree",
-	vert = "default/gl-extended",
+	frag = "default/gl",
+	vert = "tree",
+	-- vert = "default/gl-extended",
 	args = {
 		tree_attenuation = attenuation or 35,
 	},

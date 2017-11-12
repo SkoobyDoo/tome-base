@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,31 +53,29 @@ end
 
 --- Update emote
 function _M:update()
-	self.dur = self.dur - 1
-	if self.dur < 0 then return true end
+	return self.dead
 end
 
 --- Generate emote
 function _M:generate()
-	-- Draw UI
-	local w, h = self.font:size(self.text)
-	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
+	self.renderer = core.renderer.renderer("static"):setRendererName("emote")
 
-	local s = core.display.newSurface(w, h)
-	s:drawColorStringBlended(self.font, self.text, 0, 0, self.color.r, self.color.g, self.color.b, true)
-	self.tex = {s:glTexture()}
-
+	local text = core.renderer.text(self.font):outline(0.7):text(self.text):center()
+	local w, h = text:getStats()
 	self.rw, self.rh = w, h
-	self.frame = self:makeFrame("ui/emote/", self.w, self.h)
+
+	local frame = self:makeFrameDO("ui/emote/", nil, nil, w, h)
+	self.w, self.h = frame.w, frame.h
+
+	self.renderer:add(frame.container:color(1, 1, 1, 0.7))
+	self.renderer:add(text:translate(self.w / 2, self.h / 2))
+
+	self.renderer:tween(self.dur, "wait", function(r) r:tween(10, "a", nil, 0, "inQuad", function() self.dead = true end) end)
+
+	self.dead = false
 end
 
 --- Display emote
 function _M:display(x, y)
-	local a = 1
-	if self.dur < 10 then
-		a = (self.dur) / 10
-	end
-
-	self:drawFrame(self.frame, x, y, 1, 1, 1, a * 0.7)
-	self.tex[1]:toScreenFull(x-frame_ox1, y-frame_oy1, self.rw, self.rh, self.tex[2], self.tex[3], 1, 1, 1, a)
+	self.renderer:toScreen(x, y)
 end

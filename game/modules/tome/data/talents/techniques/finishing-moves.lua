@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -52,6 +52,9 @@ newTalent{
 			else
 				game.logSeen(target, "%s resists the stun!", target.name:capitalize())
 			end
+
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=90 + a, a=250, appear=6, limit_life=4, speed=0, img="uppercut_on_hit", radius=-0.5})
 		end
 
 		self:clearCombo()
@@ -77,8 +80,8 @@ newTalent{
 	require = techs_dex_req2,
 	points = 5,
 	random_ego = "attack",
-	cooldown = 6,
-	stamina = 20,
+	cooldown = 4,
+	stamina = 12,
 	message = "@Source@ throws a concussive punch.",
 	tactical = { ATTACK = { weapon = 2 }, },
 	requires_target = true,
@@ -183,6 +186,7 @@ newTalent{
 				local hit = self:attackTarget(target, nil, totalDamage, true)
 			end
 		end)
+		game.level.map:particleEmitter(self.x, self.y, tg.radius, "butterfly_kick", {radius=tg.radius})
 
 		self:clearCombo()
 		return true
@@ -199,7 +203,7 @@ newTalent{
 	require = techs_dex_req4,
 	points = 5,
 	random_ego = "attack",
-	cooldown = 12,
+	cooldown = 8,
 	stamina = 12,
 	message = "@Source@ throws a wild haymaker!",
 	tactical = { ATTACK = { weapon = 2 } },
@@ -236,6 +240,9 @@ newTalent{
 			elseif target.life > 0 and target.life < target.max_life * 0.2 then
 				game.logSeen(target, "%s resists the death blow!", target.name:capitalize())
 			end
+
+			local a = util.dirToAngle(util.getDir(target.x, self.y, self.x, target.y))
+			game.level.map:particleEmitter(target.x, target.y, 2, "circle", {appear_size=0, base_rot=45 + a, a=250, appear=6, limit_life=4, speed=0, img="heymaker_on_hit", radius=-0.3})
 		end
 
 		-- restore stamina

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -463,7 +463,7 @@ newEntity{ base = "BASE_SLING",
 	wielder = {
 		inc_stats = { [Stats.STAT_DEX] = 4, [Stats.STAT_CUN] = 3,  },
 		inc_damage={ [DamageType.PHYSICAL] = 15 },
-		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_EYE_SHOT]=2},
+		talent_cd_reduction={[Talents.T_STEADY_SHOT]=1, [Talents.T_SCATTER_SHOT]=2},
 	},
 }
 
@@ -638,7 +638,7 @@ newEntity{ base = "BASE_BATTLEAXE",
 	unique = true,
 	unided_name = "viciously sharp battle axe",
 	name = "Drake's Bane", image = "object/artifact/axe_drakes_bane.png",
-	moddable_tile = "special/axe_drakes_bane",
+	moddable_tile = "special/%s_axe_drakes_bane",
 	moddable_tile_big = true,
 	color = colors.RED,
 	desc = [[The killing of Kroltar, mightiest of wyrms, took seven months and the lives of 20,000 dwarven warriors.  Finally the beast was worn down and mastersmith Gruxim, standing atop the bodies of his fallen comrades, was able slit its throat with this axe crafted purely for the purpose of penetrating the wyrm's hide.]],
@@ -707,6 +707,11 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 	identified = false,
 	cost = 200,
 	material_level = 5,
+	color_attributes = {
+		damage_type = 'BLIGHT',
+		alt_damage_type = 'DRAINLIFE',
+		particle = 'slime',
+	},
 	carrier = {
 		lite = 2,
 	},
@@ -716,6 +721,7 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		confusion_immune = 0.3,
 		fear_immune = 0.3,
 		resists={[DamageType.MIND] = 30,},
+		sentient_telos = 1,
 	},
 	imbue_powers = {
 		inc_stats = { [Stats.STAT_STR] = 5, [Stats.STAT_DEX] = 5, [Stats.STAT_MAG] = 5, [Stats.STAT_WIL] = 5, [Stats.STAT_CUN] = 5, [Stats.STAT_CON] = 5, },
@@ -757,6 +763,28 @@ newEntity{ base = "BASE_GEM", define_as = "GEM_TELOS",
 		end)
 		return {id=true, used=true}
 	end },
+	set_list = { {"define_as","TELOS_BOTTOM_HALF"}, {"define_as","TELOS_TOP_HALF"} },
+	on_set_complete = function(self, who)
+		local DamageType = require "engine.DamageType"
+		self:specialSetAdd({"wielder","spell_cooldown_reduction"}, 0.1)
+		self:specialWearAdd({"wielder","melee_project"}, { [engine.DamageType.DRAINLIFE] = 50 } )
+		game.logSeen(game.player, "#CRIMSON#Telos's gem seems to flare and glows an unearthly colour.")
+	end,
+	on_set_broken = function(self, who)
+		game.logPlayer(game.player, "#CRIMSON#The unearthly glow fades away.")
+	end,
+	on_wear = function(self, who)
+		if who.is_alchemist_golem then
+			self.old_golem_name = who.name
+			who.name = "Telos Golem (reluctant follower of "..who.summoner.name..")"
+			game.log("#ROYAL_BLUE#The golem decides to change it's name to #{bold}#%s#{normal}#.", who.name)
+		end
+	end,
+	on_takeoff = function(self, who)
+		if who.is_alchemist_golem then
+			who.name = self.old_golem_name or "I feel lost!"
+		end
+	end,
 }
 
 -- The staff that goes with the crystal above, it will not be generated randomly it is created by the crystal

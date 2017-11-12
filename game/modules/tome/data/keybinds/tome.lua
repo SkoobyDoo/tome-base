@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -29,13 +29,6 @@ defineAction{
 	type = "SHOW_CHARACTER_SHEET_CURSOR",
 	group = "actions",
 	name = "Show character sheet (actor @ cursor)",
-}
-
-defineAction{
-	default = { "sym:=d:false:true:false:false" },
-	type = "DISARM_TRAP",
-	group = "actions",
-	name = "Disarm a trap",
 }
 
 defineAction{

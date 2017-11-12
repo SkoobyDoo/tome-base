@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,4 +51,5 @@ newPackage{ id = "fantasy", name = "Fantasy", weight = 100,
 	bignews = {font="/data/font/Salsa-Regular.ttf", normal=30},
 	resources_normal = {font="/data/font/Salsa-Regular.ttf", normal=14},
 	resources_small = {font="/data/font/Salsa-Regular.ttf", normal=12},
+	-- lore = {font="/data/font/Allura-Regular.ttf", normal=32, small=12, big=18},
 }

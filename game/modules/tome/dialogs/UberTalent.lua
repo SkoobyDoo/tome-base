@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -88,12 +88,8 @@ function _M:generateList()
 		table.sort(cols[s], function(a,b) return a.name < b.name end)
 
 		for i = 1, max do
-			if not cols[s][i] then
-
-			else
+			if cols[s][i] then
 				local t = cols[s][i]
-				if t.display_entity then t.display_entity:getMapObjects(game.uiset.hotkeys_display_icons.tiles, {}, 1) end
-
 				n[#n+1] = {
 					rawname = t.name,
 					talent = t.id,

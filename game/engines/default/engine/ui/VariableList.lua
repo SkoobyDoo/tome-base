@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,7 +20,195 @@
 require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
-local Slider = require "engine.ui.Slider"
+local Entry = require "engine.ui.blocks.Entry"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
+
+--- A generic UI list
+-- @classmod engine.ui.List
+module(..., package.seeall, class.inherit(Base, Focusable))
+
+function _M:init(t)
+	self.list = assert(t.list, "no list list")
+	self.w = assert(t.width, "no list width")
+	self.h = t.height
+	self.fct = t.fct
+	self.on_select = t.select
+	self.on_drag = t.on_drag
+	self.display_prop = t.display_prop or "name"
+	self.scrollbar = t.scrollbar
+	self.all_clicks = t.all_clicks
+	self.scroll_inertia = 0
+
+	t.require_renderer = true
+	Base.init(self, t)
+end
+
+function _M:generate()
+	self.mouse:reset()
+	self.key:reset()
+	self.do_container:clear()
+	
+	self.scroll_container = core.renderer.container()
+	self.do_container:add(self.scroll_container)
+
+	self.sel = 1
+
+	local fw, fh = self.w, self.font_h + 6
+	self.fw, self.fh = fw, fh
+
+	-- Draw the scrollbar
+	if self.scrollbar then
+		self.fw = self.w - Scrollbar:getWidth()
+	end
+
+	-- Draw the list items
+	local max_h = 0
+	for i, item in ipairs(self.list) do
+		item._i = i
+		self:drawItem(item)
+		item._entry:translate(0, max_h, 0)
+		item._entry.y = max_h
+		max_h = max_h + item._entry.h
+	end
+
+	if not self.h then self.h = max_h end
+	self.do_container:cutoff(0, 0, self.w, self.h)
+
+	self.max = #self.list
+
+	-- Draw the scrollbar
+	local sc = self.scrollbar
+	self.scrollbar = Scrollbar.new(nil, self.h, max_h - self.h)
+	self.scrollbar:translate(self.fw, 0, 1)
+	if sc then self.do_container:add(self.scrollbar:get()) end
+
+	-- Add UI controls
+	self.mouse:registerZone(0, 0, self.w, self.h, function(button, x, y, xrel, yrel, bx, by, event)
+		if button == "wheelup" and event == "button" then self.scroll_inertia = math.min(self.scroll_inertia, 0) - 10
+		elseif button == "wheeldown" and event == "button" then self.scroll_inertia = math.max(self.scroll_inertia, 0) + 10 end
+
+		self:selectByY((self.scrollbar and self.scrollbar.pos or 0) + y)
+		if (self.all_clicks or button == "left") and event == "button" then self:onUse(button) end
+		if event == "motion" and button == "left" and self.on_drag then self.on_drag(self.list[self.sel], self.sel) end
+	end)
+	self.key:addBinds{
+		ACCEPT = function() self:onUse() end,
+		MOVE_UP = function()
+			self.sel = util.boundWrap(self.sel - 1, 1, self.max)
+			self:onSelect()
+			if not self:isOnScreen(self.list[self.sel]._entry.y) then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) end
+		end,
+		MOVE_DOWN = function()
+			self.sel = util.boundWrap(self.sel + 1, 1, self.max)
+			self:onSelect()
+			if not self:isOnScreen(self.list[self.sel]._entry.y) then self.scrollbar.pos = math.min(self.list[self.sel]._entry.y, self.scrollbar.max) self.oldpos = self.scrollbar.max end
+		end,
+	}
+	self.key:addCommands{
+		[{"_UP","ctrl"}] = function() self.key:triggerVirtual("MOVE_UP") end,
+		[{"_DOWN","ctrl"}] = function() self.key:triggerVirtual("MOVE_DOWN") end,
+		_HOME = function() if self.scrollbar then self.scrollbar.pos = 0 end end,
+		_END = function() if self.scrollbar then self.scrollbar.pos = self.scrollbar.max end end,
+		_PAGEUP = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos - self.h, 0, self.scrollbar.max) end end,
+		_PAGEDOWN = function() if self.scrollbar then self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.h, 0, self.scrollbar.max) end end,
+	}
+	self:onSelect()
+end
+
+function _M:getCurrentText()
+	if not self.sel then return "" end
+	return self.list[self.sel][self.display_prop]
+end
+
+function _M:drawItem(item)
+	local text = item[self.display_prop]
+
+	if not item._entry then
+		item._entry = Entry.new(nil, text, item.color, self.fw, self.fh, nil, 99, false)
+		self.scroll_container:add(item._entry:get())
+	end
+end
+
+function _M:select(i)
+	self.sel = util.bound(i, 1, self.max)
+	self:onSelect()
+end
+
+function _M:isOnScreen(y)
+	if y >= self.scrollbar.pos and y < self.scrollbar.pos + self.h then return true end
+end
+
+function _M:selectByY(y)
+	for i, item in ipairs(self.list) do
+		if y >= item._entry.y and y < item._entry.y + item._entry.h and item._entry.y + item._entry.h - y <= self.h then
+			self.sel = i
+			break
+		end
+	end
+	self:onSelect()
+end
+
+function _M:onSelect()
+	local item = self.list[self.sel]
+	if not item then return end
+
+	if self.last_selected_item and self.last_selected_item ~= item then self.last_selected_item._entry:select(false) end
+	item._entry:select(true)
+	self.last_selected_item = item
+
+	if rawget(self, "on_select") then self.on_select(item, self.sel) end
+end
+
+function _M:onUse(...)
+	local item = self.list[self.sel]
+	if not item then return end
+	self:sound("button")
+	if item.fct then item:fct(item, self.sel, ...)
+	else self.fct(item, self.sel, ...) end
+end
+
+function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
+	if self.scrollbar then
+		self.scrollbar:setPos(util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max))
+		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
+		end
+		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
+
+		if self.scrollbar.pos ~= self.oldpos then
+			local olddir = math.sign((self.oldpos or 0) - self.scrollbar.pos)
+			self:selectByY(self.scrollbar.pos + (olddir > 0 and 3 or self.h - 3))
+			self.scroll_container:translate(0, -self.scrollbar.pos, 0)
+		end
+		self.oldpos = self.scrollbar.pos
+	end
+end
+
+--[[==
+-- TE4 - T-Engine 4
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
+--
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--
+-- Nicolas Casalini "DarkGod"
+-- darkgod@te4.org
+
+require "engine.class"
+local Base = require "engine.ui.Base"
+local Focusable = require "engine.ui.Focusable"
+local Entry = require "engine.ui.blocks.Entry"
+local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI variable list
 -- @classmod engine.ui.VariableList
@@ -42,6 +230,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
+	self.do_container:clear()
 
 	self.sel = 1
 	self.scroll = 1
@@ -53,6 +242,13 @@ function _M:generate()
 	self.frame = self:makeFrame(nil, fw, fh)
 	self.frame_sel = self:makeFrame("ui/selector-sel", fw, fh)
 	self.frame_usel = self:makeFrame("ui/selector", fw, fh)
+
+	-- Draw the scrollbar
+	if self.scrollbar then
+		self.scrollbar = Scrollbar.new(nil, self.h, self.max - self.max_display)
+		self.scrollbar:translate(self.w - self.scrollbar.w, 0, 1)
+		self.do_container:add(self.scrollbar:get())
+	end
 
 	-- Draw the list items
 	local sh = 0
@@ -154,8 +350,8 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y)
 	if self.scrollbar then
 		local tmp_pos = self.scrollbar.pos
 		self.scrollbar.pos = util.minBound(self.scrollbar.pos + self.scroll_inertia, 0, self.scrollbar.max)
-		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - 1, 0)
-		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + 1, 0)
+		if self.scroll_inertia > 0 then self.scroll_inertia = math.max(self.scroll_inertia - nb_keyframes, 0)
+		elseif self.scroll_inertia < 0 then self.scroll_inertia = math.min(self.scroll_inertia + nb_keyframes, 0)
 		end
 		if self.scrollbar.pos == 0 or self.scrollbar.pos == self.scrollbar.max then self.scroll_inertia = 0 end
 
@@ -198,3 +394,4 @@ function _M:display(x, y, nb_keyframes, screen_x, screen_y)
 		self.last_scroll = self.scrollbar.pos
 	end
 end
+==]]

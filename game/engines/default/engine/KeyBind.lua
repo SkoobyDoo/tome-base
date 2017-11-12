@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -115,6 +115,19 @@ function _M:getBindTable(type)
 	return _M.binds_remap[type.type] or type.default
 end
 
+local changed_handlers = setmetatable({}, {__mode='k'})
+
+--- Bindings changed
+-- Calls the method "onKeyBindAltered" on the handler object when a keybind changes
+function _M:callWhenChanged(handler)
+	changed_handlers[handler] = true
+end
+
+--- Bindings changed
+function _M:changed()
+	for h, _ in pairs(changed_handlers) do h:onKeyBindAltered() end
+end
+
 function _M:init()
 	engine.KeyCommand.init(self)
 	self.virtuals = {}
@@ -135,10 +148,10 @@ function _M:bindKeys()
 	end
 end
 
-function _M:findBoundKeys(virtual)
+function _M:findBoundKeys(virtual, single)
 	local bs = {}
 	for ks, virt in pairs(self.binds) do
-		if virt[virtual] then bs[#bs+1] = ks end
+		if virt[virtual] then if single then return ks else bs[#bs+1] = ks end end
 	end
 	return unpack(bs)
 end

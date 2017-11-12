@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,7 +37,16 @@ extern "C" {
 #include "physfsrwops.h"
 }
 #include "renderer-moderngl/Particles.hpp"
+#include "renderer-moderngl/FBO.hpp"
 #include "particles.hpp"
+
+// Lol or what ? Mingw64 on windows seems to not find it ..
+#ifndef M_PI
+#define M_PI                3.14159265358979323846
+#endif
+#ifndef M_PI_2
+# define M_PI_2		1.57079632679489661923	/* pi/2 */
+#endif
 
 #define rng(x, y) (x + rand_div(1 + y - x))
 
@@ -56,8 +65,13 @@ static particle_thread *threads = NULL;
 static int textures_ref = LUA_NOREF;
 static int nb_threads = 0;
 static int cur_thread = 0;
-static lua_fbo *main_fbo = NULL;
+static DORTarget *alter_fbo = NULL;
+static DORTarget *bloom_fbo = NULL;
+static StaticSubRenderer *bloom_do = NULL;
 static particle_draw_last *pdls_head = NULL;
+static particle_draw_last *blooms_head = NULL;
+static shader_type *default_particles_shader = NULL;
+static vector<tuple<int, float, float>> trigger_cbs(1000);
 void thread_add(particles_type *ps);
 
 /********************************************
@@ -111,10 +125,25 @@ static int particles_flush_last(lua_State *L)
 		pdls_head = pdls_head->next;
 		free(pdl);
 	}
+	while (blooms_head) {
+		particle_draw_last *pdl = blooms_head;
+		blooms_head = blooms_head->next;
+		free(pdl);
+	}
+	for (auto &t : trigger_cbs) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, std::get<0>(t));
+		lua_pushnumber(L, std::get<1>(t));
+		lua_pushnumber(L, std::get<2>(t));
+		if (lua_pcall(L, 2, 0, 0)) {
+			printf("Particle trigger error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+	}
+	trigger_cbs.clear();
 	return 0;
 }
 
-static int particles_main_fbo(lua_State *L)
+static int particles_alter_fbo(lua_State *L)
 {
 	while (pdls_head) {
 		particle_draw_last *pdl = pdls_head;
@@ -123,12 +152,28 @@ static int particles_main_fbo(lua_State *L)
 	}
 
 	if (lua_isnil(L, 1)) {
-		main_fbo = NULL;
+		alter_fbo = NULL;
 		return 0;
 	}
 
-	lua_fbo *fbo = (lua_fbo*)auxiliar_checkclass(L, "gl{fbo}", 1);
-	main_fbo = fbo;
+	alter_fbo = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	return 0;
+}
+
+static int particles_bloom_fbo(lua_State *L)
+{
+	while (blooms_head) {
+		particle_draw_last *pdl = blooms_head;
+		blooms_head = blooms_head->next;
+		free(pdl);
+	}
+
+	if (lua_isnil(L, 1)) {
+		bloom_fbo = NULL;
+		return 0;
+	}
+
+	bloom_fbo = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
 	return 0;
 }
 
@@ -143,6 +188,7 @@ static int particles_new(lua_State *L)
 	shader_type *s = NULL;
 	if (lua_isuserdata(L, 6)) s = (shader_type*)lua_touserdata(L, 6);
 	bool fboalter = lua_toboolean(L, 7);
+	bool allow_bloom = lua_toboolean(L, 8);
 
 	particles_type *ps = (particles_type*)lua_newuserdata(L, sizeof(particles_type));
 	auxiliar_setclass(L, "core{particles}", -1);
@@ -150,6 +196,7 @@ static int particles_new(lua_State *L)
 	ps->lock = SDL_CreateMutex();
 	ps->name_def = strdup(name_def);
 	ps->args = strdup(args);
+	ps->shift_x = ps->shift_y = 0;
 	ps->density = density;
 	ps->alive = TRUE;
 	ps->i_want_to_die = FALSE;
@@ -157,12 +204,18 @@ static int particles_new(lua_State *L)
 	ps->vertices = NULL;
 	ps->particles = NULL;
 	ps->init = FALSE;
+	ps->trigger_old = 0;
+	ps->trigger = 0;
+	ps->trigger_pass = 0;
+	ps->trigger_cb = LUA_NOREF;
 	ps->texture = texture->tex;
 	ps->shader = s;
 	ps->fboalter = fboalter;
+	ps->allow_bloom = allow_bloom;
 	ps->sub = NULL;
 	ps->recompile = FALSE;
 	glGenBuffers(1, &ps->vbo);
+	ps->vbo_elements = 0;
 
 	thread_add(ps);
 	return 1;
@@ -178,44 +231,45 @@ static int particles_set_sub(lua_State *L)
 	return 0;
 }
 
-static void do_shift(particles_type *ps, float sx, float sy) {
+static int particles_trigger_cb(lua_State *L) 
+{
+	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
+	lua_pushvalue(L, 2);
+	ps->trigger_cb = luaL_ref(L, LUA_REGISTRYINDEX);
+
+	return 0;
+}
+
+static void do_shift(particles_type *ps, float sx, float sy, bool set) {
 	SDL_mutexP(ps->lock);
 
-	if (ps->alive) {
-		int w;
-		for (w = 0; w < ps->nb; w++)
-		{
-			particle_type *p = &ps->particles[w];
-			if (!p) break;
-
-			if (p->life > 0)
-			{
-				p->x += sx;
-				p->ox += sx;
-				p->y += sy;
-				p->oy += sy;
-			}
-		}
-
-		ps->recompile = TRUE;
+	if (set) {
+		ps->shift_x = sx;
+		ps->shift_y = sy;
+	} else {
+		ps->shift_x += sx;
+		ps->shift_y += sy;
 	}
 
 	SDL_mutexV(ps->lock);
 
-	if (ps->sub) do_shift(ps->sub, sx, sy);
+	if (ps->sub) do_shift(ps->sub, sx, sy, set);
 }
 
 // Runs into main thread
 static int particles_shift(lua_State *L)
 {
 	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
-	float sx = lua_tonumber(L, 2) / ps->zoom;
-	float sy = lua_tonumber(L, 3) / ps->zoom;
-	if (!sx && !sy) return 0;
-//	printf("shift, %fx%f, zoom %f\n", sx, sy, ps->zoom);
-
-	do_shift(ps, sx, sy);
-
+	if (lua_toboolean(L, 4)) {
+		float sx = lua_tonumber(L, 2);
+		float sy = lua_tonumber(L, 3);
+		do_shift(ps, sx, sy, true);
+	} else {
+		float sx = lua_tonumber(L, 2);
+		float sy = lua_tonumber(L, 3);
+		if (!sx && !sy) return 0;
+		do_shift(ps, sx, sy, false);
+	}
 	return 0;
 }
 
@@ -240,6 +294,9 @@ static int particles_free(lua_State *L)
 	if (l && l->pt) SDL_mutexV(l->pt->lock);
 
 	if (ps->vbo) glDeleteBuffers(1, &ps->vbo);
+	if (ps->vbo_elements) glDeleteBuffers(1, &ps->vbo_elements);
+
+	if (ps->trigger_cb != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ps->trigger_cb);
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -334,13 +391,15 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						lx = ps->particles[p->trail].x;
 						ly = ps->particles[p->trail].y;
 						lsize = ps->particles[p->trail].size;
-						a = atan2(p->y - ly, p->x - lx) + M_PI_2;
-//						printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,a*180/M_PI,p->x,p->y,p->size);
+						float angle = atan2(p->y - ly, p->x - lx) + M_PI_2;
+						float cangle = cos(angle);
+						float sangle = sin(angle);
+						// printf("%d: trailing from %d: %fx%f(%f) with angle %f to %fx%f(%f)\n",w, p->trail, lx,ly,lsize,angle*180/M_PI,p->x,p->y,p->size);
 
-						vertices[ps->batch_nb++] = particles_vertex({{lx + cos(a) * lsize / 2, ly + sin(a) * lsize / 2, 0, 1}, {0, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{lx - cos(a) * lsize / 2, ly - sin(a) * lsize / 2, 0, 1}, {1, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->x - cos(a) * p->size / 2, p->y - sin(a) * p->size / 2, 0, 1}, {1, 1}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->x + cos(a) * p->size / 2, p->y + sin(a) * p->size / 2, 0, 1}, {0, 1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{lx + cangle * lsize / 2, ly + sangle * lsize / 2, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{lx - cangle * lsize / 2, ly - sangle * lsize / 2, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x - cangle * p->size / 2, p->y - sangle * p->size / 2, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->x + cangle * p->size / 2, p->y + sangle * p->size / 2, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 					}
 				} else {
 					if (!p->trail)
@@ -348,40 +407,40 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 						i = p->x * zoom - p->size / 2;
 						j = p->y * zoom - p->size / 2;
 
-						vertices[ps->batch_nb++] = particles_vertex({{i, j, 0, 1}, {0, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, j, 0, 1}, {1, 0}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, p->size + j, 0, 1}, {1, 1}, {r, g, b, a}});
-						vertices[ps->batch_nb++] = particles_vertex({{i, p->size + j, 0, 1}, {0, 1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{i, j, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, j, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{p->size + i, p->size + j, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+						vertices[ps->batch_nb++] = particles_vertex({{i, p->size + j, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 					}
 					else
 					{
 						if ((p->ox <= p->x) && (p->oy <= p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 						else if ((p->ox <= p->x) && (p->oy > p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 						else if ((p->ox > p->x) && (p->oy <= p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, 0 +  p->oy * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 						else if ((p->ox > p->x) && (p->oy > p->y))
 						{
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {0, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {1, 0}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {1, 1}, {r, g, b, a}});
-							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {0, 1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u1, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->x * zoom, 0 +  p->y * zoom, 0, 1}, {p->u2, p->v1}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{p->size +  p->ox * zoom, p->size +  p->oy * zoom, 0, 1}, {p->u2, p->v2}, {r, g, b, a}});
+							vertices[ps->batch_nb++] = particles_vertex({{0 +  p->x * zoom, p->size +  p->y * zoom, 0, 1}, {p->u1, p->v2}, {r, g, b, a}});
 						}
 					}
 				}
@@ -391,6 +450,8 @@ static void particles_update(particles_type *ps, bool last, bool no_update)
 
 	if (last)
 	{
+		ps->trigger = ps->trigger_pass;
+
 		if (!no_update) ps->alive = alive || ps->no_stop;
 
 		SDL_mutexV(ps->lock);
@@ -410,9 +471,30 @@ static void particles_draw(particles_type *ps, mat4 model)
 
 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0);
 	tglBindTexture(GL_TEXTURE_2D, ps->texture);
-	if (multitexture_active && main_fbo) {
+	if (alter_fbo) {
 		tglActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, main_fbo->textures[0]);
+		glBindTexture(GL_TEXTURE_2D, alter_fbo->getTexture(0));
+	}
+
+	// Make the elements vbo, but only once
+	// We do it now instead of on creation because we dont know at creation the max particles we'll need
+	if (!ps->vbo_elements) {
+		glGenBuffers(1, &ps->vbo_elements);
+		GLuint *vbo_elements_data = (GLuint*)malloc(sizeof(GLuint) * ps->nb * 6);
+		for (int i = 0; i < ps->nb; i++) {
+			vbo_elements_data[i * 6 + 0] = i * 4 + 0;
+			vbo_elements_data[i * 6 + 1] = i * 4 + 1;
+			vbo_elements_data[i * 6 + 2] = i * 4 + 2;
+
+			vbo_elements_data[i * 6 + 3] = i * 4 + 0;
+			vbo_elements_data[i * 6 + 4] = i * 4 + 2;
+			vbo_elements_data[i * 6 + 5] = i * 4 + 3;
+		}
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ps->vbo_elements);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * ps->nb * 6, vbo_elements_data, GL_STATIC_DRAW);
+		free(vbo_elements_data);
+	} else {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ps->vbo_elements);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, ps->vbo);
@@ -423,9 +505,10 @@ static void particles_draw(particles_type *ps, mat4 model)
 	mat4 rot = mat4();
 	rot = glm::rotate(rot, ps->rotate, glm::vec3(0, 0, 1));
 	rot = glm::scale(rot, glm::vec3(ps->zoom, ps->zoom, ps->zoom));
-	mat4 mvp = View::getCurrent()->view * rot * model;
+	mat4 mvp = View::getCurrent()->get() * model * rot;
 
 	shader_type *shader = ps->shader;
+	if (!shader) shader = default_particles_shader;
 	if (!shader) { useNoShader(); if (!current_shader) return; }
 	else { useShaderSimple(shader); current_shader = shader; }
 	shader = current_shader;
@@ -435,8 +518,10 @@ static void particles_draw(particles_type *ps, mat4 model)
 	if (shader->p_mvp != -1) { glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp)); }
 	if (shader->p_texsize != -1) {
 		GLfloat c[2];
-		c[0] = main_fbo ? main_fbo->w : 1;
-		c[1] = main_fbo ? main_fbo->h : 1;
+		int w = 1, h = 1;
+		if (alter_fbo) alter_fbo->getDisplaySize(&w, &h);
+		c[0] = w;
+		c[1] = h;
 		glUniform2fv(shader->p_texsize, 1, c);
 	}
 	glEnableVertexAttribArray(shader->vertex_attrib);
@@ -447,14 +532,21 @@ static void particles_draw(particles_type *ps, mat4 model)
 	glVertexAttribPointer(shader->color_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(particles_vertex), (void*)offsetof(particles_vertex, color));
 
 	// glDrawArrays(GL_TRIANGLES, 0, ps->batch_nb);
-#if 0 // DGDGDGDG Open GL ES2  needs to be happy
-	glDrawArrays(GL_QUADS, 0, ps->batch_nb);
-#endif
+	glDrawElements(GL_TRIANGLES, ps->batch_nb * 6, GL_UNSIGNED_INT, (void*)0);
+	// glDrawArrays(GL_QUADS, 0, ps->batch_nb);
 
 	if (ps->blend_mode) glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
-	if (multitexture_active && main_fbo) {
+	if (alter_fbo) {
 		tglActiveTexture(GL_TEXTURE0);
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	if (ps->trigger_cb != LUA_NOREF && ps->trigger != ps->trigger_old) {
+		trigger_cbs.push_back(make_tuple(ps->trigger_cb, ps->trigger, ps->trigger_old));
+		ps->trigger_old = ps->trigger;
 	}
 
 	SDL_mutexV(ps->lock);
@@ -468,6 +560,14 @@ void particles_to_screen(particles_type *ps, mat4 model)
 
 	if (ps->recompile) particles_update(ps, TRUE, TRUE);
 
+	if (ps->allow_bloom && bloom_fbo) {
+		particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
+		pdl->ps = ps;
+		pdl->model = model;
+		pdl->next = blooms_head;
+		blooms_head = pdl;
+		return;
+	}
 	if (ps->fboalter) {
 		particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 		pdl->ps = ps;
@@ -480,6 +580,13 @@ void particles_to_screen(particles_type *ps, mat4 model)
 
 	if (ps->sub) {
 		ps = ps->sub;
+		if (ps->allow_bloom) {
+			particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
+			pdl->ps = ps;
+			pdl->model = model;
+			pdl->next = blooms_head;
+			blooms_head = pdl;
+		}
 		if (ps->fboalter) {
 			particle_draw_last *pdl = (particle_draw_last*)malloc(sizeof(particle_draw_last));
 			pdl->ps = ps;
@@ -503,8 +610,8 @@ static int lua_particles_to_screen(lua_State *L)
 	if (!show) return 0;
 
 	mat4 model = mat4();
-	model = glm::translate(model, glm::vec3(x, y, 0));
 	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
+	model = glm::translate(model, glm::vec3(x, y, 0));
 
 	particles_to_screen(ps, model);
 	return 0;
@@ -531,7 +638,7 @@ static int particles_get_do(lua_State *L)
 }
 
 // Runs into main thread
-static int particles_draw_last(lua_State *L)
+static int particles_draw_alter(lua_State *L)
 {
 	if (!pdls_head) return 0;
 	while (pdls_head) {
@@ -541,6 +648,61 @@ static int particles_draw_last(lua_State *L)
 		free(pdl);
 	}
 	return 0;
+}
+
+// Runs into main thread
+static int particles_has_alter(lua_State *L)
+{
+	lua_pushboolean(L, pdls_head ? true : false);
+	return 1;
+}
+
+static void draw_bloom(mat4 model, vec4 color) {
+	if (!blooms_head) return;
+	while (blooms_head) {
+		particle_draw_last *pdl = blooms_head;
+		particles_draw(pdl->ps, model * pdl->model);
+		blooms_head = blooms_head->next;
+		free(pdl);
+	}
+}
+
+// Runs into main thread
+static int particles_set_default_shader(lua_State *L)
+{
+	if (lua_isnil(L, 1)) {
+		default_particles_shader = NULL;
+	} else {
+		default_particles_shader = (shader_type*)lua_touserdata(L, 1);
+	}
+	return 0;
+}
+
+// Runs into main thread
+static int particles_bloom_do(lua_State *L)
+{
+	if (!bloom_do) {
+		bloom_do = new StaticSubRenderer(draw_bloom);
+	}
+
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	*v = bloom_do;
+	auxiliar_setclass(L, "gl{staticsub}", -1);
+	return 1;
+}
+
+// Runs into main thread
+static int particles_draw_bloom(lua_State *L)
+{
+	draw_bloom(mat4(), vec4(1, 1, 1, 1));
+	return 0;
+}
+
+// Runs into main thread
+static int particles_has_bloom(lua_State *L)
+{
+	lua_pushboolean(L, blooms_head ? true : false);
+	return 1;
 }
 
 // Runs into particles thread
@@ -665,10 +827,17 @@ static int particles_emit(lua_State *L)
 					getparticulefield(L, "a", &(p->a));
 					getparticulefield(L, "av", &(p->av));
 					getparticulefield(L, "aa", &(p->aa));
+
+					getparticulefield(L, "u1", &(p->u1));
+					getparticulefield(L, "v1", &(p->v1));
+					getparticulefield(L, "u2", &(p->u2)); if (!p->u2) p->u2 = 1;
+					getparticulefield(L, "v2", &(p->v2)); if (!p->v2) p->v2 = 1;
 				}
 				lua_pop(L, 1);
 				lua_pop(L, 1); // global table
 			}
+			p->x += ps->shift_x / ps->zoom;
+			p->y += ps->shift_y / ps->zoom;
 			p->ox = p->x;
 			p->oy = p->y;
 
@@ -684,9 +853,15 @@ static int particles_emit(lua_State *L)
 static const struct luaL_Reg particleslib[] =
 {
 	{"newEmitter", particles_new},
-	{"defineFramebuffer", particles_main_fbo},
+	{"defineAlterFBO", particles_alter_fbo},
+	{"defineBloomFBO", particles_bloom_fbo},
 	{"flushLast", particles_flush_last},
-	{"drawAlterings", particles_draw_last},
+	{"drawAlterings", particles_draw_alter},
+	{"hasAlterings", particles_has_alter},
+	{"getBloomsDO", particles_bloom_do},
+	{"drawBlooms", particles_draw_bloom},
+	{"hasBlooms", particles_has_bloom},
+	{"defaultShader", particles_set_default_shader},
 	{NULL, NULL},
 };
 
@@ -698,6 +873,7 @@ static const struct luaL_Reg particles_reg[] =
 	{"setSub", particles_set_sub},
 	{"shift", particles_shift},
 	{"die", particles_die},
+	{"trigger", particles_trigger_cb},
 	{"getDO", particles_get_do},
 	{NULL, NULL},
 };
@@ -744,6 +920,9 @@ int luaopen_particles(lua_State *L)
 	lua_newtable(L);
 	textures_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
+	trigger_cbs.clear();
+	trigger_cbs.reserve(1000);
+
 	return 1;
 }
 
@@ -778,12 +957,14 @@ void thread_particle_run(particle_thread *pt, plist *l)
 			lua_pop(L, 1);
 
 			if (run) {
-				if (lua_pcall(L, 1, 0, 0))
+				if (lua_pcall(L, 1, 1, 0))
 				{
 	//				printf("L(%x) Particle updater error %x (%d, %d): %s\n", (int)L, (int)l, l->updator_ref, l->emit_ref, lua_tostring(L, -1));
 	//				ps->i_want_to_die = TRUE;
 					lua_pop(L, 1);
 				}
+				ps->trigger_pass = lua_tonumber(L, -1);
+				lua_pop(L, 1);
 			}
 		}
 		lua_pop(L, 1); // global table
@@ -1139,12 +1320,16 @@ int thread_particles(void *data)
 
 // Runs on main thread
 // Signals all particles threads that some new keyframes have arrived
-void thread_particle_new_keyframes(int nb_keyframes)
+float nb_keyframes_remaining = 0;
+void thread_particle_new_keyframes(float nb_keyframes)
 {
 	int i, j;
+	nb_keyframes += nb_keyframes_remaining;
 	for (i = 0; i < MAX_THREADS; i++)
 	{
 		for (j = 0; j < nb_keyframes; j++) SDL_SemPost(threads[i].keyframes);
+		nb_keyframes_remaining = nb_keyframes - j;
+		// printf("==particels %f remain %f  :: %d\n", nb_keyframes_remaining, nb_keyframes, j);
 	}
 }
 

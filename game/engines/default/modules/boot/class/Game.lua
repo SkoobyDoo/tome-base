@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -98,6 +98,7 @@ function _M:init()
 
 --	self.refuse_threads = true
 	self.normal_key = self.key
+	self.key:setupProfiler()
 	self.stopped = config.settings.boot_menu_background
 	-- self.stopped = true
 	if core.display.safeMode() then self.stopped = true end
@@ -119,7 +120,7 @@ end
 
 function _M:makeWebtooltip()
 	self.webtooltip = require("engine.ui.WebView").new{width=380, height=500, has_box="ui/tooltip/", has_box_alpha=0.75, never_clean=true, allow_popup=true,
-		url = ("http://te4.org/tooltip-ingame?steam=%d&vM=%d&vm=%d&vp=%d"):format(core.steam and 1 or 0, engine.version[1], engine.version[2], engine.version[3])
+		url = ("https://te4.org/tooltip-ingame?steam=%d&vM=%d&vm=%d&vp=%d"):format(core.steam and 1 or 0, engine.version[1], engine.version[2], engine.version[3])
 	}
 	if self.webtooltip.unusable then self.webtooltip = nil end
 end
@@ -168,7 +169,7 @@ function _M:run()
 	if not self.news then
 		self.news = {
 			title = "Welcome to T-Engine and the Tales of Maj'Eyal",
-			text = [[#GOLD#"Tales of Maj'Eyal"#WHITE# is the main game, you can also install more addons or modules by by going to http://te4.org/
+			text = [[#GOLD#"Tales of Maj'Eyal"#WHITE# is the main game, you can also install more addons or modules by by going to https://te4.org/
 
 When inside a module remember you can press Escape to bring up a menu to change keybindings, resolution and other module specific options.
 
@@ -296,7 +297,7 @@ function _M:grabAddons()
 					local ok = d:start()
 					if ok then
 						local wdir = fs.getWritePath()
-						local _, _, dir, name = add.file:find("(.+)/([^/]+)$")
+						local _, _, dir, name = add.file:find("(.+/)([^/]+)$")
 						if dir then
 							fs.setWritePath(fs.getRealPath(dir))
 							fs.delete(name)
@@ -483,12 +484,12 @@ function _M:display(nb_keyframes)
 
 	-- If background anim is stopped, things are greatly simplified
 	if self.stopped then
-		self.full_fbo:use(true)
-		self.renderer:toScreen()
-		self.logdisplay:toScreen()
+		-- self.full_fbo:use(true)
+		-- self.renderer:toScreen()
+		-- self.logdisplay:toScreen()
 		engine.GameEnergyBased.display(self, nb_keyframes)
-		self.full_fbo:use(false)
-		self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1)
+		-- self.full_fbo:use(false)
+		-- self.full_fborenderer:toScreen(0, 0, 1, 1, 1, 1)
 		return
 	end
 
@@ -532,15 +533,15 @@ end
 
 --[[
 local renderer = core.renderer.renderer():translate(200, 200)
-renderer:setRendererName("renderer")
+renderer:setRendererName("renderer"):zSort("fast")
 -- local i = core.renderer.image("/data/gfx/background/tome.png", 0, 0, 2000, 2000)
-local i = core.renderer.colorQuad(0, 0, 2000, 2000, colors.unpack1(colors.RED, 1))
-renderer:add(i)
+local i2 = core.renderer.colorQuad(20, 20, 20, 20, colors.unpack1(colors.BLUE, 1)):translate(0, 0, 10)
+local i = core.renderer.colorQuad(0, 0, 200, 200, colors.unpack1(colors.RED, 1))
+local c = core.renderer.container()
+c:add(i2)
+c:add(i)
+renderer:add(c)
 
-local f = core.display.newFont("/data/font/Salsa-Regular.ttf", 32)
-local v = core.renderer.colorQuad(0, 0, 512, 512, 1,1,1,1)
-v:textureFontAtlas(f)
-renderer:add(v:translate(200, 200))
 
 local nb = 1
 local z = false
@@ -559,7 +560,7 @@ function _M:onQuit()
 	end, "Quit", "Continue")
 end
 
-profile_help_text = [[#LIGHT_GREEN#T-Engine4#LAST# allows you to sync your player profile with the website #LIGHT_BLUE#http://te4.org/#LAST#
+profile_help_text = [[#LIGHT_GREEN#T-Engine4#LAST# allows you to sync your player profile with the website #LIGHT_BLUE#https://te4.org/#LAST#
 
 This allows you to:
 * Play from several computers without having to copy unlocks and achievements.
@@ -568,7 +569,7 @@ This allows you to:
 * Cool statistics for each module to help sharpen your gameplay style
 * Help the game developers balance and refine the game
 
-You will also have a user page on http://te4.org/ where you can show off your achievements to your friends.
+You will also have a user page on https://te4.org/ where you can show off your achievements to your friends.
 This is all optional, you are not forced to use this feature at all, but the developers would thank you if you did as it will make balancing easier.
 Online profile requires an internet connection, if not available it will wait and sync when it finds one.]]
 
@@ -613,17 +614,17 @@ function _M:createProfile(loginItem)
 		end
 	else
 		self.auth_tried = nil
-		local d = Dialog:simpleWaiter("Registering...", "Registering on http://te4.org/, please wait...") core.display.forceRedraw()
-		local ok, err = profile:newProfile(loginItem.login, loginItem.name, loginItem.pass, loginItem.email)
+		local d = Dialog:simpleWaiter("Registering...", "Registering on https://te4.org/, please wait...") core.display.forceRedraw()
+		local ok, err = profile:newProfile(loginItem.login, loginItem.name, loginItem.pass, loginItem.email, loginItem.news)
 		profile:waitFirstAuth()
 		d:done()
 		if profile.auth then
 			Dialog:simplePopup(self.justlogin and "Logged in!" or "Profile created!", "Your online profile is now active. Have fun!", function() end )
 		else
 			if err ~= "unknown" and err then
-				Dialog:simplePopup("Profile creation failed!", "Creation failed: "..err.." (you may also register on http://te4.org/)", function() end )
+				Dialog:simplePopup("Profile creation failed!", "Creation failed: "..err.." (you may also register on https://te4.org/)", function() end )
 			else
-				Dialog:simplePopup("Profile creation failed!", "Try again in in a few moments, or try online at http://te4.org/", function() end )
+				Dialog:simplePopup("Profile creation failed!", "Try again in in a few moments, or try online at https://te4.org/", function() end )
 			end
 		end
 	end

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -19,6 +19,10 @@
 
 --- @script init.lua
 
+-- No need for the anim system to think it needs to compute the loading time
+-- This is unset in engine.Game:prerun
+core.display.pauseAnims(true)
+
 -- load some utility functions
 dofile("/engine/utils.lua")
 dofile("/engine/renderer.lua")
@@ -28,6 +32,7 @@ dofile("/engine/colors.lua")
 dofile("/engine/resolvers.lua")
 
 require "config"
+local I18N = require "engine.I18N"
 require "engine.Game"
 require "engine.version"
 require "engine.interface.GameMusic"
@@ -58,6 +63,7 @@ fs.setWritePath(engine.homepath)
 -- Loads default config & user config
 fs.mount(engine.homepath, "/")
 config.loadString[[
+locale = "en_US"
 audio.music_volume = 40
 audio.effects_volume = 100
 audio.enable = true
@@ -71,7 +77,7 @@ screen_zoom = 1
 particles_density = 100
 background_saves = true
 mouse_cursor = true
-display_fps = 30
+display_fps = 60
 gamma_correction = 120
 font_scale = 100
 mouse_move = true
@@ -86,6 +92,8 @@ for i, file in ipairs(fs.list("/settings/")) do
 		config.load("/settings/"..file)
 	end
 end
+-- DGDGDGDG
+config.settings.cheat = true
 
 if config.settings.force_safeboot then
 	util.removeForceSafeBoot()
@@ -154,19 +162,13 @@ game = false
 -- Setup resolution
 engine.Game:setResolution(config.settings.window.size, true)
 -- core.display.setGamma(config.settings.gamma_correction / 100)
-if not config.settings.fbo_active then core.display.disableFBO() print("Disabling FBO") end
-if not config.settings.shaders_active then core.shader.disable() print("Disabling Shaders") end
-if core.shader.active() then
-	local Shader = require "engine.Shader"
-	local default = Shader.new("default/gl")
-	if default.shad then
-		print("[SHADER] Defined default gl shader")
-		default.shad:setDefault()
-	else
-		print("[SHADER] ERROR !!!!! COULD NOT DEFINE default gl shader")
-	end
-	Shader:setDefault("text", "default/text")
-end
+
+-- if not config.settings.fbo_active then core.display.disableFBO() print("Disabling FBO") end
+-- if not config.settings.shaders_active then core.shader.disable() print("Disabling Shaders") end
+local Shader = require "engine.Shader"
+local default = Shader.new("default/gl")
+if default.shad then default.shad:setDefault() end
+Shader:setDefault("text", "default/text")
 
 -- Webcore local request resolver
 dofile("/engine/webcore.lua")

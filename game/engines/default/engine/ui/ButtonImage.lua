@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -96,5 +96,5 @@ function _M:on_focus_change(status)
 		self.frame.container:shown(not status)
 		self.frame_sel.container:shown(status)
 	end
-	self.content:colorTween("focus", 8, "a", nil, status and 1 or self.alpha_unfocus)
+	self.content:tween(8, "a", nil, status and 1 or self.alpha_unfocus, "inOutQuad")
 end

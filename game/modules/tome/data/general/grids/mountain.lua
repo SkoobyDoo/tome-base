@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -18,6 +18,32 @@
 -- darkgod@te4.org
 
 local mountain_editer = {method="borders_def", def="mountain"}
+
+local treesdef = {
+	{"pine_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"narrow_cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_willow_moss_trunk_foliage_winter", tall=0},
+	{"small_willow_moss_trunk_foliage_winter", tall=0},
+	{"small_oak_trunk_01_foliage_winter_%02d", 1, 3, tall=0},
+	{"small_oak_trunk_02_foliage_winter_%02d", 1, 3, tall=0},
+	{"small_elm_trunk_foliage_winter", tall=0},
+	{"cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_wider_pine_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_narrow_pine_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"tiny_cypress_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"elm_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_moss_trunk_foliage_winter", tall=-1},
+	{"willow_moss_trunk_foliage_winter", tall=-1},
+	{"oak_trunk_01_foliage_winter_%02d", 1, 3, tall=-1},
+	{"oak_trunk_02_foliage_winter_%02d", 1, 3, tall=-1},
+}
 
 newEntity{
 	define_as = "ROCKY_GROUND",
@@ -56,17 +82,7 @@ newEntity{
 	nice_tiler = { method="replace", base={"ROCKY_SNOWY_TREE", 100, 1, 30} },
 }
 for i = 1, 30 do
-	newEntity(class:makeNewTrees({base="ROCKY_SNOWY_TREE", define_as = "ROCKY_SNOWY_TREE"..i, image = "terrain/rocky_ground.png", nice_tiler = false}, {
-		{"small_elm", {"shadow", "trunk", "foliage_winter"}},
-		{"elm", {tall=-1, "shadow", "trunk", "foliage_winter"}},
-		{"pine", {tall=-1, "shadow", "trunk", {"foliage_winter_%02d", 1, 2}, shader_args={attenuation=14}}},
-		{"small_narrow_pine", {"shadow", "trunk", {"foliage_winter_%02d", 1, 2}, shader_args={attenuation=14}}},
-		{"small_wider_pine", {"shadow", "trunk", {"foliage_winter_%02d", 1, 2}, shader_args={attenuation=14}}},
-		{"cypress", {tall=-1, "shadow", "trunk", {"foliage_winter_%02d",1,2}}},
-		{"small_cypress", {tall=-1, "shadow", "trunk", {"foliage_winter_%02d",1,2}}},
-		{"tiny_cypress", {"shadow", "trunk", {"foliage_winter_%02d",1,2}}},
-		{"oak", {tall=-1, "shadow", {"trunk_%02d",1,2}, {"foliage_winter_%02d",1,2}}},
-	}))
+	newEntity(class:makeNewTrees({base="ROCKY_SNOWY_TREE", define_as = "ROCKY_SNOWY_TREE"..i, image = "terrain/rocky_ground.png", nice_tiler = false}, treesdef))
 end
 
 newEntity{

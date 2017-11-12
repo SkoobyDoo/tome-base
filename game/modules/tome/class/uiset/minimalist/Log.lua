@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,12 +27,16 @@ module(..., package.seeall, class.inherit(MiniContainer))
 
 function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
+	self.resize_mode = "resize"
+
+	self.do_container = core.renderer.container()
 
 	local font, size = FontPackage:getFont("default")
 	self.logdisplay = LogDisplay.new(0, 0, self.w, self.h, nil, font, size, nil, nil)
 	self.logdisplay.resizeToLines = function() end
 	self.logdisplay:setTextOutline(0.7)
 	self.logdisplay:enableFading(config.settings.tome.log_fade or 3)
+	self.do_container:add(self.logdisplay.renderer)
 
 	minimalist.logdisplay = self.logdisplay -- for old code compatibility
 
@@ -64,28 +68,30 @@ function _M:init(minimalist)
 	end)
 end
 
+function _M:getName()
+	return "Game Log"
+end
+
 function _M:getDefaultGeometry()
-	local th = 52
-	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
+	local th = 60
+	if config.settings.tome.hotkey_icons then th = (19 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
 
 	local x = 0
 	local w = math.floor(game.w / 2)
-	local h = math.floor(game.h / 5) - th
+	local h = math.floor(game.h / 4) - th
 	local y = game.h - h - th
 	return x, y, w, h
 end
 
 function _M:getDO()
-	return self.logdisplay.renderer
+	return self.do_container
 end
 
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
-	self:getDO():translate(x, y, 0)
 end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
 	self.logdisplay:resize(0, 0, w, h)
-	self:getDO():translate(self.x, self.y, 0)
 end

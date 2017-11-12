@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -408,7 +408,7 @@ function _M:forceUseTalent(t, def)
 	if def.ignore_energy then self.energy.value = 10000 end
 
 	if def.ignore_ressources then self:attr("force_talent_ignore_ressources", 1) end
-	local ret = {self:useTalent(t, def.force_who, def.force_level, def.ignore_cd, def.force_target, def.silent, true)}
+	local ret = {self:useTalent(t, def.force_who, def.force_level, def.ignore_cd or def.ignore_cooldown, def.force_target, def.silent, true)}
 	if def.ignore_ressources then self:attr("force_talent_ignore_ressources", -1) end
 
 	if def.ignore_energy then
@@ -446,6 +446,7 @@ end
 function _M:learnTalent(t_id, force, nb)
 --	print("[TALENT]", self.name, self.uid, "learning", t_id, force, nb)
 	local t = _M.talents_def[t_id]
+	assert(t, "Learning unknown talent: "..tostring(t_id))
 
 	if not force then
 		local ok, err = self:canLearnTalent(t)
@@ -814,6 +815,9 @@ function _M:updateTalentTypeMastery(tt)
 			end
 		end
 	end
+	if self.talents_types_def[tt] and self.talents_types_def[tt].on_mastery_change then
+		self.talents_types_def[tt].on_mastery_change(self, self:getTalentTypeMastery(tt), tt)
+	end
 end
 
 --- Return talent definition from id
@@ -890,7 +894,7 @@ end
 --- Is talent in cooldown?
 function _M:isTalentCoolingDown(t)
 	t = self:getTalentFromId(t)
-	if not t.cooldown then return false end
+	if not t or not t.cooldown then return false end
 	if self.talents_cd[t.id] and self.talents_cd[t.id] > 0 then return self.talents_cd[t.id] else return false end
 end
 
@@ -1006,7 +1010,7 @@ function _M:talentParticles(p, ...)
 	local Particles = require "engine.Particles"
 	if not p.__tmpparticles then p.__tmpparticles = {} end
 	for _, ps in ipairs{...} do
-		p.__tmpparticles[#p.__tmpparticles+1] = self:addParticles(Particles.new(ps.type, 1, ps.args))
+		p.__tmpparticles[#p.__tmpparticles+1] = self:addParticles(Particles.new(ps.type, 1, ps.args, ps.shader))
 	end
 end
 

@@ -1,12 +1,12 @@
 uniform float blur;
 uniform float tick;
-uniform vec2 texSize;
+uniform vec2 screenSize;
 uniform sampler2D tex;
 
 void main(void)
 {
 	int blursize = int(blur);
-	vec2 offset = 1.0/texSize;
+	vec2 offset = 1.0/screenSize;
 
 	// Center Pixel
 	vec4 sample = vec4(0.0,0.0,0.0,0.0);

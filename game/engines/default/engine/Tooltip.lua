@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	self.font_line_skip = self.font:lineSkip()
 	self.scroll_delay = 20 -- ms/pixel
 
-	self.default_ui = { TextzoneList.new{weakstore=true, width=self.max, height=500, variable_height=true, font=self.font, ui=self.ui} }
+	self.default_ui = { TextzoneList.new{weakstore=true, no_update_delay=true, width=self.max, height=500, variable_height=true, font=self.font, ui=self.ui} }
 	self.locked = false
 	
 	if lockstatus_icon then
@@ -61,6 +61,7 @@ function _M:init(fontname, fontsize, color, bgcolor, max, lockstatus_icon)
 	self.uis_h = 0
 	self.last_display_x = 0
 	self.last_display_y = 0
+	self.last_update_time = 0
 	self.container = UIContainer.new{width = self.w, height = self.h }
 	Base.init(self, {require_renderer=true})
 
@@ -78,6 +79,13 @@ end
 function _M:set(str, ...)
 	-- if locked change is forbiden
 	if self.locked then return end
+
+	if (core.game.getTime() - self.last_update_time < 100) then
+		self.to_update_next = {str=str, args={...}}
+		return
+	end
+
+	self.last_update_time = core.game.getTime()
 	self.pingpong = 0
 	self.pingpong_last = nil
 	str = str or {}
@@ -143,7 +151,7 @@ function _M:set(str, ...)
 						if not str[i].suppress_line_break then
 							ts:add(true, "---")
 						end
-						local tz = TextzoneList.new{weakstore=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
+						local tz = TextzoneList.new{weakstore=true, no_update_delay=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
 						tz:switchItem(ts, ts)
 						uis_size = uis_size + 1
 						uis[uis_size] = tz
@@ -156,7 +164,7 @@ function _M:set(str, ...)
 				end
 			end
 		end
-		local tz = TextzoneList.new{weakstore=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
+		local tz = TextzoneList.new{weakstore=true, no_update_delay=true, width=max_w, height=500, variable_height=true, font=self.font, ui=self.ui}
 		tz:switchItem(ts, ts)
 		
 		uis_size = uis_size + 1
@@ -209,6 +217,11 @@ function _M:display() end
 function _M:toScreen(x, y, nb_keyframes)
 	self.last_display_x = x
 	self.last_display_y = y
+
+	if self.to_update_next and (core.game.getTime() - self.last_update_time >= 100) then
+		self:set(self.to_update_next.str, unpack(self.to_update_next.args))
+		self.to_update_next = nil
+	end
 
 	if self.inhibited == true or self.empty == true then return nil end
 	nb_keyframes = nb_keyframes or 0

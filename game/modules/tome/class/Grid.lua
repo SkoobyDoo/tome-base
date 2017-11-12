@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -227,8 +227,9 @@ function _M:tooltip(x, y)
 		-- debugging info
 		if game.level.map.room_map then
 			local data = game.level.map.room_map[x][y]
-			local room = table.get(game.level.map.room_map.rooms, data.room, "room")
-			tstr:add(true, {"color", "PINK"}, ("room_map: rm:%s(%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
+			local room_base = table.get(game.level.map.room_map.rooms, data.room)
+			local room = room_base and room_base.room
+			tstr:add(true, {"color", "PINK"}, ("room_map:rm:%s(id:%s,name:%s), spec:%s, c/o:%s, bor:%s, tun:%s, rtun:%s"):format(data.room, room_base and room_base.id, room and room.name, data.special, data.can_open, data.border, data.tunnel, data.real_tunnel))
 		end
 		local attrs = game.level.map.attrs[x+y*game.level.map.w]
 		if attrs then
@@ -259,45 +260,46 @@ function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
 		local inb = 4 - nb
 		local treedef = rng.table(kindsdefs)
 		local treeid = treedef[1]
-		local parts = treedef[2]
-		if not parts.tall then parts.tall = 0 end
+		if treedef[2] and treedef[3] then treeid = treeid:format(treedef[2], treedef[3]) end
+		-- local parts = treedef[2]
+		if not treedef.tall then treedef.tall = 0 end
 
 		local scale = rng.float(0.5 + inb / 6, 1)
 		local x = rng.float(-1 / 3 * nb / 3, 1 / 3 * nb / 3)
 		local y = rng.float(-1 / 5 * nb / 3, 1 / 4 * nb / 3)
 
-		for i = 1, #parts - 1 do
-			mos[#mos+1] = {image=basedir..treeid.."_"..getname(parts[i])..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
-		end
-		if parts.base then
-			basemos[#basemos+1] = {image=basedir..treeid.."_"..getname(parts.base)..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
-		end
-		if parts.adds then
-			local name = parts.adds[1]
-			local t = {
-				z = z,
-				display_x = x,
-				display_y = y,
-				display_w = scale,
-				display_h = scale,
-				display_on_seen = true,
-				display_on_remember = true,
-				image = basedir..treeid.."_"..getname(name)..".png",
-			}
-			table.merge(t, parts.adds)
-			add[#add+1] = engine.Entity.new(t)
-		end
+		-- for i = 1, #parts - 1 do
+		-- 	mos[#mos+1] = {image=basedir..treeid.."_"..getname(parts[i])..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+		-- end
+		-- if parts.base then
+		-- 	basemos[#basemos+1] = {image=basedir..treeid.."_"..getname(parts.base)..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+		-- end
+		-- if parts.adds then
+		-- 	local name = parts.adds[1]
+		-- 	local t = {
+		-- 		z = z,
+		-- 		display_x = x,
+		-- 		display_y = y,
+		-- 		display_w = scale,
+		-- 		display_h = scale,
+		-- 		display_on_seen = true,
+		-- 		display_on_remember = true,
+		-- 		image = basedir..treeid.."_"..getname(name)..".png",
+		-- 	}
+		-- 	table.merge(t, parts.adds)
+		-- 	add[#add+1] = engine.Entity.new(t)
+		-- end
 		add[#add+1] = engine.Entity.new{
 			z = z,
 			_st = y,
 			display_x = x,
-			display_y = y + scale * parts.tall,
+			display_y = y + scale * treedef.tall,
 			display_w = scale,
-			display_h = scale * (1 - parts.tall),
+			display_h = scale * (1 - treedef.tall),
 			display_on_seen = true,
 			display_on_remember = true,
-			image = basedir..treeid.."_"..getname(parts[#parts])..".png",
-			shader = "tree", shader_args = parts.shader_args,
+			image = basedir..treeid..".png",
+			shader = "tree", shader_args = treedef.shader_args, -- DGDGDGDG
 		}
 		return add[#add]
 	end

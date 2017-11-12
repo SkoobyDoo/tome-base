@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -345,7 +345,7 @@ function _M:generate(lev, old_lev)
 			-- print("Possible waypoint",i,spot.x,spot.y)
 		-- end
 
-		print("Axis : ", axis, " from ", start," to ", finish)
+		-- print("Axis : ", axis, " from ", start," to ", finish)
 
 		if ending and end_room then
 			if axis == "x" then finish = end_room.x
@@ -355,13 +355,13 @@ function _M:generate(lev, old_lev)
 
 		for i = 1, #possible_waypoints do
 			local s = possible_waypoints[i]
-			print ("Possible waypoint",i,s.x,s.y)
+			-- print ("Possible waypoint",i,s.x,s.y)
 			reason = self:checkValid(s,waypoints[#waypoints],axis,start,finish)
 			if not (self.map.room_map[s.x][s.y].special or self.map.room_map[s.x][s.y].border) and reason == true then
 				waypoints[#waypoints+1] = {x=s.x,y=s.y}
-				print("Waypoint",i,s.x,s.y,"accepted")
+				-- print("Waypoint",i,s.x,s.y,"accepted")
 			else
-				print("Waypoint",i,s.x,s.y,"rejected: ", reason == true and "room" or reason)
+				-- print("Waypoint",i,s.x,s.y,"rejected: ", reason == true and "room" or reason)
 			end
 		end
 
@@ -377,7 +377,7 @@ function _M:generate(lev, old_lev)
 		--print("Amount of waypoints in road are: ", #waypoints)
 		local i = 2
 		while i <= #waypoints do
-			print("tunnel waypoint ",i-1," from ", waypoints[i-1].x, waypoints[i-1].y, " to ", waypoints[i].x,waypoints[i].y)
+			-- print("tunnel waypoint ",i-1," from ", waypoints[i-1].x, waypoints[i-1].y, " to ", waypoints[i].x,waypoints[i].y)
 			self:makeRoad(waypoints[i-1].x,waypoints[i-1].y,waypoints[i].x,waypoints[i].y,id,"road")
 			i = i + 1
 		end

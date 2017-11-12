@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -26,48 +26,64 @@
 
 #include "map.hpp"
 
-enum class TileMapMode { MAP, MINIMAP, GRID_LINES, FOV };
-
+/***********************************************************************
+ ** Map
+ ***********************************************************************/
 // This one is a little strange, it is not the master of map_type it's a slave, as such it will never try to free it or anything, it is created by it
 // This is, in essence, a DO warper around map code
 class DORTileMap : public SubRenderer{
 private:
 	map_type *map = NULL;
-	TileMapMode mode = TileMapMode::MAP;
+	virtual void cloneInto(DisplayObject *into);
+
+public:
+	DORTileMap();
+	virtual ~DORTileMap();
+	DO_STANDARD_CLONE_METHOD(DORTileMap);
+	virtual const char* getKind() { return "DORTileMap"; };
+
+	void mapDeath(map_type *map);
+	void setMap(map_type *map);
+	virtual void toScreen(mat4 cur_model, vec4 color);
+};
+
+/***********************************************************************
+ ** MiniMap
+ ***********************************************************************/
+// This one is a little strange, it is not the master of map_type it's a slave, as such it will never try to free it or anything, it is created by it
+// This is, in essence, a DO warper around map code
+class DORTileMiniMap : public DORVertexes{
+private:
+	map_type *map = NULL;
 	struct {
-		int gridsize = 4;
-		int mdx = 0, mdy = 0;
-		int mdw = 50, mdh = 50;
-		float transp = 1;
-	} mm_info;
+		int mdx = -9999, mdy = -9999;
+		int mdw = 500000, mdh = 500000;
+		float transp = 1000;
+	} info;
+	bool redraw_mm = true;
+	bool ready = false;
+
+	GLubyte *mm_data = NULL;
 
 	virtual void cloneInto(DisplayObject *into);
 
 public:
-	DORTileMap() { setRendererName("map"); };
-	virtual ~DORTileMap() {
-	};
-	DO_STANDARD_CLONE_METHOD(DORTileMap);
-	virtual const char* getKind() { return "DORTileMap"; };
+	DORTileMiniMap();
+	virtual ~DORTileMiniMap();
+	DO_STANDARD_CLONE_METHOD(DORTileMiniMap);
+	virtual const char* getKind() { return "DORTileMiniMap"; };
 
-	void setMap(map_type *map) {
-		this->map = map;
-	};
-	void setMode(TileMapMode mode) {
-		this->mode = mode;
-	}
-	void setMinimapInfo(int gridsize, int mdx, int mdy, int mdw, int mdh, float transp) {
-		mm_info.gridsize = gridsize;
-		mm_info.mdx = mdx;
-		mm_info.mdy = mdy;
-		mm_info.mdw = mdw;
-		mm_info.mdh = mdh;
-		mm_info.transp = transp;
-	}
+	virtual void setTexture(GLuint tex, int lua_ref, int id);
 
-	virtual void toScreen(mat4 cur_model, vec4 color);
+	void mapDeath(map_type *map);
+	void setMap(map_type *map);
+	void redrawMiniMap(bool full_texture_update = false);
+	void setMinimapInfo(int mdx, int mdy, int mdw, int mdh, float transp);
 };
 
+/***********************************************************************
+ ** Map Object
+ ***********************************************************************/
 typedef struct
 {
 	map_object *mo;
@@ -98,8 +114,9 @@ public:
 	virtual void clear();
 
 	void regenData();
-	virtual void render(RendererGL *container, mat4 cur_model, vec4 color);
-	virtual void renderZ(RendererGL *container, mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
 #endif

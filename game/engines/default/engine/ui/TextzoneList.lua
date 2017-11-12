@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,11 +27,14 @@ local Textzone = require "engine.ui.Textzone"
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
+	t.require_renderer = true
 	self.items = {}
 	if t.weakstore then setmetatable(self.items, {__mode="k"}) end
 	self.cur_item = nil
 	self.w = assert(t.width, "no list width")
 	self.h = assert(t.height, "no list height")
+	self.no_update_delay = t.no_update_delay
+	self.update_delay = t.update_delay or 2
 	self.scrollbar = t.scrollbar
 	self.focus_check = t.focus_check
 	self.variable_height = t.variable_height
@@ -58,7 +61,12 @@ function _M:generate()
 end
 
 function _M:createItem(item, text)
-	local ui = Textzone.new{width=self.w, height=self.h, auto_height=self.variable_height, font=self.font, fct=function() end, scrollbar=self.scrollbar, text=text}
+	local ui
+	if Textzone:isInstance(text) then
+		ui = text
+	else
+		ui = Textzone.new{width=self.w, height=self.h, auto_height=self.variable_height, font=self.font, fct=function() end, scrollbar=self.scrollbar, text=text}
+	end
 	if self.text_outline then ui:setTextOutline(self.text_outline) end
 	if self.text_shadow then ui:setTextShadow(self.text_shadow.color, self.text_shadow.x, self.text_shadow.y) end
 	self.items[item] = { ui = ui }
@@ -74,6 +82,15 @@ function _M:on_focus_change(status)
 end
 
 function _M:switchItem(item, create_if_needed, force)
+	if self.no_update_delay then
+		self:switchItemExecute(item, create_if_needed, force)
+	else
+		self.to_switch_delay = self.update_delay
+		self.to_switch = {item, create_if_needed, force}
+	end
+end
+
+function _M:switchItemExecute(item, create_if_needed, force)
 	if self.cur_item == item and not force then return true end
 	if (create_if_needed and not self.items[item]) or force then self:createItem(item, create_if_needed) end
 	if not item or not self.items[item] then self.cur_item = nil self.do_container:clear() return false end
@@ -109,12 +126,38 @@ function _M:switchItem(item, create_if_needed, force)
 end
 
 function _M:erase()
+	if self.no_update_delay then
+		self:eraseExecute()
+	else
+		self.to_erase_delay = self.update_delay
+		self.to_erase = true
+	end
+end
+
+function _M:eraseExecute()
 	self.items = {}
 	self.cur_item = nil
 	self.do_container:clear()
 end
 
 function _M:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
+	if self.to_erase then
+		if self.to_erase_delay == 0 then
+			self:eraseExecute()
+			self.to_erase = nil
+		else
+			self.to_erase_delay = self.to_erase_delay - 1
+		end
+	end
+	if self.to_switch then
+		if self.to_switch_delay == 0 then
+			self:switchItemExecute(unpack(self.to_switch))
+			self.to_switch = nil
+		else
+			self.to_switch_delay = self.to_switch_delay - 1
+		end
+	end
+
 	if self.cur_item and self.items[self.cur_item] then
 		self.items[self.cur_item].ui:display(x, y, nb_keyframes, screen_x, screen_y, offset_x, offset_y, local_x, local_y)
 	end

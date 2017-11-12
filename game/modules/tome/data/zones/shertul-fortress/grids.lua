@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -134,6 +134,9 @@ It should automatically create a portal back, but it might not be near your arri
 			game.state:seenSpecialFarportal("eidolon")
 			return true
 		end
+		if self:triggerHook{"ShertulFortress:exploratoryPortal:specialLocation", q=q, who=who} then
+			return true
+		end
 	end,
 
 	on_move = function(self, x, y, who)
@@ -145,6 +148,7 @@ It should automatically create a portal back, but it might not be near your arri
 		if not q:exploratory_energy(true) then Dialog:simplePopup("Exploratory Farportal", "The fortress does not have enough energy to power a trip through the portal.") return end
 
 		Dialog:yesnoPopup("Exploratory Farportal", "Do you want to travel in the farportal? You cannot know where you will end up.", function(ret) if ret then
+			if not game:changeLevelCheck(1, {}, {direct_switch=true}) then return end
 			if self:checkSpecialLocation(who, q) then return end
 
 			local zone, boss = game.state:createRandomZone()

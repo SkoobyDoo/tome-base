@@ -1,5 +1,5 @@
 uniform float tick;
-uniform vec2 texSize;
+uniform vec2 screenSize;
 uniform sampler2D tex;
 
 // Simple Water shader. (c) Victor Korsun, bitekas@gmail.com; 2012.
@@ -59,15 +59,15 @@ float col(vec2 coord)
 
 void main(void)
 {
-	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
-	vec2 p = (vec2(gl_FragCoord.x - mapCoord.x, texSize.y - gl_FragCoord.y - mapCoord.y)) / texSize.xy, c1 = p, c2 = p;
+	// gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
+	vec2 p = (vec2(gl_FragCoord.x, screenSize.y - gl_FragCoord.y)) / screenSize.xy, c1 = p, c2 = p;
 	float cc1 = col(c1);
 
-	c2.x += texSize.x/delta;
+	c2.x += screenSize.x/delta;
 	float dx = emboss*(cc1-col(c2))/delta;
 
 	c2.x = p.x;
-	c2.y += texSize.y/delta;
+	c2.y += screenSize.y/delta;
 	float dy = emboss*(cc1-col(c2))/delta;
 
 	c1.x += dx*2.;

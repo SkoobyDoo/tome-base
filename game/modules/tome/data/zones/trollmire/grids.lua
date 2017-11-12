@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ local grass_editer = { method="borders_def", def="grass"}
 newEntity{
 	define_as = "BOGTREE",
 	type = "wall", subtype = "water",
-	name = "tree",
+	name = "tree", z = 1,
 	image = "terrain/tree.png",
 	display = '#', color=colors.LIGHT_GREEN, back_color=colors.DARK_BLUE,
 	always_remember = true,
@@ -58,20 +58,32 @@ newEntity{
 }
 for i = 1, 20 do
 	newEntity(class:makeNewTrees({base="BOGTREE", define_as = "BOGTREE"..i, image = "terrain/water_grass_5_1.png"}, {
-		{"small_willow", {"shadow", "trunk", "foliage_bare"}},
-		{"small_willow_moss", {"shadow", "trunk", "foliage_bare"}},
-		{"willow", {tall=-1, "shadow", "trunk", "foliage_bare"}},
-		{"willow_moss", {tall=-1, "shadow", "trunk", "foliage_bare"}},
-		{"small_willow", {"shadow", "trunk", "foliage_spring"}},
-		{"small_willow_moss", {"shadow", "trunk", "foliage_spring"}},
-		{"willow", {tall=-1, "shadow", "trunk", "foliage_spring"}},
-		{"willow_moss", {tall=-1, "shadow", "trunk", "foliage_spring"}},
+		{"small_willow_moss_trunk_foliage_spring", tall=0},
+		{"small_willow_moss_trunk_foliage_bare", tall=0},
+		{"small_willow_moss_trunk_foliage_spring", tall=0},
+		{"small_willow_moss_trunk_foliage_bare", tall=0},
+		{"small_willow_trunk_foliage_spring", tall=0},
+		{"small_willow_trunk_foliage_bare", tall=0},
+		{"small_willow_trunk_foliage_spring", tall=0},
+		{"small_willow_trunk_foliage_bare", tall=0},
+		{"small_willow_trunk_foliage_spring", tall=0},
+		{"small_willow_trunk_foliage_bare", tall=0},
+		{"willow_trunk_foliage_spring", tall=-1},
+		{"willow_trunk_foliage_bare", tall=-1},
+		{"willow_trunk_foliage_spring", tall=-1},
+		{"willow_trunk_foliage_bare", tall=-1},
+		{"willow_trunk_foliage_spring", tall=-1},
+		{"willow_trunk_foliage_bare", tall=-1},
+		{"willow_moss_trunk_foliage_spring", tall=-1},
+		{"willow_moss_trunk_foliage_bare", tall=-1},
+		{"willow_moss_trunk_foliage_spring", tall=-1},
+		{"willow_moss_trunk_foliage_bare", tall=-1},
 	}, 1))
 end
 
 newEntity{ base="WATER_BASE",
 	define_as = "BOGWATER",
-	name = "bog water",
+	name = "bog water", z = 1,
 	image="terrain/water_grass_5_1.png",
 }
 

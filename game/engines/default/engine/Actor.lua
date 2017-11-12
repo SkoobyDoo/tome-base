@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -69,6 +69,32 @@ end
 function _M:setTarget(target)
 end
 
+--- cloneActor default alt_node fields (controls fields copied by cloneCustom)
+-- modules should update this as needed
+_M.clone_nodes = {player=false, x=false, y=false,
+	fov_computed=false,	fov={v={actors={}, actors_dist={}}}, distance_map={v={}},
+	_mo=false, _last_mo=false, add_mos=false, add_displays=false,
+	shader=false, shader_args=false,
+}
+--- cloneActor default fields (merged by _M.cloneActor with cloneCustom)
+-- modules may define this as a table to automatically merge into cloned actors
+_M.clone_copy = nil
+
+--- Special version of cloneFull that clones an Actor, automatically managing duplication of some fields
+--	uses class.CloneCustom
+-- @param[optional, type=?table] post_copy a table merged into the cloned actor
+--		updated with self.clone_copy if it is defined
+-- @param[default=self.clone_nodes, type=?table] alt_nodes a table containing parameters for cloneCustom
+--		to be merged with self.clone_nodes
+-- @return the cloned actor
+function _M:cloneActor(post_copy, alt_nodes)
+	alt_nodes = table.merge(alt_nodes or {}, self.clone_nodes, true)
+	if post_copy or self.clone_copy then post_copy = post_copy or {} table.update(post_copy, self.clone_copy or {}, true) end
+	local a = self:cloneCustom(alt_nodes, post_copy)
+	a:removeAllMOs()
+	return a, post_copy
+end
+
 --- Setup minimap color for this entity
 -- You may overload this method to customize your minimap
 -- @param mo
@@ -134,38 +160,39 @@ function _M:defineDisplayCallback()
 	end
 
 	local function tactical(x, y, w, h)
-		-- Tactical info
-		if game.level and game.level.map.view_faction then
-			local self = weak[1]
-			if not self then return end
-			local map = game.level.map
+		-- meh
+		-- -- Tactical info
+		-- if game.level and game.level.map.view_faction then
+		-- 	local self = weak[1]
+		-- 	if not self then return end
+		-- 	local map = game.level.map
 
-			if not f_self then
-				f_self = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_self)
-				f_danger = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_danger)
-				f_friend = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_friend)
-				f_enemy = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_enemy)
-				f_neutral = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_neutral)
-			end
+		-- 	if not f_self then
+		-- 		f_self = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_self)
+		-- 		f_danger = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_danger)
+		-- 		f_friend = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_friend)
+		-- 		f_enemy = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_enemy)
+		-- 		f_neutral = game.level.map.tilesTactic:get(nil, 0,0,0, 0,0,0, map.faction_neutral)
+		-- 	end
 
-			if self.faction then
-				local friend
-				if not map.actor_player then friend = Faction:factionReaction(map.view_faction, self.faction)
-				else friend = map.actor_player:reactionToward(self) end
+		-- 	if self.faction then
+		-- 		local friend
+		-- 		if not map.actor_player then friend = Faction:factionReaction(map.view_faction, self.faction)
+		-- 		else friend = map.actor_player:reactionToward(self) end
 
-				if self == map.actor_player then
-					f_self:toScreen(x, y, w, h)
-				elseif map:faction_danger_check(self) then
-					f_danger:toScreen(x, y, w, h)
-				elseif friend > 0 then
-					f_friend:toScreen(x, y, w, h)
-				elseif friend < 0 then
-					f_enemy:toScreen(x, y, w, h)
-				else
-					f_neutral:toScreen(x, y, w, h)
-				end
-			end
-		end
+		-- 		if self == map.actor_player then
+		-- 			f_self:toScreen(x, y, w, h)
+		-- 		elseif map:faction_danger_check(self) then
+		-- 			f_danger:toScreen(x, y, w, h)
+		-- 		elseif friend > 0 then
+		-- 			f_friend:toScreen(x, y, w, h)
+		-- 		elseif friend < 0 then
+		-- 			f_enemy:toScreen(x, y, w, h)
+		-- 		else
+		-- 			f_neutral:toScreen(x, y, w, h)
+		-- 		end
+		-- 	end
+		-- end
 	end
 
 	if self._mo == self._last_mo or not self._last_mo then

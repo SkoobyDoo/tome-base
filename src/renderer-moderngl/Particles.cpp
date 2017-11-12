@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ void DORParticles::cloneInto(DisplayObject *_into) {
 	into->ps = ps;
 }
 
-void DORParticles::toScreen(mat4 model, vec4 color) {
+void DORParticles::toScreen(mat4 cur_model, vec4 color) {
 	if (!ps) return;
 
 	// If we are dead, our parent has no more uses for us
@@ -36,5 +36,5 @@ void DORParticles::toScreen(mat4 model, vec4 color) {
 		return;
 	}
 
-	particles_to_screen(ps, model);
+	particles_to_screen(ps, cur_model * model);
 }

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ newEntity{ base="BASE_NPC_CORRUPTED_HORROR", define_as = "THE_MOUTH",
 	infravision = 10,
 	instakill_immune = 1,
 	never_move = 1,
+	immune_possession = 1,
 
 	-- Bad idea to melee it
 	combat = {dam=100, atk=1000, apr=1000, physcrit=1000},

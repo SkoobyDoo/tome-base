@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,6 +42,11 @@ extern bool no_debug;
 extern int noprint(lua_State *L);
 #ifdef REWRITE_PRINTF
 #define printf(...) { if (!no_debug) printf(__VA_ARGS__); }
+#endif
+
+
+#ifdef TE4_PROFILING
+#include <gperftools/profiler.h>
 #endif
 
 #endif

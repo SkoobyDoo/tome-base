@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -37,6 +37,30 @@ local function canUseGestures(self)
 		end
 	end
 	return nb >= 2 and true or false, dam -- return damage for use with Gesture of Guarding
+end
+
+local function gestures_gfx_update(self)
+	local pain = self:isTalentActive(self.T_GESTURE_OF_PAIN)
+	local malice = self:knowTalent(self.T_GESTURE_OF_MALICE)
+	local power = self:knowTalent(self.T_GESTURE_OF_POWER)
+	local guarding = self:knowTalent(self.T_GESTURE_OF_GUARDING)
+
+	local img = nil
+	if pain and not malice and not power and not guarding then img = "doomed_gestures_Po_tentacles"
+	elseif pain and malice and not power and not guarding then img = "doomed_gestures_Pa_M_tentacles"
+	elseif pain and malice and power and not guarding then img = "doomed_gestures_Pa_M_Po_tentacles"
+	elseif pain and malice and power and guarding then img = "doomed_gestures_ALL_tentacles"
+	elseif not pain and power and not guarding then img = "doomed_gestures_Po_tentacles"
+	elseif not pain and power and guarding then img = "doomed_gestures_Po_G_tentacles"
+	end
+
+	if self._gesturepain_gfx then
+		self:removeParticles(self._gesturepain_gfx)
+		self._gesturepain_gfx = nil
+	end
+	if img and core.shader.active() then
+		self._gesturepain_gfx = self:addParticles(Particles.new("shader_shield", 1, {toback=false, size_factor=1.5, img=img}, {type="tentacles", appearTime=0.7, time_factor=1200, noup=0.0}))
+	end
 end
 
 newTalent{
@@ -160,10 +184,13 @@ newTalent{
 
 		return self:combatSpeed(), hit
 	end,
+	on_learn = gestures_gfx_update, on_unlearn = gestures_gfx_update,
 	activate = function(self, t)
-		return {  }
+		game:onTickEnd(function() gestures_gfx_update(self) end)
+		return {}
 	end,
 	deactivate = function(self, t, p)
+		game:onTickEnd(function() gestures_gfx_update(self) end)
 		return true
 	end,
 	info = function(self, t)
@@ -192,6 +219,7 @@ newTalent{
 	getResistAllChange = function(self, t)
 		return -math.min(30, (math.sqrt(self:getTalentLevel(t)) - 0.5) * 12)
 	end,
+	on_learn = gestures_gfx_update, on_unlearn = gestures_gfx_update,
 	info = function(self, t)
 		local resistAllChange = t.getResistAllChange(self, t)
 		local duration = t.getDuration(self, t)
@@ -216,6 +244,7 @@ newTalent{
 
 		return math.floor(math.min(14, self:getTalentLevel(t) * 1.2))
 	end,
+	on_learn = gestures_gfx_update, on_unlearn = gestures_gfx_update,
 	info = function(self, t)
 		local mindpowerChange = t.getMindpowerChange(self, t, 2)
 		local mindCritChange = t.getMindCritChange(self, t)
@@ -265,8 +294,10 @@ newTalent{
 			tGestureOfPain.attack(self, tGestureOfPain, who)
 		end
 	end,
+	on_learn = gestures_gfx_update,
 	on_unlearn = function(self, t)
 		self:removeEffect(self.EFF_GESTURE_OF_GUARDING)
+		gestures_gfx_update(self)
 	end,
 	info = function(self, t)
 		local damageChange = t.getDamageChange(self, t, true)

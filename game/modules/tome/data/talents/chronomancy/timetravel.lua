@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -287,6 +287,12 @@ newTalent{
 			game.logPlayer(game.player, "#STEEL_BLUE#You time travel to a quiet place.")
 			game.nicer_tiles:postProcessLevelTiles(game.level)
 
+			if not game.state.temporal_reprieve_lore and rng.percent(5) then
+				game.state.temporal_reprieve_lore = true
+				require("engine.ui.Dialog"):simpleLongPopup("What the... ugh.", "Some rookie paradox mage is about to find out that the standard-issue Temporal Reprieve takes you to a random safe-zone, not a fixed one, and left the contents of their pack strewn about the place. Nearly all of it is equipment that your transmutation chest won't process and is unusable by anything with less than twelve limbs, so you kick most of it into the void, but a crumpled note catches your eye...", 500, function()
+					game.party:learnLore("galsame-orientation-notes")
+				end)
+			end
 		end)
 
 		self:setEffect(self.EFF_TEMPORAL_REPRIEVE, t.getDuration(self, t), {x=self.x, y=self.y})

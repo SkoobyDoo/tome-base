@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ require "mod.class.interface.PartyDeath"
 local Map = require "engine.Map"
 local Dialog = require "engine.ui.Dialog"
 local ActorTalents = require "engine.interface.ActorTalents"
+local Particles = require "engine.Particles"
 
 --- Defines the player for ToME
 -- It is a normal actor, with some redefined methods to handle user interaction.<br/>
@@ -208,7 +209,17 @@ function _M:onEnterLevel(zone, level)
 end
 
 function _M:onEnterLevelEnd(zone, level)
+	if level._player_enter_scatter then return end
+	level._player_enter_scatter = true
 
+	if level.data.generator and level.data.generator.map and level.data.generator.map.class == "engine.generator.map.Static" and not level.data.static_force_scatter then return end
+
+	self:project({type="ball", radius=5}, self.x, self.y, function(px, py)
+		local a = level.map(px, py, Map.ACTOR)
+		if a and self:reactionToward(a) < 0 then
+			a:teleportRandom(self.x, self.y, 50, 5)
+		end
+	end)
 end
 
 function _M:onLeaveLevel(zone, level)
@@ -417,78 +428,77 @@ end
 
 --- Funky shader stuff
 function _M:updateMainShader()
-	if game.fbo_shader then
-		local effects = {}
-		local pf = game.posteffects or {}
+	local effects = {}
+	local pf = game.posteffects or {}
 
-		-- Set shader HP warning
-		if self.life ~= self.shader_old_life then
-			if self.life < self.max_life / 2 then game.fbo_shader:setUniform("hp_warning", 1 - (self.life / self.max_life))
-			else game.fbo_shader:setUniform("hp_warning", 0) end
-		end
-		-- Set shader air warning
-		if self.air ~= self.old_air then
-			if self.air < self.max_air / 2 then game.fbo_shader:setUniform("air_warning", 1 - (self.air / self.max_air))
-			else game.fbo_shader:setUniform("air_warning", 0) end
-		end
-		if self:attr("solipsism_threshold") and self.psi ~= self.old_psi then
-			local solipsism_power = self:attr("solipsism_threshold") - self:getPsi()/self:getMaxPsi()
-			if solipsism_power > 0 then game.fbo_shader:setUniform("solipsism_warning", solipsism_power)
-			else game.fbo_shader:setUniform("solipsism_warning", 0) end
-		end
-		if ((self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) ~= self.old_healwarn) and not self:attr("no_healing_no_warning") then
-			if (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) then
-				game.fbo_shader:setUniform("intensify", {0.3,1.3,0.3,1})
-			else
-				game.fbo_shader:setUniform("intensify", {0,0,0,0})
-			end
-		end
-
-		-- Colorize shader
-		if self:attr("stealth") and self:attr("stealth") > 0 then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9,0.6})
-		elseif self:attr("invisible") and self:attr("invisible") > 0 then game.fbo_shader:setUniform("colorize", {0.3,0.4,0.9,0.8})
-		elseif self:attr("unstoppable") then game.fbo_shader:setUniform("colorize", {1,0.2,0,1})
-		elseif self:attr("lightning_speed") then game.fbo_shader:setUniform("colorize", {0.2,0.3,1,1})
-		elseif game.level and game.level.data.is_eidolon_plane then game.fbo_shader:setUniform("colorize", {1,1,1,1})
---		elseif game:hasDialogUp() then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9})
-		else game.fbo_shader:setUniform("colorize", {0,0,0,0}) -- Disable
-		end
-
-		-- Blur shader
-		if config.settings.tome.fullscreen_confusion and pf.blur and pf.blur.shad then
-			if self:attr("confused") and self.confused >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
-			elseif self:attr("sleep") and not self:attr("lucid_dreamer") and self.sleep >= 1 then pf.blur.shad:uniBlur(2) effects[pf.blur.shad] = true
-			end
-		end
-
-		-- Moving Blur shader
-		if pf.motionblur and pf.motionblur.shad then
-			if self:attr("invisible") then pf.motionblur.shad:uniMotionblur(3) effects[pf.motionblur.shad] = true
-			elseif self:attr("lightning_speed") then pf.motionblur.shad:uniMotionblur(2) effects[pf.motionblur.shad] = true
-			elseif game.level and game.level.data and game.level.data.motionblur then pf.motionblur.shad:uniMotionblur(game.level.data.motionblur) effects[pf.motionblur.shad] = true
-			end
-		end
-
-		-- Underwater shader
-		if game.level and game.level.data and game.level.data.underwater and pf.underwater and pf.underwater.shad then effects[pf.underwater.shad] = true
-		end
-
-		-- Wobbling shader
-		if config.settings.tome.fullscreen_stun and pf.wobbling and pf.wobbling.shad then
-			if self:attr("stunned") and self.stunned >= 1 then pf.wobbling.shad:uniWobbling(1) effects[pf.wobbling.shad] = true
-			elseif self:attr("dazed") and self.dazed >= 1 then pf.wobbling.shad:uniWobbling(0.7) effects[pf.wobbling.shad] = true
-			end
-		end
-
-		-- Timestop shader
-		if self:attr("timestopping") and pf.timestop and pf.timestop.shad then
-			effects[pf.timestop.shad] = true
-			pf.timestop.shad:paramNumber("tick_start", core.game.getTime())
-		end
-
-		game.posteffects_use = table.keys(effects)
-		game.posteffects_use[#game.posteffects_use+1] = game.fbo_shader.shad
+	-- Set shader HP warning
+	if self.life ~= self.shader_old_life then
+		if self.life < self.max_life / 2 then game.fbo_shader:setUniform("hp_warning", 1 - (self.life / self.max_life))
+		else game.fbo_shader:setUniform("hp_warning", 0) end
 	end
+	-- Set shader air warning
+	if self.air ~= self.old_air then
+		if self.air < self.max_air / 2 then game.fbo_shader:setUniform("air_warning", 1 - (self.air / self.max_air))
+		else game.fbo_shader:setUniform("air_warning", 0) end
+	end
+	if self:attr("solipsism_threshold") and self.psi ~= self.old_psi then
+		local solipsism_power = self:attr("solipsism_threshold") - self:getPsi()/self:getMaxPsi()
+		if solipsism_power > 0 then game.fbo_shader:setUniform("solipsism_warning", solipsism_power)
+		else game.fbo_shader:setUniform("solipsism_warning", 0) end
+	end
+	if ((self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) ~= self.old_healwarn) and not self:attr("no_healing_no_warning") then
+		if (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) then
+			game.fbo_shader:setUniform("intensify", {0.3,1.3,0.3,1})
+		else
+			game.fbo_shader:setUniform("intensify", {0,0,0,0})
+		end
+	end
+
+	-- Colorize shader
+	if self:attr("stealth") and self:attr("stealth") > 0 then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9,0.6})
+	elseif self:attr("invisible") and self:attr("invisible") > 0 then game.fbo_shader:setUniform("colorize", {0.3,0.4,0.9,0.8})
+	elseif self:attr("unstoppable") then game.fbo_shader:setUniform("colorize", {1,0.2,0,1})
+	elseif self:attr("lightning_speed") then game.fbo_shader:setUniform("colorize", {0.2,0.3,1,1})
+	elseif game.level and game.level.data.is_eidolon_plane then game.fbo_shader:setUniform("colorize", {1,1,1,1})
+--		elseif game:hasDialogUp() then game.fbo_shader:setUniform("colorize", {0.9,0.9,0.9})
+	else game.fbo_shader:setUniform("colorize", {0,0,0,0}) -- Disable
+	end
+
+	-- Blur shader
+	if config.settings.tome.fullscreen_confusion and pf.blur then
+		if self:attr("confused") and self.confused >= 1 then pf.blur:uniBlur(2) effects.blur = true
+		elseif self:attr("sleep") and not self:attr("lucid_dreamer") and self.sleep >= 1 then pf.blur:uniBlur(2) effects.blur = true
+		end
+	end
+
+	-- Moving Blur shader
+	if pf.motionblur then
+		if self:attr("invisible") then pf.motionblur:uniMotionblur(3) effects.motionblur = true
+		elseif self:attr("lightning_speed") then pf.motionblur:uniMotionblur(2) effects.motionblur = true
+		elseif game.level and game.level.data and game.level.data.motionblur then pf.motionblur:uniMotionblur(game.level.data.motionblur) effects.motionblur = true
+		end
+	end
+
+	-- Underwater shader
+	if game.level and game.level.data and game.level.data.underwater and pf.underwater then effects.underwater = true
+	end
+
+	-- Wobbling shader
+	if config.settings.tome.fullscreen_stun and pf.wobbling then
+		if self:attr("stunned") and self.stunned >= 1 then pf.wobbling:uniWobbling(1) effects.wobbling = true
+		elseif self:attr("dazed") and self.dazed >= 1 then pf.wobbling:uniWobbling(0.7) effects.wobbling = true
+		end
+	end
+
+	-- Timestop shader
+	if self:attr("timestopping") and pf.timestop then
+		effects.timestop = true
+		pf.timestop:uniTick_start(core.game.getTime())
+	end
+
+	game.fbo_posteffects:disableAll()
+	game.fbo_posteffects:enable("main", true)
+	for name, _ in pairs(effects) do game.fbo_posteffects:enable(name, true) end
 end
 
 -- Precompute FOV form, for speed
@@ -554,6 +564,19 @@ function _M:playerFOV()
 			cache and map._fovcache["block_sight"]
 		)
 	end
+
+	core.fov.calc_circle(self.x, self.y, game.level.map.w, game.level.map.h, 10,
+		function(d, x, y)end, -- block
+		function(d, x, y) -- apply
+			local act = game.level.map(x, y, game.level.map.ACTOR)
+			if act then
+			local eff = act:hasEffect(act.EFF_MARKED)
+				if eff and eff.src==self then
+					game.level.map.seens(x, y, 0.6)
+				end
+			end
+		end,
+	nil)
 
 	-- Handle Preternatural Senses talent, a simple FOV, using cache.
 	if self:knowTalent(self.T_PRETERNATURAL_SENSES) then
@@ -709,6 +732,21 @@ function _M:onTakeHit(value, src, death_note)
 	end
 
 	return ret
+end
+
+function _M:setEffect(eff_id, ...)
+	game:triggerEventUI("Player:setEffect", self, eff_id, ...)
+	return mod.class.Actor.setEffect(self, eff_id, ...)
+end
+
+function _M:removeEffect(eff_id, ...)
+	game:triggerEventUI("Player:removeEffect", self, eff_id, ...)
+	return mod.class.Actor.removeEffect(self, eff_id, ...)
+end
+
+function _M:postUseTalent(ab, ...)
+	game:triggerEventUI("Player:postUseTalent", self, ab, ...)
+	return mod.class.Actor.postUseTalent(self, ab, ...)
 end
 
 function _M:on_set_temporary_effect(eff_id, e, p)
@@ -947,7 +985,7 @@ function _M:restCheck()
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
 		for _, node in ipairs(spotted) do
-			node.entity:addParticles(engine.Particles.new("notice_enemy", 1))
+			node.entity:addParticles(Particles.new("notice_enemy", 1))
 		end
 		local dir = game.level.map:compassDirection(spotted[1].x - self.x, spotted[1].y - self.y)
 		return false, ("hostile spotted to the %s (%s%s)"):format(dir or "???", spotted[1].name, game.level.map:isOnScreen(spotted[1].x, spotted[1].y) and "" or " - offscreen")
@@ -989,10 +1027,10 @@ function _M:restCheck()
 		-- Check for resources
 		for res, res_def in ipairs(_M.resources_def) do
 			if res_def.wait_on_rest and res_def.regen_prop and self:attr(res_def.regen_prop) then
-				if not res_def.invert_values then
+				if not res_def.invert_values and not res_def.switch_direction then
 					if self[res_def.regen_prop] > 0.0001 and self:check(res_def.getFunction) < self:check(res_def.getMaxFunction) then return true end
 				else
-					if self[res_def.regen_prop] < 0.0001 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
+					if self[res_def.regen_prop] < -0.0001 and self:check(res_def.getFunction) > self:check(res_def.getMinFunction) then return true end
 				end
 			end
 		end
@@ -1189,7 +1227,7 @@ function _M:runStopped()
 	local spotted = spotHostiles(self)
 	if #spotted > 0 then
 		for _, node in ipairs(spotted) do
-			node.entity:addParticles(engine.Particles.new("notice_enemy", 1))
+			node.entity:addParticles(Particles.new("notice_enemy", 1))
 		end
 	end
 
@@ -1204,10 +1242,8 @@ function _M:activateHotkey(id)
 	-- Visual feedback to show whcih key was pressed
 	if config.settings.tome.visual_hotkeys and game.uiset.hotkeys_display and game.uiset.hotkeys_display.clics and game.uiset.hotkeys_display.clics[id] and self.hotkey[id] then
 		local zone = game.uiset.hotkeys_display.clics[id]
-		game.uiset:addParticle(
-			game.uiset.hotkeys_display.display_x + zone[1] + zone[3] / 2, game.uiset.hotkeys_display.display_y + zone[2] + zone[4] / 2,
-			"hotkey_feedback", {w=zone[3], h=zone[4]}
-		)
+		local p = Particles.new("hotkey_feedback", 1, {w=zone[3], h=zone[4]}):getDO()
+		game.uiset.hotkeys_display.renderer:add(p:translate(zone[1] + zone[3] / 2 - 4, zone[2] + zone[4] / 2 - 4, 100))
 	end
 
 	return engine.interface.PlayerHotkeys.activateHotkey(self, id)
@@ -1245,51 +1281,6 @@ function _M:hotkeyInventory(name)
 			end
 		end
 		self:playerUseItem(o, item, inven)
-	end
-end
-
---- Player specifically requests disarming a trap
-function _M:playerDisarmTrap(tx, ty)
-	if self:attr("sleep") and not self:attr("lucid_dreamer") then
-		game.log("You can not disarm traps while asleep!") return
-	elseif self:getTalentLevel(self.T_HEIGHTENED_SENSES) < 3 and not self:attr("can_disarm") then
-		game.log("You don't know how to disarm traps!") return
-	end
-	core.mouse.set(game.level.map:getTileToScreen(self.x, self.y, true))
-	local function do_disarm(x, y)
-		if x and y then
-			local dir = util.getDir(x, y, self.x, self.y)
-			x, y = util.coordAddDir(self.x, self.y, dir)
-			print("Disarm trap command", x, y)
-			if (x == self.x and y == self.y) or self:canMove(x, y) then
-				local trap = self:detectTrap(nil, x, y)
-				if trap then
-					print("Attempting to disarm trap", trap.name, x, y)
-					game.log("#CADET_BLUE#You attempt to disarm a trap (%s).", trap:getName())
-					local px, py = self.x, self.y
-					self:move(x, y, true) -- temporarily move the player to make sure trap can trigger properly
-						-- attempt to disarm the trap, may trigger it
-					trap:trigger(self.x, self.y, self) -- try to disarm, or trigger the trap
-					if not self.dead then self:move(px, py, true) end
-				else
-					game.log("#CADET_BLUE#You don't see a trap there.")
-				end
-				self:useEnergy()
-			else
-				game.log("#CADET_BLUE#You cannot disarm traps in grids you cannot enter.")
-			end
-		end
-	end
-	if tx and ty then
-		do_disarm(tx, ty)
-	else
-		local co = coroutine.create(function()
-			game.log("Disarm A Trap: (direction keys to select where to disarm, shift+direction keys to move freely)")
-			local x, y, dir = self:getTarget({type="hit", range=1, nowarning=true, immediate_keys=true, no_lock=false})
-			do_disarm(x, y)
-		end)
-		local ok, err = coroutine.resume(co)
-		if not ok and err then print(debug.traceback(co)) error(err) end
 	end
 end
 
@@ -1650,6 +1641,11 @@ function _M:attackOrMoveDir(dir)
 	game_or_player.bump_attack_disabled = false
 	self:moveDir(dir)
 	game_or_player.bump_attack_disabled = tmp
+end
+
+function _M:updateModdableTile()
+	mod.class.Actor.updateModdableTile(self)
+	game:triggerEventUI("Player:updateModdableTile", self)
 end
 
 return _M

@@ -102,7 +102,7 @@ bool _CheckGLSLProgramValid(GLuint program)
 	return TRUE;
 }
 
-//#define _DEBUG
+#define _DEBUG
 #ifdef _DEBUG
 
 #define CHECKGL( GLcall )                               		\

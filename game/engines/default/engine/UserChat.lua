@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,11 +42,12 @@ function _M:init()
 	self.channel_codes = {}
 	self.channel_codes_rev = {}
 	self.max = 500
-	self.do_display_chans = true
 	self.on_event = {}
 	self.full_log = {}
 	self.last_whispers = {}
 	self.friends = {}
+	self.cache_next_id = 1
+	self.cache = {}
 end
 
 --- Hook up in the current running game
@@ -126,7 +127,8 @@ function _M:addMessage(kind, channel, login, name, msg, extra_data, no_change)
 		pcall(function() msg = msg:lpegSub(urlfind, "#LIGHT_BLUE##{italic}#"..url.."#{normal}##LAST#") end)
 	end
 
-	local item = {channel=channel, kind=kind, login=login, name=name, color_name=color_name, msg=msg, url=url, extra_data=extra_data, timestamp=core.game.getTime()}
+	local item = {channel=channel, kind=kind, login=login, name=name, color_name=color_name, msg=msg, url=url, extra_data=extra_data, timestamp=core.game.getTime(), id=self.cache_next_id}
+	self.cache_next_id = self.cache_next_id + 1
 	if self:filterMessage(item) then return end
 	if self.uc_ext and self.uc_ext.filterMessage then
 		if self.uc_ext:filterMessage(item) then return end
@@ -580,38 +582,35 @@ function _M:showLogDialog(title, shadow)
 end
 
 --- Resize the display area
-function _M:resize(x, y, w, h, fontname, fontsize, color, bgcolor)
-	self.color = color or {255,255,255}
-	if type(bgcolor) ~= "string" then
-		self.bgcolor = bgcolor or {0,0,0}
-	else
-		self.bgcolor = {0,0,0}
-		self.bg_image = bgcolor
+function _M:resize(x, y, w, h, fontname, fontsize)
+	if not self.renderer then
+		self.renderer = core.renderer.renderer("stream"):setRendererName("ChatLog")
 	end
+
+	self.renderer:clear()
+
+	local wself = self:weakSelf()
+	local cb = core.renderer.callback(function()
+		if not wself.__getstrong then return end
+		wself.__getstrong:display()
+	end)
+	self.renderer:add(cb)
+
+	self.renderer:cutoff(0, 0, w, h)
+	self.renderer:translate(self.display_x, self.display_y, 0)
+	self.history_container = core.renderer.container()
+	self.renderer:add(self.history_container)
+
 	self.font = core.display.newFont(fontname or "/data/font/DroidSans.ttf", fontsize or 12)
 	self.font_h = self.font:lineSkip()
 
 	self.scroll = 0
 	self.changed = true
 
-	self.frame_sel = self:makeFrame("ui/selector-sel", 1, 5 + self.font_h)
-	self.frame = self:makeFrame("ui/selector", 1, 5 + self.font_h)
-
 	self.display_x, self.display_y = math.floor(x), math.floor(y)
 	self.w, self.h = math.floor(w), math.floor(h)
 	self.fw, self.fh = self.w - 4, self.font:lineSkip()
 	self.max_display = math.floor(self.h / self.fh)
-
-	if self.bg_image then
-		local fill = core.display.loadImage(self.bg_image)
-		local fw, fh = fill:getSize()
-		self.bg_surface = core.display.newSurface(w, h)
-		self.bg_surface:erase(0, 0, 0)
-		for i = 0, w, fw do for j = 0, h, fh do
-			self.bg_surface:merge(fill, i, j)
-		end end
-		self.bg_texture, self.bg_texture_w, self.bg_texture_h = self.bg_surface:glTexture()
-	end
 
 	self.scrollbar = Slider.new{size=self.h - 20, max=1, inverse=true}
 
@@ -626,20 +625,6 @@ end
 function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 	if button == "wheelup" then self:scrollUp(1)
 	elseif button == "wheeldown" then self:scrollUp(-1)
-	elseif event == "button" and button == "left" and y <= self.frame.h and self.do_display_chans then
-		local w = 0
-		local last_ok = nil
-		for i = 1, #self.display_chans do
-			local item = self.display_chans[i]
-			last_ok = item
-			w = w + item.w + 4
-			if w > x then break end
-		end
-		if last_ok then
-			local old = self.cur_channel
-			self:selectChannel(last_ok.name)
-			if old == self.cur_channel then self:showLogDialog(nil, self.shadow) end
-		end
 	else
 		if not self.on_mouse or not self.dlist then return end
 		local citem = nil
@@ -666,8 +651,9 @@ function _M:enableFading(v)
 	self.fading = v
 end
 
+-- DGDGDGDG: does anybody even cares ?
 function _M:enableDisplayChans(v)
-	self.do_display_chans = v
+-- 	self.do_display_chans = v
 end
 
 function _M:onMouse(fct)
@@ -676,31 +662,33 @@ end
 
 function _M:display()
 	-- Changed channels list
-	if self.channels_changed then
-		self.display_chans = {}
-		local list = {}
-		for name, data in pairs(self.channels) do list[#list+1] = name end
-		table.sort(list, function(a,b) if a == "global" then return 1 elseif b == "global" then return nil else return a < b end end)
-		for i, name in ipairs(list) do
-			local oname = name
-			local nb_users = 0
-			for _, _ in pairs(self.channels[name].users) do nb_users = nb_users + 1 end
-			name = "["..name:capitalize().." ("..nb_users..")]"
+	-- if self.channels_changed then
+	-- 	self.display_chans = {}
+	-- 	local list = {}
+	-- 	for name, data in pairs(self.channels) do list[#list+1] = name end
+	-- 	table.sort(list, function(a,b) if a == "global" then return 1 elseif b == "global" then return nil else return a < b end end)
+	-- 	for i, name in ipairs(list) do
+	-- 		local oname = name
+	-- 		local nb_users = 0
+	-- 		for _, _ in pairs(self.channels[name].users) do nb_users = nb_users + 1 end
+	-- 		name = "["..name:capitalize().." ("..nb_users..")]"
 
-			local tex = self:drawFontLine(self.font_mono, name)
-			table.update(tex, {name = oname, sel = oname == self.cur_channel})
-			self.display_chans[#self.display_chans+1] = tex
-		end
-		self.channels_changed = false
-	end
+	-- 		local tex = self:drawFontLine(self.font_mono, name)
+	-- 		table.update(tex, {name = oname, sel = oname == self.cur_channel})
+	-- 		self.display_chans[#self.display_chans+1] = tex
+	-- 	end
+	-- 	self.channels_changed = false
+	-- end
 
 	-- If nothing changed, return the same surface as before
 	if not self.changed then return end
 	self.changed = false
 
 	-- Erase and the display
+	self.history_container:clear()
 	self.dlist = {}
-	local h = 0
+	local h = self.h
+	local fh = self.font_h
 	local log = {}
 	if self.full_log then log = self.full_log end
 	local old_style = self.font:getStyle()
@@ -715,14 +703,38 @@ function _M:display()
 			tstr = tstring{"[", self:getChannelCode(log[z].channel), "-", log[z].channel, "] <", {"color",unpack(colors.simple(log[z].color_name))}, log[z].name, {"color", "LAST"}, "> "}
 		end
 		tstr:merge(log[z].msg:toTString())
-		--local gen = tstring.makeLineTextures(tstr, self.w, self.font_mono)
-		local gen = self.font_mono:draw(tstr:toString(), self.w, 255, 255, 255)
-		for i = #gen, 1, -1 do
-			gen[i].login = log[z].login
-			gen[i].extra_data = log[z].extra_data
-			self.dlist[#self.dlist+1] = {item=gen[i], date=log[z].reset_fade or log[z].timestamp, src=log[z]}
-			h = h + self.fh
-			if h > self.h - self.fh - (self.do_display_chans and self.fh or 0) then stop=true break end
+
+		local lines = tstr:toString():splitLines(self.w, self.font)
+		for i, line in ripairs(lines) do
+			local tid = log[z].id + i / 10
+
+			local text
+			if self.cache[tid] then
+				text = self.cache[tid]
+			else
+				text = core.renderer.text(self.font)
+				self:applyShadowOutline(text)
+				text:text(line)
+				self.cache[tid] = text
+			end
+
+			text:removeFromParent():translate(0, h - fh, 10)
+			self.history_container:add(text)
+
+			if self.fading and not text:hasTween("wait") then text:tween(30 * self.fading, "wait", function(toto) toto:tween(30, "a", nil, 0, "linear") end) end
+
+			--local gen = tstring.makeLineTextures(tstr, self.w, self.font_mono)
+			-- local gen = self.font_mono:draw(tstr:toString(), self.w, 255, 255, 255)
+			-- for i = #gen, 1, -1 do
+			-- 	gen[i].login = log[z].login
+			-- 	gen[i].extra_data = log[z].extra_data
+			-- 	self.dlist[#self.dlist+1] = {item=gen[i], date=log[z].reset_fade or log[z].timestamp, src=log[z]}
+			-- 	h = h + self.fh
+			-- 	if h > self.h - self.fh then stop=true break end
+			-- end
+			self.dlist[#self.dlist+1] = {item=text, date=log[z].reset_fade or log[z].timestamp, src=log[z]}
+			h = h - fh
+			if h < fh then stop=true break end
 		end
 		if stop then break end
 	end
@@ -733,60 +745,43 @@ end
 function _M:toScreen()
 	self:display()
 
-	local shader = Shader.default.textoutline and Shader.default.textoutline.shad
+	-- local shader = Shader.default.textoutline and Shader.default.textoutline.shad
 
-	if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
-	local h = self.display_y + self.h -  self.fh
-	local now = core.game.getTime()
-	for i = 1, #self.dlist do
-		local item = self.dlist[i].item
+	-- if self.bg_texture then self.bg_texture:toScreenFull(self.display_x, self.display_y, self.w, self.h, self.bg_texture_w, self.bg_texture_h) end
+	-- local h = self.display_y + self.h -  self.fh
+	-- local now = core.game.getTime()
+	-- for i = 1, #self.dlist do
+	-- 	local item = self.dlist[i].item
 
-		local fade = 1
-		if self.fading and self.fading > 0 then
-			fade = now - self.dlist[i].date
-			if fade < self.fading * 1000 then fade = 1
-			elseif fade < self.fading * 2000 then fade = (self.fading * 2000 - fade) / (self.fading * 1000)
-			else fade = 0 end
-			self.dlist[i].src.faded = fade
-		end
+	-- 	local fade = 1
+	-- 	if self.fading and self.fading > 0 then
+	-- 		fade = now - self.dlist[i].date
+	-- 		if fade < self.fading * 1000 then fade = 1
+	-- 		elseif fade < self.fading * 2000 then fade = (self.fading * 2000 - fade) / (self.fading * 1000)
+	-- 		else fade = 0 end
+	-- 		self.dlist[i].src.faded = fade
+	-- 	end
 
-		self.dlist[i].dh = h
-		if self.shadow then
-			if shader then
-				shader:use(true)
-				shader:uniOutlineSize(0.7, 0.7)
-				shader:uniTextSize(item._tex_w, item._tex_h)
-			else
-				item._tex:toScreenFull(self.display_x+2, h+2, item.w, item.h, item._tex_w, item._tex_h, 0,0,0, self.shadow * fade)
-			end
-		end
-		item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
-		if self.shadow and shader then shader:use(false) end
-		h = h - self.fh
-	end
+	-- 	self.dlist[i].dh = h
+	-- 	if self.shadow then
+	-- 		if shader then
+	-- 			shader:use(true)
+	-- 			shader:uniOutlineSize(0.7, 0.7)
+	-- 			shader:uniTextSize(item._tex_w, item._tex_h)
+	-- 		else
+	-- 			item._tex:toScreenFull(self.display_x+2, h+2, item.w, item.h, item._tex_w, item._tex_h, 0,0,0, self.shadow * fade)
+	-- 		end
+	-- 	end
+	-- 	item._tex:toScreenFull(self.display_x, h, item.w, item.h, item._tex_w, item._tex_h, 1, 1, 1, fade)
+	-- 	if self.shadow and shader then shader:use(false) end
+	-- 	h = h - self.fh
+	-- end
 
-	if self.do_display_chans then
-		local w = 0
-		for i = 1, #self.display_chans do
-			local item = self.display_chans[i]
-			local f = item.sel and self.frame_sel or self.frame
-			f.w = item.w
-
-			Base:drawFrame(f, self.display_x + w, self.display_y)
-			if self.channels[item.name].changed then
-				local glow = (1+math.sin(core.game.getTime() / 500)) / 2 * 100 + 120
-				Base:drawFrame(f, self.display_x + w, self.display_y, 139/255, 210/255, 77/255, glow / 255)
-			end
-			self:textureToScreen(item, self.display_x + w + self.frame.b4.w, self.display_y + (self.frame.h - self.font_h)/2)
-			w = w + item.w + 4
-		end
-	end
-
-	if not self.fading then
-		self.scrollbar.pos = self.scroll
-		self.scrollbar.max = self.max - self.max_display + 1
-		self.scrollbar:display(self.display_x + self.w - self.scrollbar.w, self.display_y)
-	end
+	-- if not self.fading then
+	-- 	self.scrollbar.pos = self.scroll
+	-- 	self.scrollbar.max = self.max - self.max_display + 1
+	-- 	self.scrollbar:display(self.display_x + self.w - self.scrollbar.w, self.display_y)
+	-- end
 end
 
 --- Scroll the zone
@@ -802,12 +797,10 @@ function _M:scrollUp(i)
 	self:resetFade()
 end
 
-function _M:resetFade()
-	local log = {}
-	if self.channels[self.cur_channel] then log = self.channels[self.cur_channel].log end
 
+function _M:resetFade()
 	-- Reset fade
-	for i = 1,#log do
-		log[i].reset_fade = core.game.getTime()
+	for _, d in ipairs(self.cache) do
+		d:tween(5, "a", nil, 1, "linear")
 	end
 end

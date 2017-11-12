@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -156,7 +156,6 @@ newEntity{ define_as = "BURNT_DOOR",
 	type = "wall", subtype = "burnt",
 	name='burnt passage',
 	display='.', color=colors.UMBER, back_color=colors.DARK_GREY, image="terrain/grass_burnt1.png",
-	add_mos = {{image="terrain/burnt_floor_deco6.png"},{image="terrain/trees/small_burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0.5, display_y=0.5}, {image="terrain/trees/burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0, display_y=0.5}, {image="terrain/trees/small_burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0.5, display_y=0}, {image="terrain/trees/burned_tree_01_trunk.png", display_w=0.5, display_h=.5, display_x=0, display_y=0}},
 	notice = true,
 	always_remember = true,
 	block_sight = true,
@@ -178,8 +177,29 @@ newEntity{
 for i = 1, 14 do newEntity{ base = "SNOWY_GRASS_2", define_as = "SNOWY_PATCH_2"..i, image = ("terrain/grass/snowy_grass_main_%02d.png"):format(i) } end
 
 local snowy_treesdef = {
-	{"small_elm", {"shadow", "trunk", "foliage_winter"}},
-	{"elm", {tall=-1, "shadow", "trunk", "foliage_winter"}},
+	{"pine_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"narrow_cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_willow_moss_trunk_foliage_winter", tall=0},
+	{"small_willow_moss_trunk_foliage_winter", tall=0},
+	{"small_oak_trunk_01_foliage_winter_%02d", 1, 3, tall=0},
+	{"small_oak_trunk_02_foliage_winter_%02d", 1, 3, tall=0},
+	{"small_elm_trunk_foliage_winter", tall=0},
+	{"cypress_trunk_foliage_winter_%02d", 1, 2, tall=-1},
+	{"small_wider_pine_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_willow_trunk_foliage_winter", tall=0},
+	{"small_narrow_pine_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"tiny_cypress_trunk_foliage_winter_%02d", 1, 2, tall=0},
+	{"elm_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_trunk_foliage_winter", tall=-1},
+	{"willow_moss_trunk_foliage_winter", tall=-1},
+	{"willow_moss_trunk_foliage_winter", tall=-1},
+	{"oak_trunk_01_foliage_winter_%02d", 1, 3, tall=-1},
+	{"oak_trunk_02_foliage_winter_%02d", 1, 3, tall=-1},
 }
 
 newEntity{

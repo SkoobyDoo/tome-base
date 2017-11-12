@@ -9,7 +9,6 @@ uniform vec3 color2;
 uniform float tick;
 uniform float speed;
 uniform vec2 p2;
-uniform float a;
 uniform float amp;
 uniform float pivot;
 
@@ -69,6 +68,6 @@ void main(void)
 	uv.x = uv.y;
 	uv.y = -t;
 	uv -= floor(uv);
-	gl_FragColor.a = texture2D(tex, gl_TexCoord[0].xy).a * a;
+	gl_FragColor.a = texture2D(tex, gl_TexCoord[0].xy).a * te4_fragcolor.a;
 	gl_FragColor.rgb = mix(color1, color2, pivot) * ((1.0 - amp) + fx(uv) * amp);
 }

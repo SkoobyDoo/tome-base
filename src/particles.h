@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 extern void create_particles_thread();
 extern void free_particles_thread();
-extern void thread_particle_new_keyframes(int nb_keyframes);
+extern void thread_particle_new_keyframes(float nb_keyframes);
 extern int luaopen_particles(lua_State *L);
 
 #endif

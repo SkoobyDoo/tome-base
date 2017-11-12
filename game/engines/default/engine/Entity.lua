@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -125,7 +125,6 @@ function _M:init(t, no_default)
 			error("Entity definition has a closure: "..err)
 		end
 	end
-
 	if self.color then
 		self.color_r = self.color.r
 		self.color_g = self.color.g
@@ -367,8 +366,12 @@ function _M:makeMapObject(tiles, idx)
 	end
 
 	-- Texture
-	local ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
-
+	-- DGDGDGDG: handle "invis.png" as a special "texture" that tells the engine to fully ignore it, no texture at all
+	-- This way this wont break sorting
+	local ok, btex, btexx, btexy, w, h, tex_x, tex_y
+	if self.image == "invis.png" then ok = false
+	else ok, btex, btexx, btexy, w, h, tex_x, tex_y = pcall(tiles.get, tiles, self.display, self.color_r, self.color_g, self.color_b, self.color_br, self.color_bg, self.color_bb, self.image, self._noalpha and 255, self.ascii_outline, true)
+	end
 	local dy, dh = 0, 0
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
 
@@ -397,7 +400,7 @@ function _M:makeMapObject(tiles, idx)
 			local sp = core.renderer.spriter("/data/gfx/spriters/"..self.spriter[1]..".scml", self.spriter[2] or "default")
 			if self.spriter.anim then sp:setAnim(self.spriter.anim) end
 			if self.spriter.scale then if type(self.spriter.scale) == "table" then sp:scale(self.spriter.scale[1], self.spriter.scale[2], self.spriter.scale[3]) else sp:scale(self.spriter.scale, self.spriter.scale, self.spriter.scale) end end
-			local spr = core.renderer.renderer() -- We add it to a renderer and then use the renderer, this way the map doesnt need to redraw the full z layer each frame
+			local spr = core.renderer.renderer("stream") -- We add it to a renderer and then use the renderer, this way the map doesnt need to redraw the full z layer each frame
 			spr:add(sp)
 			self._mo:displayObject(spr)
 		elseif self.anim then
@@ -407,6 +410,8 @@ function _M:makeMapObject(tiles, idx)
 			-- print("=======", self.image, btexx, btexy, te)
 			self._mo:texture(0, btex, false, btexx, btexy, tex_x, tex_y)
 		end
+	else
+		self._mo:hide()
 	end
 
 	-- Additional MO chained to the same Z order
@@ -677,6 +682,14 @@ function _M:getDisplayString(tstr)
 	end
 end
 
+--- Simplyfied DO method to get a basic one
+function _M:getDO(w, h, a)
+	local Map = require "engine.Map"
+	local tiles = Map.tiles
+	if game.level and game.level.map then tiles = game.level.map.tiles end
+	return self:getEntityDisplayObject(tiles, w or 64, h or 64, a or 1, false, true, true)
+end
+
 --- Displays an entity somewhere on screen, outside the map
 -- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles, it will if this is null)
 -- @int x where to display
@@ -701,14 +714,28 @@ function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_shader)
 	DO:toScreen(x, y)
 end
 
---- Resolves an entity  
--- This is called when generating the final clones of an entity for use in a level.  
--- This can be used to make random enchants on objects, random properties on actors, ...  
--- by default this only looks for properties with a table value containing a __resolver field
--- @param[type=?table] t table defaults to self
--- @param[type=?boolean] last resolve last
--- @param[type=?boolean] on_entity
--- @param[type=?table] key_chain stores keys, defaults to {}
+--- Resolves an entity, finishing resolvers previously defined for it
+-- Called when generating the final clones of (instantiating) a prototype entity for use in the game
+-- This may be used to make random enchants on objects, add random properties on actors, etc.
+-- Recursively searches for all property fields assigned a resolver table, assigning final values to those properties
+-- (resolver tables are tables containing a __resolver field by default)
+-- @see resolvers.lua
+-- @param[type=?table] t table to search recursively for resolver tables (defaults to self)
+-- @param[type=?boolean] last handle resolvers with .__resolve_last set (which are skipped if this is not set)
+-- @param[type=?table] on_entity alternate entity for which to evaluate resolvers
+-- @param[type=?table] key_chain (defaults to {}) contains keys recursively traversed while resolving
+-- 	During the recursive search:
+--		subtables with .__ATOMIC or .__CLASSNAME are skipped
+--		the key_chain table is appended with each recursive key
+--		resolver tables (containing .__resolver) are evaluated
+-- resolvers are 2-part functions:
+--	resolver.foo(...) (called when creating the entity prototype) assigns a resolver table to a property field within the entity
+--		The resolver table contains .__resolver == "foo" and all other data needed to create the final value for the property field when the final entity instance is prepared (performed here)
+---		If the resolver table contains .__resolve_instant, it will be resolved immediately (before the next level of recursion)
+--	resolver.calc.foo(t, e) (called here) calculates the final value for ("resolves") the property field where:
+--		t = table generated by resolver.foo and stored in the property field
+--		e = the entity on which to perform the changes
+--		the property field is set to the return value of this function
 function _M:resolve(t, last, on_entity, key_chain)
 	t = t or self
 	key_chain = key_chain or {}
@@ -726,8 +753,8 @@ function _M:resolve(t, last, on_entity, key_chain)
 	-- Then we handle it, this is because resolvers can modify the list with their returns, or handlers, so we must make sure to not modify the list we are iterating over
 	local r
 	for k, e in pairs(list) do
-		if type(e) == "table" and e.__resolver then
-		end
+--		if type(e) == "table" and e.__resolver then
+--		end
 		if type(e) == "table" and e.__resolver and (not e.__resolve_last or last) then
 			if not resolvers.calc[e.__resolver] then error("missing resolver "..e.__resolver.." on entity "..tostring(t).." key "..table.concat(key_chain, ".")) end
 			r = resolvers.calc[e.__resolver](e, on_entity or self, self, t, k, key_chain)
@@ -769,16 +796,17 @@ function _M:printResolvers(t)
 end
 
 --- Call when the entity is actually added to a level/whatever
--- This helps ensuring uniqueness of uniques
+-- This helps ensure uniqueness of uniques
 function _M:added()
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) + 1
-		print("Added unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tostring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) + 1
+		print("Added unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 
 --- Call when the entity is actually removed from existence
--- This helps ensuring uniqueness of uniques.
+-- This helps ensure uniqueness of uniques.
 -- This recursively removes inventories too, if you need anything special, overload this
 function _M:removed()
 	if self.inven then
@@ -792,9 +820,10 @@ function _M:removed()
 	if game and game.hasEntity and game:hasEntity(self) then game:removeEntity(self) end
 
 	if self.unique then
-		game.uniques[self.__CLASSNAME.."/"..self.unique] = (game.uniques[self.__CLASSNAME.."/"..self.unique] or 0) - 1
-		if game.uniques[self.__CLASSNAME.."/"..self.unique] <= 0 then game.uniques[self.__CLASSNAME.."/"..self.unique] = nil end
-		print("Removed unique", self.__CLASSNAME.."/"..self.unique, "::", game.uniques[self.__CLASSNAME.."/"..self.unique])
+		local ustr = tostring(self.unique)
+		game.uniques[self.__CLASSNAME.."/"..ustr] = (game.uniques[self.__CLASSNAME.."/"..ustr] or 0) - 1
+		if game.uniques[self.__CLASSNAME.."/"..ustr] <= 0 then game.uniques[self.__CLASSNAME.."/"..ustr] = nil end
+		print("Removed unique", self.__CLASSNAME.."/"..ustr, "::", game.uniques[self.__CLASSNAME.."/"..ustr])
 	end
 end
 
@@ -928,11 +957,11 @@ end
 -- @int id the id of the increase to delete
 -- @param[type=boolean] noupdate if true the actual property is not changed and needs to be changed by the caller
 function _M:removeTemporaryValue(prop, id, noupdate)
+	if not self.compute_vals then util.send_error_backtrace("removeTemporaryValue: attempting to remove prop "..tostring(prop).." with no temporary values initialized") return end
+	if not id then util.send_error_backtrace("removeTemporaryValue: error removing prop "..tostring(prop).." with id "..tostring(id)) return end
 	local oldval = self.compute_vals[id]
 --	print("removeTempVal", prop, oldval, " :=: ", id)
-	if not id then util.send_error_backtrace("error removing prop "..tostring(prop).." with id nil") return end
 	self.compute_vals[id] = nil
-
 	-- Find the base, one removed from the last prop
 	local initial_base, initial_prop
 	if type(prop) == "table" then
@@ -1014,9 +1043,9 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 		else
 			if config.settings.cheat then
 				if type(v) == "nil" then
-					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("ERROR!!! unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				else
-					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop))
+					error("unsupported temporary value type: "..type(v).." :=: "..tostring(v).." for "..tostring(prop)..(" [%s] %s"):format(tostring(self.uid), tostring(self.name)))
 				end
 			end
 		end
@@ -1026,6 +1055,12 @@ function _M:removeTemporaryValue(prop, id, noupdate)
 	if not noupdate then
 		recursive(initial_base, initial_prop, oldval, "add")
 	end
+end
+
+--- Returns a previously set temporary value, see addTemporaryValue()
+-- @int id the index of the previously set property
+function _M:getTemporaryValue(id)
+	return self.compute_vals and self.compute_vals[id]
 end
 
 --- Helper function to add temporary values
@@ -1119,11 +1154,11 @@ function _M:loadList(file, no_default, res, mod, loaded)
 
 	local f, err = nil, nil
 	if entities_load_functions[file] and entities_load_functions[file][no_default] then
-		print("Loading entities file from memory", file)
+		-- print("Loading entities file from memory", file)
 		f = entities_load_functions[file][no_default]
 	elseif fs.exists(file) then
 		f, err = loadfile(file)
-		print("Loading entities file from file", file)
+		-- print("Loading entities file from file", file)
 		entities_load_functions[file] = entities_load_functions[file] or {}
 		entities_load_functions[file][no_default] = f
 	else

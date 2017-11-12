@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
--- last updated: 9:25 AM 2/5/2010
-
 local Talents = require("engine.interface.ActorTalents")
 
 newEntity{
@@ -28,6 +26,7 @@ newEntity{
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1 },
 	resolvers.drops{chance=20, nb=1, {} },
+	resolvers.auto_equip_filters("Rogue"),
 	resolvers.equip{
 		{type="weapon", subtype="dagger", autoreq=true},
 		{type="weapon", subtype="dagger", autoreq=true},
@@ -56,6 +55,7 @@ newEntity{
 		[Talents.T_KNIFE_MASTERY]={base=0, every=6, max=6},
 		[Talents.T_WEAPON_COMBAT]={base=0, every=6, max=6},
 	},
+
 	power_source = {technique=true},
 }
 
@@ -104,7 +104,7 @@ newEntity{ base = "BASE_NPC_THIEF", define_as = "THIEF_BANDIT",
 	resolvers.talents{
 		[Talents.T_STEALTH]={base=3, every=6, max=9},
 		[Talents.T_LETHALITY]={base=2, every=6, max=6},
-		[Talents.T_DIRTY_FIGHTING]={base=1, every=7, max=6},
+		[Talents.T_VICIOUS_STRIKES]={base=1, every=7, max=6},
 	},
 	max_life = resolvers.rngavg(80,100),
 }
@@ -145,7 +145,7 @@ newEntity{ base = "BASE_NPC_THIEF", define_as = "THIEF_ASSASSIN",
 	resolvers.talents{
 		[Talents.T_STEALTH]={base=3, every=6, max=7},
 		[Talents.T_EXPOSE_WEAKNESS]={base=3, every=6, max=7},
-		[Talents.T_PARRY]={base=2, every=6, max=6},
+		[Talents.T_DUAL_WEAPON_MASTERY]={base=2, every=6, max=6},
 		[Talents.T_TEMPO]={base=2, every=6, max=6},
 		[Talents.T_DUAL_STRIKE]={base=1, every=6, max=6},
 		[Talents.T_COUP_DE_GRACE]={base=1, every=6, max=6},
@@ -167,7 +167,7 @@ newEntity{ base = "BASE_NPC_THIEF", define_as = "THIEF_ASSASSIN",
 	combat_armor = 3, combat_def = 10,
 	resolvers.talents{
 		[Talents.T_STEALTH]={base=3, every=5, max=8},
-		[Talents.T_PARRY]={base=2, every=6, max=6},
+		[Talents.T_DUAL_WEAPON_MASTERY]={base=2, every=6, max=6},
 		[Talents.T_TEMPO]={base=2, every=6, max=6},
 		[Talents.T_DUAL_STRIKE]={base=1, every=6, max=6},
 		[Talents.T_SHADOWSTRIKE]={base=2, every=6, max=6},
@@ -195,21 +195,21 @@ newEntity{ base = "BASE_NPC_THIEF", define_as = "THIEF_SAPPER",
 	combat_armor = 3, combat_def = 10,
 	ai = "tactical",
 	ai_state = { ai_move="move_complex", talent_in=2},
-	ai_tactic = {disable = 2, defend=2, heal=2, escape = 3, closein = 0.5, safe_range = 3},
+	ai_tactic = {disable=2, defend=2, heal=2, escape=3, closein=0.5, safe_range=3},
 	resolvers.talents{
-		[Talents.T_STEALTH]={base=3, every=6, max=7},
-		[Talents.T_UNSEEN_ACTIONS]={base=2, every=6, max=7},
+		[Talents.T_STEALTH]={base=1, every=6, max=7},
+		[Talents.T_UNSEEN_ACTIONS]={base=0, every=8, max=2},
 		[Talents.T_SOOTHING_DARKNESS]={base=1, every=8, max=3},
 		[Talents.T_HEIGHTENED_SENSES]={base=1, every=8, max=5},
-		[Talents.T_TRAP_MASTERY]={base=3, every=6, max=7},
+		[Talents.T_DEVICE_MASTERY]={base=0, every=10, max=4},
+		[Talents.T_TRAP_MASTERY]={base=1, every=5, max=5},
 		[Talents.T_TRAP_LAUNCHER]={base=1, every=8, max=5},
 		[Talents.T_TRAP_PRIMING]={base=-1, every=8, max=5},
-		[Talents.T_PARRY]={base=1, every=8, max=5},
+		[Talents.T_DUAL_WEAPON_MASTERY]={base=1, every=8, max=5},
 		[Talents.T_TEMPO]={base=1, every=8, max=5},
-		[Talents.T_DUAL_STRIKE]={base=1, every=6, max=6},
-		[Talents.T_DISARM]={base=1, every=6, max=6},
+		[Talents.T_DUAL_STRIKE]={base=1, every=10, max=3},
+		[Talents.T_DISARM]={base=0, every=8, max=5},
 	},
-	talent_cd_reduction = {T_STEALTH = 5},
 	max_life = resolvers.rngavg(70,90),
 	resolvers.sustains_at_birth(),
 	autolevel = "rogue",

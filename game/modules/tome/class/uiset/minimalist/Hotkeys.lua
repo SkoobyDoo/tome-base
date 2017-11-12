@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -28,20 +28,32 @@ module(..., package.seeall, class.inherit(MiniContainer))
 
 function _M:init(minimalist)
 	MiniContainer.init(self, minimalist)
+	self.container_z = 100
+	self.resize_mode = "resize"
+
+	self.do_container = core.renderer.container()
 
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
 	self.hotkeys_display_icons = HotkeysIconsDisplay.new(nil, 0, 0, self.w, self.h, nil, font_mono, size_mono, config.settings.tome.hotkey_icons_size, config.settings.tome.hotkey_icons_size)
 	self.hotkeys_display_icons:setTextOutline(0.7)
+	-- self.hotkeys_display_icons:setTextShadow(true)
+	self.hotkeys_display_icons.orient = self.orientation
 	self.hotkeys_display_icons.actor = game.player
+	self.frame_container = core.renderer.container():translate(0, 0, -5)
+	self.do_container:add(self.frame_container)
+
+	self.hkframe = self:makeFrameDO("hotkeys/hotkey_", nil, nil, self.w, self.h, false, true)
+	self.frame_container:add(self.hkframe.container:translate(-4 - self.hkframe.b7.w, -4 - self.hkframe.b7.h))
+	
+	self.do_container:add(self.hotkeys_display_icons.renderer)
 
 	minimalist.hotkeys_display_icons = self.hotkeys_display_icons -- for old code compatibility
 	minimalist.hotkeys_display = self.hotkeys_display_icons
 
-	local hkframe = self:makeFrameDO("hotkeys/hotkey_", nil, nil, self.w, self.h)
-	self.hotkeys_display_icons.bg_container:add(hkframe.container:translate(-4 - hkframe.b7.w, -4 - hkframe.b7.h))
-
-	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
+	self.mouse:dragListener(true)
+	self.mouse:registerZone(0, 0, self.mouse.CAPTURE_ALL, self.mouse.CAPTURE_ALL, function(button, mx, my, xrel, yrel, bx, by, event)
 		if event == "button" and button == "left" and ((game.zone and game.zone.wilderness and not game.player.allow_talents_worldmap) or (game.key ~= game.normal_key)) then return end
+		if button == "none" then button = event end
 		self.hotkeys_display_icons:onMouse(button, mx, my, event == "button",
 			function(text)
 				text = text:toTString()
@@ -66,6 +78,10 @@ function _M:init(minimalist)
 	end, nil, "hotkeys", true, 1)
 end
 
+function _M:getName()
+	return "Hotkeys"
+end
+
 function _M:getDefaultGeometry()
 	local th = 52
 	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
@@ -77,21 +93,60 @@ function _M:getDefaultGeometry()
 	return x, y, w, h
 end
 
+function _M:onSnapChange()
+	local what = self.configs.force_orientation
+	if not what or what == "natural" then
+		self.hotkeys_display_icons.orient = self.orientation
+	elseif what == "horizontal" then
+		self.hotkeys_display_icons.orient = "down"
+	elseif what == "vertical" then
+		self.hotkeys_display_icons.orient = "left"
+	end
+	self:resize(self.w, self.h)
+end
+
 function _M:getDO()
-	return self.hotkeys_display_icons.renderer
+	return self.do_container
 end
 
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
-	self:getDO():translate(x, y, 100)
 end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
 	self.hotkeys_display_icons:resize(0, 0, w, h)
-	self:getDO():translate(self.x, self.y, 100)
+
+	self.hkframe:resize(nil, nil, w, h)
 end
 
 function _M:update(nb_keyframes)
 	self.hotkeys_display_icons:display()
+end
+
+function _M:loadConfig(config)
+	MiniContainer.loadConfig(self, config)
+	self.frame_container:shown(not self.configs.hide_frame)
+	self:onSnapChange()
+end
+
+function _M:toggleFrame()
+	self.configs.hide_frame = not self.configs.hide_frame
+	self.frame_container:shown(not self.configs.hide_frame)
+	self.uiset:saveSettings()
+end
+
+function _M:forceOrientation(what)
+	self.configs.force_orientation = what
+	self:onSnapChange()
+	self.uiset:saveSettings()
+end
+
+function _M:editMenu()
+	return {
+		{ name = "Toggle frame", fct=function() self:toggleFrame() end },
+		{ name = "Force orientation: natural", fct=function() self:forceOrientation("natural") end },
+		{ name = "Force orientation: horizontal", fct=function() self:forceOrientation("horizontal") end },
+		{ name = "Force orientation: vertical", fct=function() self:forceOrientation("vertical") end },
+	}
 end

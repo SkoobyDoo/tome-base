@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2014 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ newTalent{
 		local hitted = self:attackTarget(target, nil, dam, true)
 		
 		if hitted then
-			self:project({type="hit"}, target.x, target.y, DamageType.BLIGHT_POISON, {dam=poison, power=0, poison=1, apply_power=self:combatSpellpower()})
+			self:project({type="hit"}, target.x, target.y, DamageType.BLIGHT_POISON, {dam=poison, power=0, poison=1, heal_factor=0, apply_power=self:combatSpellpower()})
 		end
 		
 		return true
@@ -155,14 +155,20 @@ newTalent{
 	end,
 	getResist = function(self, t) return self:combatTalentLimit(t, 30, 5, 25) end,
 	getAffinity = function(self, t) return self:combatTalentLimit(t, 25, 4, 20) end,
+	getDamageReduction = function(self, t) 
+		return self:combatTalentLimit(t, 0.5, 0.1, 0.22)
+	end,
 	activate = function(self, t)
 		local resist = t.getResist(self,t)
 		local affinity = t.getAffinity(self,t)
 		local ret = {
-					res = self:addTemporaryValue("resists", {[DamageType.BLIGHT]=resist, [DamageType.ACID]=resist}),
-					aff = self:addTemporaryValue("damage_affinity", {[DamageType.BLIGHT]=affinity}),
-					worm = self:addTemporaryValue("worm", 1),
-					}
+			res = self:addTemporaryValue("resists", {[DamageType.BLIGHT]=resist, [DamageType.ACID]=resist}),
+			aff = self:addTemporaryValue("damage_affinity", {[DamageType.BLIGHT]=affinity}),
+			worm = self:addTemporaryValue("worm", 1),
+		}
+		if core.shader.active() then
+			self:talentParticles(ret, {type="shader_shield", args={toback=false, size_factor=1.5, img="infestation_sustain_tentacles2"}, shader={type="tentacles", appearTime=0.6, time_factor=1000, noup=0.0}})
+		end
 		return ret
 	end,
 	deactivate = function(self, t, p)
@@ -173,7 +179,10 @@ newTalent{
 	end,
 	callbackOnHit = function(self, t, cb)
 		if ( cb.value > (0.15 * self.max_life) ) then
-		
+			local damageReduction = cb.value * t.getDamageReduction(self, t)
+			cb.value = cb.value - damageReduction
+
+
 			local nb = 0 
 			if game.level then
 				for _, act in pairs(game.level.entities) do
@@ -183,21 +192,14 @@ newTalent{
 			
 			if nb >= 5 then return nil end
 
-			game.logPlayer(self, "#GREEN#A carrion worm mass bursts forth from your wounds!")
+			game.logPlayer(self, "#GREEN#A carrion worm mass bursts forth from your wounds, softening the blow and reducing damage taken by #ORCHID#" .. math.ceil(damageReduction) .. "#LAST#.")
 			
 			if not self.turn_procs.infestation then
 				self.turn_procs.infestation = true
 				
-				local nb = 0
-
-				local grids = {}
-				self:project({type="ball", range=0, radius=2, talent=t}, self.x, self.y, function(px, py)
-					if not ((px == x and py == y) or game.level.map:checkEntity(px, py, Map.TERRAIN, "block_move") or game.level.map(px, py, Map.TRAP)) then grids[#grids+1] = {x=px, y=py} end
-				end)
-		
-				local g = rng.tableRemove(grids)
-				if g then 
-					carrionworm(self, self, 5, g.x, g.y)
+				local gx, gy = util.findFreeGrid(self.x, self.y, 2, true, {[Map.ACTOR]=true})
+				if gx and gy then 
+					carrionworm(self, self, 5, gx, gy)
 				end
 			end
 			return cb.value
@@ -207,11 +209,12 @@ newTalent{
 	local resist = t.getResist(self,t)
 	local affinity = t.getAffinity(self,t)
 	local dam = t.getDamage(self,t)
+	local reduction = t.getDamageReduction(self,t)*100
 		return ([[Your body has become a mass of living corruption, increasing your blight and acid resistance by %d%% and blight affinity by %d%%.
-On taking damage greater than 15%% of your maximum health, a carrion worm mass will burst forth onto a nearby tile, attacking your foes for 5 turns.
+On taking damage greater than 15%% of your maximum health, the damage will be reduced by %d%% and a carrion worm mass will burst forth onto a nearby tile, attacking your foes for 5 turns.
 You can never have more than 5 worms active from any source at a time.
 When a carrion worm dies it will explode into a radius 2 pool of blight for 5 turns, dealing %0.2f blight damage each turn and healing you for %d.]]):
-		format(resist, affinity, damDesc(self, DamageType.BLIGHT, dam), dam)
+		format(resist, affinity, reduction, damDesc(self, DamageType.BLIGHT, dam), dam)
 	end,
 }
 
@@ -220,7 +223,7 @@ newTalent{
 	type = {"corruption/rot", 2},
 	require = corrs_req_high2,
 	points = 5,
-	cooldown = 12,
+	cooldown = 10,
 	vim = 8,
 	requires_target = true,
 	radius = function(self, t) return math.max(0, 7 - math.floor(self:getTalentLevel(t))) end,

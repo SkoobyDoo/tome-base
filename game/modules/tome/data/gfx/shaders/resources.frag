@@ -8,7 +8,6 @@ uniform vec3 color;
 uniform float tick;
 uniform float speed;
 uniform vec2 p2;
-uniform float a;
 uniform float amp;
 
 int LFSR_Rand_Gen(in int n)
@@ -67,6 +66,6 @@ void main(void)
 	uv.x = uv.y;
 	uv.y = -t;
 	uv -= floor(uv);
-	gl_FragColor.a = texture2D(tex, gl_TexCoord[0].xy).a * a;
+	gl_FragColor.a = texture2D(tex, gl_TexCoord[0].xy).a * te4_fragcolor.a;
 	gl_FragColor.rgb = color * ((1.0 - amp) + fx(uv) * amp);
 }

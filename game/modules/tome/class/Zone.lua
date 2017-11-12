@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 require "engine.class"
 local Zone = require "engine.Zone"
 local Map = require "engine.Map"
+local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Zone))
 
@@ -31,6 +32,8 @@ _M._retain_level_room_map = true
 -- object ego fields that are appended as a list when the ego is applied
 -- overridden by mod.class.Object._special_ego_rules (defined here for backwards compatibility)
 _M._object_special_ego_rules = {special_on_hit=true, special_on_crit=true, special_on_kill=true}
+
+_M.update_base_level_on_enter = true -- Always update base level on zone load
 
 -- Merge special_on_crit values.
 _M:addEgoRule("object", function(dvalue, svalue, key, dst, src, rules, state)

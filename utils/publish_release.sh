@@ -19,7 +19,7 @@ if test -f $2; then
 			name="${BASH_REMATCH[3]}"
 
 			if test "$kind" = "module"; then
-				echo "replace into modules_versions set module='$name', md5='$md5', shown='false';"
+				echo "replace into modules_versions set module='$name', md5='$md5', md5_2='', shown='false';"
 			else
 				echo "replace into modules_addons_versions set module='tome', addon='$name' , md5='$md5', md5_2 ='';"
 			fi

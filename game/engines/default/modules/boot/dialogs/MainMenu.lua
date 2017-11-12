@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ function _M:init()
 	l[#l+1] = {name="New Game", fct=function() game:registerDialog(require("mod.dialogs.NewGame").new()) end}
 	l[#l+1] = {name="Load Game", fct=function() game:registerDialog(require("mod.dialogs.LoadGame").new()) end}
 --	l[#l+1] = {name="Online Profile", fct=function() game:registerDialog(require("mod.dialogs.Profile").new()) end}
-	l[#l+1] = {name="View High Scores", fct=function() game:registerDialog(require("mod.dialogs.ViewHighScores").new()) end}
+	-- l[#l+1] = {name="View High Scores", fct=function() game:registerDialog(require("mod.dialogs.ViewHighScores").new()) end}
 	l[#l+1] = {name="Addons", fct=function() game:registerDialog(require("mod.dialogs.Addons").new()) end}
 --	if config.settings.install_remote then l[#l+1] = {name="Install Module", fct=function() end} end
 --	l[#l+1] = {name="Update", fct=function() game:registerDialog(require("mod.dialogs.UpdateAll").new()) end}
@@ -78,6 +78,7 @@ function _M:init()
 	if config.settings.cheat then l[#l+1] = {name="Reboot", fct=function() util.showMainMenu() end} end
 --	if config.settings.cheat then l[#l+1] = {name="webtest", fct=function() util.browserOpenUrl("http://google.com") end} end
 --	if config.settings.cheat then l[#l+1] = {name="webtest", fct=function() util.browserOpenUrl("asset://te4/html/test.html") end} end
+	-- if config.settings.cheat then l[#l+1] = {name="foo", fct=function() Dialog:simpleWaiter("Test", "Test", 500, nil, 500) end} end
 
 	self.c_background = Button.new{text=game.stopped and "Enable background" or "Disable background", fct=function() self:switchBackground() end}
 	self.c_version = Textzone.new{font={FontPackage:getFont("default"), 10}, auto_width=true, auto_height=true, text=("#B9E100#T-Engine4 version: %d.%d.%d"):format(engine.version[1], engine.version[2], engine.version[3])}
@@ -109,6 +110,8 @@ function _M:init()
 	end
 
 	self:updateUI()
+
+	self.key:setupRebootKeys()
 end
 
 function _M:enableWebtooltip()
@@ -131,14 +134,17 @@ function _M:updateUI()
 ----------------------------
 ----------------------------DGDGDGDG remove this
 ----------------------------
-	local tz = require("engine.ui.TextzoneList").new{width=self.iw, height=self.ih / 2, scrollbar=true, focus_check=true, pingpong=true}
-	local test = require("engine.ui.List").new{width=self.iw, height=self.ih / 2, list={
-		{name='p1', desc='this is a long text 1\nthis is a long text 1\nthis is a long text 1\nthis is a long text 1\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo\nplpo'},
-		{name='p2', desc='this is a long text 2'},
-		{name='p3', desc='this is a long text 3'},
-	}, fct=function(t) tz:switchItem(t, t.desc) end}
+--[[
+	local tree = {}
+	for i = 1, 1000 do tree[#tree+1] = {name='this is azlkdj a long text '..i, plop="kjhekjghekg", plop3="kjhekjghekg"} end
+	local test = require("engine.ui.TreeList").new{scrollbar=true, width=self.iw * 2, height=self.ih * 3, columns={
+		{name="Inventory", width=50, display_prop="name", sort="name"},
+		{name="2", width=25, display_prop="plop", sort="plop"},
+		{name="3", width=25, display_prop="plop3", sort="plop3"},
+	}, tree=tree, fct=function(t) core.game.CProfiler("luastarted.profiler.prof") end}
 	
-	-- uis = { {left=0, top=0, ui=test}, {left=0, top=test, ui=tz}, }
+	uis = { {left=0, top=0, ui=test},  }
+--]]
 ----------------------------
 ----------------------------
 ----------------------------
@@ -157,21 +163,6 @@ function _M:updateUI()
 	self.key:addBind("USERCHAT_TALK", function() profile.chat:talkBox(nil, true) end)
 
 	self:setFocus(self.c_list)
-
-	-- game:onTickEnd(function()
-	-- 	local sp1  = core.renderer.spriter("/data/gfx/spriters/test_02/test_embedded_03.scml", "Player") sp1:setAnim('walk')
-	-- 	sp1:scale(0.2, 0.2, 0.2)
-	-- 	-- game.player._mo:displayObject(sp1)
-	-- 	local spr = core.renderer.renderer()
-	-- 	spr:add(sp1)
-	-- 	game.player._mo:displayObject(spr)
-	-- end)
-
-	-- local ps = require("engine.Particles").new("fireflash", 1, {radius=0.2}):getDO()
-	-- local psr = core.renderer.renderer()
-	-- psr:translate(10, 0, 0)
-	-- psr:add(ps)
-	-- self.do_container:add(psr)
 end
 
 function _M:uiLogin(uis)
@@ -180,8 +171,8 @@ function _M:uiLogin(uis)
 	local str = Textzone.new{auto_width=true, auto_height=true, text="#GOLD#Online Profile"}
 	local bt = Button.new{text="Login", width=50, fct=function() self:login() end}
 	local btr = Button.new{text="Register", fct=function() self:register() end}
-	self.c_login = Textbox.new{title="Username: ", text="", chars=16, max_len=20, fct=function(text) self:login() end}
-	self.c_pass = Textbox.new{title="Password: ", size_title=self.c_login.title, text="", chars=16, max_len=20, hide=true, fct=function(text) self:login() end}
+	self.c_login = Textbox.new{title="Username: ", text="t8", chars=16, max_len=20, fct=function(text) self:login() end}
+	self.c_pass = Textbox.new{title="Password: ", size_title=self.c_login.title, text="toto", chars=16, max_len=20, hide=true, fct=function(text) self:login() end}
 
 	uis[#uis+1] = {left=10, bottom=bt.h + self.c_login.h + self.c_pass.h + str.h, ui=Separator.new{dir="vertical", size=self.iw - 20}}
 	uis[#uis+1] = {hcenter=0, bottom=bt.h + self.c_login.h + self.c_pass.h, ui=str}
@@ -201,7 +192,7 @@ function _M:uiLoginSteam(uis)
 end
 
 function _M:uiStats(uis)
-	self.logged_url = "http://te4.org/users/"..profile.auth.page
+	self.logged_url = "https://te4.org/users/"..profile.auth.page
 	local str1 = Textzone.new{auto_width=true, auto_height=true, text="#GOLD#Online Profile#WHITE#"}
 	local str2 = Textzone.new{auto_width=true, auto_height=true, text="#LIGHT_BLUE##{underline}#"..self.logged_url.."#LAST##{normal}#", fct=function() util.browserOpenUrl(self.logged_url, {is_external=true}) end}
 

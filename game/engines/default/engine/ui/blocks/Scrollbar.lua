@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -27,14 +27,15 @@ module(..., package.seeall, class.inherit(Block))
 function _M:getWidth()
 	local UIBase = require "engine.ui.Base"
 	local middle = UIBase:getAtlasTexture("ui/scrollbar.png")
-	return middle.w
+	local sel_t = UIBase:getAtlasTexture("ui/scrollbar-sel.png")
+	return math.max(middle.w, sel_t.w)
 end
 
 function _M:init(t, size, max, pos, inverse)
 	Block.init(self, t)
 
 	self.inverse = inverse
-	self.max = max
+	self.max = max or 1
 	self.pos = util.minBound(pos or 0, 0, self.max)
 
 	local top = self.parent:getAtlasTexture("ui/scrollbar_top.png")
@@ -68,6 +69,7 @@ end
 function _M:setPos(pos)
 	self.max = math.max(self.max, 1)
 	self.pos = util.minBound(pos, 0, self.max)
+	if self.pos == self.oldpos and self.max == self.oldmax then return end
 
 	local y
 	if self.inverse then
@@ -76,4 +78,7 @@ function _M:setPos(pos)
 		y = (self.pos / self.max) * (self.h - self.bottom_h - self.top_h - self.sel_t.h) + self.top_h
 	end
 	self.sel:translate(0, y, 1)
+
+	self.oldmax = self.max
+	self.oldpos = self.pos
 end

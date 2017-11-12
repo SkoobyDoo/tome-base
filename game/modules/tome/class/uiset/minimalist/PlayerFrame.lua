@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ function _M:init(minimalist, w, h)
 
 	local font, smallfont = FontPackage:get("resources_normal", true), FontPackage:get("resources_small", true)
 
-	self.do_container = core.renderer.renderer("playerframe") -- Should we use renderer or container ?
+	self.do_container = core.renderer.renderer("static"):zSort(true):setRendererName("playerframe") -- Should we use renderer or container ?
 	self.do_container:add(pf_shadow) pf_shadow:translate(0, 0, -0.1)
 	self.do_container:add(pf_bg) pf_bg:translate(config.bg.x, config.bg.y, 0)
 	self.do_container:add(self.pf_defend) self.pf_defend:translate(config.attack.x, config.attack.y, 0)
@@ -91,7 +91,10 @@ function _M:init(minimalist, w, h)
 	self.text_money = core.renderer.text(font)
 	self.text_money:textColor(colors.unpack1(colors.GOLD))
 	self.do_container:add(self.text_money) self.text_money:translate(config.money.x, config.money.y, 10)
-	
+
+	self.full_container = core.renderer.container()
+	self.full_container:add(self.do_container)
+
 	MiniContainer.init(self, minimalist)
 
 	self.mouse:registerZone(config.attack.x, config.attack.y, pf_defend_w, pf_defend_h, self:tooltipButton(function(button, mx, my, xrel, yrel, bx, by, event)
@@ -104,7 +107,13 @@ function _M:init(minimalist, w, h)
 		game.key:triggerVirtual("SHOW_CHARACTER_SHEET")
 	end, "Click to assign stats and talents!"), nil, "charsheet", false, 1)
 
+	game:registerEventUI(self, "Player:updateModdableTile")
+
 	self:update(0)
+end
+
+function _M:getName()
+	return "Player Character"
 end
 
 function _M:getDefaultGeometry()
@@ -113,6 +122,11 @@ function _M:getDefaultGeometry()
 	local w = self.def_w
 	local h = self.def_h
 	return x, y, w, h
+end
+
+function _M:onEventUI(kind, who)
+	self.old_player = nil
+	self:update(0)
 end
 
 function _M:update(nb_keyframes)
@@ -126,7 +140,7 @@ function _M:update(nb_keyframes)
 			local config = configs[UI.ui] or configs.dark
 			self.do_container:shown(true)
 			if self.player_do then self.do_container:remove(self.player_do) end
-			self.player_do = self:getPlayerDO()
+			self.player_do = player:getDO()
 			self.do_container:add(self.player_do) self.player_do:translate(config.player.x, config.player.y, 1)
 		end
 	end
@@ -139,23 +153,27 @@ function _M:update(nb_keyframes)
 		self.text_exp:center()
 		self.pf_exp:scale(v, 1, 1)
 		self.pf_exp_levelup:scale(v, 1, 1)
+		self.old_exp = player.exp
 	end
 	if self.old_money ~= player.money then self.text_money:text(("%d"):format(player.money)) self.text_money:center() self.old_money = player.money end
-	if self.old_level ~= player.level then self.text_level:text("Lvl "..player.level) end
-	if self.old_name ~= player.name then self.text_name:text(player.name) end
+	if self.old_level ~= player.level then self.text_level:text("Lvl "..player.level) self.old_level = player.level end
+	if self.old_name ~= player.name then self.text_name:text(player.name) self.old_name = player.name end
 
-	local v = (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled
+	local v = (not config.settings.tome.actor_based_movement_mode and self or player).bump_attack_disabled and true or false
 	if self.old_attack == nil or self.old_attack ~= v then
 		self.pf_defend:shown(v)
 		self.pf_attack:shown(not v)
+		self.old_attack = v
 	end
 
-	if self.old_encumber == nil or self.old_encumber ~= player:attr("encumbered") then
+	if self.old_encumber == nil or self.old_encumber ~= (player:attr("encumbered") and true or false) then
 		self.pf_encumber:shown(player:attr("encumbered") and true or false)
+		self.old_encumber = player:attr("encumbered") and true or false
 	end
 
 	local v = player.unused_stats + player.unused_talents + player.unused_generics + player.unused_talents_types
 	if self.old_levelup ~= v then
+		self.old_levelup = v
 		v = v > 0
 		self.pf_levelup:shown(v)
 		self.pf_exp_levelup:shown(v)
@@ -166,25 +184,31 @@ function _M:getPlayer()
 	return game:getPlayer()
 end
 
-function _M:getPlayerDO()
-	-- We dont use Entity:getEntityDisplayObject because we need no caching
-	local tiles = Map.tiles
-	if game.level and game.level.map then tiles = game.level.map.tiles end
-
-	local mos = {}
-	local list = {}
-	self:getPlayer():getMapObjects(tiles, mos, 1)
-	for i = 1, Map.zdepth do
-		if mos[i] then list[#list+1] = mos[i] end
-	end
-	return core.map.mapObjectsToDisplayObject(40, 40, 1, false, true, unpack(list))
-end
-
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
-	self:getDO():translate(x, y, 0)
 end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
+end
+
+function _M:getDO()
+	return self.full_container
+end
+
+function _M:loadConfig(config)
+	MiniContainer.loadConfig(self, config)
+	self.do_container:shown(not self.configs.hide)
+end
+
+function _M:toggleDisplay()
+	self.configs.hide = not self.configs.hide
+	self.do_container:shown(not self.configs.hide)
+	self.uiset:saveSettings()
+end
+
+function _M:editMenu()
+	return {
+		{ name = "Toggle display", fct=function() self:toggleDisplay() end },
+	}
 end

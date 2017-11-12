@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ newEntity{ base = "BASE_NPC_SUNWALL_TOWN",
 	max_life = resolvers.rngavg(70,80),
 	resolvers.equip{
 		{type="weapon", subtype="staff", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="armor", subtype="robe", forbid_power_source={antimagic=true}, autoreq=true},
+		{type="armor", subtype="cloth", forbid_power_source={antimagic=true}, autoreq=true},
 	},
 	resolvers.talents{
 		[Talents.T_STAFF_MASTERY]={base=1, every=10, max=5},

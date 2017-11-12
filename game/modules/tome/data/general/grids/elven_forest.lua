@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -22,10 +22,12 @@ local autumn_grass_editer = { method="borders_def", def="autumn_grass"}
 local snowy_grass_editer = { method="borders_def", def="snowy_grass"}
 
 local treesdef = {
-	{"elventree", {tall=-1, "shadow", "trunk", "foliage_summer"}},
-	{"elventree_03", {tall=-1, "shadow", "trunk", "foliage_summer"}},
-	{"fat_elventree", {tall=-1, "shadow", "trunk", {"foliage_summer_%02d",1,2}}},
-	{"oak", {tall=-1, "shadow", {"trunk_%02d",1,2}, {"foliage_summer_%02d",1,4}}},
+	{"elventree_03_trunk_foliage_spring_%02d", 1, 4, tall=-1},
+	{"elventree_03_trunk_foliage_summer", tall=-1},
+	{"elventree_trunk_foliage_spring", tall=-1},
+	{"elventree_trunk_foliage_summer", tall=-1},
+	{"fat_elventree_trunk_foliage_spring_%02d", 1, 3, tall=-1},
+	{"fat_elventree_trunk_foliage_summer_%02d", 1, 2, tall=-1},
 }
 
 newEntity{
@@ -66,9 +68,9 @@ end
 
 
 local snow_treesdef = {
-	{"elventree", {tall=-1, "shadow", "trunk", "foliage_winter"}},
-	{"fat_elventree", {tall=-1, "shadow", "trunk", "foliage_winter"}},
-	{"oak", {tall=-1, "shadow", {"trunk_%02d",1,2}, {"foliage_winter_%02d",1,2}}},
+	{"elventree_03_trunk_foliage_winter", tall=-1},
+	{"elventree_trunk_foliage_winter", tall=-1},
+	{"fat_elventree_trunk_foliage_winter", tall=-1},
 }
 
 newEntity{
@@ -90,9 +92,9 @@ for i = 1, 30 do
 end
 
 local autumn_treesdef = {
-	{"elventree", {tall=-1, "shadow", "trunk", "foliage_autumn"}},
-	{"fat_elventree", {tall=-1, "shadow", "trunk", {"foliage_autumn_%02d",1,2}}},
-	{"oak", {tall=-1, "shadow", {"trunk_%02d",1,2}, {"foliage_autumn_%02d",1,4}}},
+	{"elventree_03_trunk_foliage_autumn", tall=-1},
+	{"elventree_trunk_foliage_autumn", tall=-1},
+	{"fat_elventree_trunk_foliage_autumn_%02d", 1, 2, tall=-1},
 }
 
 newEntity{

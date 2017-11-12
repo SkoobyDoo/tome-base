@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ function _M:ok()
 
 	if not inside then self:simplePopup("Thank you", "Thank you, a paypal page should now open in your browser.") end
 
-	local url = ("http://te4.org/ingame-donate/%s/%s/%s/EUR/%s"):format(self.c_donate.number, self.c_recur.checked and "monthly" or "onetime", (profile.auth and profile.auth.drupid) and profile.auth.drupid or "0", self.donation_source)
+	local url = ("https://te4.org/ingame-donate/%s/%s/%s/EUR/%s"):format(self.c_donate.number, self.c_recur.checked and "monthly" or "onetime", (profile.auth and profile.auth.drupid) and profile.auth.drupid or "0", self.donation_source)
 
 	if inside then util.browserOpenUrl(url, {is_external=true})
 	else util.browserOpenUrl(url, {webview=true, is_external=true}) end

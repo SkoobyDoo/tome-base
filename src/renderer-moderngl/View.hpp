@@ -1,6 +1,6 @@
 /*
 	TE4 - T-Engine 4
-	Copyright (C) 2009 - 2015 Nicolas Casalini
+	Copyright (C) 2009 - 2017 Nicolas Casalini
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -24,24 +24,38 @@
 
 #include "renderer-moderngl/Renderer.hpp"
 
-enum class ViewMode { ORTHO };
+enum class ViewMode { ORTHO, PROJECT };
+
+class DisplayObject;
 
 class View : public IResizable {
 private:
 	bool in_use = false;
 	bool from_screen_size = false;
 	ViewMode mode = ViewMode::ORTHO;
+	mat4 view;
+
+	mat4 cam;
+	int camera_lua_ref = LUA_NOREF;
+	DisplayObject *camera_do = NULL;
+	int origin_lua_ref = LUA_NOREF;
+	DisplayObject *origin_do = NULL;
 
 public:
-	mat4 view;
 
 	View();
 	View(int w, int h);
 	virtual ~View();
 
 	void setOrthoView(int w, int h);
+	void setProjectView(
+		float fov_angle, int w, int h, float near_clip, float far_clip,
+		DisplayObject *camera, int camera_ref, DisplayObject *origin, int origin_ref
+	);
 
 	void use(bool v);
+
+	mat4 get();
 
 	virtual void onScreenResize(int w, int h);
 

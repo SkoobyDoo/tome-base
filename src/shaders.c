@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2016 Nicolas Casalini
+    Copyright (C) 2009 - 2017 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -102,6 +102,11 @@ void useShaderSimple(shader_type *p)
 	current_shader = p;
 	tglUseProgramObject(p->shader);
 
+	if (p->p_tick != -1) {
+		GLfloat t = cur_frame_tick;
+		glUniform1fv(p->p_tick, 1, &t);
+	}
+
 	shader_reset_uniform *ru = p->reset_uniforms;
 	while (ru) {
 		switch (ru->kind) {
@@ -123,7 +128,7 @@ void useShaderSimple(shader_type *p)
 }
 
 void useNoShader() {
-	printf("Requesting default shader %lxd\n", default_shader);
+	// printf("Requesting default shader %lxd\n", default_shader);
 	if (default_shader) {
 		tglUseProgramObject(default_shader->shader);
 		current_shader = default_shader;
@@ -277,7 +282,7 @@ static int program_clone(lua_State *L)
 	lua_setmetatable(L, 2);
 	lua_pop(L, 1);
 
-	printf("Cloned shader %d\n", p->shader);
+	// printf("Cloned shader %d\n", p->shader);
 
 	return 1;
 }
@@ -621,7 +626,7 @@ static int program_compile(lua_State *L)
 		uniLoc = glGetUniformLocation(p->shader, buffer);
 		if(uniLoc>=0)	// Test for valid uniform location
 		{
-			printf("*p %i: Uniform: %i: %X %s\n", p->shader,uniLoc, dummytype, buffer);
+			// printf("*p %i: Uniform: %i: %X %s\n", p->shader,uniLoc, dummytype, buffer);
 			// Add a C closure to define the uniform
 			if (dummytype == GL_FLOAT) {
 				// Compute the name

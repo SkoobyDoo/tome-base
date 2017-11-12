@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -53,11 +53,13 @@ newEntity{ define_as = "SLASUL",
 	resists = { [DamageType.COLD] = 60, [DamageType.ACID] = 20, },
 
 	body = { INVEN = 10, MAINHAND=1, OFFHAND=1, BODY=1, LITE=1 },
+	resolvers.auto_equip_filters("Sun Paladin"),
 	resolvers.equip{
 		{type="weapon", subtype="mace", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="shield", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
 		{type="armor", subtype="heavy", force_drop=true, tome_drops="boss", forbid_power_source={antimagic=true}, autoreq=true},
-		{type="jewelry", subtype="lite", defined="ELDRITCH_PEARL", autoreq=true},
+		{type="jewelry", subtype="lite", defined="ELDRITCH_PEARL", autoreq=true,
+			replace_unique={type="lite", forbid_power_source={antimagic=true}, ignore_material_restriction=true}}
 	},
 	resolvers.drops{chance=100, nb=1, {defined="SLASUL_NOTE"} },
 	resolvers.drops{chance=100, nb=5, {tome_drops="boss"} },

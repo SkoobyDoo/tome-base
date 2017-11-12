@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ require "engine.class"
 local Base = require "engine.ui.Base"
 local Focusable = require "engine.ui.Focusable"
 local Entry = require "engine.ui.blocks.Entry"
+local CustomEntry = require "engine.ui.blocks.CustomEntry"
 local Scrollbar = require "engine.ui.blocks.Scrollbar"
 
 --- A generic UI tree list
@@ -28,6 +29,7 @@ local Scrollbar = require "engine.ui.blocks.Scrollbar"
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
+	t.require_renderer = true
 	self.tree = assert(t.tree, "no tree tree")
 	self.columns = assert(t.columns, "no list columns")
 	self.w = assert(t.width, "no tree width")
@@ -36,6 +38,7 @@ function _M:init(t)
 	assert(self.h or self.nb_items, "no tree height/nb_items")
 	self.fct = t.fct
 	self.on_drag = t.on_drag
+	self.on_drag_end = t.on_drag_end
 	self.on_expand = t.on_expand
 	self.on_drawitem = t.on_drawitem
 	self.select = t.select
@@ -81,7 +84,7 @@ end
 function _M:generate()
 	self.mouse:reset()
 	self.key:reset()
-	self.do_container:clear()
+	self.do_container:clear():zSort(true):countDraws(false)
 
 	-- Draw the scrollbar
 	if self.scrollbar then
@@ -131,6 +134,7 @@ function _M:generate()
 			if (self.all_clicks or button == "left") and button ~= "wheelup" and button ~= "wheeldown" and event == "button" then self:onUse(button) end
 		end
 		if event == "motion" and button == "left" and self.on_drag then self.on_drag(self.list[self.sel], self.sel) end
+		if button == "drag-end" and self.on_drag_end then self.on_drag_end(self.list[self.sel], self.sel) end
 	end)
 	self.key:addBinds{
 		ACCEPT = function() self:onUse("left") end,
@@ -256,6 +260,10 @@ function _M:sortByColumn(column, reverse)
 	self:outputList()
 end
 
+function _M:regenerate()
+	self:setTree(self.tree)
+end
+
 function _M:setTree(tree)
 	self.tree = tree
 	self:walkTree(true)
@@ -274,16 +282,25 @@ function _M:drawItem(item)
 
 	local x = 0
 	for i, col in ipairs(self.columns) do
-		if not col.direct_draw then
+		if not col.direct_draw or is_header then
 			local fw = col.width
 			local level = item.level
-			local color = util.getval(item.color, item) or {255,255,255}
+			local color = item.color or {255,255,255}
+			if type(color) == "function" then color = color(item) end
 			local text
+
 			if is_header then
 				text = tostring(item[i].name)
+				if not text or text == "" then text = " " end
+			elseif type(col.display_prop) == "function" then
+				text = tostring(col.display_prop(item))
 			else
-				text = util.getitem(item, col.display_prop or col.sort)
-				text = tostring(text)
+				text = item[col.display_prop or col.sort]
+				if type(text) == "table" and text.is_tstring then
+					text = tostring(text)
+				else
+					text = tostring(util.getval(text, item))
+				end
 			end
 
 			if not item.cols[i] then
@@ -298,7 +315,7 @@ function _M:drawItem(item)
 				if is_header then
 					opts = {frame="ui/heading-sel", frame_sel="ui/heading"}
 				end
-				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset)
+				item.cols[i]._entry = Entry.new(opts, text, color, col.width - offset, self.fh, offset, 1, not is_header)
 				item.cols[i]._entry:translate(x + offset, 0, 0)
 				item.cols[i]._entry:select(is_header)
 				local ec = item.cols[i]._entry:get()
@@ -314,14 +331,30 @@ function _M:drawItem(item)
 					ec:add(item.plus)
 					ec:add(item.minus)
 				end
-			else
-				item.cols[i]._entry:setText(text, color)
 			end
+			item.cols[i]._entry:setText(text, color, true)
 			item.cols[i]._value = text
+		else
+			if not item.cols[i] then
+				local level = item.level
+				local offset = 0
+				if i == 1 then
+					offset = level * self.level_offset
+					if item.nodes then offset = offset + self.plus.w end
+				end
+
+				item.cols[i] = {}
+				item.cols[i]._entry = CustomEntry.new(nil, col.width - offset, self.fh, col.direct_draw(item, self.fh))
+				item.cols[i]._entry:translate(x + offset, 0, 0)
+				item.cols[i]._entry:select(is_header)
+				local ec = item.cols[i]._entry:get()
+				item._container:add(ec)
+			end
 		end
 		x = x + col.width
 	end
 	if self.on_drawitem then self.on_drawitem(item) end
+	item.__drawn = true
 end
 
 function _M:walkTree(purge_cache)
@@ -331,7 +364,7 @@ function _M:walkTree(purge_cache)
 			item._number = count
 			count = count + 1
 			if item[self.key_prop] then self.items_by_key[item[self.key_prop]] = item end
-			if purge_cache then item.cols = nil end
+			if purge_cache then item.cols = nil if item._container then item._container:removeFromParent() end item._container = nil end
 			if item.nodes then count = recurs(item.nodes, level+1, count) end
 		end
 		return count
@@ -366,6 +399,16 @@ function _M:outputList()
 		self.scrollbar:setPos(self.scroll - 1)
 	end
 
+	-- Generate all items, in lazy mode
+	self.item_container:clear()
+	for i = 1, self.max do
+		local item = self.list[i]
+		if item then
+			self:drawItem(item)
+			self.item_container:add(item._container)
+		end
+	end
+
 	self.old_sel = nil
 	self:onSelect()
 end
@@ -392,26 +435,27 @@ function _M:onSelect(sel)
 		self.scroll = util.scroll(self.sel, self.scroll, self.max_display)
 	end
 	if self.old_sel and self.sel == self.old_sel and self.cur_col == self.old_col then return end
-	local item = nil
-	if #self.tree > 0 then
-		item = self.list[self.sel]
-	end
-	if not item then return end
 
 	-- Update scrolling
-	self.item_container:clear()
-	local max = self.scroll + self.max_display - 1
 	local pos = 0
-
-	for i = self.scroll, math.min(max, self.max) do
+	local max = math.min(self.scroll + self.max_display - 1, self.max)
+	for i = 1, self.max do
 		local item = self.list[i]
 		if item then
-			self:drawItem(item)
-			item._container:translate(0, pos, 0)
-			self.item_container:add(item._container)
-			pos = pos + self.fh
+			if i >= self.scroll and i <= max then
+				item._pos_y = pos
+				item._container:translate(0, pos, 0)
+				for c = 1, #item.cols do item.cols[c]._entry:shown(true) end
+				pos = pos + self.fh
+			else
+				for c = 1, #item.cols do item.cols[c]._entry:shown(false) end
+			end
 		end
 	end
+
+	local item = nil
+	if #self.tree > 0 then item = self.list[self.sel] end
+	if not item then return end
 
 	if self.last_selected_item and self.last_selected_item ~= item then
 		-- print("LAST", self.last_selected_item)
@@ -433,6 +477,7 @@ function _M:onSelect(sel)
 
 	self.old_sel = self.sel
 	self.old_col = self.cur_col
+	self.old_scroll = self.scroll
 end
 
 function _M:onUse(...)
@@ -441,4 +486,10 @@ function _M:onUse(...)
 	self:sound("button")
 	if item.fct then item.fct(item, self.sel, ...)
 	else self.fct(item, self.sel, ...) end
+end
+
+
+function _M:display(x, y, nb_keyframes, ox, oy)
+	self.last_display_x = ox
+	self.last_display_y = oy
 end

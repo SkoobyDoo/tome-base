@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ setmetatable(__map_store, {__mode="k"})
 
 --- The map vertical depth storage
 zdepth = 20
+zdepth_sort_start = 6
 
 --- The place of a terrain entity in a map grid
 TERRAIN = 1
@@ -183,7 +184,6 @@ end
 function _M:resetTiles()
 	Entity:invalidateAllMO()
 	self.tiles = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, true, self.allow_backcolor)
-	self.tilesSurface = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, false, false)
 	self.tilesTactic = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, true, false)
 	self.tilesEffects = Tiles.new(self.tile_w, self.tile_h, self.fontname, self.fontsize, true, true)
 end
@@ -256,7 +256,8 @@ function _M:updateDefaultShader()
 	if self.default_shader then
 		print("[MAP] Building default shader for map", self.default_shader.name, self.default_shader.args, self.default_shader.unique)
 		local shader = Shader.new(self.default_shader.name, self.default_shader.args, self.default_shader.unique)
-		print("[MAP] Shader built: ", shader, shader.shad)
+		print("[MAP] Shader built: ", shader, shader.shad, "with kindselectors:")
+		table.print(shader.data and shader.data.kindselectors or {})
 		if shader.shad then self._map:setDefaultShader(shader.shad, shader.data.kindselectors) end	
 	end
 end
@@ -278,7 +279,7 @@ function _M:getMinimapDO(forcenew)
 end
 
 function _M:makeCMap()
-	--util.show_backtrace()
+	-- util.show_backtrace()
 	self._map = core.map.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
 	if not self._do_map then self._do_map = self._map:getMapDO()
 	else self._do_map:setMap(self._map)
@@ -286,6 +287,7 @@ function _M:makeCMap()
 	if not self._do_mm then self._do_mm = self._map:getMinimapDO()
 	else self._do_mm:setMap(self._map)
 	end
+	self._map:setSortStart(self.zdepth_sort_start)
 	self._map:setObscure(unpack(self.color_obscure))
 	self._map:setShown(unpack(self.color_shown))
 	self._map:setupGridLines(unpack(self.grid_lines))
@@ -518,13 +520,13 @@ function _M:updateMap(x, y)
 				self._fovcache.path_caches[ps]:set(x, y, g:check("block_move", x, y, self.path_strings_computed[ps] or ps, false, true))
 			end
 
-			g:getMapObjects(self.tiles, mos, 1)
+			g:getMapObjects(self.tiles, mos, 2)
 			g:setupMinimapInfo(g._mo, self)
 		end
 		if t then
 			-- Handles trap being known
 			if not self.actor_player or t:knownBy(self.actor_player) then
-				t:getMapObjects(self.tiles, mos, 4)
+				t:getMapObjects(self.tiles, mos, 5)
 				t:setupMinimapInfo(t._mo, self)
 			else
 				t = nil
@@ -949,10 +951,10 @@ function _M:checkMapViewBounded()
 
 	-- Center if smaller than map viewport
 	local centered = false
-	if self.w < self.viewport.mwidth then self.mx = math.floor((self.w - self.viewport.mwidth) / 2) centered = true self.changed = true end
-	if self.h < self.viewport.mheight then self.my = math.floor((self.h - self.viewport.mheight) / 2) centered = true self.changed = true end
+	if self.w + self.viewport_padding_4 + self.viewport_padding_6 < self.viewport.mwidth then self.mx = math.floor((self.w - self.viewport.mwidth) / 2) centered = true self.changed = true end
+	if self.h + self.viewport_padding_8 + self.viewport_padding_2 < self.viewport.mheight then self.my = math.floor((self.h - self.viewport.mheight) / 2) centered = true self.changed = true end
 
---	self._map:setScroll(self.mx, self.my, centered and 0 or self.smooth_scroll)
+	--   self._map:setScroll(self.mx, self.my, centered and 0 or self.smooth_scroll)
 	self._map:setScroll(self.mx, self.my, self.smooth_scroll)
 end
 
@@ -1220,13 +1222,13 @@ function _M:displayEffects(z, prevfbo, nb_keyframes)
 					e.overlay.effect_shader_tex = {}
 					if type(e.overlay.effect_shader) == "table" then
 						for i = 1, #e.overlay.effect_shader do
-							e.overlay.effect_shader_tex[i] = Tiles:loadImage(e.overlay.effect_shader[i]):glTexture()
+							e.overlay.effect_shader_tex[i] = Tiles:loadTexture(e.overlay.effect_shader[i])
 						end
 						e.overlay.effect_shader_tex.cur = 1
 						e.overlay.effect_shader_tex.cnt = 0
 						e.overlay.effect_shader_tex.max = e.overlay.effect_shader.max
 					else
-						e.overlay.effect_shader_tex[1] = Tiles:loadImage(e.overlay.effect_shader):glTexture()
+						e.overlay.effect_shader_tex[1] = Tiles:loadTexture(e.overlay.effect_shader)
 						e.overlay.effect_shader_tex.cur = 1
 						e.overlay.effect_shader_tex.cnt = 0
 						e.overlay.effect_shader_tex.max = 1

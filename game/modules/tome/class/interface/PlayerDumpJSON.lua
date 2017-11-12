@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -87,17 +87,13 @@ function _M:dumpToJSON(js, bypass, nosub)
 	-------------------------------------------------------------------
 	local r = js:newSection("resources")
 	r.life = string.format("%d/%d", self.life, self.max_life)
-	if self:knowTalent(self.T_STAMINA_POOL) then r.stamina=string.format("%d/%d", self.stamina, self.max_stamina) end
-	if self:knowTalent(self.T_MANA_POOL) then r.mana=string.format("%d/%d", self.mana, self.max_mana) end
-	if self:knowTalent(self.T_SOUL_POOL) then r.souls=string.format("%d/%d", self.soul, self.max_soul) end
-	if self:knowTalent(self.T_POSITIVE_POOL) then r.positive=string.format("%d/%d", self.positive, self.max_positive) end
-	if self:knowTalent(self.T_NEGATIVE_POOL) then r.negative=string.format("%d/%d", self.negative, self.max_negative) end
-	if self:knowTalent(self.T_VIM_POOL) then r.vim=string.format("%d/%d", self.vim, self.max_vim) end
-	if self:knowTalent(self.T_PSI_POOL) then r.psi=string.format("%d/%d", self.psi, self.max_psi) end
-	if self.psionic_feedback_max then r.psi_feedback=string.format("%d/%d", self:getFeedback(), self:getMaxFeedback()) end
-	if self:knowTalent(self.T_EQUILIBRIUM_POOL) then r.equilibrium=string.format("%d", self.equilibrium) end
-	if self:knowTalent(self.T_PARADOX_POOL) then r.paradox=string.format("%d", self.paradox) end
-	if self:knowTalent(self.T_HATE_POOL) then r.hate=string.format("%d/%d", self.hate, self.max_hate) end
+	for res, res_def in ipairs(self.resources_def) do if res_def.talent and self:knowTalent(res_def.talent) then
+		if res_def.invert_values then
+			r[res_def.short_name] = string.format("%d", self[res_def.getFunction](self))
+		else
+			r[res_def.short_name] = string.format("%d/%d", self[res_def.getFunction](self), self[res_def.getMaxFunction](self))
+		end
+	end end
 
 	-------------------------------------------------------------------
 	-- Inscriptions
@@ -108,7 +104,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	for i = 1, self.max_inscriptions do if self.inscriptions[i] then
 		local t = self:getTalentFromId("T_"..self.inscriptions[i])
 		local desc = tostring(self:getTalentFullDescription(t))
-		ins[#ins+1] = {name=t.name, kind=t.type[1], desc=desc}
+		ins[#ins+1] = {name=t.name, image=t.image, kind=t.type[1], desc=desc}
 	end end
 
 	-------------------------------------------------------------------
@@ -237,7 +233,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	c.damage = {}
 
 	if self.inc_damage.all then c.damage.all = string.format("%d%%", self.inc_damage.all) end
-	for i, t in ipairs(DamageType.dam_def) do
+	for i, t in pairs(DamageType.dam_def) do
 		if self:combatHasDamageIncrease(DamageType[t.type]) then
 			c.damage[t.name] = string.format("%d%%", self:combatGetDamageIncrease(DamageType[t.type]))
 		end
@@ -246,7 +242,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	c.damage_pen = {}
 
 	if self.resists_pen.all then c.damage_pen.all = string.format("%d%%", self.resists_pen.all) end
-	for i, t in ipairs(DamageType.dam_def) do
+	for i, t in pairs(DamageType.dam_def) do
 		if self.resists_pen[DamageType[t.type]] and self.resists_pen[DamageType[t.type]] ~= 0 then
 			c.damage_pen[t.name] = string.format("%d%%", self.resists_pen[DamageType[t.type]] + (self.resists_pen.all or 0))
 		end
@@ -268,7 +264,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 
 	d.resistances = {}
 	if self.resists.all then d.resistances.all = string.format("%3d%%(%3d%%)", self.resists.all, self.resists_cap.all or 0) end
-	for i, t in ipairs(DamageType.dam_def) do
+	for i, t in pairs(DamageType.dam_def) do
 		if self.resists[DamageType[t.type]] and self.resists[DamageType[t.type]] ~= 0 then
 			d.resistances[t.name] =  string.format("%3d%%(%3d%%)", self:combatGetResist(DamageType[t.type]), (self.resists_cap[DamageType[t.type]] or 0) + (self.resists_cap.all or 0))
 		end
@@ -307,7 +303,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 					if not t.hide then
 						local skillname = t.name
 						local desc = self:getTalentFullDescription(t):toString()
-						td.list[#td.list+1] = { name=skillname, val=("%d/%d"):format(self:getTalentLevelRaw(t.id), t.points), desc=desc}
+						td.list[#td.list+1] = { name=skillname, image=t.image, val=("%d/%d"):format(self:getTalentLevelRaw(t.id), t.points), desc=desc}
 					end
 				end
 			end
@@ -367,7 +363,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 				local desc = tostring(o:getDesc())
 				equip[self.inven_def[inven_id].name] = equip[self.inven_def[inven_id].name] or {}
 				local ie = equip[self.inven_def[inven_id].name]
-				ie[#ie+1] = { name=o:getName{do_color=true, no_image=true}, desc=desc }
+				ie[#ie+1] = { name=o:getName{do_color=true, no_image=true}, image=o.image, desc=desc }
 			end
 		end
 	end
@@ -378,7 +374,7 @@ function _M:dumpToJSON(js, bypass, nosub)
 	local inven = js:newSection("inventory")
 	for item, o in ipairs(self.inven[self.INVEN_INVEN]) do
 		local desc = tostring(o:getDesc())
-		inven[#inven+1] = { name=o:getName{do_color=true, no_image=true}, desc=desc }
+		inven[#inven+1] = { name=o:getName{do_color=true, no_image=true}, image=o.image, desc=desc }
 	end
 
 	-------------------------------------------------------------------
@@ -424,6 +420,12 @@ function _M:dumpToJSON(js, bypass, nosub)
 	if self.has_custom_tile then
 		tags.tile = self.has_custom_tile
 		js:hiddenData("tile", self.has_custom_tile)
+	elseif self.moddable_tile then
+		local doll = { self.image }
+		for i, mo in ipairs(self.add_mos or {}) do
+			doll[#doll+1] = mo.image
+		end
+		js:hiddenData("doll", doll)
 	end
 
 	self:triggerHook{"ToME:PlayerDumpJSON", title=title, js=js, tags=tags}

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2016 Nicolas Casalini
+-- Copyright (C) 2009 - 2017 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,13 +23,14 @@ local UISet = require "mod.class.uiset.UISet"
 local Dialog = require "engine.ui.Dialog"
 local Map = require "engine.Map"
 local FontPackage = require "engine.FontPackage"
+local KeyBind = require "engine.KeyBind"
 
 module(..., package.seeall, class.inherit(UISet, TooltipsData))
 
 function _M:init()
 	UISet.init(self)
 
-	self.renderer = core.renderer.renderer():zSort(true)
+	self.renderer = core.renderer.renderer():setRendererName("Minimalist Main Renderer"):zSort(true)
 	self.minicontainers = {}
 	self.locked = true
 end
@@ -40,18 +41,41 @@ end
 
 function _M:switchLocked()
 	self.locked = not self.locked
-	for i, container in ipairs(self.minicontainers) do container:locked(self.locked) end
-	if self.locked then
-		game.bignews:say(60, "#CRIMSON#Interface locked, mouse enabled on the map")
-	else
-		game.bignews:say(60, "#CRIMSON#Interface unlocked, mouse disabled on the map")
+	for i, container in ipairs(self.minicontainers) do
+		container:lock(self.locked)
+		if not self.locked then container:getDO():add(container:getUnlockedDO())
+		else container:getDO():remove(container:getUnlockedDO()) end
 	end
+	if self.locked then
+		game.key = self.unlock_game_key_save
+		game.key:setCurrent()
+		game.bignews:say(60, "#CRIMSON#Interface locked, keyboard and mouse enabled.")
+	else
+		self.unlock_game_key_save = game.key
+		local key = KeyBind.new()
+		game.key = key
+		game.key:setCurrent()
+		game.bignews:say(60, "#CRIMSON#Interface unlocked, keyboard and mouse disabled.")
+
+		key:addCommand(key._ESCAPE, nil, function() self:switchLocked() end)
+	end
+end
+
+function _M:resetPlaces()
+	for i, container in ipairs(self.minicontainers) do
+		local x, y, w, h = container:getDefaultGeometry()
+		container:move(x, y)
+		container:resize(w, h)
+		container:setScale(1)
+		container:setAlpha(1)
+	end	
+	self:saveSettings()
 end
 
 function _M:getMainMenuItems()
 	return {
 		{"Reset interface positions", function() Dialog:yesnoPopup("Reset UI", "Reset all the interface?", function(ret) if ret then
-			self:resetPlaces() self:saveSettings() 
+			self:resetPlaces()
 		end end) end},
 	}
 end
@@ -63,12 +87,55 @@ function _M:checkGameOption(name)
 end
 
 _M.allcontainers = {
-	playerframe = "mod.class.uiset.minimalist.PlayerFrame",
-	gamelog = "mod.class.uiset.minimalist.Log",
-	minimap = "mod.class.uiset.minimalist.Minimap",
-	toolbar = "mod.class.uiset.minimalist.Toolbar",
-	hotkeys = "mod.class.uiset.minimalist.Hotkeys",
+	"mod.class.uiset.minimalist.PlayerFrame",
+	"mod.class.uiset.minimalist.Minimap",
+	"mod.class.uiset.minimalist.Toolbar",
+	"mod.class.uiset.minimalist.Resources",
+	"mod.class.uiset.minimalist.Effects",
+	"mod.class.uiset.minimalist.Hourglass",
+	"mod.class.uiset.minimalist.Hotkeys",
+	"mod.class.uiset.minimalist.Party",
+	"mod.class.uiset.minimalist.Log",
+	"mod.class.uiset.minimalist.UserChat",
+	"mod.class.uiset.minimalist.CustomZone",
 }
+
+function _M:saveSettings()
+	-- self:boundPlaces()
+
+	local lines = {}
+	lines[#lines+1] = ("tome.uiset_minimalist2 = {}"):format()
+	lines[#lines+1] = ("tome.uiset_minimalist2.save_size = {w=%d, h=%d}"):format(game.w, game.h)
+	lines[#lines+1] = ("tome.uiset_minimalist2.places = {}"):format(w)
+	for _, container in ipairs(self.minicontainers) do
+		local id = container.container_id
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q] = {}"):format(id)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].x = %f"):format(id, container.x)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].y = %f"):format(id, container.y)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].w = %f"):format(id, container.w)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].h = %f"):format(id, container.h)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].scale = %f"):format(id, container.scale)
+		lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].alpha = %f"):format(id, container.alpha)
+		if next(container.configs) then
+			lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs = {}"):format(id)
+			for k, v in pairs(container.configs) do
+				if type(v) == "string" then
+					lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs[%q] = %q"):format(id, k, v)
+				elseif type(v) == "number" then
+					lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs[%q] = %f"):format(id, k, v)
+				elseif type(v) == "boolean" then
+					lines[#lines+1] = ("tome.uiset_minimalist2.places[%q].configs[%q] = %s"):format(id, k, v and "true" or "false")
+				else
+					error("Saving MiniContainer configs, key "..tostring(k).." has wrong value")
+				end
+			end
+		end
+	end
+
+	self:triggerHook{"UISet:Minimalist:saveSettings", lines=lines}
+
+	game:saveSettings("tome.uiset_minimalist2", table.concat(lines, "\n"))
+end
 
 function _M:activate()
 	local font_mono, size_mono = FontPackage:getFont("mono_small", "mono")
@@ -77,19 +144,21 @@ function _M:activate()
 	local font, size = FontPackage:getFont("default")
 	local f = core.display.newFont(font, size)
 	font_h = f:lineSkip()
-	f = core.display.newFont(font_mono, size_mono)
-	font_mono_h = f:lineSkip()
+	fm = core.display.newFont(font_mono, size_mono)
+	font_mono_h = fm:lineSkip()
+	self.font = f
 	self.init_font = font
 	self.init_size_font = size
 	self.init_font_h = font_h
+	self.font_mono = fm
 	self.init_font_mono = font_mono
 	self.init_size_mono = size_mono
 	self.init_font_mono_h = font_mono_h
 
-	for name, class in pairs(self.allcontainers) do
-		self[name] = require(class).new(self)
-		self.minicontainers[#self.minicontainers+1] = self[name]
-		self.renderer:add(self[name]:getDO())
+	for _, class in ipairs(self.allcontainers) do
+		local c = require(class).new(self)
+		self.minicontainers[#self.minicontainers+1] = c
+		self.renderer:add(c:getDO())
 	end
 
 	game.log = function(style, ...) if type(style) == "number" then game.uiset.logdisplay(...) else game.uiset.logdisplay(style, ...) end end
@@ -112,6 +181,9 @@ function _M:placeContainers()
 	for _, container in ipairs(self.minicontainers) do
 		local x, y = container:getDefaultGeometry()
 		container:move(x, y)
+		if config.settings.tome.uiset_minimalist2 and config.settings.tome.uiset_minimalist2.places and config.settings.tome.uiset_minimalist2.places[container.container_id] then
+			container:loadConfig(config.settings.tome.uiset_minimalist2.places[container.container_id])
+		end
 	end
 end
 
