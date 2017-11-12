@@ -99,6 +99,7 @@ int max_ms_per_frame = 33;
 int requested_fps_idle = DEFAULT_IDLE_FPS;
 /* The currently "saved" fps, used for idle transitions. */
 int requested_fps_idle_saved = 0;
+bool forbid_idle_mode = FALSE;
 
 SDL_TimerID realtime_timer_id = 0;
 
@@ -1251,6 +1252,8 @@ void cleanupTimerLock(SDL_mutex *lock, SDL_TimerID *timer
 /* Handles game idle transition.  See function declaration for more info. */
 void handleIdleTransition(int goIdle)
 {
+	if (forbid_idle_mode) return;
+
 	if (goIdle) {
 		/* Make sure this isn't an idle->idle transition */
 		if (requested_fps != requested_fps_idle) {
@@ -1440,120 +1443,129 @@ int main(int argc, char *argv[])
 #ifdef SELFEXE_MACOSX
 		if (os_autoflush) fflush(stdout);
 #endif
-		/* handle the events in the queue */
-		while (SDL_PollEvent(&event))
-		{
-			switch(event.type)
+
+		while (TRUE) {
+			on_tick();
+
+			/* handle the events in the queue */
+			while (SDL_PollEvent(&event))
 			{
-			case SDL_WINDOWEVENT:
-				switch (event.window.event)
+				switch(event.type)
 				{
-				case SDL_WINDOWEVENT_RESIZED:
-					/* Note: SDL can't resize a fullscreen window, so don't bother! */
-					if (!is_fullscreen) {
-						printf("SDL_WINDOWEVENT_RESIZED: %d x %d\n", event.window.data1, event.window.data2);
-						do_resize(event.window.data1, event.window.data2, is_fullscreen, is_borderless, screen_zoom);
-						if (current_game != LUA_NOREF)
-						{
-							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-							lua_pushliteral(L, "onResolutionChange");
-							lua_gettable(L, -2);
-							lua_remove(L, -2);
-							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-							docall(L, 1, 0);
+				case SDL_WINDOWEVENT:
+					switch (event.window.event)
+					{
+					case SDL_WINDOWEVENT_RESIZED:
+						/* Note: SDL can't resize a fullscreen window, so don't bother! */
+						if (!is_fullscreen) {
+							printf("SDL_WINDOWEVENT_RESIZED: %d x %d\n", event.window.data1, event.window.data2);
+							do_resize(event.window.data1, event.window.data2, is_fullscreen, is_borderless, screen_zoom);
+							if (current_game != LUA_NOREF)
+							{
+								lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
+								lua_pushliteral(L, "onResolutionChange");
+								lua_gettable(L, -2);
+								lua_remove(L, -2);
+								lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
+								docall(L, 1, 0);
+							}
+						} else {
+							printf("SDL_WINDOWEVENT_RESIZED: ignored due to fullscreen\n");
+
 						}
-					} else {
-						printf("SDL_WINDOWEVENT_RESIZED: ignored due to fullscreen\n");
+						break;
+					case SDL_WINDOWEVENT_MOVED: {
+						int x, y;
+						/* Note: SDL can't resize a fullscreen window, so don't bother! */
+						if (!is_fullscreen) {
+							SDL_GetWindowPosition(window, &x, &y);
+							printf("move %d x %d\n", x, y);
+							if (current_game != LUA_NOREF)
+							{
+								lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
+								lua_pushliteral(L, "onWindowMoved");
+								lua_gettable(L, -2);
+								lua_remove(L, -2);
+								lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
+								lua_pushnumber(L, x);
+								lua_pushnumber(L, y);
+								docall(L, 3, 0);
+							}
+						} else {
+							printf("SDL_WINDOWEVENT_MOVED: ignored due to fullscreen\n");
+						}
+						break;
+					}
+					case SDL_WINDOWEVENT_CLOSE:
+						event.type = SDL_QUIT;
+						SDL_PushEvent(&event);
+						break;
+
+					case SDL_WINDOWEVENT_SHOWN:
+					case SDL_WINDOWEVENT_FOCUS_GAINED:
+						SDL_SetModState(KMOD_NONE);
+						/* break from idle */
+						//printf("[EVENT HANDLER]: Got a SHOW/FOCUS_GAINED event, restoring full FPS.\n");
+						handleIdleTransition(0);
+						break;
+
+					case SDL_WINDOWEVENT_HIDDEN:
+					case SDL_WINDOWEVENT_FOCUS_LOST:
+						/* go idle */
+						SDL_SetModState(KMOD_NONE);
+						//printf("[EVENT HANDLER]: Got a HIDDEN/FOCUS_LOST event, going idle.\n");
+						handleIdleTransition(1);
+						break;
+					default:
+						break;
 
 					}
 					break;
-				case SDL_WINDOWEVENT_MOVED: {
-					int x, y;
-					/* Note: SDL can't resize a fullscreen window, so don't bother! */
-					if (!is_fullscreen) {
-						SDL_GetWindowPosition(window, &x, &y);
-						printf("move %d x %d\n", x, y);
-						if (current_game != LUA_NOREF)
-						{
-							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-							lua_pushliteral(L, "onWindowMoved");
-							lua_gettable(L, -2);
-							lua_remove(L, -2);
-							lua_rawgeti(L, LUA_REGISTRYINDEX, current_game);
-							lua_pushnumber(L, x);
-							lua_pushnumber(L, y);
-							docall(L, 3, 0);
+				case SDL_QUIT:
+					/* handle quit requests */
+					exit_engine = TRUE;
+					break;
+				case SDL_USEREVENT:
+					/* TODO: Enumerate user event codes */
+					switch(event.user.code)
+					{
+					case 1:
+						on_music_stop();
+						break;
+
+					case 2:
+					/* DGDGDGDG Ibroke realtime mode
+						if (isActive) {
+							on_tick();
+							SDL_mutexP(realtimeLock);
+							realtime_pending = 0;
+							SDL_mutexV(realtimeLock);
 						}
-					} else {
-						printf("SDL_WINDOWEVENT_MOVED: ignored due to fullscreen\n");
+						break;
+					*/
+
+					default:
+						break;
 					}
-					break;
-				}
-				case SDL_WINDOWEVENT_CLOSE:
-					event.type = SDL_QUIT;
-					SDL_PushEvent(&event);
-					break;
-
-				case SDL_WINDOWEVENT_SHOWN:
-				case SDL_WINDOWEVENT_FOCUS_GAINED:
-					SDL_SetModState(KMOD_NONE);
-					/* break from idle */
-					//printf("[EVENT HANDLER]: Got a SHOW/FOCUS_GAINED event, restoring full FPS.\n");
-					handleIdleTransition(0);
-					break;
-
-				case SDL_WINDOWEVENT_HIDDEN:
-				case SDL_WINDOWEVENT_FOCUS_LOST:
-					/* go idle */
-					SDL_SetModState(KMOD_NONE);
-					//printf("[EVENT HANDLER]: Got a HIDDEN/FOCUS_LOST event, going idle.\n");
-					handleIdleTransition(1);
 					break;
 				default:
-					break;
-
-				}
-				break;
-			case SDL_QUIT:
-				/* handle quit requests */
-				exit_engine = TRUE;
-				break;
-			case SDL_USEREVENT:
-				/* TODO: Enumerate user event codes */
-				switch(event.user.code)
-				{
-				case 1:
-					on_music_stop();
-					break;
-
-				case 2:
-					if (isActive) {
-						on_tick();
-						SDL_mutexP(realtimeLock);
-						realtime_pending = 0;
-						SDL_mutexV(realtimeLock);
+					/* handle key presses */
+					if (on_event(&event)) {
+						tickPaused = FALSE;
 					}
 					break;
-
-				default:
-					break;
 				}
-				break;
-			default:
-				/* handle key presses */
-				if (on_event(&event)) {
-					tickPaused = FALSE;
-				}
-				break;
 			}
+			if (tickPaused) break; // No more ticks to process
+			if (SDL_GetTicks() - ticks >= max_ms_per_frame) break; // We took too long! DRAW A FRAME! DRAW A FRAME !!!!!
 		}
-		if (ticks) {
-			ticks_per_frame = SDL_GetTicks() - ticks;
-			if (ticks_per_frame < max_ms_per_frame) SDL_Delay(max_ms_per_frame - ticks_per_frame);
-		}
+
+		ticks_per_frame = SDL_GetTicks() - ticks;
+		if (ticks_per_frame < max_ms_per_frame) SDL_Delay(max_ms_per_frame - ticks_per_frame);
 
 		/* draw the scene */
 		// Note: since realtime_timer_id is accessed, have to lock first
+		/* DGDGDGDG I broke realtime mode! slap me!
 		int doATick = 0;
 		SDL_mutexP(realtimeLock);
 			if (!realtime_timer_id && isActive && !tickPaused) {
@@ -1567,6 +1579,7 @@ int main(int argc, char *argv[])
 			realtime_pending = 0;	
 			SDL_mutexV(realtimeLock);
 		}
+		*/
 
 		/* Reboot the lua engine */
 		if (core_def->corenum)

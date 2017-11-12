@@ -27,6 +27,8 @@ colors_simple = {}
 colors_simple1 = {}
 colors_alphaf = {}
 colors_alphafs = {}
+r_colors = {}
+r_colors_simple = {}
 
 --- Define Color
 -- @string name
@@ -44,6 +46,8 @@ function defineColor(name, r, g, b, br, bg, bb)
 	colors_alphaf[name] = function(a) return {r1, g1, b1, a} end
 	colors_alphafs[name] = function(a) return r1, g1, b1, a end
 	if core.colors then core.colors.define256(name, r, g, b, 255) end
+	r_colors[colors[name]] = name
+	r_colors_simple[colors_simple[name]] = name
 end
 
 --- color -> foreground table
