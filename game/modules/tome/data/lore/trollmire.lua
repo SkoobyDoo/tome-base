@@ -25,7 +25,7 @@ newLore{
 	id = "trollmire-note-1",
 	category = "trollmire",
 	name = "tattered paper scrap (trollmire)",
-	lore = [[[b]You find a tattered page scrap. Perhaps[/b] this is part of a diary entry.
+	lore = [[You find a tattered page scrap. Perhaps this is part of a diary entry.
 "...is a gorgeous glade, but I could swear that looked like a part of a human femur.
 
 ...
