@@ -150,6 +150,7 @@ function _M:select(v)
 	self.selected = v
 	if not self.frame then return end
 	if v then
+		self.cur_frame.container:cancelTween(true)
 		self.cur_frame.container:color(1, 1, 1, 1)
 		self.cur_frame.container:shown(v)
 		self:startScrolling()

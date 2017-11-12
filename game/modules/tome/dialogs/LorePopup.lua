@@ -20,9 +20,8 @@
 require "engine.class"
 local Dialog = require "engine.ui.Dialog"
 local ListColumns = require "engine.ui.ListColumns"
-local TextzoneList = require "engine.ui.TextzoneList"
+local Textzone = require("engine.ui.Textzone")
 local Image = require "engine.ui.Image"
-local Separator = require "engine.ui.Separator"
 local FontPackage = require "engine.FontPackage"
 
 module(..., package.seeall, class.inherit(Dialog))
@@ -63,7 +62,7 @@ function _M:init(l, w, force_height)
 
 	local required_h = self.font:height() + self.font_h * (#list - 1)
 	local h = math.min(force_height and (force_height * game.h) or 999999999, required_h)
-	local c_text = require("engine.ui.Textzone").new{
+	local c_text = Textzone.new{
 		font = self.font,
 		config=function(self) self:setTextOutline(false) self:setTextShadow(false) end,
 		width=w+10, height=h, scrollbar=(h < required_h) and true or false, text=text, color=self.color,
