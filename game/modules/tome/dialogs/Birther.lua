@@ -164,7 +164,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 		{left=0, bottom=self.c_ok, ui=self.c_extra_options},
 
 		
-		{right=0, top=-64, ui=self.actor_frame},
+		{right=0, top=-32, ui=self.actor_frame},
 	}
 	self:setupUI()
 
