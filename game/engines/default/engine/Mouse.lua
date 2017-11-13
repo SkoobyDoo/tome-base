@@ -226,6 +226,7 @@ function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 		if _M.drag.cursor then
 			core.mouse.setMouseDrag(_M.drag.cursor, 32, 32) -- DGDGDGDG hardcoded 32 size, bad bad bad !
 		end
+		for m, _ in pairs(drag_listeners) do m:receiveMouseGlobal("drag-start-global", x, y, true, nil, {drag=_M.drag}) end
 		print("[MOUSE] enabling drag from predrag")
 	end
 
@@ -239,7 +240,6 @@ function _M:startDrag(x, y, cursor, payload, on_done, on_move, no_prestart)
 	_M.drag = {start_x=x, start_y=y, payload=payload, on_done=on_done, on_move=on_move, prestart=true, cursor=cursor}
 	print("[MOUSE] pre starting drag'n'drop")
 	if no_prestart then start() end
-	for m, _ in pairs(drag_listeners) do m:receiveMouseGlobal("drag-start-global", x, y, true, nil, {drag=_M.drag}) end
 end
 
 function _M:isDragging()
