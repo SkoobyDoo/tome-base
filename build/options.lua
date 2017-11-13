@@ -78,6 +78,11 @@ newoption {
 }
 
 newoption {
+	trigger	    = "discord",
+	description = "Discord integration"
+}
+
+newoption {
 	trigger	    = "web-awesomium",
 	description = "Use awesomium embedded browser as the webcore"
 }

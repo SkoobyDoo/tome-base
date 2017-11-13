@@ -701,6 +701,10 @@ void on_redraw()
 #ifdef STEAM_TE4
 	if (!no_steam) te4_steam_callbacks();
 #endif
+#ifdef DISCORD_TE4
+	extern void te4_discord_update();
+	te4_discord_update();
+#endif
 	if (te4_web_update) te4_web_update(L);
 }
 
@@ -1118,6 +1122,10 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 
 #ifdef STEAM_TE4
 		if (!no_steam) te4_steam_lua_init(L);
+#endif
+#ifdef DISCORD_TE4
+		extern int luaopen_discord(lua_State *L);
+		luaopen_discord(L);
 #endif
 		printf("===top %d\n", lua_gettop(L));
 //		exit(0);

@@ -38,6 +38,7 @@ project "TEngine"
 		files { "../steamworks/luasteam.c", }
 	end
 	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-particles-system", "te4-navmesh", "te4-spriter", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader", "te4-box2d-".._OPTIONS.box2d:lower(), "te4-poly2tri", "te4-clipper", "te4-muparser" }
+	if _OPTIONS.discord then links { "te4-discord" } defines { "DISCORD_TE4" } end
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
 	buildoptions { "-std=gnu++11" }
@@ -737,4 +738,25 @@ end
 
 if _OPTIONS.steam then
 	dofile("../steamworks/build/steam-code.lua")
+end
+
+if _OPTIONS.discord then
+project "te4-discord"
+	kind "SharedLib"
+	language "C++"
+	targetname "te4-discord"
+
+	includedirs { "../src/discord-rpc/include/", "../src/discord-rpc/rapidjson/", }
+
+	files { "../src/discord-rpc/te4-discord.cpp", "../src/discord-rpc/src/discord-rpc.cpp", "../src/discord-rpc/src/rpc_connection.cpp", "../src/discord-rpc/src/serialization.cpp", }
+	-- defines { "DISCORD_DISABLE_IO_THREAD" }
+
+	-- configuration "macosx"
+	-- 	files {}
+
+	configuration "linux"
+		files { "../src/discord-rpc/src/connection_unix.cpp", "../src/discord-rpc/src/discord_register_linux.cpp", }
+
+	configuration "windows"
+		files { "../src/discord-rpc/src/connection_win.cpp", "../src/discord-rpc/src/discord_register_win.cpp", }
 end

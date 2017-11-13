@@ -206,6 +206,8 @@ function _M:onEnterLevel(zone, level)
 	end
 
 	self:fireTalentCheck("callbackOnChangeLevel", "enter", zone, level)
+
+	game:updateCurrentChar()
 end
 
 function _M:onEnterLevelEnd(zone, level)
