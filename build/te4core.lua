@@ -610,9 +610,12 @@ project "te4-discord"
 
 		defines { "DISCORD_DYNAMIC_LIB" }
 
-	-- configuration "macosx"
-	-- 	files {}
-
 		files { "../src/discord-rpc/src/discord-rpc.cpp", "../src/discord-rpc/src/rpc_connection.cpp", "../src/discord-rpc/src/serialization.cpp", }
 		files { "../src/discord-rpc/src/connection_unix.cpp", "../src/discord-rpc/src/discord_register_linux.cpp", }
+
+	configuration "windows"
+		kind "None"
+
+	configuration "macosx"
+		kind "None"
 end
