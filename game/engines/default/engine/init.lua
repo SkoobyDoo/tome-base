@@ -169,4 +169,8 @@ savefile_pipe = engine.SavefilePipe.new()
 -- Setup FPS
 core.game.setFPS(config.settings.display_fps)
 
+if config.settings.disable_discord then core.discord = nil end
+if core.discord then core.discord.init() end
+
 util.showMainMenu(true)
+

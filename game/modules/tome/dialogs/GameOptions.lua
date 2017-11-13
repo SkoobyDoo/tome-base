@@ -588,6 +588,15 @@ function _M:generateListOnline()
 		self.c_list:drawItem(item)
 	end,}
 
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Enable Discord's Rich Presence integration to show your current character on your currently playing profile on Discord (restart the game to apply).\n#ANTIQUE_WHITE#If you do not use Discord this option doesn't do anything in either state."}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Discord's Rich Presence#WHITE##{normal}#", status=function(item)
+		return tostring(not config.settings.disable_discord and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.disable_discord = not config.settings.disable_discord
+		game:saveSettings("disable_discord", ("disable_discord = %s\n"):format(tostring(config.settings.disable_discord)))
+		self.c_list:drawItem(item)
+	end,}
+
 	self.list = list
 end
 
