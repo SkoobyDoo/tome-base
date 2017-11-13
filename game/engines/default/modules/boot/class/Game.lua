@@ -160,7 +160,8 @@ function _M:run()
 	end
 
 	-- Setup display
-	self:registerDialog(MainMenu.new())
+	self.main_menu = MainMenu.new()
+	self:registerDialog(self.main_menu)
 
 	-- Run the current music if any
 	self:playMusic("The saga begins.ogg")
@@ -350,6 +351,9 @@ end
 --- Called when screen resolution changes
 function _M:checkResolutionChange(w, h, ow, oh)
 	self:resizeMapViewport(w, h)
+
+	self:onTickEndRemove("mainmenu_resize")
+	self:onTickEnd(function() self.main_menu:setupUI(false, true) end)
 
 	return true
 end
