@@ -43,7 +43,12 @@ View::~View() {
 	if (origin_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, origin_lua_ref);
 }
 
+void View::print() {
+	printf("[VIEW]: %dx%d, in use %d, from from_screen_size %d, mode %s\n", w, h, in_use, from_screen_size, mode == ViewMode::ORTHO ? "Ortho" : "Project");
+}
+
 void View::setOrthoView(int w, int h, bool reverse_height) {
+	this->w = w; this->h = h;
 	from_screen_size = false;
 	mode = ViewMode::ORTHO;
 	if (reverse_height) view = glm::ortho(0.f, (float)w, (float)h, 0.f, -1001.f, 1001.f);
@@ -55,6 +60,7 @@ void View::setProjectView(
 	float fov_angle, int w, int h, float near_clip, float far_clip,
 	DisplayObject *camera, int camera_ref, DisplayObject *origin, int origin_ref
 ) {
+	this->w = w; this->h = h;
 	from_screen_size = false;
 	if (camera_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, camera_lua_ref);
 	if (origin_lua_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, origin_lua_ref);
@@ -73,12 +79,14 @@ void View::setProjectView(
 }
 
 void View::onScreenResize(int w, int h) {
+	// printf("On screen resize: "); print();
 	if (!from_screen_size) return;
 	printf("View resizing to screen size\n");
 
 	switch (mode) {
 		case ViewMode::ORTHO:
 			setOrthoView(w / screen_zoom, h / screen_zoom);
+			from_screen_size = true; // Keep the flag around lol
 			break;
 		default:
 			break;

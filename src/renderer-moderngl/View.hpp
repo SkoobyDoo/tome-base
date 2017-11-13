@@ -30,6 +30,7 @@ class DisplayObject;
 
 class View : public IResizable {
 private:
+	int w, h;
 	bool in_use = false;
 	bool from_screen_size = false;
 	ViewMode mode = ViewMode::ORTHO;
@@ -54,6 +55,7 @@ public:
 	);
 
 	void use(bool v);
+	void print();
 
 	mat4 get();
 
