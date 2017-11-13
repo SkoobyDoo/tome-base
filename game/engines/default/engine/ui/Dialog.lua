@@ -253,15 +253,18 @@ end
 -- @param escape = the default choice (number) to select if escape is pressed
 -- @param default = the default choice (number) to select (highlight) when the dialog opens, default 1
 function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leave, escape, default)
+	local Textzone = require("engine.ui.Textzone")
+	local Button = require("engine.ui.Button")
+
 	escape = escape or 1
 	default = default or 1
 	-- compute display limits
 	local max_w, max_h = w or game.w*.75, h or game.h*.75
 
 	-- use tex params to place text
-	local text_w, text_h = self.font:size(text)
-	local tex, text_lines, text_width = self.font:draw(text, (w or max_w)*.9, 255, 255, 255, false, true)
-	local text_height = text_lines*text_h+5
+	local txtzone = Textzone.new{auto_width=1, auto_height=1, text=text, can_focus=false}
+	local text_width, text_height = txtzone.w, txtzone.h
+
 	local button_spacing = 10
 	
 	local d = new(title, w or 1, h or 1)
@@ -276,7 +279,7 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 
 	-- build list of buttons
 	for i = 1, num_buttons do
-		local b = require("engine.ui.Button").new{text=button_list[i].name,
+		local b = Button.new{text=button_list[i].name,
 			fct=function()
 				print("[multiButtonPopup] button pressed:", i, button_list[i].name) table.print(button_list[i])
 				game:unregisterDialog(d)
@@ -311,7 +314,7 @@ function _M:multiButtonPopup(title, text, button_list, w, h, choice_fct, no_leav
 	local width = w or math.min(max_w, math.max(text_width + 20, max_buttons_width + 20))
 	local height = h or math.min(max_h, text_height + 10 + nrow*button_height)
 	local uis = {
-		{left = (width - text_width)/2, top = 3, ui=require("engine.ui.Textzone").new{width=text_width, height=text_height, text=text, can_focus=false}}
+		{left = (width - text_width)/2, top = 3, ui=txtzone}
 	}
 	-- actually place the buttons in the dialog
 	top = math.max(text_height, text_height + (height - text_height - nrow*button_height - 5)/2)
