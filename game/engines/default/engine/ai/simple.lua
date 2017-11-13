@@ -250,7 +250,7 @@ end)
 -- this requires the ActorFOV interface, or an interface that provides self.fov.actors*
 newAI("target_simple", function(self)
 	-- keep same (hostile) target 90% of the time
-	if self.ai_target.actor and not self.ai_target.actor.dead and self:reactionToward(act) < 0 and rng.percent(90) then return true end
+	if self.ai_target.actor and not self.ai_target.actor.dead and self:reactionToward(self.ai_target.actor) < 0 and rng.percent(90) then return true end
 
 	-- Find closer enemy and target it
 	-- Get list of actors ordered by distance
