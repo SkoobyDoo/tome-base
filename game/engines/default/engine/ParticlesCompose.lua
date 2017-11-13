@@ -53,14 +53,7 @@ function _M:cloned()
 end
 
 function _M:loaded()
-	local ok, f = pcall(loadfile, item.path)
-	if not ok then print("Error loading particle file", f) return end
-	setfenv(f, {math=math, colors_alphaf=colors_alphaf, PC=PC})
-	local ok, data = pcall(f)
-	if not ok then print("Error loading particle file", data) return end
-
-	self.ps = PC.new(data)
-
+	self.ps = PC.new("/data/gfx/particles/"..self.def..".pc")
 end
 
 --- Gets a DisplayObject representing this particle

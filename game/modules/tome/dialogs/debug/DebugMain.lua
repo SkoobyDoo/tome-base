@@ -143,6 +143,8 @@ function _M:use(item)
 				game.player:sortInven()
 			end
 		end
+	elseif act == "particles-editor" then
+		game:registerDialog(require("engine.dialogs.ParticlesComposeEditor").new())
 	else
 		self:triggerHook{"DebugMain:use", act=act}
 	end
@@ -168,6 +170,7 @@ function _M:generateList()
 	list[#list+1] = {name="Give Sher'tul fortress energy", action="shertul-energy"}
 	list[#list+1] = {name="Give all ingredients", action="all-ingredients"}
 	list[#list+1] = {name="Weakdamage", action="weakdamage"}
+	list[#list+1] = {name="Particles Editor", action="particles-editor"}
 	self:triggerHook{"DebugMain:generate", menu=list}
 
 	local chars = {}
