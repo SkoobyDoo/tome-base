@@ -163,7 +163,7 @@ function _M:shift(map, mo)
 
 	local adx, ady = mo:getWorldPos()
 	if self._adx then
-		self.ps:shift(self._adx - adx, self._ady - ady)
+		self.ps:shift(adx - self._adx, ady - self._ady)
 	end					
 	self._adx, self._ady = adx, ady
 end

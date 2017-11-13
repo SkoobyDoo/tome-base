@@ -20,14 +20,14 @@
 */
 #ifdef DISCORD_TE4
 
-#include "display.h"
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
+#include "types.h"
+#include "display.h"
 #include "physfs.h"
 #include "core_lua.h"
-#include "types.h"
 #include "main.h"
 #include "getself.h"
 #include "te4web.h"
