@@ -77,8 +77,8 @@ public:
 	void setNoLinefeed(bool no_linefeed) { this->no_linefeed = no_linefeed; parseText(); };
 	void setMaxWidth(int width) { this->line_max_width = width; parseText(); };
 	void setMaxLines(int max) { this->max_lines = max; parseText(); };
-	void setTextStyle(font_style style) { default_style = style; };
-	void setTextColor(float r, float g, float b, float a) { font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a; font_last_color.r = r; font_last_color.g = g; font_last_color.b = b; font_last_color.a = a; parseText(); };
+	void setTextStyle(font_style style);
+	void setTextColor(float r, float g, float b, float a);
 	void setFrom(DORText *prev);
 
 	vec2 getLetterPosition(int idx);

@@ -60,6 +60,18 @@ void DORText::setFrom(DORText *prev) {
 	default_style = prev->used_font_style;
 }
 
+void DORText::setTextStyle(font_style style) {
+	default_style = style;
+	used_font_style = style;
+}
+void DORText::setTextColor(float r, float g, float b, float a) {
+	font_color.r = r; font_color.g = g; font_color.b = b; font_color.a = a;
+	font_last_color.r = r; font_last_color.g = g; font_last_color.b = b; font_last_color.a = a;
+	used_color = font_color;
+	used_last_color = font_last_color;
+	parseText();
+}
+
 ftgl::texture_glyph_t *DORText::getGlyph(uint32_t codepoint) {
 	auto glyph_map = font->glyph_map;
 	if (font->font->rendermode == ftgl::RENDER_OUTLINE_POSITIVE) glyph_map = font->glyph_map_outline;
@@ -203,10 +215,19 @@ void DORText::parseText() {
 	centered = false;
 	setChanged(true);
 
+	// printf("-- '%s'\n", text);
+	// printf("==CUREC  %fx%fx%fx%f\n", font_color.r, font_color.g, font_color.b, font_color.a);
+	// printf("==USEDC  %fx%fx%fx%f\n", used_color.r, used_color.g, used_color.b, used_color.a);
+
 	font_type *f = font;
 	if (!f) return;
 	size_t len = strlen(text);
-	if (!len) return;
+	if (!len) {
+		used_color = font_color;
+		used_last_color = font_last_color;
+		used_font_style = default_style;
+		return;
+	}
 	const char *str = text;
 	float r = font_color.r, g = font_color.g, b = font_color.b, a = font_color.a;
 	float lr = font_last_color.r, lg = font_last_color.g, lb = font_last_color.b, la = font_last_color.a;
