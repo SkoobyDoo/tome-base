@@ -614,8 +614,10 @@ project "te4-discord"
 		files { "../src/discord-rpc/src/connection_unix.cpp", "../src/discord-rpc/src/discord_register_linux.cpp", }
 
 	configuration "windows"
-		kind "None"
+		kind "SharedLib"
+		-- Empty
 
 	configuration "macosx"
-		kind "None"
+		kind "SharedLib"
+		-- Empty
 end
