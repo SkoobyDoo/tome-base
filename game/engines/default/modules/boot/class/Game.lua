@@ -91,6 +91,7 @@ function _M:init()
 
 	self:loaded()
 	profile:currentCharacter("Main Menu", "Main Menu")
+	if core.discord then core.discord.updatePresence{state="Main Menu", details="Thinking about which character to die with!", large_image="default", large_image_text="Pondering..."} end
 end
 
 function _M:loaded()
