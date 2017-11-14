@@ -605,6 +605,7 @@ project "te4-discord"
 		kind "SharedLib"
 		language "C++"
 		targetname "discord-rpc"
+		buildoptions { "-std=gnu++11" }
 
 		includedirs { "../src/discord-rpc/include/", "../src/discord-rpc/rapidjson/", }
 
