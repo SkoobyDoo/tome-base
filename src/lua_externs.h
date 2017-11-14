@@ -22,6 +22,7 @@ extern int luaopen_colors (lua_State *L);
 extern int luaopen_core_mouse(lua_State *L);
 extern int luaopen_navmesh(lua_State *L);
 extern int luaopen_particles_system(lua_State *L);
+extern int luaopen_map2d(lua_State *L);
 
 extern int luaopen_loader(lua_State *L);
 extern void loader_tick();

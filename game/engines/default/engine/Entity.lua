@@ -376,7 +376,7 @@ function _M:makeMapObject(tiles, idx)
 	if ok and self.auto_tall and h > w then dy = -1 dh = 1 end
 
 	-- Create the map object with 1 + additional textures
-	self._mo = core.map.newObject(self.uid,
+	self._mo = core.map2d.newObject(self.uid,
 		1 + (tiles.use_images and self.textures and #self.textures or 0),
 		self:check("display_on_seen"),
 		self:check("display_on_remember"),
@@ -439,7 +439,7 @@ function _M:makeMapObject(tiles, idx)
 				tex, texx, texy, w, h, pos_x, pos_y = tiles:get("", 0, 0, 0, 0, 0, 0, amo.image, false, false, true)
 				if amo.auto_tall and h > w then dy = -1 dh = 2 end
 			end
-			local mo = core.map.newObject(self.uid, 1 + (tiles.use_images and amo.textures and #amo.textures or 0), false, false, false, amo.display_x or 0, dy, amo.display_w or 1, dh, amo.display_scale or 1)
+			local mo = core.map2d.newObject(self.uid, 1 + (tiles.use_images and amo.textures and #amo.textures or 0), false, false, false, amo.display_x or 0, dy, amo.display_w or 1, dh, amo.display_scale or 1)
 			mo:texture(0, tex, false, texx, texy, pos_x, pos_y)
 			if amo.particle then
 				local args = amo.particle_args or {}
@@ -652,7 +652,7 @@ function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader, no_ca
 	for i = 1, Map.zdepth do
 		if mos[i] then list[#list+1] = mos[i] end
 	end
-	local DO = core.map.mapObjectsToDisplayObject(w, h, a, allow_cb, allow_shader, unpack(list))
+	local DO = core.map2d.mapObjectsToDisplayObject(w, h, a, allow_cb, allow_shader, unpack(list))
 	if not DO then return nil end
 
 	if no_cache then
@@ -709,7 +709,7 @@ function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_shader)
 	-- for i = 1, Map.zdepth do
 	-- 	if mos[i] then list[#list+1] = mos[i] end
 	-- end
-	-- core.map.mapObjectsToScreen(x, y, w, h, a, allow_cb, allow_shader, unpack(list))
+	-- core.map2d.mapObjectsToScreen(x, y, w, h, a, allow_cb, allow_shader, unpack(list))
 	local DO = self:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader)
 	DO:toScreen(x, y)
 end

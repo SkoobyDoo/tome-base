@@ -9,8 +9,6 @@ solution "TEngine"
 		if not _OPTIONS.wincross then libdirs{"/usr/lib32"} end
 	end
 
-	buildoptions { "-O3" }
-
 	includedirs {
 		"src",
 		"src/luasocket",
@@ -97,7 +95,7 @@ configuration "Debug"
 configuration "Release"
 	defines { "NDEBUG=1" }
 	flags { "Optimize", "NoFramePointer" }
-	buildoptions { "-O2" }
+	buildoptions { "-O3" }
 	targetdir "bin/Release"
 
 

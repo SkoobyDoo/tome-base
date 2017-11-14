@@ -36,7 +36,7 @@ local NPC = require "mod.class.NPC"
 local HotkeysDisplay = require "engine.HotkeysDisplay"
 local ActorsSeenDisplay = require "engine.ActorsSeenDisplay"
 local LogDisplay = require "engine.LogDisplay"
-local LogFlasher = require "engine.LogFlasher"
+-- local LogFlasher = require "engine.LogFlasher"
 local DebugConsole = require "engine.DebugConsole"
 local FlyingText = require "engine.FlyingText"
 local Tooltip = require "engine.Tooltip"
@@ -56,7 +56,7 @@ function _M:init()
 end
 
 function _M:run()
-	self.flash = LogFlasher.new(0, 0, self.w, 20, nil, nil, nil, {255,255,255}, {0,0,0})
+	-- self.flash = LogFlasher.new(0, 0, self.w, 20, nil, nil, nil, {255,255,255}, {0,0,0})
 	self.logdisplay = LogDisplay.new(0, self.h * 0.8, self.w * 0.5, self.h * 0.2, nil, nil, nil, {255,255,255}, {30,30,30})
 	self.hotkeys_display = HotkeysDisplay.new(nil, self.w * 0.5, self.h * 0.8, self.w * 0.5, self.h * 0.2, {30,30,0})
 	self.npcs_display = ActorsSeenDisplay.new(nil, self.w * 0.5, self.h * 0.8, self.w * 0.5, self.h * 0.2, {30,30,0})
@@ -64,12 +64,16 @@ function _M:run()
 	self.flyers = FlyingText.new()
 	self:setFlyingText(self.flyers)
 
-	self.log = function(style, ...) if type(style) == "number" then self.logdisplay(...) self.flash(style, ...) else self.logdisplay(style, ...) self.flash(self.flash.NEUTRAL, style, ...) end end
-	self.logSeen = function(e, style, ...) if e and self.level.map.seens(e.x, e.y) then self.log(style, ...) end end
-	self.logPlayer = function(e, style, ...) if e == self.player then self.log(style, ...) end end
-	self.logNewest = function() return self.logdisplay:getNewestLine() end
+	-- self.log = function(style, ...) if type(style) == "number" then self.logdisplay(...) else self.logdisplay(style, ...) end end
+	-- self.logSeen = function(e, style, ...) if e and self.level.map.seens(e.x, e.y) then self.log(style, ...) end end
+	-- self.logPlayer = function(e, style, ...) if e == self.player then self.log(style, ...) end end
+	-- self.logNewest = function() return self.logdisplay:getNewestLine() end
+	self.log = function() end
+	self.logSeen = function() end
+	self.logPlayer = function() end
+	self.logNewest = function() end
 
-	self.log(self.flash.GOOD, "Welcome to #00FF00#the template module!")
+	-- self.log(self.flash.GOOD, "Welcome to #00FF00#the template module!")
 
 	-- Setup inputs
 	self:setupCommands()
@@ -226,17 +230,17 @@ function _M:display(nb_keyframe)
 		self.target:display()
 
 		-- And the minimap
-		self.level.map:minimapDisplay(self.w - 200, 20, util.bound(self.player.x - 25, 0, self.level.map.w - 50), util.bound(self.player.y - 25, 0, self.level.map.h - 50), 50, 50, 0.6)
+		-- self.level.map:minimapDisplay(self.w - 200, 20, util.bound(self.player.x - 25, 0, self.level.map.w - 50), util.bound(self.player.y - 25, 0, self.level.map.h - 50), 50, 50, 0.6)
 	end
 
 	-- We display the player's interface
-	self.flash:toScreen(nb_keyframe)
-	self.logdisplay:toScreen()
-	if self.show_npc_list then
-		self.npcs_display:toScreen()
-	else
-		self.hotkeys_display:toScreen()
-	end
+	-- self.flash:toScreen(nb_keyframe)
+	-- self.logdisplay:toScreen()
+	-- if self.show_npc_list then
+	-- 	self.npcs_display:toScreen()
+	-- else
+	-- 	self.hotkeys_display:toScreen()
+	-- end
 	if self.player then self.player.changed = false end
 
 	-- Tooltip is displayed over all else
@@ -389,8 +393,8 @@ function _M:setupCommands()
 		end,
 
 		LOOK_AROUND = function()
-			self.flash:empty(true)
-			self.flash(self.flash.GOOD, "Looking around... (direction keys to select interesting things, shift+direction keys to move freely)")
+			-- self.flash:empty(true)
+			-- self.flash(self.flash.GOOD, "Looking around... (direction keys to select interesting things, shift+direction keys to move freely)")
 			local co = coroutine.create(function() self.player:getTarget{type="hit", no_restrict=true, range=2000} end)
 			local ok, err = coroutine.resume(co)
 			if not ok and err then print(debug.traceback(co)) error(err) end

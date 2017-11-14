@@ -26,6 +26,7 @@
 #include "renderer-moderngl/Particles.hpp"
 #include "renderer-moderngl/Physic.hpp"
 #include "spriter/Spriter.hpp"
+#include "renderer-moderngl/renderer-lua.hpp"
 
 extern "C" {
 #include "auxiliar.h"
@@ -56,13 +57,13 @@ static void setWeakSelfRef(lua_State *L, int idx, DisplayObject *c) {
 	c->setWeakSelfRef(ref);
 	lua_pop(L, 1); // Remove the weak storage table
 }
-static int gl_generic_getkind(lua_State *L)
+int gl_generic_getkind(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	lua_pushstring(L, c->getKind());
 	return 1;
 }
-static int gl_generic_clone(lua_State *L)
+int gl_generic_clone(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	const char *luatype = auxiliar_getclassname(L, 1);
@@ -72,7 +73,7 @@ static int gl_generic_clone(lua_State *L)
 	*nc = c->clone();
 	return 1;
 }
-static int gl_generic_color_get(lua_State *L)
+int gl_generic_color_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	vec4 color = c->getColor();
@@ -82,7 +83,7 @@ static int gl_generic_color_get(lua_State *L)
 	lua_pushnumber(L, color.a);
 	return 4;
 }
-static int gl_generic_translate_get(lua_State *L)
+int gl_generic_translate_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	float x, y, z;
@@ -107,7 +108,7 @@ static int gl_generic_translate_get(lua_State *L)
 	lua_pushnumber(L, z);
 	return 3;
 }
-static int gl_generic_rotate_get(lua_State *L)
+int gl_generic_rotate_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	float x, y, z;
@@ -117,7 +118,7 @@ static int gl_generic_rotate_get(lua_State *L)
 	lua_pushnumber(L, z);
 	return 3;
 }
-static int gl_generic_scale_get(lua_State *L)
+int gl_generic_scale_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	float x, y, z;
@@ -127,14 +128,14 @@ static int gl_generic_scale_get(lua_State *L)
 	lua_pushnumber(L, z);
 	return 3;
 }
-static int gl_generic_shown_get(lua_State *L)
+int gl_generic_shown_get(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	lua_pushboolean(L, c->getShown());
 	return 1;
 }
 
-static int gl_generic_color(lua_State *L)
+int gl_generic_color(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
@@ -213,7 +214,7 @@ static bool string_get_lua_table(lua_State *L, int table_idx, float field, const
 	return ret;
 }
 
-static int gl_generic_physic_create(lua_State *L)
+int gl_generic_physic_create(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	int pid = c->enablePhysic();
@@ -253,7 +254,7 @@ static int gl_generic_physic_create(lua_State *L)
 	return 1;
 }
 
-static int gl_generic_physic_destroy(lua_State *L)
+int gl_generic_physic_destroy(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	if (lua_toboolean(L, 2)) {
@@ -264,7 +265,7 @@ static int gl_generic_physic_destroy(lua_State *L)
 	return 0;
 }
 
-static int gl_generic_get_physic(lua_State *L)
+int gl_generic_get_physic(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	DORPhysic *physic = c->getPhysic(lua_tonumber(L, 2));
@@ -314,7 +315,7 @@ static easing_ptr easings_table[] = {
 	easing::backInOut,
 };
 
-static int gl_generic_tween(lua_State *L)
+int gl_generic_tween(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	int easing_id = lua_tonumber(L, 3);
@@ -340,7 +341,7 @@ static int gl_generic_tween(lua_State *L)
 	lua_pushvalue(L, 1);
 	return 1;
 }
-static int gl_generic_cancel_tween(lua_State *L)
+int gl_generic_cancel_tween(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	if (lua_isboolean(L, 2) && lua_toboolean(L, 2)) {
@@ -351,14 +352,14 @@ static int gl_generic_cancel_tween(lua_State *L)
 	lua_pushvalue(L, 1);
 	return 1;
 }
-static int gl_generic_has_tween(lua_State *L)
+int gl_generic_has_tween(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	lua_pushboolean(L, c->hasTween((TweenSlot)lua_tonumber(L, 2)));
 	return 1;
 }
 
-static int gl_generic_translate(lua_State *L)
+int gl_generic_translate(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
@@ -366,7 +367,7 @@ static int gl_generic_translate(lua_State *L)
 	return 1;
 }
 
-static int gl_generic_rotate(lua_State *L)
+int gl_generic_rotate(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
@@ -374,7 +375,7 @@ static int gl_generic_rotate(lua_State *L)
 	return 1;
 }
 
-static int gl_generic_scale(lua_State *L)
+int gl_generic_scale(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
@@ -382,7 +383,7 @@ static int gl_generic_scale(lua_State *L)
 	return 1;
 }
 
-static int gl_generic_reset_matrix(lua_State *L)
+int gl_generic_reset_matrix(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->resetModelMatrix();
@@ -390,7 +391,7 @@ static int gl_generic_reset_matrix(lua_State *L)
 	return 1;
 }
 
-static int gl_generic_shown(lua_State *L)
+int gl_generic_shown(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->shown(lua_toboolean(L, 2));
@@ -398,7 +399,7 @@ static int gl_generic_shown(lua_State *L)
 	return 1;
 }
 
-static int gl_generic_remove_from_parent(lua_State *L)
+int gl_generic_remove_from_parent(lua_State *L)
 {
 	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
 	c->removeFromParent();
@@ -1911,26 +1912,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
 	{"view", gl_renderer_view},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
@@ -1972,26 +1954,7 @@ static const struct luaL_Reg gl_target_reg[] =
 	{"shader", gl_target_shader},
 	{"setAutoRender", gl_target_set_auto_render},
 	{"clear", gl_vertexes_clear},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
@@ -2001,26 +1964,7 @@ static const struct luaL_Reg gl_container_reg[] =
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
 	{"clear", gl_container_clear},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
@@ -2039,26 +1983,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"shader", gl_vertexes_shader},
 	{"uniformTween", gl_vertexes_uniform_tween},
 	{"clear", gl_vertexes_clear},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
@@ -2080,26 +2005,7 @@ static const struct luaL_Reg gl_text_reg[] =
 	{"texture", gl_text_texture},
 	{"shader", gl_text_shader},
 	{"clear", gl_vertexes_clear},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
@@ -2108,78 +2014,21 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{"__gc", gl_callback_free},
 	{"set", gl_callback_set},
 	{"enable", gl_callback_enable},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
 static const struct luaL_Reg gl_tileobject_reg[] =
 {
 	{"__gc", gl_tileobject_free},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
 static const struct luaL_Reg gl_tilemap_reg[] =
 {
 	{"__gc", gl_tilemap_free},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{"setMap", gl_tilemap_setmap},
 	{NULL, NULL},
 };
@@ -2187,26 +2036,7 @@ static const struct luaL_Reg gl_tilemap_reg[] =
 static const struct luaL_Reg gl_tileminimap_reg[] =
 {
 	{"__gc", gl_tileminimap_free},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{"setMap", gl_tileminimap_setmap},
 	{"setMinimapInfo", gl_tileminimap_setinfo},
 	{NULL, NULL},
@@ -2223,52 +2053,14 @@ static const struct luaL_Reg gl_particles_reg[] =
 	{"params", gl_particles_params},
 	{"onEvents", gl_particles_on_events},
 	{"countAlive", gl_particles_count_alive},
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
 static const struct luaL_Reg gl_staticsub_reg[] =
 {
 	// No _GC method, this object is fulyl handled C++ side
-	{"getKind", gl_generic_getkind},
-	{"getColor", gl_generic_color_get},
-	{"getTranslate", gl_generic_translate_get},
-	{"getRotate", gl_generic_rotate_get},
-	{"getScale", gl_generic_scale_get},
-	{"getShown", gl_generic_shown_get},
-	{"shown", gl_generic_shown},
-	{"color", gl_generic_color},
-	{"resetMatrix", gl_generic_reset_matrix},
-	{"physicCreate", gl_generic_physic_create},
-	{"physicDestroy", gl_generic_physic_destroy},
-	{"physic", gl_generic_get_physic},
-	{"rawtween", gl_generic_tween},
-	{"rawcancelTween", gl_generic_cancel_tween},
-	{"rawhasTween", gl_generic_has_tween},
-	{"translate", gl_generic_translate},
-	{"rotate", gl_generic_rotate},
-	{"scale", gl_generic_scale},
-	{"clone", gl_generic_clone},
-	{"removeFromParent", gl_generic_remove_from_parent},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 

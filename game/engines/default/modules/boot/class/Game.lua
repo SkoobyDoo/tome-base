@@ -511,7 +511,7 @@ function _M:display(nb_keyframes)
 -- core.display.countDraws()
 		self.level.map:display(nil, nil, nb_keyframes, true)
 -- print("[draw calls] map", core.display.countDraws())
-		self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
+		-- self.level.map._map:drawSeensTexture(0, 0, nb_keyframes)
 	end
 
 	-- Draw it here, inside the FBO
