@@ -100,7 +100,7 @@ protected:
 	float move_step = 0, move_max = 0, move_blur = 0;
 	float move_twitch = 0;
 	uint8_t move_twitch_dir = 0;
-	int32_t move_start_x, move_start_y;
+	float move_start_x, move_start_y;
 	float move_anim_dx = 0, move_anim_dy = 0;
 
 	DisplayObject *displayobject = nullptr;
