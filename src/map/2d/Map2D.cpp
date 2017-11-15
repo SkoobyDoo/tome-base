@@ -93,6 +93,60 @@ void MapObject::setShader(shader_type *s, int ref) {
 	shader_ref = ref;
 }
 
+void MapObject::resetMoveAnim() {
+	move_max = 0;
+	move_anim_dx = move_anim_dy = 0;
+}
+
+void MapObject::setMoveAnim(int32_t startx, int32_t starty, float max, float blur, uint8_t twitch_dir, float twitch) {
+	// If at rest use starting point
+	if (!move_max) {
+		move_start_x = startx;
+		move_start_y = starty;
+	// If already moving, compute starting point
+	} else {
+		move_start_x = move_anim_dx + startx;
+		move_start_y = move_anim_dy + starty;
+	}
+	move_step = 0;
+	move_max = max;
+	move_blur = blur; // defaults to 0
+	move_twitch_dir = twitch_dir; // defaults to 0 (which is equivalent to up or 8)
+	move_twitch = twitch; // defaults to 0
+}
+
+inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
+	if (!nb_keyframes) return {move_anim_dx, move_anim_dy};
+
+	move_step += nb_keyframes;
+	if (move_step >= move_max) move_max = 0; // Reset once in place
+
+	if (move_max) {
+		// Compute the distance to traverse from origin to self
+		float adx = grid_x - move_start_x;
+		float ady = grid_y - move_start_y;
+
+		// Final step
+		move_anim_dx = adx * move_step / move_max - adx;
+		move_anim_dy = ady * move_step / move_max - ady;
+
+		if (move_twitch) {
+			float where = (0.5 - fabsf(move_step / move_max - 0.5)) * 2;
+			if (move_twitch_dir == 4) move_anim_dx -= move_twitch * where;
+			else if (move_twitch_dir == 6) move_anim_dx += move_twitch * where;
+			else if (move_twitch_dir == 2) move_anim_dy += move_twitch * where;
+			else if (move_twitch_dir == 1) { move_anim_dx -= move_twitch * where; move_anim_dy += move_twitch * where; }
+			else if (move_twitch_dir == 3) { move_anim_dx += move_twitch * where; move_anim_dy += move_twitch * where; }
+			else if (move_twitch_dir == 7) { move_anim_dx -= move_twitch * where; move_anim_dy -= move_twitch * where; }
+			else if (move_twitch_dir == 9) { move_anim_dx += move_twitch * where; move_anim_dy -= move_twitch * where; }
+			else move_anim_dy -= move_twitch * where;
+		}
+
+//			printf("==computing %f x %f : %f x %f // %d/%d\n", animdx, animdy, adx, ady, move_step, move_max);
+	}
+	return {move_anim_dx, move_anim_dy};
+}
+
 inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color) {
 	float dw = dm->size.x, dh = dm->size.y;
 	float x1, x2, y1, y2;
@@ -272,124 +326,19 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, f
 	/********************************************************
 	 ** Compute/display movement and motion blur
 	 ********************************************************/
-/*
-	float animdx = 0, animdy = 0;
-	float tlanimdx = 0, tlanimdy = 0;
-
-	if (m->move_max)
-	{
-		map->changed = true;
-		m->move_step += nb_keyframes;
-		if (m->move_step >= m->move_max) m->move_max = 0; // Reset once in place
-
-		if (m->move_max)
-		{
-			float adx = (float)i - m->oldx;
-			float ady = (float)j - m->oldy + 0.5f*(i & is_hex);
-
-			// Motion bluuuurr!
-			if (m->move_blur)
-			{
-				int step;
-				for (z = 1; z <= m->move_blur; z++)
-				{
-					step = m->move_step - z;
-					if (step >= 0)
-					{
-						animdx = tlanimdx = tile_w * (adx * step / (float)m->move_max - adx);
-						animdy = tlanimdy = tile_h * (ady * step / (float)m->move_max - ady);
-						float dm_peel = 0;
-						dm = m;
-						while (dm)
-						{
-							map_object_sort *so = map->sort_mos[map->sort_mos_max++];
-							so->m = m;
-							so->dm = dm;
-							so->z = dz;
-							so->anim = 0;
-							so->dx = dx + dm->dx * tile_w + animdx;
-							so->dy = dy + dm->dy * tile_h + animdy;
-							so->dy_sort = j + dm->dy + animdy + ((float)dz / (map->zdepth)) + dm->dh + dm_peel;
-							so->tldx = dx + dm->dx * tile_w + tlanimdx;
-							so->tldy = dy + dm->dy * tile_h + tlanimdy;
-							so->r = r;
-							so->g = b;
-							so->b = b;
-							so->a = ((dm->dy < 0) && up_important) ? a / 3 : a;
-							so->i = i;
-							so->j = j;
-							dm = dm->next;
-							dm_peel += 0.001;
-						}
-					}
-				}
-			}
-
-			// Final step
-			animdx = tlanimdx = adx * m->move_step / (float)m->move_max - adx;
-			animdy = tlanimdy = ady * m->move_step / (float)m->move_max - ady;
-
-			if (m->move_twitch) {
-				float where = (0.5 - fabsf(m->move_step / (float)m->move_max - 0.5)) * 2;
-				if (m->move_twitch_dir == 4) animdx -= m->move_twitch * where;
-				else if (m->move_twitch_dir == 6) animdx += m->move_twitch * where;
-				else if (m->move_twitch_dir == 2) animdy += m->move_twitch * where;
-				else if (m->move_twitch_dir == 1) { animdx -= m->move_twitch * where; animdy += m->move_twitch * where; }
-				else if (m->move_twitch_dir == 3) { animdx += m->move_twitch * where; animdy += m->move_twitch * where; }
-				else if (m->move_twitch_dir == 7) { animdx -= m->move_twitch * where; animdy -= m->move_twitch * where; }
-				else if (m->move_twitch_dir == 9) { animdx += m->move_twitch * where; animdy -= m->move_twitch * where; }
-				else animdy -= m->move_twitch * where;
-			}
-
-//			printf("==computing %f x %f : %f x %f // %d/%d\n", animdx, animdy, adx, ady, m->move_step, m->move_max);
-		}
-	}
-
-//	if ((j - 1 >= 0) && map->grids_important[i][j - 1] && map->grids[i][j-1][9] && !map->grids[i][j-1][9]->move_max) up_important = true;
-	*/
+	m->computeMoveAnim(keyframes);
 
 	/********************************************************
 	 ** Display the entity
 	 ********************************************************/
 	float dm_peel = 0;
 	dm = m;
-	while (dm)
-	{
-/*
-		if (!dm->anim_max) anim = 0;
-		else {
-			dm->anim_step += (dm->anim_speed * nb_keyframes);
-			anim_step = dm->anim_step;
-			if (dm->anim_step >= dm->anim_max) {
-				dm->anim_step = 0;
-				if (dm->anim_loop == 0) dm->anim_max = 0;
-				else if (dm->anim_loop > 0) dm->anim_loop--;
-			}
-			anim = (float)anim_step / dm->anim_max;
-			map->changed = true;
-		}
-		dm->world_x = bdx + (dm->dx + animdx) * tile_w;
-		dm->world_y = bdy + (dm->dy + animdy) * tile_h;
-*/
-	 	// if (m != dm && dm->shader) {
-			// unbatchQuads((*vert_idx), (*col_idx));
-			// // printf(" -- unbatch3\n");
-
-			// for (zc = dm->nb_textures - 1; zc > 0; zc--)
-			// {
-			// 	if (multitexture_active) tglActiveTexture(GL_TEXTURE0+zc);
-			// 	tglBindTexture(dm->textures_is3d[zc] ? GL_TEXTURE_3D : GL_TEXTURE_2D, dm->textures[zc]);
-			// }
-			// if (dm->nb_textures && multitexture_active) tglActiveTexture(GL_TEXTURE0); // Switch back to default texture unit
-
-	 	// 	useShader(dm->shader, dx, dy, tile_w, tile_h, dm->tex_x[0], dm->tex_y[0], dm->tex_factorx[0], dm->tex_factory[0], r, g, b, a);
-	 	// }
-
+	while (dm) {
 		MapObjectSort *so = getSorter();
 		so->m = dm;
-		so->dx = dx + (dm->pos.x /*+ animdx*/) * tile_w;
-		so->dy = dy + (dm->pos.y /*+ animdy*/) * tile_h;
-		so->dy_sort = j + dm->pos.y /*+ animdy*/ + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
+		so->dx = dx + (dm->pos.x + m->move_anim_dx) * tile_w;
+		so->dy = dy + (dm->pos.y + m->move_anim_dy) * tile_h;
+		so->dy_sort = j + dm->pos.y + m->move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
 		so->color = color;
 		dm = dm->next;
 		dm_peel += 0.001;

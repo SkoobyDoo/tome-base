@@ -574,7 +574,7 @@ end
 -- @param twitch defaults to 0, the amplitude of movement twitch
 function _M:setMoveAnim(oldx, oldy, speed, blur, twitch_dir, twitch)
 	if not self._mo then return end
-	self._mo:setMoveAnim(oldx, oldy, self.x, self.y, speed, blur, twitch_dir, twitch, game.level and game.level.map and game.level.map._map, self.__z_layers)
+	self._mo:setMoveAnim(oldx, oldy, speed, blur, twitch_dir, twitch)
 
 	local add_displays = self.add_displays
 	if self.replace_display then add_displays = self.replace_display.add_displays end
@@ -583,7 +583,7 @@ function _M:setMoveAnim(oldx, oldy, speed, blur, twitch_dir, twitch)
 
 	for i = 1, #add_displays do
 		if add_displays[i]._mo then
-			add_displays[i]._mo:setMoveAnim(oldx, oldy, self.x, self.y, speed, blur, twitch_dir, twitch, nil)
+			add_displays[i]._mo:setMoveAnim(oldx, oldy, speed, blur, twitch_dir, twitch)
 		end
 	end
 end
@@ -591,7 +591,7 @@ end
 --- Reset movement animation for the entity - removes any anim
 function _M:resetMoveAnim()
 	if not self._mo then return end
-	self._mo:resetMoveAnim(game.level and game.level.map and game.level.map._map, self.__z_layers)
+	self._mo:resetMoveAnim()
 
 	if not self.add_displays then return end
 
@@ -606,7 +606,7 @@ end
 -- @param v passed to the map object's flipX()
 function _M:MOflipX(v)
 	if not self._mo then return end
-	self._mo:flipX(v, game.level and game.level.map and game.level.map._map, self.__z_layers)
+	self._mo:flipX(v)
 	self._flipx = v
 
 	if not self.add_displays then return end
@@ -622,7 +622,7 @@ end
 -- @param v passed to the map object's flipY()
 function _M:MOflipY(v)
 	if not self._mo then return end
-	self._mo:flipY(v, game.level and game.level.map and game.level.map._map, self.__z_layers)
+	self._mo:flipY(v)
 	self._flipy = v
 
 	if not self.add_displays then return end

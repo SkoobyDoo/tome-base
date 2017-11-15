@@ -91,13 +91,17 @@ protected:
 	vec3 tint = {1, 1, 1};
 	vec3 mm = {1, 1, 1}; // Minimap color
 
-	float scale;
-	vec2 pos, size;
+	float scale = 1;
+	vec2 pos = {0, 0}, size = {1, 1};
 	vec2 computed_screen_pos;
-	// float move_step, move_max, move_blur, move_twitch_dir;
-	// float move_twitch;
-	// int anim_max, anim_loop;
-	// float anim_step, anim_speed;
+
+	float grid_x = 0, grid_y = 0; // Current position on the map (stored as float to avoid later convertion)
+
+	float move_step = 0, move_max = 0, move_blur = 0;
+	float move_twitch = 0;
+	uint8_t move_twitch_dir = 0;
+	int32_t move_start_x, move_start_y;
+	float move_anim_dx = 0, move_anim_dy = 0;
 
 	DisplayObject *displayobject = nullptr;
 	int do_ref = LUA_NOREF;
@@ -128,6 +132,10 @@ public:
 	inline bool isSeen() { return on_seen; }
 	inline bool isRemember() { return on_remember; }
 	inline bool isUnknown() { return on_unknown; }
+
+	void resetMoveAnim();
+	void setMoveAnim(int32_t startx, int32_t starty, float max, float blur, uint8_t twitch_dir, float twitch);
+	vec2 computeMoveAnim(float nb_keyframes);
 };
 
 class MapObjectProcessor {
@@ -199,6 +207,7 @@ public:
 		if (map_ref[off] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map_ref[off]);
 		map[off] = mo;
 		map_ref[off] = ref;
+		if (mo) { mo->grid_x = x; mo->grid_y = y; }
 		return old;
 	}
 	inline void setSeen(int32_t x, int32_t y, float v) { map_seens[x * w_off + y] = v; }

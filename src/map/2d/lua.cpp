@@ -35,6 +35,7 @@ extern "C" {
 }
 
 #include "map/2d/Map2D.hpp"
+#include "map/2d/Minimap2D.hpp"
 #include "renderer-moderngl/renderer-lua.hpp"
 
 /*************************************************************************
@@ -204,54 +205,14 @@ static int map_object_set_anim(lua_State *L)
 static int map_object_reset_move_anim(lua_State *L)
 {
 	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
-	// obj->move_max = 0;
-	// obj->animdx = obj->animdy = 0;
+	obj->resetMoveAnim();
 	return 0;
 }
 
 static int map_object_set_move_anim(lua_State *L)
 {
 	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
-
-	// lua_is_hex(L);
-	// int is_hex = luaL_checknumber(L, -1);
-
-	// // If at rest use starting point
-	// if (!obj->move_max)
-	// {
-	// 	int ox = luaL_checknumber(L, 2);
-	// 	int oy = luaL_checknumber(L, 3);
-	// 	obj->oldx = ox;
-	// 	obj->oldy = oy + 0.5f*(ox & is_hex);
-	// }
-	// // If already moving, compute starting point
-	// else
-	// {
-	// 	int ox = luaL_checknumber(L, 2);
-	// 	int oy = luaL_checknumber(L, 3);
-	// 	obj->oldx = obj->animdx + ox;
-	// 	obj->oldy = obj->animdy + oy + 0.5f*(ox & is_hex);
-	// }
-	// obj->move_step = 0;
-	// obj->move_max = luaL_checknumber(L, 6);
-	// obj->move_blur = lua_tonumber(L, 7); // defaults to 0
-	// obj->move_twitch_dir = lua_tonumber(L, 8); // defaults to 0 (which is equivalent to up or 8)
-	// obj->move_twitch = lua_tonumber(L, 9); // defaults to 0
-	// // obj->animdx = obj->animdx - ((float)obj->cur_x - obj->oldx);
-	// // obj->animdy = obj->animdy - ((float)obj->cur_y - obj->oldy);
-
-	// // Invalidate layers upon which we exist, so that the animation can actually play
-	// if (lua_isuserdata(L, 10) && lua_istable(L, 11)) {
-	// 	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map2d}", 10);
-	// 	lua_pushnil(L);
-	// 	while (lua_next(L, 11) != 0) {
-	// 		int z = lua_tonumber(L, -1) - 1;
-	// 		z = (z < 0) ? 0 : ((z >= map->zdepth) ? map->zdepth : z);
-	// 		lua_pop(L, 1);
-	// 	}		
-	// 	map->changed = true;
-	// }
-	
+	obj->setMoveAnim(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6), luaL_checknumber(L, 7));
 	return 0;
 }
 
@@ -873,16 +834,14 @@ static int map_get_display_object(lua_State *L)
 
 static int map_get_display_object_mm(lua_State *L)
 {
-	// Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
 
-	// DORTileMiniMap *tm = new DORTileMiniMap();
-	// tm->setMap(map);
+	Minimap2D *tm = new Minimap2D();
 
-	// DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
-	// *v = tm;
-	// auxiliar_setclass(L, "gl{tileminimap}", -1);
-	// return 1;
-	return 0;
+	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	*v = tm;
+	auxiliar_setclass(L, "gl{minimap2d}", -1);
+	return 1;
 }
 
 /*************************************************************************
@@ -890,11 +849,31 @@ static int map_get_display_object_mm(lua_State *L)
  *************************************************************************/
 static int gl_mapobjectrenderer_free(lua_State *L)
 {
-	MapObjectRenderer **mor = (MapObjectRenderer**)auxiliar_checkclass(L, "core{mapobj2drender}", 1);
+	MapObjectRenderer **mor = (MapObjectRenderer**)auxiliar_checkclass(L, "gl{mapobj2drender}", 1);
 	delete *mor;
 
 	lua_pushnumber(L, 1);
 	return 1;
+}
+
+/*************************************************************************
+ ** Minimap2D wrapper
+ *************************************************************************/
+static int gl_minimap2d_free(lua_State *L)
+{
+	Minimap2D **mor = (Minimap2D**)auxiliar_checkclass(L, "gl{minimap2d}", 1);
+	delete *mor;
+
+	lua_pushnumber(L, 1);
+	return 1;
+}
+static int gl_minimap2d_setmap(lua_State *L) {
+	Minimap2D *mor = *(Minimap2D**)auxiliar_checkclass(L, "gl{minimap2d}", 1);
+	return 0;
+}
+static int gl_minimap2d_setinfo(lua_State *L) {
+	Minimap2D *mor = *(Minimap2D**)auxiliar_checkclass(L, "gl{minimap2d}", 1);
+	return 0;
 }
 
 
@@ -937,6 +916,7 @@ static const struct luaL_Reg map_reg[] = {
 	{"setupGridLines", map_define_grid_lines},
 	{"getMapDO", map_get_display_object},
 	{"getMinimapDO", map_get_display_object_mm},
+	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };
 
@@ -964,6 +944,14 @@ static const struct luaL_Reg map_object_reg[] = {
 	{NULL, NULL},
 };
 
+static const struct luaL_Reg gl_minimap2d_reg[] =
+{
+	{"__gc", gl_minimap2d_free},
+	INJECT_GENERIC_DO_METHODS
+	{"setMap", gl_minimap2d_setmap},
+	{"setMinimapInfo", gl_minimap2d_setinfo},
+	{NULL, NULL},
+};
 
 static const struct luaL_Reg gl_mapobjectrenderer_reg[] =
 {
@@ -976,6 +964,7 @@ extern "C" int luaopen_map2d(lua_State *L) {
 	auxiliar_newclass(L, "core{map2d}", map_reg);
 	auxiliar_newclass(L, "core{mapobj2d}", map_object_reg);
 	auxiliar_newclass(L, "gl{mapobj2drender}", gl_mapobjectrenderer_reg);
+	auxiliar_newclass(L, "gl{minimap2d}", gl_minimap2d_reg);
 	luaL_openlib(L, "core.map2d", maplib, 0);
 	lua_pop(L, 1);
 	return 1;
