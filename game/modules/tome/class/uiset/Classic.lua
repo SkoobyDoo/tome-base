@@ -296,7 +296,7 @@ end
 
 function _M:display(nb_keyframes)
 	-- Now the map, if any
-	game:displayMap(nb_keyframes)
+	game:displayMap(nb_keyframes, game.full_fbo)
 
 	-- Minimap display
 	if game.level and game.level.map and not self.no_minimap then
