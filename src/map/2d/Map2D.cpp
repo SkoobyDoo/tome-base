@@ -147,7 +147,7 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 	return {move_anim_dx, move_anim_dy};
 }
 
-inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color) {
+inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model) {
 	float dw = dm->size.x, dh = dm->size.y;
 	float x1, x2, y1, y2;
 
@@ -186,10 +186,17 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 			// DGDGDGDG: actually do it
 
 			// Put it directly into the DisplayList
-			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
-			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
-			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
-			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
+			if (model) {
+				dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
+				dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
+				dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
+				dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
+			} else {
+				dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
+				dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
+				dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
+				dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
+			}
 			dl->list_map_info.push_back({dm->tex_coords[0], {dx, dy, x2, y2}});
 			dl->list_map_info.push_back({dm->tex_coords[0], {dx, dy, x2, y2}});
 			dl->list_map_info.push_back({dm->tex_coords[0], {dx, dy, x2, y2}});
@@ -241,26 +248,65 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 /*************************************************************************
  ** MapObjectRender
  *************************************************************************/
-MapObjectRenderer::MapObjectRenderer(int32_t tile_w, int32_t tile_h)
-	: tile_w(tile_w), tile_h(tile_h), renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h)
+MapObjectRenderer::MapObjectRenderer(float w, float h, float a, bool allow_cb, bool allow_shader)
+	: w(w), h(h), a(a), allow_cb(allow_cb), allow_shader(allow_shader), MapObjectProcessor(w, h)
 {
 }
 
 MapObjectRenderer::~MapObjectRenderer() {
-	for (auto& it : objs) {
-		if (get<1>(it) != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(it));
-	}	
+	resetMapObjects();
 }
 
-void MapObjectRenderer::addMapObject(MapObject *dm, int ref) {
-	objs.emplace_back(dm, ref);
+DisplayObject* MapObjectRenderer::clone() {
+	MapObjectRenderer *into = new MapObjectRenderer(w, h, a, allow_cb, allow_shader);
+	this->cloneInto(into);
+	return into;
+}
+void MapObjectRenderer::cloneInto(DisplayObject *_into) {
+	DORFlatSortable::cloneInto(_into);
+	MapObjectRenderer *into = dynamic_cast<MapObjectRenderer*>(_into);
+
+	for (auto &it : mos) {
+		int ref = LUA_NOREF;
+		if (L && get<1>(it) != LUA_NOREF) {
+			lua_rawgeti(L, LUA_REGISTRYINDEX, get<1>(it));
+			ref = luaL_ref(L, LUA_REGISTRYINDEX);
+		}
+		into->addMapObject(get<0>(it), ref);
+	}
 }
 
-void MapObjectRenderer::toScreen(mat4 cur_model, vec4 color) {
-	renderer.resetDisplayLists();
-	renderer.setChanged(true);
-	for (auto &it : objs) processMapObject(&renderer, get<0>(it), 0, 0, color);
-	renderer.toScreen(cur_model, color);
+void MapObjectRenderer::resetMapObjects() {
+	for (auto &it : mos) {
+		if (get<1>(it) != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(it));
+	}
+	mos.clear();
+	setChanged();
+}
+
+void MapObjectRenderer::addMapObject(MapObject *mo, int ref) {
+	mos.emplace_back(mo, ref);
+	setChanged();
+}
+
+void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible) {
+	if (!visible || !cur_visible) return;
+	mat4 vmodel = cur_model * model;
+	vec4 vcolor = cur_color * color;
+	for (auto &it : mos) {		
+		processMapObject(container, get<0>(it), 0, 0, vcolor, &vmodel);
+	}
+}
+
+void MapObjectRenderer::sortZ(RendererGL *container, mat4& cur_model) {
+	mat4 vmodel = cur_model * model;
+
+	// We take a "virtual" point at zflat coordinates
+	vec4 virtualz = vmodel * vec4(0, 0, 0, 1);
+	sort_z = virtualz.z;
+	sort_shader = NULL;
+	sort_tex = {0,0,0};
+	container->sorted_dos.push_back(this);
 }
 
 /*************************************************************************
@@ -383,7 +429,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
 		MapObjectSort *so = sorting_mos[spos];
-		processMapObject(&renderer, so->m, so->dx, so->dy, so->color);
+		processMapObject(&renderer, so->m, so->dx, so->dy, so->color, nullptr);
 
 	}
 	renderer.toScreen(cur_model, color);

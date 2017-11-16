@@ -247,10 +247,10 @@ static int map_object_is_valid(lua_State *L) {
 static int map_objects_to_displayobject(lua_State *L) {
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
-	// bool allow_cb = lua_toboolean(L, 3);
-	// bool allow_shader = lua_toboolean(L, 4);
+	bool allow_cb = lua_toboolean(L, 3);
+	bool allow_shader = lua_toboolean(L, 4);
 
-	MapObjectRenderer *mor = new MapObjectRenderer(w, h);
+	MapObjectRenderer *mor = new MapObjectRenderer(w, h, 1, allow_cb, allow_shader);
 	// to->setLuaState(L);
 
 	int moid = 6;

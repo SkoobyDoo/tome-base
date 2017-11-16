@@ -143,7 +143,7 @@ private:
 	int32_t tile_w, tile_h;
 public:
 	MapObjectProcessor(int32_t tile_w, int32_t tile_h) : tile_w(tile_w), tile_h(tile_h) {}
-	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color);
+	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model = nullptr);
 };
 
 /****************************************************************************
@@ -253,23 +253,27 @@ public:
 /****************************************************************************
  ** DO-inheriting direct renderer for MapObjects
  ****************************************************************************/
-class MapObjectRenderer : public SubRenderer, public MapObjectProcessor {
+class MapObjectRenderer : public DORFlatSortable, public MapObjectProcessor {
 private:
-	int32_t tile_w, tile_h;
-	vector<tuple<MapObject*,int>> objs;
+	vector<tuple<MapObject*, int>> mos;
+	bool allow_cb = false;
+	bool allow_shader = false;
+	float w, h, a;	
 
-	RendererGL renderer;
+	virtual void cloneInto(DisplayObject *into);
 
 public:
-	MapObjectRenderer(int32_t tile_w, int32_t tile_h);
+	MapObjectRenderer(float w, float h, float a, bool allow_cb, bool allow_shader);
 	virtual ~MapObjectRenderer();
+	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
 	virtual const char* getKind() { return "MapObjectRenderer"; };
 
-	void addMapObject(MapObject *dm, int ref);
+	void resetMapObjects();
+	void addMapObject(MapObject *mo, int ref);
 
-	inline vec2 getTileSize() { return {tile_w, tile_h}; }
-
-	virtual void toScreen(mat4 cur_model, vec4 color);
+	virtual void render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible);
+	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
+	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
 
 #endif
