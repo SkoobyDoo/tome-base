@@ -1657,7 +1657,11 @@ function _M:updateFOV()
 	self.player:playerFOV()
 end
 
-function _M:displayMap(nb_keyframes)
+function _M:displaySeensMap(map, x, y, nb_keyframe)
+	map._map:drawSeensTexture(x, y)
+end
+
+function _M:displayMap(nb_keyframes, prev_fbo)
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
 		local map = self.level.map
@@ -1683,7 +1687,7 @@ function _M:displayMap(nb_keyframes)
 				if self.level.data.foreground then self.level.data.foreground(self.level, 0, 0, nb_keyframes) end
 				if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 				if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
-			self.fbo:use(false, self.full_fbo)
+			self.fbo:use(false, prev_fbo)
 
 			-- 2nd pass to apply distorting particles
 			self.fbo2:use(true)
@@ -1692,18 +1696,18 @@ function _M:displayMap(nb_keyframes)
 				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
 				map._map:toScreenLineGrids(map.display_x, map.display_y)
 				if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-				if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
-			self.fbo2:use(false, self.full_fbo)
+				if config.settings.tome.smooth_fov then self:displaySeensMap(map, 0, 0, nb_keyframes) end
+			self.fbo2:use(false, prev_fbo)
 
 			_2DNoise:bind(1, false)
-			self.fbo2:postEffects(self.fbo, self.full_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
-			if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
+			self.fbo2:postEffects(self.fbo, prev_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
+			if self.target then self.target:display(nil, nil, prev_fbo, nb_keyframes) end
 
 		-- Basic display; no FBOs
 		else
 			if self.level.data.background then self.level.data.background(self.level, map.display_x, map.display_y, nb_keyframes) end
 			map:display(nil, nil, nb_keyframes, config.settings.tome.smooth_fov, nil)
-			if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
+			if self.target then self.target:display(nil, nil, prev_fbo, nb_keyframes) end
 			if self.level.data.foreground then self.level.data.foreground(self.level, map.display_x, map.display_y, nb_keyframes) end
 			if self.level.data.weather_particle then self.state:displayWeather(self.level, self.level.data.weather_particle, nb_keyframes) end
 			if self.level.data.weather_shader then self.state:displayWeatherShader(self.level, self.level.data.weather_shader, map.display_x, map.display_y, nb_keyframes) end
@@ -1711,7 +1715,7 @@ function _M:displayMap(nb_keyframes)
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
 			map._map:toScreenLineGrids(map.display_x, map.display_y)
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(map.display_x, map.display_y, nb_keyframes) end
+			if config.settings.tome.smooth_fov then self:displaySeensMap(map, map.display_x, map.display_y, nb_keyframes) end
 		end
 
 		-- Handle ambient sounds
