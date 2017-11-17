@@ -38,7 +38,6 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	material_level = 1,
 	wielder = {
 		combat_armor = 1,
-		fatigue = 1,
 	},
 }
 
@@ -49,7 +48,6 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	material_level = 3,
 	wielder = {
 		combat_armor = 3,
-		fatigue = 3,
 	},
 }
 
@@ -60,6 +58,5 @@ newEntity{ base = "BASE_LEATHER_BOOT",
 	material_level = 5,
 	wielder = {
 		combat_armor = 5,
-		fatigue = 5,
 	},
 }
