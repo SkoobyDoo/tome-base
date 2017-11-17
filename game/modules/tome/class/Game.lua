@@ -942,7 +942,7 @@ function _M:changeLevelReal(lev, zone, params)
 	local oz, ol = self.zone, self.level
 	
 	-- Unlock first!
-	if not params.temporary_zone_shift_back and self.level and self.level.temp_shift_zone then
+	if not params.temporary_zone_shift_back and self.zone and self.zone.temp_shift_zone then
 		self:changeLevelReal(1, "useless", {temporary_zone_shift_back=true})
 	end
 
@@ -996,14 +996,14 @@ function _M:changeLevelReal(lev, zone, params)
 		else
 			self.visited_zones[self.zone.short_name] = true
 			world:seenZone(self.zone.short_name)
-			self.level.temp_shift_zone = oz
-			self.level.temp_shift_level = ol
+			self.zone.temp_shift_zone = oz
+			self.zone.temp_shift_level = ol
 		end
 	elseif params.temporary_zone_shift_back then -- We switch back
 		popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
 		core.display.forceRedraw()
 
-		local old = self.level
+		local old = self.zone
 
 		if self.zone and self.zone.on_leave then
 			local nl, nz, stop = self.zone.on_leave(lev, old_lev, zone)
@@ -1114,7 +1114,8 @@ function _M:changeLevelReal(lev, zone, params)
 		self.player.last_wilderness = self.zone.short_name
 	else
 		local x, y = nil, nil
-		if (params.auto_zone_stair or self.level.data.auto_zone_stair) and left_zone then
+		if nil then
+		elseif (params.auto_zone_stair or self.level.data.auto_zone_stair) and left_zone then
 			-- Dirty but quick
 			local list, catchall = {}, {}
 			for i = 0, self.level.map.w - 1 do for j = 0, self.level.map.h - 1 do
