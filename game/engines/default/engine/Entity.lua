@@ -1206,6 +1206,10 @@ function _M:loadList(file, no_default, res, mod, loaded)
 		load = function(f, new_mod)
 			self:loadList(f, no_default, res, new_mod or mod, loaded)
 		end,
+		loadIfNot = function(f, new_mod)
+			if loaded[f] then return end
+			self:loadList(f, no_default, res, new_mod or mod, loaded)
+		end,
 		loadList = function(f, new_mod, list, loaded)
 			return self:loadList(f, no_default, list, new_mod or mod, loaded)
 		end,
