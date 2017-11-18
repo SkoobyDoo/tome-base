@@ -34,6 +34,8 @@
 #include "web-external.h"
 #include "discord-rpc/include/discord-rpc-dynlib.h"
 
+#include <time.h>
+
 /*
  * Grab stuff from the dynlib
  */
@@ -107,7 +109,6 @@ static int lua_discord_update(lua_State *L)
 		return 0;		
 	}
 
-	char buffer[256];
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
