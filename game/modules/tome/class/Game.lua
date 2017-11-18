@@ -976,6 +976,7 @@ function _M:changeLevelReal(lev, zone, params)
 	local recreate_nothing = false
 	local popup = nil
 	local afternicer = nil
+	local force_back_pos = nil
 
 	if params._debug_mode then
 		print("Entering zone:", self.zone.name, "level:", self.level and self.level.level, "in debug mode")	
@@ -998,6 +999,10 @@ function _M:changeLevelReal(lev, zone, params)
 			world:seenZone(self.zone.short_name)
 			self.zone.temp_shift_zone = oz
 			self.zone.temp_shift_level = ol
+			if params.temporary_zone_shift_save_pos then
+				local p = self:getPlayer(true)
+				self.zone.temp_shift_pos = {x=p.x, y=p.y}
+			end
 		end
 	elseif params.temporary_zone_shift_back then -- We switch back
 		popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
@@ -1020,6 +1025,7 @@ function _M:changeLevelReal(lev, zone, params)
 
 		self.zone = old.temp_shift_zone
 		self.level = old.temp_shift_level
+		if old.temp_shift_pos then force_back_pos = old.temp_shift_pos end
 
 		self.visited_zones[self.zone.short_name] = true
 		world:seenZone(self.zone.short_name)
@@ -1114,7 +1120,8 @@ function _M:changeLevelReal(lev, zone, params)
 		self.player.last_wilderness = self.zone.short_name
 	else
 		local x, y = nil, nil
-		if nil then
+		if force_back_pos then
+			x, y = force_back_pos.x, force_back_pos.y
 		elseif (params.auto_zone_stair or self.level.data.auto_zone_stair) and left_zone then
 			-- Dirty but quick
 			local list, catchall = {}, {}
