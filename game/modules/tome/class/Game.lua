@@ -1022,6 +1022,10 @@ function _M:changeLevelReal(lev, zone, params)
 				local p = self:getPlayer(true)
 				self.zone.temp_shift_pos = {x=p.x, y=p.y}
 			end
+
+			if new_level then
+				afternicer = self.state:startEvents()
+			end
 		end
 	elseif params.temporary_zone_shift_back then -- We switch back
 		popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
