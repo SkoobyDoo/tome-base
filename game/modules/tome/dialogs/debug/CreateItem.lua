@@ -255,7 +255,7 @@ function _M:acceptObject(obj, actor)
 		-- choose where to put object (default is current actor's inventory)
 		local d = Dialog:multiButtonPopup("Place Object", "Place the object where?",
 			{{name=("Inventory of %s%s"):format( actor.name, actor.player and " #LIGHT_GREEN#(player)#LAST#" or ""), choice="player", fct=function(sel)
-				if not obj.quest and not obj.plot then obj.__transmo = true end
+				-- if not obj.quest and not obj.plot then obj.__transmo = true end
 				actor:addObject(actor.INVEN_INVEN, obj)
 				game.zone:addEntity(game.level, obj, "object")
 				_M.findObject(self, obj, actor)
