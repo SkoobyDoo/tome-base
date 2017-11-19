@@ -919,7 +919,7 @@ function _M:changeLevelReal(lev, zone, params)
 	local oz, ol = self.zone, self.level
 
 	-- Unlock first!
-	if not params.temporary_zone_shift_back and self.level and self.level.temp_shift_zone then
+	if not params.temporary_zone_shift_back and self.zone and self.zone.temp_shift_zone and zone and zone == self.zone.short_name then
 		self:changeLevelReal(1, "useless", {temporary_zone_shift_back=true})
 	end
 
@@ -932,7 +932,7 @@ function _M:changeLevelReal(lev, zone, params)
 	-- Finish stuff registered for the previous level
 	self:onTickEndExecute()
 
-	if self.zone and self.level then self.party:leftLevel() end
+	if self.zone and self.level then self.party:leftLevel(params.temporary_zone_shift_back or (zone and zone == self.zone.short_name)) end
 
 	if self.player:isTalentActive(self.player.T_JUMPGATE) then
 		self.player:forceUseTalent(self.player.T_JUMPGATE, {ignore_energy=true})
@@ -953,6 +953,7 @@ function _M:changeLevelReal(lev, zone, params)
 	local recreate_nothing = false
 	local popup = nil
 	local afternicer = nil
+	local force_back_pos = nil
 
 	if params._debug_mode then
 		print("Entering zone:", self.zone.name, "level:", self.level and self.level.level, "in debug mode")	
@@ -973,14 +974,22 @@ function _M:changeLevelReal(lev, zone, params)
 		else
 			self.visited_zones[self.zone.short_name] = true
 			world:seenZone(self.zone.short_name)
-			self.level.temp_shift_zone = oz
-			self.level.temp_shift_level = ol
+			self.zone.temp_shift_zone = oz
+			self.zone.temp_shift_level = ol
+			if params.temporary_zone_shift_save_pos then
+				local p = self:getPlayer(true)
+				self.zone.temp_shift_pos = {x=p.x, y=p.y}
+			end
+
+			if new_level then
+				afternicer = self.state:startEvents()
+			end
 		end
 	elseif params.temporary_zone_shift_back then -- We switch back
 		popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
 		core.display.forceRedraw()
 
-		local old = self.level
+		local old = self.zone
 
 		if self.zone and self.zone.on_leave then
 			local nl, nz, stop = self.zone.on_leave(lev, old_lev, zone)
@@ -997,6 +1006,7 @@ function _M:changeLevelReal(lev, zone, params)
 
 		self.zone = old.temp_shift_zone
 		self.level = old.temp_shift_level
+		if old.temp_shift_pos then force_back_pos = old.temp_shift_pos end
 
 		self.visited_zones[self.zone.short_name] = true
 		world:seenZone(self.zone.short_name)
@@ -1099,7 +1109,9 @@ function _M:changeLevelReal(lev, zone, params)
 		self.player.last_wilderness = self.zone.short_name
 	else
 		local x, y = nil, nil
-		if (params.auto_zone_stair or self.level.data.auto_zone_stair) and left_zone then
+		if force_back_pos then
+			x, y = force_back_pos.x, force_back_pos.y
+		elseif (params.auto_zone_stair or self.level.data.auto_zone_stair) and left_zone then
 			-- Dirty but quick
 			local list, catchall = {}, {}
 			for i = 0, self.level.map.w - 1 do for j = 0, self.level.map.h - 1 do
@@ -1702,6 +1714,10 @@ function _M:createFBOs()
 	if self.player then self.player:updateMainShader() end
 end
 
+function _M:displaySeensMap(map, x, y, nb_keyframe)
+	map._map:drawSeensTexture(x, y)
+end
+
 function _M:displayMap(nb_keyframes)
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
@@ -1739,7 +1755,7 @@ function _M:displayMap(nb_keyframes)
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
 			map._map:toScreenLineGrids(map.display_x, map.display_y)
 			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-			if config.settings.tome.smooth_fov then map._map:drawSeensTexture(0, 0, nb_keyframes) end
+			if config.settings.tome.smooth_fov then self:displaySeensMap(map, 0, 0, nb_keyframes) end
 		self.fbo2:use(false, self.full_fbo)
 
 		-- _2DNoise:bind(1, false)
