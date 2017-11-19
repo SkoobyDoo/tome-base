@@ -184,6 +184,7 @@ function _M:tmxLoad(file)
 
 	local data_ids = {}
 	local data_images = {}
+	local data_talls = {}
 	local g = self:getLoader(t)
 	local map = lom.parse(data)
 	local mapprops = {}
@@ -203,10 +204,10 @@ function _M:tmxLoad(file)
 		for _, tile in ipairs(tileset:findAll("tile")) do
 			local tid = tonumber(tile.attr.id + firstgid)
 			local id = tile:findOne("property", "name", "id")
+			local tall = tile:findOne("property", "name", "tall")
 			local image = tile:findOne("image")
-			if id then
-				data_ids[tid] = id.attr.value
-			end
+			if id then data_ids[tid] = id.attr.value end
+			if tall then data_talls[tid] = true end
 			if image then
 				local _, _, src = image.attr.source:find("(/data/gfx/[a-zA-Z0-9-_/]+%.png)$")
 				if src then
@@ -254,7 +255,9 @@ function _M:tmxLoad(file)
 		m_images[ii][jj] = m_images[ii][jj] or {}
 
 		if data_ids[tid] then m[ii][jj] = data_ids[tid] end
-		if data_images[tid] then table.insert(m_images[ii][jj], {z=z, prefix=prefix, image=data_images[tid]}) end
+		if data_images[tid] then 
+			table.insert(m_images[ii][jj], {z=z, prefix=prefix, tall=data_talls[tid], image=data_images[tid]})
+		end
 	end
 
 	self.gen_map = m
@@ -399,6 +402,10 @@ function _M:generate(lev, old_lev)
 			g.add_displays = g.add_displays or {}
 			for iz = 2, #imgs do
 				g.add_displays[#g.add_displays+1] = g:getClass().new{image=imgs[iz].image, z=imgs[iz].z}
+				if imgs[iz].tall then
+					g.add_displays[#g.add_displays].display_y = -1
+					g.add_displays[#g.add_displays].display_h = 2
+				end
 			end
 		end
 		g:resolve() g:resolve(nil, true)
