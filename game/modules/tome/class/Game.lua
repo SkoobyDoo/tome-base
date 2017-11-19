@@ -974,7 +974,7 @@ function _M:changeLevelReal(lev, zone, params)
 	-- Finish stuff registered for the previous level
 	self:onTickEndExecute()
 
-	if self.zone and self.level then self.party:leftLevel() end
+	if self.zone and self.level then self.party:leftLevel(params.temporary_zone_shift_back or (zone and zone == self.zone.short_name)) end
 
 	if self.player:isTalentActive(self.player.T_JUMPGATE) then
 		self.player:forceUseTalent(self.player.T_JUMPGATE, {ignore_energy=true})
