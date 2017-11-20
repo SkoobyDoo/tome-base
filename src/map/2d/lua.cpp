@@ -194,7 +194,7 @@ static int map_object_reset_move_anim(lua_State *L) {
 
 static int map_object_set_move_anim(lua_State *L) {
 	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
-	obj->setMoveAnim(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6), luaL_checknumber(L, 7));
+	obj->setMoveAnim(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7));
 	return 0;
 }
 
@@ -287,7 +287,7 @@ static int map_new(lua_State *L) {
 
 	Map2D **pmap = (Map2D**)lua_newuserdata(L, sizeof(Map2D*));
 	auxiliar_setclass(L, "core{map2d}", -1);
-	*pmap = new Map2D(zdepth, w, h, tile_w, tile_h);
+	*pmap = new Map2D(zdepth, w, h, tile_w, tile_h, mwidth, mheight);
 	return 1;
 }
 
@@ -703,49 +703,19 @@ static int map_bind_seen_texture(lua_State *L) {
 }
 
 static int map_set_scroll(lua_State *L) {
-	// Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// int x = luaL_checknumber(L, 2);
-	// int y = luaL_checknumber(L, 3);
-	// int smooth = luaL_checknumber(L, 4);
-
-	// if (map->mx != x || map->my != y) {
-	// 	map->changed = true;
-	// }
-
-	// if (smooth)
-	// {
-	// 	// Not moving, use starting point
-	// 	if (!map->move_max)
-	// 	{
-	// 		map->oldmx = map->mx;
-	// 		map->oldmy = map->my;
-	// 	}
-	// 	// Already moving, compute starting point
-	// 	else
-	// 	{
-	// 		map->oldmx = map->oldmx + map->used_animdx;
-	// 		map->oldmy = map->oldmy + map->used_animdy;
-	// 	}
-	// } else {
-	// 	map->oldmx = x;
-	// 	map->oldmy = y;
-	// }
-
-	// map->move_step = 0;
-	// map->move_max = smooth;
-	// map->used_animdx = 0;
-	// map->used_animdy = 0;
-	// map->mx = x;
-	// map->my = y;
-	// map->seen_changed = true;
+	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	int x = luaL_checknumber(L, 2);
+	int y = luaL_checknumber(L, 3);
+	int smooth = luaL_checknumber(L, 4);
+	map->scroll(x, y, smooth);
 	return 0;
 }
 
 static int map_get_scroll(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// lua_pushnumber(L, -map->tile_w*(map->used_animdx + map->oldmx - map->mx));
-	// lua_pushnumber(L, -map->tile_h*(map->used_animdy + map->oldmy - map->my));
-	lua_pushnumber(L,0);lua_pushnumber(L,0);
+	vec2 s = map->getScroll();
+	lua_pushnumber(L, s.x);
+	lua_pushnumber(L, s.y);
 	return 2;
 }
 

@@ -143,7 +143,7 @@ private:
 	int32_t tile_w, tile_h;
 public:
 	MapObjectProcessor(int32_t tile_w, int32_t tile_h) : tile_w(tile_w), tile_h(tile_h) {}
-	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model = nullptr);
+	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float scrollx, float scrolly, vec4 color, mat4 *model = nullptr);
 };
 
 /****************************************************************************
@@ -159,6 +159,7 @@ struct MapObjectSort {
 
 class Map2D : public SubRenderer, public IRealtime, public MapObjectProcessor {
 private:
+	int32_t mwidth, mheight;
 	int32_t tile_w, tile_h;
 	int32_t z_off, w_off;
 	int32_t zdepth, w, h;
@@ -168,6 +169,11 @@ private:
 	bool *map_remembers;
 	bool *map_lites;
 	bool *map_important;
+
+	int32_t mx = 0, my = 0;
+	float scroll_anim_max = 0, scroll_anim_step = 0;
+	float scroll_anim_start_x = 0, scroll_anim_start_y = 0;
+	float scroll_anim_dx = 0, scroll_anim_dy = 0;
 
 	vector<MapObjectSort*> sorting_mos;
 	uint32_t sorting_mos_next = 0;
@@ -187,7 +193,7 @@ private:
 	RendererGL renderer;
 
 public:
-	Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h);
+	Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight);
 	virtual ~Map2D();
 	virtual const char* getKind() { return "Map2D"; };
 
@@ -226,6 +232,9 @@ public:
 	inline vec2 getTileSize() { return {tile_w, tile_h}; }
 	inline uint8_t getDepth() { return zdepth; }
 
+	void scroll(int32_t x, int32_t y, float smooth);
+	vec2 getScroll();
+
 	void setZSortStart(uint8_t v) { zdepth_sort_start = v; }
 	inline void initSorter() { sorting_mos_next = 0; }
 	inline MapObjectSort* getSorter() {
@@ -245,6 +254,8 @@ public:
 	void setDefaultShader(shader_type *s, int ref);
 
 	void computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, float seen);
+
+	vec2 computeScrollAnim(float nb_keyframes);
 
 	virtual void toScreen(mat4 cur_model, vec4 color);
 	virtual void onKeyframe(float nb_keyframes);

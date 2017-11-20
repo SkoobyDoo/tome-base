@@ -165,7 +165,7 @@ function _M:checkTileset(image)
 	local f = gfx_prefix..image
 	if not self.tilesets[f] then return end
 	local d = self.tilesets[f]
-	print("Loading tile from tileset", f)
+	-- print("Loading tile from tileset", f)
 	local tex = self.tilesets_texs[d.set]
 	if not tex then
 		tex = core.loader.png(d.set, true, true)

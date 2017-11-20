@@ -147,7 +147,7 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 	return {move_anim_dx, move_anim_dy};
 }
 
-inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model) {
+inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float scrollx, float scrolly, vec4 color, mat4 *model) {
 	float dw = dm->size.x, dh = dm->size.y;
 	float x1, x2, y1, y2;
 
@@ -187,20 +187,20 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 
 			// Put it directly into the DisplayList
 			if (model) {
-				dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
-				dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
-				dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
-				dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
+				dl->list.push_back({(*model) * vec4(x1+scrollx, y1+scrolly, 0, 1), {tx1, ty1}, color});
+				dl->list.push_back({(*model) * vec4(x2+scrollx, y1+scrolly, 0, 1), {tx2, ty1}, color});
+				dl->list.push_back({(*model) * vec4(x2+scrollx, y2+scrolly, 0, 1), {tx2, ty2}, color});
+				dl->list.push_back({(*model) * vec4(x1+scrollx, y2+scrolly, 0, 1), {tx1, ty2}, color});
 			} else {
-				dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
-				dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
-				dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
-				dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
+				dl->list.push_back({{x1+scrollx, y1+scrolly, 0, 1}, {tx1, ty1}, color});
+				dl->list.push_back({{x2+scrollx, y1+scrolly, 0, 1}, {tx2, ty1}, color});
+				dl->list.push_back({{x2+scrollx, y2+scrolly, 0, 1}, {tx2, ty2}, color});
+				dl->list.push_back({{x1+scrollx, y2+scrolly, 0, 1}, {tx1, ty2}, color});
 			}
-			dl->list_map_info.push_back({dm->tex_coords[0], {dx, dy, x2, y2}});
-			dl->list_map_info.push_back({dm->tex_coords[0], {dx, dy, x2, y2}});
-			dl->list_map_info.push_back({dm->tex_coords[0], {dx, dy, x2, y2}});
-			dl->list_map_info.push_back({dm->tex_coords[0], {dx, dy, x2, y2}});
+			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
+			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
+			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
+			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 		}
 	}
 
@@ -294,7 +294,7 @@ void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur
 	mat4 vmodel = cur_model * model;
 	vec4 vcolor = cur_color * color;
 	for (auto &it : mos) {		
-		processMapObject(container, get<0>(it), 0, 0, vcolor, &vmodel);
+		processMapObject(container, get<0>(it), 0, 0, 0, 0, vcolor, &vmodel);
 	}
 }
 
@@ -312,8 +312,8 @@ void MapObjectRenderer::sortZ(RendererGL *container, mat4& cur_model) {
 /*************************************************************************
  ** Map itself
  *************************************************************************/
-Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h)
-	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h)
+Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight)
+	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight), renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h)
 {
 	w_off = h;
 	z_off = w * h;
@@ -356,11 +356,57 @@ void Map2D::setDefaultShader(shader_type *s, int ref) {
 	default_shader_ref = ref;
 }
 
+void Map2D::scroll(int32_t x, int32_t y, float smooth) {
+	if (smooth) {
+		// Not moving, use starting point
+		if (!scroll_anim_max) 	{
+			scroll_anim_start_x = mx;
+			scroll_anim_start_y = my;
+		// Already moving, compute starting point
+		} else {
+			scroll_anim_start_x = scroll_anim_dx + mx;
+			scroll_anim_start_y = scroll_anim_dy + my;
+		}
+	} else {
+		scroll_anim_start_x = x;
+		scroll_anim_start_y = y;
+	}
+
+	scroll_anim_step = 0;
+	scroll_anim_max = smooth;
+	scroll_anim_dx = 0;
+	scroll_anim_dy = 0;
+	mx = x;
+	my = y;	
+}
+
+inline vec2 Map2D::computeScrollAnim(float nb_keyframes) {
+	if (!nb_keyframes) return {scroll_anim_dx, scroll_anim_dx};
+
+	scroll_anim_step += nb_keyframes;
+	if (scroll_anim_step >= scroll_anim_max) scroll_anim_max = 0; // Reset once in place
+
+	if (scroll_anim_max) {
+		// Compute the distance to traverse from origin to self
+		float adx = mx - scroll_anim_start_x;
+		float ady = my - scroll_anim_start_y;
+
+		// Final step
+		scroll_anim_dx = adx * scroll_anim_step / scroll_anim_max - adx;
+		scroll_anim_dy = ady * scroll_anim_step / scroll_anim_max - ady;
+	}
+	return {scroll_anim_dx, scroll_anim_dy};
+}
+
+vec2 Map2D::getScroll() {
+	return { -floor(scroll_anim_dx * tile_w), -floor(scroll_anim_dy * tile_h) };
+}
+
 inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, float seen) {
 	MapObject *dm;
 	vec4 color = shown;
 
-	float dx = i * tile_w, dy = j * tile_h;
+	float dx = floor((i - mx) * tile_w), dy = floor((j - my) * tile_h);
 
 	/********************************************************
 	 ** Select the color to use
@@ -373,6 +419,7 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, f
 	 ** Compute/display movement and motion blur
 	 ********************************************************/
 	m->computeMoveAnim(keyframes);
+	// DGDGDGDG DO BLUR
 
 	/********************************************************
 	 ** Display the entity
@@ -382,8 +429,8 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, f
 	while (dm) {
 		MapObjectSort *so = getSorter();
 		so->m = dm;
-		so->dx = dx + (dm->pos.x + m->move_anim_dx) * tile_w;
-		so->dy = dy + (dm->pos.y + m->move_anim_dy) * tile_h;
+		so->dx = dx + floor((dm->pos.x + m->move_anim_dx) * tile_w);
+		so->dy = dy + floor((dm->pos.y + m->move_anim_dy) * tile_h);
 		so->dy_sort = j + dm->pos.y + m->move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
 		so->color = color;
 		dm = dm->next;
@@ -402,7 +449,11 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	renderer.resetDisplayLists();
 	renderer.setChanged(true);
 
-	int32_t mini = 0, maxi = w - 1, minj = 0, maxj = h - 1;
+	computeScrollAnim(keyframes);
+
+	float sx = -floor(scroll_anim_dx * tile_w), sy = -floor(scroll_anim_dy * tile_h);
+	int32_t msx = mx + scroll_anim_dx, msy = my + scroll_anim_dy;
+	int32_t mini = msx - 1, maxi = msx + mwidth + 2, minj = msy - 1, maxj = msy + mheight + 2;
 
 	uint32_t start_sort = 0;
 	initSorter();
@@ -411,10 +462,9 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 		if (z == zdepth_sort_start) { start_sort = sorting_mos_next; }
 		for (int32_t j = minj; j < maxj; j++) {
 			for (int32_t i = mini; i < maxi; i++) {
+				if (!checkBounds(z, i, j)) continue;
 				MapObject *mo = at(z, i, j);
 				if (!mo) continue;
-				int32_t dx = i * tile_w;
-				int32_t dy = j * tile_h;
 
 				float seen = isSeen(i, j);
 				if ((mo->isSeen() && seen) || mo->isRemember() || mo->isUnknown()) {
@@ -429,7 +479,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
 		MapObjectSort *so = sorting_mos[spos];
-		processMapObject(&renderer, so->m, so->dx, so->dy, so->color, nullptr);
+		processMapObject(&renderer, so->m, so->dx, so->dy, sx, sy, so->color, nullptr);
 
 	}
 	renderer.toScreen(cur_model, color);

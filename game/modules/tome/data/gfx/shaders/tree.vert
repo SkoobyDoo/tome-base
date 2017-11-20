@@ -16,7 +16,7 @@ void main()
 	vec4 pos = te4_position;
 	float time = tick / 1000.0;
 
-	pos.x += 2.0 * sin(time + te4_mapcoord.x / (40.0) + te4_mapcoord.y) * (te4_mapcoord.w - pos.y) / 64.0 * 35.0 / tree_attenuation;
+	pos.x += 2.0 * sin(time + te4_mapcoord.x / (40.0) + te4_mapcoord.y) * (1.0 - te4_mapcoord.w) * 35.0 / tree_attenuation;
 
 	gl_Position = mvp * pos;
 
