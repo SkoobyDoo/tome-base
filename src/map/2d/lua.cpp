@@ -396,6 +396,19 @@ static int map_set_zoom(lua_State *L) {
 	return 0;
 }
 
+static int map_set_vision_shader(lua_State *L) {
+	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	if (!lua_isnil(L, 2)) {
+		shader_type *s = (shader_type*)lua_touserdata(L, 2);
+		lua_pushvalue(L, 2);
+		map->setVisionShader(s, luaL_ref(L, LUA_REGISTRYINDEX));
+	} else {
+		lua_pushliteral(L, "Map vision shader must exist");
+		lua_error(L);
+	}
+	return 0;
+}
+
 static int map_set_default_shader(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
 	if (!lua_isnil(L, 2)) {
@@ -743,19 +756,6 @@ static int map_line_grids(lua_State *L) {
 	return 0;	
 }
 
-static int map_get_display_object(lua_State *L) {
-	// Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-
-	// DORTileMap *tm = new DORTileMap();
-	// tm->setMap(map);
-
-	// DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
-	// *v = tm;
-	// auxiliar_setclass(L, "gl{tilemap}", -1);
-	// return 1;
-	return 0;
-}
-
 static int map_get_display_object_mm(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
 
@@ -825,6 +825,7 @@ static const struct luaL_Reg map_reg[] = {
 	{"cleanRemember", map_clean_remember},
 	{"cleanLite", map_clean_lite},
 	{"setDefaultShader", map_set_default_shader},
+	{"setVisionShader", map_set_vision_shader},
 	{"setSeen", map_set_seen},
 	{"setRemember", map_set_remember},
 	{"setLite", map_set_lite},
@@ -835,7 +836,6 @@ static const struct luaL_Reg map_reg[] = {
 	{"toScreen", lua_map_toscreen},
 	{"toScreenLineGrids", map_line_grids},
 	{"setupGridLines", map_define_grid_lines},
-	{"getMapDO", map_get_display_object},
 	{"getMinimapDO", map_get_display_object_mm},
 	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},

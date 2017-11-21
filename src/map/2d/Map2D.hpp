@@ -143,7 +143,7 @@ private:
 	int32_t tile_w, tile_h;
 public:
 	MapObjectProcessor(int32_t tile_w, int32_t tile_h) : tile_w(tile_w), tile_h(tile_h) {}
-	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float scrollx, float scrolly, vec4 color, mat4 *model = nullptr);
+	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model = nullptr);
 };
 
 /****************************************************************************
@@ -159,7 +159,7 @@ struct MapObjectSort {
 
 class Map2D : public SubRenderer, public IRealtime, public MapObjectProcessor {
 private:
-	int32_t mwidth, mheight;
+	// Map data
 	int32_t tile_w, tile_h;
 	int32_t z_off, w_off;
 	int32_t zdepth, w, h;
@@ -170,25 +170,37 @@ private:
 	bool *map_lites;
 	bool *map_important;
 
+	// Viewport
+	int32_t mwidth, mheight;
+	ivec2 viewport_pos, viewport_size, viewport_dimension;
+
+	// Scroll data
 	int32_t mx = 0, my = 0;
 	float scroll_anim_max = 0, scroll_anim_step = 0;
 	float scroll_anim_start_x = 0, scroll_anim_start_y = 0;
 	float scroll_anim_dx = 0, scroll_anim_dy = 0;
 
+	// Sorter data
 	vector<MapObjectSort*> sorting_mos;
 	uint32_t sorting_mos_next = 0;
 	uint8_t zdepth_sort_start = 0;
 
+	// Shaders
 	int default_shader_ref = LUA_NOREF;
 	shader_type *default_shader = nullptr;
 
+	// Visibility
 	vec4 obscure = {0.6,0.6,0.6,1}, shown = {1,1,1,1}, tint = {1,1,1,1};
-
-	vec2 viewport_top = vec2(0, 0);
-	vec2 viewport_size = vec2(10, 10);
-
 	bool mapchanged = true, seen_changed = true;
 
+	// Vision data
+	ivec2 seens_texture_size;
+	GLuint seens_texture = 0;
+	int8_t *seens_texture_data;
+	VBO seens_vbo;
+	int vision_shader_ref = LUA_NOREF;
+
+	// Renderer
 	float keyframes = 0;
 	RendererGL renderer;
 
@@ -197,6 +209,7 @@ public:
 	virtual ~Map2D();
 	virtual const char* getKind() { return "Map2D"; };
 
+	/* Simple accessors */
 	inline int32_t mapOffset(int32_t z, int32_t x, int32_t y) { return z * z_off + x * w_off + y; }
 	inline bool checkBounds(int32_t z, int32_t x, int32_t y) {
 		if (z < 0 || z >= zdepth || x < 0 || x >= w || y < 0 || y >= h) return false;
@@ -231,10 +244,16 @@ public:
 	inline vec2 getSize() { return {w, h}; }
 	inline vec2 getTileSize() { return {tile_w, tile_h}; }
 	inline uint8_t getDepth() { return zdepth; }
+	void setShown(vec4 t) { shown = t; }
+	void setObscure(vec4 t) { obscure = t; }
+	void setTint(vec4 t) { tint = t; }
+	void setDefaultShader(shader_type *s, int ref);
 
+	/* Scrolling */
 	void scroll(int32_t x, int32_t y, float smooth);
 	vec2 getScroll();
 
+	/* MO sorter */
 	void setZSortStart(uint8_t v) { zdepth_sort_start = v; }
 	inline void initSorter() { sorting_mos_next = 0; }
 	inline MapObjectSort* getSorter() {
@@ -248,15 +267,15 @@ public:
 		return mos;
 	};
 
-	void setShown(vec4 t) { shown = t; }
-	void setObscure(vec4 t) { obscure = t; }
-	void setTint(vec4 t) { tint = t; }
-	void setDefaultShader(shader_type *s, int ref);
-
-	void computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, float seen);
-
+	/* Compute visuals */
+	void computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j);
 	vec2 computeScrollAnim(float nb_keyframes);
 
+	/* Vision handling */
+	void setVisionShader(shader_type *s, int ref);
+	void updateVision();
+
+	/* Class superloads */
 	virtual void toScreen(mat4 cur_model, vec4 color);
 	virtual void onKeyframe(float nb_keyframes);
 };

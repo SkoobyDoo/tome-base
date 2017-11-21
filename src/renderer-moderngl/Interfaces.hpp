@@ -57,4 +57,12 @@ public:
 
 extern "C" void interface_realtime(float nb_keyframes);
 
+inline ivec2 powerOfTwoSize(int32_t w, int32_t h) {
+	int32_t realw = 1;
+	while (realw < w) realw *= 2;
+	int32_t realh = 1;
+	while (realh < h) realh *= 2;
+	return {realw, realh};
+}
+
 #endif

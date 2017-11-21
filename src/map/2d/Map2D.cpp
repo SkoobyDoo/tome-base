@@ -147,7 +147,7 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 	return {move_anim_dx, move_anim_dy};
 }
 
-inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float scrollx, float scrolly, vec4 color, mat4 *model) {
+inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model) {
 	float dw = dm->size.x, dh = dm->size.y;
 	float x1, x2, y1, y2;
 
@@ -187,15 +187,15 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 
 			// Put it directly into the DisplayList
 			if (model) {
-				dl->list.push_back({(*model) * vec4(x1+scrollx, y1+scrolly, 0, 1), {tx1, ty1}, color});
-				dl->list.push_back({(*model) * vec4(x2+scrollx, y1+scrolly, 0, 1), {tx2, ty1}, color});
-				dl->list.push_back({(*model) * vec4(x2+scrollx, y2+scrolly, 0, 1), {tx2, ty2}, color});
-				dl->list.push_back({(*model) * vec4(x1+scrollx, y2+scrolly, 0, 1), {tx1, ty2}, color});
+				dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
+				dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
+				dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
+				dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
 			} else {
-				dl->list.push_back({{x1+scrollx, y1+scrolly, 0, 1}, {tx1, ty1}, color});
-				dl->list.push_back({{x2+scrollx, y1+scrolly, 0, 1}, {tx2, ty1}, color});
-				dl->list.push_back({{x2+scrollx, y2+scrolly, 0, 1}, {tx2, ty2}, color});
-				dl->list.push_back({{x1+scrollx, y2+scrolly, 0, 1}, {tx1, ty2}, color});
+				dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
+				dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
+				dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
+				dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
 			}
 			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
 			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
@@ -294,7 +294,7 @@ void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur
 	mat4 vmodel = cur_model * model;
 	vec4 vcolor = cur_color * color;
 	for (auto &it : mos) {		
-		processMapObject(container, get<0>(it), 0, 0, 0, 0, vcolor, &vmodel);
+		processMapObject(container, get<0>(it), 0, 0, vcolor, &vmodel);
 	}
 }
 
@@ -313,15 +313,20 @@ void MapObjectRenderer::sortZ(RendererGL *container, mat4& cur_model) {
  ** Map itself
  *************************************************************************/
 Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight)
-	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight), renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h)
+	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight),
+	  renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h), seens_vbo(VBOMode::STATIC)
 {
 	w_off = h;
 	z_off = w * h;
 
+	// Compute viewport, we make it a bit bigger than requested to be able to do smooth scrolling without black zones
+	viewport_pos = {-2, -2};
+	viewport_size = {mwidth + 2, mheight + 2};
+	viewport_dimension = viewport_size - viewport_pos;
+
+	// Init the map data
 	map = new MapObject*[z * w * h];
-	
 	map_ref = new int[z * w * h]; std::fill_n(map_ref, z * w * h, LUA_NOREF);
-	
 	map_seens = new float[w * h]; std::fill_n(map_seens, w * h, 0);
 	map_remembers = new bool[w * h]; std::fill_n(map_remembers, w * h, false);
 	map_lites = new bool[w * h]; std::fill_n(map_lites, w * h, false);
@@ -331,6 +336,34 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	sorting_mos.reserve(8092);
 	for (uint32_t i = 0; i < sorting_mos.capacity(); i++) sorting_mos.emplace_back(new MapObjectSort());
 
+	// Init vision data
+	seens_texture_size = powerOfTwoSize(viewport_dimension.x, viewport_dimension.y);
+	glGenTextures(1, &seens_texture);
+	tglBindTexture(GL_TEXTURE_2D, seens_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, seens_texture_size.x, seens_texture_size.y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+	seens_texture_data = new int8_t[seens_texture_size.x * seens_texture_size.y]; std:fill_n(seens_texture_data, seens_texture_size.x * seens_texture_size.y, 0);
+	seens_vbo.setTexture(seens_texture);
+	int32_t seenx = viewport_pos.x * tile_w + tile_w * 1, seeny = viewport_pos.y * tile_h + tile_h * 1;
+	int32_t seenw = viewport_size.x * tile_w, seenh = viewport_size.y * tile_h;
+	seens_vbo.addQuad(
+		seenx, seeny, 0, 0,
+		seenx+seenw, seeny, (float)viewport_dimension.x / (float)seens_texture_size.x, 0,
+		seenx+seenw, seeny+seenh, (float)viewport_dimension.x / (float)seens_texture_size.x, (float)viewport_dimension.y / (float)seens_texture_size.y,
+		seenx, seeny+seenh, 0, (float)viewport_dimension.y / (float)seens_texture_size.y,
+		1, 1, 1, 1
+	);
+	// seens_vbo.addQuad(
+	// 	seenx, seeny, 0, 0,
+	// 	seenx+seenw, seeny, 1, 0,
+	// 	seenx+seenw, seeny+seenh, 1, 1,
+	// 	seenx, seeny+seenh, 0, 1,
+	// 	1, 1, 1, 1
+	// );
+
+	// Init renderer
 	renderer.setRendererName(strdup("map-layer"), false);
 	renderer.setManualManagement(true);
 	// renderer.countDraws(true);
@@ -348,12 +381,21 @@ Map2D::~Map2D() {
 	delete[] map_lites;
 	delete[] map_important;
 	for (auto mos : sorting_mos) delete mos;
+
+	delete[] seens_texture_data;
+	glDeleteTextures(1, &seens_texture);
 }
 
 void Map2D::setDefaultShader(shader_type *s, int ref) {
 	if (default_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, default_shader_ref);
 	default_shader = s;
 	default_shader_ref = ref;
+}
+
+void Map2D::setVisionShader(shader_type *s, int ref) {
+	if (vision_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, vision_shader_ref);
+	vision_shader_ref = ref;
+	seens_vbo.setShader(s);
 }
 
 void Map2D::scroll(int32_t x, int32_t y, float smooth) {
@@ -402,7 +444,7 @@ vec2 Map2D::getScroll() {
 	return { -floor(scroll_anim_dx * tile_w), -floor(scroll_anim_dy * tile_h) };
 }
 
-inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, float seen) {
+inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 	MapObject *dm;
 	vec4 color = shown;
 
@@ -416,11 +458,10 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, f
 	if (m->tint.b < 1) color.b = (color.b + m->tint.b) / 2;
 
 	/********************************************************
-	 ** Compute/display movement and motion blur
+	 ** Compute/display movement
 	 ********************************************************/
 	m->computeMoveAnim(keyframes);
-	// DGDGDGDG DO BLUR
-
+	
 	/********************************************************
 	 ** Display the entity
 	 ********************************************************/
@@ -436,11 +477,74 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j, f
 		dm = dm->next;
 		dm_peel += 0.001;
 	}
+
+	// Motion bluuuurr!
+	if (m->move_max && m->move_blur) {
+		// Compute the distance to traverse from origin to self
+		float adx = m->grid_x - m->move_start_x;
+		float ady = m->grid_y - m->move_start_y;
+		float blur_step_interval = m->move_step / m->move_blur;
+
+		for (float step = 0; step <= m->move_step; step += blur_step_interval) {
+			float blur_move_anim_dx = adx * step / m->move_max - adx;
+			float blur_move_anim_dy = ady * step / m->move_max - ady;
+
+			if (m->move_twitch) {
+				float where = (0.5 - fabsf(step / m->move_max - 0.5)) * 2;
+				if (m->move_twitch_dir == 4) blur_move_anim_dx -= m->move_twitch * where;
+				else if (m->move_twitch_dir == 6) blur_move_anim_dx += m->move_twitch * where;
+				else if (m->move_twitch_dir == 2) blur_move_anim_dy += m->move_twitch * where;
+				else if (m->move_twitch_dir == 1) { blur_move_anim_dx -= m->move_twitch * where; blur_move_anim_dy += m->move_twitch * where; }
+				else if (m->move_twitch_dir == 3) { blur_move_anim_dx += m->move_twitch * where; blur_move_anim_dy += m->move_twitch * where; }
+				else if (m->move_twitch_dir == 7) { blur_move_anim_dx -= m->move_twitch * where; blur_move_anim_dy -= m->move_twitch * where; }
+				else if (m->move_twitch_dir == 9) { blur_move_anim_dx += m->move_twitch * where; blur_move_anim_dy -= m->move_twitch * where; }
+				else blur_move_anim_dy -= m->move_twitch * where;
+			}
+
+			dm_peel = 0;
+			dm = m;
+			while (dm) {
+				MapObjectSort *so = getSorter();
+				so->m = dm;
+				so->dx = dx + floor((dm->pos.x + blur_move_anim_dx) * tile_w);
+				so->dy = dy + floor((dm->pos.y + blur_move_anim_dy) * tile_h);
+				so->dy_sort = j + dm->pos.y + blur_move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
+				so->color = color;
+				so->color.a = 0.3 + (step / m->move_step) * 0.7;
+				dm = dm->next;
+				dm_peel += 0.001;
+			}
+		}
+	}
 }
 
 static bool sort_mos(MapObjectSort *i, MapObjectSort *j) {
 	if (i->dy_sort == j->dy_sort) return i->dx < j->dx;
 	else return i->dy_sort < j->dy_sort;
+}
+
+void Map2D::updateVision() {
+	int32_t msx = mx + scroll_anim_dx, msy = my + scroll_anim_dy;
+	int32_t mini = msx + viewport_pos.x, maxi = msx + viewport_size.x;
+	int32_t minj = msy + viewport_pos.y, maxj = msy + viewport_size.y;
+
+	for (int32_t j = minj; j < maxj; j++) {
+		int32_t sj = j - minj;
+		for (int32_t i = mini; i < maxi; i++) {
+			// printf("%dx%d / %dx%d\n", i-mini, sj, viewport_dimension.x, viewport_dimension.y);
+			int32_t idx = sj * seens_texture_size.x + (i - mini);
+			if (!checkBounds(0, i, j)) seens_texture_data[idx] = 255;
+			else {
+				float seen = isSeen(i, j);
+				if (seen) seens_texture_data[idx] = 255 - seen * 255;
+				else if (isRemember(i, j)) seens_texture_data[idx] = obscure.a * 255;
+				else seens_texture_data[idx] = 255;
+			}
+		}
+	}
+
+	tglBindTexture(GL_TEXTURE_2D, seens_texture);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, seens_texture_size.x, seens_texture_size.y, GL_RED, GL_UNSIGNED_BYTE, seens_texture_data);
 }
 
 void Map2D::toScreen(mat4 cur_model, vec4 color) {
@@ -453,7 +557,8 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	float sx = -floor(scroll_anim_dx * tile_w), sy = -floor(scroll_anim_dy * tile_h);
 	int32_t msx = mx + scroll_anim_dx, msy = my + scroll_anim_dy;
-	int32_t mini = msx - 1, maxi = msx + mwidth + 2, minj = msy - 1, maxj = msy + mheight + 2;
+	int32_t mini = msx + viewport_pos.x, maxi = msx + viewport_size.x;
+	int32_t minj = msy + viewport_pos.y, maxj = msy + viewport_size.y;
 
 	uint32_t start_sort = 0;
 	initSorter();
@@ -468,7 +573,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 				float seen = isSeen(i, j);
 				if ((mo->isSeen() && seen) || mo->isRemember() || mo->isUnknown()) {
-					computeGrid(mo, z, i, j, seen);
+					computeGrid(mo, z, i, j);
 				}
 			}
 		}
@@ -479,11 +584,22 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
 		MapObjectSort *so = sorting_mos[spos];
-		processMapObject(&renderer, so->m, so->dx, so->dy, sx, sy, so->color, nullptr);
-
+		processMapObject(&renderer, so->m, so->dx, so->dy, so->color, nullptr);
 	}
+
+	// Compute the smooth scrolling matrix offset
+	mat4 scrollmodel = mat4();
+	scrollmodel = glm::translate(scrollmodel, glm::vec3(sx, sy, 0));
+	cur_model = cur_model * scrollmodel;
+
+	// Render the map
 	renderer.toScreen(cur_model, color);
 
+	// Render the vision overlay
+	updateVision();
+	seens_vbo.toScreen(cur_model);
+
+	// We displayed, reset the frames counter
 	keyframes = 0;
 }
 

@@ -262,12 +262,19 @@ function _M:updateDefaultShader()
 	end
 end
 
-function _M:getMapDO()
-	if forcenew then
-		return self._map:getMapDO()
-	else
-		return self._do_map
+function _M:setVisionShader(shader)
+	if not shader then
+		if not _M.default_vision_shader then
+			_M.default_vision_shader = Shader.new("default/map_vision")
+		end
+		shader = _M.default_vision_shader
 	end
+	self._map:setVisionShader(shader.shad)
+end
+
+function _M:getMapDO()
+	-- Map C object is already a DO, woot
+	return self._map
 end
 
 function _M:getMinimapDO(forcenew)
@@ -281,9 +288,6 @@ end
 function _M:makeCMap()
 	-- util.show_backtrace()
 	self._map = core.map2d.newMap(self.w, self.h, self.mx, self.my, self.viewport.mwidth, self.viewport.mheight, self.tile_w, self.tile_h, self.zdepth, util.isHex() and 1 or 0)
-	if not self._do_map then self._do_map = self._map:getMapDO()
-	else self._do_map:setMap(self._map)
-	end
 	if not self._do_mm then self._do_mm = self._map:getMinimapDO()
 	else self._do_mm:setMap(self._map)
 	end
@@ -293,6 +297,7 @@ function _M:makeCMap()
 	self._map:setupGridLines(unpack(self.grid_lines))
 
 	self:updateDefaultShader()
+	self:setVisionShader()
 
 	self._fovcache =
 	{
