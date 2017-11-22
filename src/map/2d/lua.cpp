@@ -299,59 +299,21 @@ static int map_free(lua_State *L) {
 	return 1;
 }
 
+static int map_show_vision(lua_State *L) {
+	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	map->enableVision(lua_toboolean(L, 2));
+	return 0;
+}
+
+static int map_smooth_vision(lua_State *L) {
+	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	map->smoothVision(lua_toboolean(L, 2));
+	return 0;
+}
+
 static int map_define_grid_lines(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// int size = luaL_checknumber(L, 2);
-	// if (!size) {
-	// 	if (map->grid_lines_renderer) delete map->grid_lines_renderer;
-	// 	if (map->grid_lines) delete map->grid_lines;
-	// 	map->grid_lines_renderer = NULL;
-	// 	map->grid_lines = NULL;
-	// 	map->nb_grid_lines_vertices = 0;
-	// 	return 0;
-	// }
-
-	// float r = luaL_checknumber(L, 3);
-	// float g = luaL_checknumber(L, 4);
-	// float b = luaL_checknumber(L, 5);
-	// float a = luaL_checknumber(L, 6);
-
-	// if (map->grid_lines_renderer) delete map->grid_lines_renderer;
-	// if (map->grid_lines) delete map->grid_lines;
-
-	// int mwidth = map->mwidth;
-	// int mheight = map->mheight;
-	// int tile_w = map->tile_w;
-	// int tile_h = map->tile_h;
-	// int grid_w = 1 + mwidth;
-	// int grid_h = 1 + mheight;
-	// map->nb_grid_lines_vertices = grid_w + grid_h;
-	// map->grid_lines = new DORVertexes();
-	// map->grid_lines->setTexture(gl_tex_white, LUA_NOREF);
-	// map->grid_lines_renderer = new RendererGL(VBOMode::STATIC);
-	// map->grid_lines_renderer->add(map->grid_lines);
-
-	// int vi = 0, ci = 0, ti = 0, i;
-	// // Verticals
-	// for (i = 0; i < grid_w; i++) {
-	// 	map->grid_lines->addQuad(
-	// 		i * tile_w - size / 2, 0, 0, 0,
-	// 		i * tile_w + size / 2, 0, 1, 0,
-	// 		i * tile_w + size / 2, mheight * tile_h, 1, 1,
-	// 		i * tile_w - size / 2, mheight * tile_h, 0, 1,
-	// 		r, g, b, a
-	// 	);
-	// }
-	// // Horizontals
-	// for (i = 0; i < grid_h; i++) {
-	// 	map->grid_lines->addQuad(
-	// 		0,		 i * tile_h - size / 2, 0, 0,
-	// 		0,		 i * tile_h + size / 2, 1, 0,
-	// 		mwidth * tile_w, i * tile_h + size / 2, 1, 1,
-	// 		mwidth * tile_w, i * tile_h - size / 2, 0, 1,
-	// 		r, g, b, a
-	// 	);
-	// }
+	map->enableGridLines(luaL_checknumber(L, 2));
 	return 0;
 }
 
@@ -405,6 +367,18 @@ static int map_set_vision_shader(lua_State *L) {
 	} else {
 		lua_pushliteral(L, "Map vision shader must exist");
 		lua_error(L);
+	}
+	return 0;
+}
+
+static int map_set_grid_lines_shader(lua_State *L) {
+	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	if (!lua_isnil(L, 2)) {
+		shader_type *s = (shader_type*)lua_touserdata(L, 2);
+		lua_pushvalue(L, 2);
+		map->setGridLinesShader(s, luaL_ref(L, LUA_REGISTRYINDEX));
+	} else {
+		map->setGridLinesShader(nullptr, LUA_NOREF);
 	}
 	return 0;
 }
@@ -826,6 +800,7 @@ static const struct luaL_Reg map_reg[] = {
 	{"cleanLite", map_clean_lite},
 	{"setDefaultShader", map_set_default_shader},
 	{"setVisionShader", map_set_vision_shader},
+	{"setGridLinesShader", map_set_grid_lines_shader},
 	{"setSeen", map_set_seen},
 	{"setRemember", map_set_remember},
 	{"setLite", map_set_lite},
@@ -833,6 +808,8 @@ static const struct luaL_Reg map_reg[] = {
 	{"getSeensInfo", map_get_seensinfo},
 	{"setScroll", map_set_scroll},
 	{"getScroll", map_get_scroll},
+	{"showVision", map_show_vision},
+	{"smoothVision", map_smooth_vision},
 	{"toScreen", lua_map_toscreen},
 	{"toScreenLineGrids", map_line_grids},
 	{"setupGridLines", map_define_grid_lines},

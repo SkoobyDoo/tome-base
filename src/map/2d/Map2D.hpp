@@ -199,6 +199,12 @@ private:
 	int8_t *seens_texture_data;
 	VBO seens_vbo;
 	int vision_shader_ref = LUA_NOREF;
+	bool show_vision = true;
+
+	// Grid lines
+	VBO grid_lines_vbo;
+	int grid_lines_shader_ref = LUA_NOREF;
+	float show_grid_lines = 2;
 
 	// Renderer
 	float keyframes = 0;
@@ -274,6 +280,13 @@ public:
 	/* Vision handling */
 	void setVisionShader(shader_type *s, int ref);
 	void updateVision();
+	void smoothVision(bool v);
+	void enableVision(bool v) { show_vision = v; };
+
+	/* Grid lines */
+	void setGridLinesShader(shader_type *s, int ref);
+	void setupGridLines();
+	void enableGridLines(float size);
 
 	/* Class superloads */
 	virtual void toScreen(mat4 cur_model, vec4 color);

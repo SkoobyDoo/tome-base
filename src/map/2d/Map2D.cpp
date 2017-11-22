@@ -119,7 +119,9 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 	if (!nb_keyframes) return {move_anim_dx, move_anim_dy};
 
 	move_step += nb_keyframes;
-	if (move_step >= move_max) move_max = 0; // Reset once in place
+	if (move_step >= move_max) {
+		move_max = move_anim_dx = move_anim_dy = 0; // Reset once in place
+	}
 
 	if (move_max) {
 		// Compute the distance to traverse from origin to self
@@ -314,7 +316,7 @@ void MapObjectRenderer::sortZ(RendererGL *container, mat4& cur_model) {
  *************************************************************************/
 Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight)
 	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight),
-	  renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h), seens_vbo(VBOMode::STATIC)
+	  renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h), seens_vbo(VBOMode::STATIC), grid_lines_vbo(VBOMode::STATIC)
 {
 	w_off = h;
 	z_off = w * h;
@@ -343,30 +345,26 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, seens_texture_size.x, seens_texture_size.y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 	seens_texture_data = new int8_t[seens_texture_size.x * seens_texture_size.y]; std:fill_n(seens_texture_data, seens_texture_size.x * seens_texture_size.y, 0);
 	seens_vbo.setTexture(seens_texture);
-	int32_t seenx = viewport_pos.x * tile_w + tile_w * 1, seeny = viewport_pos.y * tile_h + tile_h * 1;
-	int32_t seenw = viewport_size.x * tile_w, seenh = viewport_size.y * tile_h;
+	int32_t seenx = viewport_pos.x * tile_w, seeny = viewport_pos.y * tile_h;
+	int32_t seenw = viewport_dimension.x * tile_w, seenh = viewport_dimension.y * tile_h;
 	seens_vbo.addQuad(
-		seenx, seeny, 0, 0,
-		seenx+seenw, seeny, (float)viewport_dimension.x / (float)seens_texture_size.x, 0,
+		seenx,       seeny,       0, 0,
+		seenx+seenw, seeny,       (float)viewport_dimension.x / (float)seens_texture_size.x, 0,
 		seenx+seenw, seeny+seenh, (float)viewport_dimension.x / (float)seens_texture_size.x, (float)viewport_dimension.y / (float)seens_texture_size.y,
-		seenx, seeny+seenh, 0, (float)viewport_dimension.y / (float)seens_texture_size.y,
+		seenx,       seeny+seenh, 0, (float)viewport_dimension.y / (float)seens_texture_size.y,
 		1, 1, 1, 1
 	);
-	// seens_vbo.addQuad(
-	// 	seenx, seeny, 0, 0,
-	// 	seenx+seenw, seeny, 1, 0,
-	// 	seenx+seenw, seeny+seenh, 1, 1,
-	// 	seenx, seeny+seenh, 0, 1,
-	// 	1, 1, 1, 1
-	// );
 
 	// Init renderer
 	renderer.setRendererName(strdup("map-layer"), false);
 	renderer.setManualManagement(true);
 	// renderer.countDraws(true);
+
+	setupGridLines();
 }
 
 Map2D::~Map2D() {
@@ -386,6 +384,49 @@ Map2D::~Map2D() {
 	glDeleteTextures(1, &seens_texture);
 }
 
+void Map2D::smoothVision(bool v) {
+	tglBindTexture(GL_TEXTURE_2D, seens_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, v ? GL_LINEAR : GL_NEAREST);
+}
+
+void Map2D::enableGridLines(float size) {
+	show_grid_lines = size;
+	setupGridLines();
+}
+
+extern GLuint gl_tex_white;
+void Map2D::setupGridLines() {
+	grid_lines_vbo.clear();
+	if (!show_grid_lines) return;
+
+	float size = show_grid_lines;
+	int32_t grid_w = 1 + mwidth;
+	int32_t grid_h = 1 + mheight;
+	grid_lines_vbo.setTexture(gl_tex_white);
+
+	int vi = 0, ci = 0, ti = 0, i;
+	// Verticals
+	for (i = 0; i < grid_w; i++) {
+		grid_lines_vbo.addQuad(
+			i * tile_w - size / 2, 0, 0, 0,
+			i * tile_w + size / 2, 0, 1, 0,
+			i * tile_w + size / 2, mheight * tile_h, 1, 1,
+			i * tile_w - size / 2, mheight * tile_h, 0, 1,
+			1, 1, 1, 1
+		);
+	}
+	// Horizontals
+	for (i = 0; i < grid_h; i++) {
+		grid_lines_vbo.addQuad(
+			0,		 i * tile_h - size / 2, 0, 0,
+			0,		 i * tile_h + size / 2, 1, 0,
+			mwidth * tile_w, i * tile_h + size / 2, 1, 1,
+			mwidth * tile_w, i * tile_h - size / 2, 0, 1,
+			1, 1, 1, 1
+		);
+	}
+}
+
 void Map2D::setDefaultShader(shader_type *s, int ref) {
 	if (default_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, default_shader_ref);
 	default_shader = s;
@@ -396,6 +437,12 @@ void Map2D::setVisionShader(shader_type *s, int ref) {
 	if (vision_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, vision_shader_ref);
 	vision_shader_ref = ref;
 	seens_vbo.setShader(s);
+}
+
+void Map2D::setGridLinesShader(shader_type *s, int ref) {
+	if (grid_lines_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, grid_lines_shader_ref);
+	grid_lines_shader_ref = ref;
+	grid_lines_vbo.setShader(s);
 }
 
 void Map2D::scroll(int32_t x, int32_t y, float smooth) {
@@ -426,7 +473,9 @@ inline vec2 Map2D::computeScrollAnim(float nb_keyframes) {
 	if (!nb_keyframes) return {scroll_anim_dx, scroll_anim_dx};
 
 	scroll_anim_step += nb_keyframes;
-	if (scroll_anim_step >= scroll_anim_max) scroll_anim_max = 0; // Reset once in place
+	if (scroll_anim_step >= scroll_anim_max) {
+		scroll_anim_max = scroll_anim_dx = scroll_anim_dy = 0; // Reset once in place
+	}
 
 	if (scroll_anim_max) {
 		// Compute the distance to traverse from origin to self
@@ -597,7 +646,10 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	// Render the vision overlay
 	updateVision();
-	seens_vbo.toScreen(cur_model);
+	if (show_vision) seens_vbo.toScreen(cur_model);
+
+	// Render grid lines
+	if (show_grid_lines) grid_lines_vbo.toScreen(cur_model);
 
 	// We displayed, reset the frames counter
 	keyframes = 0;
