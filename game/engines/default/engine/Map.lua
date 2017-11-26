@@ -319,7 +319,9 @@ function _M:makeCMap()
 	weak[1] = self
 
 	for z = 0, self.zdepth - 1 do
-		self._map:zCallback(z, function(z, nb_keyframe, prevfbo)
+		self._map:zCallback(z, function(nb_keyframe, sx, sy)
+			local z = z
+			print("====CBZ ", z)
 			if weak[1] then
 				return weak[1]:zDisplay(z, nb_keyframe, prevfbo)
 			end

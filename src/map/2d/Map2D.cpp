@@ -149,7 +149,7 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 	return {move_anim_dx, move_anim_dy};
 }
 
-inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model) {
+inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float sx, float sy, vec4 color, mat4 *model) {
 	float dw = dm->size.x, dh = dm->size.y;
 	float x1, x2, y1, y2;
 
@@ -206,21 +206,18 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 		}
 	}
 
-	if (L && dm->cb)
-	{
-	/*
+	if (L && dm->cb) {
 		stopDisplayList(); // Needed to make sure we break texture chaining
-		auto dl = getDisplayList(map->renderer);
+		auto dl = getDisplayList(renderer);
 		stopDisplayList(); // Needed to make sure we break texture chaining
-		dm->cb->dx = dx - map->scroll_x;
-		dm->cb->dy = dy - map->scroll_y;
-		dm->cb->dw = tile_w * (dw) * (dm->scale);
-		dm->cb->dh = tile_h * (dh) * (dm->scale);
+		dm->cb->dx = dx + sx;
+		dm->cb->dy = dy + sy;
+		dm->cb->dw = tile_w * dw * dm->scale;
+		dm->cb->dh = tile_h * dh * dm->scale;
 		dm->cb->scale = dm->scale;
-		dm->cb->tldx = tldx - map->scroll_x;
-		dm->cb->tldy = tldy - map->scroll_y;
+		dm->cb->tldx = dx + sx;
+		dm->cb->tldy = dy + sy;
 		dl->sub = dm->cb;
-		*/
 	}
 	// DGDGDGDG: this needs to be done smartly, no actual CB here, but creation of a callback put into the DisplayList
 	/*
@@ -296,7 +293,7 @@ void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur
 	mat4 vmodel = cur_model * model;
 	vec4 vcolor = cur_color * color;
 	for (auto &it : mos) {		
-		processMapObject(container, get<0>(it), 0, 0, vcolor, &vmodel);
+		processMapObject(container, get<0>(it), 0, 0, 0, 0, vcolor, &vmodel);
 	}
 }
 
@@ -333,6 +330,7 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	map_remembers = new bool[w * h]; std::fill_n(map_remembers, w * h, false);
 	map_lites = new bool[w * h]; std::fill_n(map_lites, w * h, false);
 	map_important = new bool[w * h]; std::fill_n(map_important, w * h, false);
+	zobjects = new DisplayObject*[z]; std::fill_n(zobjects, z, nullptr);
 
 	// Reserve some sorting space
 	sorting_mos.reserve(8092);
@@ -378,6 +376,7 @@ Map2D::~Map2D() {
 	delete[] map_remembers;
 	delete[] map_lites;
 	delete[] map_important;
+	delete[] zobjects;
 	for (auto mos : sorting_mos) delete mos;
 
 	delete[] seens_texture_data;
@@ -443,6 +442,18 @@ void Map2D::setGridLinesShader(shader_type *s, int ref) {
 	if (grid_lines_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, grid_lines_shader_ref);
 	grid_lines_shader_ref = ref;
 	grid_lines_vbo.setShader(s);
+}
+
+void Map2D::setZCallback(int32_t z, int ref) {
+	if (!checkBounds(z, 0, 0)) return;
+	if (zobjects[z]) {
+		printf("[Map2D] Error, setting zCallback (%d) over existing DO/CB\n", z);
+		return;
+	}
+
+	DORCallbackMapZ *cb = new DORCallbackMapZ();
+	cb->setCallback(ref);
+	zobjects[z] = cb;
 }
 
 void Map2D::scroll(int32_t x, int32_t y, float smooth) {
@@ -613,7 +624,6 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	uint32_t start_sort = 0;
 	initSorter();
 	for (int32_t z = 0; z < zdepth; z++) {
-		// DGDGDGDG add z-callbacks as DORCallbacks
 		if (z == zdepth_sort_start) { start_sort = sorting_mos_next; }
 		for (int32_t j = minj; j < maxj; j++) {
 			for (int32_t i = mini; i < maxi; i++) {
@@ -634,7 +644,13 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
 		MapObjectSort *so = sorting_mos[spos];
-		processMapObject(&renderer, so->m, so->dx, so->dy, so->color, nullptr);
+		processMapObject(&renderer, so->m, so->dx, so->dy, sx, sy, so->color, nullptr);
+	}
+	
+	mat4 zmodel = mat4();
+	vec4 zcolor = vec4(1, 1, 1, 1);
+	for (int32_t z = 0; z < zdepth; z++) {
+		if (zobjects[z]) zobjects[z]->render(&renderer, zmodel, zcolor, true);
 	}
 
 	// Compute the smooth scrolling matrix offset

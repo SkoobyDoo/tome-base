@@ -319,14 +319,11 @@ static int map_define_grid_lines(lua_State *L) {
 
 static int map_set_z_callback(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// int z = luaL_checknumber(L, 2);
-
-	// if (map->z_callbacks[z] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map->z_callbacks[z]);
-
-	// if (lua_isfunction(L, 3)) {
-	// 	lua_pushvalue(L, 3);
-	// 	map->z_callbacks[z] = luaL_ref(L, LUA_REGISTRYINDEX);
-	// }
+	int32_t z = luaL_checknumber(L, 2);
+	if (lua_isfunction(L, 3)) {
+		lua_pushvalue(L, 3);
+		map->setZCallback(z, luaL_ref(L, LUA_REGISTRYINDEX));
+	}
 	return 0;
 }
 
@@ -506,189 +503,6 @@ static int map_get_seensinfo(lua_State *L) {
 	return 4;
 }
 
-// static void map_update_seen_texture(map_type *map)
-// {
-	// tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
-	// gl_c_texture = -1;
-
-	// int mx = map->used_mx;
-	// int my = map->used_my;
-	// GLubyte *seens = map->seens_map;
-	// int ptr = 0;
-	// int f = (map->is_hex & 1);
-	// int ii, jj;
-	// map->seensinfo_w = map->w+10;
-	// map->seensinfo_h = map->h+10;
-
-	// for (jj = 0; jj < map->h+10; jj++)
-	// {
-	// 	for (ii = 0; ii < map->w+10; ii++)
-	// 	{
-	// 		int i = ii, j = jj;
-	// 		int ri = i-5, rj = j-5;
-	// 		ptr = (((1+f)*j + (ri & f)) * map->seens_map_w + (1+f)*i) * 4;
-	// 		ri = (ri < 0) ? 0 : (ri >= map->w) ? map->w-1 : ri;
-	// 		rj = (rj < 0) ? 0 : (rj >= map->h) ? map->h-1 : rj;
-	// 		if ((i < 0) || (j < 0) || (i >= map->w+10) || (j >= map->h+10))
-	// 		{
-	// 			seens[ptr] = 0;
-	// 			seens[ptr+1] = 0;
-	// 			seens[ptr+2] = 0;
-	// 			seens[ptr+3] = 255;
-	// 			if (f) {
-	// 				ptr += 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255;
-	// 				ptr += 4 * map->seens_map_w - 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255;
-	// 				ptr += 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255;
-	// 			}
-	// 			//ptr += 4;
-	// 			continue;
-	// 		}
-	// 		float v = map->grids_seens[rj*map->w+ri] * 255;
-	// 		if (v)
-	// 		{
-	// 			if (v > 255) v = 255;
-	// 			if (v < 0) v = 0;
-	// 			seens[ptr] = (GLubyte)0;
-	// 			seens[ptr+1] = (GLubyte)0;
-	// 			seens[ptr+2] = (GLubyte)0;
-	// 			seens[ptr+3] = (GLubyte)255-v;
-	// 			if (f) {
-	// 				ptr += 4;
-	// 				seens[ptr] = (GLubyte)0;
-	// 				seens[ptr+1] = (GLubyte)0;
-	// 				seens[ptr+2] = (GLubyte)0;
-	// 				seens[ptr+3] = (GLubyte)255-v;
-	// 				ptr += 4 * map->seens_map_w - 4;
-	// 				seens[ptr] = (GLubyte)0;
-	// 				seens[ptr+1] = (GLubyte)0;
-	// 				seens[ptr+2] = (GLubyte)0;
-	// 				seens[ptr+3] = (GLubyte)255-v;
-	// 				ptr += 4;
-	// 				seens[ptr] = (GLubyte)0;
-	// 				seens[ptr+1] = (GLubyte)0;
-	// 				seens[ptr+2] = (GLubyte)0;
-	// 				seens[ptr+3] = (GLubyte)255-v;
-	// 			}
-	// 		}
-	// 		else if (map->grids_remembers[ri][rj])
-	// 		{
-	// 			seens[ptr] = 0;
-	// 			seens[ptr+1] = 0;
-	// 			seens[ptr+2] = 0;
-	// 			seens[ptr+3] = 255 - map->obscure_a * 255;
-	// 			if (f) {
-	// 				ptr += 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255 - map->obscure_a * 255;
-	// 				ptr += 4 * map->seens_map_w - 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255 - map->obscure_a * 255;
-	// 				ptr += 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255 - map->obscure_a * 255;
-	// 			}
-	// 		}
-	// 		else
-	// 		{
-	// 			seens[ptr] = 0;
-	// 			seens[ptr+1] = 0;
-	// 			seens[ptr+2] = 0;
-	// 			seens[ptr+3] = 255;
-	// 			if (f) {
-	// 				ptr += 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255;
-	// 				ptr += 4 * map->seens_map_w - 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255;
-	// 				ptr += 4;
-	// 				seens[ptr] = 0;
-	// 				seens[ptr+1] = 0;
-	// 				seens[ptr+2] = 0;
-	// 				seens[ptr+3] = 255;
-	// 			}
-	// 		}
-	// 		//ptr += 4;
-	// 	}
-	// 	// Skip the rest of the texture, silly GPUs not supporting NPOT textures!
-	// 	//ptr += (map->seens_map_w - map->w) * 4;
-	// }
-	// glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, map->seens_map_w, map->seens_map_h, GL_BGRA, GL_UNSIGNED_BYTE, seens);
-
-	// if (!map->seens_vbo) {
-	// 	map->seens_vbo = new VBO(VBOMode::STATIC);
-		
-	// 	map->seens_vbo->setTexture(map->seens_texture);
-
-	// 	int w = (map->seens_map_w) * map->tile_w;
-	// 	int h = (map->seens_map_h) * map->tile_h;
-	// 	int f = 1 + (map->is_hex & 1);
-	// 	map->seens_vbo->addQuad(
-	// 		0, 0, 0, 0,
-	// 		w, 0, f, 0,
-	// 		w, h, f, f,
-	// 		0, h, 0, f,
-	// 		1, 1, 1, 1
-	// 	);
-	// }
-// }
-
-static int map_update_seen_texture_lua(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// map_update_seen_texture(map);
-	return 0;
-}
-
-static int map_draw_seen_texture(lua_State *L) {
-	// Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// if (!map->seens_vbo) return 0;
-	// int x = lua_tonumber(L, 2);
-	// int y = lua_tonumber(L, 3);
-	// int mx = map->mx;
-	// int my = map->my;
-	// x += -map->tile_w * 5;
-	// y += -map->tile_h * 5;
-	// x -= map->tile_w * (map->used_animdx + map->oldmx);
-	// y -= map->tile_h * (map->used_animdy + map->oldmy);
-
-	// map->seens_vbo->toScreen(x, y, 0, 1, 1);
-	return 0;
-}
-
-static int map_bind_seen_texture(lua_State *L) {
-	// Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// int unit = luaL_checknumber(L, 2);
-	// if (unit > 0 && !multitexture_active) return 0;
-
-	// if (unit > 0) tglActiveTexture(GL_TEXTURE0+unit);
-	// tglBindTexture(GL_TEXTURE_2D, map->seens_texture);
-	// if (unit > 0) tglActiveTexture(GL_TEXTURE0);
-
-	return 0;
-}
-
 static int map_set_scroll(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
 	int x = luaL_checknumber(L, 2);
@@ -714,20 +528,6 @@ static int lua_map_toscreen(lua_State *L) {
 
 	map->toScreen(model, {1, 1, 1, 1});
 	return 0;
-}
-
-static int map_line_grids(lua_State *L) {
-	// Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	// if (!map->grid_lines_renderer) return 0;
-
-	// int x = luaL_checknumber(L, 2);
-	// int y = luaL_checknumber(L, 3);
-
-	// glTranslatef(x - map->used_animdx * map->tile_w, y - map->used_animdy * map->tile_h, 0);
-	// mat4 model = mat4();
-	// model = glm::translate(model, vec3(x, y, 0));
-	// map->grid_lines_renderer->toScreen(model, {1, 1, 1, 1});
-	return 0;	
 }
 
 static int map_get_display_object_mm(lua_State *L) {
@@ -785,9 +585,6 @@ static const struct luaL_Reg maplib[] = {
 static const struct luaL_Reg map_reg[] = {
 	{"__gc", map_free},
 	{"close", map_free},
-	{"updateSeensTexture", map_update_seen_texture_lua},
-	{"bindSeensTexture", map_bind_seen_texture},
-	{"drawSeensTexture", map_draw_seen_texture},
 	{"setSortStart", map_set_sort_start},
 	{"setZoom", map_set_zoom},
 	{"setTint", map_set_tint},

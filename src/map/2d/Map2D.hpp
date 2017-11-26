@@ -55,6 +55,27 @@ public:
 		}
 	};
 };
+class DORCallbackMapZ : public DORCallback {
+public:
+	float sx, sy, z, keyframes;
+
+	DO_STANDARD_CLONE_METHOD(DORCallbackMapZ);
+	virtual const char* getKind() { return "DORCallbackMapZ"; };
+	virtual void toScreen(mat4 cur_model, vec4 color) {
+		if (cb_ref == LUA_NOREF) return;
+		lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
+		lua_checkstack(L, 4);
+		lua_pushnumber(L, z);
+		lua_pushnumber(L, keyframes);
+		lua_pushnumber(L, sx);
+		lua_pushnumber(L, sy);
+		if (lua_pcall(L, 4, 1, 0))
+		{
+			printf("DORCallbackMapZ callback error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+	};
+};
 /****************************************************************************/
 
 class Map2D;
@@ -143,7 +164,7 @@ private:
 	int32_t tile_w, tile_h;
 public:
 	MapObjectProcessor(int32_t tile_w, int32_t tile_h) : tile_w(tile_w), tile_h(tile_h) {}
-	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model = nullptr);
+	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float sx, float sy, vec4 color, mat4 *model = nullptr);
 };
 
 /****************************************************************************
@@ -151,7 +172,7 @@ public:
  ****************************************************************************/
 
 struct MapObjectSort {
-	MapObject *m;
+	MapObject *m = nullptr;
 	float dx, dy, dw, dh;
 	float dy_sort;
 	vec4 color;
@@ -188,6 +209,9 @@ private:
 	// Shaders
 	int default_shader_ref = LUA_NOREF;
 	shader_type *default_shader = nullptr;
+
+	// Z-layers
+	DisplayObject **zobjects;
 
 	// Visibility
 	vec4 obscure = {0.6,0.6,0.6,1}, shown = {1,1,1,1}, tint = {1,1,1,1};
@@ -258,6 +282,9 @@ public:
 	/* Scrolling */
 	void scroll(int32_t x, int32_t y, float smooth);
 	vec2 getScroll();
+
+	/* Z-layers */
+	void setZCallback(int32_t z, int ref);
 
 	/* MO sorter */
 	void setZSortStart(uint8_t v) { zdepth_sort_start = v; }
