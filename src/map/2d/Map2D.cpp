@@ -573,7 +573,8 @@ static bool sort_mos(MapObjectSort *i, MapObjectSort *j) {
 }
 
 void Map2D::updateVision() {
-	int32_t msx = mx + scroll_anim_dx, msy = my + scroll_anim_dy;
+	int32_t msx = mx, msy = my;
+	// int32_t msx = mx + scroll_anim_dx, msy = my + scroll_anim_dy;
 	int32_t mini = msx + viewport_pos.x, maxi = msx + viewport_size.x;
 	int32_t minj = msy + viewport_pos.y, maxj = msy + viewport_size.y;
 
