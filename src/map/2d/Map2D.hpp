@@ -80,6 +80,7 @@ public:
 /****************************************************************************/
 
 class Map2D;
+class Minimap2D;
 class MapObjectRenderer;
 class MapObjectProcessor;
 
@@ -90,6 +91,7 @@ using ParticlesVector = vector<tuple<DORParticles*,int>>;
  ****************************************************************************/
 class MapObject {
 	friend Map2D;
+	friend Minimap2D;
 	friend MapObjectProcessor;
 	friend MapObjectRenderer;
 protected:
@@ -190,6 +192,7 @@ struct MapObjectSort {
 };
 
 class Map2D : public SubRenderer, public IRealtime, public MapObjectProcessor {
+	friend Minimap2D;
 private:
 	// Map data
 	int32_t tile_w, tile_h;
@@ -245,6 +248,11 @@ private:
 	float keyframes = 0;
 	RendererGL renderer;
 
+	// Minimap listing
+	bool minimap_changed = true;
+	unordered_set<Minimap2D*> minimap_dos;
+
+
 public:
 	Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight);
 	virtual ~Map2D();
@@ -268,15 +276,16 @@ public:
 		map[off] = mo;
 		map_ref[off] = ref;
 		if (mo) { mo->grid_x = x; mo->grid_y = y; }
+		minimap_changed = true;
 		return old;
 	}
-	inline void setSeen(int32_t x, int32_t y, float v) { map_seens[x * w_off + y] = v; }
-	inline void setRemember(int32_t x, int32_t y, bool v) { map_remembers[x * w_off + y] = v; }
-	inline void setLite(int32_t x, int32_t y, bool v) { map_lites[x * w_off + y] = v; }
+	inline void setSeen(int32_t x, int32_t y, float v) { map_seens[x * w_off + y] = v; minimap_changed = true; }
+	inline void setRemember(int32_t x, int32_t y, bool v) { map_remembers[x * w_off + y] = v; minimap_changed = true; }
+	inline void setLite(int32_t x, int32_t y, bool v) { map_lites[x * w_off + y] = v; minimap_changed = true; }
 	inline void setImportant(int32_t x, int32_t y, bool v) { map_important[x * w_off + y] = v; }
-	inline void cleanSeen(float v) { std::fill_n(map_seens, w * h, v); }
-	inline void cleanRemember(bool v) { std::fill_n(map_remembers, w * h, v); }
-	inline void cleanLite(bool v) { std::fill_n(map_lites, w * h, v); }
+	inline void cleanSeen(float v) { std::fill_n(map_seens, w * h, v); minimap_changed = true;}
+	inline void cleanRemember(bool v) { std::fill_n(map_remembers, w * h, v); minimap_changed = true;}
+	inline void cleanLite(bool v) { std::fill_n(map_lites, w * h, v); minimap_changed = true;}
 	inline void cleanImportant(bool v) { std::fill_n(map_important, w * h, v); }
 	inline float isSeen(int32_t x, int32_t y) { return map_seens[x * w_off + y]; }
 	inline bool isRemember(int32_t x, int32_t y) { return map_remembers[x * w_off + y]; }
@@ -325,6 +334,10 @@ public:
 	void setGridLinesShader(shader_type *s, int ref);
 	void setupGridLines();
 	void enableGridLines(float size);
+
+	/* Minimap */
+	void addMinimap(Minimap2D *mm);
+	void removeMinimap(Minimap2D *mm);
 
 	/* Class superloads */
 	virtual void toScreen(mat4 cur_model, vec4 color);

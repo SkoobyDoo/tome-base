@@ -58,6 +58,7 @@ struct s_particles_type {
 	const char *name_def;
 	const char *args;
 	float zoom;
+	bool can_shift;
 
 	// R/W only by thread
 	particle_type *particles;

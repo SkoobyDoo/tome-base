@@ -201,6 +201,7 @@ static int particles_new(lua_State *L)
 	if (lua_isuserdata(L, 6)) s = lua_get_shader(L, 6);
 	bool fboalter = lua_toboolean(L, 7);
 	bool allow_bloom = lua_toboolean(L, 8);
+	bool can_shift = lua_toboolean(L, 9);
 
 	particles_type *ps = (particles_type*)lua_newuserdata(L, sizeof(particles_type));
 	auxiliar_setclass(L, "core{particles}", -1);
@@ -213,6 +214,7 @@ static int particles_new(lua_State *L)
 	ps->alive = TRUE;
 	ps->i_want_to_die = FALSE;
 	ps->l = NULL;
+	ps->can_shift = can_shift;
 	ps->vertices = NULL;
 	ps->particles = NULL;
 	ps->init = FALSE;
@@ -263,6 +265,8 @@ static int particles_send_value(lua_State *L)
 }
 
 void particles_shift(particles_type *ps, float sx, float sy, bool set) {
+	if (!ps->can_shift) return;
+
 	SDL_mutexP(ps->lock);
 	// DGDGDGDG: replace locking with a lockfree order queue
 

@@ -570,11 +570,16 @@ static int gl_minimap2d_free(lua_State *L) {
 }
 static int gl_minimap2d_setmap(lua_State *L) {
 	Minimap2D *mor = *(Minimap2D**)auxiliar_checkclass(L, "gl{minimap2d}", 1);
-	return 0;
+	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 2);
+	mor->setMap(map);
+	lua_pushvalue(L, 1);
+	return 1;
 }
 static int gl_minimap2d_setinfo(lua_State *L) {
 	Minimap2D *mor = *(Minimap2D**)auxiliar_checkclass(L, "gl{minimap2d}", 1);
-	return 0;
+	mor->setMinimapInfo(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6));
+	lua_pushvalue(L, 1);
+	return 1;
 }
 
 

@@ -114,7 +114,7 @@ function _M:loaded()
 	end
 
 	if islast and allow_bloom then error("Particle defined with both bloom and alterscreen") end
-	self.ps = core.particles.newEmitter("/data/gfx/particles/"..self.def..".lua", args, self.zoom, config.settings.particles_density or 100, gl, sha, islast, allow_bloom)
+	self.ps = core.particles.newEmitter("/data/gfx/particles/"..self.def..".lua", args, self.zoom, config.settings.particles_density or 100, gl, sha, islast, allow_bloom, self.can_shift)
 	self.gl_texture = gl
 
 	if sub_particle then

@@ -34,6 +34,7 @@ extern "C" {
 }
 
 #include "map/2d/Map2D.hpp"
+#include "map/2d/Minimap2D.hpp"
 #include <algorithm>
 
 
@@ -417,8 +418,17 @@ Map2D::~Map2D() {
 	delete[] zobjects;
 	for (auto mos : sorting_mos) delete mos;
 
+	for (auto &it : minimap_dos) it->mapDeath(this);
+
 	delete[] seens_texture_data;
 	glDeleteTextures(1, &seens_texture);
+}
+
+void Map2D::addMinimap(Minimap2D *mm) {
+	minimap_dos.insert(mm);
+}
+void Map2D::removeMinimap(Minimap2D *mm) {
+	minimap_dos.erase(mm);
 }
 
 void Map2D::smoothVision(bool v) {
@@ -705,6 +715,12 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	// Render grid lines
 	if (show_grid_lines) grid_lines_vbo.toScreen(cur_model);
+
+	// Update minimaps
+	if (minimap_changed) {
+		minimap_changed = false;
+		for (auto &it : minimap_dos) it->redrawMiniMap();
+	}
 
 	// We displayed, reset the frames counter
 	keyframes = 0;
