@@ -906,8 +906,8 @@ function _M:defineDisplayCallback()
 	-- this way when self dies the weak reference dies and does not prevent GC'ing
 	local weak = setmetatable({[1]=self}, {__mode="v"})
 
-	local backps = self:getParticlesList(true)
-	local ps = self:getParticlesList()
+	-- local backps = self:getParticlesList(true)
+	-- local ps = self:getParticlesList()
 
 	if not self._tactical then
 		if game.always_target and game.always_target ~= "old" then
@@ -921,60 +921,69 @@ function _M:defineDisplayCallback()
 		end
 	end
 
-	local function particles(x, y, w, h, zoom, on_map)
-		local self = weak[1]
-		if not self or not self._mo then return end
-
-		self._tactical:toScreenFront(x, y, w, h)
-
-		local e
-		local dy = 0
-		if h > w then dy = (h - w) / 2 end
-		for i = 1, #ps do
-			e = ps[i]
-			e:checkDisplay()
-			if e.ps:isAlive() then
-				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
-				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
-			else self:removeParticles(e)
-			end
-		end
-	end
-
-	local function backparticles(x, y, w, h, zoom, on_map)
-		local self = weak[1]
-		if not self then return end
-
-		local e
-		local dy = 0
-		if h > w then dy = (h - w) / 2 end
-		for i = 1, #backps do
-			e = backps[i]
-			e:checkDisplay()
-			if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
-			else self:removeParticles(e)
-			end
-		end
-
-		self._tactical:toScreenBack(x, y, w, h)
-	end
-
 	if self._mo == self._last_mo or not self._last_mo then
-		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			backparticles(x, y, w, h, zoom, on_map)
-			particles(x, y, w, h, zoom, on_map)
-			return true
-		end)
+		local DO = core.renderer.container():add(self._tactical.DO_back:removeFromParent()):add(self._tactical.DO_front:removeFromParent()):add(self._tactical.DO:removeFromParent())
+		-- self._mo:displayObject(DO)
 	else
-		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			backparticles(x, y, w, h, zoom, on_map)
-			return true
-		end)
-		self._last_mo:displayCallback(function(x, y, w, h, zoom, on_map)
-			particles(x, y, w, h, zoom, on_map)
-			return true
-		end)
+		self._mo:displayObject(self._tactical.DO_back, false)
+		local DO = core.renderer.container():add(self._tactical.DO_front:removeFromParent()):add(self._tactical.DO:removeFromParent())
+		self._last_mo:displayObject(DO, true)
 	end
+
+	-- local function particles(x, y, w, h, zoom, on_map)
+	-- 	local self = weak[1]
+	-- 	if not self or not self._mo then return end
+
+	-- 	self._tactical:toScreenFront(x, y, w, h)
+
+	-- 	local e
+	-- 	local dy = 0
+	-- 	if h > w then dy = (h - w) / 2 end
+	-- 	for i = 1, #ps do
+	-- 		e = ps[i]
+	-- 		e:checkDisplay()
+	-- 		if e.ps:isAlive() then
+	-- 			if game.level and game.level.map then e:shift(game.level.map, self._mo) end
+	-- 			e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
+	-- 		else self:removeParticles(e)
+	-- 		end
+	-- 	end
+	-- end
+
+	-- local function backparticles(x, y, w, h, zoom, on_map)
+	-- 	local self = weak[1]
+	-- 	if not self then return end
+
+	-- 	local e
+	-- 	local dy = 0
+	-- 	if h > w then dy = (h - w) / 2 end
+	-- 	for i = 1, #backps do
+	-- 		e = backps[i]
+	-- 		e:checkDisplay()
+	-- 		if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
+	-- 		else self:removeParticles(e)
+	-- 		end
+	-- 	end
+
+	-- 	self._tactical:toScreenBack(x, y, w, h)
+	-- end
+
+	-- if self._mo == self._last_mo or not self._last_mo then
+	-- 	self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
+	-- 		backparticles(x, y, w, h, zoom, on_map)
+	-- 		particles(x, y, w, h, zoom, on_map)
+	-- 		return true
+	-- 	end)
+	-- else
+	-- 	self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
+	-- 		backparticles(x, y, w, h, zoom, on_map)
+	-- 		return true
+	-- 	end)
+	-- 	self._last_mo:displayCallback(function(x, y, w, h, zoom, on_map)
+	-- 		particles(x, y, w, h, zoom, on_map)
+	-- 		return true
+	-- 	end)
+	-- end
 end
 
 function _M:move(x, y, force)

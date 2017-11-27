@@ -54,6 +54,7 @@ function _M:init()
 	self.DO:add(self.DO_rank_back)
 	self.DO_front:add(self.DO_rank_front)
 	self.DO_front:add(self.DO_chat)
+	self:toScreenBack(0, 0, 64, 64)
 end
 
 function _M:toScreenBack(x, y, w, h)

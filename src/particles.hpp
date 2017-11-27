@@ -146,5 +146,6 @@ struct s_particle_thread {
 typedef struct s_particle_thread particle_thread;
 
 extern void particles_to_screen(particles_type *ps, mat4 model);
+extern void particles_shift(particles_type *ps, float sx, float sy, bool set);
 
 #endif

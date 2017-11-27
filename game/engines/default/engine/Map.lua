@@ -310,21 +310,12 @@ function _M:makeCMap()
 		self._fovcache.path_caches[ps] = core.fov.newCache(self.w, self.h)
 	end
 
-	-- Cunning trick here!
-	-- the callback we give to _map:zCallback is a function that references self
-	-- but self contains _map so it would create a cyclic reference and prevent GC'ing
-	-- thus we store a reference to a weak table and put self into it
-	-- this way when self dies the weak reference dies and does not prevent GC'ing
-	local weak = setmetatable({}, {__mode="v"})
-	weak[1] = self
-
+	local wself = self:weakSelf()
 	for z = 0, self.zdepth - 1 do
 		self._map:zCallback(z, function(nb_keyframe, sx, sy)
 			local z = z
-			print("====CBZ ", z)
-			if weak[1] then
-				return weak[1]:zDisplay(z, nb_keyframe, prevfbo)
-			end
+			if not wself.__getstrong then return end
+			return wself.__getstrong:zDisplay(z, nb_keyframe, prevfbo)
 		end)
 	end
 end
@@ -1444,9 +1435,7 @@ end
 
 --- Display the particle emitters, called by self:display()
 function _M:displayParticles(z, nb_keyframes)
-	print("----particles on layer z")
 	if not next(self.z_particles[z]) then return false end
-	print(" => OK!")
 	nb_keyframes = nb_keyframes or 1
 	local adx, ady
 	local alive

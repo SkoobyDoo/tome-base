@@ -21,8 +21,9 @@
 #ifndef _MAP2D_HPP_
 #define _MAP2D_HPP_
 
-#include <renderer-moderngl/Renderer.hpp>
-#include <renderer-moderngl/VBO.hpp>
+#include "renderer-moderngl/Renderer.hpp"
+#include "renderer-moderngl/VBO.hpp"
+#include "renderer-moderngl/Particles.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -114,9 +115,9 @@ protected:
 
 	float scale = 1;
 	vec2 pos = {0, 0}, size = {1, 1};
-	vec2 computed_screen_pos;
 
 	float grid_x = 0, grid_y = 0; // Current position on the map (stored as float to avoid later convertion)
+	float last_x = 0, last_y = 0;
 
 	float move_step = 0, move_max = 0, move_blur = 0;
 	float move_twitch = 0;
@@ -124,8 +125,11 @@ protected:
 	float move_start_x, move_start_y;
 	float move_anim_dx = 0, move_anim_dy = 0;
 
-	DisplayObject *displayobject = nullptr;
-	int do_ref = LUA_NOREF;
+	DisplayObject *bdisplayobject = nullptr;
+	DisplayObject *fdisplayobject = nullptr;
+	int bdo_ref = LUA_NOREF;
+	int fdo_ref = LUA_NOREF;
+	vector<tuple<DORParticles*,int>> particles;
 
 	DORCallbackMap *cb = nullptr;
 
@@ -142,7 +146,10 @@ public:
 	void setHidden(bool v) { hide = v; }
 	void setSeen(bool v) { on_seen = v; }
 	bool setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords);
-	void setDisplayObject(DisplayObject *d, int ref);
+	void setDisplayObject(DisplayObject *d, int ref, bool front);
+	void addParticles(DORParticles *p, int ref);
+	void removeParticles(DORParticles *p);
+	void clearParticles();
 	void setShader(shader_type *s, int ref);
 	void flipX(bool v) { flip_x = v; if (next) return next->flipX(v); }
 	void flipY(bool v) { flip_y = v; if (next) return next->flipY(v); }
@@ -162,8 +169,9 @@ public:
 class MapObjectProcessor {
 private:
 	int32_t tile_w, tile_h;
+	bool allow_cb, allow_do, allow_particles;
 public:
-	MapObjectProcessor(int32_t tile_w, int32_t tile_h) : tile_w(tile_w), tile_h(tile_h) {}
+	MapObjectProcessor(int32_t tile_w, int32_t tile_h, bool allow_cb, bool allow_do, bool allow_particles) : tile_w(tile_w), tile_h(tile_h), allow_cb(allow_cb), allow_do(allow_do), allow_particles(allow_particles) {}
 	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float sx, float sy, vec4 color, mat4 *model = nullptr);
 };
 

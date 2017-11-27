@@ -262,35 +262,54 @@ static int particles_send_value(lua_State *L)
 	return 0;
 }
 
-static void do_shift(particles_type *ps, float sx, float sy, bool set) {
+void particles_shift(particles_type *ps, float sx, float sy, bool set) {
 	SDL_mutexP(ps->lock);
+	// DGDGDGDG: replace locking with a lockfree order queue
 
 	if (set) {
 		ps->shift_x = sx;
 		ps->shift_y = sy;
 	} else {
-		ps->shift_x += sx;
-		ps->shift_y += sy;
+		// ps->shift_x += sx;
+		// ps->shift_y += sy;
+		sx /= ps->zoom;
+		sy /= ps->zoom;
+		if (ps->alive) {
+			int w;
+			for (w = 0; w < ps->nb; w++) {
+				particle_type *p = &ps->particles[w];
+				if (!p) break;
+
+				if (p->life > 0) {
+					p->x += sx;
+					p->ox += sx;
+					p->y += sy;
+					p->oy += sy;
+				}
+			}
+
+			ps->recompile = TRUE;
+		}
 	}
 
 	SDL_mutexV(ps->lock);
 
-	if (ps->sub) do_shift(ps->sub, sx, sy, set);
+	if (ps->sub) particles_shift(ps->sub, sx, sy, set);
 }
 
 // Runs into main thread
-static int particles_shift(lua_State *L)
+static int lua_particles_shift(lua_State *L)
 {
 	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
 	if (lua_toboolean(L, 4)) {
 		float sx = lua_tonumber(L, 2);
 		float sy = lua_tonumber(L, 3);
-		do_shift(ps, sx, sy, true);
+		particles_shift(ps, sx, sy, true);
 	} else {
 		float sx = lua_tonumber(L, 2);
 		float sy = lua_tonumber(L, 3);
 		if (!sx && !sy) return 0;
-		do_shift(ps, sx, sy, false);
+		particles_shift(ps, sx, sy, false);
 	}
 	return 0;
 }
@@ -895,7 +914,7 @@ static const struct luaL_Reg particles_reg[] =
 	{"toScreen", lua_particles_to_screen},
 	{"isAlive", particles_is_alive},
 	{"setSub", particles_set_sub},
-	{"shift", particles_shift},
+	{"shift", lua_particles_shift},
 	{"die", particles_die},
 	{"trigger", particles_trigger_cb},
 	{"send", particles_send_value},

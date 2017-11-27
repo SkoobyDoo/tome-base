@@ -121,9 +121,10 @@ static int map_object_set_do(lua_State *L) {
 	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
 	if (!lua_isnil(L, 2)) {
 		DisplayObject *v = userdata_to_DO(__FUNCTION__, L, 2);
-		obj->setDisplayObject(v, luaL_ref(L, LUA_REGISTRYINDEX));
+		lua_pushvalue(L, 2);
+		obj->setDisplayObject(v, luaL_ref(L, LUA_REGISTRYINDEX), lua_toboolean(L, 3));
 	} else {
-		obj->setDisplayObject(nullptr, LUA_NOREF);
+		obj->setDisplayObject(nullptr, LUA_NOREF, lua_toboolean(L, 3));
 	}
 	return 0;
 }
@@ -137,6 +138,25 @@ static int map_object_shader(lua_State *L) {
 	} else {
 		obj->setShader(nullptr, LUA_NOREF);
 	}
+	return 0;
+}
+
+static int map_object_add_particles(lua_State *L) {
+	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 2, "gl{particles}");
+	lua_pushvalue(L, 2);
+	obj->addParticles(v, luaL_ref(L, LUA_REGISTRYINDEX));
+	return 0;
+}
+static int map_object_remove_particles(lua_State *L) {
+	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 2, "gl{particles}");
+	obj->removeParticles(v);
+	return 0;
+}
+static int map_object_clear_particles(lua_State *L) {
+	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	obj->clearParticles();
 	return 0;
 }
 
@@ -489,20 +509,6 @@ static int map_clean_lite(lua_State *L) {
 	return 0;
 }
 
-static int map_get_seensinfo(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	vec2 tile = map->getTileSize();
-	// lua_pushnumber(L, map->tile_w);
-	// lua_pushnumber(L, map->tile_h);
-	// lua_pushnumber(L, map->seensinfo_w);
-	// lua_pushnumber(L, map->seensinfo_h);
-	lua_pushnumber(L, tile.x);
-	lua_pushnumber(L, tile.y);
-	lua_pushnumber(L, 0);
-	lua_pushnumber(L, 0);
-	return 4;
-}
-
 static int map_set_scroll(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
 	int x = luaL_checknumber(L, 2);
@@ -602,13 +608,11 @@ static const struct luaL_Reg map_reg[] = {
 	{"setRemember", map_set_remember},
 	{"setLite", map_set_lite},
 	{"setImportant", map_set_important},
-	{"getSeensInfo", map_get_seensinfo},
 	{"setScroll", map_set_scroll},
 	{"getScroll", map_get_scroll},
 	{"showVision", map_show_vision},
 	{"smoothVision", map_smooth_vision},
 	{"toScreen", lua_map_toscreen},
-	{"toScreenLineGrids", map_line_grids},
 	{"setupGridLines", map_define_grid_lines},
 	{"getMinimapDO", map_get_display_object_mm},
 	INJECT_GENERIC_DO_METHODS
@@ -623,6 +627,9 @@ static const struct luaL_Reg map_object_reg[] = {
 	{"chain", map_object_chain},
 	{"tint", map_object_tint},
 	{"shader", map_object_shader},
+	{"addParticles", map_object_add_particles},
+	{"removeParticles", map_object_remove_particles},
+	{"clearParticles", map_object_clear_particles},
 	{"print", map_object_print},
 	{"invalidate", map_object_invalid},
 	{"isValid", map_object_is_valid},

@@ -551,6 +551,34 @@ static int lua_getclasstable(lua_State *L) {
 	return 1;
 }
 
+static int lua_gettype(lua_State *L) {
+	if (lua_type(L, 1) == LUA_TUSERDATA) {
+		int oldtop = lua_gettop(L);
+		if (!lua_getmetatable(L, 1)) {
+			lua_settop(L, oldtop);
+			lua_pushstring(L, "[metatable-less userdata]");
+			return 1;
+		}
+		lua_pushstring(L, "__index");
+		lua_gettable(L, -2);
+		if (!lua_istable(L, -1)) {
+			lua_settop(L, oldtop);
+			lua_pushstring(L, "[metatable witout index userdata]");
+			return 1;
+		}
+		lua_pushstring(L, "class");
+		lua_gettable(L, -2);
+		if (!lua_isstring(L, -1)) {
+			lua_settop(L, oldtop);
+			lua_pushstring(L, "[unknown class name userdata]");
+			return 1;
+		}
+	} else {
+		lua_pushstring(L, lua_typename(L, lua_type(L, 1)));
+	}
+	return 1;
+}
+
 #ifdef TE4_PROFILING
 static bool cprofiler_running = FALSE;
 static int lua_cprofiler(lua_State *L) {
@@ -591,6 +619,7 @@ static int lua_open_browser(lua_State *L)
 
 static const struct luaL_Reg gamelib[] =
 {
+	{"getType", lua_gettype},
 	{"getCClass", lua_getclasstable},
 	{"setRebootMessage", lua_set_reboot_message},
 	{"getRebootMessage", lua_get_reboot_message},

@@ -1714,10 +1714,6 @@ function _M:createFBOs()
 	if self.player then self.player:updateMainShader() end
 end
 
-function _M:displaySeensMap(map, x, y, nb_keyframe)
-	map._map:drawSeensTexture(x, y)
-end
-
 function _M:displayMap(nb_keyframes)
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
@@ -1739,7 +1735,7 @@ function _M:displayMap(nb_keyframes)
 		if self.level.data.display_prepare then self.level.data.display_prepare(self.level, 0, 0, nb_keyframes) end
 		self.fbo:use(true)
 			if self.level.data.background then self.level.data.background(self.level, 0, 0, nb_keyframes) end
-			map:display(0, 0, nb_keyframes, config.settings.tome.smooth_fov)
+			map:display(0, 0, nb_keyframes)
 			-- if core.particles.hasBlooms() then
 			-- 	self.fbobloom:use(true) core.particles.drawBlooms() self.fbobloom:use(false) self.fbobloomrenderer:toScreen()
 			-- end
@@ -1752,14 +1748,8 @@ function _M:displayMap(nb_keyframes)
 		self.fbo2:use(true)
 			self.fborenderer:toScreen()
 			core.particles.drawAlterings()
-			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(true) end
-			map._map:toScreenLineGrids(map.display_x, map.display_y)
-			if self.posteffects and self.posteffects.line_grids and self.posteffects.line_grids.shad then self.posteffects.line_grids.shad:use(false) end
-			if config.settings.tome.smooth_fov then self:displaySeensMap(map, 0, 0, nb_keyframes) end
 		self.fbo2:use(false, self.full_fbo)
 
-		-- _2DNoise:bind(1, false)
-		-- self.fbo2:postEffects(self.fbo, self.full_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
 		self.fbo2renderer:toScreen(map.display_x, map.display_y)
 		if self.target then self.target:display(nil, nil, self.full_fbo, nb_keyframes) end
 

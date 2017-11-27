@@ -62,7 +62,7 @@ public:
 		owned = true;
 	};
 
-	inline void shift(float sx, float sy, bool absolute) { if (e) e->shift(sx, sy, absolute); }
+	inline void shift(float sx, float sy, bool absolute) { if (e) e->shift(sx, sy, absolute); else particles_shift(ps, sx, sy, absolute); }
 	inline bool isDead() { if (e) return e->isDead(); else if (ps) return !ps->alive; return true; }
 	inline uint32_t countAlive() { if (e) return e->countAlive(); else if (ps) return ps->nb; return true; }
 	inline void setZoom(float zoom) { if (e) e->setZoom(zoom); }

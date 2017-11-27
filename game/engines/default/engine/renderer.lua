@@ -413,7 +413,7 @@ local function doContainerAdd(self, d)
 	if t == "userdata" then
 		return self:_add(d)
 	elseif t == "table" and d.__CLASSNAME then
-		if d:isClassName("engine.Particles") then
+		if d:isClassName("engine.Particles") or d:isClassName("engine.ParticlesCompose") then
 			return self:_add(d:getDO())
 		end
 	else

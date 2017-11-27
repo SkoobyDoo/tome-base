@@ -55,7 +55,8 @@ MapObject::~MapObject() {
 		if (textures_ref[i] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, textures_ref[i]);
 	}
 	if (next_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, next_ref);
-	if (do_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, do_ref);
+	if (fdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, fdo_ref);
+	if (bdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, bdo_ref);
 	if (shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, shader_ref);
 	if (cb) delete cb;
 }
@@ -81,10 +82,35 @@ bool MapObject::setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords) {
 	return true;
 }
 
-void MapObject::setDisplayObject(DisplayObject *d, int ref) {
-	if (do_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, do_ref);	
-	displayobject = d;
-	do_ref = ref;
+void MapObject::setDisplayObject(DisplayObject *d, int ref, bool front) {
+	if (front) {
+		if (fdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, fdo_ref);
+		fdisplayobject = d;
+		fdo_ref = ref;
+	} else {
+		if (bdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, bdo_ref);
+		bdisplayobject = d;
+		bdo_ref = ref;
+	}
+}
+
+void MapObject::addParticles(DORParticles *p, int ref) {
+	particles.emplace_back(p, ref);
+}
+void MapObject::removeParticles(DORParticles *p) {
+	for (auto it = particles.begin(); it != particles.end(); it++) {
+		if (get<0>(*it) == p) {
+			if (get<1>(*it) != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(*it));
+			particles.erase(it);			
+			break;
+		}
+	}
+}
+void MapObject::clearParticles() {
+	for (auto it = particles.begin(); it != particles.end(); it++) {
+		if (get<1>(*it) != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(*it));
+	}
+	particles.clear();
 }
 
 void MapObject::setShader(shader_type *s, int ref) {
@@ -165,82 +191,83 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 	}
 
 	if (!dm->hide) {
-		if (dm->displayobject) {
-			// DGDGDGDG: integrate that as a chained DO perhaps
-			mat4 model = mat4();
-			model = glm::translate(model, glm::vec3(x1, y1, 0));
-			dm->displayobject->render(renderer, model, color, true);
-			if (!dm->displayobject->independantRenderer()) {
-				// map->changed = true; // DGDGDGDG: for t his and other similar eventually it'd be good to try and detect which aprts of the VBO need reconstructing and only do those
-			}
+		if (allow_do && dm->bdisplayobject) {
+			mat4 base;
+			mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
+			dm->bdisplayobject->render(renderer, m, color, true);
+		}
+
+		float tx1 = dm->tex_coords[0].x, tx2 = dm->tex_coords[0].x + dm->tex_coords[0].z;
+		float ty1 = dm->tex_coords[0].y, ty2 = dm->tex_coords[0].y + dm->tex_coords[0].w;
+
+		shader_type *shader = default_shader;
+		if (dm->shader) shader = dm->shader;
+		else if (dm->root->shader) shader = dm->root->shader;
+		else shader = default_shader;
+
+		auto dl = getDisplayList(renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
+	
+		// Make sure we do not have to reallocate each step
+		// DGDGDGDG: actually do it
+
+		// Put it directly into the DisplayList
+		if (model) {
+			dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
+			dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
+			dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
+			dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
 		} else {
-			float tx1 = dm->tex_coords[0].x, tx2 = dm->tex_coords[0].x + dm->tex_coords[0].z;
-			float ty1 = dm->tex_coords[0].y, ty2 = dm->tex_coords[0].y + dm->tex_coords[0].w;
+			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
+			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
+			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
+			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
+		}
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 
-			shader_type *shader = default_shader;
-			if (dm->shader) shader = dm->shader;
-			else if (dm->root->shader) shader = dm->root->shader;
-			else shader = default_shader;
-
-			auto dl = getDisplayList(renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
-		
-			// Make sure we do not have to reallocate each step
-			// DGDGDGDG: actually do it
-
-			// Put it directly into the DisplayList
+		if (allow_particles && dm->particles.size()) {
+			float px = dx + dw * tile_w * dm->scale / 2, py = dy + dh * tile_h * dm->scale / 2;
+			// Not on map, just display
 			if (model) {
-				dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
-				dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
-				dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
-				dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
+				mat4 m = glm::translate(*model, glm::vec3(px, py, 0));
+				for (auto &it : dm->particles) get<0>(it)->render(renderer, m, color, true);
+			// On map, display and shift accordingly
 			} else {
-				dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
-				dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
-				dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
-				dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
-			}
-			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
-			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
-			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
-			dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
-		}
-	}
+				float nshiftx = floor((dm->root->grid_x + dm->pos.x + dm->root->move_anim_dx) * tile_w);
+				float nshifty = floor((dm->root->grid_y + dm->pos.y + dm->root->move_anim_dy) * tile_h);
 
-	if (L && dm->cb) {
-		stopDisplayList(); // Needed to make sure we break texture chaining
-		auto dl = getDisplayList(renderer);
-		stopDisplayList(); // Needed to make sure we break texture chaining
-		dm->cb->dx = dx + sx;
-		dm->cb->dy = dy + sy;
-		dm->cb->dw = tile_w * dw * dm->scale;
-		dm->cb->dh = tile_h * dh * dm->scale;
-		dm->cb->scale = dm->scale;
-		dm->cb->tldx = dx + sx;
-		dm->cb->tldy = dy + sy;
-		dl->sub = dm->cb;
-	}
-	// DGDGDGDG: this needs to be done smartly, no actual CB here, but creation of a callback put into the DisplayList
-	/*
-	if (L && dm->cb_ref != LUA_NOREF)
-	{
-		lua_rawgeti(L, LUA_REGISTRYINDEX, dm->cb_ref);
-		lua_checkstack(L, 8);
-		lua_pushnumber(L, dx);
-		lua_pushnumber(L, dy);
-		lua_pushnumber(L, tile_w * (dw) * (dm->scale));
-		lua_pushnumber(L, tile_h * (dh) * (dm->scale));
-		lua_pushnumber(L, (dm->scale));
-		lua_pushboolean(L, true);
-		lua_pushnumber(L, tldx);
-		lua_pushnumber(L, tldy);
-		if (lua_pcall(L, 8, 1, 0))
-		{
-			printf("Display callback error: UID %ld: %s\n", dm->uid, lua_tostring(L, -1));
-			lua_pop(L, 1);
+				mat4 m;
+				m = glm::translate(m, glm::vec3(px, py, 0));
+				for (auto &it : dm->particles) {
+					get<0>(it)->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
+					get<0>(it)->render(renderer, m, color, true);
+				}
+				dm->last_x = nshiftx; dm->last_y = nshifty;
+			}
 		}
-		lua_pop(L, 1);
+
+		if (allow_do && dm->fdisplayobject) {
+			mat4 base;
+			mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
+			dm->fdisplayobject->render(renderer, m, color, true);
+		}
+
+		if (allow_cb && L && dm->cb) {
+			stopDisplayList(); // Needed to make sure we break texture chaining
+			auto dl = getDisplayList(renderer);
+			stopDisplayList(); // Needed to make sure we break texture chaining
+			dm->cb->dx = dx + sx;
+			dm->cb->dy = dy + sy;
+			dm->cb->dw = tile_w * dw * dm->scale;
+			dm->cb->dh = tile_h * dh * dm->scale;
+			dm->cb->scale = dm->scale;
+			dm->cb->tldx = dx + sx;
+			dm->cb->tldy = dy + sy;
+			dl->sub = dm->cb;
+		}
 	}
-	*/
 }
 
 
@@ -248,7 +275,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
  ** MapObjectRender
  *************************************************************************/
 MapObjectRenderer::MapObjectRenderer(float w, float h, float a, bool allow_cb, bool allow_shader)
-	: w(w), h(h), a(a), allow_cb(allow_cb), allow_shader(allow_shader), MapObjectProcessor(w, h)
+	: w(w), h(h), a(a), allow_cb(allow_cb), allow_shader(allow_shader), MapObjectProcessor(w, h, allow_cb, allow_cb, true)
 {
 }
 
@@ -313,7 +340,7 @@ void MapObjectRenderer::sortZ(RendererGL *container, mat4& cur_model) {
  *************************************************************************/
 Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight)
 	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight),
-	  renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h), seens_vbo(VBOMode::STATIC), grid_lines_vbo(VBOMode::STATIC)
+	  renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h, true, true, true), seens_vbo(VBOMode::STATIC), grid_lines_vbo(VBOMode::STATIC)
 {
 	w_off = h;
 	z_off = w * h;

@@ -241,12 +241,13 @@ end
 --- Adds a particles emitter following the entity
 -- @param[type=Particles] ps
 function _M:addParticles(ps)
-	self.__particles[ps] = true
-	if self.x and self.y and game.level and game.level.map then
-		ps.x = self.x
-		ps.y = self.y
-		self:defineDisplayCallback()
-	end
+	self._mo:addParticles(ps:getDO())
+	-- self.__particles[ps] = true
+	-- if self.x and self.y and game.level and game.level.map then
+	-- 	ps.x = self.x
+	-- 	ps.y = self.y
+	-- 	self:defineDisplayCallback()
+	-- end
 	return ps
 end
 
@@ -281,33 +282,23 @@ end
 -- @param[type=Particles] ps
 function _M:removeParticles(ps)
 	if not ps then return end
-	self.__particles[ps] = nil
+	self._mo:removeParticles(ps:getDO())
 	ps:dieDisplay()
-	if self.x and self.y and game.level and game.level.map then
-		ps.x = nil
-		ps.y = nil
-		self:defineDisplayCallback()
-	end
 end
 
 --- Get the particle emitters of this entity
 -- @param[type=string|bool] back "all" is a valid value
 function _M:getParticlesList(back)
 	local ps = {}
-	for e, _ in pairs(self.__particles) do
-		if (not back and not e.toback) or (back and e.toback) or (back == "all") then
-			e:checkDisplay()
-			ps[#ps+1] = e
-		end
-	end
+	-- DGDGDGDG: we should not need that anymore
 	return ps
 end
 
 --- Removes the particles from the running threads but keep the data for later
 function _M:closeParticles()
-	for e, _ in pairs(self.__particles) do
-		e:dieDisplay()
-	end
+	-- for e, _ in pairs(self.__particles) do
+	-- 	e:dieDisplay()
+	-- end
 end
 
 --- Attach or remove a display callback

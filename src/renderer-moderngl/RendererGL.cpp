@@ -310,42 +310,6 @@ void RendererGL::update() {
 	}
 }
 
-// void RendererGL::enablePostProcessing(bool v) {
-// 	post_processing = v;
-// 	if (v) {
-// 		glGenFramebuffers(2, post_process_fbos);
-// 		glGenTextures(2, post_process_textures);
-// 		for (int i = 0; i < 2; i++) {
-// 			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
-// 			tfglBindTexture(GL_TEXTURE_2D, post_process_textures[i]);
-// 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-// 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-// 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-// 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-// 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, post_process_textures[i], 0);
-// 		}
-// 		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
-// 	} else {
-// 		for (int i = 0; i < 2; i++) {
-// 			tglBindFramebuffer(GL_FRAMEBUFFER, post_process_fbos[i]);
-// 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-// 		}
-// 		tglBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-// 		glDeleteTextures(2, post_process_textures);
-// 		glDeleteFramebuffers(2, post_process_fbos);
-// 	}
-// }
-
-// void RendererGL::clearPostProcessShaders() {
-// 	post_process_shaders.clear();
-// }
-
-// // DGDGDGDG: test & finish post processing
-// void RendererGL::addPostProcessShader(shader_type *s) {
-// 	post_process_shaders.push_back(s);
-// }
-
 void RendererGL::activateCutting(mat4 cur_model, bool v) {
 	if (v) {
 		glEnable(GL_SCISSOR_TEST);
