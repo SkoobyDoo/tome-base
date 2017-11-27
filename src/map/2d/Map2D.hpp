@@ -83,6 +83,8 @@ class Map2D;
 class MapObjectRenderer;
 class MapObjectProcessor;
 
+using ParticlesVector = vector<tuple<DORParticles*,int>>;
+
 /****************************************************************************
  ** An object on the map, at a given z/x/y coord
  ****************************************************************************/
@@ -129,7 +131,7 @@ protected:
 	DisplayObject *fdisplayobject = nullptr;
 	int bdo_ref = LUA_NOREF;
 	int fdo_ref = LUA_NOREF;
-	vector<tuple<DORParticles*,int>> particles;
+	ParticlesVector particles;
 
 	DORCallbackMap *cb = nullptr;
 
@@ -148,6 +150,7 @@ public:
 	bool setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords);
 	void setDisplayObject(DisplayObject *d, int ref, bool front);
 	void addParticles(DORParticles *p, int ref);
+	ParticlesVector::iterator removeParticles(ParticlesVector::iterator it);
 	void removeParticles(DORParticles *p);
 	void clearParticles();
 	void setShader(shader_type *s, int ref);

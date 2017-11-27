@@ -97,6 +97,10 @@ void MapObject::setDisplayObject(DisplayObject *d, int ref, bool front) {
 void MapObject::addParticles(DORParticles *p, int ref) {
 	particles.emplace_back(p, ref);
 }
+ParticlesVector::iterator MapObject::removeParticles(ParticlesVector::iterator it) {
+	if (get<1>(*it) != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(*it));
+	return particles.erase(it);
+}
 void MapObject::removeParticles(DORParticles *p) {
 	for (auto it = particles.begin(); it != particles.end(); it++) {
 		if (get<0>(*it) == p) {
@@ -235,14 +239,21 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 				for (auto &it : dm->particles) get<0>(it)->render(renderer, m, color, true);
 			// On map, display and shift accordingly
 			} else {
+				// Compute the position with animation and absolute map positioning instead of screen positioning to be able ot deduce shift effect
 				float nshiftx = floor((dm->root->grid_x + dm->pos.x + dm->root->move_anim_dx) * tile_w);
 				float nshifty = floor((dm->root->grid_y + dm->pos.y + dm->root->move_anim_dy) * tile_h);
 
 				mat4 m;
 				m = glm::translate(m, glm::vec3(px, py, 0));
-				for (auto &it : dm->particles) {
-					get<0>(it)->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
-					get<0>(it)->render(renderer, m, color, true);
+				for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
+					DORParticles *ps = get<0>(*it);
+					if (ps->isDead()) {
+						it = dm->removeParticles(it);
+					} else {
+						ps->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
+						ps->render(renderer, m, color, true);
+						++it;
+					}
 				}
 				dm->last_x = nshiftx; dm->last_y = nshifty;
 			}
