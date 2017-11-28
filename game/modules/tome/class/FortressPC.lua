@@ -77,33 +77,6 @@ function _M:die(src, death_note)
 	return self:onPartyDeath(src, death_note)
 end
 
---- Attach or remove a display callback
--- Defines particles to display
-function _M:defineDisplayCallback()
-	if not self._mo then return end
-
-	local ps = self:getParticlesList()
-
-	local fct = function(x, y, w, h, zoom, on_map)
-		local e
-		for i = 1, #ps do
-			e = ps[i]
-			e:checkDisplay()
-			if e.ps:isAlive() then e.ps:toScreen(x + w / 2, y + h / 2, true, w / (game.level and game.level.map.tile_w or w))
-			else self:removeParticles(e)
-			end
-		end
-
-		return true
-	end
-
-	if self._mo == self._last_mo or not self._last_mo then
-		self._mo:displayCallback(fct)
-	else
-		self._last_mo:displayCallback(fct)
-	end
-end
-
 function _M:move(x, y, force)
 	local ox, oy = self.x, self.y
 	local moved = self:moveModActor(x, y, force)

@@ -66,47 +66,48 @@ end
 
 --- Attach or remove a display callback
 -- Defines particles to display
-function _M:defineDisplayCallback()
-	if not self._mo then return end
+-- DGDGDGDG
+-- function _M:defineDisplayCallback()
+-- 	if not self._mo then return end
 
-	-- Cunning trick here!
-	-- the callback we give to mo:displayCallback is a function that references self
-	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
-	-- thus we store a reference to a weak table and put self into it
-	-- this way when self dies the weak reference dies and does not prevent GC'ing
-	local weak = setmetatable({[1]=self}, {__mode="v"})
+-- 	-- Cunning trick here!
+-- 	-- the callback we give to mo:displayCallback is a function that references self
+-- 	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
+-- 	-- thus we store a reference to a weak table and put self into it
+-- 	-- this way when self dies the weak reference dies and does not prevent GC'ing
+-- 	local weak = setmetatable({[1]=self}, {__mode="v"})
 
-	local ps = self:getParticlesList()
+-- 	local ps = self:getParticlesList()
 
-	self._mo:displayCallback(function(x, y, w, h, zoom, on_map)
-		local self = weak[1]
-		if not self then return end
+-- 	self._mo:displayCallback(function(x, y, w, h, zoom, on_map)
+-- 		local self = weak[1]
+-- 		if not self then return end
 
-		if game.level and game.level.map.view_faction and game.always_target and game.always_target ~= "old" then
-			local map = game.level.map
-			if on_map then
-				self:smallTacticalFrame(game.level.map, x, y, w, h, zoom, on_map, tlx, tly)
-			end
-		else
-			self:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
-		end
+-- 		if game.level and game.level.map.view_faction and game.always_target and game.always_target ~= "old" then
+-- 			local map = game.level.map
+-- 			if on_map then
+-- 				self:smallTacticalFrame(game.level.map, x, y, w, h, zoom, on_map, tlx, tly)
+-- 			end
+-- 		else
+-- 			self:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
+-- 		end
 
-		local e
-		local dy = 0
-		if h > w then dy = (h - w) / 2 end
-		for i = 1, #ps do
-			e = ps[i]
-			e:checkDisplay()
-			if e.ps:isAlive() then
-				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
-				e.ps:toScreen(x + w / 2, y + dy + h / 2, true, w / (game.level and game.level.map.tile_w or w))
-			else self:removeParticles(e)
-			end
-		end
+-- 		local e
+-- 		local dy = 0
+-- 		if h > w then dy = (h - w) / 2 end
+-- 		for i = 1, #ps do
+-- 			e = ps[i]
+-- 			e:checkDisplay()
+-- 			if e.ps:isAlive() then
+-- 				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
+-- 				e.ps:toScreen(x + w / 2, y + dy + h / 2, true, w / (game.level and game.level.map.tile_w or w))
+-- 			else self:removeParticles(e)
+-- 			end
+-- 		end
 
-		return true
-	end)
-end
+-- 		return true
+-- 	end)
+-- end
 
 function _M:takePowerHit(val, src)
 	self.unit_power = (self.unit_power or 0) - val

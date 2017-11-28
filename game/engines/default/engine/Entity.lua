@@ -19,6 +19,7 @@
 
 local Shader = require "engine.Shader"
 local Particles = require "engine.Particles"
+local Savefile = require "engine.Savefile"
 
 --- An entity is anything that goes on a map, terrain features, objects, monsters, player, ...  
 -- Usually there is no need to use it directly, and it is better to use specific engine.Grid, engine.Actor or engine.Object
@@ -241,8 +242,8 @@ end
 --- Adds a particles emitter following the entity
 -- @param[type=Particles] ps
 function _M:addParticles(ps)
-	self._mo:addParticles(ps:getDO())
-	-- self.__particles[ps] = true
+	if self._mo then self._mo:addParticles(ps:getDO()) end
+	self.__particles[ps] = true
 	-- if self.x and self.y and game.level and game.level.map then
 	-- 	ps.x = self.x
 	-- 	ps.y = self.y
@@ -282,7 +283,8 @@ end
 -- @param[type=Particles] ps
 function _M:removeParticles(ps)
 	if not ps then return end
-	self._mo:removeParticles(ps:getDO())
+	self.__particles[ps] = nil
+	if self._mo then self._mo:removeParticles(ps:getDO()) end
 	ps:dieDisplay()
 end
 
@@ -307,34 +309,6 @@ function _M:defineDisplayCallback()
 	if self.add_displays then
 		for i, add in ipairs(self.add_displays) do add:defineDisplayCallback() end
 	end
-
-	if not self._mo then return end
-	if not next(self.__particles) then self._mo:displayCallback(nil) return end
-
-	-- Cunning trick here!
-	-- the callback we give to mo:displayCallback is a function that references self
-	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
-	-- thus we store a reference to a weak table and put self into it
-	-- this way when self dies the weak reference dies and does not prevent GC'ing
-	local weak = setmetatable({[1]=self}, {__mode="v"})
-
-	local ps = self:getParticlesList()
-	self._mo:displayCallback(function(x, y, w, h)
-		local self = weak[1]
-		if not self or not self._mo then return end
-
-		local e
-		for i = 1, #ps do
-			e = ps[i]
-			e:checkDisplay()
-			if e.ps:isAlive() then
-				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
-				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + h / 2 + (e.dy or 0) * h, true, w / game.level.map.tile_w)
-			else self:removeParticles(e)
-			end
-		end
-		return true
-	end)
 end
 
 --- Create the "map object" representing this entity
@@ -493,6 +467,11 @@ function _M:makeMapObject(tiles, idx)
 	end
 
 	self._mo_updated = true
+
+	if idx == 1 then
+		if Savefile.current_save then game:onTickEnd(function() for ps, _ in pairs(self.__particles or {}) do self:addParticles(ps) end end)
+		else for ps, _ in pairs(self.__particles or {}) do self:addParticles(ps) end end
+	end
 
 	return self._mo, self.z, last_mo
 end
