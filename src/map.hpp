@@ -110,8 +110,6 @@ struct map_object_sort {
 	int i, j;
 };
 
-class DORTileMap;
-class DORTileMiniMap;
 struct map_type {
 	map_object_sort **sort_mos;
 	int sort_mos_max;
@@ -171,8 +169,8 @@ struct map_type {
 	VBO *seens_vbo;
 
 	// Referencing
-	unordered_set<DORTileMap*> *map_dos;
-	unordered_set<DORTileMiniMap*> *minimap_dos;
+	// unordered_set<DORTileMap*> *map_dos;
+	// unordered_set<DORTileMiniMap*> *minimap_dos;
 };
 
 extern void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes, bool always_show, mat4 model, vec4 color);

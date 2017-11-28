@@ -22,7 +22,6 @@
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/FBO.hpp"
 #include "renderer-moderngl/TextObject.hpp"
-#include "renderer-moderngl/TileMap.hpp"
 #include "renderer-moderngl/Particles.hpp"
 #include "renderer-moderngl/Physic.hpp"
 #include "spriter/Spriter.hpp"
@@ -1302,17 +1301,6 @@ static int gl_callback_enable(lua_State *L)
 }
 
 /******************************************************************
- ** TileObject -- no constructor, this is in map.cpp
- ******************************************************************/
-static int gl_tileobject_free(lua_State *L)
-{
-	DORTileObject *v = userdata_to_DO<DORTileObject>(__FUNCTION__, L, 1, "gl{tileobject}");
-	delete(v);
-	lua_pushnumber(L, 1);
-	return 1;
-}
-
-/******************************************************************
  ** Particles -- no constructor, this is in particles.cpp
  ******************************************************************/
 static int gl_particles_free(lua_State *L)
@@ -1379,57 +1367,6 @@ static int gl_particles_on_events(lua_State *L)
 	} else {
 		v->setEventsCallback(LUA_NOREF);		
 	}
-	lua_pushvalue(L, 1);
-	return 1;
-}
-
-/******************************************************************
- ** TileMap -- no constructor, this is in map.cpp
- ******************************************************************/
-static int gl_tilemap_free(lua_State *L)
-{
-	DORTileMap *v = userdata_to_DO<DORTileMap>(__FUNCTION__, L, 1, "gl{tilemap}");
-	delete(v);
-	lua_pushnumber(L, 1);
-	return 1;
-}
-
-static int gl_tilemap_setmap(lua_State *L)
-{
-	DORTileMap *v = userdata_to_DO<DORTileMap>(__FUNCTION__, L, 1, "gl{tilemap}");
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 2);
-
-	v->setMap(map);	
-	lua_pushvalue(L, 1);
-	return 1;
-}
-
-/******************************************************************
- ** TileMiniMap -- no constructor, this is in map.cpp
- ******************************************************************/
-static int gl_tileminimap_free(lua_State *L)
-{
-	DORTileMiniMap *v = userdata_to_DO<DORTileMiniMap>(__FUNCTION__, L, 1, "gl{tileminimap}");
-	delete(v);
-	lua_pushnumber(L, 1);
-	return 1;
-}
-
-static int gl_tileminimap_setmap(lua_State *L)
-{
-	DORTileMiniMap *v = userdata_to_DO<DORTileMiniMap>(__FUNCTION__, L, 1, "gl{tileminimap}");
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 2);
-
-	v->setMap(map);	
-	lua_pushvalue(L, 1);
-	return 1;
-}
-
-static int gl_tileminimap_setinfo(lua_State *L)
-{
-	DORTileMiniMap *v = userdata_to_DO<DORTileMiniMap>(__FUNCTION__, L, 1, "gl{tileminimap}");
-
-	v->setMinimapInfo(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6));
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -2018,30 +1955,6 @@ static const struct luaL_Reg gl_callback_reg[] =
 	{NULL, NULL},
 };
 
-static const struct luaL_Reg gl_tileobject_reg[] =
-{
-	{"__gc", gl_tileobject_free},
-	INJECT_GENERIC_DO_METHODS
-	{NULL, NULL},
-};
-
-static const struct luaL_Reg gl_tilemap_reg[] =
-{
-	{"__gc", gl_tilemap_free},
-	INJECT_GENERIC_DO_METHODS
-	{"setMap", gl_tilemap_setmap},
-	{NULL, NULL},
-};
-
-static const struct luaL_Reg gl_tileminimap_reg[] =
-{
-	{"__gc", gl_tileminimap_free},
-	INJECT_GENERIC_DO_METHODS
-	{"setMap", gl_tileminimap_setmap},
-	{"setMinimapInfo", gl_tileminimap_setinfo},
-	{NULL, NULL},
-};
-
 static const struct luaL_Reg gl_particles_reg[] =
 {
 	{"__gc", gl_particles_free},
@@ -2170,9 +2083,6 @@ int luaopen_renderer(lua_State *L)
 	auxiliar_newclass(L, "gl{target:posteffects}", gl_target_posteffects_reg);
 	auxiliar_newclass(L, "gl{target}", gl_target_reg);
 	auxiliar_newclass(L, "gl{callback}", gl_callback_reg);
-	auxiliar_newclass(L, "gl{tileobject}", gl_tileobject_reg);
-	auxiliar_newclass(L, "gl{tilemap}", gl_tilemap_reg);
-	auxiliar_newclass(L, "gl{tileminimap}", gl_tileminimap_reg);
 	auxiliar_newclass(L, "gl{particles}", gl_particles_reg);
 	auxiliar_newclass(L, "gl{staticsub}", gl_staticsub_reg);
 	auxiliar_newclass(L, "gl{spriter}", gl_spriter_reg);

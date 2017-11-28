@@ -94,7 +94,6 @@ void Minimap2D::redrawMiniMap() {
 	GLfloat r, g, b, a;
 
 	// Create/recreate the minimap data if needed
-	printf("MM %d\n", next_update_full);
 	if (next_update_full) {
 		if (mm_data) delete mm_data;
 		mm_data = new GLubyte[4 * info.mdw * info.mdh];

@@ -55,13 +55,16 @@ function _M:init(minimalist, w, h)
 	local mm_transp = self:imageLoader("minimap/transp.png"):translate(config.draw.x, config.draw.y, 0)
 	self.mm_container = core.renderer.container():translate(config.draw.x, config.draw.y, 0)
 
+	self.decor_back = core.renderer.container():add(mm_shadow):add(mm_bg)
+	self.decor_front = core.renderer.container():add(mm_transp):add(mm_comp)
+
 	self.text_name = core.renderer.text(font):translate(self.def_w / 2, 2 + font_h / 2, 10):textColor(colors.unpack1(colors.GOLD))
-	self.do_container:add(mm_shadow)
-	self.do_container:add(mm_bg)
+	self.do_container:add(self.decor_back)
 	self.do_container:add(self.mm_container)
-	self.do_container:add(mm_transp)
-	self.do_container:add(mm_comp)
+	self.do_container:add(self.decor_front)
 	self.do_container:add(self.text_name)
+
+	self.full_container = core.renderer.container():add(self.do_container)
 
 	MiniContainer.init(self, minimalist)
 	self:update(0)
@@ -114,10 +117,41 @@ function _M:update(nb_keyframes)
 	end
 end
 
+function _M:getDO()
+	return self.full_container
+end
+
 function _M:move(x, y)
 	MiniContainer.move(self, x, y)
 end
 
 function _M:resize(w, h)
 	MiniContainer.resize(self, w, h)
+end
+
+function _M:loadConfig(config)
+	MiniContainer.loadConfig(self, config)
+	self.do_container:shown(not self.configs.hide)
+	self.decor_back:shown(not self.configs.hide_frame)	
+	self.decor_front:shown(not self.configs.hide_frame)	
+end
+
+function _M:toggleDisplay()
+	self.configs.hide = not self.configs.hide
+	self.do_container:shown(not self.configs.hide)
+	self.uiset:saveSettings()
+end
+
+function _M:toggleFrame()
+	self.configs.hide_frame = not self.configs.hide_frame
+	self.decor_back:shown(not self.configs.hide_frame)	
+	self.decor_front:shown(not self.configs.hide_frame)	
+	self.uiset:saveSettings()
+end
+
+function _M:editMenu()
+	return {
+		{ name = "Toggle display", fct=function() self:toggleDisplay() end },
+		{ name = "Toggle frame", fct=function() self:toggleFrame() end },
+	}
 end

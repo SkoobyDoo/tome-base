@@ -264,16 +264,8 @@ static int map_object_is_valid(lua_State *L) {
 	return 1;
 }
 
-static int map_objects_to_displayobject(lua_State *L) {
-	int w = luaL_checknumber(L, 1);
-	int h = luaL_checknumber(L, 2);
-	bool allow_cb = lua_toboolean(L, 3);
-	bool allow_shader = lua_toboolean(L, 4);
+static void map_object_update(lua_State *L, int moid, MapObjectRenderer *mor) {
 
-	MapObjectRenderer *mor = new MapObjectRenderer(w, h, 1, allow_cb, allow_shader);
-	// to->setLuaState(L);
-
-	int moid = 6;
 	while (lua_isuserdata(L, moid))
 	{
 		MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", moid);
@@ -283,6 +275,17 @@ static int map_objects_to_displayobject(lua_State *L) {
 		mor->addMapObject(obj, ref);
 		moid++;
 	}
+}
+
+static int map_objects_to_displayobject(lua_State *L) {
+	int w = luaL_checknumber(L, 1);
+	int h = luaL_checknumber(L, 2);
+	bool allow_cb = lua_toboolean(L, 3);
+	bool allow_shader = lua_toboolean(L, 4);
+
+	MapObjectRenderer *mor = new MapObjectRenderer(w, h, 1, allow_cb, allow_cb);
+
+	map_object_update(L, 6, mor);
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = mor;
@@ -558,6 +561,14 @@ static int gl_mapobjectrenderer_free(lua_State *L) {
 	return 1;
 }
 
+static int gl_mapobjectrenderer_update(lua_State *L) {
+	MapObjectRenderer *mor = *(MapObjectRenderer**)auxiliar_checkclass(L, "gl{mapobj2drender}", 1);
+	mor->resetMapObjects();
+	map_object_update(L, 2, mor);
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 /*************************************************************************
  ** Minimap2D wrapper
  *************************************************************************/
@@ -663,6 +674,7 @@ static const struct luaL_Reg gl_minimap2d_reg[] =
 static const struct luaL_Reg gl_mapobjectrenderer_reg[] =
 {
 	{"__gc", gl_mapobjectrenderer_free},
+	{"updateEntity", gl_mapobjectrenderer_update},
 	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},
 };

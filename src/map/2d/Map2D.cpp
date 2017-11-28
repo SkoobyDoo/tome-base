@@ -181,104 +181,102 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 }
 
 inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float sx, float sy, vec4 color, mat4 *model) {
+	if (dm->hide) return;
+
 	float dw = dm->size.x, dh = dm->size.y;
 	float x1, x2, y1, y2;
 
-	if (dm->flip_x) {
-		x2 = dx; x1 = tile_w * dw * dm->scale + dx;
-	} else {
-		x1 = dx; x2 = tile_w * dw * dm->scale + dx;
+	if (dm->flip_x) { x2 = dx; x1 = tile_w * dw * dm->scale + dx; }
+	else { x1 = dx; x2 = tile_w * dw * dm->scale + dx; }
+	if (dm->flip_y) { y2 = dy; y1 = tile_h * dh * dm->scale + dy; }
+	else { y1 = dy; y2 = tile_h * dh * dm->scale + dy; }
+
+	if (false && dm->bdisplayobject) {
+		mat4 base;
+		mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
+		dm->bdisplayobject->render(renderer, m, color, true);
 	}
-	if (dm->flip_y) {
-		y2 = dy; y1 = tile_h * dh * dm->scale + dy;
+
+	float tx1 = dm->tex_coords[0].x, tx2 = dm->tex_coords[0].x + dm->tex_coords[0].z;
+	float ty1 = dm->tex_coords[0].y, ty2 = dm->tex_coords[0].y + dm->tex_coords[0].w;
+
+	shader_type *shader = default_shader;
+	if (dm->shader) shader = dm->shader;
+	else if (dm->root->shader) shader = dm->root->shader;
+	else shader = default_shader;
+
+	auto dl = getDisplayList(renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
+
+	// Make sure we do not have to reallocate each step
+	// DGDGDGDG: actually do it
+
+	// Put it directly into the DisplayList
+	if (model) {
+		dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
+		dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
+		dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
+		dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
 	} else {
-		y1 = dy; y2 = tile_h * dh * dm->scale + dy;
+		dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
+		dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
+		dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
+		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
 	}
+	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
+	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
+	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
+	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 
-	if (!dm->hide) {
-		if (allow_do && dm->bdisplayobject) {
-			mat4 base;
-			mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
-			dm->bdisplayobject->render(renderer, m, color, true);
-		}
-
-		float tx1 = dm->tex_coords[0].x, tx2 = dm->tex_coords[0].x + dm->tex_coords[0].z;
-		float ty1 = dm->tex_coords[0].y, ty2 = dm->tex_coords[0].y + dm->tex_coords[0].w;
-
-		shader_type *shader = default_shader;
-		if (dm->shader) shader = dm->shader;
-		else if (dm->root->shader) shader = dm->root->shader;
-		else shader = default_shader;
-
-		auto dl = getDisplayList(renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
-	
-		// Make sure we do not have to reallocate each step
-		// DGDGDGDG: actually do it
-
-		// Put it directly into the DisplayList
+	if (allow_particles && dm->particles.size()) {
+		float px = dx + dw * tile_w * dm->scale / 2, py = dy + dh * tile_h * dm->scale / 2;
+		// Not on map, just display
 		if (model) {
-			dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
-			dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
-			dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
-			dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
-		} else {
-			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
-			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
-			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
-			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
-		}
-		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
-		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
-		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
-		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
-
-		if (allow_particles && dm->particles.size()) {
-			float px = dx + dw * tile_w * dm->scale / 2, py = dy + dh * tile_h * dm->scale / 2;
-			// Not on map, just display
-			if (model) {
-				mat4 m = glm::translate(*model, glm::vec3(px, py, 0));
-				for (auto &it : dm->particles) get<0>(it)->render(renderer, m, color, true);
-			// On map, display and shift accordingly
-			} else {
-				// Compute the position with animation and absolute map positioning instead of screen positioning to be able ot deduce shift effect
-				float nshiftx = floor((dm->root->grid_x + dm->pos.x + dm->root->move_anim_dx) * tile_w);
-				float nshifty = floor((dm->root->grid_y + dm->pos.y + dm->root->move_anim_dy) * tile_h);
-
-				mat4 m;
-				m = glm::translate(m, glm::vec3(px, py, 0));
-				for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
-					DORParticles *ps = get<0>(*it);
-					if (ps->isDead()) {
-						it = dm->removeParticles(it);
-					} else {
-						ps->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
-						ps->render(renderer, m, color, true);
-						++it;
-					}
-				}
-				dm->last_x = nshiftx; dm->last_y = nshifty;
+			mat4 m = glm::translate(*model, glm::vec3(px, py, 0));
+			for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
+				DORParticles *ps = get<0>(*it);
+				if (ps->isDead()) { it = dm->removeParticles(it); }
+				else { ps->render(renderer, m, color, true); ++it; }
 			}
-		}
+		// On map, display and shift accordingly
+		} else {
+			// Compute the position with animation and absolute map positioning instead of screen positioning to be able ot deduce shift effect
+			float nshiftx = floor((dm->root->grid_x + dm->pos.x + dm->root->move_anim_dx) * tile_w);
+			float nshifty = floor((dm->root->grid_y + dm->pos.y + dm->root->move_anim_dy) * tile_h);
 
-		if (allow_do && dm->fdisplayobject) {
-			mat4 base;
-			mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
-			dm->fdisplayobject->render(renderer, m, color, true);
+			mat4 m;
+			m = glm::translate(m, glm::vec3(px, py, 0));
+			for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
+				DORParticles *ps = get<0>(*it);
+				if (ps->isDead()) {
+					it = dm->removeParticles(it);
+				} else {
+					ps->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
+					ps->render(renderer, m, color, true);
+					++it;
+				}
+			}
+			dm->last_x = nshiftx; dm->last_y = nshifty;
 		}
+	}
 
-		if (allow_cb && L && dm->cb) {
-			stopDisplayList(); // Needed to make sure we break texture chaining
-			auto dl = getDisplayList(renderer);
-			stopDisplayList(); // Needed to make sure we break texture chaining
-			dm->cb->dx = dx + sx;
-			dm->cb->dy = dy + sy;
-			dm->cb->dw = tile_w * dw * dm->scale;
-			dm->cb->dh = tile_h * dh * dm->scale;
-			dm->cb->scale = dm->scale;
-			dm->cb->tldx = dx + sx;
-			dm->cb->tldy = dy + sy;
-			dl->sub = dm->cb;
-		}
+	if (false && dm->fdisplayobject) {
+		mat4 base;
+		mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
+		dm->fdisplayobject->render(renderer, m, color, true);
+	}
+
+	if (allow_cb && L && dm->cb) {
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		auto dl = getDisplayList(renderer);
+		stopDisplayList(); // Needed to make sure we break texture chaining
+		dm->cb->dx = dx + sx;
+		dm->cb->dy = dy + sy;
+		dm->cb->dw = tile_w * dw * dm->scale;
+		dm->cb->dh = tile_h * dh * dm->scale;
+		dm->cb->scale = dm->scale;
+		dm->cb->tldx = dx + sx;
+		dm->cb->tldy = dy + sy;
+		dl->sub = dm->cb;
 	}
 }
 
@@ -331,8 +329,12 @@ void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur
 	if (!visible || !cur_visible) return;
 	mat4 vmodel = cur_model * model;
 	vec4 vcolor = cur_color * color;
-	for (auto &it : mos) {		
-		processMapObject(container, get<0>(it), 0, 0, 0, 0, vcolor, &vmodel);
+	for (auto &it : mos) {
+		MapObject *dm = get<0>(it);
+		while (dm) {
+			processMapObject(container, dm, floor(dm->pos.x * w), floor(dm->pos.y * h), 0, 0, vcolor, &vmodel);
+			dm = dm->next;
+		}
 	}
 }
 
@@ -688,7 +690,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	}
 	// stable_sort(map->sort_mos, map->sort_mos + start_sort, sort_mos_shader);
 	sort(sorting_mos.begin() + start_sort, sorting_mos.begin() + sorting_mos_next, sort_mos);
-	// printf("sorted %d mos\n", map->sort_mos_max - start_sort);
+	// printf("sorted %d mos\n", sorting_mos_next - start_sort);
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
 		MapObjectSort *so = sorting_mos[spos];

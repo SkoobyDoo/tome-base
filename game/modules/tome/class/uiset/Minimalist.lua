@@ -62,12 +62,15 @@ function _M:switchLocked()
 end
 
 function _M:resetPlaces()
+	config.settings.tome.uiset_minimalist2.places = {}
 	for i, container in ipairs(self.minicontainers) do
 		local x, y, w, h = container:getDefaultGeometry()
 		container:move(x, y)
 		container:resize(w, h)
 		container:setScale(1)
 		container:setAlpha(1)
+		container.configs = {}
+		container:loadConfig{}
 	end	
 	self:saveSettings()
 end

@@ -24,8 +24,6 @@ local DOText = core.game.getCClass("gl{text}")
 local DOContainer = core.game.getCClass("gl{container}")
 local DOTarget = core.game.getCClass("gl{target}")
 local DOCallback = core.game.getCClass("gl{callback}")
-local DOTileMap = core.game.getCClass("gl{tilemap}")
-local DOTileObject = core.game.getCClass("gl{tileobject}")
 local DOSpriter = core.game.getCClass("gl{spriter}")
 local DOParticles = core.game.getCClass("gl{particles}")
 local DOPhysic = core.game.getCClass("physic{body}")
@@ -34,7 +32,7 @@ local Minimap2D = core.game.getCClass("gl{minimap2d}")
 local MapObjectRenderer = core.game.getCClass("gl{mapobj2drender}")
 local DOAll = {
 	DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOSpriter, DOParticles,
-	DOTileObject, DOTileMap, Map2D, Minimap2D, MapObjectRenderer,
+	Map2D, Minimap2D, MapObjectRenderer,
 }
 
 -----------------------------------------------------------------------------------

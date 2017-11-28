@@ -107,8 +107,6 @@ function _M:init(minimalist, w, h)
 		game.key:triggerVirtual("SHOW_CHARACTER_SHEET")
 	end, "Click to assign stats and talents!"), nil, "charsheet", false, 1)
 
-	game:registerEventUI(self, "Player:updateModdableTile")
-
 	self:update(0)
 end
 
@@ -124,11 +122,6 @@ function _M:getDefaultGeometry()
 	return x, y, w, h
 end
 
-function _M:onEventUI(kind, who)
-	self.old_player = nil
-	self:update(0)
-end
-
 function _M:update(nb_keyframes)
 	local player = self:getPlayer()
 	if not player then
@@ -140,8 +133,8 @@ function _M:update(nb_keyframes)
 			local config = configs[UI.ui] or configs.dark
 			self.do_container:shown(true)
 			if self.player_do then self.do_container:remove(self.player_do) end
-			self.player_do = player:getDO()
-			self.do_container:add(self.player_do) self.player_do:translate(config.player.x, config.player.y, 1)
+			self.player_do = player:getEntityDisplayObject(nil, 40, 40, 1, false, true, true):translate(config.player.x, config.player.y, 1)
+			self.do_container:add(self.player_do)
 		end
 	end
 	self.old_player = player

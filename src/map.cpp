@@ -35,7 +35,6 @@ extern "C" {
 }
 
 #include "map.hpp"
-#include "renderer-moderngl/TileMap.hpp"
 #include <algorithm>
 
 static const char IS_HEX_KEY = 'k';
@@ -486,32 +485,32 @@ static int map_object_is_valid(lua_State *L)
 
 static int map_objects_to_displayobject(lua_State *L)
 {
-	int w = luaL_checknumber(L, 1);
-	int h = luaL_checknumber(L, 2);
-	float a = (lua_isnumber(L, 3) ? lua_tonumber(L, 3) : 1);
-	bool allow_cb = true;
-	bool allow_shader = true;
-	if (lua_isboolean(L, 4)) allow_cb = lua_toboolean(L, 4);
-	if (lua_isboolean(L, 5)) allow_shader = lua_toboolean(L, 5);
+	// int w = luaL_checknumber(L, 1);
+	// int h = luaL_checknumber(L, 2);
+	// float a = (lua_isnumber(L, 3) ? lua_tonumber(L, 3) : 1);
+	// bool allow_cb = true;
+	// bool allow_shader = true;
+	// if (lua_isboolean(L, 4)) allow_cb = lua_toboolean(L, 4);
+	// if (lua_isboolean(L, 5)) allow_shader = lua_toboolean(L, 5);
 
-	DORTileObject *to = new DORTileObject(w, h, a, allow_cb, allow_shader);
-	// to->setLuaState(L);
+	// DORTileObject *to = new DORTileObject(w, h, a, allow_cb, allow_shader);
+	// // to->setLuaState(L);
 
-	int moid = 6;
-	while (lua_isuserdata(L, moid))
-	{
-		map_object *m = (map_object*)auxiliar_checkclass(L, "core{mapobj}", moid);
-		lua_pushvalue(L, -1);
-		int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	// int moid = 6;
+	// while (lua_isuserdata(L, moid))
+	// {
+	// 	map_object *m = (map_object*)auxiliar_checkclass(L, "core{mapobj}", moid);
+	// 	lua_pushvalue(L, -1);
+	// 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
-		to->addMapObject(m, ref);
-		moid++;
-	}
+	// 	to->addMapObject(m, ref);
+	// 	moid++;
+	// }
 
-	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
-	*v = to;
-	auxiliar_setclass(L, "gl{tileobject}", -1);
-	return 1;
+	// DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	// *v = to;
+	// auxiliar_setclass(L, "gl{tileobject}", -1);
+	// return 1;
 }
 
 static void setup_seens_texture(map_type *map)
@@ -664,8 +663,8 @@ static int map_new(lua_State *L)
 
 	map->seens_vbo = NULL;
 
-	map->map_dos = new unordered_set<DORTileMap*>;
-	map->minimap_dos = new unordered_set<DORTileMiniMap*>;
+	// map->map_dos = new unordered_set<DORTileMap*>;
+	// map->minimap_dos = new unordered_set<DORTileMiniMap*>;
 
 	return 1;
 }
@@ -716,10 +715,10 @@ static int map_free(lua_State *L)
 
 	if (map->seens_vbo) delete map->seens_vbo;
 
-	for (auto &it : *map->map_dos) it->mapDeath(map);
-	for (auto &it : *map->minimap_dos) it->mapDeath(map);
-	delete map->map_dos;
-	delete map->minimap_dos;
+	// for (auto &it : *map->map_dos) it->mapDeath(map);
+	// for (auto &it : *map->minimap_dos) it->mapDeath(map);
+	// delete map->map_dos;
+	// delete map->minimap_dos;
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -1734,10 +1733,10 @@ void map_toscreen(lua_State *L, map_type *map, int x, int y, float nb_keyframes,
 	}
 	render->toScreen(model, color);
 
-	if (map->minimap_changed) {
-		map->minimap_changed = false;
-		for (auto &it : *map->minimap_dos) it->redrawMiniMap();
-	}
+	// if (map->minimap_changed) {
+	// 	map->minimap_changed = false;
+	// 	for (auto &it : *map->minimap_dos) it->redrawMiniMap();
+	// }
 
 	/*
 	// Always display some more of the map to make sure we always see it all
@@ -1855,28 +1854,28 @@ static int map_line_grids(lua_State *L) {
 
 static int map_get_display_object(lua_State *L)
 {
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	// map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 
-	DORTileMap *tm = new DORTileMap();
-	tm->setMap(map);
+	// DORTileMap *tm = new DORTileMap();
+	// tm->setMap(map);
 
-	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
-	*v = tm;
-	auxiliar_setclass(L, "gl{tilemap}", -1);
-	return 1;
+	// DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	// *v = tm;
+	// auxiliar_setclass(L, "gl{tilemap}", -1);
+	// return 1;
 }
 
 static int map_get_display_object_mm(lua_State *L)
 {
-	map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
+	// map_type *map = (map_type*)auxiliar_checkclass(L, "core{map}", 1);
 
-	DORTileMiniMap *tm = new DORTileMiniMap();
-	tm->setMap(map);
+	// DORTileMiniMap *tm = new DORTileMiniMap();
+	// tm->setMap(map);
 
-	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
-	*v = tm;
-	auxiliar_setclass(L, "gl{tileminimap}", -1);
-	return 1;
+	// DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
+	// *v = tm;
+	// auxiliar_setclass(L, "gl{tileminimap}", -1);
+	// return 1;
 }
 
 static const struct luaL_Reg maplib[] =

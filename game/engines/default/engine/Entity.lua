@@ -32,7 +32,7 @@ local entities_load_functions = {}
 
 _M.__mo_final_repo = {}
 --- Fields we shouldn't save
-_M._no_save_fields = { _shader = true, __z_layers = true }
+_M._no_save_fields = { _shader = true, __z_layers = true, _do_cache = true }
  --- Subclasses can change it to know where they are on the map
 _M.__position_aware = false
 
@@ -492,6 +492,8 @@ function _M:makeMapObject(tiles, idx)
 		end
 	end
 
+	self._mo_updated = true
+
 	return self._mo, self.z, last_mo
 end
 
@@ -521,6 +523,7 @@ function _M:getMapObjects(tiles, mos, z)
 
 	self.__z_layers = {}
 
+	self._mo_updated = false
 	local i = -1
 	local nextz = 0
 	local mo, dz, lm
@@ -537,6 +540,10 @@ function _M:getMapObjects(tiles, mos, z)
 	until not mo
 	self._last_mo = last_mo
 	self:defineDisplayCallback()
+
+	if self._mo_updated and self._do_cache then
+		for DO, tiles in pairs(self._do_cache) do self:updateEntityDisplayObject(DO, tiles) end
+	end
 end
 
 --- Remove all Map objects for this entity
@@ -631,9 +638,6 @@ end
 -- @param h the height
 -- @return[1] the display object, that can then be chained to others DOs or renderer
 function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader, no_cache)
-	local id = w.."x"..h
-	if not no_cache and _M.__mo_final_repo[self] and _M.__mo_final_repo[self][id] then return _M.__mo_final_repo[self][id].DO end
-
 	local Map = require "engine.Map"
 	tiles = tiles or Map.tiles
 
@@ -646,13 +650,23 @@ function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader, no_ca
 	local DO = core.map2d.mapObjectsToDisplayObject(w, h, a, allow_cb, allow_shader, unpack(list))
 	if not DO then return nil end
 
-	if no_cache then
-		return DO
-	else
-		_M.__mo_final_repo[self] = _M.__mo_final_repo[self] or {}
-		_M.__mo_final_repo[self][id] = {DO=DO}
-		return _M.__mo_final_repo[self][id].DO
+	if not self._do_cache then self._do_cache = setmetatable({}, {__mode='k'}) end
+	self._do_cache[DO] = tiles
+
+	return DO
+end
+
+--- Update an Entity DO
+-- Internal use. DO NOT TOUCH
+function _M:updateEntityDisplayObject(DO, tiles)
+	local Map = require "engine.Map"
+	local mos = {}
+	local list = {}
+	self:getMapObjects(tiles, mos, 1)
+	for i = 1, Map.zdepth do
+		if mos[i] then list[#list+1] = mos[i] end
 	end
+	DO:updateEntity(unpack(list))
 end
 
 --- Get a string that will display in text the texture of this entity
