@@ -98,7 +98,7 @@ end
 function _M:toScreenBack(x, y, w, h)
 	TacticalOverlay.toScreenBack(self, x, y, w, h)
 
-	local map = game.level.map
+	local map = game.level and game.level.map
 	local friend = -100
 	local lp = math.max(0, self.actor.life) / self.actor.max_life + 0.0001
 	if self.actor.faction and map then

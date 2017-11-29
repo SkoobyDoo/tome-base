@@ -589,7 +589,7 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 	}
 
 	// Motion bluuuurr!
-	if (m->move_max && m->move_blur) {
+	if (m->move_max && m->move_blur && (m->move_step > 0)) {
 		// Compute the distance to traverse from origin to self
 		float adx = m->grid_x - m->move_start_x;
 		float ady = m->grid_y - m->move_start_y;
@@ -647,7 +647,7 @@ void Map2D::updateVision() {
 			if (!checkBounds(0, i, j)) seens_texture_data[idx] = 255;
 			else {
 				float seen = isSeen(i, j);
-				if (seen) seens_texture_data[idx] = 255 - seen * 255;
+				if (seen) seens_texture_data[idx] = 255 - (seen < 0 ? 0 : (seen > 1 ? 1 : seen)) * 255;
 				else if (isRemember(i, j)) seens_texture_data[idx] = obscure.a * 255;
 				else seens_texture_data[idx] = 255;
 			}
@@ -673,10 +673,13 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	uint32_t start_sort = 0;
 	initSorter();
+	// printf("==================================== START\n");
 	for (int32_t z = 0; z < zdepth; z++) {
+		// printf("------ Z %d\n", z);
 		if (z == zdepth_sort_start) { start_sort = sorting_mos_next; }
 		for (int32_t j = minj; j < maxj; j++) {
 			for (int32_t i = mini; i < maxi; i++) {
+				// printf("     * i, j %dx%d\n", i, j);
 				if (!checkBounds(z, i, j)) continue;
 				MapObject *mo = at(z, i, j);
 				if (!mo) continue;
@@ -688,6 +691,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 			}
 		}
 	}
+	// printf("==================================== END\n");
 	// stable_sort(map->sort_mos, map->sort_mos + start_sort, sort_mos_shader);
 	sort(sorting_mos.begin() + start_sort, sorting_mos.begin() + sorting_mos_next, sort_mos);
 	// printf("sorted %d mos\n", sorting_mos_next - start_sort);

@@ -1113,7 +1113,7 @@ function _M:setTile(f, w, h, last)
 		self:applyCosmeticActor(false)
 		self.actor:updateModdableTile()
 		self:fakeEquip(false)
-		self.actor_frame:setActor(self.actor)
+		-- self.actor_frame:setActor(self.actor) -- DGDGDGDG
 	else
 		self:applyCosmeticActor(true)
 	end

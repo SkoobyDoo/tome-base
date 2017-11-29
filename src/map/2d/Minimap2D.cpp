@@ -60,6 +60,7 @@ void Minimap2D::setMap(Map2D *map) {
 	if (!map) { printf("[Minimap2D] ERROR: trying to setMap a NULL map\n"); return; }
 	map->addMinimap(this);
 	this->map = map;
+	next_update_full = true;
 };
 
 void Minimap2D::cloneInto(DisplayObject *_into) {
@@ -78,7 +79,7 @@ void Minimap2D::setTexture(GLuint tex, int lua_ref, int id) {
 
 void Minimap2D::setMinimapInfo(int mdx, int mdy, int mdw, int mdh, float transp) {
 	if (info.mdx == mdx && info.mdy == mdy && info.mdw == mdw && info.mdh == mdh && info.transp == transp) return;
-	next_update_full = (info.mdw != mdw || info.mdh != mdh);
+	next_update_full = next_update_full || info.mdw != mdw || info.mdh != mdh;
 	info.mdx = mdx;
 	info.mdy = mdy;
 	info.mdw = mdw;

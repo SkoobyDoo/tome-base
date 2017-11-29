@@ -239,7 +239,7 @@ public:
 
 	void setDataKinds(uint8_t kinds);
 
-	void reserveQuads(int nb) { vertices.reserve(4 * nb); };
+	void reserveQuads(int nb) { if (nb <= 0) return; vertices.reserve(4 * nb); };
 
 	int addQuadPie(
 		float x1, float y1, float x2, float y2,
