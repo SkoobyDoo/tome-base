@@ -900,16 +900,6 @@ end
 function _M:defineDisplayCallback()
 	if not self._mo then return end
 
-	-- Cunning trick here!
-	-- the callback we give to mo:displayCallback is a function that references self
-	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
-	-- thus we store a reference to a weak table and put self into it
-	-- this way when self dies the weak reference dies and does not prevent GC'ing
-	local weak = setmetatable({[1]=self}, {__mode="v"})
-
-	-- local backps = self:getParticlesList(true)
-	-- local ps = self:getParticlesList()
-
 	if not self._tactical then
 		if game.always_target and game.always_target ~= "old" then
 			if config.settings.tome.small_frame_side then
@@ -923,68 +913,12 @@ function _M:defineDisplayCallback()
 	end
 
 	if self._mo == self._last_mo or not self._last_mo then
-		local DO = core.renderer.container():add(self._tactical.DO_back:removeFromParent()):add(self._tactical.DO_front:removeFromParent()):add(self._tactical.DO:removeFromParent())
+		local DO = core.renderer.container():add(self._tactical.DO:removeFromParent()):add(self._tactical.DO_front:removeFromParent())
 		-- self._mo:displayObject(DO)
 	else
-		self._mo:displayObject(self._tactical.DO_back, false)
-		local DO = core.renderer.container():add(self._tactical.DO_front:removeFromParent()):add(self._tactical.DO:removeFromParent())
-		self._last_mo:displayObject(DO, true)
+		self._mo:displayObject(self._tactical.DO:removeFromParent(), false)
+		self._last_mo:displayObject(self._tactical.DO_front:removeFromParent(), true)
 	end
-
-	-- local function particles(x, y, w, h, zoom, on_map)
-	-- 	local self = weak[1]
-	-- 	if not self or not self._mo then return end
-
-	-- 	self._tactical:toScreenFront(x, y, w, h)
-
-	-- 	local e
-	-- 	local dy = 0
-	-- 	if h > w then dy = (h - w) / 2 end
-	-- 	for i = 1, #ps do
-	-- 		e = ps[i]
-	-- 		e:checkDisplay()
-	-- 		if e.ps:isAlive() then
-	-- 			if game.level and game.level.map then e:shift(game.level.map, self._mo) end
-	-- 			e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
-	-- 		else self:removeParticles(e)
-	-- 		end
-	-- 	end
-	-- end
-
-	-- local function backparticles(x, y, w, h, zoom, on_map)
-	-- 	local self = weak[1]
-	-- 	if not self then return end
-
-	-- 	local e
-	-- 	local dy = 0
-	-- 	if h > w then dy = (h - w) / 2 end
-	-- 	for i = 1, #backps do
-	-- 		e = backps[i]
-	-- 		e:checkDisplay()
-	-- 		if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
-	-- 		else self:removeParticles(e)
-	-- 		end
-	-- 	end
-
-	-- 	self._tactical:toScreenBack(x, y, w, h)
-	-- end
-
-	-- if self._mo == self._last_mo or not self._last_mo then
-	-- 	self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-	-- 		backparticles(x, y, w, h, zoom, on_map)
-	-- 		particles(x, y, w, h, zoom, on_map)
-	-- 		return true
-	-- 	end)
-	-- else
-	-- 	self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-	-- 		backparticles(x, y, w, h, zoom, on_map)
-	-- 		return true
-	-- 	end)
-	-- 	self._last_mo:displayCallback(function(x, y, w, h, zoom, on_map)
-	-- 		particles(x, y, w, h, zoom, on_map)
-	-- 		return true
-	-- 	end)
-	-- end
 end
 
 function _M:move(x, y, force)
@@ -1736,6 +1670,7 @@ function _M:regenLife(fake)
 		-- handles maximum life (including Blood Lock)
 		regen = util.bound(self.life + regen, self.die_at, self:attr("blood_lock") or self.max_life) - self.life
 		if not fake then self.life = self.life + regen end
+		if self._tactical then self._tactical:update() end
 		return regen, psi_increase or self.psi_regen or 0
 	end
 	return 0, 0
@@ -1807,6 +1742,14 @@ function _M:onHeal(value, src)
 	end
 	return value
 end
+
+--- Heal some
+function _M:heal(value, src)
+	value = mod.class.interface.ActorLife.heal(self, value, src)
+	if self._tactical then self._tactical:update() end
+	return value
+end
+
 
 --- Called before taking a hit, it's the chance to check for shields
 function _M:onTakeHit(value, src, death_note)
@@ -2562,6 +2505,7 @@ function _M:takeHit(value, src, death_note)
 		self.inc_damage = incdam
 	end
 
+	if self._tactical then self._tactical:update() end
 	return dead, val
 end
 

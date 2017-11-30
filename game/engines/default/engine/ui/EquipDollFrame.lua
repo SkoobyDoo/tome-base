@@ -112,7 +112,7 @@ end
 function _M:onDrag(inven, item, o)
 	if not self.drag_enable then return end
 	if o then
-		local DO = o:getEntityDisplayObject(nil, 64, 64)
+		local DO = o:getDO(64, 64)
 		local x, y = core.mouse.get()
 		game.mouse:startDrag(x, y, DO, {kind="inventory", item_idx=item, inven=inven, object=o, id=o:getName{no_add_name=true, force_id=true, no_count=true}}, function(drag, used)
 			local x, y = core.mouse.get()
@@ -182,7 +182,7 @@ function _M:display(x, y, nb_keyframes, ox, oy)
 	local o = self:getItem()
 	if self.old_o ~= o then
 		if o then
-			self.item_container:clear():add(o:getEntityDisplayObject(nil, self.f_iw, self.f_ih, 1, false, false, true)):shown(true)
+			self.item_container:clear():add(o:getDO(self.f_iw, self.f_ih)):shown(true)
 			if self.bg_empty then self.bg_empty:shown(false) end
 		else
 			self.item_container:clear():shown(false)

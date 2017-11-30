@@ -184,7 +184,7 @@ private:
 	bool allow_cb, allow_do, allow_particles;
 public:
 	MapObjectProcessor(int32_t tile_w, int32_t tile_h, bool allow_cb, bool allow_do, bool allow_particles) : tile_w(tile_w), tile_h(tile_h), allow_cb(allow_cb), allow_do(allow_do), allow_particles(allow_particles) {}
-	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float sx, float sy, vec4 color, mat4 *model = nullptr);
+	void processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model = nullptr);
 };
 
 /****************************************************************************
@@ -358,13 +358,13 @@ class MapObjectRenderer : public DORFlatSortable, public MapObjectProcessor {
 private:
 	vector<tuple<MapObject*, int>> mos;
 	bool allow_cb = false;
-	bool allow_shader = false;
-	float w, h, a;	
+	bool allow_particles = false;
+	float w, h;
 
 	virtual void cloneInto(DisplayObject *into);
 
 public:
-	MapObjectRenderer(float w, float h, float a, bool allow_cb, bool allow_shader);
+	MapObjectRenderer(float w, float h, bool allow_cb, bool allow_particles);
 	virtual ~MapObjectRenderer();
 	virtual DisplayObject* clone(); // We dont use the standard definition, see .cpp file
 	virtual const char* getKind() { return "MapObjectRenderer"; };

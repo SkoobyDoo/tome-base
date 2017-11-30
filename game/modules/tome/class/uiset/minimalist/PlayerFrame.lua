@@ -133,7 +133,7 @@ function _M:update(nb_keyframes)
 			local config = configs[UI.ui] or configs.dark
 			self.do_container:shown(true)
 			if self.player_do then self.do_container:remove(self.player_do) end
-			self.player_do = player:getEntityDisplayObject(nil, 40, 40, 1, false, true, true):translate(config.player.x, config.player.y, 1)
+			self.player_do = player:getDO(40, 40):translate(config.player.x, config.player.y, 1)
 			self.do_container:add(self.player_do)
 		end
 	end

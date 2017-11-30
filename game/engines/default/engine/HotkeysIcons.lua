@@ -87,7 +87,7 @@ function _M:addTo(hks, actor, page, bi, i, x, y)
 	self.oldpie_color = {1, 1, 1, 0}
 
 	if display_entity then
-		self.display_entity = display_entity:getEntityDisplayObject(hks.tiles, hks.icon_w, hks.icon_h, 1, false, false, true)
+		self.display_entity = display_entity:getEntityDisplayObject(hks.tiles, hks.icon_w, hks.icon_h, false, true)
 		hks.icons_layer:add(self.display_entity:removeFromParent():translate(x, y, 0))
 	end
 

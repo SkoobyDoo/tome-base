@@ -209,8 +209,12 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 	return {move_anim_dx, move_anim_dy};
 }
 
-inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, float sx, float sy, vec4 color, mat4 *model) {
+inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model) {
 	if (dm->hide) return;
+
+	float base_x = dx, base_y = dy;
+	dx += floor(dm->pos.x * tile_w);
+	dy += floor(dm->pos.y * tile_h);
 
 	float dw = dm->size.x, dh = dm->size.y;
 	float x1, x2, y1, y2;
@@ -222,7 +226,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 
 	if (allow_do && dm->bdisplayobject) {
 		mat4 base;
-		mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
+		mat4 m = glm::translate(model ? *model : base, glm::vec3(base_x, base_y, 0));
 		dm->bdisplayobject->render(renderer, m, color, true);
 	}
 
@@ -257,7 +261,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 
 	if (allow_particles && dm->particles.size()) {
-		float px = dx + dw * tile_w * dm->scale / 2, py = dy + dh * tile_h * dm->scale / 2;
+		float px = base_x + dm->root->move_anim_dx * tile_w + tile_w * dm->scale / 2, py = base_y + dm->root->move_anim_dy * tile_h + tile_h * dm->scale / 2;
 		// Not on map, just display
 		if (model) {
 			mat4 m = glm::translate(*model, glm::vec3(px, py, 0));
@@ -272,8 +276,8 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 		// On map, display and shift accordingly
 		} else {
 			// Compute the position with animation and absolute map positioning instead of screen positioning to be able ot deduce shift effect
-			float nshiftx = floor((dm->root->grid_x + dm->pos.x + dm->root->move_anim_dx) * tile_w);
-			float nshifty = floor((dm->root->grid_y + dm->pos.y + dm->root->move_anim_dy) * tile_h);
+			float nshiftx = floor((dm->root->grid_x + dm->root->move_anim_dx) * tile_w);
+			float nshifty = floor((dm->root->grid_y + dm->root->move_anim_dy) * tile_h);
 
 			mat4 m;
 			m = glm::translate(m, glm::vec3(px, py, 0));
@@ -294,7 +298,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 
 	if (allow_do && dm->fdisplayobject) {
 		mat4 base;
-		mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
+		mat4 m = glm::translate(model ? *model : base, glm::vec3(base_x, base_y, 0));
 		dm->fdisplayobject->render(renderer, m, color, true);
 	}
 
@@ -302,13 +306,13 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 		stopDisplayList(); // Needed to make sure we break texture chaining
 		auto dl = getDisplayList(renderer);
 		stopDisplayList(); // Needed to make sure we break texture chaining
-		dm->cb->dx = dx + sx;
-		dm->cb->dy = dy + sy;
+		dm->cb->dx = base_x;
+		dm->cb->dy = base_y;
 		dm->cb->dw = tile_w * dw * dm->scale;
 		dm->cb->dh = tile_h * dh * dm->scale;
 		dm->cb->scale = dm->scale;
-		dm->cb->tldx = dx + sx;
-		dm->cb->tldy = dy + sy;
+		dm->cb->tldx = dx;
+		dm->cb->tldy = dy;
 		dl->sub = dm->cb;
 	}
 }
@@ -317,8 +321,8 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 /*************************************************************************
  ** MapObjectRender
  *************************************************************************/
-MapObjectRenderer::MapObjectRenderer(float w, float h, float a, bool allow_cb, bool allow_shader)
-	: w(w), h(h), a(a), allow_cb(allow_cb), allow_shader(allow_shader), MapObjectProcessor(w, h, allow_cb, allow_cb, true)
+MapObjectRenderer::MapObjectRenderer(float w, float h, bool allow_cb, bool allow_particles)
+	: w(w), h(h), allow_cb(allow_cb), allow_particles(allow_particles), MapObjectProcessor(w, h, allow_cb, allow_cb, allow_particles)
 {
 }
 
@@ -327,7 +331,7 @@ MapObjectRenderer::~MapObjectRenderer() {
 }
 
 DisplayObject* MapObjectRenderer::clone() {
-	MapObjectRenderer *into = new MapObjectRenderer(w, h, a, allow_cb, allow_shader);
+	MapObjectRenderer *into = new MapObjectRenderer(w, h, allow_cb, allow_particles);
 	this->cloneInto(into);
 	return into;
 }
@@ -367,7 +371,7 @@ void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur
 	for (auto &it : mos) {
 		MapObject *dm = get<0>(it);
 		while (dm) {
-			processMapObject(container, dm, floor(dm->pos.x * w), floor(dm->pos.y * h), 0, 0, vcolor, &vmodel);
+			processMapObject(container, dm, 0, 0, vcolor, &vmodel);
 			dm = dm->next;
 		}
 	}
@@ -615,8 +619,8 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 	while (dm) {
 		MapObjectSort *so = getSorter();
 		so->m = dm;
-		so->dx = dx + floor((dm->pos.x + m->move_anim_dx) * tile_w);
-		so->dy = dy + floor((dm->pos.y + m->move_anim_dy) * tile_h);
+		so->dx = dx + floor(m->move_anim_dx * tile_w);
+		so->dy = dy + floor(m->move_anim_dy * tile_h);
 		so->dy_sort = j + dm->pos.y + m->move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
 		so->color = color;
 		dm = dm->next;
@@ -733,7 +737,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
 		MapObjectSort *so = sorting_mos[spos];
-		processMapObject(&renderer, so->m, so->dx, so->dy, sx, sy, so->color, nullptr);
+		processMapObject(&renderer, so->m, so->dx, so->dy, so->color, nullptr);
 	}
 	
 	mat4 zmodel = mat4();
@@ -773,7 +777,7 @@ void Map2D::onKeyframe(float nb_keyframes) {
 
 void map2d_clean_particles() {
 	if (mos_particles_clean.size() == 0) return;
-	printf("[Map2D] Cleaning %d MOs with some dead particles\n", mos_particles_clean.size());
+	printf("[Map2D] Cleaning %ld MOs with some dead particles\n", mos_particles_clean.size());
 	for (auto dm : mos_particles_clean) dm->cleanParticles();
 	mos_particles_clean.clear();
 }

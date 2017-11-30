@@ -39,7 +39,7 @@ function _M:init(effects, eff_id)
 	self.effects = effects
 	self.eff_id = eff_id
 	self.frame = UI:cloneFrameDO(effects.base_frame)
-	self.display_entity = e.display_entity:getEntityDisplayObject(effects.tiles, 38, 38, 1, false, false, true)
+	self.display_entity = e.display_entity:getEntityDisplayObject(effects.tiles, 38, 38, false, true)
 	self.texts = core.renderer.container()
 	if e.decrease > 0 then
 		local font = e.charges and effects.buff_font_small or effects.buff_font

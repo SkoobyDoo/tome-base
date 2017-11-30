@@ -242,13 +242,12 @@ end
 --- Adds a particles emitter following the entity
 -- @param[type=Particles] ps
 function _M:addParticles(ps)
-	if self._mo then self._mo:addParticles(ps:getDO()) end
+	if self._mo then
+		local mo = self._last_mo
+		if not mo or ps.toback then mo = self._mo end
+		mo:addParticles(ps:getDO())
+	end
 	self.__particles[ps] = true
-	-- if self.x and self.y and game.level and game.level.map then
-	-- 	ps.x = self.x
-	-- 	ps.y = self.y
-	-- 	self:defineDisplayCallback()
-	-- end
 	return ps
 end
 
@@ -288,12 +287,20 @@ function _M:removeParticles(ps)
 	ps:dieDisplay()
 end
 
---- Get the particle emitters of this entity
--- @param[type=string|bool] back "all" is a valid value
-function _M:getParticlesList(back)
-	local ps = {}
-	-- DGDGDGDG: we should not need that anymore
-	return ps
+--- Removes all particles emitters following the entity
+function _M:removeAllParticles()
+	for ps, _ in ipairs(table.keys(self.__particles)) do
+		self:removeParticles(ps)
+	end
+end
+
+--- Removes all particles emitters following the entity
+function _M:cleanupParticles()
+	for _, ps in ipairs(table.keys(self.__particles)) do
+		if ps.ps and not ps.ps:isAlive() then
+			self:removeParticles(ps)
+		end
+	end
 end
 
 --- Removes the particles from the running threads but keep the data for later
@@ -469,8 +476,8 @@ function _M:makeMapObject(tiles, idx)
 	self._mo_updated = true
 
 	if idx == 1 then
-		if Savefile.current_save then game:onTickEnd(function() for ps, _ in pairs(self.__particles or {}) do self:addParticles(ps) end end)
-		else for ps, _ in pairs(self.__particles or {}) do self:addParticles(ps) end end
+		if Savefile.current_save then game:onTickEnd(function() self:cleanupParticles() for ps, _ in pairs(self.__particles or {}) do self:addParticles(ps) end end)
+		else self:cleanupParticles() for ps, _ in pairs(self.__particles or {}) do self:addParticles(ps) end end
 	end
 
 	return self._mo, self.z, last_mo
@@ -616,7 +623,7 @@ end
 -- @param w the width
 -- @param h the height
 -- @return[1] the display object, that can then be chained to others DOs or renderer
-function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader, no_cache)
+function _M:getEntityDisplayObject(tiles, w, h, allow_cb, allow_particles)
 	local Map = require "engine.Map"
 	tiles = tiles or Map.tiles
 
@@ -626,7 +633,7 @@ function _M:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader, no_ca
 	for i = 1, Map.zdepth do
 		if mos[i] then list[#list+1] = mos[i] end
 	end
-	local DO = core.map2d.mapObjectsToDisplayObject(w, h, a, allow_cb, allow_shader, unpack(list))
+	local DO = core.map2d.mapObjectsToDisplayObject(w, h, allow_cb, allow_particles, unpack(list))
 	if not DO then return nil end
 
 	if not self._do_cache then self._do_cache = setmetatable({}, {__mode='k'}) end
@@ -667,23 +674,23 @@ function _M:getDisplayString(tstr)
 end
 
 --- Simplyfied DO method to get a basic one
-function _M:getDO(w, h, a)
+function _M:getDO(w, h)
 	local Map = require "engine.Map"
 	local tiles = Map.tiles
-	if game.level and game.level.map then tiles = game.level.map.tiles end
-	return self:getEntityDisplayObject(tiles, w or 64, h or 64, a or 1, false, true, true)
+	-- if game.level and game.level.map then tiles = game.level.map.tiles end
+	return self:getEntityDisplayObject(tiles, w or 64, h or 64, false, true)
 end
 
 --- Displays an entity somewhere on screen, outside the map
+-- DEPRECATED! DO NOT USE! *DO NOT USE*
 -- @param[type=Tiles] tiles a Tiles instance that will handle the tiles (usually pass it the current Map.tiles, it will if this is null)
 -- @int x where to display
 -- @int y where to display
 -- @int w the width
 -- @int h the height
--- @param[type=?number] a the alpha setting
 -- @param allow_cb
--- @param allow_shader
-function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_shader)
+-- @param allow_particles
+function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_particles)
 	-- local Map = require "engine.Map"
 	-- tiles = tiles or Map.tiles
 
@@ -694,7 +701,7 @@ function _M:toScreen(tiles, x, y, w, h, a, allow_cb, allow_shader)
 	-- 	if mos[i] then list[#list+1] = mos[i] end
 	-- end
 	-- core.map2d.mapObjectsToScreen(x, y, w, h, a, allow_cb, allow_shader, unpack(list))
-	local DO = self:getEntityDisplayObject(tiles, w, h, a, allow_cb, allow_shader)
+	local DO = self:getEntityDisplayObject(tiles, w, h, allow_cb, allow_particles)
 	DO:toScreen(x, y)
 end
 

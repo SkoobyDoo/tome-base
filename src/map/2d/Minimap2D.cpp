@@ -44,6 +44,7 @@ Minimap2D::Minimap2D() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	// printf("===tilemap %ld with texture %d\n", this, tex[0]);
+	next_update_full = true;
 }
 
 Minimap2D::~Minimap2D() {

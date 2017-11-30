@@ -54,10 +54,12 @@ function _M:init()
 	self.DO:add(self.DO_rank_back)
 	self.DO_front:add(self.DO_rank_front)
 	self.DO_front:add(self.DO_chat)
-	self:toScreenBack(0, 0, 64, 64)
+	self:update()
 end
 
-function _M:toScreenBack(x, y, w, h)
+function _M:update()
+	local w, h = Map.tile_w, Map.tile_h
+
 	if self.actor.rank ~= self.old_rank then
 		if boss_rank_circles[self.actor.rank or 1] then
 			local b = boss_rank_circles[self.actor.rank]
@@ -69,12 +71,6 @@ function _M:toScreenBack(x, y, w, h)
 		end
 	end
 	self.old_rank = self.actor.rank
-end
-
-function _M:toScreenFront(x, y, w, h)
-	if not boss_rank_circles[self.actor.rank or 1] and not self.can_talk then return end
-	local dy = 0
-	if h > w then dy = (h - w) / 2 end
 
 	-- Chat
 	if self.actor.can_talk ~= self.old_talk then
@@ -85,6 +81,4 @@ function _M:toScreenFront(x, y, w, h)
 		end
 	end
 	self.old_talk = self.actor.can_talk
-
-	self.DO_front:toScreen(x, y + dy)
 end

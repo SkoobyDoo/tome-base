@@ -250,8 +250,7 @@ end
 function _M:atEnd(v)
 	if v == "created" and not self.ui_by_ui[self.c_ok].hidden then
 		self:checkNew(function()
-			local ps = self.actor:getParticlesList()
-			for i, p in ipairs(ps) do self.actor:removeParticles(p) end
+			self.actor:removeAllParticles()
 			self.actor:defineDisplayCallback()
 			self.actor:removeAllMOs()
 
@@ -1095,8 +1094,7 @@ function _M:setTile(f, w, h, last)
 
 	if not last then
 		-- Add an example particles if any
-		local ps = self.actor:getParticlesList("all")
-		for i, p in ipairs(ps) do self.actor:removeParticles(p) end
+		self.actor:removeAllParticles()
 		if self.actor.shader_auras then self.actor.shader_auras = {} end
 		self.replace_display = nil
 		if self.descriptors_by_type.subclass then

@@ -36,7 +36,7 @@ function _M:init(effects, tid)
 	self.effects = effects
 	self.tid = tid
 	self.frame = UI:cloneFrameDO(effects.base_frame)
-	self.display_entity = t.display_entity:getEntityDisplayObject(effects.tiles, 38, 38, 1, false, false, true)
+	self.display_entity = t.display_entity:getEntityDisplayObject(effects.tiles, 38, 38, false, true)
 	self.texts = core.renderer.container()
 	if t.iconOverlay then
 		self.text_overlay = core.renderer.text(effects.buff_font):outline(1, 0, 0, 0, 1)

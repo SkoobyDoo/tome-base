@@ -49,7 +49,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 	self.c_inven = Inventory.new{actor=actor_actor, inven=actor_inven, filter=actor_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10,
 		columns={
 			{name="", width={30,"fixed"}, display_prop="char", sort="id"},
-			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
+			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getDO(h, h) end end},
 			{name="Inventory", width=80, display_prop="name", sort="name"},
 			{name="Category", width=20, display_prop="cat", sort="cat"},
 			{name="Price", width={70,"fixed"}, display_prop=function(item) return self.descprice("sell", item.object) end, sort=function(a, b) return descprice("sell", a.object) < descprice("sell", b.object) end},
@@ -64,7 +64,7 @@ function _M:init(title, store_inven, actor_inven, store_filter, actor_filter, ac
 	self.c_store = Inventory.new{actor=store_actor, inven=store_inven, filter=store_filter, width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, tabslist=false,
 		columns={
 			{name="", width={30,"fixed"}, display_prop="char", sort="id"},
-			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getEntityDisplayObject(nil, h, h, 1, false, false, true) end end},
+			{name="", width={24,"fixed"}, display_prop="object", direct_draw=function(item, h) if item.object then return item.object:getDO(h, h) end end},
 			{name="Store", width=80, display_prop="name"},
 			{name="Category", width=20, display_prop="cat"},
 			{name="Price", width={70,"fixed"}, display_prop=function(item) return self.descprice("buy", item.object) end, sort=function(a, b) return descprice("buy", a.object) < descprice("buy", b.object) end},
@@ -192,7 +192,7 @@ end
 
 function _M:onDrag(item, what)
 	if item and item.object then
-		local DO = item.object:getEntityDisplayObject(nil, 64, 64)
+		local DO = item.object:getDO(64, 64)
 		local x, y = core.mouse.get()
 		game.mouse:startDrag(x, y, DO, {kind=what, item_idx=item.item, inven=item.inven, object=item.object, id=item.object:getName{no_add_name=true, force_id=true, no_count=true}}, function(drag, used)
 			if not used then

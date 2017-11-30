@@ -39,7 +39,7 @@ function _M:init(t, item, entity, size, frame, talent_frame, no_text)
 	self.w, self.h = self.talent_frame.w, self.talent_frame.h
 
 	self.do_container:add(self.talent_frame.container)
-	self.do_container:add(entity:getEntityDisplayObject(tiles_cache, size - 6, size - 6, 1, false, false, true):translate(3, 3, 20))
+	self.do_container:add(entity:getEntityDisplayObject(tiles_cache, size - 6, size - 6, false, true):translate(3, 3, 20))
 	self.shadow = core.renderer.colorQuad(3, 3, size - 6, size - 6, 0, 0, 0, 0.85):translate(0, 0, 50):shown(false)
 	self.do_container:add(self.shadow)
 

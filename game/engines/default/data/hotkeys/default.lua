@@ -47,7 +47,7 @@ newKind{
 	end end,
 	drag_display_object = function(self, actor)
 		local t = actor:getTalentFromId(self.data)
-		return t.display_entity:getEntityDisplayObject(nil, 64, 64, 1, false, false, true)
+		return t.display_entity:getDO(64, 64)
 	end,
 	use = function(self, actor)
 		actor:useTalent(self.data)
@@ -101,7 +101,7 @@ newKind{
 	end,
 	drag_display_object = function(self, actor)
 		local o = actor:findInAllInventories(self.data, {no_add_name=true, force_id=true, no_count=true})
-		if o then return o:getEntityDisplayObject(nil, 64, 64) end
+		if o then return o:getDO(64, 64) end
 	end,
 	use = function(self, actor)
 		local o, item, inven = actor:findInAllInventories(self.data)

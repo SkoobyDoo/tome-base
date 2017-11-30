@@ -279,11 +279,11 @@ static int map_objects_to_displayobject(lua_State *L) {
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
 	bool allow_cb = lua_toboolean(L, 3);
-	bool allow_shader = lua_toboolean(L, 4);
+	bool allow_particles = lua_toboolean(L, 4);
 
-	MapObjectRenderer *mor = new MapObjectRenderer(w, h, 1, allow_cb, allow_cb);
+	MapObjectRenderer *mor = new MapObjectRenderer(w, h, allow_cb, allow_cb);
 
-	map_object_update(L, 6, mor);
+	map_object_update(L, 5, mor);
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = mor;

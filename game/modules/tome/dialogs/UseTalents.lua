@@ -135,7 +135,7 @@ function _M:onDrag(item)
 	if item and item.talent then
 		local t = self.actor:getTalentFromId(item.talent)
 --		if t.mode == "passive" then return end
-		local DO = t.display_entity:getEntityDisplayObject(nil, 64, 64)
+		local DO = t.display_entity:getDO(64, 64)
 		local x, y = core.mouse.get()
 		game.mouse:startDrag(x, y, DO, {kind="talent", id=t.id}, function(drag, used)
 			local x, y = core.mouse.get()

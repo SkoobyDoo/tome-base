@@ -95,9 +95,10 @@ function _M:init(actor)
 	TacticalOverlay.init(self)
 end
 
-function _M:toScreenBack(x, y, w, h)
-	TacticalOverlay.toScreenBack(self, x, y, w, h)
+function _M:update()
+	TacticalOverlay.update(self)
 
+	local w, h = Map.tile_w, Map.tile_h
 	local map = game.level and game.level.map
 	local friend = -100
 	local lp = math.max(0, self.actor.life) / self.actor.max_life + 0.0001
@@ -160,9 +161,6 @@ function _M:toScreenBack(x, y, w, h)
 		self.DO_tactical:clear()
 		core.renderer.fromTextureTable(tactical_texture, 0, 0, w, h, false, 1, 1, 1, 1, self.DO_tactical)
 	end
-
-	-- DGDGDGDG They all use the same texture atlas, we shouldnt draw the DO but pass it to the map code
-	self.DO:toScreen(x, y)
 
 	self.old_friend = friend
 	self.old_life = lp
