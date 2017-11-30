@@ -544,5 +544,5 @@ DORText::DORText() {
 
 DORText::~DORText() {
 	free((void*)text);
-	if (font_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, font_lua_ref);
+	refcleaner(font_lua_ref);
 };

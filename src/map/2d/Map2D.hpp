@@ -141,6 +141,8 @@ protected:
 	MapObject *next = nullptr;
 	int next_ref = LUA_NOREF;
 
+	unordered_set<MapObjectRenderer*> mor_set;
+
 public:
 	MapObject(int64_t uid, uint8_t nb_textures, bool on_seen, bool on_remember, bool on_unknown, vec2 pos, vec2 size, float scale);
 	~MapObject();
@@ -152,8 +154,9 @@ public:
 	bool setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords);
 	void setDisplayObject(DisplayObject *d, int ref, bool front);
 	void addParticles(DORParticles *p, int ref);
-	ParticlesVector::iterator removeParticles(ParticlesVector::iterator it);
+	void removeParticles(ParticlesVector::iterator *it);
 	void removeParticles(DORParticles *p);
+	void cleanParticles();
 	void clearParticles();
 	void setShader(shader_type *s, int ref);
 	void flipX(bool v) { flip_x = v; if (next) return next->flipX(v); }
@@ -169,6 +172,10 @@ public:
 	void resetMoveAnim();
 	void setMoveAnim(int32_t startx, int32_t starty, float max, float blur, uint8_t twitch_dir, float twitch);
 	vec2 computeMoveAnim(float nb_keyframes);
+
+	void addMOR(MapObjectRenderer *mor);
+	void removeMOR(MapObjectRenderer *mor);
+	void notifyChangedMORs();
 };
 
 class MapObjectProcessor {
@@ -369,5 +376,7 @@ public:
 	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);
 	virtual void sortZ(RendererGL *container, mat4& cur_model);
 };
+
+void map2d_clean_particles();
 
 #endif

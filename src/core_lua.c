@@ -333,7 +333,7 @@ extern int current_keyhandler;
 static int lua_set_current_keyhandler(lua_State *L)
 {
 	if (current_keyhandler != LUA_NOREF)
-		luaL_unref(L, LUA_REGISTRYINDEX, current_keyhandler);
+		refcleaner(current_keyhandler);
 
 	if (lua_isnil(L, 1))
 		current_keyhandler = LUA_NOREF;
@@ -422,7 +422,7 @@ extern int current_game;
 static int lua_set_current_game(lua_State *L)
 {
 	if (current_game != LUA_NOREF)
-		luaL_unref(L, LUA_REGISTRYINDEX, current_game);
+		refcleaner(current_game);
 
 	if (lua_isnil(L, 1))
 		current_game = LUA_NOREF;

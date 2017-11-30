@@ -36,7 +36,9 @@ extern "C" {
 #include "map/2d/Map2D.hpp"
 #include "map/2d/Minimap2D.hpp"
 #include <algorithm>
+#include <unordered_set>
 
+static unordered_set<MapObject*> mos_particles_clean;
 
 /*************************************************************************
  ** Map objects
@@ -52,75 +54,102 @@ MapObject::MapObject(int64_t uid, uint8_t nb_textures, bool on_seen, bool on_rem
 }
 
 MapObject::~MapObject() {
+	mos_particles_clean.erase(this);
+	clearParticles();
 	for (int i = 0; i < nb_textures; i++) {
-		if (textures_ref[i] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, textures_ref[i]);
+		refcleaner(textures_ref[i]);
 	}
-	if (next_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, next_ref);
-	if (fdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, fdo_ref);
-	if (bdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, bdo_ref);
-	if (shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, shader_ref);
+	refcleaner(next_ref);
+	refcleaner(fdo_ref);
+	refcleaner(bdo_ref);
+	refcleaner(shader_ref);
 	if (cb) delete cb;
 }
 
 void MapObject::setCallback(int ref) {
 	if (!cb) cb = new DORCallbackMap();
 	cb->setCallback(ref);
+	notifyChangedMORs();
 }
 
 void MapObject::chain(MapObject *n, int ref) {
-	if (next_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, next_ref);
+	refcleaner(next_ref);
 	next = n;
 	next_ref = ref;
 	n->root = root;
+	notifyChangedMORs();
 }
 
 bool MapObject::setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords) {
 	if (slot >= MAX_TEXTURES) return false;
-	if (textures_ref[slot] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, textures_ref[slot]);
+	refcleaner(textures_ref[slot]);
 	textures[slot] = tex;
 	textures_ref[slot] = ref;
 	tex_coords[slot] = coords;
+	notifyChangedMORs();
 	return true;
 }
 
 void MapObject::setDisplayObject(DisplayObject *d, int ref, bool front) {
 	if (front) {
-		if (fdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, fdo_ref);
+		refcleaner(fdo_ref);
 		fdisplayobject = d;
 		fdo_ref = ref;
 	} else {
-		if (bdo_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, bdo_ref);
+		refcleaner(bdo_ref);
 		bdisplayobject = d;
 		bdo_ref = ref;
 	}
+	notifyChangedMORs();
+}
+
+void MapObject::addMOR(MapObjectRenderer *mor) {
+	mor_set.insert(mor);
+}
+void MapObject::removeMOR(MapObjectRenderer *mor) {
+	mor_set.erase(mor);
+}
+void MapObject::notifyChangedMORs() {
+	for (auto mor : mor_set) mor->setChanged();
 }
 
 void MapObject::addParticles(DORParticles *p, int ref) {
 	particles.emplace_back(p, ref);
+	notifyChangedMORs();
 }
-ParticlesVector::iterator MapObject::removeParticles(ParticlesVector::iterator it) {
-	if (get<1>(*it) != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(*it));
-	return particles.erase(it);
+void MapObject::removeParticles(ParticlesVector::iterator *it) {
+	refcleaner(get<1>(**it));
+	*it = particles.erase(*it);
+	notifyChangedMORs();
 }
 void MapObject::removeParticles(DORParticles *p) {
 	for (auto it = particles.begin(); it != particles.end(); it++) {
 		if (get<0>(*it) == p) {
-			if (get<1>(*it) != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(*it));
+			refcleaner(get<1>(*it));
 			particles.erase(it);			
 			break;
 		}
 	}
+	notifyChangedMORs();
+}
+void MapObject::cleanParticles() {
+	for (auto it = particles.begin(); it != particles.end(); ) {
+		DORParticles *ps = get<0>(*it);
+		if (ps->isDead()) removeParticles(&it);
+		else it++;
+	}		
 }
 void MapObject::clearParticles() {
 	for (auto it = particles.begin(); it != particles.end(); it++) {
-		if (get<1>(*it) != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(*it));
+		refcleaner(get<1>(*it));
 	}
 	particles.clear();
+	notifyChangedMORs();
 }
 
 void MapObject::setShader(shader_type *s, int ref) {
 	shader = s;
-	if (shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, shader_ref);
+	refcleaner(shader_ref);
 	shader_ref = ref;
 }
 
@@ -234,7 +263,10 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 			mat4 m = glm::translate(*model, glm::vec3(px, py, 0));
 			for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
 				DORParticles *ps = get<0>(*it);
-				if (ps->isDead()) { it = dm->removeParticles(it); }
+				if (ps->isDead()) {
+					mos_particles_clean.insert(dm);
+					++it;
+				}
 				else { ps->render(renderer, m, color, true); ++it; }
 			}
 		// On map, display and shift accordingly
@@ -248,7 +280,8 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 			for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
 				DORParticles *ps = get<0>(*it);
 				if (ps->isDead()) {
-					it = dm->removeParticles(it);
+					mos_particles_clean.insert(dm);
+					++it;
 				} else {
 					ps->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
 					ps->render(renderer, m, color, true);
@@ -290,7 +323,7 @@ MapObjectRenderer::MapObjectRenderer(float w, float h, float a, bool allow_cb, b
 }
 
 MapObjectRenderer::~MapObjectRenderer() {
-	resetMapObjects();
+	resetMapObjects(); // Very important to cleanup all references and links
 }
 
 DisplayObject* MapObjectRenderer::clone() {
@@ -314,7 +347,8 @@ void MapObjectRenderer::cloneInto(DisplayObject *_into) {
 
 void MapObjectRenderer::resetMapObjects() {
 	for (auto &it : mos) {
-		if (get<1>(it) != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, get<1>(it));
+		refcleaner(get<1>(it));
+		get<0>(it)->removeMOR(this);
 	}
 	mos.clear();
 	setChanged();
@@ -322,6 +356,7 @@ void MapObjectRenderer::resetMapObjects() {
 
 void MapObjectRenderer::addMapObject(MapObject *mo, int ref) {
 	mos.emplace_back(mo, ref);
+	mo->addMOR(this);
 	setChanged();
 }
 
@@ -407,9 +442,9 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 }
 
 Map2D::~Map2D() {
-	if (default_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, default_shader_ref);
+	refcleaner(default_shader_ref);
 	for (uint32_t i = 0; i < z * w * h; i++) {
-		if (map_ref[i] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map_ref[i]);
+		refcleaner(map_ref[i]);
 	}
 	delete[] map;
 	delete[] map_ref;
@@ -477,19 +512,19 @@ void Map2D::setupGridLines() {
 }
 
 void Map2D::setDefaultShader(shader_type *s, int ref) {
-	if (default_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, default_shader_ref);
+	refcleaner(default_shader_ref);
 	default_shader = s;
 	default_shader_ref = ref;
 }
 
 void Map2D::setVisionShader(shader_type *s, int ref) {
-	if (vision_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, vision_shader_ref);
+	refcleaner(vision_shader_ref);
 	vision_shader_ref = ref;
 	seens_vbo.setShader(s);
 }
 
 void Map2D::setGridLinesShader(shader_type *s, int ref) {
-	if (grid_lines_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, grid_lines_shader_ref);
+	refcleaner(grid_lines_shader_ref);
 	grid_lines_shader_ref = ref;
 	grid_lines_vbo.setShader(s);
 }
@@ -734,4 +769,11 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 void Map2D::onKeyframe(float nb_keyframes) {
 	keyframes += nb_keyframes;
+}
+
+void map2d_clean_particles() {
+	if (mos_particles_clean.size() == 0) return;
+	printf("[Map2D] Cleaning %d MOs with some dead particles\n", mos_particles_clean.size());
+	for (auto dm : mos_particles_clean) dm->cleanParticles();
+	mos_particles_clean.clear();
 }

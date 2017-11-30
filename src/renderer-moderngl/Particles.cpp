@@ -22,7 +22,8 @@
 #include "renderer-moderngl/Particles.hpp"
 
 DORParticles::~DORParticles() {
-	if (ps_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, ps_lua_ref);
+	// printf("==================== DORParticles DYING %s linked to parent %lx\n", ps ? ps->name_def : (e ? "Ensemble" : "--"), parent);
+	refcleaner(ps_lua_ref);
 	if (e && owned) {
 		delete e;
 	}

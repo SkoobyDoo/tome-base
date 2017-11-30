@@ -112,7 +112,7 @@ RendererGL::RendererGL(VBOMode mode) {
 }
 RendererGL::~RendererGL() {
 	glDeleteBuffers(1, &vbo_elements);
-	if (my_default_shader_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, my_default_shader_lua_ref);
+	refcleaner(my_default_shader_lua_ref);
 }
 
 DisplayObject* RendererGL::clone() {
@@ -133,7 +133,7 @@ void RendererGL::cloneInto(DisplayObject* _into) {
 }
 
 void RendererGL::setShader(shader_type *s, int lua_ref) {
-	if (my_default_shader_lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, my_default_shader_lua_ref);
+	refcleaner(my_default_shader_lua_ref);
 	my_default_shader = s;
 	my_default_shader_lua_ref = lua_ref;
 }

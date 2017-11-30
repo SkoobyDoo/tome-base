@@ -252,9 +252,9 @@ static int lua_fov_calc_circle(lua_State *L)
 	fov_circle(&(fov.fov_settings), &fov, NULL, x, y, radius);
 	map_seen(&fov, x, y, 0, 0, radius, NULL);
 
-	luaL_unref(L, LUA_REGISTRYINDEX, fov.apply_ref); fov.apply_ref = LUA_NOREF;
-	luaL_unref(L, LUA_REGISTRYINDEX, fov.opaque_ref); fov.opaque_ref = LUA_NOREF;
-	if (fov.cache_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, fov.cache_ref); fov.cache_ref = LUA_NOREF; }
+	refcleaner(fov.apply_ref); fov.apply_ref = LUA_NOREF;
+	refcleaner(fov.opaque_ref); fov.opaque_ref = LUA_NOREF;
+	if (fov.cache_ref != LUA_NOREF) { refcleaner(fov.cache_ref); fov.cache_ref = LUA_NOREF; }
 
 	return 0;
 }
@@ -307,9 +307,9 @@ static int lua_fov_calc_beam(lua_State *L)
 	fov_beam(&(fov.fov_settings), &fov, NULL, x, y, radius, dir, angle);
 	map_seen(&fov, x, y, 0, 0, radius, NULL);
 
-	luaL_unref(L, LUA_REGISTRYINDEX, fov.apply_ref); fov.apply_ref = LUA_NOREF;
-	luaL_unref(L, LUA_REGISTRYINDEX, fov.opaque_ref); fov.opaque_ref = LUA_NOREF;
-	if (fov.cache_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, fov.cache_ref); fov.cache_ref = LUA_NOREF; }
+	refcleaner(fov.apply_ref); fov.apply_ref = LUA_NOREF;
+	refcleaner(fov.opaque_ref); fov.opaque_ref = LUA_NOREF;
+	if (fov.cache_ref != LUA_NOREF) { refcleaner(fov.cache_ref); fov.cache_ref = LUA_NOREF; }
 
 	return 0;
 }
@@ -352,9 +352,9 @@ static int lua_fov_calc_beam_any_angle(lua_State *L)
 	fov_beam_any_angle(&(fov.fov_settings), &fov, NULL, x, y, radius, sx, sy, dx, dy, beam_angle);
 	map_seen(&fov, x, y, 0, 0, radius, NULL);
 
-	luaL_unref(L, LUA_REGISTRYINDEX, fov.apply_ref); fov.apply_ref = LUA_NOREF;
-	luaL_unref(L, LUA_REGISTRYINDEX, fov.opaque_ref); fov.opaque_ref = LUA_NOREF;
-	if (fov.cache_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, fov.cache_ref); fov.cache_ref = LUA_NOREF; }
+	refcleaner(fov.apply_ref); fov.apply_ref = LUA_NOREF;
+	refcleaner(fov.opaque_ref); fov.opaque_ref = LUA_NOREF;
+	if (fov.cache_ref != LUA_NOREF) { refcleaner(fov.cache_ref); fov.cache_ref = LUA_NOREF; }
 
 	return 0;
 }
@@ -633,7 +633,7 @@ static int lua_fov_line_init(lua_State *L)
 	fov_settings_set_opacity_test_function(&(fov->fov_settings), map_opaque);
 
 	fov_create_los_line(&(fov->fov_settings), fov, NULL, line, source_x, source_y, dest_x, dest_y, start_at_end);
-	luaL_unref(L, LUA_REGISTRYINDEX, fov->opaque_ref);
+	refcleaner(fov->opaque_ref);
 	fov->opaque_ref = LUA_NOREF;
 
 	auxiliar_setclass(L, "core{fovline}", -1);
@@ -659,7 +659,7 @@ static int lua_fov_line_step(lua_State *L)
 	bool dont_stop_at_end = lua_toboolean(L, 2);
 	if ((!dont_stop_at_end && line->dest_t == line->t) || line->dest_t == 0) {
 		if (lua_line->fov.opaque_ref != LUA_NOREF) {
-			luaL_unref(L, LUA_REGISTRYINDEX, lua_line->fov.opaque_ref);
+			refcleaner(lua_line->fov.opaque_ref);
 			lua_line->fov.opaque_ref = LUA_NOREF;
 		}
 		return 0;
@@ -903,7 +903,7 @@ static int lua_fov_line_step(lua_State *L)
 	line->t += 1;
 
 	if (lua_line->fov.opaque_ref != LUA_NOREF) {
-		luaL_unref(L, LUA_REGISTRYINDEX, lua_line->fov.opaque_ref);
+		refcleaner(lua_line->fov.opaque_ref);
 		lua_line->fov.opaque_ref = LUA_NOREF;
 	}
 
@@ -1158,11 +1158,11 @@ static int lua_free_fov_line(lua_State *L)
 	}
 
 	if (lua_line->fov.opaque_ref != LUA_NOREF) {
-		luaL_unref(L, LUA_REGISTRYINDEX, lua_line->fov.opaque_ref);
+		refcleaner(lua_line->fov.opaque_ref);
 		lua_line->fov.opaque_ref = LUA_NOREF;
 	}
 	if (lua_line->fov.cache_ref != LUA_NOREF) {
-		luaL_unref(L, LUA_REGISTRYINDEX, lua_line->fov.cache_ref);
+		refcleaner(lua_line->fov.cache_ref);
 		lua_line->fov.cache_ref = LUA_NOREF;
 	}
 
@@ -1198,7 +1198,7 @@ static int lua_hex_fov_line_init(lua_State *L)
 	fov_settings_set_opacity_test_function(&(fov->fov_settings), map_opaque);
 
 	hex_fov_create_los_line(&(fov->fov_settings), fov, NULL, line, source_x, source_y, dest_x, dest_y, start_at_end);
-	luaL_unref(L, LUA_REGISTRYINDEX, fov->opaque_ref);
+	refcleaner(fov->opaque_ref);
 	fov->opaque_ref = LUA_NOREF;
 
 	auxiliar_setclass(L, "core{hexfovline}", -1);

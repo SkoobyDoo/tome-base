@@ -79,7 +79,7 @@ static int lua_web_new(lua_State *L) {
 static int lua_web_close(lua_State *L) {
 	web_view_type *view = (web_view_type*)auxiliar_checkclass(L, "web{view}", 1);
 	if (!te4_web_close(view)) {
-		luaL_unref(L, LUA_REGISTRYINDEX, view->handlers);
+		refcleaner(view->handlers);
 	}
 	return 0;
 }

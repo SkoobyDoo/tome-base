@@ -337,7 +337,8 @@ static int sourceCollectLua(lua_State *L) {
 	SoundSource *s = (SoundSource*)auxiliar_checkclass(L, "sound{source}", 1);
 
 	if (!s->is_static_source) alDeleteSources(1, &s->source);
-	luaL_unref(L, LUA_REGISTRYINDEX, s->sound_ref);
+	refcleaner(s->sound_ref);
+	s->sound_ref = LUA_NOREF;
 
 	return 0;
 }

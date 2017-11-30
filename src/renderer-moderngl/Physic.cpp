@@ -689,7 +689,7 @@ PhysicSimulator::PhysicSimulator(float x, float y) : world(b2Vec2(x / unit_scale
 }
 #endif
 PhysicSimulator::~PhysicSimulator() {
-	if (contact_listener_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, contact_listener_ref);
+	refcleaner(contact_listener_ref);
 	delete contact_listener;
 }
 
@@ -710,7 +710,7 @@ void PhysicSimulator::setUnitScale(float scale) {
 }
 
 void PhysicSimulator::setContactListener(int ref) {
-	if (contact_listener_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, contact_listener_ref);
+	refcleaner(contact_listener_ref);
 	contact_listener_ref = ref;
 }
 

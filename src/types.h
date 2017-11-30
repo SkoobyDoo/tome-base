@@ -44,6 +44,7 @@ extern int noprint(lua_State *L);
 #define printf(...) { if (!no_debug) printf(__VA_ARGS__); }
 #endif
 
+#include "refcleaner.h"
 
 #ifdef TE4_PROFILING
 #include <gperftools/profiler.h>

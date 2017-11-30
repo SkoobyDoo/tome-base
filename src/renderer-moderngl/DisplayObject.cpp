@@ -56,7 +56,7 @@ DisplayObject::~DisplayObject() {
 	donb--;
 	// printf("-DOs %d\n", donb);
 	removeFromParent();
-	if (lua_ref != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, lua_ref);
+	if (lua_ref != LUA_NOREF && L) refcleaner(lua_ref);
 	if (tweener) delete tweener;
 	tweener = NULL;
 	for (int pid = 0; pid < physics.size(); pid++) delete physics[pid];
@@ -196,8 +196,8 @@ DORTweener::DORTweener(DisplayObject *d) {
 DORTweener::~DORTweener() {
 	for (short slot = 0; slot < TweenSlot::MAX; slot++) {
 		auto &t = tweens[slot];
-		if (t.on_end_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF; }
-		if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+		if (t.on_end_ref != LUA_NOREF) { refcleaner(t.on_end_ref); t.on_end_ref = LUA_NOREF; }
+		if (t.on_change_ref != LUA_NOREF) { refcleaner(t.on_change_ref); t.on_change_ref = LUA_NOREF; }
 	}
 }
 
@@ -304,8 +304,8 @@ void DORTweener::onKeyframe(float nb_keyframes) {
 				}
 				// Check time == 0, if it is not it means the on_end callback reassigned the slot, we dont want to touch it then, it's not "us" anymore
 				if (!t.time) {
-					if (t.on_end_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF; }
-					if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+					if (t.on_end_ref != LUA_NOREF) { refcleaner(t.on_end_ref); t.on_end_ref = LUA_NOREF; }
+					if (t.on_change_ref != LUA_NOREF) { refcleaner(t.on_change_ref); t.on_change_ref = LUA_NOREF; }
 				}
 			}
 		}
@@ -358,8 +358,8 @@ void DORTweener::cancelTween(TweenSlot slot) {
 	} else {
 		auto &t = tweens[(short)slot];
 		t.time = 0;
-		if (t.on_end_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_end_ref); t.on_end_ref = LUA_NOREF; }
-		if (t.on_change_ref != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, t.on_change_ref); t.on_change_ref = LUA_NOREF; }
+		if (t.on_end_ref != LUA_NOREF) { refcleaner(t.on_end_ref); t.on_end_ref = LUA_NOREF; }
+		if (t.on_change_ref != LUA_NOREF) { refcleaner(t.on_change_ref); t.on_change_ref = LUA_NOREF; }
 	}
 }
 
@@ -488,13 +488,13 @@ void DisplayObject::cloneInto(DisplayObject *into) {
  *************************************************************************/
 DORVertexes::~DORVertexes() {
 	for (int i = 0; i < DO_MAX_TEX; i++) {
-		if (tex_lua_ref[i] != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref[i]);
+		if (tex_lua_ref[i] != LUA_NOREF && L) refcleaner(tex_lua_ref[i]);
 	}
 };
 
 void DORVertexes::setTexture(GLuint tex, int lua_ref, int id) {
 	if (id >= DO_MAX_TEX) id = DO_MAX_TEX - 1;
-	if (tex_lua_ref[id] != LUA_NOREF && L) luaL_unref(L, LUA_REGISTRYINDEX, tex_lua_ref[id]);
+	if (tex_lua_ref[id] != LUA_NOREF && L) refcleaner(tex_lua_ref[id]);
 	this->tex[id] = tex;
 	tex_lua_ref[id] = lua_ref;
 
@@ -1072,7 +1072,7 @@ bool IContainer::containerRemove(DisplayObject *dob) {
 			dob->setParent(NULL);
 			if (L) {
 				int ref = dob->unsetLuaRef();
-				if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+				if (ref != LUA_NOREF) refcleaner(ref);
 			}
 			return true;
 		}
@@ -1086,7 +1086,7 @@ void IContainer::containerClear() {
 		(*it)->setParent(NULL);
 		if (L) {
 			int ref = (*it)->unsetLuaRef();
-			if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+			if (ref != LUA_NOREF) refcleaner(ref);
 		}
 	}
 	dos.clear();
