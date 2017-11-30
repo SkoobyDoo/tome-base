@@ -34,9 +34,9 @@ else
 end
 
 -- Setup the GC
-collectgarbage("setpause",100)
-collectgarbage("setstepmul",400)
-collectgarbage("restart")
+-- collectgarbage("setpause",100)
+-- collectgarbage("setstepmul",400)
+-- collectgarbage("restart")
 
 -- Setup correct lua path
 package.path = "/?.lua"

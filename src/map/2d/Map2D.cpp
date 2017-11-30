@@ -191,7 +191,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 	if (dm->flip_y) { y2 = dy; y1 = tile_h * dh * dm->scale + dy; }
 	else { y1 = dy; y2 = tile_h * dh * dm->scale + dy; }
 
-	if (false && dm->bdisplayobject) {
+	if (allow_do && dm->bdisplayobject) {
 		mat4 base;
 		mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
 		dm->bdisplayobject->render(renderer, m, color, true);
@@ -259,7 +259,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 		}
 	}
 
-	if (false && dm->fdisplayobject) {
+	if (allow_do && dm->fdisplayobject) {
 		mat4 base;
 		mat4 m = glm::translate(model ? *model : base, glm::vec3(dx, dy, 0));
 		dm->fdisplayobject->render(renderer, m, color, true);

@@ -666,12 +666,14 @@ void on_redraw()
 {
 	static int last_ticks = 0;
 	static int ticks_count = 0;
+	static int ticks_count_gc = 0;
 	static float keyframes_done = 0;
 	static int frames_done = 0;
 	static float frames_count = 0;
 
 	int ticks = SDL_GetTicks();
 	ticks_count += ticks - last_ticks;
+	ticks_count_gc += ticks - last_ticks;
 
 	if (!anims_paused) cur_frame_tick = ticks - frame_tick_paused_time;
 
@@ -706,6 +708,13 @@ void on_redraw()
 	te4_discord_update();
 #endif
 	if (te4_web_update) te4_web_update(L);
+
+	// Run GC every second, this is the only place the GC should be called
+	// This is also a way to ensure the GC wont try to delete things while in callbacks from the display code and such which is annoying
+	if (ticks_count_gc >= 1000) {
+		lua_gc(L, LUA_GCCOLLECT, 0);
+		ticks_count_gc = 0;
+	}
 }
 
 void pass_command_args(int argc, char *argv[])
@@ -1118,6 +1127,9 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_wait(L);
 		luaopen_clipper(L);
 		luaopen_navmesh(L);
+
+		// Disable automatic GC, we'l do it when we want
+		lua_gc(L, LUA_GCSTOP, 0);
 
 		physfs_reset_dir_allowed(L);
 
