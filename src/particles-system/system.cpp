@@ -423,8 +423,8 @@ Ensemble::Ensemble() {
 
 Ensemble::~Ensemble() {
 	printf("===Ensemble destroyed, %lx\n", this);
-	if (event_cb_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
-	if (parameters_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, parameters_ref);
+	refcleaner(event_cb_ref);
+	refcleaner(parameters_ref);
 	lock_guard<mutex> lock(th_runner_singleton.mux);
 	all_ensembles.erase(this);
 }
@@ -462,9 +462,7 @@ void Ensemble::update(float nb_keyframes) {
 }
 
 void Ensemble::setEventsCallback(int ref) {
-	if (event_cb_ref != LUA_NOREF) {
-		luaL_unref(L, LUA_REGISTRYINDEX, event_cb_ref);
-	}
+	refcleaner(event_cb_ref);
 	event_cb_ref = ref;
 }
 

@@ -76,7 +76,11 @@ void MapObject::chain(MapObject *n, int ref) {
 	refcleaner(next_ref);
 	next = n;
 	next_ref = ref;
-	n->root = root;
+	MapObject *nm = n;
+	while (n) {
+		n->root = root;
+		n = n->next;
+	}
 	notifyChangedMORs();
 }
 
@@ -261,7 +265,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 
 	if (allow_particles && dm->particles.size()) {
-		float px = base_x + dm->root->move_anim_dx * tile_w + tile_w * dm->scale / 2, py = base_y + dm->root->move_anim_dy * tile_h + tile_h * dm->scale / 2;
+		float px = base_x + tile_w * dm->scale / 2, py = base_y + tile_h * dm->scale / 2;
 		// Not on map, just display
 		if (model) {
 			mat4 m = glm::translate(*model, glm::vec3(px, py, 0));
@@ -351,8 +355,8 @@ void MapObjectRenderer::cloneInto(DisplayObject *_into) {
 
 void MapObjectRenderer::resetMapObjects() {
 	for (auto &it : mos) {
-		refcleaner(get<1>(it));
 		get<0>(it)->removeMOR(this);
+		refcleaner(get<1>(it));
 	}
 	mos.clear();
 	setChanged();
@@ -737,6 +741,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
 		MapObjectSort *so = sorting_mos[spos];
+		MapObject *dm = so->m;
 		processMapObject(&renderer, so->m, so->dx, so->dy, so->color, nullptr);
 	}
 	
@@ -779,5 +784,8 @@ void map2d_clean_particles() {
 	if (mos_particles_clean.size() == 0) return;
 	printf("[Map2D] Cleaning %ld MOs with some dead particles\n", mos_particles_clean.size());
 	for (auto dm : mos_particles_clean) dm->cleanParticles();
+	mos_particles_clean.clear();
+}
+void map2d_clean_particles_reset() {
 	mos_particles_clean.clear();
 }

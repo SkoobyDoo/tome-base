@@ -279,7 +279,7 @@ public:
 		MapObject *old = map[off];
 		if (old == mo) return old;
 
-		if (map_ref[off] != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, map_ref[off]);
+		refcleaner(map_ref[off]);
 		map[off] = mo;
 		map_ref[off] = ref;
 		if (mo) { mo->grid_x = x; mo->grid_y = y; }
@@ -378,5 +378,6 @@ public:
 };
 
 void map2d_clean_particles();
+void map2d_clean_particles_reset();
 
 #endif

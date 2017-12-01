@@ -21,6 +21,10 @@
 #ifndef _REFCLEANER_H_
 #define _REFCLEANER_H_
 
-void refcleaner(int ref);
+#include "lua.h"
+extern lua_State *L;
+
+void refcleaner_clean(lua_State *L);
+void refcleaner_reset();
 
 #endif

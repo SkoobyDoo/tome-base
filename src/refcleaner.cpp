@@ -24,6 +24,7 @@ extern "C" {
 #include "types.h"
 #include "lauxlib.h"
 #include "lualib.h"
+#include "refcleaner_clean.h"
 }
 
 #include "map/2d/Map2D.hpp"
@@ -33,19 +34,24 @@ using namespace std;
 
 static vector<int> refs_to_clean;
 
-void refcleaner(int ref) {
+extern "C" void refcleaner(int ref) {
 	if (ref == LUA_NOREF) return;
 	// printf("[RefCleaner] adding ref %d to clean\n", ref);
 	refs_to_clean.push_back(ref);
 }
 
-void refcleaner_clean(lua_State *L) {
+extern "C" void refcleaner_clean(lua_State *L) {
 	map2d_clean_particles();
 
 	if (refs_to_clean.size() == 0) return;
-	printf("[RefCleaner] cleaning %ld lua references\n", refs_to_clean.size());
+	// printf("[RefCleaner] cleaning %ld lua references\n", refs_to_clean.size());
 	for (auto it : refs_to_clean) {
 		luaL_unref(L, LUA_REGISTRYINDEX, it);
 	}	
+	refs_to_clean.clear();
+}
+
+extern "C" void refcleaner_reset() {
+	map2d_clean_particles_reset();
 	refs_to_clean.clear();
 }

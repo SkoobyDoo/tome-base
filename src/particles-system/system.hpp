@@ -26,6 +26,7 @@ extern "C" {
 #include "lua.h"
 #include "auxiliar.h"
 #include "useshader.h"
+#include "refcleaner.h"
 }
 
 #include <memory>
@@ -192,7 +193,7 @@ public:
 	};
 	~ShaderHolder() {
 		printf("Freeing shader %d\n", shader->shader);
-		if (lua_shader_ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, lua_shader_ref);
+		refcleaner(lua_shader_ref);
 	};
 };
 typedef shared_ptr<ShaderHolder> spShaderHolder;
@@ -206,7 +207,7 @@ public:
 	};
 	~DefHolder() {
 		printf("Freeing def %d : %s\n", ref, expr.c_str());
-		if (ref != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, ref);
+		refcleaner(ref);
 	};
 };
 typedef shared_ptr<DefHolder> spDefHolder;

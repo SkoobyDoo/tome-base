@@ -43,6 +43,7 @@
 #include "main.h"
 #include "te4web.h"
 #include "lua_externs.h"
+#include "refcleaner_clean.h"
 #include "particles.h"
 #include "renderer-moderngl/renderer-lua.h"
 #include "runner/core.h"
@@ -693,7 +694,7 @@ void on_redraw()
 
 	if (ticks_count >= 500) {
 		current_fps = (float)frames_done * 1000.0 / (float)ticks_count;
-		printf("%d frames in %d ms = %0.2f FPS (%f keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
+		// printf("%d frames in %d ms = %0.2f FPS (%f keyframes)\n", frames_done, ticks_count, current_fps, keyframes_done);
 		ticks_count = 0;
 		frames_done = 0;
 		keyframes_done = 0;
@@ -1077,6 +1078,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 			
 			lua_particles_system_clean();
 			lua_close(L);
+			refcleaner_reset();
 			PHYSFS_deinit();
 		}
 
@@ -1620,6 +1622,7 @@ int main(int argc, char *argv[])
 			{
 				lua_particles_system_clean();
 				lua_close(L);
+				refcleaner_reset();
 				free_particles_thread();
 				free_profile_thread();
 				PHYSFS_deinit();
