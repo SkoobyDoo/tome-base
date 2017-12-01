@@ -82,12 +82,12 @@ public:
 	}
 	virtual bool finish() {
 		if (s) {
+			printf("[LOADER] done loading PNG %s!\n", filename.c_str());
 			tfglBindTexture(GL_TEXTURE_2D, tex->tex);
 			GLenum texture_format = sdl_gl_texture_format(s);
 			GLint nOfColors = s->format->BytesPerPixel;
 			glTexImage2D(GL_TEXTURE_2D, 0, nOfColors == 4 ? GL_RGBA : GL_RGB, s->w, s->h, 0, texture_format, GL_UNSIGNED_BYTE, s->pixels);
 			SDL_FreeSurface(s);
-			// printf("[LOADER] done loading PNG %s!\n", filename.c_str());
 		}
 	}
 };
@@ -398,23 +398,24 @@ void loader_tick() {
 	// printf("LOADER LEFT: %d\n", loader_running);
 }
 
-static int lua_loader_wait(lua_State *L) {
+extern "C" void core_loader_waitall() {
 	while (loader_running) {
 		loader_tick();
 		if (loader_running) SDL_Delay(10);
 	}
+}
+
+static int lua_loader_wait(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_Reg loaderlib[] =
-{
+static const struct luaL_Reg loaderlib[] = {
 	{"png", lua_loader_png},
 	{"waitAll", lua_loader_wait},
 	{NULL, NULL},
 };
 
-int luaopen_loader(lua_State *L)
-{
+int luaopen_loader(lua_State *L) {
 	luaL_openlib(L, "core.loader", loaderlib, 0);
 
 	lua_settop(L, 0);
@@ -422,4 +423,3 @@ int luaopen_loader(lua_State *L)
 	create_loader_thread();
 	return 1;
 }
-

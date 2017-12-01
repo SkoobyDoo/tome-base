@@ -29,6 +29,13 @@ function os.capture(cmd, raw)
 	return s
 end
 
+function enableSanitizer()
+	if _OPTIONS.debugdeep then
+		buildoptions { "-ggdb", "-fsanitize=address", "-fno-omit-frame-pointer" }
+		linkoptions { "-fsanitize=address", "-fuse-ld=gold" }
+	end
+end
+
 project "TEngine"
 	kind "WindowedApp"
 	language "C++"
@@ -48,6 +55,7 @@ project "TEngine"
 		linkoptions{ "-fno-omit-frame-pointer" }
 		links{"profiler"}
 	end
+	enableSanitizer()
 
 	if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib "} end
 	if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN/lib64 "} end
@@ -123,7 +131,11 @@ project "TEngine"
 		defines { [[TENGINE_HOME_PATH='"T-Engine"']], 'SELFEXE_WINDOWS' }
 
 	configuration "linux"
-		libdirs {"/opt/SDL-2.0/lib/"}
+		if _OPTIONS.force32bits then
+			libdirs {"/opt/SDL2.32b/lib/"}
+		else
+			libdirs {"/opt/SDL-2.0/lib/"}
+		end
 		links { "dl", "freetype", "SDL2", "SDL2_image", "png", "openal", "vorbisfile", "GL", "GLU", "m", "pthread" }
 		linkoptions { "-Wl,-E" }
 		defines { [[TENGINE_HOME_PATH='".t-engine"']], 'SELFEXE_LINUX' }
@@ -165,6 +177,7 @@ project "physfs"
 	defines {"PHYSFS_SUPPORTS_ZIP"}
 	if _OPTIONS.no_rwops_size then defines{"NO_RWOPS_SIZE"} end
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/physfs/*.c", "../src/zlib/*.c", "../src/physfs/archivers/*.c", }
 
@@ -199,9 +212,13 @@ elseif _OPTIONS.lua == "jit2" then
 
 		local arch_test
 		if _OPTIONS.wincross then
-			arch_test = os.capture("i686-w64-mingw32.shared-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			arch_test = os.capture("i686-w64-mingw32.shared-gcc -m32 -E ../src/luajit2/src/lj_arch.h -dM", true)
 		else
-			arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			if _OPTIONS.force32bits then
+				arch_test = os.capture("gcc -m32 -E ../src/luajit2/src/lj_arch.h -dM", true)
+			else
+				arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			end
 		end
 
 		if string.find(arch_test, "LJ_TARGET_X64") then
@@ -262,7 +279,11 @@ elseif _OPTIONS.lua == "jit2" then
 		if _OPTIONS.wincross then
 			arch_test = os.capture("i686-w64-mingw32.shared-gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
 		else
-			arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			if _OPTIONS.force32bits then
+				arch_test = os.capture("gcc -m32 -E ../src/luajit2/src/lj_arch.h -dM", true)
+			else
+				arch_test = os.capture("gcc -E ../src/luajit2/src/lj_arch.h -dM", true)
+			end
 		end
 
 		if string.find(arch_test, "LJ_TARGET_X64") then
@@ -473,6 +494,7 @@ project "fov"
 	language "C"
 	targetname "fov"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/fov/*.c", }
 
@@ -481,6 +503,7 @@ project "lpeg"
 	language "C"
 	targetname "lpeg"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/lpeg/*.c", }
 
@@ -497,6 +520,7 @@ project "tcodimport"
 	language "C"
 	targetname "tcodimport"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/libtcod_import/*.c", }
 
@@ -506,6 +530,7 @@ project "expatstatic"
 	targetname "expatstatic"
 	defines{ "HAVE_MEMMOVE" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/expat/*.c", }
 
@@ -522,6 +547,7 @@ project "utf8proc"
 	language "C"
 	targetname "utf8proc"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/utf8proc/utf8proc.c", }
 
@@ -530,6 +556,7 @@ project "luamd5"
 	language "C"
 	targetname "luamd5"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/luamd5/*.c", }
 
@@ -554,6 +581,7 @@ project "te4-bzip"
 	language "C"
 	targetname "te4-bzip"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/bzip2/*.c", }
 
@@ -562,6 +590,7 @@ project "te4-freetype-gl"
 	language "C"
 	targetname "te4-freetype-gl"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 	if _OPTIONS.wincross then
 		includedirs{'/opt/mxe/usr/i686-w64-mingw32.shared/include/freetype2'}
 	end
@@ -574,6 +603,7 @@ project "te4-web"
 	language "C++"
 	targetname "te4-web"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	if _OPTIONS.relpath=="32" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN "} end
 	if _OPTIONS.relpath=="64" then linkoptions{"-Wl,-rpath -Wl,\\\$\$ORIGIN "} end
@@ -602,6 +632,7 @@ project "cef3spawn"
 	language "C++"
 	targetname "cef3spawn"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	includedirs {"../src/web-cef3/", }
 	files {
@@ -630,6 +661,7 @@ project "tinyxml2"
 	targetname "tinyxml2"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/tinyxml2/*.cpp", }
 
@@ -643,6 +675,7 @@ project "te4-renderer"
 	targetname "te4-renderer"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/renderer-moderngl/*.cpp", "../src/displayobjects/*.cpp", }
 
@@ -652,6 +685,7 @@ project "te4-map2d"
 	targetname "te4-map2d"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/map/2d/*.cpp" }
 
@@ -661,6 +695,7 @@ project "te4-navmesh"
 	targetname "te4-navmesh"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/navmesh/*.cpp" }
 
@@ -675,6 +710,7 @@ project "te4-spriter"
 	targetname "te4-spriter"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/spriterengine/animation/*.cpp", "../src/spriterengine/charactermap/*.cpp", "../src/spriterengine/entity/*.cpp", "../src/spriterengine/file/*.cpp", "../src/spriterengine/global/*.cpp", "../src/spriterengine/loading/*.cpp", "../src/spriterengine/model/*.cpp", "../src/spriterengine/objectinfo/*.cpp", "../src/spriterengine/objectref/*.cpp", "../src/spriterengine/override/*.cpp", "../src/spriterengine/timeinfo/*.cpp", "../src/spriterengine/timeline/*.cpp", "../src/spriterengine/variable/*.cpp", "../src/spriter/*.cpp", }
 
@@ -684,6 +720,7 @@ project "te4-tinyobjloader"
 	targetname "te4-tinyobjloader"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/tinyobjloader/*.cc", }
 
@@ -693,6 +730,7 @@ project "te4-clipper"
 	targetname "te4-clipper"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/clipper/**.cpp", }
 
@@ -702,6 +740,7 @@ project "te4-poly2tri"
 	targetname "te4-poly2tri"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/poly2tri/**.cc", }
 
@@ -711,6 +750,7 @@ project "te4-muparser"
 	targetname "te4-muparser"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	includedirs{ "../src/muparser/include/" }
 	files { "../src/muparser/src/**.cpp", }
@@ -721,6 +761,7 @@ project "te4-particles-system"
 	targetname "te4-particles-system"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/particles-system/**.cpp", }
 
@@ -731,6 +772,7 @@ project "te4-box2d-st"
 	targetname "te4-box2d-st"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/Box2D/**.h", "../src/Box2D/**.cpp", }
 elseif _OPTIONS.box2d == "MT" then
@@ -740,6 +782,7 @@ project "te4-box2d-mt"
 	targetname "te4-box2d-mt"
 	buildoptions { "-std=gnu++11" }
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
 
 	files { "../src/Box2D-MT/**.h", "../src/Box2D-MT/**.cpp", }
 end
@@ -751,6 +794,7 @@ end
 
 if _OPTIONS.discord then
 project "te4-discord"
+	enableSanitizer()
 	configuration "linux"
 		kind "SharedLib"
 		language "C++"

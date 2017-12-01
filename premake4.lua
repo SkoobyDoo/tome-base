@@ -85,11 +85,16 @@ configuration "macosx"
 configuration "Debug"
 	flags { "Symbols" }
 	buildoptions { "-ggdb" }
---	buildoptions { "-O3" }
 	targetdir "bin/Debug"
 	if _OPTIONS.luaassert then defines {"LUA_USE_APICHECK", "LUA_USE_ASSERT"} end
 	if _OPTIONS.pedantic then buildoptions { "-Wall" } end
 	defines {"TE4_LUA_ALLOW_GENERIC_IO", "LUAJIT_USE_VALGRIND" }
+	if _OPTIONS.force32bits then
+		defines {"LUAJIT_USE_SYSMALLOC"}
+		configuration "linux"
+			libdirs {"/usr/lib/i386-linux-gnu/"}
+	end
+
 
 configuration "Release"
 	defines { "NDEBUG=1" }

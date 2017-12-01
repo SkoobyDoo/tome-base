@@ -64,6 +64,7 @@ MapObject::~MapObject() {
 	refcleaner(bdo_ref);
 	refcleaner(shader_ref);
 	if (cb) delete cb;
+	for (auto mor : mor_set) mor->resetMapObjects(); // Make sure that its impossible to access deleted stuff
 }
 
 void MapObject::setCallback(int ref) {

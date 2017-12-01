@@ -39,3 +39,6 @@ extern void threaded_runner_keyframe(float nb_keyframes);
 
 extern void copy_surface_to_texture(SDL_Surface *s);
 extern GLenum sdl_gl_texture_format(SDL_Surface *s);
+
+extern void font_cleanup();
+extern void core_loader_waitall();

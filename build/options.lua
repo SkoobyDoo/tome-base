@@ -38,6 +38,10 @@ newoption {
 	}
 }
 newoption {
+	trigger     = "debugdeep",
+	description = "Enables sanitizer and such",
+}
+newoption {
 	trigger     = "profiling",
 	description = "Enables gprof profiling data",
 }

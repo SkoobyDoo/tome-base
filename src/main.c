@@ -1061,6 +1061,15 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 	interface_resize(aw, ah);
 }
 
+static void close_state() {
+	core_loader_waitall();
+	lua_particles_system_clean();
+	lua_close(L);
+	refcleaner_reset();
+	PHYSFS_deinit();
+	font_cleanup();
+}
+
 void boot_lua(int state, bool rebooting, int argc, char *argv[])
 {
 	core_def->corenum = 0;
@@ -1075,11 +1084,8 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 			current_mousehandler = LUA_NOREF;
 			current_keyhandler = LUA_NOREF;
 			current_game = LUA_NOREF;
-			
-			lua_particles_system_clean();
-			lua_close(L);
-			refcleaner_reset();
-			PHYSFS_deinit();
+
+			close_state();			
 		}
 
 		/***************** Physfs Init *****************/
@@ -1620,12 +1626,9 @@ int main(int argc, char *argv[])
 			// Clean up and tell the runner to run a different core
 			else
 			{
-				lua_particles_system_clean();
-				lua_close(L);
-				refcleaner_reset();
+				close_state();
 				free_particles_thread();
 				free_profile_thread();
-				PHYSFS_deinit();
 				break;
 			}
 		}
