@@ -65,14 +65,14 @@ static int set_default_atlas_chars(lua_State *L) {
 }
 
 extern "C" void font_cleanup() {
-	for (auto &am : atlases) {
-		glDeleteTextures(1, &am.second.atlas->id);
-		texture_font_delete(am.second.font);
-		texture_atlas_delete(am.second.atlas);
-		free(am.second.data);
-	}
-	atlases.clear();
-	nb_fonts = 0;
+	// for (auto &am : atlases) {
+	// 	glDeleteTextures(1, &am.second.atlas->id);
+	// 	texture_font_delete(am.second.font);
+	// 	texture_atlas_delete(am.second.atlas);
+	// 	free(am.second.data);
+	// }
+	// atlases.clear();
+	// nb_fonts = 0;
 }
 
 static int sdl_free_font(lua_State *L)
@@ -82,15 +82,15 @@ static int sdl_free_font(lua_State *L)
 	if (am != atlases.end()) {
 		am->second.used--;
 		printf("[FONT] delete use %s => %d\n", am->first.c_str(), am->second.used);
-		if (am->second.used <= 0) {
-			printf("[FONT] deleting font %s => %d\n", am->first.c_str(), am->second.used);
-			glDeleteTextures(1, &am->second.atlas->id);
-			texture_font_delete(am->second.font);
-			texture_atlas_delete(am->second.atlas);
-			free(am->second.data);
-			nb_fonts--;
-			atlases.erase(am);
-		}
+		// if (am->second.used <= 0) {
+		// 	printf("[FONT] deleting font %s => %d\n", am->first.c_str(), am->second.used);
+		// 	glDeleteTextures(1, &am->second.atlas->id);
+		// 	texture_font_delete(am->second.font);
+		// 	texture_atlas_delete(am->second.atlas);
+		// 	free(am->second.data);
+		// 	nb_fonts--;
+		// 	atlases.erase(am);
+		// }
 	}
 	delete f->fontname;
 	delete f->glyph_map;

@@ -72,6 +72,7 @@ public:
 		refcleaner(font_lua_ref);
 		this->font = font;
 		font_lua_ref = lua_ref;
+		printf("[FONT] Accessing the evil data !!!, %s\n", font->fontname->c_str());
 	};
 
 	void setNoLinefeed(bool no_linefeed) { this->no_linefeed = no_linefeed; parseText(); };
