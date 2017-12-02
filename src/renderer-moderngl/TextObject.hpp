@@ -32,7 +32,7 @@ private:
 	DORContainer entities_container;
 
 	int font_lua_ref = LUA_NOREF;
-	font_type *font = NULL;
+	FontInstance *font = NULL;
 	bool centered = false;
 	char *text;
 	int line_max_width = 99999;
@@ -54,7 +54,6 @@ private:
 	vec4 outline_color;
 
 	virtual void cloneInto(DisplayObject *into);
-	ftgl::texture_glyph_t *getGlyph(uint32_t codepoint);
 
 public:
 	int nb_lines = 1;
@@ -68,11 +67,10 @@ public:
 	DO_STANDARD_CLONE_METHOD(DORText);
 	virtual const char* getKind() { return "DORText"; };
 	
-	void setFont(font_type *font, int lua_ref) {
+	void setFont(FontInstance *font, int lua_ref) {
 		refcleaner(font_lua_ref);
 		this->font = font;
 		font_lua_ref = lua_ref;
-		printf("[FONT] Accessing the evil data !!!, %s\n", font->fontname->c_str());
 	};
 
 	void setNoLinefeed(bool no_linefeed) { this->no_linefeed = no_linefeed; parseText(); };

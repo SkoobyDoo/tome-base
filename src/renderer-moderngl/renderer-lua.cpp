@@ -1024,9 +1024,9 @@ static int gl_vertexes_target_texture(lua_State *L)
 static int gl_vertexes_font_atlas_texture(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 2);
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 2);
 	lua_pushvalue(L, 2);
-	v->setTexture(f->atlas->id, luaL_ref(L, LUA_REGISTRYINDEX));
+	v->setTexture(f->kind->getAtlasTexture(), luaL_ref(L, LUA_REGISTRYINDEX));
 
 	lua_pushvalue(L, 1);
 	return 1;
@@ -1065,7 +1065,7 @@ static int gl_text_new(lua_State *L)
 	*v = t = new DORText();
 	setWeakSelfRef(L, -1, t);
 
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
 	if (lua_isnumber(L, 2)) t->setMaxWidth(lua_tonumber(L, 2));
 	t->setNoLinefeed(lua_toboolean(L, 3));
 

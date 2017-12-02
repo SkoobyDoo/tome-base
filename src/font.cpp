@@ -35,66 +35,94 @@ extern "C" {
 #include "utf8proc/utf8proc.h"
 }
 #include "font.hpp"
-#include <map>
 
 using namespace ftgl;
 using namespace std;
 
 static int nb_fonts = 0;
 
-static bool default_atlas_chars_bold = FALSE;
-static char *default_atlas_chars;
 
-struct AtlasManager {
-	char *data;
-	size_t data_len;
-	texture_atlas_t *atlas;
-	texture_font_t *font;
-	int used;
-};
+/************************************************************
+ ** FontKind
+ ************************************************************/
 
-static map<string, AtlasManager> atlases;
-
-static int set_default_atlas_chars(lua_State *L) {
-	const char *n = luaL_checkstring(L, 1);	
-	default_atlas_chars_bold = lua_toboolean(L, 2);
-
-	free(default_atlas_chars);
-	default_atlas_chars = strdup(n);
-	return 0;
+unordered_map<string, FontKind*> FontKind::all_fonts;
+void FontKind::used(bool v) {
+	nb_use += v ? 1 : -1;
 }
 
+FontKind* FontKind::getFont(string &name) {
+	auto am = all_fonts.find(name);
+	if (am != all_fonts.end()) { // Found, use it
+		FontKind *fk = am->second;
+		fk->used(true);
+		printf("[FONT] add use %s => %d\n", fk->fontname.c_str(), fk->nb_use);
+		return fk;
+	} else { // Not found, create it, we assume the file exists, check is before
+		FontKind *fk = new FontKind(name);
+		fk->used(true);
+		all_fonts.emplace(name, fk);
+		printf("[FONT] create %s\n", fk->fontname.c_str());
+		return fk;
+	}
+}
+
+FontKind::FontKind(string &name) : fontname(name) {
+	PHYSFS_file *fff = PHYSFS_openRead(name.c_str());
+	font_mem_size = PHYSFS_fileLength(fff);
+	font_mem = new char[font_mem_size];
+	size_t read = 0;
+	while (read < font_mem_size) {
+		size_t rl = PHYSFS_read(fff, font_mem + read, sizeof(char), font_mem_size - read);
+		if (rl <= 0) break;
+		read += rl;
+	}
+	PHYSFS_close(fff);
+
+	atlas = texture_atlas_new(DEFAULT_ATLAS_W, DEFAULT_ATLAS_H, 1);
+	font = texture_font_new_from_memory(atlas, 32, font_mem, font_mem_size);
+	font->rendermode = RENDER_SIGNED_DISTANCE_FIELD;
+	texture_font_load_glyphs(font, default_atlas_chars.c_str());
+	lineskip = font->height;
+
+	glGenTextures(1, &atlas->id);
+	glBindTexture(GL_TEXTURE_2D, atlas->id );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+
+	updateAtlas();
+}
+
+FontKind::~FontKind() {
+	glyph_map_normal.clear();
+	glyph_map_outline.clear();
+	glDeleteTextures(1, &atlas->id);
+	texture_font_delete(font);
+	texture_atlas_delete(atlas);
+	delete[] font_mem;
+}
+
+void FontKind::updateAtlas() {
+	if (!atlas->changed) return;
+	glBindTexture(GL_TEXTURE_2D, atlas->id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
+	atlas->changed = false;
+}
+
+
+/************************************************************
+ ** Lua Stuff
+ ************************************************************/
+
 extern "C" void font_cleanup() {
-	// for (auto &am : atlases) {
-	// 	glDeleteTextures(1, &am.second.atlas->id);
-	// 	texture_font_delete(am.second.font);
-	// 	texture_atlas_delete(am.second.atlas);
-	// 	free(am.second.data);
-	// }
-	// atlases.clear();
-	// nb_fonts = 0;
 }
 
 static int sdl_free_font(lua_State *L)
 {
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
-	auto am = atlases.find(*f->fontname);
-	if (am != atlases.end()) {
-		am->second.used--;
-		printf("[FONT] delete use %s => %d\n", am->first.c_str(), am->second.used);
-		// if (am->second.used <= 0) {
-		// 	printf("[FONT] deleting font %s => %d\n", am->first.c_str(), am->second.used);
-		// 	glDeleteTextures(1, &am->second.atlas->id);
-		// 	texture_font_delete(am->second.font);
-		// 	texture_atlas_delete(am->second.atlas);
-		// 	free(am->second.data);
-		// 	nb_fonts--;
-		// 	atlases.erase(am);
-		// }
-	}
-	delete f->fontname;
-	delete f->glyph_map;
-	delete f->glyph_map_outline;
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
+	delete f;
 	lua_pushnumber(L, 1);
 	return 1;
 }
@@ -103,95 +131,29 @@ static int sdl_new_font(lua_State *L)
 {
 	const char *name = luaL_checkstring(L, 1);
 	float size = luaL_checknumber(L, 2);
-
-	PHYSFS_file *fff = PHYSFS_openRead(name);
-	if (!fff) {
-		return luaL_error(L, "could not load font: %s (%d); file not found", name, (int)size);
+	if (!PHYSFS_exists(name)) {
+		return luaL_error(L, "could not load font: %s (%f); file not found", name, size);
 		return 0;
 	}
 
-	font_type *f = (font_type*)lua_newuserdata(L, sizeof(font_type));
+	FontInstance **fp = (FontInstance**)lua_newuserdata(L, sizeof(FontInstance*));
 	auxiliar_setclass(L, "sdl{font}", -1);
 
-	f->fontname = new string(name);
-	f->glyph_map = new unordered_map<uint32_t, ftgl::texture_glyph_t*>;
-	f->glyph_map_outline = new unordered_map<uint32_t, ftgl::texture_glyph_t*>;
-
-	auto am = atlases.find(*f->fontname);
-	if (am != atlases.end()) { // Found, use it
-		f->atlas = am->second.atlas;
-		f->font = am->second.font;
-		f->font_mem = am->second.data;
-		f->font_mem_size = am->second.data_len;
-		am->second.used++;
-		printf("[FONT] add use %s => %d\n", am->first.c_str(), am->second.used);
-	} else { // Not found, create it
-		size_t len = PHYSFS_fileLength(fff);
-		char *data = (char*)malloc(len * sizeof(char));
-		size_t read = 0;
-		while (read < len) {
-			size_t rl = PHYSFS_read(fff, data + read, sizeof(char), len - read);
-			if (rl <= 0) break;
-			read += rl;
-		}
-		PHYSFS_close(fff);
-
-		f->font_mem = data;
-		f->font_mem_size = len;
-
-		f->atlas = texture_atlas_new(DEFAULT_ATLAS_W, DEFAULT_ATLAS_H, 1);
-		f->font = texture_font_new_from_memory(f->atlas, 32, data, len);
-		f->font->rendermode = RENDER_SIGNED_DISTANCE_FIELD;
-		texture_font_load_glyphs(f->font, default_atlas_chars);
-
-		glGenTextures(1, &f->atlas->id);
-		glBindTexture(GL_TEXTURE_2D, f->atlas->id );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-
-		font_update_atlas(f);
-		atlases[*f->fontname] = (AtlasManager){ data, len, f->atlas, f->font, 1 };
-		printf("[FONT] new use %s => %d\n", name, 1);
-		nb_fonts++;
-	}
-
-
-	f->scale = size / 32.0;
-	// f->lineskip = (f->font->ascender - f->font->descender + f->font->linegap) * f->scale;
-	// f->lineskip = (f->font->ascender - f->font->descender + f->font->linegap);
-	f->lineskip = f->font->height;
-
+	string fname(name);
+	*fp = new FontInstance(FontKind::getFont(fname), size);
 	return 1;
-}
-
-#define FONT_PADDING 2
-bool font_add_atlas(font_type *f, int32_t c, font_style style) {
-}
-
-void font_update_atlas(font_type *f) {
-	if (f->atlas->changed) {
-		glBindTexture(GL_TEXTURE_2D, f->atlas->id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, f->atlas->width, f->atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, f->atlas->data);
-		f->atlas->changed = false;
-	}
 }
 
 static int sdl_font_get_atlas_size(lua_State *L)
 {
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
-	lua_pushnumber(L, f->atlas->width);
-	lua_pushnumber(L, f->atlas->height);
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
+	auto s = f->kind->getAtlasSize();
+	lua_pushnumber(L, s.x);
+	lua_pushnumber(L, s.y);
 	return 2;
 }
 
-static int sdl_font_size(lua_State *L)
-{
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
-	size_t len;
-	const char *str = luaL_checklstring(L, 2, &len);
-
+glm::vec2 FontInstance::textSize(const char *str, size_t len, font_style style) {
 	int x = 0;
 	ssize_t off = 1;
 	int32_t c, oldc = 0;
@@ -200,32 +162,41 @@ static int sdl_font_size(lua_State *L)
 		str += off;
 		len -= off;
 
-		texture_glyph_t *d = ftgl::texture_font_get_glyph(f->font, c);
+		texture_glyph_t *d = kind->getGlyph(c);
 		if (d) {
 			if (oldc) {
-				x += texture_glyph_get_kerning(d, oldc) * f->scale;
+				x += texture_glyph_get_kerning(d, oldc) * scale;
 			}
-			x += d->advance_x * f->scale;
+			x += d->advance_x * scale;
 		}
 		oldc = c;
 	}
+	return {x, kind->lineSkip() * scale};
+}
 
-	lua_pushnumber(L, x);
-	lua_pushnumber(L, f->lineskip * f->scale);
+static int sdl_font_size(lua_State *L)
+{
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
+	size_t len;
+	const char *str = luaL_checklstring(L, 2, &len);
+
+	auto s = f->textSize(str, len);
+	lua_pushnumber(L, s.x);
+	lua_pushnumber(L, s.y);
 	return 2;
 }
 
 static int sdl_font_height(lua_State *L)
 {
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
-	lua_pushnumber(L, f->lineskip * f->scale);
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
+	lua_pushnumber(L, f->kind->lineSkip() * f->scale);
 	return 1;
 }
 
 static int sdl_font_lineskip(lua_State *L)
 {
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
-	lua_pushnumber(L, f->lineskip * f->scale);
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
+	lua_pushnumber(L, f->kind->lineSkip() * f->scale);
 	return 1;
 }
 
@@ -258,7 +229,7 @@ static int sdl_new_tile(lua_State *L)
 {
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
-	font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 3);
+	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 3);
 	size_t lenstr;
 	const char *str = luaL_checklstring(L, 4, &lenstr);
 	int x = luaL_checknumber(L, 5);
@@ -275,7 +246,7 @@ static int sdl_new_tile(lua_State *L)
 	// SDL_Surface *txt = TTF_RenderUTF8_Blended(f->font, str, color);
 	int32_t c;
 	utf8proc_iterate((const uint8_t*)str, lenstr, &c);
-	texture_glyph_t *d = ftgl::texture_font_get_glyph(f->font, c);
+	// texture_glyph_t *d = ftgl::texture_font_get_glyph(f->font, c);
 
 	SDL_Surface **s = (SDL_Surface**)lua_newuserdata(L, sizeof(SDL_Surface*));
 	auxiliar_setclass(L, "sdl{surface}", -1);
@@ -342,7 +313,6 @@ static const struct luaL_Reg sdl_font_reg[] =
 };
 
 const luaL_Reg fontlib[] = {
-	{"fontDefaultAtlasChars", set_default_atlas_chars},
 	{"newFont", sdl_new_font},
 	{"newTile", sdl_new_tile},
 	{"totalOpenFonts", sdl_font_total},
@@ -351,15 +321,10 @@ const luaL_Reg fontlib[] = {
 
 int luaopen_font(lua_State *L)
 {
-	default_atlas_chars = strdup("abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMOPQRSTUVWXYZ0123456789.-_/*&~\"'\\{}()[]|^%%*$! =+,€");
-	default_atlas_chars_bold = FALSE;
-
 	auxiliar_newclass(L, "sdl{font}", sdl_font_reg);
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "display");
 	luaL_register(L, NULL, fontlib);
 	lua_pop(L, 2);
-
-	if (!default_atlas_chars) utf8proc_iterate(NULL, 0, NULL); // DGDGDGDG: WTF ??? Without it the lib is not compiled in ? -- This codeis never even executed
 	return 1;
 }

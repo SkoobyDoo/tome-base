@@ -72,21 +72,6 @@ void DORText::setTextColor(float r, float g, float b, float a) {
 	parseText();
 }
 
-ftgl::texture_glyph_t *DORText::getGlyph(uint32_t codepoint) {
-	auto glyph_map = font->glyph_map;
-	if (font->font->rendermode == ftgl::RENDER_OUTLINE_POSITIVE) glyph_map = font->glyph_map_outline;
-
-	auto it = glyph_map->find(codepoint);
-	if (it != glyph_map->end()) return it->second;
-
-	ftgl::texture_glyph_t *g = ftgl::texture_font_get_glyph(font->font, codepoint);
-	if (g) {
-		std::pair<uint32_t, ftgl::texture_glyph_t*> p(codepoint, g);
-		glyph_map->insert(p);
-	}
-	return g;
-}
-
 int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, int by, float r, float g, float b, float a) {
 	int x = 0, y = by;
 	ssize_t off = 1;
@@ -99,9 +84,9 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 		str += off;
 		len -= off;
 
-		font->font->outline_thickness = 0;
-		font->font->rendermode = ftgl::RENDER_SIGNED_DISTANCE_FIELD;
-		ftgl::texture_glyph_t *d = getGlyph(c);
+		font->kind->font->outline_thickness = 0;
+		font->kind->font->rendermode = ftgl::RENDER_SIGNED_DISTANCE_FIELD;
+		ftgl::texture_glyph_t *d = font->kind->getGlyph(c);
 		if (d) {
 			float kerning = 0;
 			if (last_glyph) {
@@ -115,7 +100,7 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			float x0  = bx + x + d->offset_x * scale;
 			float x1  = x0 + d->width * scale;
 			float italicx = - d->offset_x * scale * italic;
-			float y0 = by + (font->font->ascender - d->offset_y) * scale;
+			float y0 = by + (font->kind->font->ascender - d->offset_y) * scale;
 			float y1 = y0 + (d->height) * scale;
 			positions.push_back({x0, y});
 
@@ -131,14 +116,14 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 			}
 
 			if (outline) {
-				font->font->outline_thickness = 2;
-				font->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
-				ftgl::texture_glyph_t *doutline = getGlyph(c);
+				font->kind->font->outline_thickness = 2;
+				font->kind->font->rendermode = ftgl::RENDER_OUTLINE_POSITIVE;
+				ftgl::texture_glyph_t *doutline = font->kind->getGlyph(c);
 				if (doutline) {
 					float x0  = bx + x + doutline->offset_x * scale;
 					float x1  = x0 + doutline->width * scale;
 					float italicx = - doutline->offset_x * scale * italic;
-					float y0 = by + (font->font->ascender - doutline->offset_y) * scale;
+					float y0 = by + (font->kind->font->ascender - doutline->offset_y) * scale;
 					float y1 = y0 + (doutline->height) * scale;
 
 					vertices.push_back({{1+x0+italicx, 1+y0, 0, 1},	{doutline->s0, doutline->t0}, outline_color});
@@ -162,11 +147,11 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 
 			// Much trickery, such dev
 			if (style == FONT_STYLE_UNDERLINED) {
-				ftgl::texture_glyph_t *ul = getGlyph('_');
+				ftgl::texture_glyph_t *ul = font->kind->getGlyph('_');
 				if (ul) {
 					float x0  = bx + x;
 					float x1  = x0 + d->advance_x * scale;
-					float y0 = by + (font->font->ascender * 1.05 - ul->offset_y) * scale;
+					float y0 = by + (font->kind->font->ascender * 1.05 - ul->offset_y) * scale;
 					float y1 = y0 + (ul->height) * scale;
 					float s2 = (ul->s1 - ul->s0) / 1.5;
 
@@ -186,28 +171,6 @@ int DORText::addCharQuad(const char *str, size_t len, font_style style, int bx, 
 	return x;
 }
 
-int DORText::getTextChunkSize(const char *str, size_t len, font_style style) {
-	int x = 0, y = 0;
-	ssize_t off = 1;
-	int32_t c, oldc = 0;
-	float scale = font->scale;
-	while (off > 0) {
-		off = utf8proc_iterate((const uint8_t*)str, len, &c);
-		str += off;
-		len -= off;
-
-		ftgl::texture_glyph_t *d = getGlyph(c);
-		if (d) {
-			if (oldc) {
-				x += texture_glyph_get_kerning(d, oldc) * scale;
-			}
-			x += d->advance_x * scale;
-		}
-		oldc = c;
-	}
-	return x;
-}
-
 void DORText::parseText() {
 	clear();
 	entities_container.clear();
@@ -219,8 +182,7 @@ void DORText::parseText() {
 	// printf("==CUREC  %fx%fx%fx%f\n", font_color.r, font_color.g, font_color.b, font_color.a);
 	// printf("==USEDC  %fx%fx%fx%f\n", used_color.r, used_color.g, used_color.b, used_color.a);
 
-	font_type *f = font;
-	if (!f) return;
+	if (!font) return;
 	size_t len = strlen(text);
 	if (!len) {
 		used_color = font_color;
@@ -234,13 +196,13 @@ void DORText::parseText() {
 	int max_width = line_max_width;
 	int bx = 0, by = 0;
 
-	setTexture(f->atlas->id, LUA_NOREF);
+	setTexture(font->kind->getAtlasTexture(), LUA_NOREF);
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	vertices.reserve(len * 4);
 	vertices_kind_info.reserve(len * 4);
 
-	int font_h = f->lineskip * f->scale;
+	int font_h = font->getHeight();
 	int nb_lines = 1;
 	int id_real_line = 1;
 	char *line_data = NULL;
@@ -254,11 +216,6 @@ void DORText::parseText() {
 	font_style style = default_style;
 
 	last_glyph = 0;
-
-	// int fstyle = TTF_GetFontStyle(f->font);
-	// if (fstyle & TTF_STYLE_BOLD) style = FONT_STYLE_BOLD;
-	// else if (fstyle & TTF_STYLE_ITALIC) style = FONT_STYLE_ITALIC;
-	// else if (fstyle & TTF_STYLE_UNDERLINE) style = FONT_STYLE_UNDERLINED;
 
 	while (true)
 	{
@@ -275,7 +232,7 @@ void DORText::parseText() {
 
 			// Make a surface for the word
 			int len = next - start;
-			int future_size = getTextChunkSize(start, len, style);
+			int future_size = (font->textSize(start, len, style)).x;
 
 			// If we must do a newline, flush the previous word and the start the new line
 			if (!no_linefeed && (force_nl || (future_size && max_width && (size + future_size > max_width))))
@@ -444,7 +401,7 @@ endcolor:
 	this->w = max_size;
 	this->h = nb_lines * font_h;
 
-	font_update_atlas(f); // Make sure any texture changes are upload to the GPU
+	font->kind->updateAtlas(); // Make sure any texture changes are upload to the GPU
 }
 
 void DORText::parseTextSimple() {
@@ -454,24 +411,23 @@ void DORText::parseTextSimple() {
 	centered = false;
 	setChanged(true);
 
-	font_type *f = font;
-	if (!f) return;
+	if (!font) return;
 	size_t len = strlen(text);
 	if (!len) return;
 	const char *str = text;
 	float r = font_color.r, g = font_color.g, b = font_color.b, a = font_color.a;
 
-	setTexture(f->atlas->id, LUA_NOREF);
+	setTexture(font->kind->getAtlasTexture(), LUA_NOREF);
 
 	// Update VO size once, we are allocating a few more than neede in case of utf8 or control sequences, but we dont care
 	vertices.reserve(len * 4);
 
-	int font_h = f->lineskip * f->scale;
-	this->w = DORText::addCharQuad(str, len, default_style, 0, 0, r, g, b, a);
+	int font_h = font->getHeight();
+	this->w = addCharQuad(str, len, default_style, 0, 0, r, g, b, a);
 	this->nb_lines = 1;
 	this->h = font_h;
 
-	font_update_atlas(f); // Make sure any texture changes are upload to the GPU
+	font->kind->updateAtlas(); // Make sure any texture changes are upload to the GPU
 }
 
 void DORText::setText(const char *text, bool simple) {

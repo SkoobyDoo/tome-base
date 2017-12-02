@@ -30,6 +30,9 @@ extern "C" {
 #include <string>
 #include <unordered_map>
 
+#define GLM_FORCE_INLINE
+#include "glm/glm.hpp"
+
 using namespace std;
 
 #define DEFAULT_ATLAS_W	1024
@@ -44,23 +47,68 @@ typedef enum {
 	FONT_STYLE_ITALIC,
 } font_style;
 
-typedef struct
-{
-	std::string *fontname;
-	void *font_mem;
-	int font_mem_size;
-	float scale;
+using CodepointGlyphMap = unordered_map<uint32_t, ftgl::texture_glyph_t*>;
+
+class FontInstance;
+class DORText;
+
+class FontKind {
+	friend FontInstance;
+	friend DORText;
+protected:
+	static unordered_map<string, FontKind*> all_fonts;
+	const string default_atlas_chars = "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMOPQRSTUVWXYZ0123456789.-_/*&~\"'\\{}()[]|^%%*$! =+,€";
+
+	string fontname;
+	char *font_mem;
+	int32_t font_mem_size;
 	float lineskip;
 	ftgl::texture_atlas_t *atlas;
 	ftgl::texture_font_t *font;
 
-	unordered_map<uint32_t, ftgl::texture_glyph_t*> *glyph_map;
-	unordered_map<uint32_t, ftgl::texture_glyph_t*> *glyph_map_outline;
-} font_type;
+	CodepointGlyphMap glyph_map_normal;
+	CodepointGlyphMap glyph_map_outline;
 
-// extern bool font_add_atlas(font_type *f, int32_t c, font_style style);
-extern void font_update_atlas(font_type *f);
-// extern void font_make_atlas(font_type *f, int w, int h);
+	int32_t nb_use = 0;
+public:
+	static FontKind* getFont(string &name);
 
+	FontKind(string &name);
+	~FontKind();
+
+	void used(bool v);
+	void updateAtlas();
+	inline glm::vec2 getAtlasSize() { return {atlas->width, atlas->height}; }
+	inline float lineSkip() { return lineskip; }
+	inline GLuint getAtlasTexture() { return atlas->id; }
+
+	inline ftgl::texture_glyph_t* getGlyph(uint32_t codepoint) {
+		CodepointGlyphMap *glyph_map = &glyph_map_normal;
+		if (font->rendermode == ftgl::RENDER_OUTLINE_POSITIVE) glyph_map = &glyph_map_outline;
+
+		auto it = glyph_map->find(codepoint);
+		if (it != glyph_map->end()) return it->second;
+
+		ftgl::texture_glyph_t *g = ftgl::texture_font_get_glyph(font, codepoint);
+		if (g) {
+			std::pair<uint32_t, ftgl::texture_glyph_t*> p(codepoint, g);
+			glyph_map->insert(p);
+		}
+		return g;
+	}
+};
+
+class FontInstance {
+public:
+	FontKind *kind;
+	float size;
+	float scale;
+
+	FontInstance(FontKind *fk, float size) : kind(fk), scale(size / 32.0), size(size) {};
+
+	glm::vec2 textSize(const char *str, size_t len, font_style style=FONT_STYLE_NORMAL);
+	inline glm::vec2 textSize(string &text, font_style style=FONT_STYLE_NORMAL) { return textSize(text.c_str(), text.size(), style); }
+	inline float getHeight() { return kind->lineSkip() * scale; }
+};
 
 #endif
