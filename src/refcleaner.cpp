@@ -34,10 +34,11 @@ using namespace std;
 
 static vector<int> refs_to_clean;
 
-extern "C" void refcleaner(int ref) {
-	if (ref == LUA_NOREF) return;
+extern "C" void refcleaner(int *ref) {
+	if (*ref == LUA_NOREF) return;
 	// printf("[RefCleaner] adding ref %d to clean\n", ref);
-	refs_to_clean.push_back(ref);
+	refs_to_clean.push_back(*ref);
+	*ref = LUA_NOREF;
 }
 
 extern "C" void refcleaner_clean(lua_State *L) {

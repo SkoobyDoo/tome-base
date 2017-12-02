@@ -234,13 +234,13 @@ static int sdl_new_tile(lua_State *L)
 	const char *str = luaL_checklstring(L, 4, &lenstr);
 	int x = luaL_checknumber(L, 5);
 	int y = luaL_checknumber(L, 6);
-	int r = luaL_checknumber(L, 7);
-	int g = luaL_checknumber(L, 8);
-	int b = luaL_checknumber(L, 9);
-	int br = luaL_checknumber(L, 10);
-	int bg = luaL_checknumber(L, 11);
-	int bb = luaL_checknumber(L, 12);
-	int alpha = luaL_checknumber(L, 13);
+	Uint8 r = luaL_checknumber(L, 7);
+	Uint8 g = luaL_checknumber(L, 8);
+	Uint8 b = luaL_checknumber(L, 9);
+	Uint8 br = luaL_checknumber(L, 10);
+	Uint8 bg = luaL_checknumber(L, 11);
+	Uint8 bb = luaL_checknumber(L, 12);
+	Uint8 alpha = luaL_checknumber(L, 13);
 
 	SDL_Color color = {r,g,b};
 	// SDL_Surface *txt = TTF_RenderUTF8_Blended(f->font, str, color);

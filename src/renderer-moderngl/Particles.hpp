@@ -44,19 +44,19 @@ public:
 	virtual const char* getKind() { return "DORParticles"; };
 
 	void setParticles(particles_type *ps, int ref) {
-		refcleaner(ps_lua_ref);
+		refcleaner(&ps_lua_ref);
 		ps_lua_ref = ref;
 		this->ps = ps;
 	};
 
 	void setParticles(particles::Ensemble *e, int ref) {
-		refcleaner(ps_lua_ref);
+		refcleaner(&ps_lua_ref);
 		ps_lua_ref = ref;
 		this->e = e;
 	};
 
 	void setParticlesOwn(particles::Ensemble *e) {
-		refcleaner(ps_lua_ref);
+		refcleaner(&ps_lua_ref);
 		ps_lua_ref = LUA_NOREF;
 		this->e = e;
 		owned = true;

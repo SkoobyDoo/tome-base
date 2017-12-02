@@ -423,8 +423,8 @@ Ensemble::Ensemble() {
 
 Ensemble::~Ensemble() {
 	printf("===Ensemble destroyed, %lx\n", this);
-	refcleaner(event_cb_ref);
-	refcleaner(parameters_ref);
+	refcleaner(&event_cb_ref);
+	refcleaner(&parameters_ref);
 	lock_guard<mutex> lock(th_runner_singleton.mux);
 	all_ensembles.erase(this);
 }
@@ -462,7 +462,7 @@ void Ensemble::update(float nb_keyframes) {
 }
 
 void Ensemble::setEventsCallback(int ref) {
-	refcleaner(event_cb_ref);
+	refcleaner(&event_cb_ref);
 	event_cb_ref = ref;
 }
 

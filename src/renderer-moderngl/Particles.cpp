@@ -23,7 +23,7 @@
 
 DORParticles::~DORParticles() {
 	// printf("==================== DORParticles DYING %s linked to parent %lx\n", ps ? ps->name_def : (e ? "Ensemble" : "--"), parent);
-	refcleaner(ps_lua_ref);
+	refcleaner(&ps_lua_ref);
 	if (e && owned) {
 		delete e;
 	}

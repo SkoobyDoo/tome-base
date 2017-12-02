@@ -341,7 +341,7 @@ static int particles_free(lua_State *L)
 	if (ps->vbo) glDeleteBuffers(1, &ps->vbo);
 	if (ps->vbo_elements) glDeleteBuffers(1, &ps->vbo_elements);
 
-	refcleaner(ps->trigger_cb);
+	refcleaner(&ps->trigger_cb);
 
 	lua_pushnumber(L, 1);
 	return 1;

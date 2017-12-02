@@ -332,8 +332,7 @@ void copy_surface_to_texture(SDL_Surface *s) {
 extern int current_keyhandler;
 static int lua_set_current_keyhandler(lua_State *L)
 {
-	if (current_keyhandler != LUA_NOREF)
-		refcleaner(current_keyhandler);
+	refcleaner(&current_keyhandler);
 
 	if (lua_isnil(L, 1))
 		current_keyhandler = LUA_NOREF;
@@ -421,8 +420,7 @@ static const struct luaL_Reg keylib[] =
 extern int current_game;
 static int lua_set_current_game(lua_State *L)
 {
-	if (current_game != LUA_NOREF)
-		refcleaner(current_game);
+	refcleaner(&current_game);
 
 	if (lua_isnil(L, 1))
 		current_game = LUA_NOREF;

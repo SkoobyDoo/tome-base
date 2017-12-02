@@ -279,7 +279,7 @@ public:
 		MapObject *old = map[off];
 		if (old == mo) return old;
 
-		refcleaner(map_ref[off]);
+		refcleaner(&map_ref[off]);
 		map[off] = mo;
 		map_ref[off] = ref;
 		if (mo) { mo->grid_x = x; mo->grid_y = y; }

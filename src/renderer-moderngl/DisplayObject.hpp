@@ -375,12 +375,12 @@ protected:
 
 public:
 	DORCallback() { };
-	virtual ~DORCallback() { refcleaner(cb_ref); };
+	virtual ~DORCallback() { refcleaner(&cb_ref); };
 	DO_STANDARD_CLONE_METHOD(DORCallback);
 	virtual const char* getKind() { return "DORCallback"; };
 
 	void setCallback(int ref) {
-		refcleaner(cb_ref);
+		refcleaner(&cb_ref);
 		cb_ref = ref;
 	};
 	void enable(bool v) { enabled = v; setChanged(); };

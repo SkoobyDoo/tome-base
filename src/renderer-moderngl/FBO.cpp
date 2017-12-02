@@ -70,8 +70,8 @@ DORTarget::~DORTarget() {
 	if (mode) delete mode;
 	if (toscreen_vbo) delete toscreen_vbo;
 
-	if (view_lua_ref != LUA_NOREF && L) refcleaner(view_lua_ref);
-	if (subrender_lua_ref != LUA_NOREF && L) refcleaner(subrender_lua_ref);
+	refcleaner(&view_lua_ref);
+	refcleaner(&subrender_lua_ref);
 
 	deleteFramebuffer(&fbo);
 }
@@ -138,7 +138,7 @@ void DORTarget::deleteFramebuffer(Fbo *fbo) {
 }
 
 void DORTarget::setView(View *view, int ref) {
-	if (view_lua_ref != LUA_NOREF && L) refcleaner(view_lua_ref);
+	refcleaner(&view_lua_ref);
 	this->view = view;
 	view_lua_ref = ref;
 }
@@ -210,7 +210,7 @@ void DORTarget::use(bool activate) {
 }
 
 void DORTarget::setAutoRender(SubRenderer *o, int ref) {
-	if (subrender_lua_ref != LUA_NOREF && L) refcleaner(subrender_lua_ref);
+	refcleaner(&subrender_lua_ref);
 	subrender_lua_ref = ref;
 	subrender = o;
 	setChanged();
@@ -289,7 +289,7 @@ TargetPostProcess::TargetPostProcess(DORTarget *t)
 }
 TargetPostProcess::~TargetPostProcess() {
 	for (auto &it : shaders) {
-		if (it.lua_ref != LUA_NOREF) { refcleaner(it.lua_ref); }
+		refcleaner(&it.lua_ref);
 	}
 	target->deleteFramebuffer(&fbo);
 }
@@ -378,7 +378,7 @@ TargetBlur::TargetBlur(DORTarget *t, int blur_passes, float renderscale, shader_
 TargetBlur::~TargetBlur() {
 	target->deleteFramebuffer(&fbo_blur);
 
-	if (blur_ref != LUA_NOREF) { refcleaner(blur_ref); blur_ref = LUA_NOREF; }
+	refcleaner(&blur_ref);
 }
 
 void TargetBlur::renderMode() {
@@ -468,7 +468,7 @@ TargetBlurDownsampling::~TargetBlurDownsampling() {
 		delete fbo.vbo;
 	}
 
-	if (blur_ref != LUA_NOREF) { refcleaner(blur_ref); blur_ref = LUA_NOREF; }
+	refcleaner(&blur_ref);
 }
 
 void TargetBlurDownsampling::renderMode() {

@@ -21,6 +21,6 @@
 #ifndef _REFCLEANER_H_
 #define _REFCLEANER_H_
 
-void refcleaner(int ref);
+void refcleaner(int *ref);
 
 #endif

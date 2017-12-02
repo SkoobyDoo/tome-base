@@ -35,8 +35,7 @@ extern SDL_Window *window;
 extern int current_gamepadhandler;
 static int lua_set_current_gamepadhandler(lua_State *L)
 {
-	if (current_gamepadhandler != LUA_NOREF)
-		refcleaner(current_gamepadhandler);
+	refcleaner(&current_gamepadhandler);
 
 	if (lua_isnil(L, 1))
 		current_gamepadhandler = LUA_NOREF;

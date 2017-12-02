@@ -55,7 +55,7 @@ static int lua_set_mouse(lua_State *L)
 extern int current_mousehandler;
 static int lua_set_current_mousehandler(lua_State *L)
 {
-	refcleaner(current_mousehandler);
+	refcleaner(&current_mousehandler);
 
 	if (lua_isnil(L, 1))
 		current_mousehandler = LUA_NOREF;
@@ -89,11 +89,7 @@ static int sdl_set_mouse_cursor(lua_State *L)
 	mouse_cursor_oy = luaL_checknumber(L, 2);
 
 	/* Down */
-	if (mouse_cursor_down_s_ref != LUA_NOREF)
-	{
-		refcleaner(mouse_cursor_down_s_ref);
-		mouse_cursor_down_s_ref = LUA_NOREF;
-	}
+	refcleaner(&mouse_cursor_down_s_ref);
 
 	if (!lua_isnil(L, 4))
 	{
@@ -107,11 +103,7 @@ static int sdl_set_mouse_cursor(lua_State *L)
 	}
 
 	/* Default */
-	if (mouse_cursor_s_ref != LUA_NOREF)
-	{
-		refcleaner(mouse_cursor_s_ref);
-		mouse_cursor_s_ref = LUA_NOREF;
-	}
+	refcleaner(&mouse_cursor_s_ref);
 
 	if (!lua_isnil(L, 3))
 	{

@@ -272,7 +272,7 @@ void DORSpriter::cloneInto(DisplayObject* _into) {
 }
 
 void DORSpriter::setTriggerCallback(int ref) {
-	refcleaner(trigger_cb_lua_ref);
+	refcleaner(&trigger_cb_lua_ref);
 	trigger_cb_lua_ref = ref;
 }
 

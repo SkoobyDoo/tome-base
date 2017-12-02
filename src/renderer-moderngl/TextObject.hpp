@@ -68,7 +68,7 @@ public:
 	virtual const char* getKind() { return "DORText"; };
 	
 	void setFont(FontInstance *font, int lua_ref) {
-		refcleaner(font_lua_ref);
+		refcleaner(&font_lua_ref);
 		this->font = font;
 		font_lua_ref = lua_ref;
 	};

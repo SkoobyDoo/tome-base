@@ -150,7 +150,7 @@ static int disable(lua_State *L)
 			wait_vbo = NULL;
 		}
 		if (wait_hooked) lua_sethook(L, NULL, 0, 0);
-		refcleaner(wait_draw_ref); wait_draw_ref = LUA_NOREF;
+		refcleaner(&wait_draw_ref);
 		waited_ticks = SDL_GetTicks() - waited_ticks;
 		printf("Wait finished, counted %d, %ld ticks\n", waited_count, waited_ticks);
 

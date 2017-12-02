@@ -57,12 +57,12 @@ MapObject::~MapObject() {
 	mos_particles_clean.erase(this);
 	clearParticles();
 	for (int i = 0; i < nb_textures; i++) {
-		refcleaner(textures_ref[i]);
+		refcleaner(&textures_ref[i]);
 	}
-	refcleaner(next_ref);
-	refcleaner(fdo_ref);
-	refcleaner(bdo_ref);
-	refcleaner(shader_ref);
+	refcleaner(&next_ref);
+	refcleaner(&fdo_ref);
+	refcleaner(&bdo_ref);
+	refcleaner(&shader_ref);
 	if (cb) delete cb;
 	for (auto mor : mor_set) mor->resetMapObjects(); // Make sure that its impossible to access deleted stuff
 }
@@ -74,7 +74,7 @@ void MapObject::setCallback(int ref) {
 }
 
 void MapObject::chain(MapObject *n, int ref) {
-	refcleaner(next_ref);
+	refcleaner(&next_ref);
 	next = n;
 	next_ref = ref;
 	MapObject *nm = n;
@@ -87,7 +87,7 @@ void MapObject::chain(MapObject *n, int ref) {
 
 bool MapObject::setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords) {
 	if (slot >= MAX_TEXTURES) return false;
-	refcleaner(textures_ref[slot]);
+	refcleaner(&textures_ref[slot]);
 	textures[slot] = tex;
 	textures_ref[slot] = ref;
 	tex_coords[slot] = coords;
@@ -97,11 +97,11 @@ bool MapObject::setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords) {
 
 void MapObject::setDisplayObject(DisplayObject *d, int ref, bool front) {
 	if (front) {
-		refcleaner(fdo_ref);
+		refcleaner(&fdo_ref);
 		fdisplayobject = d;
 		fdo_ref = ref;
 	} else {
-		refcleaner(bdo_ref);
+		refcleaner(&bdo_ref);
 		bdisplayobject = d;
 		bdo_ref = ref;
 	}
@@ -123,14 +123,14 @@ void MapObject::addParticles(DORParticles *p, int ref) {
 	notifyChangedMORs();
 }
 void MapObject::removeParticles(ParticlesVector::iterator *it) {
-	refcleaner(get<1>(**it));
+	refcleaner(&get<1>(**it));
 	*it = particles.erase(*it);
 	notifyChangedMORs();
 }
 void MapObject::removeParticles(DORParticles *p) {
 	for (auto it = particles.begin(); it != particles.end(); it++) {
 		if (get<0>(*it) == p) {
-			refcleaner(get<1>(*it));
+			refcleaner(&get<1>(*it));
 			particles.erase(it);			
 			break;
 		}
@@ -146,7 +146,7 @@ void MapObject::cleanParticles() {
 }
 void MapObject::clearParticles() {
 	for (auto it = particles.begin(); it != particles.end(); it++) {
-		refcleaner(get<1>(*it));
+		refcleaner(&get<1>(*it));
 	}
 	particles.clear();
 	notifyChangedMORs();
@@ -154,7 +154,7 @@ void MapObject::clearParticles() {
 
 void MapObject::setShader(shader_type *s, int ref) {
 	shader = s;
-	refcleaner(shader_ref);
+	refcleaner(&shader_ref);
 	shader_ref = ref;
 }
 
@@ -357,7 +357,7 @@ void MapObjectRenderer::cloneInto(DisplayObject *_into) {
 void MapObjectRenderer::resetMapObjects() {
 	for (auto &it : mos) {
 		get<0>(it)->removeMOR(this);
-		refcleaner(get<1>(it));
+		refcleaner(&get<1>(it));
 	}
 	mos.clear();
 	setChanged();
@@ -451,9 +451,9 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 }
 
 Map2D::~Map2D() {
-	refcleaner(default_shader_ref);
+	refcleaner(&default_shader_ref);
 	for (uint32_t i = 0; i < z * w * h; i++) {
-		refcleaner(map_ref[i]);
+		refcleaner(&map_ref[i]);
 	}
 	delete[] map;
 	delete[] map_ref;
@@ -521,19 +521,19 @@ void Map2D::setupGridLines() {
 }
 
 void Map2D::setDefaultShader(shader_type *s, int ref) {
-	refcleaner(default_shader_ref);
+	refcleaner(&default_shader_ref);
 	default_shader = s;
 	default_shader_ref = ref;
 }
 
 void Map2D::setVisionShader(shader_type *s, int ref) {
-	refcleaner(vision_shader_ref);
+	refcleaner(&vision_shader_ref);
 	vision_shader_ref = ref;
 	seens_vbo.setShader(s);
 }
 
 void Map2D::setGridLinesShader(shader_type *s, int ref) {
-	refcleaner(grid_lines_shader_ref);
+	refcleaner(&grid_lines_shader_ref);
 	grid_lines_shader_ref = ref;
 	grid_lines_vbo.setShader(s);
 }

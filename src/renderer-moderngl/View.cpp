@@ -39,8 +39,8 @@ View::View(int w, int h) {
 
 View::~View() {
 	if (in_use) use(false);
-	refcleaner(camera_lua_ref);
-	refcleaner(origin_lua_ref);
+	refcleaner(&camera_lua_ref);
+	refcleaner(&origin_lua_ref);
 }
 
 void View::print() {
@@ -62,8 +62,8 @@ void View::setProjectView(
 ) {
 	this->w = w; this->h = h;
 	from_screen_size = false;
-	refcleaner(camera_lua_ref);
-	refcleaner(origin_lua_ref);
+	refcleaner(&camera_lua_ref);
+	refcleaner(&origin_lua_ref);
 
 	mode = ViewMode::PROJECT;
 	view = glm::perspective(

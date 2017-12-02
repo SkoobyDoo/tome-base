@@ -500,5 +500,5 @@ DORText::DORText() {
 
 DORText::~DORText() {
 	free((void*)text);
-	refcleaner(font_lua_ref);
+	refcleaner(&font_lua_ref);
 };

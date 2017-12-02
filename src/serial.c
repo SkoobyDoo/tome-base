@@ -295,11 +295,11 @@ static int serial_new(lua_State *L)
 static int serial_free(lua_State *L)
 {
 	serial_type *s = (serial_type*)auxiliar_checkclass(L, "core{serial}", 1);
-	refcleaner(s->fname);
-	refcleaner(s->fadd);
-	refcleaner(s->allow);
-	refcleaner(s->disallow);
-	refcleaner(s->disallow2);
+	refcleaner(&s->fname);
+	refcleaner(&s->fadd);
+	refcleaner(&s->allow);
+	refcleaner(&s->disallow);
+	refcleaner(&s->disallow2);
 	lua_pushnumber(L, 1);
 	return 1;
 }

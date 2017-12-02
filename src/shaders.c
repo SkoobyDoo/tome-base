@@ -753,7 +753,7 @@ static int program_set_name(lua_State *L)
 static int program_set_default(lua_State *L)
 {
 	shader_type *p = (shader_type*)lua_touserdata(L, 1);
-	refcleaner(default_shader_ref);
+	refcleaner(&default_shader_ref);
 	default_shader = p;
 	default_shader_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	return 0;

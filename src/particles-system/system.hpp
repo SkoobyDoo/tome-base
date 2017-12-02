@@ -193,7 +193,7 @@ public:
 	};
 	~ShaderHolder() {
 		printf("Freeing shader %d\n", shader->shader);
-		refcleaner(lua_shader_ref);
+		refcleaner(&lua_shader_ref);
 	};
 };
 typedef shared_ptr<ShaderHolder> spShaderHolder;
@@ -207,7 +207,7 @@ public:
 	};
 	~DefHolder() {
 		printf("Freeing def %d : %s\n", ref, expr.c_str());
-		refcleaner(ref);
+		refcleaner(&ref);
 	};
 };
 typedef shared_ptr<DefHolder> spDefHolder;
