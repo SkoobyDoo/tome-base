@@ -284,20 +284,23 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 			float nshiftx = floor((dm->root->grid_x + dm->root->move_anim_dx) * tile_w);
 			float nshifty = floor((dm->root->grid_y + dm->root->move_anim_dy) * tile_h);
 
-			mat4 m;
-			m = glm::translate(m, glm::vec3(px, py, 0));
-			for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
-				DORParticles *ps = get<0>(*it);
-				if (ps->isDead()) {
-					mos_particles_clean.insert(dm);
-					++it;
-				} else {
-					ps->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
-					ps->render(renderer, m, color, true);
-					++it;
+			if (dm->last_set) {
+				mat4 m;
+				m = glm::translate(m, glm::vec3(px, py, 0));
+				for (auto it = dm->particles.begin(); it != dm->particles.end(); ) {
+					DORParticles *ps = get<0>(*it);
+					if (ps->isDead()) {
+						mos_particles_clean.insert(dm);
+						++it;
+					} else {
+						ps->shift(dm->last_x - nshiftx, dm->last_y - nshifty, false);
+						ps->render(renderer, m, color, true);
+						++it;
+					}
 				}
 			}
 			dm->last_x = nshiftx; dm->last_y = nshifty;
+			dm->last_set = true;
 		}
 	}
 

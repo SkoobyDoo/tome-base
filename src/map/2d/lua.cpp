@@ -269,7 +269,6 @@ static void map_object_update(lua_State *L, int moid, MapObjectRenderer *mor) {
 		MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", moid);
 		lua_pushvalue(L, moid);
 		int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-
 		mor->addMapObject(obj, ref);
 		moid++;
 	}

@@ -31,7 +31,7 @@ function _M:init(party, a)
 	self.back = core.renderer.colorQuad(0, 0, 34, 34, 0, 0, 0, 1)
 	self.lifebar = core.renderer.colorQuad(0, 0, 34, 34, 0xc0/255, 0, 0, 1)
 	self.frame = core.renderer.container()
-	self.display_entity = a:getEntityDisplayObject(party.tiles, 38, 38, 1, false, false, true)
+	self.display_entity = a:getEntityDisplayObject(party.tiles, 38, 38, false, true)
 	self.texts = core.renderer.container()
 	if a.summon_time then
 		self.text_overlay = core.renderer.text(party.buff_font):outline(1, 0, 0, 0, 1)

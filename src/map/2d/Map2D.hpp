@@ -122,6 +122,7 @@ protected:
 
 	float grid_x = 0, grid_y = 0; // Current position on the map (stored as float to avoid later convertion)
 	float last_x = 0, last_y = 0;
+	bool last_set = false;
 
 	float move_step = 0, move_max = 0, move_blur = 0;
 	float move_twitch = 0;
@@ -177,6 +178,7 @@ public:
 	void removeMOR(MapObjectRenderer *mor);
 	void notifyChangedMORs();
 };
+using sMapObject = shared_ptr<MapObject>;
 
 class MapObjectProcessor {
 private:
