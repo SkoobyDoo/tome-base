@@ -32,6 +32,7 @@ module(..., package.seeall, class.make)
 local fps_counter_renderer
 local fps_counter
 local fps_counter_frames = 30
+local fps_font
 _M.fps_shown = false
 
 --- Sets up the default keyhandler
@@ -55,7 +56,7 @@ function _M:init(keyhandler)
 
 	self:defaultMouseCursor()
 
-	local fps_font = core.display.newFont("/data/font/FSEX300.ttf", 14)
+	fps_font = core.display.newFont("/data/font/FSEX300.ttf", 14)
 	fps_counter_renderer = core.renderer.renderer():color(1, 1, 1, 1)
 	fps_counter = core.renderer.text(fps_font):outline(1, 0, 0, 0, 1)
 	fps_counter_renderer:add(fps_counter)

@@ -171,6 +171,8 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 
 			-- DGDGDGDG: idea! to replace newtile, instead use a font atlas and grab glyph coords inside and make a MO from that
 			-- so this uses the same
+			-- DGDGDGDG: better idea, now that MO can have back & front DOs make a text DO and a plain color DO (for background if needed)
+			-- and set them on an MO
 			s = core.display.newTile(pot_width, pot_height, self.font, dochar, (pot_width - w) / 2, (pot_height - h) / 2, fr, fg, fb, br or 0, bg or 0, bb or 0, alpha)
 		end
 

@@ -119,16 +119,14 @@ void FontKind::updateAtlas() {
 extern "C" void font_cleanup() {
 }
 
-static int sdl_free_font(lua_State *L)
-{
+static int sdl_free_font(lua_State *L) {
 	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
 	delete f;
 	lua_pushnumber(L, 1);
 	return 1;
 }
 
-static int sdl_new_font(lua_State *L)
-{
+static int sdl_new_font(lua_State *L) {
 	const char *name = luaL_checkstring(L, 1);
 	float size = luaL_checknumber(L, 2);
 	if (!PHYSFS_exists(name)) {
@@ -143,9 +141,8 @@ static int sdl_new_font(lua_State *L)
 	*fp = new FontInstance(FontKind::getFont(fname), size);
 	return 1;
 }
-
-static int sdl_font_get_atlas_size(lua_State *L)
-{
+ 
+static int sdl_font_get_atlas_size(lua_State *L) {
 	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
 	auto s = f->kind->getAtlasSize();
 	lua_pushnumber(L, s.x);
@@ -174,8 +171,7 @@ glm::vec2 FontInstance::textSize(const char *str, size_t len, font_style style) 
 	return {x, kind->lineSkip() * scale};
 }
 
-static int sdl_font_size(lua_State *L)
-{
+static int sdl_font_size(lua_State *L) {
 	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
 	size_t len;
 	const char *str = luaL_checklstring(L, 2, &len);
@@ -186,22 +182,19 @@ static int sdl_font_size(lua_State *L)
 	return 2;
 }
 
-static int sdl_font_height(lua_State *L)
-{
+static int sdl_font_height(lua_State *L) {
 	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
 	lua_pushnumber(L, f->kind->lineSkip() * f->scale);
 	return 1;
 }
 
-static int sdl_font_lineskip(lua_State *L)
-{
+static int sdl_font_lineskip(lua_State *L) {
 	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 1);
 	lua_pushnumber(L, f->kind->lineSkip() * f->scale);
 	return 1;
 }
 
-static int sdl_font_style_get(lua_State *L)
-{
+static int sdl_font_style_get(lua_State *L) {
 	// font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	// int style = TTF_GetFontStyle(f->font);
 
@@ -213,8 +206,7 @@ static int sdl_font_style_get(lua_State *L)
 	return 1;
 }
 
-static int sdl_font_style(lua_State *L)
-{
+static int sdl_font_style(lua_State *L) {
 	// font_type *f = (font_type*)auxiliar_checkclass(L, "sdl{font}", 1);
 	// const char *style = luaL_checkstring(L, 2);
 
@@ -225,8 +217,7 @@ static int sdl_font_style(lua_State *L)
 	return 0;
 }
 
-static int sdl_new_tile(lua_State *L)
-{
+static int sdl_new_tile(lua_State *L) {
 	int w = luaL_checknumber(L, 1);
 	int h = luaL_checknumber(L, 2);
 	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 3);
@@ -293,15 +284,12 @@ static int sdl_new_tile(lua_State *L)
 	return 1;
 }
 
-static int sdl_font_total(lua_State *L)
-{
+static int sdl_font_total(lua_State *L) {
 	lua_pushnumber(L, nb_fonts);
 	return 1;
 }
 
-
-static const struct luaL_Reg sdl_font_reg[] =
-{
+static const struct luaL_Reg sdl_font_reg[] = {
 	{"__gc", sdl_free_font},
 	{"close", sdl_free_font},
 	{"size", sdl_font_size},
@@ -319,8 +307,7 @@ const luaL_Reg fontlib[] = {
 	{NULL, NULL}
 };
 
-int luaopen_font(lua_State *L)
-{
+int luaopen_font(lua_State *L) {
 	auxiliar_newclass(L, "sdl{font}", sdl_font_reg);
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "display");
