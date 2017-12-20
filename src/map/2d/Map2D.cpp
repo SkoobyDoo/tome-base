@@ -54,17 +54,17 @@ MapObject::MapObject(int64_t uid, uint8_t nb_textures, bool on_seen, bool on_rem
 }
 
 MapObject::~MapObject() {
+	printf("======================map object dying %ld\n", uid);
 	mos_particles_clean.erase(this);
 	clearParticles();
 	for (int i = 0; i < nb_textures; i++) {
 		refcleaner(&textures_ref[i]);
 	}
-	refcleaner(&next_ref);
 	refcleaner(&fdo_ref);
 	refcleaner(&bdo_ref);
 	refcleaner(&shader_ref);
 	if (cb) delete cb;
-	for (auto mor : mor_set) mor->resetMapObjects(); // Make sure that its impossible to access deleted stuff
+	for (auto mor : mor_set) mor->removeMapObject(this); // Make sure that its impossible to access deleted stuff
 }
 
 void MapObject::setCallback(int ref) {
@@ -73,14 +73,12 @@ void MapObject::setCallback(int ref) {
 	notifyChangedMORs();
 }
 
-void MapObject::chain(MapObject *n, int ref) {
-	refcleaner(&next_ref);
+void MapObject::chain(sMapObject n) {
 	next = n;
-	next_ref = ref;
-	MapObject *nm = n;
-	while (n) {
-		n->root = root;
-		n = n->next;
+	MapObject *nm = n.get();
+	while (nm) {
+		nm->root = root;
+		nm = nm->next.get();
 	}
 	notifyChangedMORs();
 }
@@ -348,27 +346,32 @@ void MapObjectRenderer::cloneInto(DisplayObject *_into) {
 	MapObjectRenderer *into = dynamic_cast<MapObjectRenderer*>(_into);
 
 	for (auto &it : mos) {
-		int ref = LUA_NOREF;
-		if (L && get<1>(it) != LUA_NOREF) {
-			lua_rawgeti(L, LUA_REGISTRYINDEX, get<1>(it));
-			ref = luaL_ref(L, LUA_REGISTRYINDEX);
-		}
-		into->addMapObject(get<0>(it), ref);
+		into->addMapObject(it);
 	}
 }
 
 void MapObjectRenderer::resetMapObjects() {
 	for (auto &it : mos) {
-		get<0>(it)->removeMOR(this);
-		refcleaner(&get<1>(it));
+		it->removeMOR(this);
 	}
 	mos.clear();
 	setChanged();
 }
 
-void MapObjectRenderer::addMapObject(MapObject *mo, int ref) {
-	mos.emplace_back(mo, ref);
+void MapObjectRenderer::addMapObject(sMapObject mo) {
+	mos.emplace_back(mo);
 	mo->addMOR(this);
+	setChanged();
+}
+
+void MapObjectRenderer::removeMapObject(MapObject *mo) {
+	for (auto it = mos.begin(); it != mos.end(); it++) {
+		if (it->get() == mo) {
+			mos.erase(it);
+			break;
+		}
+	}
+	mo->removeMOR(this);
 	setChanged();
 }
 
@@ -377,10 +380,10 @@ void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur
 	mat4 vmodel = cur_model * model;
 	vec4 vcolor = cur_color * color;
 	for (auto &it : mos) {
-		MapObject *dm = get<0>(it);
+		MapObject *dm = it.get();
 		while (dm) {
 			processMapObject(container, dm, 0, 0, vcolor, &vmodel);
-			dm = dm->next;
+			dm = dm->next.get();
 		}
 	}
 }
@@ -412,8 +415,7 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	viewport_dimension = viewport_size - viewport_pos;
 
 	// Init the map data
-	map = new MapObject*[z * w * h];
-	map_ref = new int[z * w * h]; std::fill_n(map_ref, z * w * h, LUA_NOREF);
+	map = new sMapObject[z * w * h];
 	map_seens = new float[w * h]; std::fill_n(map_seens, w * h, 0);
 	map_remembers = new bool[w * h]; std::fill_n(map_remembers, w * h, false);
 	map_lites = new bool[w * h]; std::fill_n(map_lites, w * h, false);
@@ -455,11 +457,7 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 
 Map2D::~Map2D() {
 	refcleaner(&default_shader_ref);
-	for (uint32_t i = 0; i < z * w * h; i++) {
-		refcleaner(&map_ref[i]);
-	}
 	delete[] map;
-	delete[] map_ref;
 	delete[] map_seens;
 	delete[] map_remembers;
 	delete[] map_lites;
@@ -631,7 +629,7 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 		so->dy = dy + floor(m->move_anim_dy * tile_h);
 		so->dy_sort = j + dm->pos.y + m->move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
 		so->color = color;
-		dm = dm->next;
+		dm = dm->next.get();
 		dm_peel += 0.001;
 	}
 
@@ -668,7 +666,7 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 				so->dy_sort = j + dm->pos.y + blur_move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
 				so->color = color;
 				so->color.a = 0.3 + (step / m->move_step) * 0.7;
-				dm = dm->next;
+				dm = dm->next.get();
 				dm_peel += 0.001;
 			}
 		}

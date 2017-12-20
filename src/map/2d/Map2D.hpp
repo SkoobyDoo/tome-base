@@ -80,11 +80,14 @@ public:
 /****************************************************************************/
 
 class Map2D;
+class MapObject;
 class Minimap2D;
 class MapObjectRenderer;
 class MapObjectProcessor;
 
 using ParticlesVector = vector<tuple<DORParticles*,int>>;
+using sMapObject = shared_ptr<MapObject>;
+
 
 /****************************************************************************
  ** An object on the map, at a given z/x/y coord
@@ -139,8 +142,7 @@ protected:
 	DORCallbackMap *cb = nullptr;
 
 	MapObject *root = nullptr;
-	MapObject *next = nullptr;
-	int next_ref = LUA_NOREF;
+	sMapObject next = nullptr;
 
 	unordered_set<MapObjectRenderer*> mor_set;
 
@@ -148,8 +150,9 @@ public:
 	MapObject(int64_t uid, uint8_t nb_textures, bool on_seen, bool on_remember, bool on_unknown, vec2 pos, vec2 size, float scale);
 	~MapObject();
 
+	int64_t getUID() { return uid; };
 	void setCallback(int ref);
-	void chain(MapObject *n, int ref);
+	void chain(sMapObject n);
 	void setHidden(bool v) { hide = v; }
 	void setSeen(bool v) { on_seen = v; }
 	bool setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords);
@@ -178,7 +181,6 @@ public:
 	void removeMOR(MapObjectRenderer *mor);
 	void notifyChangedMORs();
 };
-using sMapObject = shared_ptr<MapObject>;
 
 class MapObjectProcessor {
 private:
@@ -207,8 +209,7 @@ private:
 	int32_t tile_w, tile_h;
 	int32_t z_off, w_off;
 	int32_t zdepth, w, h;
-	MapObject **map;
-	int *map_ref;
+	sMapObject *map;
 	float *map_seens;
 	bool *map_remembers;
 	bool *map_lites;
@@ -274,16 +275,14 @@ public:
 		else return true;
 	}
 	inline MapObject* at(int32_t z, int32_t x, int32_t y) {
-		return map[mapOffset(z, x, y)];
+		return map[mapOffset(z, x, y)].get();
 	}
-	inline MapObject* set(int32_t z, int32_t x, int32_t y, MapObject *mo, int ref) {
+	inline MapObject* set(int32_t z, int32_t x, int32_t y, sMapObject mo) {
 		int32_t off = mapOffset(z, x, y);
-		MapObject *old = map[off];
-		if (old == mo) return old;
+		MapObject *old = map[off].get();
+		if (old == mo.get()) return old;
 
-		refcleaner(&map_ref[off]);
 		map[off] = mo;
-		map_ref[off] = ref;
 		if (mo) { mo->grid_x = x; mo->grid_y = y; }
 		minimap_changed = true;
 		return old;
@@ -358,7 +357,7 @@ public:
  ****************************************************************************/
 class MapObjectRenderer : public DORFlatSortable, public MapObjectProcessor {
 private:
-	vector<tuple<MapObject*, int>> mos;
+	vector<sMapObject> mos;
 	bool allow_cb = false;
 	bool allow_particles = false;
 	float w, h;
@@ -372,7 +371,8 @@ public:
 	virtual const char* getKind() { return "MapObjectRenderer"; };
 
 	void resetMapObjects();
-	void addMapObject(MapObject *mo, int ref);
+	void addMapObject(sMapObject mo);
+	void removeMapObject(MapObject *mo);
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible);
 	// virtual void renderZ(RendererGL *container, mat4& cur_model, vec4& color, bool cur_visible);

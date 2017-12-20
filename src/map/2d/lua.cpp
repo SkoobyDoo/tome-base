@@ -37,38 +37,42 @@ extern "C" {
 #include "map/2d/Map2D.hpp"
 #include "map/2d/Minimap2D.hpp"
 #include "renderer-moderngl/renderer-lua.hpp"
+#include "auxiliar.hpp"
+
 
 /*************************************************************************
  ** MapObject wrapper
  *************************************************************************/
+static uint64_t nb_mo = 0;
 static int map_object_new(lua_State *L) {
 	long uid = luaL_checknumber(L, 1);
 	int nb_textures = luaL_checknumber(L, 2);
 	int i;
 
-	MapObject **pobj = (MapObject**)lua_newuserdata(L, sizeof(MapObject*));
-	auxiliar_setclass(L, "core{mapobj2d}", -1);
-	*pobj = new MapObject(uid, nb_textures,
+	lua_make_sobj(L, "core{mapobj2d}", new MapObject(uid, nb_textures,
 		lua_toboolean(L, 3),
 		lua_toboolean(L, 4),
 		lua_toboolean(L, 5),
 		{ luaL_checknumber(L, 6), luaL_checknumber(L, 7) },
 		{ luaL_checknumber(L, 8), luaL_checknumber(L, 9) },
 		luaL_checknumber(L, 10)
-	);
+	));
+	nb_mo++;
 
 	return 1;
 }
 
 static int map_object_free(lua_State *L) {
-	MapObject **obj = (MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
-	delete *obj;
+	auto obj = lua_get_sobj_ptr<MapObject>(L, "core{mapobj2d}", 1);
+	printf("========del %ld : use %ld\n", (*obj)->getUID(), obj->use_count());
+	delete obj;
+	nb_mo--;
 	lua_pushnumber(L, 1);
 	return 1;
 }
 
 static int map_object_cb(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 
 	if (lua_isfunction(L, 2)) {
 		lua_pushvalue(L, 2);
@@ -78,22 +82,21 @@ static int map_object_cb(lua_State *L) {
 }
 
 static int map_object_chain(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
-	MapObject *obj2 = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 2);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
+	auto obj2 = lua_get_sobj<MapObject>(L, "core{mapobj2d}", 2);
 	
-	lua_pushvalue(L, 2);
-	obj->chain(obj2, luaL_ref(L, LUA_REGISTRYINDEX));
+	obj->chain(obj2);
 	return 0;
 }
 
 static int map_object_hide(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->setHidden(true);
 	return 0;
 }
 
 static int map_object_on_seen(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	if (lua_isboolean(L, 2)) {
 		obj->setSeen(lua_toboolean(L, 2));
 	}
@@ -102,7 +105,7 @@ static int map_object_on_seen(lua_State *L) {
 }
 
 static int map_object_texture(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	int i = luaL_checknumber(L, 2);
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 3);
 
@@ -118,7 +121,7 @@ static int map_object_texture(lua_State *L) {
 }
 
 static int map_object_set_do(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	if (!lua_isnil(L, 2)) {
 		DisplayObject *v = userdata_to_DO(__FUNCTION__, L, 2);
 		lua_pushvalue(L, 2);
@@ -130,7 +133,7 @@ static int map_object_set_do(lua_State *L) {
 }
 
 static int map_object_shader(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	if (!lua_isnil(L, 2)) {
 		shader_type *s = (shader_type*)lua_touserdata(L, 2);
 		lua_pushvalue(L, 2);
@@ -142,62 +145,62 @@ static int map_object_shader(lua_State *L) {
 }
 
 static int map_object_add_particles(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 2, "gl{particles}");
 	lua_pushvalue(L, 2);
 	obj->addParticles(v, luaL_ref(L, LUA_REGISTRYINDEX));
 	return 0;
 }
 static int map_object_remove_particles(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 2, "gl{particles}");
 	obj->removeParticles(v);
 	return 0;
 }
 static int map_object_clear_particles(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->clearParticles();
 	return 0;
 }
 
 static int map_object_tint(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->setTint({luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4)});
 	return 0;
 }
 
 static int map_object_minimap(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->setMinimapColor({luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4)});
 	return 0;
 }
 
 static int map_object_flip_x(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->flipX(lua_toboolean(L, 2));
 	return 0;
 }
 
 static int map_object_flip_y(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->flipY(lua_toboolean(L, 2));
 	return 0;
 }
 
 static int map_object_print(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	return 0;
 }
 
 static int map_object_invalid(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->invalidate();
 	return 0;
 }
 
 
 static int map_object_set_anim(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 
 	// obj->anim_step = luaL_checknumber(L, 2);
 	// obj->anim_max = luaL_checknumber(L, 3);
@@ -207,19 +210,19 @@ static int map_object_set_anim(lua_State *L) {
 }
 
 static int map_object_reset_move_anim(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->resetMoveAnim();
 	return 0;
 }
 
 static int map_object_set_move_anim(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	obj->setMoveAnim(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7));
 	return 0;
 }
 
 static int map_object_get_move_anim(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	// map_type *map = (map_type*)auxiliar_checkclass(L, "core{map2d}", 2);
 
 	lua_pushnumber(L, 0);lua_pushnumber(L, 0);return 2;
@@ -251,7 +254,7 @@ static int map_object_get_move_anim(lua_State *L) {
 }
 
 static int map_object_get_world_pos(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	lua_pushnumber(L, 0);lua_pushnumber(L, 0);return 2;
 	// lua_pushnumber(L, obj->world_x);
 	// lua_pushnumber(L, obj->world_y);
@@ -259,17 +262,15 @@ static int map_object_get_world_pos(lua_State *L) {
 }
 
 static int map_object_is_valid(lua_State *L) {
-	MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", 1);
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	lua_pushboolean(L, obj->isValid());
 	return 1;
 }
 
 static void map_object_update(lua_State *L, int moid, MapObjectRenderer *mor) {
 	while (lua_isuserdata(L, moid)) {
-		MapObject *obj = *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", moid);
-		lua_pushvalue(L, moid);
-		int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-		mor->addMapObject(obj, ref);
+		auto obj = lua_get_sobj<MapObject>(L, "core{mapobj2d}", moid);
+		mor->addMapObject(obj);
 		moid++;
 	}
 }
@@ -434,13 +435,9 @@ static int map_set_grid(lua_State *L) {
 	for (uint8_t z = 0; z < map->getDepth(); z++) {
 		lua_pushnumber(L, z + 1);
 		lua_gettable(L, 4); // Access the table of mos for this spot
-		MapObject *mo = lua_isnoneornil(L, -1) ? nullptr : *(MapObject**)auxiliar_checkclass(L, "core{mapobj2d}", -1);
-		int ref = LUA_NOREF;
-		if (mo) {
-			lua_pushvalue(L, -1);
-			luaL_ref(L, LUA_REGISTRYINDEX);
-		}
-		map->set(z, x, y, mo, ref);
+		sMapObject mo(nullptr);
+		if (!lua_isnoneornil(L, -1)) mo = lua_get_sobj<MapObject>(L, "core{mapobj2d}", -1);
+		map->set(z, x, y, mo);
 
 		// Remove the mo and get the next
 		lua_pop(L, 1);
@@ -683,5 +680,16 @@ extern "C" int luaopen_map2d(lua_State *L) {
 	auxiliar_newclass(L, "gl{minimap2d}", gl_minimap2d_reg);
 	luaL_openlib(L, "core.map2d", maplib, 0);
 	lua_pop(L, 1);
+
+	// sMapObject mo1 = make_shared<MapObject>(1, 1, true, true, true, vec2(), vec2(), 1);
+	// sMapObject mo2 = make_shared<MapObject>(1, 1, true, true, true, vec2(), vec2(), 1);
+	// vector<sMapObject> map;
+	// printf("===== %ld\n", mo1.use_count());
+	// map.emplace_back(mo1);
+	// printf("===== %ld\n", mo1.use_count());
+	// map.clear();
+	// printf("===== %ld\n", mo1.use_count());
+
+	// exit(1);
 	return 1;
 }
