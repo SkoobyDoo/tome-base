@@ -123,6 +123,9 @@ function _M:drawItem(item, nb_keyframes)
 			item.cols[i] = {}
 
 			s:erase(0, 0, 0, 0)
+
+			if self.on_drawitem then startx = self.on_drawitem(item, s, startx, self.fh) end
+
 			local test_text = text:toString()
 			local font_w, _ = self.font:size(test_text)
 			font_w = font_w + startx
@@ -156,7 +159,6 @@ function _M:drawItem(item, nb_keyframes)
 			item.cols[i]._tex, item.cols[i]._tex_w, item.cols[i]._tex_h = s:glTexture()
 		end
 	end
-	if self.on_drawitem then self.on_drawitem(item) end
 end
 
 function _M:drawTree()
