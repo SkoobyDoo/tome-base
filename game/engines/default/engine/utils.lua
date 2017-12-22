@@ -886,8 +886,11 @@ end
 function __get_uid_surface(uid, w, h)
 	uid = tonumber(uid)
 	local e = uid and __uids[uid]
-	if e and game.level then
-		return e:getEntityFinalSurface(game.level.map.tiles, w, h)
+	local tiles
+	if game.level then tiles = game.level.map.tiles
+	else tiles = require("engine.Map").tiles end
+	if e and tiles then
+		return e:getEntityFinalSurface(tiles, w, h)
 	end
 	return nil
 end
@@ -895,7 +898,7 @@ end
 function __get_uid_entity(uid)
 	uid = tonumber(uid)
 	local e = uid and __uids[uid]
-	if e and game.level then
+	if e then
 		return e
 	end
 	return nil
@@ -963,7 +966,10 @@ getmetatable(tmps).__index.size = function(font, str)
 				local uid = v[2]
 				local e = __uids[uid]
 				if e then
-					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
+					local tiles
+					if game.level then tiles = game.level.map.tiles
+					else tiles = require("engine.Map").tiles end
+					local surf = e:getEntityFinalSurface(tiles, font:lineSkip(), font:lineSkip())
 					if surf then
 						local w, h = surf:getSize()
 						mw = mw + w
