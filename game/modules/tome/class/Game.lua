@@ -716,8 +716,12 @@ function _M:updateCurrentChar()
 		info.char = ("Lvl %d %s %s"):format(player.level, player.descriptor.subrace, player.descriptor.subclass)
 		info.splash = "default"
 		info.splash_text = ("%s playing on %s %s; died %d time%s!"):format(player.name, player.descriptor.permadeath, player.descriptor.difficulty, player.died_times and #player.died_times or 0, (player.died_times and #player.died_times == 1) and "" or "s")
-		-- info.icon = "archmage"
-		-- info.icon_text = "lol"
+		
+		local sc = Birther:getBirthDescriptor("subclass", player.descriptor.subclass)
+		if sc then
+			info.icon = sc.name:lower():gsub("[^a-z0-9]", "_")
+			info.icon_text = sc.name
+		end
 
 		-- Determine which dlc it originates from
 		local _, _, addon = self.zone.short_name:find("^([^+]+)%+(.*)$")
