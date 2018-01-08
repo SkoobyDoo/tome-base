@@ -143,7 +143,7 @@ newTalent{
 	require = undeads_req4,
 	points = 5,
 	cooldown = 10,
-	tactical = { ATTACK = {BLIGHT = 5} },  -- Ghouls really like making more ghouls
+	tactical = { ATTACK = {BLIGHT = {disease = 3}} },  -- Ghouls really like making more ghouls
 	range = 1,
 	requires_target = true,
 	is_melee = true,
