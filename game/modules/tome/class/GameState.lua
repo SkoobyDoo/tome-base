@@ -2405,7 +2405,14 @@ function _M:eventBaseName(sub, name)
 		base = "/data-"..addon
 		name = rname
 	end
-	return base.."/general/events/"..sub..name..".lua"
+	local data = {
+		"GameState:makeEventName",
+		file = base.."/general/events/"..sub..name..".lua",
+		sub = sub,
+		name = name,
+	}
+	self:triggerHook(data)
+	return data.file
 end
 
 --- Process the zone.events table, managing spawning of events on each level
