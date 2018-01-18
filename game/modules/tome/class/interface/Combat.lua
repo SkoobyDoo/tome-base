@@ -487,10 +487,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	
 	if target:isTalentActive(target.T_INTUITIVE_SHOTS) then
 		local chance = target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")
-		self.turn_procs.intuitive_shots = self.turn_procs.intuitive_shots or target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
-		if self.turn_procs.intuitive_shots == true then
-			repelled = true
-		end
+		repelled = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
 	end
 
 	-- Dwarves stoneskin
