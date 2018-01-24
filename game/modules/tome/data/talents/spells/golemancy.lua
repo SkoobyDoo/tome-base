@@ -26,10 +26,11 @@ function getGolem(self)
 	end
 end
 
-local function makeGolem(self)
+function makeAlchemistGolem(self)
 	self:attr("summoned_times", 100)
 	local g = require("mod.class.NPC").new{
 		type = "construct", subtype = "golem",
+		name = "golem",
 		display = 'g', color=colors.WHITE, image = "npc/alchemist_golem.png",
 		moddable_tile = "runic_golem",
 		moddable_tile_nude = 1,
@@ -145,6 +146,7 @@ local function makeGolem(self)
 	}
 
 	if self.alchemist_golem_is_drolem then
+		g.name = "drolem"
 		g.image="invis.png"
 		g.add_mos = {{image="npc/construct_golem_drolem.png", display_h=2, display_y=-1}}
 		g.moddable_tile = nil
@@ -225,7 +227,7 @@ newTalent{
 		end
 	end,
 	invoke_golem = function(self, t)
-		self.alchemy_golem = game.zone:finishEntity(game.level, "actor", makeGolem(self))
+		self.alchemy_golem = game.zone:finishEntity(game.level, "actor", makeAlchemistGolem(self))
 		if game.party:hasMember(self) then
 			game.party:addMember(self.alchemy_golem, {
 				control="full", type="golem", title="Golem", important=true,
@@ -234,7 +236,7 @@ newTalent{
 		end
 		if not self.alchemy_golem then return end
 		self.alchemy_golem.faction = self.faction
-		self.alchemy_golem.name = "golem (servant of "..self.name..")"
+		self.alchemy_golem.name = self.alchemy_golem.name.." (servant of "..self.name..")"
 		self.alchemy_golem.summoner = self
 		self.alchemy_golem.summoner_gain_exp = true
 
