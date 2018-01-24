@@ -724,6 +724,14 @@ With each slow breath it takes reality distorts around it.  Blue twirls into red
 		end
 	end),
 
+	custom_tooltip = function(self)
+		if self.dreamer_sleep_state then
+			return tstring{{"color", "LIGHT_BLUE"}, "It looks asleep and dreamy."}
+		else
+			return tstring{{"color", "LIGHT_RED"}, "It looks awake, beware!"}
+		end
+	end,
+
 	-- Spawn Dream Seeds
 	on_act = function(self)
 		if self.dreamer_sleep_state and self.ai_target.actor then 
