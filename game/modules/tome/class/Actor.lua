@@ -1974,6 +1974,15 @@ function _M:tooltip(x, y, seen_by)
 	if config.settings.cheat and self.descriptor and self.descriptor.classes then
 		ts:add("Classes:", table.concat(self.descriptor.classes or {}, ","), true)
 	end
+
+	if self.custom_tooltip then
+		local cts = self:custom_tooltip():toTString()
+		if cts then
+			ts:merge(cts)
+			ts:add(true)
+		end
+	end
+
 	if self.faction and Faction.factions[self.faction] then ts:add("Faction: ") ts:merge(factcolor:toTString()) ts:add(("%s (%s, %d)"):format(Faction.factions[self.faction].name, factstate, factlevel), {"color", "WHITE"}, true) end
 	if game.player ~= self then ts:add("Personal reaction: ") ts:merge(pfactcolor:toTString()) ts:add(("%s, %d"):format(pfactstate, pfactlevel), {"color", "WHITE"} ) end
 
