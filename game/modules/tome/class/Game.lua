@@ -410,7 +410,7 @@ function _M:loaded()
 
 	if self.always_target == true or self.always_target == "old" then Map:setViewerFaction(self.player.faction) end
 	if self.player and config.settings.cheat then self.player.__cheated = true end
-	self:updateCurrentChar()
+	self:onTickEnd(function() self:updateCurrentChar() end)
 
 	if self.zone and self.zone.on_loaded then self.zone.on_loaded(self.level.level) end
 end
