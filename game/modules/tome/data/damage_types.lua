@@ -696,7 +696,7 @@ newDamageType{
 }
 
 newDamageType{
-	name = "physical", type = "PHYSICAL",
+	name = "physical", type = "PHYSICAL", text_color = "#WHITE#",
 	projector = function(src, x, y, type, dam, state)
 		state = initState(state)
 		useImplicitCrit(src, state)
