@@ -33,5 +33,5 @@ return {
 	resetargs = {
 		tick_start = function() return core.game.getFrameTime() end,
 	},
-	clone = false,
+	clone = true,
 }

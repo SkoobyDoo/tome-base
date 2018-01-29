@@ -159,6 +159,11 @@ function _M:runReal()
 
 	self.zone_font = FontPackage:get("zone")
 
+	self.shake_time = nil
+	self.shake_force = 0
+	self.shake_x = 0
+	self.shake_y = 0
+
 	self.inited = true
 
 	if self.level and self.level.map then
@@ -1694,6 +1699,11 @@ function _M:updateFOV()
 	self.player:playerFOV()
 end
 
+function _M:shakeScreen(time, force)
+	self.shake_time = time
+	self.shake_force = force
+end
+
 function _M:displaySeensMap(map, x, y, nb_keyframe)
 	map._map:drawSeensTexture(x, y)
 end
@@ -1702,6 +1712,18 @@ function _M:displayMap(nb_keyframes, prev_fbo)
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
 		local map = self.level.map
+
+		if self.shake_time then
+			if self.shake_time <= 0 then
+				self.shake_time = nil
+				self.shake_x = 0
+				self.shake_y = 0
+			else
+				self.shake_time = self.shake_time - nb_keyframes
+				self.shake_x = self.shake_x + rng.range(-self.shake_force, self.shake_force)
+				self.shake_y = self.shake_y + rng.range(-self.shake_force, self.shake_force)
+			end
+		end
 
 		-- Display the map and compute FOV for the player if needed
 		local changed = map.changed
@@ -1737,7 +1759,7 @@ function _M:displayMap(nb_keyframes, prev_fbo)
 			self.fbo2:use(false, prev_fbo)
 
 			_2DNoise:bind(1, false)
-			self.fbo2:postEffects(self.fbo, prev_fbo, map.display_x, map.display_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
+			self.fbo2:postEffects(self.fbo, prev_fbo, map.display_x + self.shake_x, map.display_y + self.shake_y, map.viewport.width, map.viewport.height, unpack(self.posteffects_use))
 			if self.target then self.target:display(nil, nil, prev_fbo, nb_keyframes) end
 
 		-- Basic display; no FBOs
