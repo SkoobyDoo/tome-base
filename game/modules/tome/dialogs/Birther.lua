@@ -204,13 +204,38 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 end
 
 function _M:checkNew(fct)
-	local savename = self.c_name.text:gsub("[^a-zA-Z0-9_-.]", "_")
-	if fs.exists(("/save/%s/game.teag"):format(savename)) then
-		Dialog:yesnoPopup("Overwrite character?", "There is already a character with this name, do you want to overwrite it?", function(ret)
-			if not ret then fct() end
-		end, "No", "Yes")
+	local function checkfct()
+		local savename = self.c_name.text:gsub("[^a-zA-Z0-9_-.]", "_")
+		if fs.exists(("/save/%s/game.teag"):format(savename)) then
+			Dialog:yesnoPopup("Overwrite character?", "There is already a character with this name, do you want to overwrite it?", function(ret)
+				if not ret then fct() end
+			end, "No", "Yes")
+		else
+			fct()
+		end
+	end
+
+	local is_antimagic, is_magic = false, false
+	for i, d in ipairs(self.descriptors) do
+		if d.copy then
+			if d.copy.forbid_arcane then is_antimagic = true end
+		end
+		if d.talents_types then
+			local tt = d.talents_types
+			if type(tt) == "function" then tt = tt(self) end
+			for t, v in pairs(tt) do
+				local ttdef = self.actor:getTalentTypeFrom(t)
+				if ttdef.is_spell then is_magic = true break end
+			end
+		end
+	end
+
+	if is_magic and is_antimagic then
+		Dialog:yesnoPopup("Antimagic Magic combo", "The selected race/class has both magic and antimagic, this is unlikely to work. Continue?", function(ret) if not ret then
+			checkfct()
+		end end, "No", "Yes I'm sure")
 	else
-		fct()
+		checkfct()
 	end
 end
 
