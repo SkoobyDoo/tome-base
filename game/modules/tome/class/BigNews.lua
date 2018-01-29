@@ -36,7 +36,7 @@ end
 
 function _M:easing(time, easing, txt, ...)
 	self:easingSimple(time, easing, txt, ...)
-	game.logPlayer(game.player, "%s", txt:toString())
+	game.logPlayer(game.player, txt, ...)
 end
 
 function _M:saySimple(time, txt, ...)

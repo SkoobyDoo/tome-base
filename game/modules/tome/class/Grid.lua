@@ -261,16 +261,17 @@ function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
 		local treeid = treedef[1]
 		local parts = treedef[2]
 		if not parts.tall then parts.tall = 0 end
+		if not parts.alltall then parts.alltall = 0 else parts.tall = parts.alltall end
 
 		local scale = rng.float(0.5 + inb / 6, 1)
 		local x = rng.float(-1 / 3 * nb / 3, 1 / 3 * nb / 3)
 		local y = rng.float(-1 / 5 * nb / 3, 1 / 4 * nb / 3)
 
 		for i = 1, #parts - 1 do
-			mos[#mos+1] = {image=basedir..treeid.."_"..getname(parts[i])..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+			mos[#mos+1] = {image=basedir..treeid.."_"..getname(parts[i])..".png", display_x=x, display_y=y + scale * parts.alltall, display_w=scale, display_h=scale * (1 - parts.alltall)}
 		end
 		if parts.base then
-			basemos[#basemos+1] = {image=basedir..treeid.."_"..getname(parts.base)..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+			basemos[#basemos+1] = {image=basedir..treeid.."_"..getname(parts.base)..".png", display_x=x, display_y=y + scale * parts.alltall, display_w=scale, display_h=scale * (1 - parts.tall)}
 		end
 		if parts.adds then
 			local name = parts.adds[1]
