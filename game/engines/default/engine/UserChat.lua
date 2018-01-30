@@ -163,15 +163,22 @@ function _M:unregisterTalkEvents(fct)
 	self.on_event[fct] = nil
 end
 
+function _M:getUserColor(e)
+	local name = e.name
+	local color = colors.WHITE
+	if e.status == 'dev' then color = colors.CRIMSON name = "{dev} "..name
+	elseif e.status == 'mod' then color = colors.GOLD name = "[mod] "..name
+	elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
+	elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+	e.color_name = color
+	return color, name
+end
+
 function _M:event(e)
 	if not profile.auth then return end
 	if e.se == "Talk" then
 		e.msg = e.msg:removeColorCodes():gsub("#", "##")
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+		local color, uname = self:getUserColor(e)
 
 		self.channels[e.channel] = self.channels[e.channel] or {users={}, log={}}
 		if profile and profile.auth and profile.auth.name then
@@ -180,21 +187,17 @@ function _M:event(e)
 				e.msg = e.msg:sub(1, ni - 1).."#YELLOW##{underline}#"..profile.auth.name.."#{normal}##LAST#"..e.msg:sub(nj + 1)
 			end
 		end
-		self:addMessage("talk", e.channel, e.login, {e.name, color}, e.msg)
+		self:addMessage("talk", e.channel, e.login, {uname, color}, e.msg)
 
 		if type(game) == "table" and game.logChat and self.cur_channel == e.channel then
 			game.logChat("#YELLOW#<%s> %s", e.name, e.msg)
 		end
 	elseif e.se == "Whisper" then
 		e.msg = e.msg:removeColorCodes()
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+		local color, uname = self:getUserColor(e)
 
 		self.channels[self.cur_channel] = self.channels[self.cur_channel] or {users={}, log={}}
-		self:addMessage("whisper", self.cur_channel, e.login, e.name, e.msg)
+		self:addMessage("whisper", self.cur_channel, e.login, uname, e.msg)
 
 		if type(game) == "table" and game.logChat then
 			game.logChat("#GOLD#<Whisper from %s> %s", e.name, e.msg)
@@ -202,11 +205,7 @@ function _M:event(e)
 		e.channel = self.cur_channel
 	elseif e.se == "Achievement" then
 		e.msg = e.msg:removeColorCodes()
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+		local color, uname = self:getUserColor(e)
 
 		local kind = "achievement_other"
 		if e.first then kind = "achievement_first"
@@ -220,18 +219,13 @@ function _M:event(e)
 		if e.first then first = " for the #FIREBRICK#first time!" end
 
 		self.channels[e.channel] = self.channels[e.channel] or {users={}, log={}}
-		self:addMessage(kind, e.channel, e.login, {e.name, color}, "#{italic}##"..acolor.."#has earned the achievement <"..e.msg..">"..first.."#{normal}#", nil, true)
+		self:addMessage(kind, e.channel, e.login, {uname, color}, "#{italic}##"..acolor.."#has earned the achievement <"..e.msg..">"..first.."#{normal}#", nil, true)
 
 		if type(game) == "table" and game.logChat and self.cur_channel == e.channel then
 			game.logChat("#"..acolor.."#%s has earned the achievement <%s>%s", e.name, e.msg, first)
 		end
 	elseif e.se == "SerialData" then
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
-		e.color_name = color
+		local color, uname = self:getUserColor(e)
 
 		local data = zlib.decompress(e.msg)
 		if not data then return end
@@ -272,58 +266,42 @@ Again, thank you, and enjoy Eyal!
 		self:updateChanList()
 		self:saveChannels()
 	elseif e.se == "Join" then
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+		local color, uname = self:getUserColor(e)
 
 		self.channels[e.channel] = self.channels[e.channel] or {users={}, log={}}
 		self.channels[e.channel].users[e.login] = {name=e.name, donator=e.donator, status=e.status, login=e.login}
 		self.channels_changed = true
-		self:addMessage("join", e.channel, e.login, {e.name, color}, "#{italic}##FIREBRICK#has joined the channel#{normal}#", nil, true)
+		self:addMessage("join", e.channel, e.login, {uname, color}, "#{italic}##FIREBRICK#has joined the channel#{normal}#", nil, true)
 		if type(game) == "table" and game.logChat and e.channel == self.cur_channel then
 			game.logChat("#{italic}##FIREBRICK#%s has joined channel %s (press space to talk).#{normal}#", e.login, e.channel)
 		end
 		self:updateChanList()
 	elseif e.se == "Part" then
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+		local color, uname = self:getUserColor(e)
 
 		self.channels[e.channel] = self.channels[e.channel] or {users={}, log={}}
 		self.channels[e.channel].users[e.login] = nil
 		self.channels_changed = true
-		self:addMessage("join", e.channel, e.login, {e.name, color}, "#{italic}##FIREBRICK#has left the channel#{normal}#", nil, true)
+		self:addMessage("join", e.channel, e.login, {uname, color}, "#{italic}##FIREBRICK#has left the channel#{normal}#", nil, true)
 		if type(game) == "table" and game.logChat and e.channel == self.cur_channel then
 			game.logChat("#{italic}##FIREBRICK#%s has left channel %s.#{normal}#", e.login, e.channel)
 		end
 		self:updateChanList()
 	elseif e.se == "FriendJoin" then
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+		local color, uname = self:getUserColor(e)
 
 		self.friends[e.login] = {name=e.name, donator=e.donator, status=e.status, login=e.login}
 		if not e.silent then
-			self:addMessage("friendjoin", self.cur_channel, e.login, {e.name, color}, "#{italic}##YELLOW_GREEN#has logged in#{normal}#", nil, true)
+			self:addMessage("friendjoin", self.cur_channel, e.login, {uname, color}, "#{italic}##YELLOW_GREEN#has logged in#{normal}#", nil, true)
 			if type(game) == "table" and game.logChat then
 				game.logChat("#{italic}##YELLOW_GREEN#%s has logged in (press space to talk).#{normal}#", e.login, e.channel)
 			end
 		end
 	elseif e.se == "FriendPart" then
-		local color = colors.WHITE
-		if e.status == 'dev' then color = colors.CRIMSON
-		elseif e.status == 'mod' then color = colors.GOLD
-		elseif e.donator == "oneshot" then color = colors.LIGHT_GREEN
-		elseif e.donator == "recurring" then color = colors.ROYAL_BLUE end
+		local color, uname = self:getUserColor(e)
 
 		self.friends[e.login] = nil
-		self:addMessage("friendpart", self.cur_channel, e.login, {e.name, color}, "#{italic}##CRIMSON#has logged off#{normal}#", nil, true)
+		self:addMessage("friendpart", self.cur_channel, e.login, {uname, color}, "#{italic}##CRIMSON#has logged off#{normal}#", nil, true)
 		if type(game) == "table" and game.logChat then
 			game.logChat("#{italic}##CRIMSON#%s has logged off.#{normal}#", e.login, e.channel)
 		end
