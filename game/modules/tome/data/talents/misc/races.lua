@@ -610,7 +610,7 @@ newTalent{
 	info = function(self, t)
 		return ([[Halflings have always been a very organised and methodical race; the more foes they face, the more organised they are.
 		If two or more foes are in sight your Physical Power, Physical Save, Spellpower, Spell Save, Mental Save, and Mindpower are increased by %0.1f per foe (up to 5 foes).]]):
-		format(self:getTalentLevel(t) * 1.5)
+		format(self:getTalentLevel(t) * 2)
 	end,
 }
 
