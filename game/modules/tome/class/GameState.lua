@@ -2360,9 +2360,9 @@ function _M:startEvents()
 	if not game.zone.assigned_events then
 		local levels = {}
 		if game.zone.events_by_level then
-			levels[game.level.level] = {}
+			levels[game.level.level] = {params={}}
 		else
-			for i = 1, game.zone.max_level do levels[i] = {} end
+			for i = 1, game.zone.max_level do levels[i] = {params={}} end
 		end
 
 		-- Generate the events list for this zone, eventually loading from group files
@@ -2417,6 +2417,7 @@ function _M:startEvents()
 				if lev then
 					lev = levels[lev]
 					lev[#lev+1] = e.name
+					if e.params then lev.params[#lev] = table.clone(e.params, true) end
 				end
 			end
 		end
@@ -2437,6 +2438,7 @@ function _M:startEvents()
 						while nb <= e.max_repeat do
 							if rng.percent(p) then
 								lev[#lev+1] = e.name
+								lev[#lev+1] = e.name self:doneEvent(e.name, 1) -- mark as done when assigned
 								nb = nb + 1
 							else
 								break
@@ -2458,7 +2460,7 @@ function _M:startEvents()
 		for i, e in ipairs(game.zone.assigned_events[game.level.level] or {}) do
 			local f, err = loadfile(self:eventBaseName("", e))
 			if not f then error(err) end
-			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e.name, Map=Map}, {__index=_G}))
+			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e.name, params=game.zone.assigned_events[game.level.level].params[i], Map=Map}, {__index=_G}))
 			f()
 		end
 		game.zone.assigned_events[game.level.level] = {}
