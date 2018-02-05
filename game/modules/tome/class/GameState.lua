@@ -2431,6 +2431,7 @@ function _M:startEvents()
 				if rng.percent(e.percent) and not forbid[lev] then
 					local lev = levels[lev]
 					lev[#lev+1] = e.name
+					if e.params then lev.params[#lev] = table.clone(e.params, true) end
 
 					if e.max_repeat then
 						local nb = 1
@@ -2438,7 +2439,7 @@ function _M:startEvents()
 						while nb <= e.max_repeat do
 							if rng.percent(p) then
 								lev[#lev+1] = e.name
-								lev[#lev+1] = e.name self:doneEvent(e.name, 1) -- mark as done when assigned
+								if e.params then lev.params[#lev] = table.clone(e.params, true) end
 								nb = nb + 1
 							else
 								break
