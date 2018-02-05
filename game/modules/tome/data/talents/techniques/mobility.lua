@@ -253,7 +253,7 @@ newTalent {
 	range = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4, "log")) end,
 	getDuration = function(self, t)	return math.ceil(self:combatTalentLimit(t, 6, 25, 15)) end, -- always >=2 turns higher than cooldown
 	target = function(self, t)
-		return {type="beam", range=self:getTalentRange(t), talent=t}
+		return {type="beam", nolock=true, range=self:getTalentRange(t), talent=t}
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)

@@ -696,7 +696,7 @@ function _M:act()
 	if not game.zone.wilderness and not self:attr("confused") and not self:attr("terrified") then self:automaticTalents() end
 
 	-- Compute bonuses based on actors in FOV
-	if self:knowTalent(self.T_MILITANT_MIND) and not self:hasEffect(self.EFF_MILITANT_MIND) then
+	if self:knowTalent(self.T_MILITANT_MIND) then
 		local nb_foes = 0
 		local act
 		for i = 1, #self.fov.actors_dist do
@@ -705,7 +705,7 @@ function _M:act()
 		end
 		if nb_foes > 1 then
 			nb_foes = math.min(nb_foes, 5)
-			self:setEffect(self.EFF_MILITANT_MIND, 4, {power=self:getTalentLevel(self.T_MILITANT_MIND) * nb_foes * 1.5})
+			self:setEffect(self.EFF_MILITANT_MIND, 4, {power=self:getTalentLevel(self.T_MILITANT_MIND) * nb_foes * 2})
 		end
 	end
 

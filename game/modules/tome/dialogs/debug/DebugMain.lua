@@ -149,6 +149,7 @@ function _M:use(item)
 		if game.player.endgamified then return end
 		game.player.endgamified = true
 		game.player.unused_generics = game.player.unused_generics + 2  -- Derth quest
+		game.player:learnTalent(game.player.T_RELENTLESS_PURSUIT, 1)
 		game.player:forceLevelup(50)
 		game.player.money = 999999
 
@@ -251,7 +252,7 @@ local endgame_class_items = {
 
 -- Fixedarts from quests or things that we can assume experienced players almost always get
 local endgame_fixed_artifacts= {"ORB_ELEMENTS", "ORB_UNDEATH", "ORB_DESTRUCTION", "ORB_DRAGON", "RUNE_DISSIPATION", "INFUSION_WILD_GROWTH", "TAINT_PURGING", "RING_OF_BLOOD", "ELIXIR_FOUNDATIONS",
-								"SANDQUEEN_HEART", "PUTRESCENT_POTION", "ELIXIR_FOCUS", "MUMMIFIED_EGGSAC", "ORB_MANY_WAYS" }
+								"SANDQUEEN_HEART", "PUTRESCENT_POTION", "ELIXIR_FOCUS", "MUMMIFIED_EGGSAC", "ORB_MANY_WAYS", "ROD_SPYDRIC_POISON" }
 function _M:makeEndgameItems(class, ilvl, filter)
 	local class_name = game.player.descriptor.subclass
 	local items = table.merge(table.clone(endgame_items), table.clone(endgame_class_items[class_name] or endgame_class_items["Other"]))

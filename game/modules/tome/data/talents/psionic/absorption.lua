@@ -363,7 +363,7 @@ newTalent{
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, damtype, dam, tmp)
 		local ff = self:isTalentActive(t.id)
-		if not ff then return dam end
+		if not ff then return {dam=dam} end
 		local total_dam = dam
 		local absorbable_dam = t.getResist(self,t) / 100 * total_dam
 		local guaranteed_dam = total_dam - absorbable_dam
