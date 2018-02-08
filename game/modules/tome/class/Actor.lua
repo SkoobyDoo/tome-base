@@ -7078,13 +7078,13 @@ function _M:checkStillInCombat()
 end
 
 function _M:updateInCombatStatus()
-	if config.settings.cheat then
-		if self.in_combat then
-			game.log("#CRIMSON#--- %s IN COMBAT since %d turns", self.name, (game.turn - self.in_combat) / 10)
-		else
-			game.log("#YELLOW#--- %s OUT OF COMBAT", self.name)
-		end
-	end
+	-- if config.settings.cheat then
+	-- 	if self.in_combat then
+	-- 		game.log("#CRIMSON#--- %s IN COMBAT since %d turns", self.name, (game.turn - self.in_combat) / 10)
+	-- 	else
+	-- 		game.log("#YELLOW#--- %s OUT OF COMBAT", self.name)
+	-- 	end
+	-- end
 
 	if self.in_combat then
 		self:fireTalentCheck("callbackOnCombat", true)
