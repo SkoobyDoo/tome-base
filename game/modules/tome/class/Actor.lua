@@ -3077,12 +3077,7 @@ function _M:die(src, death_note)
 		local rsrc = src:resolveSource()
 		local p = rsrc:isTalentActive(src.T_NECROTIC_AURA)
 		if self.x and self.y and src.x and src.y and core.fov.distance(self.x, self.y, rsrc.x, rsrc.y) <= rsrc.necrotic_aura_radius then
-			rsrc:incSoul(1)
-			if rsrc:attr("extra_soul_chance") and rng.percent(rsrc:attr("extra_soul_chance")) then
-				rsrc:incSoul(1)
-				game.logPlayer(rsrc, "%s rips more animus from its victim. (+1 more soul)", rsrc.name:capitalize())
-			end
-			rsrc.changed = true
+			rsrc:callTalent(rsrc.T_NECROTIC_AURA, "absorbSoul", self)
 		end
 	end
 

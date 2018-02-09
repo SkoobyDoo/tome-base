@@ -393,6 +393,15 @@ function _M:setCurrentHookDir(dir)
 	_current_hook_dir = dir
 end
 
+function _M:loadHooksFile(file)
+	assert(_current_hook_dir, "loadHooksFile can only be used in hooks/load.lua")	
+
+	local f, err = loadfile(_current_hook_dir.."/"..file)
+	if not f and err then error(err) end
+	setfenv(f, setmetatable({}, {__index = _G}))
+	f()
+end
+
 function _M:bindHook(hook, fct)
 	if type(fct) == "string" and _current_hook_dir then
 		local f, err = loadfile(_current_hook_dir..fct..".lua")

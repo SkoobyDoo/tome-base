@@ -2367,6 +2367,7 @@ local standard_flavors = {
 	starstaff = {engine.DamageType.LIGHT, engine.DamageType.DARKNESS, engine.DamageType.TEMPORAL, engine.DamageType.PHYSICAL},
 	vilestaff = {engine.DamageType.DARKNESS, engine.DamageType.BLIGHT, engine.DamageType.ACID, engine.DamageType.FIRE}, -- yes it overlaps, it's okay
 }
+_M.staves_standard_flavors = standard_flavors
 
 -- from command-staff.lua
 local function update_staff_table(o, d_table_old, d_table_new, old_element, new_element, tab, v, is_greater)
