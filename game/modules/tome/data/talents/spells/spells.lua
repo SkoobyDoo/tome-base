@@ -219,6 +219,7 @@ function necroSetupSummon(self, m, x, y, level, no_control, no_decay)
 	end
 
 	m.on_die = function(self, killer)
+		if self.on_die_necrotic_minion then self:on_die_necrotic_minion(killer) end
 		local src = self.summoner
 		local w = src:isTalentActive(src.T_WILL_O__THE_WISP)
 		local p = src:isTalentActive(src.T_NECROTIC_AURA)

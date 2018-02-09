@@ -144,7 +144,7 @@ newTalent{
 		if self.player then -- prompt the player to pick a new element
 			local state = {}
 			local Chat = require("engine.Chat")
-			local chat = Chat.new("command-staff", {name="Command Staff"}, self, {version=staff, state=state, co=coroutine.running()})
+			local chat = Chat.new("command-staff", {name="Command Staff: "..staff:getName{do_color=true, no_add_name=true}}, self, {version=staff, state=state, co=coroutine.running()})
 			local d = chat:invoke()
 			if not coroutine.yield() then return nil end
 			return true
