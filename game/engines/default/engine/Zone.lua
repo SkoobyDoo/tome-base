@@ -762,6 +762,7 @@ function _M:load(dynamic)
 		data = dynamic
 		ret = false
 		for k, e in pairs(data) do self[k] = e end
+		self:onLoadZoneFile(false)
 		self:triggerHook{"Zone:create", dynamic=dynamic}
 		if self.on_loaded then self:on_loaded() end
 	else
