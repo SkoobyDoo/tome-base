@@ -74,6 +74,13 @@ function _M:isEnded()
 	if self.status == DONE or self.status == FAILED then return true else return false end
 end
 
+--- Checks if the quest is ended in success
+-- @return[1] false if quest didn't end
+-- @return[2] true if quest ended
+function _M:isSuccess()
+	if self.status == DONE then return true else return false end
+end
+
 --- Check for an quest property
 -- If not a function it returns it directly, otherwise it calls the function
 -- with the extra parameters
