@@ -127,6 +127,7 @@ function win(self, how)
 	
 	local p = game:getPlayer(true)
 	p:inventoryApplyAll(function(inven, item, o) o:check("on_win") end)
+	self:triggerHook{"Winner", how=how, kind="sorcerers"}
 
 	local aeryn = game.level:findEntity{define_as="HIGH_SUN_PALADIN_AERYN"}
 	if aeryn and not aeryn.dead then world:gainAchievement("WIN_AERYN_SURVIVE", game.player) end
