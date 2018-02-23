@@ -219,7 +219,7 @@ newTalent{
 				
 				[Talents.T_CRIPPLING_SHOT]= math.ceil(self.level/10),
 				[Talents.T_STEADY_SHOT]= math.ceil(self.level/10),
-				[Talents.T_RAPID_SHOT]= math.ceil(self.level/10),
+				[Talents.T_AIM]= math.ceil(self.level/10),
 				
 				[Talents.T_PSYCHOMETRY]= math.floor(self:getTalentLevel(self.T_TRANSCENDENT_THOUGHT_FORMS)),
 				[Talents.T_BIOFEEDBACK]= math.floor(self:getTalentLevel(self.T_TRANSCENDENT_THOUGHT_FORMS)),
