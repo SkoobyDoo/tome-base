@@ -3051,8 +3051,11 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 		{name = "Random Artifact", id="randart", rarity=1,
 		give=function(who)
 			local tries = 100
+			-- make sure randart is compatible with recipient
+			local random_filter = {properties={"randart_able"}, special=function(e) return self:checkPowers(who, e) end,
+				random_object={egos=rng.range(2,3), nb_powers_add=rng.range(10,30), forbid_power_source=self:attrPowers(who)}}
 			while tries > 0 do
-				local o = game.zone:makeEntity(game.level, "object", {random_object={egos=rng.range(2,3), nb_powers_add=rng.range(10,30)}, properties={"randart_able"}}, nil, true)
+				local o = game.zone:makeEntity(game.level, "object", random_filter, nil, true)
 				if o then
 					if o.__transmo == nil and who:attr("has_transmo") then o.__transmo = true end
 					o:identify(true)
@@ -3060,6 +3063,7 @@ function _M:infiniteDungeonChallengeReward(quest, who)
 					who:sortInven()
 					return "Random Artifact: "..o:getName{do_color=true}
 				end
+				tries = tries - 1
 			end
 			-- Fallback
 			who.unused_stats = who.unused_stats + 3
