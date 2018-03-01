@@ -159,6 +159,11 @@ function _M:runReal()
 	local txt = core.renderer.text(lfont):outline(1):text("#GOLD#<Scroll mode, press direction keys to scroll, press again to exit>"):center()
 	self.caps_scroll:add(txt)
 
+	self.shake_time = nil
+	self.shake_force = 0
+	self.shake_x = 0
+	self.shake_y = 0
+
 	self.inited = true
 
 	if self.level and self.level.map then
@@ -422,7 +427,7 @@ function _M:loaded()
 
 	if self.always_target == true or self.always_target == "old" then Map:setViewerFaction(self.player.faction) end
 	if self.player and config.settings.cheat then self.player.__cheated = true end
-	self:updateCurrentChar()
+	self:onTickEnd(function() self:updateCurrentChar() end)
 
 	if self.zone and self.zone.on_loaded then self.zone.on_loaded(self.level.level) end
 end
@@ -670,13 +675,38 @@ function _M:updateCurrentChar()
 	local player = self.party:findMember{main=true}
 	profile:currentCharacter(self.__mod_info.full_version_string, ("%s the level %d %s %s"):format(player.name, player.level, player.descriptor.subrace, player.descriptor.subclass), player.__te4_uuid)
 	if core.discord and self.zone then
+		local all_kills_kind = player.all_kills_kind or {}
+
+		self.total_playtime = (self.total_playtime or 0) + (os.time() - (self.last_update or self.real_starttime or os.time()))
+		self.last_update = os.time()
+
+		local playtime = ""
+		local days = math.floor(self.total_playtime/86400)
+		local hours = math.floor(self.total_playtime/3600) % 24
+		local minutes = math.floor(self.total_playtime/60) % 60
+		local seconds = self.total_playtime % 60
+
+		if days > 0 then
+			playtime = ("%id %ih %im %ss"):format(days, hours, minutes, seconds)
+		elseif hours > 0 then
+			playtime = ("%id %im %ss"):format(hours, minutes, seconds)
+		elseif minutes > 0 then
+			playtime = ("%im %ss"):format(minutes, seconds)
+		else
+			playtime = ("%ss"):format(seconds)
+		end
+
 		local info = {}
 		info.zone = self:getZoneName()
 		info.char = ("Lvl %d %s %s"):format(player.level, player.descriptor.subrace, player.descriptor.subclass)
 		info.splash = "default"
-		info.splash_text = ("%s playing on %s %s; died %d time%s!"):format(player.name, player.descriptor.permadeath, player.descriptor.difficulty, player.died_times and #player.died_times or 0, (player.died_times and #player.died_times == 1) and "" or "s")
-		-- info.icon = "archmage"
-		-- info.icon_text = "lol"
+		info.splash_text = ("%d elite/%d rare/%d boss kills; playtime %s"):format(all_kills_kind.elite or 0, all_kills_kind.rare or 0, all_kills_kind.boss or 0, playtime)
+		
+		local sc = Birther:getBirthDescriptor("subclass", player.descriptor.subclass)
+		if sc then
+			info.icon = sc.name:lower():gsub("[^a-z0-9]", "_")
+			info.icon_text = ("%s playing on %s %s; died %d time%s!"):format(player.name, player.descriptor.permadeath, player.descriptor.difficulty, player.died_times and #player.died_times or 0, (player.died_times and #player.died_times == 1) and "" or "s")
+		end
 
 		-- Determine which dlc it originates from
 		local _, _, addon = self.zone.short_name:find("^([^+]+)%+(.*)$")
@@ -1714,10 +1744,27 @@ function _M:createFBOs()
 	if self.player then self.player:updateMainShader() end
 end
 
+function _M:shakeScreen(time, force)
+	self.shake_time = time
+	self.shake_force = force
+end
+
 function _M:displayMap(nb_keyframes)
 	-- Now the map, if any
 	if self.level and self.level.map and self.level.map.finished then
 		local map = self.level.map
+
+		if self.shake_time then
+			if self.shake_time <= 0 then
+				self.shake_time = nil
+				self.shake_x = 0
+				self.shake_y = 0
+			else
+				self.shake_time = self.shake_time - nb_keyframes
+				self.shake_x = self.shake_x + rng.range(-self.shake_force, self.shake_force)
+				self.shake_y = self.shake_y + rng.range(-self.shake_force, self.shake_force)
+			end
+		end
 
 		-- Display the map and compute FOV for the player if needed
 		local changed = map.changed
@@ -1911,7 +1958,7 @@ function _M:setupCommands()
 			print("===============")
 		end end,
 		[{"_g","ctrl"}] = function() if config.settings.cheat then
-			self:changeLevel(1, "cults+maggot")
+			self:changeLevel(1, "cults+godfeaster")
 do return end
 			local m = game.zone:makeEntity(game.level, "actor", {name="elven mage"}, nil, true)
 			local x, y = util.findFreeGrid(game.player.x, game.player.y, 20, true, {[Map.ACTOR]=true})

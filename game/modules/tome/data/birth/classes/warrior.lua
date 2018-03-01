@@ -81,6 +81,7 @@ newBirthDescriptor{
 		[ActorTalents.T_WARSHOUT_BERSERKER] = 1,
 		[ActorTalents.T_STUNNING_BLOW_ASSAULT] = 1,
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
+		[ActorTalents.T_WEAPONS_MASTERY] = 1,
 		[ActorTalents.T_ARMOUR_TRAINING] = 1,
 	},
 	copy = {

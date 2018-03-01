@@ -333,10 +333,13 @@ function _M:cloneFull(post_copy)
 end
 
 --- Automatically called by cloneCustom()
-local function cloneCustomRecurs(clonetable, d, noclonecall, use_saveinstead, alt_nodes)
+local function cloneCustomRecurs(clonetable, d, noclonecall, use_saveinstead, alt_nodes, type_checker, first)
 	if use_saveinstead and (d.__ATOMIC or d.__CLASSNAME) and d.__SAVEINSTEAD then
 		d = d.__SAVEINSTEAD
 		if clonetable[d] then return d, 1 end
+	end
+	if not first and type_checker and d.__CLASSNAME then
+		if not type_checker(d) then return d, 1 end
 	end
 
 	local nb = 0
@@ -368,11 +371,11 @@ local function cloneCustomRecurs(clonetable, d, noclonecall, use_saveinstead, al
 			if ne_alt ~= nil then ne = ne_alt else ne = e end
 			
 			if clonetable[nk] then nk = clonetable[nk]
-			elseif type(nk) == "table" then nk, add = cloneCustomRecurs(clonetable, nk, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			elseif type(nk) == "table" then nk, add = cloneCustomRecurs(clonetable, nk, noclonecall, use_saveinstead, alt_nodes, type_checker, false) nb = nb + add
 			end
 
 			if clonetable[ne] then ne = clonetable[ne]
-			elseif type(ne) == "table" and (type(nk) ~= "string" or nk ~= "__threads") then ne, add = cloneCustomRecurs(clonetable, ne, noclonecall, use_saveinstead, alt_nodes) nb = nb + add
+			elseif type(ne) == "table" and (type(nk) ~= "string" or nk ~= "__threads") then ne, add = cloneCustomRecurs(clonetable, ne, noclonecall, use_saveinstead, alt_nodes, type_checker, false) nb = nb + add
 			end
 			
 			n[nk] = ne
@@ -395,11 +398,12 @@ end
 -- @      or nil to use the default name/ref as keys on the clone
 -- @    v = the value to assign for instances of this node,
 -- @      or nil to use the default assignment value
+-- @param[type=function] type_checker  Optional, a function that returns true if the given object is to be cloned and false if it is to be referenced
 -- @param[type=table] post_copy  Optional, a table to be merged (recursively) with the new object after cloning.
 -- @return a reference to the clone
-function _M:cloneCustom(alt_nodes, post_copy)
+function _M:cloneCustom(alt_nodes, type_checker, post_copy)
 	local clonetable = {}
-	local n = cloneCustomRecurs(clonetable, self, nil, nil, alt_nodes)
+	local n = cloneCustomRecurs(clonetable, self, nil, nil, alt_nodes, type_checker, true)
 	if post_copy then
 		table.merge(n, post_copy, true)
 	end
@@ -442,6 +446,15 @@ local _current_hook_dir = nil
 
 function _M:setCurrentHookDir(dir)
 	_current_hook_dir = dir
+end
+
+function _M:loadHooksFile(file)
+	assert(_current_hook_dir, "loadHooksFile can only be used in hooks/load.lua")	
+
+	local f, err = loadfile(_current_hook_dir.."/"..file)
+	if not f and err then error(err) end
+	setfenv(f, setmetatable({}, {__index = _G}))
+	f()
 end
 
 function _M:bindHook(hook, fct)

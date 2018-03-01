@@ -380,6 +380,17 @@ function table.removeFromList(t, ...)
 	end
 end
 
+function table.pairsRemove(t, check)
+	local todel = {}
+	for k, v in pairs(t) do
+		if check(k, v) then todel[#todel+1] = k end
+	end
+	for _, k in ipairs(todel) do
+		t[k] = nil
+	end
+	return #todel
+end
+
 function table.check(t, fct, do_recurse, path)
 	if path and path ~= '' then path = path..'/' else path = '' end
 	do_recurse = do_recurse or function() return true end
@@ -1030,8 +1041,11 @@ end
 function __get_uid_surface(uid, w, h)
 	uid = tonumber(uid)
 	local e = uid and __uids[uid]
-	if e and game.level then
-		return e:getEntityFinalSurface(game.level.map.tiles, w, h)
+	local tiles
+	if game.level then tiles = game.level.map.tiles
+	else tiles = require("engine.Map").tiles end
+	if e and tiles then
+		return e:getEntityFinalSurface(tiles, w, h)
 	end
 	return nil
 end
@@ -1039,7 +1053,7 @@ end
 function __get_uid_entity(uid)
 	uid = tonumber(uid)
 	local e = uid and __uids[uid]
-	if e and game.level then
+	if e then
 		return e
 	end
 	return nil
