@@ -3780,9 +3780,9 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:attr("worm") then
-			target:heal(dam, src)
+			target:heal(dam / 3, src)
 			return -dam
-		elseif target then
+		elseif target and not target.carrion_worm then  -- Carrion worms are immune but not healed by the damage, this spams the log so we just don't hit them instead
 			DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam)
 			return dam
 		end
