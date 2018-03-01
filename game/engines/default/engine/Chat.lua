@@ -44,6 +44,7 @@ function _M:init(name, npc, player, data)
 	local f, err = loadfile(self:getChatFile(name))
 	if not f and err then error(err) end
 	setfenv(f, setmetatable({
+		cur_chat = self,
 		setDialogWidth = function(w) self.force_dialog_width = w end,
 		newChat = function(c) self:addChat(c) end,
 	}, {__index=data}))
@@ -100,7 +101,10 @@ function _M:invoke(id)
 	if self.npc.onChat then self.npc:onChat() end
 	if self.player.onChat then self.player:onChat() end
 
-	local d = engine.dialogs.Chat.new(self, id or self.default_id, self.force_dialog_width or 500)
+	local hd = {"Chat:invoke", id = id or self.default_id }
+	self:triggerHook(hd)
+
+	local d = engine.dialogs.Chat.new(self, hd.id, self.force_dialog_width or 500)
 	game:registerDialog(d)
 	return d
 end

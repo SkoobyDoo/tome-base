@@ -678,6 +678,7 @@ newEntity{
 	unique = true,
 	type = "misc", subtype="egg",
 	unided_name = "dark egg",
+	define_as = "MUMMIFIED_EGGSAC",
 	name = "Mummified Egg-sac of Ungolë", image = "object/artifact/mummified_eggsack.png",
 	level_range = {20, 35},
 	rarity = 190,
@@ -6506,13 +6507,15 @@ newEntity{ base = "BASE_TOOL_MISC",
 			m:resolve()
 			who:logCombat(target or {name = "a spot nearby"}, "#Source# points %s %s at #target#, releasing a brilliant orb of light!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.zone:addEntity(game.level, m, "actor", x, y)
-			m.remove_from_party_on_death = true,
-			game.party:addMember(m, {
-				control=false,
-				type="summon",
-				title="Summon",
-				orders = {target=true, leash=true, anchor=true, talents=true},
-			})
+			m.remove_from_party_on_death = true
+			if game.party:hasMember(who) then
+				game.party:addMember(m, {
+					control=false,
+					type="summon",
+					title="Summon",
+					orders = {target=true, leash=true, anchor=true, talents=true},
+				})
+			end
 			return {id=true, used=true}
 		end
 	},

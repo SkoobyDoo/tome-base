@@ -2401,7 +2401,14 @@ function _M:eventBaseName(sub, name)
 		base = "/data-"..addon
 		name = rname
 	end
-	return base.."/general/events/"..sub..name..".lua"
+	local data = {
+		"GameState:makeEventName",
+		file = base.."/general/events/"..sub..name..".lua",
+		sub = sub,
+		name = name,
+	}
+	self:triggerHook(data)
+	return data.file
 end
 
 --- Process the zone.events table, managing spawning of events on each level
@@ -2432,9 +2439,9 @@ function _M:startEvents()
 	if not game.zone.assigned_events then
 		local levels = {}
 		if game.zone.events_by_level then
-			levels[game.level.level] = {}
+			levels[game.level.level] = {params={}}
 		else
-			for i = 1, game.zone.max_level do levels[i] = {} end
+			for i = 1, game.zone.max_level do levels[i] = {params={}} end
 		end
 
 		-- Generate the events list for this zone, possibly loading from group files
@@ -2506,6 +2513,7 @@ function _M:startEvents()
 				if lev then
 					lev = levels[lev]
 					lev[#lev+1] = e.name
+					if e.params then lev.params[#lev] = table.clone(e.params, true) end
 					self:doneEvent(e.name, 1) -- mark as done when assigned
 				end
 			end
@@ -2525,12 +2533,14 @@ function _M:startEvents()
 				if (e.always or rng.percent(e.percent)) and not forbid[lv] and (not e.special or e.special(lv)) then
 					local lev = levels[lv]
 					lev[#lev+1] = e.name self:doneEvent(e.name, 1) -- mark as done when assigned
+					if e.params then lev.params[#lev] = table.clone(e.params, true) end
 					if e.max_repeat then -- try to repeat the event with diminishing probability
 						local nb = 1
 						local p = e.percent or 100
 						while nb <= e.max_repeat do
 							if e.always or rng.percent(p) and (not e.special or e.special(lv)) then
 								lev[#lev+1] = e.name self:doneEvent(e.name, 1) -- mark as done when assigned
+								if e.params then lev.params[#lev] = table.clone(e.params, true) end
 								nb = nb + 1
 								p = p/2
 							else
@@ -2553,7 +2563,7 @@ function _M:startEvents()
 		for i, e in ipairs(game.zone.assigned_events[game.level.level] or {}) do
 			local f, err = loadfile(self:eventBaseName("", e))
 			if not f then error(err) end
-			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e, Map=Map}, {__index=_G}))
+			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e, params=game.zone.assigned_events[game.level.level].params[i], Map=Map}, {__index=_G}))
 			self:doneEvent(e, -1) -- unmark as done (for event code)
 			if f() then self:doneEvent(e, 1) end -- remark as done if event completed
 		end

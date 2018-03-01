@@ -90,7 +90,8 @@ _M.clone_copy = nil
 function _M:cloneActor(post_copy, alt_nodes)
 	alt_nodes = table.merge(alt_nodes or {}, self.clone_nodes, true)
 	if post_copy or self.clone_copy then post_copy = post_copy or {} table.update(post_copy, self.clone_copy or {}, true) end
-	local a = self:cloneCustom(alt_nodes, post_copy)
+	-- Clone all except sub-actors which need to simply reference the same ones
+	local a = self:cloneCustom(alt_nodes, function(d) return not d:isClassName("mod.class.Actor") end, post_copy)
 	a:removeAllMOs()
 	return a, post_copy
 end

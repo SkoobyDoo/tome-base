@@ -69,6 +69,13 @@ function _M:knownLore(lore)
 	return self.lore_known[lore] and true or false
 end
 
+function _M:isLoreShareable(lore)
+	local l = self.lore_defs[lore] or self.additional_lore[lore]
+	if not l then return false end
+	if l.not_shareable then return false end
+	return true
+end
+
 function _M:getLore(lore, silent)
 	self.lore_known = self.lore_known or {}
 	self.additional_lore = self.additional_lore or {}
