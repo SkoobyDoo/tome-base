@@ -75,6 +75,7 @@ _M._no_save_fields._tactical = true
 
 -- Dont store resting or running
 _M._no_save_fields.running = true
+_M._no_save_fields.running_prev = true
 _M._no_save_fields.resting = true
 
 -- No need to save __project_source either, it's a turn by turn thing
