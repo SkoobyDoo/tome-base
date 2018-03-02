@@ -259,6 +259,7 @@ newEntity{ theme={defense=true, antimagic=true, temporal=true}, name="resist tem
 ----------------------------------------------------------------
 -- Elemental Retribution
 ----------------------------------------------------------------
+--[[  Temporarily removed due to causing randbosses to be very annoying for melee and spamming the combat log for player gear
 newEntity{ theme={physical=true}, name="physical retribution", points = 1, rarity = 18, level_range = {1, 50},
 	wielder = { on_melee_hit = {[DamageType.PHYSICAL] = resolvers.randartmax(4, 20), }, },
 }
@@ -295,6 +296,7 @@ newEntity{ theme={arcane=true, spell=true}, name="arcane retribution", points = 
 newEntity{ theme={temporal=true}, name="temporal retribution", points = 2, rarity = 24, level_range = {1, 50},
 	wielder = { on_melee_hit = {[DamageType.TEMPORAL] = resolvers.randartmax(4, 20), }, },
 }
+]]
 
 ----------------------------------------------------------------
 -- Damage %
