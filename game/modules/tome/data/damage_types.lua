@@ -2435,7 +2435,6 @@ newDamageType{
 		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam, state)
 		if target and realdam > 0 and not src:attr("dead") then
 			src:heal(realdam * dam.healfactor, target)
-			src:logCombat(target, "#Source# drains life from #Target#!")
 		end
 		return realdam
 	end,
