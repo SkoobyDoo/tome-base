@@ -133,7 +133,6 @@ carrionworm = function(self, target, duration, x, y)
 			control=false,
 			type="summon",
 			title="Summon",
-			orders = {target=true, leash=true, anchor=true, talents=true},
 		})
 	end
 	return m
@@ -236,7 +235,7 @@ newTalent{
 	getHeal = function(self, t) return math.floor(self:combatTalentSpellDamage(t, 20, 400)) end,
 	getVim = function(self, t) return 8 + math.floor(self:combatTalentScale(t, 5, 35)) end,
 	getDam = function(self, t) return self:combatTalentLimit(t, 1, 20, 5) end,
-	tactical = {HEAL = 0.3},  -- Only use the healing functionality of this since in practice thats almost always optimal, but use it rarely so we don't waste time hopping around a lot as a melee
+	tactical = {HEAL = 0.5},  -- Only use the healing functionality of this since in practice thats almost always optimal, but use it rarely so we don't waste time hopping around a lot as a melee
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t)}
 	end,
@@ -350,7 +349,7 @@ newTalent{
 	getBurstDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 150) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 55) end,
 	getChance = function(self, t) return math.min(100,self:combatTalentScale(t, 20, 90)) end,
-	proj_speed = 6,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}} end,
 	spawn_carrion_worm = function (self, target, t)
 		local nb = 0 
 		if game.level then
@@ -367,7 +366,7 @@ newTalent{
 		
 	end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 
