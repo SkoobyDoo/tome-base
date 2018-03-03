@@ -1062,8 +1062,10 @@ void do_resize(int w, int h, bool fullscreen, bool borderless, float zoom)
 }
 
 static void close_state() {
+	refcleaner_clean(L);
 	core_loader_waitall();
 	lua_particles_system_clean();
+	lua_gc(L, LUA_GCCOLLECT, 0);
 	lua_close(L);
 	refcleaner_reset();
 	PHYSFS_deinit();

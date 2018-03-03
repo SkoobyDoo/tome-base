@@ -67,6 +67,13 @@ FontKind* FontKind::getFont(string &name) {
 	}
 }
 
+void FontKind::releaseAllFonts() {
+	for (auto it : FontKind::all_fonts) {
+		delete it.second;
+	}
+	all_fonts.clear();
+}
+
 FontKind::FontKind(string &name) : fontname(name) {
 	PHYSFS_file *fff = PHYSFS_openRead(name.c_str());
 	font_mem_size = PHYSFS_fileLength(fff);
@@ -117,6 +124,7 @@ void FontKind::updateAtlas() {
  ************************************************************/
 
 extern "C" void font_cleanup() {
+	FontKind::releaseAllFonts();
 }
 
 static int sdl_free_font(lua_State *L) {

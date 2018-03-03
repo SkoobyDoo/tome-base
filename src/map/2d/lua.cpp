@@ -64,7 +64,7 @@ static int map_object_new(lua_State *L) {
 
 static int map_object_free(lua_State *L) {
 	auto obj = lua_get_sobj_ptr<MapObject>(L, "core{mapobj2d}", 1);
-	printf("========del %ld : use %ld\n", (*obj)->getUID(), obj->use_count());
+	// printf("========del %ld : use %ld\n", (*obj)->getUID(), obj->use_count());
 	delete obj;
 	nb_mo--;
 	lua_pushnumber(L, 1);

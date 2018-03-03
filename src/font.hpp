@@ -72,6 +72,7 @@ protected:
 	int32_t nb_use = 0;
 public:
 	static FontKind* getFont(string &name);
+	static void releaseAllFonts();
 
 	FontKind(string &name);
 	~FontKind();
