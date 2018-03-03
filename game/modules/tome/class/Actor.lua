@@ -92,6 +92,7 @@ _M.clone_nodes = table.merge({running_fov=false, running_prev=false,
 	-- player fields:
 	puuid=false, quests=false, random_escort_levels=false, achievements=false, achievement_data=false, game_ender=false,
 	last_learnt_talents = false, died=false, died_times=false, killedBy=false, all_kills=false,	all_kills_kind=false,
+	_tactical=false,
 },_M.clone_nodes, true)
 
 --- cloneActor default post copy fields (merged by cloneActor)
