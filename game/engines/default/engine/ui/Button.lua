@@ -63,6 +63,7 @@ function _M:generate()
 
 	text:translate(f.b4.w, f.b8.h, 10)
 	self.do_container:add(text)
+	self.do_text = text
 
 	self.frame_sel_do = self:makeFrameDO(self.use_frame or "ui/button_sel", f.w, f.h)
 	self.frame_sel_do.container:translate(0, 0, 1)
@@ -83,6 +84,12 @@ end
 
 function _M:on_focus_change(status)
 	self.frame_sel_do.container:tween(8, "a", nil, status and 1 or 0, "inOutQuad")
+	if status then
+		self.frame_sel_do.container:tween(2.5, "y", nil, -4, "inOutQuad", function(self) self:tween(2.5, "y", nil, 0, "inOutQuad") end)
+		self.frame_do.container:tween(2.5, "y", nil, -4, "inOutQuad", function(self) self:tween(2.5, "y", nil, 0, "inOutQuad") end)
+		local ox, oy = self.do_text:getTranslate()
+		self.do_text:tween(2.5, "y", nil, oy-4, "inOutQuad", function(self) self:tween(2.5, "y", nil, oy, "inOutQuad") end)
+	end
 end
 
 function _M:proxyDataSet(k, v)

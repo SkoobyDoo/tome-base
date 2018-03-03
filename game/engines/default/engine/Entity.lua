@@ -289,7 +289,7 @@ end
 
 --- Removes all particles emitters following the entity
 function _M:removeAllParticles()
-	for ps, _ in ipairs(table.keys(self.__particles)) do
+	for _, ps in ipairs(table.keys(self.__particles)) do
 		self:removeParticles(ps)
 	end
 end
