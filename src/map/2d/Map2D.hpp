@@ -21,9 +21,9 @@
 #ifndef _MAP2D_HPP_
 #define _MAP2D_HPP_
 
-#include "renderer-moderngl/Renderer.hpp"
-#include "renderer-moderngl/VBO.hpp"
-#include "renderer-moderngl/Particles.hpp"
+#include "displayobjects/Renderer.hpp"
+#include "displayobjects/VBO.hpp"
+#include "displayobjects/Particles.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>

@@ -30,6 +30,13 @@ newoption {
 	}
 }
 newoption {
+	trigger     = "renderer",
+	description = "Renderer backend to use",
+	allowed = {
+		{ "GL21", "OpenGL 2.1 renderer" },
+	}
+}
+newoption {
 	trigger     = "box2d",
 	description = "Box2D engine to use",
 	allowed = {

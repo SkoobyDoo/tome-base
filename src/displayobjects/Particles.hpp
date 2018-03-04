@@ -22,7 +22,7 @@
 #ifndef PARTICLES_GL_HPP
 #define PARTICLES_GL_HPP
 
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #include "../particles.hpp"
 #include "../particles-system/system.hpp"
 

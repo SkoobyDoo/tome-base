@@ -44,7 +44,7 @@ extern "C" {
 #include "lua_externs.h"
 #include "refcleaner_clean.h"
 #include "particles.h"
-#include "renderer-moderngl/renderer-lua.h"
+#include "displayobjects/renderer-lua.h"
 #include "runner/core.h"
 #ifdef SELFEXE_WINDOWS
 #include <windows.h>
@@ -53,7 +53,8 @@ extern "C" {
 
 #include "core_lua.hpp"
 #include "profile.hpp"
-#include "renderer-moderngl/Interfaces.hpp"
+#include "displayobjects/Interfaces.hpp"
+#include "renderer/TER.hpp"
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -1459,6 +1460,38 @@ int main(int argc, char *argv[])
 	if (safe_mode) printf("Safe mode activated\n");
 
 	init_blank_surface();
+
+	/********** DGDGDGDG TEST *********/
+	sTER_Shader vertex = TER_Shader::build(TER_ShaderType::VERTEX, " \
+attribute vec4 te4_position; \
+attribute vec2 te4_texcoord; \
+attribute vec4 te4_color; \
+varying vec2 te4_uv; \
+varying vec4 te4_fragcolor; \
+uniform float tick; \
+uniform vec4 displayColor; \
+uniform mat4 mvp; \
+ \
+void main() \
+{ \
+	gl_Position = mvp * te4_position; \
+	te4_uv = te4_texcoord; \
+	te4_fragcolor = te4_color * displayColor; \
+} \
+");
+	sTER_Shader fragment = TER_Shader::build(TER_ShaderType::FRAGMENT, " \
+varying vec2 te4_uv; \
+varying vec4 te4_fragcolor;		 \
+uniform sampler2D tex; \
+ \
+void main() \
+{ \
+	gl_FragColor = texture2D(tex, te4_uv) * te4_fragcolor; \
+} \
+");
+	sTER_Program program = TER_Program::build(vertex, fragment);
+	exit(0);
+	/********** DGDGDGDG TEST *********/
 
 	boot_lua(2, FALSE, argc, argv);
 

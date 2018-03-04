@@ -19,7 +19,7 @@
 	darkgod@te4.org
 */
 
-#include "renderer-moderngl/View.hpp"
+#include "displayobjects/View.hpp"
 #include <stack>
 
 extern "C"{

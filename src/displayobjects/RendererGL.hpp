@@ -22,8 +22,8 @@
 #ifndef RENDERER_GL_H
 #define RENDERER_GL_H
 
-#include "renderer-moderngl/Renderer.hpp"
-#include "renderer-moderngl/VBO.hpp"
+#include "displayobjects/Renderer.hpp"
+#include "displayobjects/VBO.hpp"
 
 class RendererGL;
 

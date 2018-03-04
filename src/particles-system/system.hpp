@@ -50,7 +50,7 @@ extern "C" {
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/ext.hpp"
 
-#include "renderer-moderngl/Interfaces.hpp"
+#include "displayobjects/Interfaces.hpp"
 
 #include "core_loader.hpp"
 

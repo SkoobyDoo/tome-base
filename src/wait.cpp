@@ -30,7 +30,7 @@ extern "C" {
 }
 
 #include "core_lua.hpp"
-#include "renderer-moderngl/VBO.hpp"
+#include "displayobjects/VBO.hpp"
 
 extern SDL_Window *window;
 extern SDL_Surface *screen;

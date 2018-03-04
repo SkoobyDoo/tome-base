@@ -19,7 +19,7 @@
 	darkgod@te4.org
 */
 
-#include "renderer-moderngl/Particles.hpp"
+#include "displayobjects/Particles.hpp"
 
 DORParticles::~DORParticles() {
 	// printf("==================== DORParticles DYING %s linked to parent %lx\n", ps ? ps->name_def : (e ? "Ensemble" : "--"), parent);

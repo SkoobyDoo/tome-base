@@ -21,7 +21,7 @@
 #ifndef TEXTOBJECTS_H
 #define TEXTOBJECTS_H
 
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #include <string.h>
 #include "font.hpp"
 

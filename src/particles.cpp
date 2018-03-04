@@ -35,8 +35,8 @@ extern "C" {
 #include "physfsrwops.h"
 }
 #include "core_lua.hpp"
-#include "renderer-moderngl/Particles.hpp"
-#include "renderer-moderngl/FBO.hpp"
+#include "displayobjects/Particles.hpp"
+#include "displayobjects/FBO.hpp"
 #include "particles.hpp"
 
 // Lol or what ? Mingw64 on windows seems to not find it ..

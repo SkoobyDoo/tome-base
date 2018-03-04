@@ -36,6 +36,8 @@ function enableSanitizer()
 	end
 end
 
+if not _OPTIONS.renderer then _OPTIONS.renderer = "GL21" end
+
 project "TEngine"
 	kind "WindowedApp"
 	language "C++"
@@ -44,7 +46,7 @@ project "TEngine"
 	if _OPTIONS.steam then
 		files { "../steamworks/luasteam.c", }
 	end
-	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-renderer", "te4-map2d", "te4-particles-system", "te4-navmesh", "te4-spriter", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader", "te4-box2d-".._OPTIONS.box2d:lower(), "te4-poly2tri", "te4-clipper", "te4-muparser" }
+	links { "physfs", "lua".._OPTIONS.lua, "fov", "luasocket", "luaprofiler", "lpeg", "tcodimport", "lxp", "expatstatic", "luamd5", "luazlib", "luabitop", "te4-bzip", "utf8proc", "te4-displayobjects", "te4-map2d", "te4-particles-system", "te4-navmesh", "te4-spriter", "te4-renderer", "tinyxml2", "te4-freetype-gl", "te4-tinyobjloader", "te4-box2d-".._OPTIONS.box2d:lower(), "te4-poly2tri", "te4-clipper", "te4-muparser" }
 	if _OPTIONS.discord then defines { "DISCORD_TE4" } end
 	defines { "_DEFAULT_VIDEOMODE_FLAGS_='SDL_HWSURFACE|SDL_DOUBLEBUF'" }
 	defines { [[TENGINE_HOME_PATH='".t-engine"']], "TE4CORE_VERSION="..TE4CORE_VERSION }
@@ -669,6 +671,16 @@ if _OPTIONS.steam then
 	dofile("../steamworks/build/steam-code.lua")
 end
 
+project "te4-displayobjects"
+	kind "StaticLib"
+	language "C++"
+	targetname "te4-displayobjects"
+	buildoptions { "-std=gnu++11" }
+	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
+	enableSanitizer()
+
+	files { "../src/displayobjects/*.cpp", }
+
 project "te4-renderer"
 	kind "StaticLib"
 	language "C++"
@@ -677,7 +689,11 @@ project "te4-renderer"
 	if _OPTIONS.profiling then buildoptions { "-fno-omit-frame-pointer" } linkoptions{ "-fno-omit-frame-pointer" } end
 	enableSanitizer()
 
-	files { "../src/renderer-moderngl/*.cpp", "../src/displayobjects/*.cpp", }
+	if _OPTIONS.renderer == "GL21" then
+		defines { "TER_USE_GL21" }
+		files { "../src/renderer/gl2.1/*.cpp", }
+	end
+	files { "../src/renderer/*.cpp", }
 
 project "te4-map2d"
 	kind "StaticLib"

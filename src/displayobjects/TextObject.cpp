@@ -30,8 +30,8 @@ extern "C" {
 #include "utf8proc/utf8proc.h"
 }
 
-#include "renderer-moderngl/Renderer.hpp"
-#include "renderer-moderngl/TextObject.hpp"
+#include "displayobjects/Renderer.hpp"
+#include "displayobjects/TextObject.hpp"
 #include "colors.hpp"
 
 shader_type *DORText::default_shader = NULL;

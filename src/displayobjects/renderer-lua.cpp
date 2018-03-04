@@ -19,17 +19,17 @@
     darkgod@te4.org
 */
 
-#include "renderer-moderngl/Renderer.hpp"
-#include "renderer-moderngl/FBO.hpp"
-#include "renderer-moderngl/TextObject.hpp"
-#include "renderer-moderngl/Particles.hpp"
-#include "renderer-moderngl/Physic.hpp"
+#include "displayobjects/Renderer.hpp"
+#include "displayobjects/FBO.hpp"
+#include "displayobjects/TextObject.hpp"
+#include "displayobjects/Particles.hpp"
+#include "displayobjects/Physic.hpp"
 #include "spriter/Spriter.hpp"
-#include "renderer-moderngl/renderer-lua.hpp"
+#include "displayobjects/renderer-lua.hpp"
 
 extern "C" {
 #include "auxiliar.h"
-#include "renderer-moderngl/renderer-lua.h"
+#include "displayobjects/renderer-lua.h"
 }
 
 /******************************************************************
@@ -279,7 +279,7 @@ int gl_generic_get_physic(lua_State *L)
 	return 1;
 }
 
-#include "renderer-moderngl/easing.hpp"
+#include "displayobjects/easing.hpp"
 static easing_ptr easings_table[] = {
 	easing::linear,
 	easing::quadraticIn,

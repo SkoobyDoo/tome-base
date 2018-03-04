@@ -28,8 +28,8 @@ extern "C" {
 #include "physfsrwops.h"
 #include "main.h"
 }
-#include "renderer-moderngl/VBO.hpp"
-#include "renderer-moderngl/View.hpp"
+#include "displayobjects/VBO.hpp"
+#include "displayobjects/View.hpp"
 
 VBO::VBO(VBOMode mode) : VBO() {
 	this->mode = mode;

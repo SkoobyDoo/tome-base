@@ -22,7 +22,7 @@
 #ifndef VIEW_HPP
 #define VIEW_HPP
 
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 
 enum class ViewMode { ORTHO, PROJECT };
 

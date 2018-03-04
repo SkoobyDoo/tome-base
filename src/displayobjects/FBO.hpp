@@ -22,7 +22,7 @@
 #ifndef FBO_GL_HPP
 #define FBO_GL_HPP
 
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #include <map>
 
 class DORTarget;

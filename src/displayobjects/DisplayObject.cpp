@@ -29,8 +29,8 @@ extern "C" {
 #include "main.h"
 }
 int donb = 0;
-#include "renderer-moderngl/Renderer.hpp"
-#include "renderer-moderngl/Physic.hpp"
+#include "displayobjects/Renderer.hpp"
+#include "displayobjects/Physic.hpp"
 #include "tinyobjloader/tiny_obj_loader.h"
 #include <string>
 

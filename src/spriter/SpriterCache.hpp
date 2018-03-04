@@ -25,7 +25,7 @@
 #include <string>
 #include <map>
 
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #include "spriterengine/spriterengine.h"
 
 using namespace std;

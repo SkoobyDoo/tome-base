@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #include "spriterengine/spriterengine.h"
 #include "spriter/tinyxmlspriterfiledocumentwrapper.h"
 #include "spriterengine/override/filefactory.h"

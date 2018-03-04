@@ -36,7 +36,7 @@ extern "C" {
 
 #include "map/2d/Map2D.hpp"
 #include "map/2d/Minimap2D.hpp"
-#include "renderer-moderngl/renderer-lua.hpp"
+#include "displayobjects/renderer-lua.hpp"
 #include "auxiliar.hpp"
 
 

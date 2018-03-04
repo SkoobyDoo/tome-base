@@ -31,7 +31,7 @@ extern "C" {
 }
 
 #include "core_lua.hpp"
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #include "spriter/Spriter.hpp"
 #include "spriterengine/global/settings.h"
 

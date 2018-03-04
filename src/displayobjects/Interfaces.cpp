@@ -28,7 +28,7 @@ extern "C" {
 #include "physfsrwops.h"
 #include "main.h"
 }
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 
 #include <set>
 

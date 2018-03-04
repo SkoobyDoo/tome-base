@@ -19,7 +19,7 @@
 	darkgod@te4.org
 */
 
-#include "renderer-moderngl/FBO.hpp"
+#include "displayobjects/FBO.hpp"
 extern "C" {
 #include "shaders.h"
 }

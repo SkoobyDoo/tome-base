@@ -47,12 +47,12 @@ extern "C" {
 using namespace glm;
 using namespace std;
 
-#include "renderer-moderngl/Interfaces.hpp"
-#include "renderer-moderngl/View.hpp"
-#include "renderer-moderngl/DisplayObject.hpp"
-// #include "renderer-moderngl/TextObject.hpp"
-#include "renderer-moderngl/RendererGL.hpp"
-//#include "renderer-moderngl/TileMap.hpp"
+#include "displayobjects/Interfaces.hpp"
+#include "displayobjects/View.hpp"
+#include "displayobjects/DisplayObject.hpp"
+// #include "displayobjects/TextObject.hpp"
+#include "displayobjects/RendererGL.hpp"
+//#include "displayobjects/TileMap.hpp"
 
 extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
 extern void releaseDisplayList(DisplayList *dl);

@@ -32,7 +32,7 @@ extern SDL_Window *window;
 }
 #include "core_lua.hpp"
 
-#include <renderer-moderngl/Renderer.hpp>
+#include <displayobjects/Renderer.hpp>
 
 static int lua_get_mouse(lua_State *L)
 {

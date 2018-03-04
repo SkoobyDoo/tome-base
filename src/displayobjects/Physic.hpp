@@ -21,7 +21,7 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #ifdef BOX2D_MT
 #include "Box2D-MT/Box2D.h"
 #else

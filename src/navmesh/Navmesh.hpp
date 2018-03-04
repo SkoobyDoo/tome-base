@@ -21,8 +21,8 @@
 #ifndef NAVMESH_H
 #define NAVMESH_H
 
-#include "renderer-moderngl/Renderer.hpp"
-#include "renderer-moderngl/Physic.hpp"
+#include "displayobjects/Renderer.hpp"
+#include "displayobjects/Physic.hpp"
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>

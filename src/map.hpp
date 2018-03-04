@@ -21,8 +21,8 @@
 #ifndef _MAP_HPP_
 #define _MAP_HPP_
 
-#include <renderer-moderngl/Renderer.hpp>
-#include <renderer-moderngl/VBO.hpp>
+#include <displayobjects/Renderer.hpp>
+#include <displayobjects/VBO.hpp>
 #include <unordered_map>
 #include <unordered_set>
 

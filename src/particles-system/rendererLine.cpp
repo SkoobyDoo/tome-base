@@ -18,7 +18,7 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
-#include "renderer-moderngl/Renderer.hpp"
+#include "displayobjects/Renderer.hpp"
 #include "particles-system/system.hpp"
 
 namespace particles {

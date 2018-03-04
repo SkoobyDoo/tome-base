@@ -18,14 +18,14 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
-#include "renderer-moderngl/Particles.hpp"
+#include "displayobjects/Particles.hpp"
 #include "particles-system/system.hpp"
 
 extern "C" {
 #include "auxiliar.h"
 }
 #include "core_loader.hpp"
-#include "renderer-moderngl/easing.hpp" // This imports the code... yeah I know
+#include "displayobjects/easing.hpp" // This imports the code... yeah I know
 
 using namespace particles;
 
