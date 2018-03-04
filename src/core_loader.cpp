@@ -33,6 +33,7 @@ extern "C" {
 #include "main.h"
 #include "lua_externs.h"
 }
+#include "core_lua.hpp"
 #include "core_loader.hpp"
 #include <queue>
 #include <string>

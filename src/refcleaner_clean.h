@@ -18,11 +18,8 @@
 	Nicolas Casalini "DarkGod"
 	darkgod@te4.org
 */
-#ifndef _REFCLEANER_H_
-#define _REFCLEANER_H_
-
-#include "lua.h"
-extern lua_State *L;
+#ifndef _REFCLEANER_CLEAN_H_
+#define _REFCLEANER_CLEAN_H_
 
 void refcleaner_clean(lua_State *L);
 void refcleaner_reset();

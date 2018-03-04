@@ -24,9 +24,7 @@ extern "C" {
 #include "display.h"
 #include "lauxlib.h"
 #include "lualib.h"
-#include "core_lua.h"
 #include "auxiliar.h"
-#include "core_lua.h"
 #include "script.h"
 #include <math.h>
 #include "SFMT.h"
@@ -36,6 +34,7 @@ extern "C" {
 #include "physfs.h"
 #include "physfsrwops.h"
 }
+#include "core_lua.hpp"
 #include "renderer-moderngl/Particles.hpp"
 #include "renderer-moderngl/FBO.hpp"
 #include "particles.hpp"

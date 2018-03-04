@@ -18,6 +18,7 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+extern "C" {
 #include "lua.h"
 #include "types.h"
 #include "display.h"
@@ -34,7 +35,6 @@
 #include "zlib.h"
 #include "main.h"
 #include "useshader.h"
-#include "core_lua.h"
 #include "sdm.h"
 #include <math.h>
 #include <time.h>
@@ -45,7 +45,9 @@
 #else
 #include <png.h>
 #endif
+}
 
+#include "core_lua.hpp"
 extern SDL_Window *window;
 
 #define SDL_SRCALPHA        0x00010000
@@ -209,7 +211,7 @@ SDL_ListModes(const SDL_PixelFormat * format, Uint32 flags)
             continue;
         }
 
-        modes = SDL_realloc(modes, (nmodes + 2) * sizeof(*modes));
+        modes = (SDL_Rect**)SDL_realloc(modes, (nmodes + 2) * sizeof(*modes));
         if (!modes) {
             return NULL;
         }
@@ -296,7 +298,7 @@ void make_texture_for_surface(SDL_Surface *s, int *fw, int *fh, bool clamp, bool
 
 	if (!largest_black || largest_size < realw * realh * 4) {
 		if (largest_black) free(largest_black);
-		largest_black = calloc(realh*realw*4, sizeof(char));
+		largest_black = (char*)calloc(realh*realw*4, sizeof(char));
 		largest_size = realh*realw*4;
 		printf("Upgrading black texture to size %d\n", largest_size);
 	}
@@ -357,7 +359,7 @@ static int lua_get_mod_state(lua_State *L)
 }
 static int lua_get_scancode_name(lua_State *L)
 {
-	SDL_Scancode code = luaL_checknumber(L, 1);
+	SDL_Scancode code = (SDL_Scancode)luaL_checknumber(L, 1);
 	lua_pushstring(L, SDL_GetScancodeName(code));
 
 	return 1;
@@ -377,7 +379,7 @@ static int lua_key_unicode(lua_State *L)
 
 static int lua_key_set_clipboard(lua_State *L)
 {
-	char *str = luaL_checkstring(L, 1);
+	const char *str = luaL_checkstring(L, 1);
 	SDL_SetClipboardText(str);
 	return 0;
 }
@@ -717,7 +719,7 @@ static int gl_texture_to_sdl(lua_State *L)
 	GLint w = t->w, h = t->h;
 //	printf("Making surface from texture %dx%d\n", w, h);
 	// Get texture data
-	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
+	GLubyte *tmp = (GLubyte*)calloc(w*h*4, sizeof(GLubyte));
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, tmp);
 
 	// Make sdl surface from it
@@ -736,10 +738,10 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	// Get texture size
 	GLint w = t->w, h = t->h, dh;
 	dh = doubleheight ? h * 2 : h;
-	GLubyte *tmp = calloc(w*h*4, sizeof(GLubyte));
+	GLubyte *tmp = (GLubyte*)calloc(w*h*4, sizeof(GLubyte));
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
 
-	GLubyte *sdm = calloc(w*dh*4, sizeof(GLubyte));
+	GLubyte *sdm = (GLubyte*)calloc(w*dh*4, sizeof(GLubyte));
 	build_sdm_ex(tmp, w, h, sdm, w, dh, 0, doubleheight ? h : 0);
 	printf("==SDM %dx%d :: %dx%d\n", w,h,w,dh);
 	texture_type *st = (texture_type*)lua_newuserdata(L, sizeof(texture_type));
@@ -761,7 +763,7 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	return 3;
 }
 
-int gl_tex_white = 0;
+GLuint gl_tex_white = 0;
 int init_blank_surface()
 {
 	Uint32 rmask, gmask, bmask, amask;
@@ -895,7 +897,7 @@ static int sdl_surface_update_texture(lua_State *L)
 
 GLuint load_image_texture(const char *file) {
 	SDL_Surface *s = IMG_Load_RW(PHYSFSRWOPS_openRead(file), TRUE);
-	printf("OPENING %s : %lx\n", file, s);
+	// printf("OPENING %s : %lx\n", file, s);
 	if (!s) return 0;
 
 	GLuint t;
@@ -1292,7 +1294,7 @@ static int sdl_set_gamma(lua_State *L)
 static void png_write_data_fn(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	luaL_Buffer *B = (luaL_Buffer*)png_get_io_ptr(png_ptr);
-	luaL_addlstring(B, data, length);
+	luaL_addlstring(B, (const char*)data, length);
 }
 static void png_output_flush_fn(png_structp png_ptr)
 {
@@ -1989,14 +1991,10 @@ static int lua_zlib_compress(lua_State *L)
 #ifdef __APPLE__
 	unsigned
 #endif
-	char *res = malloc(reslen);
+	char *res = (char*)malloc(reslen);
 	z_stream zi;
 
-	zi.next_in = (
-#ifdef __APPLE__
-	unsigned
-#endif
-	char *)data;
+	zi.next_in = (const Bytef*)data;
 	zi.avail_in = len;
 	zi.total_in = 0;
 
@@ -2010,7 +2008,7 @@ static int lua_zlib_compress(lua_State *L)
 
 	int deflateStatus;
 	do {
-		zi.next_out = res + zi.total_out;
+		zi.next_out = (Bytef*)res + zi.total_out;
 
 		// Calculate the amount of remaining free space in the output buffer
 		// by subtracting the number of bytes that have been written so far

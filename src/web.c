@@ -26,7 +26,7 @@
 #include "lualib.h"
 #include "auxiliar.h"
 #include "physfs.h"
-#include "core_lua.h"
+// #include "core_lua.h"
 #include "main.h"
 #include "getself.h"
 #include "te4web.h"

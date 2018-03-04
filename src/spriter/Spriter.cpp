@@ -27,10 +27,10 @@ extern "C" {
 #include "physfs.h"
 #include "physfsrwops.h"
 #include "main.h"
-#include "core_lua.h"
 #include "math.h"
 }
 
+#include "core_lua.hpp"
 #include "renderer-moderngl/Renderer.hpp"
 #include "spriter/Spriter.hpp"
 #include "spriterengine/global/settings.h"

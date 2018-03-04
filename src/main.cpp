@@ -18,6 +18,7 @@
     Nicolas Casalini "DarkGod"
     darkgod@te4.org
 */
+extern "C" {
 #include "lua.h"
 #include "types.h"
 #include "display.h"
@@ -35,11 +36,9 @@
 #include "script.h"
 #include "physfs.h"
 #include "physfsrwops.h"
-#include "core_lua.h"
 #include "getself.h"
 #include "music.h"
 #include "serial.h"
-#include "profile.h"
 #include "main.h"
 #include "te4web.h"
 #include "lua_externs.h"
@@ -50,6 +49,11 @@
 #ifdef SELFEXE_WINDOWS
 #include <windows.h>
 #endif
+}
+
+#include "core_lua.hpp"
+#include "profile.hpp"
+#include "renderer-moderngl/Interfaces.hpp"
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -168,7 +172,7 @@ static void new_lua_error(const char *err)
 {
 	del_lua_error();
 
-	lua_err_type *cur = calloc(1, sizeof(lua_err_type));
+	lua_err_type *cur = (lua_err_type*)calloc(1, sizeof(lua_err_type));
 	cur->err_msg = strdup(err);
 	cur->next = NULL;
 
@@ -178,7 +182,7 @@ static void new_lua_error(const char *err)
 
 static void add_lua_error(const char *file, int line, const char *func)
 {
-	lua_err_type *cur = calloc(1, sizeof(lua_err_type));
+	lua_err_type *cur = (lua_err_type*)calloc(1, sizeof(lua_err_type));
 	cur->err_msg = NULL;
 	cur->file = strdup(file);
 	cur->line = line;
@@ -232,7 +236,7 @@ void stackDump (lua_State *L) {
 			if((sizeof(__PTRDIFF_TYPE__) == sizeof(long int)))
 			{ printf("%d: %s // %lx\n", i, lua_typename(L, t), (unsigned long int)lua_topointer(L, i)); }
 			else
-			{ printf("%d: %s // %x\n", i, lua_typename(L, t), (unsigned int)lua_topointer(L, i)); }
+			{ printf("%d: %s // %lx\n", i, lua_typename(L, t), (unsigned long int)lua_topointer(L, i)); }
 #else
 			printf("%d: %s // %x\n", i, lua_typename(L, t), lua_topointer(L, i));
 #endif
@@ -577,7 +581,7 @@ bool on_event(SDL_Event *event)
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
-			lua_pushstring(L, SDL_GameControllerGetStringForButton(event->cbutton.button));
+			lua_pushstring(L, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)event->cbutton.button));
 			lua_pushboolean(L, event->cbutton.state == SDL_RELEASED ? TRUE : FALSE);
 			docall(L, 3, 0);
 		}
@@ -592,7 +596,7 @@ bool on_event(SDL_Event *event)
 			lua_gettable(L, -2);
 			lua_remove(L, -2);
 			lua_rawgeti(L, LUA_REGISTRYINDEX, current_gamepadhandler);
-			lua_pushstring(L, SDL_GameControllerGetStringForAxis(event->caxis.axis));
+			lua_pushstring(L, SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)event->caxis.axis));
 			lua_pushnumber(L, v);
 			docall(L, 3, 0);
 		}
@@ -633,8 +637,6 @@ void on_tick()
 	}
 }
 
-extern void interface_realtime(float nb_keyframes); // From renderer-moderngl/Interfaces.hpp
-
 static void call_draw(float nb_keyframes)
 {
 	if (draw_waiting(L)) return;
@@ -663,6 +665,7 @@ static void call_draw(float nb_keyframes)
 	interface_realtime(nb_keyframes);
 }
 
+extern "C" void te4_discord_update();
 void on_redraw()
 {
 	static int last_ticks = 0;
@@ -705,7 +708,6 @@ void on_redraw()
 	if (!no_steam) te4_steam_callbacks();
 #endif
 #ifdef DISCORD_TE4
-	extern void te4_discord_update();
 	te4_discord_update();
 #endif
 	if (te4_web_update) te4_web_update(L);
@@ -1072,6 +1074,7 @@ static void close_state() {
 	font_cleanup();
 }
 
+extern "C" int luaopen_discord(lua_State *L);
 void boot_lua(int state, bool rebooting, int argc, char *argv[])
 {
 	core_def->corenum = 0;
@@ -1148,7 +1151,6 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		if (!no_steam) te4_steam_lua_init(L);
 #endif
 #ifdef DISCORD_TE4
-		extern int luaopen_discord(lua_State *L);
 		luaopen_discord(L);
 #endif
 		printf("===top %d\n", lua_gettop(L));
@@ -1315,7 +1317,7 @@ void handleIdleTransition(int goIdle)
  */
 int main(int argc, char *argv[])
 {
-	core_def = calloc(1, sizeof(core_boot_type));
+	core_def = (core_boot_type*)calloc(1, sizeof(core_boot_type));
 	core_def->define = &define_core;
 	core_def->define(core_def, "te4core", -1, NULL, NULL, NULL, NULL, 0, NULL);
 

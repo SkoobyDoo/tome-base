@@ -21,8 +21,10 @@
 #ifndef _CORELUA_H_
 #define _CORELUA_H_
 
+extern "C" {
 #include "tgl.h"
 #include "tSDL.h"
+}
 
 typedef struct
 {

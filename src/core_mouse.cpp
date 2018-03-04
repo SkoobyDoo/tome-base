@@ -28,9 +28,9 @@ extern "C" {
 #include "auxiliar.h"
 #include "script.h"
 #include "useshader.h"
-#include "core_lua.h"
 extern SDL_Window *window;
 }
+#include "core_lua.hpp"
 
 #include <renderer-moderngl/Renderer.hpp>
 

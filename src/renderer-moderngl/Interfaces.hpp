@@ -55,7 +55,7 @@ public:
 	virtual void onKeyframe(float nb_keyframes) = 0;
 };
 
-extern "C" void interface_realtime(float nb_keyframes);
+void interface_realtime(float nb_keyframes);
 
 inline ivec2 powerOfTwoSize(int32_t w, int32_t h) {
 	int32_t realw = 1;

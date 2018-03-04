@@ -25,11 +25,11 @@ extern "C" {
 #include "types.h"
 #include "lauxlib.h"
 #include "lualib.h"
-#include "core_lua.h"
 #include "main.h"
 #include "lua_externs.h"
 }
 
+#include "core_lua.hpp"
 #include "renderer-moderngl/VBO.hpp"
 
 extern SDL_Window *window;
@@ -55,7 +55,7 @@ static int draw_last_frame(lua_State *L)
 }
 
 extern int requested_fps;
-extern "C" void on_redraw();
+extern void on_redraw();
 static void hook_wait_display(lua_State *L, lua_Debug *ar)
 {
 	if (!manual_ticks_enabled) waited_count++;

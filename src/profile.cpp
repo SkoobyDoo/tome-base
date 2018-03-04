@@ -19,15 +19,17 @@
     darkgod@te4.org
 */
 
+extern "C" {
 #include "lua.h"
 #include "types.h"
 #include "lauxlib.h"
 #include "lualib.h"
-#include "core_lua.h"
 #include "tSDL.h"
 #include "main.h"
-#include "profile.h"
 #include "lua_externs.h"
+}
+#include "profile.hpp"
+#include "core_lua.hpp"
 
 static profile_type *main_profile = NULL;
 
@@ -37,8 +39,8 @@ int push_order(lua_State *L)
 	const char *code = luaL_checklstring(L, 1, &len);
 //	printf("[profile order] %s\n", code);
 
-	profile_queue *q = malloc(sizeof(profile_queue));
-	char *d = calloc(len, sizeof(char));
+	profile_queue *q = (profile_queue*)malloc(sizeof(profile_queue));
+	char *d = (char*)calloc(len, sizeof(char));
 	memcpy(d, code, len);
 	q->payload = d;
 	q->payload_len = len;
@@ -84,8 +86,8 @@ int push_event(lua_State *L)
 	const char *code = luaL_checklstring(L, 1, &len);
 //	printf("[profile event] %s\n", code);
 
-	profile_queue *q = malloc(sizeof(profile_queue));
-	char *d = calloc(len, sizeof(char));
+	profile_queue *q = (profile_queue*)malloc(sizeof(profile_queue));
+	char *d = (char*)calloc(len, sizeof(char));
 	memcpy(d, code, len);
 	q->payload = d;
 	q->payload_len = len;
@@ -198,7 +200,7 @@ int create_profile_thread(lua_State *L)
 	if (main_profile) return 0;
 
 	SDL_Thread *thread;
-	profile_type *profile = calloc(1, sizeof(profile_type));
+	profile_type *profile = (profile_type*)calloc(1, sizeof(profile_type));
 	main_profile = profile;
 
 	profile->running = TRUE;
