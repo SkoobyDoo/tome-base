@@ -738,7 +738,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	}
 	// printf("==================================== END\n");
 	// stable_sort(map->sort_mos, map->sort_mos + start_sort, sort_mos_shader);
-	// sort(sorting_mos.begin() + start_sort, sorting_mos.begin() + sorting_mos_next, sort_mos);
+	sort(sorting_mos.begin() + start_sort, sorting_mos.begin() + sorting_mos_next, sort_mos);
 	// printf("sorted %d mos\n", sorting_mos_next - start_sort);
 
 	for (int spos = 0; spos < sorting_mos_next; spos++) {
@@ -771,9 +771,11 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	// Render the map
 	renderer.toScreen(cur_model, color);
 
-	// Render the vision overlay
-	updateVision();
-	if (show_vision) seens_vbo.toScreen(cur_model);
+	// Render the vision overlay	
+	if (show_vision) {
+		updateVision();
+		seens_vbo.toScreen(cur_model);
+	}
 
 	// Render grid lines
 	if (show_grid_lines) grid_lines_vbo.toScreen(cur_model);

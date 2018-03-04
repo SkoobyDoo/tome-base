@@ -1126,7 +1126,6 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		luaopen_lxp(L);
 		luaopen_md5_core(L);
 		luaopen_renderer(L);
-		// luaopen_map(L);
 		luaopen_map2d(L);
 		luaopen_particles(L);
 		luaopen_particles_system(L);
