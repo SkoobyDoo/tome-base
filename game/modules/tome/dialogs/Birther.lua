@@ -137,11 +137,10 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 		fct=function(item, sel, v) self:classUse(item, sel, v) end,
 		select=function(item, sel) self:updateDesc(item) end,
 		on_expand=function(item) end,
-		on_drawitem=function(item, s, startx, h)
-			if not item.def or not item.def.display_entity32 then return startx end
-			local sc = item.def.display_entity32:getEntityFinalSurface(self.tiles, h, h)
-			s:merge(sc, startx, 0)
-			return startx + h
+		on_drawitem=function(item, h)
+			if not item.def or not item.def.display_entity32 then return end
+			local sc = item.def.display_entity32:getDO(h, h)
+			item._container:add(sc)
 		end,
 	}
 

@@ -750,7 +750,17 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	mat4 zmodel = mat4();
 	vec4 zcolor = vec4(1, 1, 1, 1);
 	for (int32_t z = 0; z < zdepth; z++) {
-		if (zobjects[z]) zobjects[z]->render(&renderer, zmodel, zcolor, true);
+		if (zobjects[z]) {
+			// DGDGDGDG: this is super-fugly, change it! Idealy do it all without callbacks
+			DORCallbackMapZ *mz = dynamic_cast<DORCallbackMapZ*>(zobjects[z]);
+			if (mz) {
+				mz->sx = sx;
+				mz->sy = sy;
+				mz->z = z;
+				mz->keyframes = keyframes;
+			}
+			zobjects[z]->render(&renderer, zmodel, zcolor, true);
+		}
 	}
 
 	// Compute the smooth scrolling matrix offset

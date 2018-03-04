@@ -353,7 +353,7 @@ function _M:drawItem(item)
 		end
 		x = x + col.width
 	end
-	if self.on_drawitem then self.on_drawitem(item) end
+	if self.on_drawitem then self.on_drawitem(item, self.fh) end
 	item.__drawn = true
 end
 

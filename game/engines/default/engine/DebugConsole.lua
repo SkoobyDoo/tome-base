@@ -471,6 +471,7 @@ function _M:autoComplete()
 		table.insert(_M.history, "<<<<< No auto-complete possibilities. >>>>>") 
 	end
 	self.changed = true
+	self.changed_input = true
 end
 
 --- Prints comments for a function

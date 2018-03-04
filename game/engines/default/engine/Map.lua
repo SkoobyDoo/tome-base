@@ -312,10 +312,9 @@ function _M:makeCMap()
 
 	local wself = self:weakSelf()
 	for z = 0, self.zdepth - 1 do
-		self._map:zCallback(z, function(nb_keyframe, sx, sy)
-			local z = z
+		self._map:zCallback(z, function(z, nb_keyframe, sx, sy)
 			if not wself.__getstrong then return end
-			return wself.__getstrong:zDisplay(z, nb_keyframe, prevfbo)
+			return wself.__getstrong:zDisplay(z, nb_keyframe, sx, sy)
 		end)
 	end
 end
@@ -652,10 +651,10 @@ function _M:display(x, y, nb_keyframe, always_show, prevfbo)
 end
 
 --- Called by the engine map draw code for each z-layer
-function _M:zDisplay(z, nb_keyframe, prevfbo)
+function _M:zDisplay(z, nb_keyframe, sx, sy)
 	self:calcEffectVisibility(z)
-	local changed = self:displayParticles(z, nb_keyframe)
-	changed = self:displayEffects(z, prevfbo, nb_keyframe) or changed
+	local changed = self:displayParticles(z, nb_keyframe, sx, sy)
+	changed = self:displayEffects(z, nb_keyframe, sx, sy) or changed
 	return changed
 end
 
@@ -1198,20 +1197,21 @@ function _M:calcEffectVisibility(z)
 end
 
 --- Display the overlay effects, called by self:display()
-function _M:displayEffects(z, prevfbo, nb_keyframes)
+function _M:displayEffects(z, nb_keyframes, sx, sy)
+	do return false end -- DGDGDGDG MAKE ALL THIS WORK
 	if not next(self.z_effects[z]) then return false end
-	local sx, sy = self._map:getScroll()
 	for e, _ in pairs(self.z_effects[z]) do
 		-- Dont bother with obviously out of screen stuff or invisible stuff
 		if e.seen and e.overlay and e.overlay.zdepth == z and e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
 			local s = self.tilesEffects:get(e.overlay.display, e.overlay.color_r, e.overlay.color_g, e.overlay.color_b, e.overlay.color_br, e.overlay.color_bg, e.overlay.color_bb, e.overlay.image, e.overlay.alpha)
 
 			-- If we dont have a special fbo/shader or no shader image to use, just display with simple quads
-			if not self.fbo or not e.overlay.effect_shader then
+			if true or not self.fbo or not e.overlay.effect_shader then
 				-- Now display each grids
 				for lx, ys in pairs(e.seen_grids) do
 					for ly, _ in pairs(ys) do
 						s:toScreen(self.display_x + sx + (lx - self.mx) * self.tile_w * self.zoom, self.display_y + sy + (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
+						print("===", self.display_x + sx, self.display_y + sy)
 					end
 				end
 			-- We have a fbo/shader pair, so we display everything inside it and apply the shader to get nice borders and such
@@ -1434,29 +1434,14 @@ function _M:removeParticleEmitters()
 end
 
 --- Display the particle emitters, called by self:display()
-function _M:displayParticles(z, nb_keyframes)
+function _M:displayParticles(z, nb_keyframes, sx, sy)
 	if not next(self.z_particles[z]) then return false end
 	nb_keyframes = nb_keyframes or 1
-	local adx, ady
+	local adx, ady = sx, sy
 	local alive
 	local dx, dy = self.display_x, self.display_y
 	for e, _ in pairs(self.z_particles[z]) do
 		if e.ps then
-			adx, ady = 0, 0
-			if e.x and e.y then
-				-- Make sure we display on the real screen coords: handle current move anim position
-				local _mo = e._mo
-				if not _mo then
-					_mo = self.map[e.x + e.y * self.w] and self.map[e.x + e.y * self.w][TERRAIN] and self.map[e.x + e.y * self.w][TERRAIN]._mo
-				end
-				if _mo then
-					adx, ady = _mo:getMoveAnim(self._map, e.x, e.y)
-				else
-					adx, ady = self._map:getScroll()
-					adx, ady = -adx / self.tile_w, -ady / self.tile_h
-				end
-			end
-
 			local show_particle = (self.seens(e.x, e.y) or e.always_visible)
 			if e.__map_effect then
 				local me = e.__map_effect
@@ -1468,14 +1453,14 @@ function _M:displayParticles(z, nb_keyframes)
 			if nb_keyframes == 0 and e.x and e.y then
 				-- Just display it, not updating, no emitting
 				if e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
-					e.ps:toScreen(dx + (adx + e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + (ady + e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle, e.zoom * self.zoom)
+					e.ps:toScreen(dx + adx + (e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + ady + (e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle, e.zoom * self.zoom)
 				end
 			elseif e.x and e.y then
 				alive = e.ps:isAlive()
 
 				-- Update more, if needed
 				if alive and e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
-					e.ps:toScreen(dx + (adx + e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + (ady + e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle)
+					e.ps:toScreen(dx + adx + (e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + ady + (e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle)
 				end
 
 				if not alive then
