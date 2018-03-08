@@ -43,7 +43,8 @@ public:
 
 	TER_GL21_Texture(TER_TextureType type, uint16_t w, uint16_t h, bool powerof2=false, bool clamp=false, bool pixelize=false);
 	virtual ~TER_GL21_Texture();
-	virtual void load(TER_TextureFormat format, const void *data);
+	virtual void load(TER_TextureFormat format, uint16_t uw, uint16_t uh, const void *data);
+	virtual void subload(TER_TextureFormat format, uint16_t x, uint16_t y, uint16_t uw, uint16_t uh, const void *data);
 };
 
 /*****************************************************************
@@ -64,6 +65,7 @@ struct TER_GL21_Program_Binder {
 	string name;
 	TER_BinderType type;
 
+	TER_GL21_Program_Binder() : loc(-1), name("--"), type(TER_BinderType::ERROR) {}
 	TER_GL21_Program_Binder(GLint loc, const char *name, GLenum gtype) : loc(loc), name(name) {
 		switch (gtype) {
 			case GL_FLOAT: type = TER_BinderType::FLOAT; break;
@@ -83,11 +85,17 @@ protected:
 	sTER_GL21_Shader fragment;
 public:
 	GLuint program = 0;
-	vector<TER_GL21_Program_Binder> attributes;
+	array<TER_GL21_Program_Binder, (uint8_t)TER_ShaderAttribute::END> attributes;
+	array<TER_GL21_Program_Binder, (uint8_t)TER_ShaderUniform::END> frame_uniforms;
 	vector<TER_GL21_Program_Binder> uniforms;
 
 	TER_GL21_Program(sTER_Shader vertex, sTER_Shader fragment);
 	virtual ~TER_GL21_Program();
+	virtual bool setUniform(string name, float v);
+	virtual bool setUniform(string name, glm::vec2 v);
+	virtual bool setUniform(string name, glm::vec3 v);
+	virtual bool setUniform(string name, glm::vec4 v);
+	virtual bool setUniform(string name, glm::mat4 v);
 };
 
 /*****************************************************************
@@ -95,10 +103,39 @@ public:
  *****************************************************************/
 class TER_GL21_VertexBuffer : public TER_VertexBuffer {
 public:
+	GLuint buff;
+	GLenum gl_mode;
+	GLenum gl_type;
+	uint8_t base_data_size = 0;
+
+	TER_GL21_VertexBuffer(TER_BufferFormat format, TER_BufferMode mode, sTER_AttributesDecl data_format, void *data, uint32_t data_nb);
+	virtual ~TER_GL21_VertexBuffer();
 };
 
 class TER_GL21_IndexBuffer : public TER_IndexBuffer {
 public:
+	GLuint buff;
+	GLenum gl_mode;
+	GLenum gl_type;
+	uint8_t base_data_size = 0;
+
+	TER_GL21_IndexBuffer(TER_BufferFormat format, TER_BufferMode mode, void *data, uint32_t data_nb);
+	virtual ~TER_GL21_IndexBuffer();
+};
+
+/*****************************************************************
+ ** Frame Buffers
+ *****************************************************************/
+class TER_GL21_FrameBuffer : public TER_FrameBuffer {
+public:
+	GLuint fbo;
+	GLuint depthbuffer;
+	vector<GLenum> buffers;
+
+	TER_GL21_FrameBuffer(uint16_t w, uint16_t h, uint16_t nbt, bool hdr, bool depth);
+	virtual ~TER_GL21_FrameBuffer();
+
+	void use(bool state) {};
 };
 
 /*****************************************************************
@@ -106,6 +143,10 @@ public:
  *****************************************************************/
 class TER_GL21_Context : public TER_Context {
 public:
+	TER_GL21_Context();
+	virtual ~TER_GL21_Context();
+	virtual void submit(sTER_Program p);
+	virtual void frame();
 };
 
 #endif

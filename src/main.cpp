@@ -1312,6 +1312,88 @@ void handleIdleTransition(int goIdle)
 	}
 }
 
+void dg_test() {
+	/********** DGDGDGDG TEST *********/
+	sTER_Shader vertex = TER_Shader::build(TER_ShaderType::VERTEX, " \
+attribute vec4 te4_position; \
+attribute vec2 te4_texcoord; \
+attribute vec4 te4_color; \
+varying vec2 te4_uv; \
+varying vec4 te4_fragcolor; \
+uniform float tick; \
+uniform vec4 displayColor; \
+uniform mat4 mvp; \
+ \
+void main() \
+{ \
+	gl_Position = mvp * te4_position; \
+	te4_uv = te4_texcoord; \
+	te4_fragcolor = te4_color * displayColor; \
+} \
+");
+	sTER_Shader fragment = TER_Shader::build(TER_ShaderType::FRAGMENT, " \
+varying vec2 te4_uv; \
+varying vec4 te4_fragcolor;		 \
+uniform sampler2D tex; \
+ \
+void main() \
+{ \
+	gl_FragColor = texture2D(tex, te4_uv) * te4_fragcolor; \
+} \
+");
+	sTER_Program program = TER_Program::build(vertex, fragment);
+	program->setUniform("tex", 0);
+	program->setUniform("displayColor", {1, 0, 0, 1});
+
+	SDL_Surface *s = IMG_Load("game/engines/default/data/gfx/background/tome.png");
+	sTER_Texture tex = TER_Texture::build(s);
+
+	sTER_AttributesDecl vertex_format = TER_AttributesDecl::build();
+	vertex_format
+		->add(TER_ShaderAttribute::POS, TER_BinderType::VEC4)
+		->add(TER_ShaderAttribute::TEXCOORD, TER_BinderType::VEC2)
+		->add(TER_ShaderAttribute::COLOR, TER_BinderType::VEC4);
+	float vertex_data[] = {
+		100, 100, 0, 1,    0, 0,    1, 1, 1, 1,
+		200, 100, 0, 1,    1, 0,    1, 1, 1, 1,
+		200, 200, 0, 1,    1, 1,    1, 1, 1, 1,
+		100, 200, 0, 1,    0, 1,    1, 1, 1, 1,
+	};
+	sTER_VertexBuffer vertex_buf = TER_VertexBuffer::build(TER_BufferFormat::FLOAT, TER_BufferMode::STATIC, vertex_format, vertex_data, 4 * (4+2+4));
+
+	uint32_t index_data[] = {
+		0, 1, 2, 0, 2, 3,
+	};
+	sTER_IndexBuffer index_buf = TER_IndexBuffer::build(TER_BufferFormat::UINT32, TER_BufferMode::STATIC, index_data, 6);
+
+	TER_Context *context = TER_Context::build();
+
+	glm::mat4 view_m = glm::ortho(0.f, (float)screen->w, (float)screen->h, 0.0f, -1001.f, 1001.f);
+	glm::mat4 model_m;
+	glm::mat4 model2_m;
+	model2_m = glm::translate(model2_m, glm::vec3(200, 150, 0));
+
+	context->view(view_m);
+
+	while (true) {
+		context->model(model_m);
+		context->index(index_buf);
+		context->vertex(vertex_buf);
+		context->texture(tex);
+		context->submit(program);
+
+		context->model(model2_m);
+		context->index(index_buf);
+		context->vertex(vertex_buf);
+		context->texture(tex);
+		context->submit(program);
+
+		context->frame();
+	}
+	exit(0);
+}
+
+
 /**
  * Core entry point.
  */
@@ -1461,37 +1543,7 @@ int main(int argc, char *argv[])
 
 	init_blank_surface();
 
-	/********** DGDGDGDG TEST *********/
-	sTER_Shader vertex = TER_Shader::build(TER_ShaderType::VERTEX, " \
-attribute vec4 te4_position; \
-attribute vec2 te4_texcoord; \
-attribute vec4 te4_color; \
-varying vec2 te4_uv; \
-varying vec4 te4_fragcolor; \
-uniform float tick; \
-uniform vec4 displayColor; \
-uniform mat4 mvp; \
- \
-void main() \
-{ \
-	gl_Position = mvp * te4_position; \
-	te4_uv = te4_texcoord; \
-	te4_fragcolor = te4_color * displayColor; \
-} \
-");
-	sTER_Shader fragment = TER_Shader::build(TER_ShaderType::FRAGMENT, " \
-varying vec2 te4_uv; \
-varying vec4 te4_fragcolor;		 \
-uniform sampler2D tex; \
- \
-void main() \
-{ \
-	gl_FragColor = texture2D(tex, te4_uv) * te4_fragcolor; \
-} \
-");
-	sTER_Program program = TER_Program::build(vertex, fragment);
-	exit(0);
-	/********** DGDGDGDG TEST *********/
+	dg_test();
 
 	boot_lua(2, FALSE, argc, argv);
 
