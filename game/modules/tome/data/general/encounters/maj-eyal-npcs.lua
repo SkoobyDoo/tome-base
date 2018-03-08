@@ -125,7 +125,7 @@ newEntity{
 		width=18,
 		height=18,
 		nb={2, 3},
-		filters={{special_rarity="humanoid_random_boss", random_boss={
+		filters={{special_rarity="zigur_random_boss", random_boss={
 			nb_classes=1,
 			rank=3, ai = "tactical",
 			life_rating=function(v) return v * 1.3 + 2 end,
