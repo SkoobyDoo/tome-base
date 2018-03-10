@@ -47,6 +47,8 @@ function _M:init(name, npc, player, data)
 		cur_chat = self,
 		setDialogWidth = function(w) self.force_dialog_width = w end,
 		newChat = function(c) self:addChat(c) end,
+		setTextFont = function(font, size) self.dialog_text_font = {font, size} end,
+		setAnswerFont = function(font, size) self.dialog_answer_font = {font, size} end,
 	}, {__index=data}))
 	self.default_id = f()
 
