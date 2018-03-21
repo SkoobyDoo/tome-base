@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ on_status_change = function(self, who, status, sub)
 		local money = math.max(0, (20 - self.lumberjacks_died) * 1.2)
 		if money > 0 then
 			who:incMoney(money)
-			require("engine.ui.Dialog"):simplePopup("Thanks", ("The remaining lumberjacks collect some gold to thanks you (%0.2f)."):format(money))
+			require("engine.ui.Dialog"):simplePopup("Thanks", ("The remaining lumberjacks collect some gold to thank you (%0.2f)."):format(money))
 		end
 		if self.lumberjacks_died < 7 then
 			local o = game.zone:makeEntity(game.level, "object", {type="tool", subtype="digger", tome_drops="boss"}, nil, true)

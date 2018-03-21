@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -49,9 +49,10 @@ newTalent{
 	tactical = { ATTACK = {BLIGHT = {disease=2}} },
 	requires_target = true,
 	no_energy = true,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	range = function(self, t) return 5 end, -- Instant cast should not do thousands of damage at long range.  This is still too powerful, though
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 
@@ -122,10 +123,10 @@ newTalent{
 	requires_target = true,
 	target = function(self, t)
 		-- Target trying to combine the bolt and the ball disease spread
-		return {type="ballbolt", radius=self:getTalentRadius(t), range=self:getTalentRange(t)}
+		return {type="ballbolt", radius=self:getTalentRadius(t), range=self:getTalentRange(t), friendlyfire=false, selffire=false, talent=t}
 	end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t)}
+		local tg = {type="hit", range=self:getTalentRange(t), talent=t}
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 
@@ -183,7 +184,7 @@ newTalent{
 	getTargetDiseases = getTargetDiseases,
 	tactical = { DISABLE = function(self, t, target)
 			local diseases = t.getTargetDiseases(self, target)
-			if diseases and diseases.num > 0 then return {stun=2} end
+			if diseases and diseases.num > 0 then return {stun=0.1} end  -- We want the disable to be a small part of this calculation, partially to emphasize delaying its use
 		end,
 		ATTACKAREA = function(self, t, target)
 			local diseases = t.getTargetDiseases(self, target)
@@ -198,7 +199,7 @@ newTalent{
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2.5, 4.5)) end,
 	getRadius = function(self, t) return math.floor(self:combatTalentScale(t, 2.3, 3.7)) end,
 	target = function(self, t)
-		return {type="ball", range=self:getTalentRange(t), radius=t.getRadius(self, t), friendlyfire=false}
+		return {type="ball", range=self:getTalentRange(t), radius=t.getRadius(self, t), friendlyfire=false, talent=t}
 	end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
@@ -251,6 +252,7 @@ newTalent{
 	range = 8,
 	radius = 2,
 	tactical = { ATTACK = {BLIGHT = 2} },
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	requires_target = true,
 	healloss = function(self,t) return self:combatTalentLimit(t, 150, 44, 80) end, -- Limit < 150%
 	disfact = function(self,t) return self:combatTalentLimit(t, 100, 36, 60) end, -- Limit < 100%
@@ -287,7 +289,7 @@ newTalent{
 		end)
 	end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t)}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 

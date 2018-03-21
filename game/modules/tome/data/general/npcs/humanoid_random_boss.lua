@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ newEntity{ base = "BASE_NPC_HUMANOID_RANDOM_BOSS",
 		e.moddable_tile_base = "base_cornac_01.png"
 	end),
 	random_name_def = "cornac_#sex#",
-	humanoid_random_boss = 1,
+	humanoid_random_boss = 1, zigur_random_boss = 1,
 	resolvers.racial(),
 }
 
@@ -66,7 +66,7 @@ newEntity{ base = "BASE_NPC_HUMANOID_RANDOM_BOSS",
 		e.moddable_tile_ornament = {female="braid_01"}
 	end),
 	random_name_def = "thalore_#sex#",
-	humanoid_random_boss = 1,
+	humanoid_random_boss = 1, zigur_random_boss = 1,
 	resolvers.racial(),
 }
 
@@ -100,7 +100,7 @@ newEntity{ base = "BASE_NPC_HUMANOID_RANDOM_BOSS",
 		e.moddable_tile = "halfling_#sex#"
 	end),
 	random_name_def = "halfling_#sex#",
-	humanoid_random_boss = 1,
+	humanoid_random_boss = 1, zigur_random_boss = 1,
 	resolvers.racial(),
 }
 
@@ -116,6 +116,21 @@ newEntity{ base = "BASE_NPC_HUMANOID_RANDOM_BOSS",
 		e.moddable_tile = "dwarf_#sex#"
 	end),
 	random_name_def = "dwarf_#sex#",
+	humanoid_random_boss = 2, zigur_random_boss = 2,
+	resolvers.racial(),
+}
+
+newEntity{ base = "BASE_NPC_HUMANOID_RANDOM_BOSS",
+	display = 'P',
+	name = "giant", subtype = "ogre", color=colors.BLUE,
+	resolvers.generic(function(e)
+		if rng.percent(50) then
+			e.female = true
+		else
+		end
+		e.moddable_tile = "ogre_#sex#"
+	end),
+	random_name_def = "shalore_#sex#",
 	humanoid_random_boss = 2,
 	resolvers.racial(),
 }

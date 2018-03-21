@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -2435,7 +2435,6 @@ newDamageType{
 		local realdam = DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam.dam, state)
 		if target and realdam > 0 and not src:attr("dead") then
 			src:heal(realdam * dam.healfactor, target)
-			src:logCombat(target, "#Source# drains life from #Target#!")
 		end
 		return realdam
 	end,
@@ -3780,9 +3779,9 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target and target:attr("worm") then
-			target:heal(dam, src)
+			target:heal(dam / 3, src)
 			return -dam
-		elseif target then
+		elseif target and not target.carrion_worm then  -- Carrion worms are immune but not healed by the damage, this spams the log so we just don't hit them instead
 			DamageType:get(DamageType.BLIGHT).projector(src, x, y, DamageType.BLIGHT, dam)
 			return dam
 		end
@@ -3811,7 +3810,6 @@ newDamageType{
 		useImplicitCrit(src, state)
 		local target = game.level.map(x, y, Map.ACTOR)
 		if target then
-			game:delayedLogDamage(src, target, 0, ("%s<%d%%%% blight chance>#LAST#"):format(DamageType:get(type).text_color or "#aaaaaa#", dam), false)
 			if rng.percent(dam) then
 			local check = src:combatSpellpower()
 			if not src:checkHit(check, target:combatSpellResist()) then return end

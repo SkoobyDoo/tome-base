@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -700,7 +700,7 @@ end
 -- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
 -- @param use_params = parameters to merge into self.use_power table
 function resolvers.charm(desc, cd, fct, tcd, use_params)
-	return {__resolver="charm", desc, cd, fct, tcd, use_params}
+	return {__resolver="charm", __resolve_last=true, desc, cd, fct, tcd, use_params}
 end
 function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
@@ -719,7 +719,7 @@ end
 -- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
 -- @param use_params = parameters to merge into self.use_talent table
 function resolvers.charmt(tid, tlvl, cd, tcd, use_params)
-	return {__resolver="charmt", tid, tlvl, cd, tcd, use_params}
+	return {__resolver="charmt", __resolve_last=true, tid, tlvl, cd, tcd, use_params}
 end
 function resolvers.calc.charmt(tt, e)
 	local cd = tt[3]

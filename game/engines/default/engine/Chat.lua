@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -47,6 +47,8 @@ function _M:init(name, npc, player, data)
 		cur_chat = self,
 		setDialogWidth = function(w) self.force_dialog_width = w end,
 		newChat = function(c) self:addChat(c) end,
+		setTextFont = function(font, size) self.dialog_text_font = {font, size} end,
+		setAnswerFont = function(font, size) self.dialog_answer_font = {font, size} end,
 	}, {__index=data}))
 	self.default_id = f()
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -3036,7 +3036,7 @@ newEffect{
 	type = "other",
 	subtype = { aura=true },
 	status = "neutral",
-	zone_wide_effect = true,
+	zone_wide_effect = false,
 	parameters = {},
 	activate = function(self, eff)
 	end,
@@ -3051,6 +3051,10 @@ newEffect{
 	callbackOnActBase = function(self, eff)
 		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
 		self:hasQuest(eff.id_challenge_quest):check("on_act_base", self)
+	end,
+	callbackOnChangeLevel = function(self, eff)
+		local q = eff.id_challenge_quest and self:hasQuest(eff.id_challenge_quest)
+		if q then q:check("on_exit_level", self) end
 	end,
 }
 

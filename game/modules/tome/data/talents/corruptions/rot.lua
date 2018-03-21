@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -63,13 +63,13 @@ carrionworm = function(self, target, duration, x, y)
 			type = "vermin", subtype = "worms",
 			display = "w", color=colors.SANDY_BROWN, image = "npc/vermin_worms_carrion_worm_mass.png",
 			name = "carrion worm mass", faction = self.faction,
-			desc = [[]],
+			desc = [[A worm spawned from a damaged horror.  Destroying it may have consequences.]],
 			autolevel = "none",
 			ai = "summoned", ai_real = "tactical",
-			ai_state = { ai_move="move_complex", talent_in=3, ally_compassion=10 },
-			ai_tactic = resolvers.tactic("tank"),
+			ai_state = { ai_move="move_complex", talent_in=1, ally_compassion=10 },
+			ai_tactic = resolvers.tactic"melee",
 			stats = { str=10, dex=15, mag=3, con=3 },
-			level_range = {self.level, self.level}, exp_worth = 0,
+			level_range = {1, self.level}, exp_worth = 0,
 			global_speed_base = 1.0,
 
 			max_life = resolvers.rngavg(5,9),
@@ -78,27 +78,21 @@ carrionworm = function(self, target, duration, x, y)
 			blind_immune = 1,
 			life_rating = 6,
 			disease_immune = 1,
+			movement_speed = 1.5,
 			melee_project={[DamageType.PESTILENT_BLIGHT] = self:callTalent(self.T_PESTILENT_BLIGHT, "getChance")/2,},
 			resists = { [DamageType.PHYSICAL] = 50, [DamageType.ACID] = 100, [DamageType.BLIGHT] = 100, [DamageType.FIRE] = -50},
 			
 			combat_armor = 1, combat_def = 1,
-			combat = { dam=1, atk=100, apr=100 },
+			combat = { dam=40, atk=900, apr=900 },  -- We only care about making sure we do at least 1 damage for on hit stuff
 			autolevel = "warriormage",
 			resolvers.talents{ 
 			[Talents.T_INFECTIOUS_BITE]=math.floor(self:getTalentLevelRaw(self.T_INFESTATION)),
 			},
-
-			
-			combat_spellpower = self:combatSpellpower(),
-
 			summoner = self, summoner_gain_exp=true, carrion_worm = true,
 			summon_time = 5,
-			ai_target = {actor=target}
-			
-
+			carrion_worm = true,  -- This prevents combat log spam from blight pools dealing 0 damage and lets the AI pick targets for Worm Rot
 
 	}
-
 	m.unused_stats = 0
 	m.unused_talents = 0
 	m.unused_generics = 0
@@ -114,33 +108,35 @@ carrionworm = function(self, target, duration, x, y)
 				local t = self.summoner:getTalentFromId(self.summoner.T_INFESTATION)
 				game.level.map:addEffect(self,
 				self.x, self.y, 5,
-				engine.DamageType.WORMBLIGHT, t.getDamage(self.summoner, t),
+				engine.DamageType.WORMBLIGHT, t.getDamage(self.summoner, t),  -- Please someone make this more transparent, changing the alpha doesn't seem to work
 					2,
 					5, nil,
 					engine.MapEffect.new{color_br=150, color_bg=255, color_bb=150, effect_shader="shader_images/poison_effect.png"}
 				)
 				game.logSeen(self, "%s exudes a corrupted gas as it dies.", self.name:capitalize())
 	end
-			
-	if game.party:hasMember(self) then
-		m.remove_from_party_on_death = true
-	end
+
+	-- Snapshot the casters effective (not base) spellpower
+	m.summoner_spellpower = self:combatSpellpower()
+	m.combatSpellpower = function(self) return self.summoner_spellpower end
+	
 	m:resolve() m:resolve(nil, true)
 	m:forceLevelup(self.level)
 	game.zone:addEntity(game.level, m, "actor", x, y)
 	game.level.map:particleEmitter(x, y, 1, "summon")
 
-	-- Summons never flee
-	m.ai_tactic = m.ai_tactic or {}
-	m.ai_tactic.escape = 0
-	m.summon_time = 5
-
 	mod.class.NPC.castAs(m)
 	engine.interface.ActorAI.init(m, m)
-
+	m.remove_from_party_on_death = true
+	if game.party:hasMember(self) then
+		game.party:addMember(m, {
+			control=false,
+			type="summon",
+			title="Summon",
+		})
+	end
 	return m
 end
-
 
 newTalent{
 	name = "Infestation",
@@ -148,8 +144,8 @@ newTalent{
 	require = corrs_req_high1,
 	points = 5,
 	mode = "sustained",
-	sustain_vim = 40,
-	cooldown = 30,
+	sustain_vim = 30,
+	cooldown = 15,
 	getDamage = function(self, t)
 		return self:combatTalentSpellDamage(t, 10, 70)
 	end,
@@ -158,6 +154,7 @@ newTalent{
 	getDamageReduction = function(self, t) 
 		return self:combatTalentLimit(t, 0.5, 0.1, 0.22)
 	end,
+	tactical = { BUFF = 2 },
 	activate = function(self, t)
 		local resist = t.getResist(self,t)
 		local affinity = t.getAffinity(self,t)
@@ -177,11 +174,11 @@ newTalent{
 		self:removeTemporaryValue("worm", p.worm)
 		return true
 	end,
+	callbackPriorities={callbackOnHit = -5},  -- High priority since we do more than just reduce damage and want to make sure the worm spawn happens often
 	callbackOnHit = function(self, t, cb)
 		if ( cb.value > (0.15 * self.max_life) ) then
 			local damageReduction = cb.value * t.getDamageReduction(self, t)
 			cb.value = cb.value - damageReduction
-
 
 			local nb = 0 
 			if game.level then
@@ -196,8 +193,14 @@ newTalent{
 			
 			if not self.turn_procs.infestation then
 				self.turn_procs.infestation = true
-				
-				local gx, gy = util.findFreeGrid(self.x, self.y, 2, true, {[Map.ACTOR]=true})
+
+				local grids = {}
+				self:project({type="ball", radius=4, x=self.x, y=self.y}, self.x, self.y, function(px, py)
+					table.insert(grids, {x=px, y=py})
+				end)
+
+				local spot = rng.table(grids)
+				local gx, gy = util.findFreeGrid(spot.x, spot.y, 4, true, {[Map.ACTOR]=true})
 				if gx and gy then 
 					carrionworm(self, self, 5, gx, gy)
 				end
@@ -213,7 +216,7 @@ newTalent{
 		return ([[Your body has become a mass of living corruption, increasing your blight and acid resistance by %d%% and blight affinity by %d%%.
 On taking damage greater than 15%% of your maximum health, the damage will be reduced by %d%% and a carrion worm mass will burst forth onto a nearby tile, attacking your foes for 5 turns.
 You can never have more than 5 worms active from any source at a time.
-When a carrion worm dies it will explode into a radius 2 pool of blight for 5 turns, dealing %0.2f blight damage each turn and healing you for %d.]]):
+When a carrion worm dies it will explode into a radius 2 pool of blight for 5 turns, dealing %0.2f blight damage each turn and healing you for 33%% of that amount.]]):
 		format(resist, affinity, reduction, damDesc(self, DamageType.BLIGHT, dam), dam)
 	end,
 }
@@ -229,12 +232,26 @@ newTalent{
 	radius = function(self, t) return math.max(0, 7 - math.floor(self:getTalentLevel(t))) end,
 	direct_hit = true,
 	range = 7,
-	getHeal = function(self, t) return (5 + math.floor(self:combatTalentScale(t, 5, 15)))/100 end,
-	getVim = function(self, t) return 8 + math.floor(self:combatTalentScale(t, 5, 25)) end,
+	getHeal = function(self, t) return math.floor(self:combatTalentSpellDamage(t, 20, 400)) end,
+	getVim = function(self, t) return 8 + math.floor(self:combatTalentScale(t, 5, 35)) end,
 	getDam = function(self, t) return self:combatTalentLimit(t, 1, 20, 5) end,
+	tactical = {HEAL = 0.5},  -- Only use the healing functionality of this since in practice thats almost always optimal, but use it rarely so we don't waste time hopping around a lot as a melee
 	target = function(self, t)
 		return {type="hit", range=self:getTalentRange(t)}
 	end,
+	onAIGetTarget = function(self, t) -- Find a worm to target
+		local tgts = {}
+		local grids = core.fov.circle_grids(self.x, self.y, self:getTalentRange(t), true)
+		
+		for x, yy in pairs(grids) do for y, _ in pairs(grids[x]) do
+			local a = game.level.map(x, y, engine.Map.ACTOR)
+			if a and a.carrion_worm and self:reactionToward(a) > 0 then tgts[#tgts+1] = a end
+		end end
+
+		local target = rng.tableRemove(tgts)
+		if target then return target.x, target.y, target end
+	end,
+	on_pre_use_ai = function(self, t, silent) return t.onAIGetTarget(self, t) and true or false end,
 	action = function(self, t)
 		local tg = self:getTalentTarget(t)
 		local x, y, target = self:getTarget(tg)
@@ -251,34 +268,28 @@ newTalent{
 			teleport = 0
 			self:incVim(t.getVim(self, t))
 			self:attr("allow_on_heal", 1)
-			self:heal(t.getHeal(self, t) * self.max_life, self)
+			self:heal(t.getHeal(self, t), self)
 			self:attr("allow_on_heal", -1)
 			target:die()
 		end
-		
-
 		
 		if not self:teleportRandom(x, y, teleport) then
 			game.logSeen(self, "The worm walk fizzles!")
 		end
 		game.level.map:particleEmitter(self.x, self.y, 1, "acidflash", {radius=1})
-
-		
-
 		game:playSoundNear(self, "talents/teleport")
 
 		return true
 	end,
 	info = function(self, t)
 		local radius = self:getTalentRadius(t)
-		local heal = t.getHeal(self, t) * 100
+		local heal = t.getHeal(self, t)
 		local vim = t.getVim(self, t)
 		return ([[You disperse into a mass of carrion worms, reforming near the target location (%d teleport accuracy).
-If used on a worm mass, you merge with it, moving to it's location, healing you for %d%% of your maximum health, restoring %d vim, and destroying the mass.]]):
+If used on a worm mass, you merge with it, moving to it's location, healing you for %d, restoring %d vim, and destroying the mass.]]):
 format (radius, heal, vim)
 	end,
 }
-
 
 newTalent{
 	name = "Pestilent Blight",
@@ -297,6 +308,7 @@ newTalent{
 		local chance = t.getChance(self,t)
 		local dur = t.getDuration(self,t)
 		if not dam or type(dam) ~= "number" then return end
+		if target.dead then return end
 		if rng.percent(chance) and not self:isTalentCoolingDown(t.id) then 
 				local tg = self:getTalentTarget(t)
 				self:project(tg, target.x, target.y, function(px, py, tg, self)
@@ -337,7 +349,7 @@ newTalent{
 	getBurstDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 150) end,
 	getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 55) end,
 	getChance = function(self, t) return math.min(100,self:combatTalentScale(t, 20, 90)) end,
-	proj_speed = 6,
+	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}} end,
 	spawn_carrion_worm = function (self, target, t)
 		local nb = 0 
 		if game.level then
@@ -354,7 +366,7 @@ newTalent{
 		
 	end,
 	action = function(self, t)
-		local tg = {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="bolt_slime"}}
+		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 

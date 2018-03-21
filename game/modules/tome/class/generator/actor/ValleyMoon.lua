@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -49,6 +49,18 @@ function _M:tick()
 		end
 	end
 
+	-- make sure hostiles (incl escorts) have targets
+	if game.turn % 50 == 0 then
+		for uid, m in pairs(self.level.entities) do
+			if m.type == "demon" and not m.ai_target.actor and not game.party:hasMember(m) then
+				if _M.limmir and not _M.limmir.dead then
+					m:setTarget(_M.limmir)
+				else
+					m:setTarget(game.player)
+				end
+			end
+		end
+	end
 	-- Fire a light AOE, healing allies damaging demons
 	if _M.limmir and not _M.limmir.dead and game.turn % 100 == 0 then
 		game.logSeen(_M.limmir, "Limmir summons a blast of holy light!")
@@ -63,7 +75,6 @@ function _M:generateOne()
 	local m
 	if not self.level.balroged and self.level.turn_counter < 100 * 10 then
 		m = self.zone:makeEntityByName(self.level, "actor", "CORRUPTED_DAELACH")
-		self.level.balroged = true
 	else
 		m = self.zone:makeEntity(self.level, "actor", {type="demon"}, nil, true)
 	end
@@ -76,19 +87,19 @@ function _M:generateOne()
 		while (not m:canMove(x, y)) and tries < 10 do
 			spot = self.level:pickSpot{type="portal", subtype="demon"}
 			x = spot.x y = spot.y
+			if m.unique then -- make room for the boss
+				local a = self.level.map(x, y, Map.ACTOR)
+				if not a.unique then a:die() end
+			end
 			tries = tries + 1
 		end
 		if tries < 10 then
-			if _M.limmir and not _M.limmir.dead then
-				m:setTarget(_M.limmir)
-			else
-				m:setTarget(game.player)
-			end
 			if not m.unique then
 				m.ai_state = m.ai_state or {}
-				m.ai_state.ai_move = "move_dmap"
+				m.ai_state.ai_move = "move_complex"
 			end
 			self.zone:addEntity(self.level, m, "actor", x, y)
+			if m.define_as == "CORRUPTED_DAELACH" and self.level:hasEntity(m) then self.level.balroged = true end
 		end
 	end
 end

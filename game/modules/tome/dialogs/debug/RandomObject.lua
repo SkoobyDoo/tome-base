@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,9 +36,9 @@ _M._random_filter = _M._default_random_filter
 
 -- default from game.state:generateRandart
 _M._default_base_filter =[[{ignore_material_restriction=true, no_tome_drops=true, ego_filter={keep_egos=true, ego_chance=-1000}, special=function(e) return (not e.unique and e.randart_able) and (not e.material_level or e.material_level >= 2) and true or false end}]]
-_M._base_filter = _M._default_base_filter
+_M._base_filter = config.settings.tome.cheat_create_object_default_filter or _M._default_base_filter
 _M._default_randart_data = "{lev=resolvers.current_level}"
-_M._randart_data = _M._default_randart_data
+_M._randart_data = config.settings.tome.cheat_create_object_default_randart_data or _M._default_randart_data
 
 --- formats function help for dialog output
 local function formatHelp(f_lines, f_name, f_lnum)
@@ -316,6 +316,7 @@ Hotkeys: #GOLD#'F1'#LAST# :: context sensitive help, #GOLD#'C'#LAST# :: Working 
 		end,
 		on_change=function(text)
 			_M._base_filter = text
+			game:saveSettings("tome.cheat_create_object_default_filter", ("tome.cheat_create_object_default_filter = %q\n"):format(text))
 		end,
 		help_display = "filter_help"
 	}
@@ -392,6 +393,7 @@ The #LIGHT_BLUE#Base Object#LAST# will be used if possible.]]):format()}
 		end,
 		on_change=function(text)
 			_M._randart_data = text
+			game:saveSettings("tome.cheat_create_object_default_randart_data", ("tome.cheat_create_object_default_randart_data = %q\n"):format(text))
 		end,
 		help_display = "data_help"
 	}
