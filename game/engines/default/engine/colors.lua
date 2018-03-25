@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 
 colors = {}
 colors_simple = {}
+r_colors = {}
+r_colors_simple = {}
 
 --- Define Color
 -- @string name
@@ -35,6 +37,8 @@ colors_simple = {}
 function defineColor(name, r, g, b, br, bg, bb)
 	colors[name] = {r=r, g=g, b=b, br=br, bg=bg, bb=bb}
 	colors_simple[name] = {r, g, b}
+	r_colors[colors[name]] = name
+	r_colors_simple[colors_simple[name]] = name
 end
 
 --- color -> foreground table
@@ -90,6 +94,11 @@ end
 -- @return a
 function colors.hex1alphaunpack(hex)
 	return tonumber("0x"..hex:sub(1, 2)) / 255, tonumber("0x"..hex:sub(3, 4)) / 255, tonumber("0x"..hex:sub(5, 6)) / 255, tonumber("0x"..hex:sub(7, 8)) / 255
+end
+
+function colors.lerp(a, b, x)
+	local lerp = util.lerp
+	return { lerp(a.r/255, b.r/255, x), lerp(a.g/255, b.g/255, x), lerp(a.b/255, b.b/255, x) }
 end
 
 defineColor('BLACK', 0, 0, 0)

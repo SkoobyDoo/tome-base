@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1018,6 +1018,7 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 	profile:loadModuleProfile(mod.short_name, mod)
 	profile:incrLoadProfile(mod)
 	profile:currentCharacter(mod.full_version_string, "game did not tell us")
+
 
 	UIBase:clearCache()
 

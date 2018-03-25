@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -58,11 +58,15 @@ function _M:block_move(x, y, e, act, couldpass)
 
 	-- Open doors
 	if self.door_opened and e.open_door and act then
+		local door_g
+		if type(self.door_opened) == "string" then door_g = game.zone.grid_list[self.door_opened]
+		else door_g = self.door_opened end
+
 		if self.door_player_check then
 			if e.player then
 				Dialog:yesnoPopup(self.name, self.door_player_check, function(ret)
 					if ret then
-						game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
+						game.level.map(x, y, engine.Map.TERRAIN, door_g)
 						game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
 						game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
@@ -75,7 +79,7 @@ function _M:block_move(x, y, e, act, couldpass)
 				Dialog:simplePopup(self.name, self.door_player_stop)
 			end
 		else
-			game.level.map(x, y, engine.Map.TERRAIN, game.zone.grid_list[self.door_opened])
+			game.level.map(x, y, engine.Map.TERRAIN, door_g)
 			game:playSoundNear({x=x,y=y}, self.door_sound or {"ambient/door_creaks/creak_%d",1,4})
 			game.level.map:checkAllEntities(x, y, "on_door_opened", e)
 
@@ -257,16 +261,17 @@ function _M:makeNewTrees(g, kindsdefs, max_trees, basedir)
 		local treeid = treedef[1]
 		local parts = treedef[2]
 		if not parts.tall then parts.tall = 0 end
+		if not parts.alltall then parts.alltall = 0 else parts.tall = parts.alltall end
 
 		local scale = rng.float(0.5 + inb / 6, 1)
 		local x = rng.float(-1 / 3 * nb / 3, 1 / 3 * nb / 3)
 		local y = rng.float(-1 / 5 * nb / 3, 1 / 4 * nb / 3)
 
 		for i = 1, #parts - 1 do
-			mos[#mos+1] = {image=basedir..treeid.."_"..getname(parts[i])..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+			mos[#mos+1] = {image=basedir..treeid.."_"..getname(parts[i])..".png", display_x=x, display_y=y + scale * parts.alltall, display_w=scale, display_h=scale * (1 - parts.alltall)}
 		end
 		if parts.base then
-			basemos[#basemos+1] = {image=basedir..treeid.."_"..getname(parts.base)..".png", display_x=x, display_y=y, display_w=scale, display_h=scale}
+			basemos[#basemos+1] = {image=basedir..treeid.."_"..getname(parts.base)..".png", display_x=x, display_y=y + scale * parts.alltall, display_w=scale, display_h=scale * (1 - parts.tall)}
 		end
 		if parts.adds then
 			local name = parts.adds[1]

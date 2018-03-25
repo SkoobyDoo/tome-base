@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -59,6 +59,16 @@ newTalent{
 	end,
 	getDecay = function(self, t) return math.max(3, 10 - self:getTalentLevelRaw(self.T_AURA_MASTERY)) end,
 	getRadius = function(self, t) return 2 + self:callTalent(self.T_AURA_MASTERY, "getbonusRadius") end,
+	absorbSoul = function(self, t, victim)
+		local nb = self:getSoul()
+		self:incSoul(1)
+		if self:attr("extra_soul_chance") and rng.percent(self:attr("extra_soul_chance")) then
+			self:incSoul(1)
+			game.logPlayer(self, "%s rips more animus from its victim. (+1 more soul)", self.name:capitalize())
+		end
+		self.changed = true
+		return self:getSoul() - nb
+	end,
 	activate = function(self, t)
 		local radius = t.getRadius(self, t)
 		local decay = t.getDecay(self, t)
@@ -636,7 +646,7 @@ local function getMinionChances(self)
 	end
 end
 
-local function makeMinion(self, lev)
+local function makeNecroticMinion(self, lev)
 	if self:knowTalent(self.T_MINION_MASTERY) then
 		local adv = getAdvancedMinionChances(self)
 		local tot = 0
@@ -711,7 +721,10 @@ local function getMinionChances(self)
 	return chances
 end
 
-local function makeMinion(self, lev)
+-- Export for addons to alter
+necrotic_minions_list = minions_list
+
+function makeNecroticMinion(self, lev)
 	local chances = getMinionChances(self)
 	local pick = rng.float(0,100)
 	local tot, m = 0
@@ -782,7 +795,7 @@ newTalent{
 		end)
 		local use_ressource = not self:attr("zero_resource_cost") and not self:attr("force_talent_ignore_ressources")
 		for i = 1, nb do
-			local minion = makeMinion(self, self:getTalentLevel(t))
+			local minion = makeNecroticMinion(self, self:getTalentLevel(t))
 			local pos = rng.tableRemove(possible_spots)
 			if minion and pos then
 				if use_ressource then self:incSoul(-1) end

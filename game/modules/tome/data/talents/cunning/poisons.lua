@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -309,6 +309,9 @@ newTalent{
 		if self:hasArcheryWeapon() then return util.getval(archery_range, self, t) end
 		return 1
 	end,
+	archery_onhit = function(self, t, target, x, y)
+		t.applyVenomousEffects(self, t, target)
+	end,
 	applyVenomousEffects = function(self, t, target) -- apply venomous strike effects to the target
 		local idam = t.getSecondaryDamage(self,t)
 		local vdam = t.getSecondaryDamage(self,t)*0.6
@@ -353,7 +356,6 @@ newTalent{
 			local targets = self:archeryAcquireTargets(nil, {one_shot=true})
 			if not targets then return end
 			local hit = self:archeryShoot(targets, t, nil, {mult=dam, damtype=DamageType.NATURE})
-			if hit then t.applyVenomousEffects(self, t, target) end
 		end
 		
 		self.talents_cd[self.T_VENOMOUS_THROW] = 8

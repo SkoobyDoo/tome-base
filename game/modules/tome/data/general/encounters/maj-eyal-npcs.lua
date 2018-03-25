@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ newEntity{
 	sight = 1,
 	rarity = 1,
 	unit_power = 14,
-	movement_speed = 0.75,
+	movement_speed = 0.5,
 	ai = "world_hostile", ai_state = {chase_distance=3},
 	on_encounter = {
 		type="ambush",
@@ -117,7 +117,7 @@ newEntity{
 	rarity = 1,
 	unit_power = 20,
 	hates_arcane = 1,
-	movement_speed = 0.75,
+	movement_speed = 0.5,
 	cant_be_moved = false,
 	ai = "world_hostile", ai_state = {chase_distance=3},
 	on_encounter = {
@@ -125,7 +125,7 @@ newEntity{
 		width=18,
 		height=18,
 		nb={2, 3},
-		filters={{special_rarity="humanoid_random_boss", random_boss={
+		filters={{special_rarity="zigur_random_boss", random_boss={
 			nb_classes=1,
 			rank=3, ai = "tactical",
 			life_rating=function(v) return v * 1.3 + 2 end,

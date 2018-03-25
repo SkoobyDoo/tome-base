@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ newEntity{ base = "BASE_RUNE",
 	rarity = 300,
 	cost = 500,
 	inscription_kind = "protect",
-	types = {"FIRE", "LIGHTNING", "COLD", "ACID", "MIND", "ARCANE", "BLIGHT", "NATURE", "TEMPORAL", "LIGHT", "DARK"},
+	types = {"FIRE", "LIGHTNING", "COLD", "ACID", "MIND", "ARCANE", "BLIGHT", "NATURE", "TEMPORAL", "LIGHT", "DARKNESS"},
 	inscription_data = {
 		cooldown = 18,
 		dur = 6,
@@ -678,6 +678,7 @@ newEntity{
 	unique = true,
 	type = "misc", subtype="egg",
 	unided_name = "dark egg",
+	define_as = "MUMMIFIED_EGGSAC",
 	name = "Mummified Egg-sac of Ungolë", image = "object/artifact/mummified_eggsack.png",
 	level_range = {20, 35},
 	rarity = 190,
@@ -6506,13 +6507,15 @@ newEntity{ base = "BASE_TOOL_MISC",
 			m:resolve()
 			who:logCombat(target or {name = "a spot nearby"}, "#Source# points %s %s at #target#, releasing a brilliant orb of light!", who:his_her(), self:getName({do_color = true, no_add_name = true}))
 			game.zone:addEntity(game.level, m, "actor", x, y)
-			m.remove_from_party_on_death = true,
-			game.party:addMember(m, {
-				control=false,
-				type="summon",
-				title="Summon",
-				orders = {target=true, leash=true, anchor=true, talents=true},
-			})
+			m.remove_from_party_on_death = true
+			if game.party:hasMember(who) then
+				game.party:addMember(m, {
+					control=false,
+					type="summon",
+					title="Summon",
+					orders = {target=true, leash=true, anchor=true, talents=true},
+				})
+			end
 			return {id=true, used=true}
 		end
 	},

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -72,6 +72,13 @@ end
 -- @return[2] true if quest ended
 function _M:isEnded()
 	if self.status == DONE or self.status == FAILED then return true else return false end
+end
+
+--- Checks if the quest is ended in success
+-- @return[1] false if quest didn't end
+-- @return[2] true if quest ended
+function _M:isSuccess()
+	if self.status == DONE then return true else return false end
 end
 
 --- Check for an quest property

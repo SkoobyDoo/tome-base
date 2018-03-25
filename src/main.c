@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2017 Nicolas Casalini
+    Copyright (C) 2009 - 2018 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -93,6 +93,7 @@ int requested_fps = 30;
 int requested_fps_idle = DEFAULT_IDLE_FPS;
 /* The currently "saved" fps, used for idle transitions. */
 int requested_fps_idle_saved = 0;
+bool forbid_idle_mode = FALSE;
 
 SDL_TimerID display_timer_id = 0;
 SDL_TimerID realtime_timer_id = 0;
@@ -749,6 +750,10 @@ void on_redraw()
 #ifdef STEAM_TE4
 	if (!no_steam) te4_steam_callbacks();
 #endif
+#ifdef DISCORD_TE4
+	extern void te4_discord_update();
+	te4_discord_update();
+#endif
 	if (te4_web_update) te4_web_update(L);
 }
 
@@ -1176,6 +1181,10 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 #ifdef STEAM_TE4
 		if (!no_steam) te4_steam_lua_init(L);
 #endif
+#ifdef DISCORD_TE4
+		extern int luaopen_discord(lua_State *L);
+		luaopen_discord(L);
+#endif
 		printf("===top %d\n", lua_gettop(L));
 //		exit(0);
 
@@ -1309,6 +1318,8 @@ void cleanupTimerLock(SDL_mutex *lock, SDL_TimerID *timer
 /* Handles game idle transition.  See function declaration for more info. */
 void handleIdleTransition(int goIdle)
 {
+	if (forbid_idle_mode) return;
+
 	/* Only allow if a display timer is already running. */
 	if (display_timer_id) {
 		if (goIdle) {

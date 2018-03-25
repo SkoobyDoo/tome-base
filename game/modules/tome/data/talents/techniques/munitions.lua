@@ -221,7 +221,9 @@ newTalent{
 	callbackOnArcheryAttack = function(self, t, target, hitted)
 		if hitted then
 			self:project({type="hit", range=100}, target.x, target.y, DamageType.NATURE, t.getPoisonDamage(self,t)/5)
-			if self.turn_procs.venomous_ammunition or not self:knowTalent(self.T_ALLOYED_MUNITIONS) then target:setEffect(target.EFF_NUMBING_POISON, 5, {src=self, power=t.getPoisonDamage(self,t)/5, reduce=t.getNumb(self,t)}) end
+			if self.turn_procs.venomous_ammunition or not self:knowTalent(self.T_ALLOYED_MUNITIONS) and target:canBe("poison") then
+				target:setEffect(target.EFF_NUMBING_POISON, 5, {src=self, power=t.getPoisonDamage(self,t)/5, reduce=t.getNumb(self,t)})
+			end
 			if self:knowTalent(self.T_ENHANCED_MUNITIONS) then
 				local t = self:getTalentFromId(self.T_ENHANCED_MUNITIONS)
 				if not self:isTalentCoolingDown(t) and target:canBe("poison") then 
@@ -240,7 +242,6 @@ newTalent{
 					sw = sw[1] and sw[1].combat
 				end
 				sw = sw or self.combat
-				local dam = self:combatDamage(sw)
 				local dam = self:combatDamage(sw)
 				local damrange = self:combatDamageRange(sw)
 				dam = rng.range(dam, dam * damrange)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -3975,8 +3975,7 @@ newEffect{
 	activate = function(self, eff)
 		if self:canBe("blind") then
 			if self.sight - eff.sight < 1 then eff.sight = self.sight - 1 end
-			eff.tmpid = self:addTemporaryValue("sight", -eff.sight)
-	--		self:setTarget(nil) -- Loose target!
+			self:effectTemporaryValue(eff, "sight", -eff.sight)
 			self:doFOV()
 		end
 		if core.shader.active() then
@@ -3984,10 +3983,7 @@ newEffect{
 		end
 	end,
 	deactivate = function(self, eff)
-		if eff.tmpid then 
-			self:removeTemporaryValue("sight", eff.tmpid)
 			self:doFOV()
-		end
 	end,
 }
 

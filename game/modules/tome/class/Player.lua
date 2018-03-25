@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -205,6 +205,8 @@ function _M:onEnterLevel(zone, level)
 	end
 
 	self:fireTalentCheck("callbackOnChangeLevel", "enter", zone, level)
+
+	game:updateCurrentChar()
 end
 
 function _M:onEnterLevelEnd(zone, level)
@@ -664,6 +666,7 @@ function _M:playerFOV()
 			self:computeFOV(self:attr("blind_sight"), "block_sight", function(x, y, dx, dy, sqdist) game.level.map:applyLite(x, y, 0.6) end, true, true, true)
 		end
 	end
+	self:postFOVCombatCheck()
 end
 
 function _M:doFOV()

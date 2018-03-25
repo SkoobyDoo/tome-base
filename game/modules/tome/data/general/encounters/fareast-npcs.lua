@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@ newEntity{
 	sight = 4,
 	rarity = 3,
 	unit_power = 8,
+	movement_speed = 0.5,
 	ai = "world_patrol", ai_state = {route_kind="orc-pride"},
 	on_encounter = {type="ambush", width=14, height=14, nb={6,10}, filters={{type="humanoid", subtype="orc"}}},
 }

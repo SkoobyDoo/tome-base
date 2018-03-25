@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -219,6 +219,7 @@ function necroSetupSummon(self, m, x, y, level, no_control, no_decay)
 	end
 
 	m.on_die = function(self, killer)
+		if self.on_die_necrotic_minion then self:on_die_necrotic_minion(killer) end
 		local src = self.summoner
 		local w = src:isTalentActive(src.T_WILL_O__THE_WISP)
 		local p = src:isTalentActive(src.T_NECROTIC_AURA)

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ newEntity{
 	resolvers.sustains_at_birth(),
 
 	autolevel = "caster",
-	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
+	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", sense_radius=25, ai_target="target_simple_or_player_radius" },
 	ai_tactic = resolvers.tactic"ranged",
 	resolvers.inscriptions(6, {"healing infusion", "regeneration infusion", "shielding rune", "invisibility rune", "movement infusion", "wild infusion"}),
 
@@ -143,7 +143,7 @@ newEntity{
 	max_life = 1000, life_rating = 42, fixed_rating = true,
 	max_mana = 10000,
 	mana_regen = 10,
-	vim_regen = 50,
+	vim_regen = 20,
 	rank = 5,
 	size_category = 3,
 	stats = { str=40, dex=60, cun=60, mag=30, con=40 },
@@ -210,7 +210,7 @@ newEntity{
 	resolvers.sustains_at_birth(),
 
 	autolevel = "warriormage",
-	ai = "tactical", ai_state = { talent_in=2, ai_move="move_astar", },
+	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", sense_radius=25, ai_target="target_simple_or_player_radius" },
 	ai_tactic = resolvers.tactic"melee",
 	resolvers.inscriptions(6, {"healing infusion", "regeneration infusion", "shielding rune", "heroism infusion", "movement infusion", "wild infusion"}),
 

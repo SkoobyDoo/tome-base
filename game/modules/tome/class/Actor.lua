@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -601,6 +601,8 @@ function _M:actBase()
 
 	-- Cooldown talents after effects, because some of them involve breaking sustains.
 	if not self:attr("no_talents_cooldown") then self:cooldownTalents() end
+
+	self:checkStillInCombat()
 end
 
 -- General entry point for Actors to act, called by NPC:act or Player:act
@@ -694,7 +696,7 @@ function _M:act()
 	if not game.zone.wilderness and not self:attr("confused") and not self:attr("terrified") then self:automaticTalents() end
 
 	-- Compute bonuses based on actors in FOV
-	if self:knowTalent(self.T_MILITANT_MIND) and not self:hasEffect(self.EFF_MILITANT_MIND) then
+	if self:knowTalent(self.T_MILITANT_MIND) then
 		local nb_foes = 0
 		local act
 		for i = 1, #self.fov.actors_dist do
@@ -703,7 +705,7 @@ function _M:act()
 		end
 		if nb_foes > 1 then
 			nb_foes = math.min(nb_foes, 5)
-			self:setEffect(self.EFF_MILITANT_MIND, 4, {power=self:getTalentLevel(self.T_MILITANT_MIND) * nb_foes * 1.5})
+			self:setEffect(self.EFF_MILITANT_MIND, 4, {power=self:getTalentLevel(self.T_MILITANT_MIND) * nb_foes * 2})
 		end
 	end
 
@@ -1772,6 +1774,10 @@ function _M:getRankSaveAdjust()
 	end
 end
 
+function _M:allowedRanks()
+	return { 1, 2, 3, 3.2, 3.5, 4, 5, 10 }
+end
+
 function _M:TextRank()
 	local rank, color = "normal", "#ANTIQUE_WHITE#"
 	if self.rank == 1 then rank, color = "critter", "#C0C0C0#"
@@ -1855,6 +1861,7 @@ function _M:tooltip(x, y, seen_by)
 	ts:add(self.type:capitalize(), " / ", self.subtype:capitalize(), true)
 	ts:add("Rank: ") ts:merge(rank_color:toTString()) ts:add(rank, {"color", "WHITE"}, true)
 	ts:add({"color", 0, 255, 255}, ("Level: %d"):format(self.level), {"color", "WHITE"}, true)
+	if self:attr("invulnerable") then ts:add({"color", "PURPLE"}, "INVULNERABLE!", true) end
 	ts:add({"color", 255, 0, 0}, ("HP: %d (%d%%)"):format(self.life, self.life * 100 / self.max_life), {"color", "WHITE"})
 
 	if self:knowTalent(self.T_SOLIPSISM) then
@@ -1967,6 +1974,15 @@ function _M:tooltip(x, y, seen_by)
 	if config.settings.cheat and self.descriptor and self.descriptor.classes then
 		ts:add("Classes:", table.concat(self.descriptor.classes or {}, ","), true)
 	end
+
+	if self.custom_tooltip then
+		local cts = self:custom_tooltip():toTString()
+		if cts then
+			ts:merge(cts)
+			ts:add(true)
+		end
+	end
+
 	if self.faction and Faction.factions[self.faction] then ts:add("Faction: ") ts:merge(factcolor:toTString()) ts:add(("%s (%s, %d)"):format(Faction.factions[self.faction].name, factstate, factlevel), {"color", "WHITE"}, true) end
 	if game.player ~= self then ts:add("Personal reaction: ") ts:merge(pfactcolor:toTString()) ts:add(("%s, %d"):format(pfactstate, pfactlevel), {"color", "WHITE"} ) end
 
@@ -2843,6 +2859,9 @@ function _M:onTakeHit(value, src, death_note)
 end
 
 function _M:takeHit(value, src, death_note)
+	self:enterCombatStatus(src)
+	if src.enterCombatStatus then src:enterCombatStatus(self) end
+
 	for eid, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eid]
 		if e.damage_feedback then
@@ -3082,12 +3101,7 @@ function _M:die(src, death_note)
 		local rsrc = src:resolveSource()
 		local p = rsrc:isTalentActive(src.T_NECROTIC_AURA)
 		if self.x and self.y and src.x and src.y and core.fov.distance(self.x, self.y, rsrc.x, rsrc.y) <= rsrc.necrotic_aura_radius then
-			rsrc:incSoul(1)
-			if rsrc:attr("extra_soul_chance") and rng.percent(rsrc:attr("extra_soul_chance")) then
-				rsrc:incSoul(1)
-				game.logPlayer(rsrc, "%s rips more animus from its victim. (+1 more soul)", rsrc.name:capitalize())
-			end
-			rsrc.changed = true
+			rsrc:callTalent(rsrc.T_NECROTIC_AURA, "absorbSoul", self)
 		end
 	end
 
@@ -5183,6 +5197,7 @@ local sustainCallbackCheck = {
 	callbackOnMove = "talents_on_move",
 	callbackOnRest = "talents_on_rest",
 	callbackOnWait = "talents_on_wait",
+	callbackOnCombat = "talents_on_combat",
 	callbackOnRun = "talents_on_run",
 	callbackOnLevelup = "talents_on_levelup",
 	callbackOnDeath = "talents_on_death",
@@ -6696,11 +6711,13 @@ end
 function _M:on_temporary_effect_added(eff_id, e, p)
 	self:registerCallbacks(e, eff_id, "effect")
 	self:fireTalentCheck("callbackOnTemporaryEffectAdd", eff_id, e, p)
+	if e.status == "detrimental" then self:enterCombatStatus() end
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
 	self:unregisterCallbacks(e, eff_id)
 	self:fireTalentCheck("callbackOnTemporaryEffectRemove", eff_id, e, p)
+	if e.status == "detrimental" then self:enterCombatStatus() end
 end
 
 --- Called when we are initiating a projection
@@ -7201,4 +7218,66 @@ function _M:findTinkerSpot(tinker)
 		end
 	end)
 	return possible[1].inven, possible[1].item, possible[1].free == 0
+end
+
+function _M:postFOVCombatCheck()
+	if self.fov and self.fov.actors_dist then
+		for i = 1, #self.fov.actors_dist do
+			local act = self.fov.actors_dist[i]
+			if act and act.x and not act.dead and not act.ignore_from_combat_compute and self:reactionToward(act) < 0 then
+				self:enterCombatStatus(act)
+				break
+			end
+		end
+	end
+end
+
+function _M:enterCombatStatus(src)
+	if src and src.ignore_from_combat_compute then return end
+	
+	if not self.in_combat then -- Start combat mode
+		self.in_combat = game.turn
+		self:updateInCombatStatus()
+	else -- Update last turn we started combat mode
+		self.in_combat = game.turn
+	end
+end
+
+function _M:checkStillInCombat()
+	if not self.in_combat then return end -- Not in combat anyway
+	if game.turn - self.in_combat < 50 then return end -- In combat for less than 5 turns, nothing to do
+
+	-- FOV needs no recheck, it's always updating
+
+	-- Damage taken needs no recheck, it's always updating
+
+	-- Damage done needs no recheck, it's always updating
+
+	-- Status effects need rechecking
+	for eff_id, p in pairs(self.tmp) do
+		local e = self:getEffectFromId(eff_id)
+		if e.status == "detrimental" then self:enterCombatStatus() break end
+	end
+
+	if game.turn - self.in_combat < 50 then return end -- Still good?
+
+	-- Ok no more in combat!
+	self.in_combat = nil
+	self:updateInCombatStatus()
+end
+
+function _M:updateInCombatStatus()
+	-- if config.settings.cheat then
+	-- 	if self.in_combat then
+	-- 		game.log("#CRIMSON#--- %s IN COMBAT since %d turns", self.name, (game.turn - self.in_combat) / 10)
+	-- 	else
+	-- 		game.log("#YELLOW#--- %s OUT OF COMBAT", self.name)
+	-- 	end
+	-- end
+
+	if self.in_combat then
+		self:fireTalentCheck("callbackOnCombat", true)
+	else
+		self:fireTalentCheck("callbackOnCombat", false)
+	end
 end

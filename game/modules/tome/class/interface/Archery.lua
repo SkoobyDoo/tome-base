@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,9 +67,14 @@ end
 --		add_speed = add to combat_physspeed for this attack
 -- returns a table of target data containing a list of target spots {x=tx, y=ty, ammo=a.combat}
 --		entries may include main = {}, off = {}, psi = {}
-function _M:archeryAcquireTargets(tg, params)
+function _M:archeryAcquireTargets(tg, params, force)
 	params = params or {}
 	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(params.type)
+
+	if force and force.mainhand then weapon = force.mainhand end
+	if force and force.offhand then offweapon = force.offhand end
+	if force and force.ammo then ammo = force.ammo end
+
 	-- Awesome, we can shoot from our offhand!
 	if not weapon and offweapon then weapon, offweapon = offweapon, nil end -- treat offweapon as primary
 	if not weapon and not pf_weapon then
@@ -660,7 +665,7 @@ end
 _M.archery_projectile = archery_projectile
 
 -- launch projectiles to each spot in the targets list (from archeryAcquireTargets)
-function _M:archeryShoot(targets, talent, tg, params)
+function _M:archeryShoot(targets, talent, tg, params, force)
 	params = params or {}
 	-- some extra safety checks
 	if self:attr("disarmed") then
@@ -668,6 +673,11 @@ function _M:archeryShoot(targets, talent, tg, params)
 		return nil
 	end
 	local weapon, ammo, offweapon, pf_weapon = self:hasArcheryWeapon(params.type)
+
+	if force and force.mainhand then weapon = force.mainhand end
+	if force and force.offhand then offweapon = force.offhand end
+	if force and force.ammo then ammo = force.ammo end
+
 	if not weapon and not pf_weapon then
 		game.logPlayer(self, "You must wield a ranged weapon (%s)!", ammo)
 		return nil

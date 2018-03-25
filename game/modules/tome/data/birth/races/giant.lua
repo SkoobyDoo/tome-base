@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ to start, look where halflings once tinkered with portals...]],
 	talents_types = { ["race/ogre"]={true, 0} },
 	talents = { [ActorTalents.T_OGRE_WRATH]=1 },
 	copy = {
+		subtype = "ogre",
 		moddable_tile = "ogre_#sex#",
 		random_name_def = "shalore_#sex#", random_name_max_syllables = 4,
 		default_wilderness = {"playerpop", "shaloren"},

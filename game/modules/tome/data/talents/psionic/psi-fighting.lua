@@ -27,7 +27,7 @@ newTalent{
 	psi = 10,
 	range = 1,
 	requires_target = true,
-	tactical = { ATTACK = { PHYSICAL = 2 } },
+	tactical = { ATTACK = { PHYSICAL = 2 }, DISABLE = {stun = 2} },
 	is_melee = true,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t)} end,
 	duration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 6)) end,

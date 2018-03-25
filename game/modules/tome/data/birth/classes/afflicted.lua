@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ newBirthDescriptor{
 		["cursed/endless-hunt"]={true, 0.3},
 		["cursed/strife"]={true, 0.3},
 		["cursed/cursed-form"]={true, 0.0},
-		["cursed/unyielding"]={true, 0.0},
+		-- ["cursed/unyielding"]={true, 0.0},
 		["technique/combat-training"]={true, 0.3},
 		["cunning/survival"]={false, 0.0},
 		["cursed/rampage"]={false, 0.0},

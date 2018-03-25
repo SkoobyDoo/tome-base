@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -94,7 +94,10 @@ function _M:unlockShimmer(o)
 	local shimmer_name
 	local unique = nil
 	-- if o.randart or o.rare then return end
-	if o.unique and not o.randart then
+	if o.cosmetic then
+		shimmer_name = o:getName{do_color=true, no_add_name=true, no_image=true, force_id=true}
+		unique = true
+	elseif o.unique and not o.randart then
 		shimmer_name = o:getName{do_color=true, no_add_name=true, no_image=true, force_id=true}
 		unique = true
 	elseif o.__original and not o.__original.randart and not o.__original.rare then

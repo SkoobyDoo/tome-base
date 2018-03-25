@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -144,7 +144,7 @@ newTalent{
 		if self.player then -- prompt the player to pick a new element
 			local state = {}
 			local Chat = require("engine.Chat")
-			local chat = Chat.new("command-staff", {name="Command Staff"}, self, {version=staff, state=state, co=coroutine.running()})
+			local chat = Chat.new("command-staff", {name="Command Staff: "..staff:getName{do_color=true, no_add_name=true}}, self, {version=staff, state=state, co=coroutine.running()})
 			local d = chat:invoke()
 			if not coroutine.yield() then return nil end
 			return true

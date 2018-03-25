@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -2254,6 +2254,7 @@ newEffect{
 		if self.player then engine.Map:setViewerFaction(self.faction) end
 	end,
 	deactivate = function(self, eff)
+		if self.permanent_undead_cloak then return end  -- Make absolutely sure that players can't lose this effect
 		self.faction = self.old_faction_cloak
 		if self.descriptor and self.descriptor.race and self:attr("undead") then self.descriptor.fake_race = nil end
 		if self.descriptor and self.descriptor.subrace and self:attr("undead") then self.descriptor.fake_subrace = nil end
@@ -3035,7 +3036,7 @@ newEffect{
 	type = "other",
 	subtype = { aura=true },
 	status = "neutral",
-	zone_wide_effect = true,
+	zone_wide_effect = false,
 	parameters = {},
 	activate = function(self, eff)
 	end,
@@ -3050,6 +3051,10 @@ newEffect{
 	callbackOnActBase = function(self, eff)
 		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
 		self:hasQuest(eff.id_challenge_quest):check("on_act_base", self)
+	end,
+	callbackOnChangeLevel = function(self, eff)
+		local q = eff.id_challenge_quest and self:hasQuest(eff.id_challenge_quest)
+		if q then q:check("on_exit_level", self) end
 	end,
 }
 

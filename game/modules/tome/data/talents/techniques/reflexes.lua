@@ -136,6 +136,7 @@ newTalent{
 	-- called by _M:attackTarget in mod.class.interface.Combat.lua
 	proc = function(self, t, target)
 		if not rng.percent(t.getChance(self,t)) then return end
+		if target.turn_procs.intuitive_shots == true then return true end  -- If we've proc'd once confirm the deflect but skip the counterattack
 		local old = self.energy.value
 		local weapon, ammo = self:hasArcheryWeapon()
 		if not weapon then return end

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ for x, yy in pairs(grids) do for y, _ in pairs(yy) do
 	end
 	g.always_remember = true
 	g.on_stand_safe = true
+	g:resolve()
 	game.zone:addEntity(game.level, g, "terrain", x, y)
 end end
 print("[EVENT] spellblaze-scar centered at ", x, y)

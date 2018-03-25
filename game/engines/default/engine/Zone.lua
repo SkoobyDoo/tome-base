@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -811,6 +811,7 @@ function _M:load(dynamic)
 		data = dynamic
 		ret = false
 		for k, e in pairs(data) do self[k] = e end
+		self:onLoadZoneFile(false)
 		self:triggerHook{"Zone:create", dynamic=dynamic}
 		if self.on_loaded then self:on_loaded() end
 	else
@@ -994,7 +995,9 @@ function _M:getGenerator(what, level, spots)
 	else
 		local base = require(level.data.generator[what].class)
 		local c = class.inherit(base){}
-		local name = self:getBaseName().."generator"..what:capitalize()..".lua"
+		local append = ""
+		if type(level.data.generator[what].zoneclass) == "string" then append = level.data.generator[what].zoneclass end
+		local name = self:getBaseName().."generator"..what:capitalize()..append..".lua"
 		print("[ZONE] Custom zone generator for "..what.." loading from "..name)
 		local add = loadfile(name)
 		setfenv(add, setmetatable({

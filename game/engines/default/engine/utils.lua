@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -372,6 +372,17 @@ function table.removeFromList(t, ...)
 	end
 end
 
+function table.pairsRemove(t, check)
+	local todel = {}
+	for k, v in pairs(t) do
+		if check(k, v) then todel[#todel+1] = k end
+	end
+	for _, k in ipairs(todel) do
+		t[k] = nil
+	end
+	return #todel
+end
+
 function table.check(t, fct, do_recurse, path)
 	if path and path ~= '' then path = path..'/' else path = '' end
 	do_recurse = do_recurse or function() return true end
@@ -444,6 +455,29 @@ function table.mapv(f, source)
 		result[k] = f(v)
 	end
 	return result
+end
+
+-- Make a new list with each k, v = k, f(v) in the original.
+function table.maplist(f, source)
+	local result = {}
+	for i, v in ipairs(source) do
+		local v2 = f(i, v)
+		if v2 then result[#result+1] = v2 end
+	end
+	return result
+end
+
+-- Make a new list with each k, v = k, f(v) in the original.
+function table.splitlist(f, source)
+	local results = {}
+	for i, v in ipairs(source) do
+		local id, v2 = f(i, v)
+		if id and v2 then
+			results[id] = results[id] or {}
+			table.insert(results[id], v2)
+		end
+	end
+	return results
 end
 
 -- Find the keys that are only in left, only in right, and are common
@@ -998,8 +1032,11 @@ end
 function __get_uid_surface(uid, w, h)
 	uid = tonumber(uid)
 	local e = uid and __uids[uid]
-	if e and game.level then
-		return e:getEntityFinalSurface(game.level.map.tiles, w, h)
+	local tiles
+	if game.level then tiles = game.level.map.tiles
+	else tiles = require("engine.Map").tiles end
+	if e and tiles then
+		return e:getEntityFinalSurface(tiles, w, h)
 	end
 	return nil
 end
@@ -1007,7 +1044,7 @@ end
 function __get_uid_entity(uid)
 	uid = tonumber(uid)
 	local e = uid and __uids[uid]
-	if e and game.level then
+	if e then
 		return e
 	end
 	return nil
@@ -1075,7 +1112,10 @@ getmetatable(tmps).__index.size = function(font, str)
 				local uid = v[2]
 				local e = __uids[uid]
 				if e then
-					local surf = e:getEntityFinalSurface(game.level.map.tiles, font:lineSkip(), font:lineSkip())
+					local tiles
+					if game.level then tiles = game.level.map.tiles
+					else tiles = require("engine.Map").tiles end
+					local surf = e:getEntityFinalSurface(tiles, font:lineSkip(), font:lineSkip())
 					if surf then
 						local w, h = surf:getSize()
 						mw = mw + w
@@ -1108,6 +1148,7 @@ end
 function fs.iterate(path, filter)
 	local list = fs.list(path)
 	if filter then
+		if type(filter) == "string" then local fstr = filter filter = function(f) f:find(fstr) return  end end
 		for i = #list, 1, -1 do if not filter(list[i]) then
 			table.remove(list, i)
 		end end
@@ -1135,7 +1176,7 @@ function fs.getRealPath(path)
 end
 
 function fs.readAll(file)
-	local f = fs:open(file, "r")
+	local f = fs.open(file, "r")
 	if not f then return nil, "file not found" end
 	local data = f:read(10485760)
 	f:close()

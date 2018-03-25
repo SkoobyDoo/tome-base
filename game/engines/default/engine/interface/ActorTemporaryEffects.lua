@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -233,14 +233,18 @@ function _M:removeEffect(eff, silent, force)
 end
 
 --- Copy an effect ensuring temporary values are managed properly
+-- NOTE:	There are some constraints on this.  Temporary value IDs are put in __tmpvals by effectTemporaryValue but *not* by addTemporaryValue, meaning using those will copy the ids
+--			This is usually fine because on_activate will overwrite them immediately but effects can be coded in a way that they will not
+--			For example, an effect that only conditionally creates a tmp id in on_activate then checks if the id exists and removes it if so in on_remove will break on copy
 -- @param eff_id the effect to copy
 -- @return[1] nil
 -- @return[2] the parameters table for the effect
 function _M:copyEffect(eff_id)
 	if not self then return nil end
-	local param = table.clone( self:hasEffect(eff_id) )
+	local param = table.clone( self:hasEffect(eff_id), true )
+	if not param then return end
 	param.__tmpvals = nil
-
+	--param.__tmpparticles = nil
 	return param
 end
 

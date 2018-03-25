@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -169,4 +169,8 @@ savefile_pipe = engine.SavefilePipe.new()
 -- Setup FPS
 core.game.setFPS(config.settings.display_fps)
 
+if config.settings.disable_discord then core.discord = nil end
+if core.discord then core.discord.init() end
+
 util.showMainMenu(true)
+

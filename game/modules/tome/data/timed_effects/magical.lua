@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -2178,7 +2178,7 @@ newEffect{
 	long_desc = function(self, eff)
 		local ghoulify = ""
 		if eff.make_ghoul > 0 then ghoulify = "  If the target dies while ghoul rot is active it will rise as a ghoul." end
-		return ("The target is infected by a disease, reducing its strength by %d, dexterity by %d, constitution by %d, and doing %0.2f blight damage per turn.%s"):format(eff.str, eff.dex, eff.con, eff.dam, ghoulify)
+		return ("The target is infected by a disease doing %0.2f blight damage per turn.%s"):format(eff.dam, ghoulify)
 	end,
 	type = "magical",
 	subtype = {disease=true, blight=true},
@@ -2192,12 +2192,9 @@ newEffect{
 		else DamageType:get(DamageType.BLIGHT).projector(eff.src, self.x, self.y, DamageType.BLIGHT, eff.dam, {from_disease=true})
 		end
 	end,
-	-- Lost of CON
 	activate = function(self, eff)
-		eff.tmpid = self:addTemporaryValue("inc_stats", {[Stats.STAT_STR] = -eff.str, [Stats.STAT_DEX] = -eff.dex, [Stats.STAT_CON] = -eff.con})
 	end,
 	deactivate = function(self, eff)
-		self:removeTemporaryValue("inc_stats", eff.tmpid) eff.tmpid = nil
 	end,
 }
 

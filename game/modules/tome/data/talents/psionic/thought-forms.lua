@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -219,7 +219,7 @@ newTalent{
 				
 				[Talents.T_CRIPPLING_SHOT]= math.ceil(self.level/10),
 				[Talents.T_STEADY_SHOT]= math.ceil(self.level/10),
-				[Talents.T_RAPID_SHOT]= math.ceil(self.level/10),
+				[Talents.T_AIM]= math.ceil(self.level/10),
 				
 				[Talents.T_PSYCHOMETRY]= math.floor(self:getTalentLevel(self.T_TRANSCENDENT_THOUGHT_FORMS)),
 				[Talents.T_BIOFEEDBACK]= math.floor(self:getTalentLevel(self.T_TRANSCENDENT_THOUGHT_FORMS)),

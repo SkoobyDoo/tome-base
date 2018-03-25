@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ newBirthDescriptor{
 		[ActorTalents.T_WARSHOUT_BERSERKER] = 1,
 		[ActorTalents.T_STUNNING_BLOW_ASSAULT] = 1,
 		[ActorTalents.T_WEAPON_COMBAT] = 1,
+		[ActorTalents.T_WEAPONS_MASTERY] = 1,
 		[ActorTalents.T_ARMOUR_TRAINING] = 1,
 	},
 	copy = {

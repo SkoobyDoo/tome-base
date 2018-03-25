@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -723,6 +723,14 @@ With each slow breath it takes reality distorts around it.  Blue twirls into red
 			e.sleep_particle = e:addParticles(engine.Particles.new("generic_shield", 1, {r=0.6, g=1, b=0.6, a=1}))
 		end
 	end),
+
+	custom_tooltip = function(self)
+		if self.dreamer_sleep_state then
+			return tstring{{"color", "LIGHT_BLUE"}, "It looks asleep and dreamy."}
+		else
+			return tstring{{"color", "LIGHT_RED"}, "It looks awake, beware!"}
+		end
+	end,
 
 	-- Spawn Dream Seeds
 	on_act = function(self)

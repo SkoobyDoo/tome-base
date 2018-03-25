@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1944,7 +1944,7 @@ function _M:display(nb_keyframes)
 	self.now = core.game.getTime()
 
 	-- Now the map, if any
-	game:displayMap(nb_keyframes)
+	game:displayMap(nb_keyframes, game.full_fbo)
 
 	if game.creating_player then return end
 	if self.no_ui then return end

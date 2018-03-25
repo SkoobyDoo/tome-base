@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -89,7 +89,8 @@ function _M:generateList()
 	}
 
 	for name, data in pairs(unlocked) do
-		if self.object.type == data.type and self.object.subtype == data.subtype then
+		-- if self.object.type == data.type and self.object.subtype == data.subtype then
+		if self.object.type == data.type then
 			local d = {
 				moddables = table.clone(data.moddables, true),
 				name = name,

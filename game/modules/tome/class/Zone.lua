@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -56,14 +56,14 @@ end)
 --- Called when the zone file is loaded
 function _M:onLoadZoneFile(basedir)
 	-- Load events if they exist
-	if fs.exists(basedir.."events.lua") then
+	if basedir and fs.exists(basedir.."events.lua") then
 		local f = loadfile(basedir.."events.lua")
 		setfenv(f, setmetatable({self=self}, {__index=_G}))
 		self.events = f()
 
 		self:triggerHook{"Zone:loadEvents", zone=self.short_name, events=self.events}
 	else
-		local evts = {}
+		local evts = self.events or {}
 		self:triggerHook{"Zone:loadEvents", zone=self.short_name, events=evts}
 		if next(evts) then self.events = evts end
 	end

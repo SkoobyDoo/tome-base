@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ local function intro(o)
 		telos = [[You really could have chosen a better home for me, you know. I was reasonably happy in my old crystal. This stick smells like armpit.]],
 		telos_full = [[Tremble before the might of Telos!]],
 	}
+	cur_chat:triggerHook{"CommandStaff:SentientOptions", o=o, mode="intro", list=sentient_responses}
 	if o.no_command then
 		return [[It is not yet your place to command such a staff as this. To do so invites obliteration.]]
 	end
@@ -70,6 +71,7 @@ local function how_speak(o)
 		telos = [[What's the good of immortality if you can't even speak? No archmage worth his salt is going to concoct some immoral life-after-death scheme without including some sort of capacity for making his opinions known. And, by the way, your energy manipulation techniques are on the same level as those of my average pair of shoes. Best study up if you don't want to die forgotten and incompetent.]],
 		telos_full = [[What's the good of immortality if you can't even speak? No archmage worth his salt is going to concoct some immoral life-after-death scheme without including some sort of capacity for making his opinions known. And, by the way, your energy manipulation techniques are on the same level as those of my average pair of shoes. Best study up if you don't want to die forgotten and incompetent.]],
 	}
+	class:triggerHook{"CommandStaff:SentientOptions", o=o, mode="how_speak", list=sentient_responses}
 	return sentient_responses[o.combat.sentient] or sentient_responses["default"]
 end
 
@@ -83,6 +85,7 @@ local function which_aspect(o)
 		telos = [[Back in my day, we didn't need to go changing our staves around willy-nilly. We picked an element and stuck with it, by the gods.]],
 		telos_full = [[Back in my day, we didn't need to go changing our staves around willy-nilly. We picked an element and stuck with it, by the gods.]],
 	}
+	class:triggerHook{"CommandStaff:SentientOptions", o=o, mode="which_aspect", list=sentient_responses}
 	return sentient_responses[o.combat.sentient] or sentient_responses["default"]
 end
 
@@ -93,6 +96,7 @@ local function alter_combat(o)
 		default = [[Certainly. You should be impressed, by the way, that I can do such a thing. Most lesser practitioners of my art would have difficulties with this. What shall I change?]],
 		aggressive = [[Fine, as long as it leads to blasting something soon. What do you want me to change?]],
 	}
+	class:triggerHook{"CommandStaff:SentientOptions", o=o, mode="alter_combat", list=sentient_responses}
 	return sentient_responses[o.combat.sentient] or sentient_responses["default"]
 end
 
@@ -152,21 +156,25 @@ end
 aspect_answers[#aspect_answers + 1] = {"Never mind."}
 
 if is_sentient() then
+	local answers = {
+		{"How is it that you speak?", cond = function() return is_sentient() and not o.no_command end, jump="how_speak"},
+		{"I'd like you to bring forth a different aspect.", cond = function() return is_sentient() and not o.no_command end, jump="which_aspect"},
+		{"I'd like to alter your basic properties.", cond = function() return is_sentient() and not o.no_command end, 
+			action = function()
+				coroutine.resume(co, true)
+				local SentientWeapon = require "mod.dialogs.SentientWeapon"
+				local ds = SentientWeapon.new({actor=game.player, o=o})
+				game:registerDialog(ds)
+			end,
+		},
+	}
+
+	cur_chat:triggerHook{"CommandStaff:SentientChat", o=o, answers=answers}
+	answers[#answers+1] = {"Never mind."}
+
 	newChat{ id="welcome",
 		text = intro(o),
-			answers = {
-			{"How is it that you speak?", cond = function() return is_sentient() and not o.no_command end, jump="how_speak"},
-			{"I'd like you to bring forth a different aspect.", cond = function() return is_sentient() and not o.no_command end, jump="which_aspect"},
-			{"I'd like to alter your basic properties.", cond = function() return is_sentient() and not o.no_command end, 
-				action = function()
-					coroutine.resume(co, true)
-					local SentientWeapon = require "mod.dialogs.SentientWeapon"
-					local ds = SentientWeapon.new({actor=game.player, o=o})
-					game:registerDialog(ds)
-				end,
-			},
-			{"Never mind."},
-		}
+		answers = answers,
 	}
 	newChat{ id="which_aspect",
 		text = which_aspect(o),

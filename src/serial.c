@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2017 Nicolas Casalini
+    Copyright (C) 2009 - 2018 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -297,6 +297,9 @@ static int serial_free(lua_State *L)
 	serial_type *s = (serial_type*)auxiliar_checkclass(L, "core{serial}", 1);
 	luaL_unref(L, LUA_REGISTRYINDEX, s->fname);
 	luaL_unref(L, LUA_REGISTRYINDEX, s->fadd);
+	luaL_unref(L, LUA_REGISTRYINDEX, s->allow);
+	luaL_unref(L, LUA_REGISTRYINDEX, s->disallow);
+	luaL_unref(L, LUA_REGISTRYINDEX, s->disallow2);
 	lua_pushnumber(L, 1);
 	return 1;
 }

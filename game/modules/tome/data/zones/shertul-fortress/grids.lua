@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -225,7 +225,7 @@ newEntity{
 	block_move = function(self, x, y, e, act, couldpass)
 		if e and e.player and act then
 			local nb = 0
-			if profile.mod.lore then for lore, _ in pairs(profile.mod.lore.lore) do nb = nb + 1 end end
+			if profile.mod.lore then for lore, _ in pairs(profile.mod.lore.lore) do if game.party:isLoreShareable(lore) then nb = nb + 1 end end end
 
 			local popup = require("engine.ui.Dialog"):simpleWaiter("Yiilkgur's Library of Lost Mysteries", "Receiving the lost knowledge of the universe...", nil, nil, nb)
 			core.wait.enableManualTick(true)
@@ -234,8 +234,10 @@ newEntity{
 			profile:setConfigsBatch(true)
 			if profile.mod.lore and profile.mod.lore.lore then
 				for lore, _ in pairs(profile.mod.lore.lore) do
-					game.party:learnLore(lore, true, true)
-					core.wait.manualTick(1)
+					if game.party:isLoreShareable(lore) then
+						game.party:learnLore(lore, true, true)
+						core.wait.manualTick(1)
+					end
 				end
 			end
 			profile:setConfigsBatch(false)

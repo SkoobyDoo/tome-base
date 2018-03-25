@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -487,10 +487,7 @@ function _M:attackTargetWith(target, weapon, damtype, mult, force_dam)
 	
 	if target:isTalentActive(target.T_INTUITIVE_SHOTS) then
 		local chance = target:callTalent(target.T_INTUITIVE_SHOTS, "getChance")
-		self.turn_procs.intuitive_shots = self.turn_procs.intuitive_shots or target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
-		if self.turn_procs.intuitive_shots == true then
-			repelled = true
-		end
+		repelled = target:callTalent(target.T_INTUITIVE_SHOTS, "proc", self)
 	end
 
 	-- Dwarves stoneskin
@@ -1675,9 +1672,10 @@ function _M:combatDamage(weapon, adddammod, damage)
 	end
 	if self:knowTalent(self["T_FORM_AND_FUNCTION"]) then totstat = totstat + self:callTalent(self["T_FORM_AND_FUNCTION"], "getDamBoost", weapon) end
 	local talented_mod = 1 + self:combatTrainingPercentInc(weapon)
+	if talented_mod > 1 then totstat = totstat + 30 end -- This is horrible, but its to prevent the +30 constant put in to help keep the weapon damage changes symmetric from effecting things without a mastery
 	local power = self:combatDamagePower(damage or weapon, totstat)
-	local phys = self:combatPhysicalpower(nil, weapon, totstat + 30)
-	return self:rescaleDamage(0.3 * phys * power * talented_mod) * 0.9
+	local phys = self:combatPhysicalpower(nil, weapon, totstat)
+	return 0.3 * phys * power * talented_mod
 end
 
 --- Gets the 'power' portion of the damage

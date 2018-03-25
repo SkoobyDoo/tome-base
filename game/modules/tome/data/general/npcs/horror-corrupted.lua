@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,8 +43,9 @@ newEntity{
 
 newEntity{ base = "BASE_NPC_CORRUPTED_HORROR",
 	dredge = 1,
-	name = "dremling", color=colors.SLATE,
+	name = "drem", color=colors.SLATE,
 	desc = "A small faceless humanoid with vaguely Dwarven features.  Its waraxe and shield look battered, rusted, and generally in ill repair.",
+	image = "npc/horror_corrupted_dremling.png",
 	level_range = {1, nil}, exp_worth = 1,
 
 	combat = { atk=6, dammod={str=0.6} },
@@ -77,7 +78,7 @@ newEntity{ base = "BASE_NPC_CORRUPTED_HORROR",
 
 newEntity{ base = "BASE_NPC_CORRUPTED_HORROR",
 	dredge = 1,
-	name = "drem", color=colors.DARK_SLATE_GRAY,
+	name = "dremling", color=colors.DARK_SLATE_GRAY,
 	resolvers.nice_tile{image="invis.png", add_mos = {{image="npc/horror_corrupted_drem.png", display_h=2, display_y=-1}}},
 	desc = "A giant black-skinned humanoid covered in spikey scabrous deposits.  Its face is featureless; its eyesockets, empty and hollow.",
 	level_range = {3, nil}, exp_worth = 1,

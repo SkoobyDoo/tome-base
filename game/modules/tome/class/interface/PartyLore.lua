@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -67,6 +67,13 @@ end
 function _M:knownLore(lore)
 	self.lore_known = self.lore_known or {}
 	return self.lore_known[lore] and true or false
+end
+
+function _M:isLoreShareable(lore)
+	local l = self.lore_defs[lore] or self.additional_lore[lore]
+	if not l then return false end
+	if l.not_shareable then return false end
+	return true
 end
 
 function _M:getLore(lore, silent)

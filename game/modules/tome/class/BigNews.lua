@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ end
 
 function _M:easing(time, easing, txt, ...)
 	self:easingSimple(time, easing, txt, ...)
-	game.logPlayer(game.player, "%s", txt:toString())
+	game.logPlayer(game.player, txt, ...)
 end
 
 function _M:saySimple(time, txt, ...)

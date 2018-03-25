@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -363,7 +363,7 @@ newTalent{
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, damtype, dam, tmp)
 		local ff = self:isTalentActive(t.id)
-		if not ff then return dam end
+		if not ff then return {dam=dam} end
 		local total_dam = dam
 		local absorbable_dam = t.getResist(self,t) / 100 * total_dam
 		local guaranteed_dam = total_dam - absorbable_dam

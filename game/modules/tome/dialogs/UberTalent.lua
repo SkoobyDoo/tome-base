@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -122,12 +122,12 @@ end
 -- UI Stuff
 -----------------------------------------------------------------
 
-local tuttext = [[Prodigies are special talents that only the most powerful of characters can attain.
+_M.tuttext = [[Prodigies are special talents that only the most powerful of characters can attain.
 All of them require at least 50 in a core stat and many also have more special demands. You can learn a new prodigy at level 30 and 42.
 #LIGHT_GREEN#Prodigies available: %d]]
 
 function _M:createDisplay()
-	self.c_tut = Textzone.new{ width=self.iw, auto_height = true, text=tuttext:format(self.actor.unused_prodigies or 0)}
+	self.c_tut = Textzone.new{ width=self.iw, auto_height = true, text=self.tuttext:format(self.actor.unused_prodigies or 0)}
 	
 	local vsep = Separator.new{dir="horizontal", size=self.ih - 20 - self.c_tut.h}
 	self.c_desc = TextzoneList.new{ focus_check = true, scrollbar = true, pingpong = 20, width=self.iw - 370 - vsep.w - 20, height = self.ih - self.c_tut.h, dest_area = { h = self.ih - self.c_tut.h } }
@@ -165,14 +165,14 @@ function _M:use(item)
 	elseif self.levelup_end_prodigies[item.talent] then
 		self.levelup_end_prodigies[item.talent] = false
 		self.actor.unused_prodigies = self.actor.unused_prodigies + 1
-		self.c_tut.text = tuttext:format(self.actor.unused_prodigies or 0)
+		self.c_tut.text = self.tuttext:format(self.actor.unused_prodigies or 0)
 		self.c_tut:generate()
 	elseif (self.actor:canLearnTalent(self.actor:getTalentFromId(item.talent)) and self.actor.unused_prodigies > 0) or config.settings.cheat then
 		if not self.levelup_end_prodigies[item.talent] then
 			self.levelup_end_prodigies[item.talent] = true
 			self.actor.unused_prodigies = math.max(0, self.actor.unused_prodigies - 1)
 		end
-		self.c_tut.text = tuttext:format(self.actor.unused_prodigies or 0)
+		self.c_tut.text = self.tuttext:format(self.actor.unused_prodigies or 0)
 		self.c_tut:generate()
 	else
 	end

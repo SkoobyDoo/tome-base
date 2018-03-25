@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -38,11 +38,12 @@ local function doclone(g, full)
 	return g
 end
 
-function _M:getTile(name)
+function _M:getTile(name, baseid)
 	if not name then return end
 
 	if type(name) == "table" then
 		local n = name[1]
+		if type(n) == "table" then n = n[baseid] end
 		if rng.percent(name[2]) then n = n..rng.range(name[3], name[4]) end
 		name = n
 	end
@@ -658,6 +659,23 @@ end
 --- Randomize tiles
 function _M:niceTileReplace(level, i, j, g, nt)
 	self:replace(i, j, self:getTile(nt.base))
+end
+
+function _M:niceTileReplaceVisible(level, i, j, g, nt)
+	local g8 = not level.map:checkEntity(i, j-1, Map.TERRAIN, "block_sight")
+	local g2 = not level.map:checkEntity(i, j+1, Map.TERRAIN, "block_sight")
+	local g4 = not level.map:checkEntity(i-1, j, Map.TERRAIN, "block_sight")
+	local g6 = not level.map:checkEntity(i+1, j, Map.TERRAIN, "block_sight")
+	local g7 = not level.map:checkEntity(i-1, j-1, Map.TERRAIN, "block_sight")
+	local g9 = not level.map:checkEntity(i+1, j-1, Map.TERRAIN, "block_sight")
+	local g1 = not level.map:checkEntity(i-1, j+1, Map.TERRAIN, "block_sight")
+	local g3 = not level.map:checkEntity(i+1, j+1, Map.TERRAIN, "block_sight")
+
+	if g1 or g2 or g3 or g4 or g6 or g7 or g8 or g9 then
+		self:replace(i, j, self:getTile(nt.base, 2))
+	else
+		self:replace(i, j, self:getTile(nt.base, 1))
+	end
 end
 
 
