@@ -88,6 +88,16 @@ function _M:generate(lev, old_lev)
 	-- return self:makeStairsInside(lev, old_lev, self.spots)
 end
 
+function _M:addSpot(x, y, type, subtype, data)
+	data = data or {}
+	-- Tilemap uses 1 based indexes
+	data.x = x - 1
+	data.y = y - 1
+	data.type = type
+	data.subtype = subtype
+	self.spots[#self.spots+1] = data
+end
+
 --- Create the stairs inside the level
 function _M:makeStairsInside(lev, old_lev, spots)
 	-- Put down stairs
