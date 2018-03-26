@@ -59,6 +59,7 @@ if wfcinner:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] inner
 tm:merge(1, 1, wfcouter, merge_order)
 tm:merge(self.mapsize.w - wfcinner.data_w, 2, wfcinner, merge_order)
 
+-- Place the doorway and tunnel from it to the dungeon part on the right
 local doorwaypos = tm:point(self.mapsize.w / 3, (self.mapsize.h - doorway.data_h) / 2)
 tm:merge(doorwaypos.x, doorwaypos.y, doorway)
 tm:carveLinearPath('.', doorwaytunnel + doorwaypos, 6, '.')
