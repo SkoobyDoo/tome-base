@@ -33,8 +33,8 @@ module(..., package.seeall, class.inherit(Tilemap))
 function _M:init(t)
 	assert(t.mode == "overlapping", "bad WaveFunctionCollapse mode")
 	assert(t.size, "WaveFunctionCollapse has no size")
-	self.data_w = t.size[1]
-	self.data_h = t.size[2]
+	self.data_w = math.floor(t.size[1])
+	self.data_h = math.floor(t.size[2])
 	if t.mode == "overlapping" then
 		if type(t.sample) == "string" then
 			t.sample = self:collapseToLineFormat(self:tmxLoad(t.sample))

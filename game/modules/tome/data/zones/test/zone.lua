@@ -29,6 +29,7 @@ return {
 	all_lited = true,
 	no_level_connectivity = true,
 	
+	nicer_tiler_overlay = "DungeonWallsGrass",
 --	events_by_level = true,
 --	_max_level_generation_count = 2,
 	
@@ -38,7 +39,7 @@ return {
 			class = "engine.generator.map.MapScript",
 			['<'] = "UP", ['>'] = "DOWN",
 			['.'] = "FLOOR", ['+'] = "DOOR", ['#'] = "WALL",
-			['_'] = "OLD_FLOOR", ['O'] = "OLD_WALL", 
+			['_'] = "FLOOR", ['O'] = "WALL", 
 			[';'] = "GRASS", ['T'] = "TREE",
 			['='] = "DEEP_WATER",
 			mapscript = "!inner_outer",

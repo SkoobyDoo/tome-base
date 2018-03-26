@@ -18,8 +18,9 @@
 -- darkgod@te4.org
 
 local Tilemap = require "engine.tilemaps.Tilemap"
+local Static = require "engine.tilemaps.Static"
 local WaveFunctionCollapse = require "engine.tilemaps.WaveFunctionCollapse"
-local merge_order = {'.', '_', 'r', '+', '#', 'O', '=', ';', 'T'}
+local merge_order = {'.', '_', 'r', '+', '#', 'O', ';', '=', 'T'}
 
 -- Water & trees layer
 local wfcwater = WaveFunctionCollapse.new{
@@ -39,12 +40,16 @@ local wfcouter = WaveFunctionCollapse.new{
 local wfcinner = WaveFunctionCollapse.new{
 	mode="overlapping", async=true,
 	sample=self:getFile("!wfctest4.tmx", "samples"),
-	size={self.mapsize.w*2/3, self.mapsize.h},
+	size={self.mapsize.w/2, self.mapsize.h-2},
 	n=3, symmetry=8, periodic_out=false, periodic_in=false, has_foundation=false
 }
 
 -- Wait for all generators to finish
 if not WaveFunctionCollapse:waitAll(wfcinner, wfcwater, wfcouter) then print("[inner_outer] a WFC failed") return self:regenerate() end
+
+-- Load predrawn stuff
+local doorway = Static.new(self:getFile("!door.tmx", "samples"))
+local doorwaytunnel = doorway:locateTile('E', '.')
 
 -- Merge them all
 local tm = Tilemap.new(self.mapsize)
@@ -52,7 +57,11 @@ wfcouter:merge(1, 1, wfcwater, merge_order)
 if wfcouter:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] outer is too small") return self:regenerate() end
 if wfcinner:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] inner is too small") return self:regenerate() end
 tm:merge(1, 1, wfcouter, merge_order)
-tm:merge(self.mapsize.w - wfcinner.data_w, 1, wfcinner, merge_order)
+tm:merge(self.mapsize.w - wfcinner.data_w, 2, wfcinner, merge_order)
+
+local doorwaypos = tm:point(self.mapsize.w / 3, (self.mapsize.h - doorway.data_h) / 2)
+tm:merge(doorwaypos.x, doorwaypos.y, doorway)
+tm:carveLinearPath('.', doorwaytunnel + doorwaypos, 6, '.')
 
 -- Find rooms
 local rooms = tm:findGroupsOf{'r'}
@@ -64,9 +73,11 @@ tm:applyOnGroups(rooms, function(w, h, data, room, idx)
 	end
 end)
 tm:fillAll('.', 'r')
+
+-- Complete the map by putting wall in all the remaining blank spaces
 tm:fillAll()
 
 -- Elimitate the rest
 if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
-tm:printResult()
+-- tm:printResult()
 return tm:getResult(true)

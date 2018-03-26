@@ -22,7 +22,7 @@ local Map = require "engine.Map"
 local RoomsLoader = require "engine.generator.map.RoomsLoader"
 require "engine.Generator"
 
---- @classmod engine.generator.map.FromCustom
+--- @classmod engine.generator.map.MapScript
 module(..., package.seeall, class.inherit(engine.Generator, RoomsLoader))
 
 function _M:init(zone, map, level, data)
@@ -70,11 +70,11 @@ function _M:custom(lev, old_lev)
 	if self.data.custom then
 		return self.data.custom(self, lev, old_lev)
 	end
-	error("Generator FromCustom called without customization!")
+	error("Generator MapScript called without customization!")
 end
 
 function _M:generate(lev, old_lev)
-	print("Generating FromCustom")
+	print("Generating MapScript")
 	self.force_regen = false
 	local data = self:custom(lev, old_lev)
 	if self.force_regen then return self:generate(lev, old_lev) end
@@ -84,7 +84,8 @@ function _M:generate(lev, old_lev)
 		end
 	end
 
-	return self:makeStairsInside(lev, old_lev, self.spots)
+	return self:makeStairsSides(lev, old_lev, {4,6},self.spots)
+	-- return self:makeStairsInside(lev, old_lev, self.spots)
 end
 
 --- Create the stairs inside the level
@@ -110,6 +111,53 @@ function _M:makeStairsInside(lev, old_lev, spots)
 			self.map(ux, uy, Map.TERRAIN, self:resolve("<"))
 			self.map.room_map[ux][uy].special = "exit"
 			break
+		end
+	end
+
+	return ux, uy, dx, dy, spots
+end
+
+--- Create the stairs on the sides
+function _M:makeStairsSides(lev, old_lev, sides, spots)
+	-- Put down stairs
+	local dx, dy
+	if self.forced_down then
+		dx, dy = self.forced_down.x, self.forced_down.y
+	else
+		if lev < self.zone.max_level or self.data.force_last_stair then
+			while true do
+				if     sides[2] == 4 then dx, dy = 0, rng.range(0, self.map.h - 1)
+				elseif sides[2] == 6 then dx, dy = self.map.w - 1, rng.range(0, self.map.h - 1)
+				elseif sides[2] == 8 then dx, dy = rng.range(0, self.map.w - 1), 0
+				elseif sides[2] == 2 then dx, dy = rng.range(0, self.map.w - 1), self.map.h - 1
+				end
+
+				if not self.map.room_map[dx][dy].special then
+					self.map(dx, dy, Map.TERRAIN, self:resolve("down"))
+					self.map.room_map[dx][dy].special = "exit"
+					break
+				end
+			end
+		end
+	end
+
+	-- Put up stairs
+	local ux, uy
+	if self.forced_up then
+		ux, uy = self.forced_up.x, self.forced_up.y
+	else
+		while true do
+			if     sides[1] == 4 then ux, uy = 0, rng.range(0, self.map.h - 1)
+			elseif sides[1] == 6 then ux, uy = self.map.w - 1, rng.range(0, self.map.h - 1)
+			elseif sides[1] == 8 then ux, uy = rng.range(0, self.map.w - 1), 0
+			elseif sides[1] == 2 then ux, uy = rng.range(0, self.map.w - 1), self.map.h - 1
+			end
+
+			if not self.map.room_map[ux][uy].special then
+				self.map(ux, uy, Map.TERRAIN, self:resolve("up"))
+				self.map.room_map[ux][uy].special = "exit"
+				break
+			end
 		end
 	end
 

@@ -27,8 +27,8 @@ module(..., package.seeall, class.make)
 
 function _M:init(size, fill_with)
 	if size then
-		self.data_w = size[1]
-		self.data_h = size[2]
+		self.data_w = math.floor(size[1])
+		self.data_h = math.floor(size[2])
 		if self.data_w and self.data_h then
 			self.data = self:makeData(self.data_w, self.data_h, fill_with or ' ')
 		end
@@ -44,6 +44,21 @@ function _M:makeData(w, h, fill_with)
 		end
 	end
 	return data
+end
+
+local point_meta = {
+	__add = function(a, b)
+		return _M:point(a.x + b.x, a.y + b.y)
+	end,
+	__sub = function(a, b)
+		return _M:point(a.x + b.x, a.y + b.y)
+	end,
+}
+--- Make a point data, can be added
+function _M:point(x, y)
+	local p = {x=math.floor(x), y=math.floor(y)}
+	setmetatable(p, point_meta)
+	return p
 end
 
 --- Find all empty spaces (defaults to ' ') and fill them with a give char
@@ -149,6 +164,21 @@ end
 --- Do we have results, or did we fail?
 function _M:hasResult()
 	return self.data and true or false
+end
+
+--- Locate a specific tile
+function _M:locateTile(char, erase)
+	local res = {}
+	for i = 1, self.data_w do
+		for j = 1, self.data_h do
+			if self.data[j][i] == char then
+				res[#res+1] = self:point(i, j)
+				if erase then self.data[j][i] = erase end
+			end
+		end
+	end
+	if #res == 0 then return nil end
+	return rng.table(res), res
 end
 
 --- Return a list of groups of tiles that matches the given cond function
@@ -392,6 +422,16 @@ function _M:groupOuterRectangle(group)
 	-- end end
 
 	return {x1=x1, y1=y1, x2=x2, y2=y2, w=x2 - x1 + 1, h=y2 - y1 + 1}
+end
+
+--- Carve out a simple linear path from coords until a tile is reached
+function _M:carveLinearPath(char, from, dir, stop_at)
+	local x, y = from.x, from.y
+	local dx, dy = util.dirToCoord(dir)
+	while x >= 1 and x <= self.data_w and y >= 1 and y <= self.data_h and self.data[y][x] ~= stop_at do
+		self.data[y][x] = char
+		x, y = x + dx, y + dy
+	end
 end
 
 --- Get the results
