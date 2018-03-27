@@ -108,6 +108,9 @@ _M.temporary_values_conf.force_melee_damtype = "last"
 -- AI
 _M.temporary_values_conf.ai_move = "last"
 
+-- Misc
+_M.temporary_values_conf.death_dialog = "last"
+
 _M.projectile_class = "mod.class.Projectile"
 
 function _M:init(t, no_default)
