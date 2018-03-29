@@ -348,12 +348,6 @@ static int map_set_z_callback(lua_State *L) {
 	return 0;
 }
 
-static int map_set_sort_start(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	map->setZSortStart(lua_tonumber(L, 2));
-	return 0;
-}
-
 
 static int map_set_tint(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
@@ -601,7 +595,6 @@ static const struct luaL_Reg maplib[] = {
 static const struct luaL_Reg map_reg[] = {
 	{"__gc", map_free},
 	{"close", map_free},
-	{"setSortStart", map_set_sort_start},
 	{"setZoom", map_set_zoom},
 	{"setTint", map_set_tint},
 	{"setShown", map_set_shown},

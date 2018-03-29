@@ -88,7 +88,7 @@ configuration "Debug"
 	targetdir "bin/Debug"
 	if _OPTIONS.luaassert then defines {"LUA_USE_APICHECK", "LUA_USE_ASSERT"} end
 	if _OPTIONS.pedantic then buildoptions { "-Wall" } end
-	defines {"TE4_LUA_ALLOW_GENERIC_IO", "LUAJIT_USE_VALGRIND" }
+	defines {"TE4_LUA_ALLOW_GENERIC_IO" }
 	if _OPTIONS.force32bits then
 		defines {"LUAJIT_USE_SYSMALLOC"}
 		configuration "linux"
