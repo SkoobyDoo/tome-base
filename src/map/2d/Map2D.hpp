@@ -87,6 +87,9 @@ class MapObjectProcessor;
 
 using ParticlesVector = vector<tuple<DORParticles*,int>>;
 using sMapObject = shared_ptr<MapObject>;
+using sMapObject = shared_ptr<MapObject>;
+using sMap2D = shared_ptr<Map2D>;
+using sMinimap2D = shared_ptr<Minimap2D>;
 
 
 /****************************************************************************
@@ -313,7 +316,7 @@ public:
 
 	/* Compute visuals */
 	void computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j);
-	vec2 computeScrollAnim(float nb_keyframes);
+	bool computeScrollAnim(float nb_keyframes);
 
 	/* Vision handling */
 	void setVisionShader(shader_type *s, int ref);

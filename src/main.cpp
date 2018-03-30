@@ -822,6 +822,7 @@ void setupDisplayTimer(int fps)
 		max_ms_per_frame = 1000 / fps;
 		printf("[ENGINE] Setting requested FPS to %d (%d ms)\n", fps, 1000 / fps);
 	} else {
+		max_ms_per_frame = 0;
 		printf("[ENGINE] Setting requested FPS to unbound\n");
 	}
 }
@@ -1539,7 +1540,7 @@ int main(int argc, char *argv[])
 						SDL_SetModState(KMOD_NONE);
 						/* break from idle */
 						//printf("[EVENT HANDLER]: Got a SHOW/FOCUS_GAINED event, restoring full FPS.\n");
-						handleIdleTransition(0);
+						// handleIdleTransition(0);
 						break;
 
 					case SDL_WINDOWEVENT_HIDDEN:
@@ -1547,7 +1548,7 @@ int main(int argc, char *argv[])
 						/* go idle */
 						SDL_SetModState(KMOD_NONE);
 						//printf("[EVENT HANDLER]: Got a HIDDEN/FOCUS_LOST event, going idle.\n");
-						handleIdleTransition(1);
+						// handleIdleTransition(1);
 						break;
 					default:
 						break;

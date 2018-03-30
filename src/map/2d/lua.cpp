@@ -306,40 +306,38 @@ static int map_new(lua_State *L) {
 	int tile_h = luaL_checknumber(L, 8);
 	int zdepth = luaL_checknumber(L, 9);
 
-	Map2D **pmap = (Map2D**)lua_newuserdata(L, sizeof(Map2D*));
-	auxiliar_setclass(L, "core{map2d}", -1);
-	*pmap = new Map2D(zdepth, w, h, tile_w, tile_h, mwidth, mheight);
+	lua_make_sobj(L, "core{map2d}", new Map2D(zdepth, w, h, tile_w, tile_h, mwidth, mheight));
 	return 1;
 }
 
 static int map_free(lua_State *L) {
-	Map2D **map = (Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
-	delete *map;
+	auto map = lua_get_sobj_ptr<Map2D>(L, "core{map2d}", 1);
+	delete map;
 
 	lua_pushnumber(L, 1);
 	return 1;
 }
 
 static int map_show_vision(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->enableVision(lua_toboolean(L, 2));
 	return 0;
 }
 
 static int map_smooth_vision(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->smoothVision(lua_toboolean(L, 2));
 	return 0;
 }
 
 static int map_define_grid_lines(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->enableGridLines(luaL_checknumber(L, 2));
 	return 0;
 }
 
 static int map_set_z_callback(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	int32_t z = luaL_checknumber(L, 2);
 	if (lua_isfunction(L, 3)) {
 		lua_pushvalue(L, 3);
@@ -350,13 +348,13 @@ static int map_set_z_callback(lua_State *L) {
 
 
 static int map_set_tint(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->setTint({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5)});
 	return 0;
 }
 
 static int map_set_zoom(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	// int tile_w = luaL_checknumber(L, 2);
 	// int tile_h = luaL_checknumber(L, 3);
 	// int mwidth = luaL_checknumber(L, 4);
@@ -371,7 +369,7 @@ static int map_set_zoom(lua_State *L) {
 }
 
 static int map_set_vision_shader(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	if (!lua_isnil(L, 2)) {
 		shader_type *s = (shader_type*)lua_touserdata(L, 2);
 		lua_pushvalue(L, 2);
@@ -384,7 +382,7 @@ static int map_set_vision_shader(lua_State *L) {
 }
 
 static int map_set_grid_lines_shader(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	if (!lua_isnil(L, 2)) {
 		shader_type *s = (shader_type*)lua_touserdata(L, 2);
 		lua_pushvalue(L, 2);
@@ -396,7 +394,7 @@ static int map_set_grid_lines_shader(lua_State *L) {
 }
 
 static int map_set_default_shader(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	if (!lua_isnil(L, 2)) {
 		shader_type *s = (shader_type*)lua_touserdata(L, 2);
 		lua_pushvalue(L, 2);
@@ -408,19 +406,19 @@ static int map_set_default_shader(lua_State *L) {
 }
 
 static int map_set_obscure(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->setObscure({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5)});
 	return 0;
 }
 
 static int map_set_shown(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->setShown({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5)});
 	return 0;
 }
 
 static int map_set_grid(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	uint32_t x = luaL_checknumber(L, 2);
 	uint32_t y = luaL_checknumber(L, 3);
 	vec2 size = map->getSize();
@@ -443,7 +441,7 @@ static int map_set_grid(lua_State *L) {
 }
 
 static int map_set_seen(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
 	float v = lua_tonumber(L, 4);
@@ -453,7 +451,7 @@ static int map_set_seen(lua_State *L) {
 }
 
 static int map_set_remember(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
 	bool v = lua_toboolean(L, 4);
@@ -463,7 +461,7 @@ static int map_set_remember(lua_State *L) {
 }
 
 static int map_set_lite(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
 	bool v = lua_toboolean(L, 4);
@@ -473,7 +471,7 @@ static int map_set_lite(lua_State *L) {
 }
 
 static int map_set_important(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	int x = lua_tonumber(L, 2);
 	int y = lua_tonumber(L, 3);
 	bool v = lua_toboolean(L, 4);
@@ -483,25 +481,25 @@ static int map_set_important(lua_State *L) {
 }
 
 static int map_clean_seen(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->cleanSeen(0);
 	return 0;
 }
 
 static int map_clean_remember(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->cleanRemember(0);
 	return 0;
 }
 
 static int map_clean_lite(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	map->cleanLite(0);
 	return 0;
 }
 
 static int map_set_scroll(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	int x = luaL_checknumber(L, 2);
 	int y = luaL_checknumber(L, 3);
 	int smooth = luaL_checknumber(L, 4);
@@ -510,7 +508,7 @@ static int map_set_scroll(lua_State *L) {
 }
 
 static int map_get_scroll(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 	vec2 s = map->getScroll();
 	lua_pushnumber(L, s.x);
 	lua_pushnumber(L, s.y);
@@ -518,7 +516,7 @@ static int map_get_scroll(lua_State *L) {
 }
 
 static int lua_map_toscreen(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 
 	mat4 model = mat4();
 	model = glm::translate(model, glm::vec3(lua_tonumber(L, 2), lua_tonumber(L, 3), 0));
@@ -528,7 +526,7 @@ static int lua_map_toscreen(lua_State *L) {
 }
 
 static int map_get_display_object_mm(lua_State *L) {
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 1);
 
 	Minimap2D *tm = new Minimap2D();
 
@@ -569,7 +567,7 @@ static int gl_minimap2d_free(lua_State *L) {
 }
 static int gl_minimap2d_setmap(lua_State *L) {
 	Minimap2D *mor = *(Minimap2D**)auxiliar_checkclass(L, "gl{minimap2d}", 1);
-	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 2);
+	auto map = lua_get_sobj_get<Map2D>(L, "core{map2d}", 2);
 	mor->setMap(map);
 	lua_pushvalue(L, 1);
 	return 1;

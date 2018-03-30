@@ -179,7 +179,7 @@ void MapObject::setMoveAnim(int32_t startx, int32_t starty, float max, float blu
 }
 
 inline bool MapObject::computeMoveAnim(float nb_keyframes) {
-	if (!nb_keyframes) return false;
+	if (!nb_keyframes) return move_max > 0;
 
 	move_step += nb_keyframes;
 	if (move_step >= move_max) {
@@ -578,8 +578,8 @@ void Map2D::scroll(int32_t x, int32_t y, float smooth) {
 	my = y;	
 }
 
-inline vec2 Map2D::computeScrollAnim(float nb_keyframes) {
-	if (!nb_keyframes) return {scroll_anim_dx, scroll_anim_dx};
+inline bool Map2D::computeScrollAnim(float nb_keyframes) {
+	if (!nb_keyframes) return scroll_anim_max > 0;
 
 	scroll_anim_step += nb_keyframes;
 	if (scroll_anim_step >= scroll_anim_max) {
@@ -594,8 +594,9 @@ inline vec2 Map2D::computeScrollAnim(float nb_keyframes) {
 		// Final step
 		scroll_anim_dx = adx * scroll_anim_step / scroll_anim_max - adx;
 		scroll_anim_dy = ady * scroll_anim_step / scroll_anim_max - ady;
+		return true;
 	}
-	return {scroll_anim_dx, scroll_anim_dy};
+	return false;
 }
 
 vec2 Map2D::getScroll() {
@@ -691,22 +692,26 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	computeScrollAnim(keyframes);
 
-	float sx = -floor((mx + scroll_anim_dx) * tile_w), sy = -floor((my + scroll_anim_dy) * tile_h);
-	int32_t msx = mx + scroll_anim_dx, msy = my + scroll_anim_dy;
-	int32_t mini = 0, maxi = w;
-	int32_t minj = 0, maxj = h;
+	float msx = -floor((mx + scroll_anim_dx) * tile_w), msy = -floor((my + scroll_anim_dy) * tile_h);
+	float sx = -floor(scroll_anim_dx * tile_w), sy = -floor(scroll_anim_dy * tile_h);
 
 
 	// Compute the smooth scrolling matrix offset
 	mat4 scrollmodel = mat4();
 	scrollmodel = glm::translate(scrollmodel, glm::vec3(sx, sy, 0));
-	cur_model = cur_model * scrollmodel;
+	mat4 scur_model = cur_model * scrollmodel;
+
+	mat4 mscrollmodel = mat4();
+	mscrollmodel = glm::translate(mscrollmodel, glm::vec3(msx, msy, 0));
+	mat4 mcur_model = cur_model * mscrollmodel;
 
 
 	// DGDGDGDG Idea: define some layers as static and some as dynamic
 	// static ones are generated for the whole level and we let GPU clip because they dont change often at all
 	// dynamic one are generated for the screen and we do the clipping because they change every frame or close enough
 
+	int32_t mini = 0, maxi = w;
+	int32_t minj = 0, maxj = h;
 	for (int32_t z = 0; z < zdepth; z++) {
 		if (renderers_changed[z]) {
 			renderers_changed[z] = false;
@@ -730,7 +735,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 		}
 
 		// Render the layer
-		renderers[z]->toScreen(cur_model, color);
+		renderers[z]->toScreen(mcur_model, color);
 	}
 	
 	mat4 zmodel = mat4();
@@ -752,12 +757,12 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 
 	// Render the vision overlay	
 	if (show_vision) {
-		// updateVision();
-		// seens_vbo.toScreen(cur_model);
+		updateVision();
+		seens_vbo.toScreen(scur_model);
 	}
 
 	// Render grid lines
-	// if (show_grid_lines) grid_lines_vbo.toScreen(cur_model);
+	if (show_grid_lines) grid_lines_vbo.toScreen(scur_model);
 
 	// Update minimaps
 	if (minimap_changed) {
