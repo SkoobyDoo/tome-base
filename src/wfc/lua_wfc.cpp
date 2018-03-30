@@ -24,74 +24,89 @@ extern "C" {
 #include "lualib.h"
 #include "auxiliar.h"
 #include "lua_wfc_external.h"
+#include "SFMT.h"
 }
 #include "stdlib.h"
 #include "string.h"
 #include "lua_wfc.hpp"
 
 static WFCOverlapping *parse_config_overlapping(lua_State *L) {
-	WFCOverlapping *config = new WFCOverlapping();
-
-	config->output.w = luaL_checknumber(L, 2);
-	config->output.h = luaL_checknumber(L, 3);
-	config->n = luaL_checknumber(L, 4);
-	config->symmetry = luaL_checknumber(L, 5);
-	config->periodic_out = lua_toboolean(L, 6);
-	config->periodic_in = lua_toboolean(L, 7);
-	config->has_foundation = lua_toboolean(L, 8);
-
-	// Iterate the sample lines
-	config->sample_w = 9999;
-	config->sample_h = lua_objlen(L, 1);
-	config->sample = (unsigned char**)malloc(config->sample_h * sizeof(unsigned char *));
-	for (int y = 0; y < config->sample_h; y++) {
+	// Iterate the sample lines to find max size
+	int sample_w = 9999;
+	int sample_h = lua_objlen(L, 1);
+	for (int y = 0; y < sample_h; y++) {
 		lua_rawgeti(L, 1, y + 1);
-
 		size_t len;
 		unsigned char *line = (unsigned char*)strdup(luaL_checklstring(L, -1, &len));
-		config->sample[y] = line;
-		if (len < config->sample_w) config->sample_w = len;
-		// printf("==sample line %d: '%s' len(%d)\n", y, line, len);
-
+		if (len < sample_w) sample_w = len;
 		lua_pop(L, 1);
 	}
 
-	// Generate output data
-	config->output.data = (unsigned char**)malloc(config->output.h * sizeof(unsigned char *));
-	for (int y = 0; y < config->output.h; y++) {
-		config->output.data[y] = (unsigned char*)calloc(config->output.w, sizeof(unsigned char));
+	WFCOverlapping *config = new WFCOverlapping(
+		luaL_checknumber(L, 4), // n
+		luaL_checknumber(L, 5), // symmetry
+		lua_toboolean(L, 6), // periodic_out
+		lua_toboolean(L, 7), // periodic_in
+		lua_toboolean(L, 8), // has_foundation
+		sample_w, sample_h,
+		luaL_checknumber(L, 2), // output.w
+		luaL_checknumber(L, 3) // output.h
+	);
+
+	// Iterate the sample lines to import them
+	for (int y = 0; y < sample_h; y++) {
+		lua_rawgeti(L, 1, y + 1);
+		size_t len;
+		unsigned char *line = (unsigned char*)strdup(luaL_checklstring(L, -1, &len));
+		for (int x = 0; x < len; x++) {
+			config->sample.get(y, x) = line[x];
+		}
+
+		lua_pop(L, 1);
 	}
 	return config;
 }
 
 static void free_config_overlapping(WFCOverlapping *config) {
-	for (int y = 0; y < config->sample_h; y++) free(config->sample[y]);
-	for (int y = 0; y < config->output.h; y++) free(config->output.data[y]);
-	free(config->sample);
-	free(config->output.data);
 	delete config;
 }
 
-static void generate_table_from_output(lua_State *L, WFCOutput *output) {
+static void generate_table_from_output(lua_State *L, WFCOverlapping *config) {
 	lua_newtable(L);
-	// printf("===========RESULT\n");
-	for (int y = 0; y < output->h; y++) {
-		// for (int x = 0; x < output->w; x++) {
-			// printf("%c", output->data[y][x]);
-		// }
-		// printf("\n");
+	printf("===========RESULT\n");
+	char *buf = new char[config->output.width+1];
+	for (int y = 0; y < config->output.height; y++) {
+		for (int x = 0; x < config->output.width; x++) {
+			printf("%c", config->output.get(y, x));
+			buf[x] = config->output.get(y, x);
+		}
+		buf[config->output.width] = '\0';
+		printf("\n");
 		
-		lua_pushlstring(L, (const char*)output->data[y], output->w);
+		lua_pushlstring(L, buf, config->output.width);
 		lua_rawseti(L, -2, y + 1);
 	}
-	// printf("===========\n");
+	delete[] buf;
+	printf("===========\n");
+}
+
+static bool wfc_generate_overlapping(WFCOverlapping *config) {
+	OverlappingWFCOptions options = {config->periodic_in, config->periodic_out, config->output.height, config->output.width, config->symmetry, config->has_foundation, config->n};
+	OverlappingWFC<char> wfc(config->sample, options, gen_rand32());
+	nonstd::optional<Array2D<char>> success = wfc.run();
+	if (success.has_value()) {
+		config->output.import(success.value());
+		return true;
+	} else {
+		return false;
+	}
 }
 
 static int lua_wfc_overlapping(lua_State *L) {
 	WFCOverlapping *config = parse_config_overlapping(L);
 
 	if (wfc_generate_overlapping(config)) {
-		generate_table_from_output(L, &config->output);
+		generate_table_from_output(L, config);
 	} else {
 		lua_pushnil(L);
 	}
@@ -134,17 +149,15 @@ static int lua_wfc_wait_async(lua_State *L) {
 	int ret;
 	SDL_WaitThread(async->thread, &ret);
 	
-	WFCOutput *output;
-	if (async->mode == WFCAsyncMode::OVERLAPPING) output = &async->overlapping_config->output;
-
-	if (ret == 1) {
-		generate_table_from_output(L, output);
-	} else {
-		lua_pushnil(L);
+	if (async->mode == WFCAsyncMode::OVERLAPPING) {
+		if (ret == 1) {
+			generate_table_from_output(L, async->overlapping_config);
+		} else {
+			lua_pushnil(L);
+		}
+		// Cleanup
+		free_config_overlapping(async->overlapping_config);
 	}
-
-	// Cleanup
-	if (async->mode == WFCAsyncMode::OVERLAPPING) free_config_overlapping(async->overlapping_config);
 
 	return 1;
 }

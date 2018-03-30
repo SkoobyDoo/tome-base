@@ -23,22 +23,22 @@
 #define _WFC_LUA_H_
 #include "tSDL.h"
 
-struct WFCOutput {
-	int w, h;
-	unsigned char **data;
-};
+#include "wfc.hpp"
+#include "overlapping_wfc.hpp"
 
 struct WFCOverlapping {
-	int n;
-	int symmetry;
+	unsigned int n;
+	unsigned int symmetry;
 	bool periodic_out;
 	bool periodic_in;
 	bool has_foundation;
 
-	int sample_w, sample_h;
-	unsigned char **sample;
+	Array2D<char> sample;
+	Array2D<char> output;
 
-	WFCOutput output;
+	WFCOverlapping(int n, int symmetry, bool periodic_out, bool periodic_in, bool has_foundation, int sample_w, int sample_h, int output_w, int output_h) :
+		n(n), symmetry(symmetry), periodic_out(periodic_out), periodic_in(periodic_in), has_foundation(has_foundation), sample(sample_h, sample_w), output(output_h, output_w)
+	{}
 };
 
 enum class WFCAsyncMode { OVERLAPPING, TILED };
@@ -47,8 +47,5 @@ struct WFCAsync {
 	WFCOverlapping *overlapping_config = nullptr;
 	SDL_Thread *thread;
 };
-
-// In wfc.cpp
-extern bool wfc_generate_overlapping(WFCOverlapping *config);
 
 #endif
