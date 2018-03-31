@@ -165,6 +165,7 @@ newEntity{ base = "BASE_NPC_SPIDER", define_as = "NIMISIL",
 	combat = {dam=80, atk=30, apr=15, dammod={mag=1.1}, damtype=DamageType.ARCANE},
 
 	autolevel = "caster",
+	auto_classes={{class="Anorithil", start_level=44}},
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
 	resolvers.inscriptions(5, {}),
 	inc_damage = {all=40},
