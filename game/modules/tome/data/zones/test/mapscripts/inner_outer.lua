@@ -39,7 +39,7 @@ local wfcouter = WaveFunctionCollapse.new{
 -- Inner buildings
 local wfcinner = WaveFunctionCollapse.new{
 	mode="overlapping", async=true,
-	sample=self:getFile("!wfctest4.tmx", "samples"),
+	sample=self:getFile("!wfctest5.tmx", "samples"),
 	size={self.mapsize.w/2, self.mapsize.h-2},
 	n=3, symmetry=8, periodic_out=false, periodic_in=false, has_foundation=false
 }
@@ -54,7 +54,7 @@ local doorwaytunnel = doorway:locateTile('E', '.')
 -- Merge them all
 local tm = Tilemap.new(self.mapsize)
 wfcouter:merge(1, 1, wfcwater, merge_order)
--- if wfcouter:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] outer is too small") return self:regenerate() end
+if wfcouter:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] outer is too small") return self:regenerate() end
 if wfcinner:eliminateByFloodfill{'#', 'T'} < 400 then print("[inner_outer] inner is too small") return self:regenerate() end
 tm:merge(1, 1, wfcouter, merge_order)
 tm:merge(self.mapsize.w - wfcinner.data_w, 2, wfcinner, merge_order)
@@ -79,6 +79,6 @@ tm:fillAll('.', 'r')
 tm:fillAll()
 
 -- Elimitate the rest
--- if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
+if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
 -- tm:printResult()
 return tm:getResult(true)
