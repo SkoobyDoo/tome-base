@@ -52,19 +52,23 @@ lines, fname, lnum = DebugConsole:functionHelp(game.state.createRandomBoss)
 _M.data_help = "#GOLD#DATA HELP#LAST# "..formatHelp(lines, fname, lnum)
 lines, fname, lnum = DebugConsole:functionHelp(game.state.applyRandomClass)
 _M.data_help = _M.data_help.."\n#GOLD#DATA HELP#LAST# "..formatHelp(lines, fname, lnum)
+lines, fname, lnum = DebugConsole:functionHelp(mod.class.Actor.levelupClass)
+_M.data_help = _M.data_help.."\n#GOLD#DATA HELP#LAST# "..formatHelp(lines, fname, lnum)
 
 function _M:init()
 	engine.ui.Dialog.init(self, "DEBUG -- Create Random Actor", 1, 1)
 
 	local tops={0}	self.tops = tops
 	
-	if not _M._base_actor then self:generateBase() end
+--	if not _M._base_actor then self:generateBase() end
 	
 	local dialog_txt = Textzone.new{auto_width=true, auto_height=true, no_color_bleed=true, font=self.font,
 	text=([[Randomly generate actors subject to a filter and/or create random bosses according to a data table.
-Filters and data are interpreted by either game.zone:checkFilter or game.state:createRandomBoss and game.state:applyRandomClass respectively,
-within the _G environment (used by the Lua Console) using the current zone's #LIGHT_GREEN#npc_list#LAST#.  Press #GOLD#'F1'#LAST# for help.
-Mouse over controls for actor preview.  (Actors may be adjusted when placed on to the level.)
+Filters are interpreted by game.zone:checkFilter.
+#ORANGE#Boss Data:#LAST# is interpreted by game.state:createRandomBoss, game.state:applyRandomClass, and Actor.levelupClass.
+Generation is performed within the _G environment (used by the Lua Console) using the current zone's #LIGHT_GREEN#npc_list#LAST#.
+Press #GOLD#'F1'#LAST# for help.
+Mouse over controls for an actor preview (which may be further adjusted when placed on to the level).
 (Press #GOLD#'L'#LAST# to lua inspect or #GOLD#'C'#LAST# to open the character sheet.)
 
 The #LIGHT_BLUE#Base Filter#LAST# is used to filter the actor randomly generated.]]):format(), can_focus=false}
@@ -345,6 +349,7 @@ function _M:generateBase()
 end
 
 -- generate random boss
+-- note: difficulty effects will not be reapplied when a base actor is used
 function _M:generateBoss()
 	local base = _M._base_actor
 	if not base then
