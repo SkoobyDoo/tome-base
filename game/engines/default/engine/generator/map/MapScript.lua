@@ -55,22 +55,37 @@ function _M:regenerate()
 end
 
 function _M:custom(lev, old_lev)
+	local ret = nil
 	if self.data.mapscript then
 		local file = self:getFile(self.data.mapscript..".lua", "mapscripts")
 		local f, err = loadfile(file)
 		if not f and err then error(err) end
 		setfenv(f, setmetatable(env or {
 			self = self,
+			zone = self.zone,
+			level = self.level,
 			lev = lev,
 			old_lev = old_lev,
 			Tilemap = require "engine.tilemaps.Tilemap",
+			Static = require "engine.tilemaps.Static",
+			WaveFunctionCollapse = require "engine.tilemaps.WaveFunctionCollapse",
 		}, {__index=_G}))
-		return f()
+		ret = f()
+	elseif self.data.custom then
+		ret = self.data.custom(self, lev, old_lev)
 	end
-	if self.data.custom then
-		return self.data.custom(self, lev, old_lev)
+
+	if ret then
+		-- If we got a Tilemap instance (very likely) then ask it for the actual characters map
+		if ret.isClassName and ret:isClassName("engine.tilemaps.Tilemap") then
+			ret = ret:getResult(true)
+		end
+		return ret
+	elseif self.force_regen then
+		return nil
+	else
+		error("Generator MapScript called without mapscript or custom fields set!")
 	end
-	error("Generator MapScript called without customization!")
 end
 
 function _M:generate(lev, old_lev)

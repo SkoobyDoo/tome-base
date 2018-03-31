@@ -17,9 +17,6 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-local Tilemap = require "engine.tilemaps.Tilemap"
-local Static = require "engine.tilemaps.Static"
-local WaveFunctionCollapse = require "engine.tilemaps.WaveFunctionCollapse"
 local merge_order = {'.', '_', 'r', '+', '#', 'O', ';', '=', 'T'}
 
 -- Water & trees layer
@@ -44,12 +41,12 @@ local wfcinner = WaveFunctionCollapse.new{
 	n=3, symmetry=8, periodic_out=false, periodic_in=false, has_foundation=false
 }
 
--- Wait for all generators to finish
-if not WaveFunctionCollapse:waitAll(wfcinner, wfcwater, wfcouter) then print("[inner_outer] a WFC failed") return self:regenerate() end
-
 -- Load predrawn stuff
 local doorway = Static.new(self:getFile("!door.tmx", "samples"))
 local doorwaytunnel = doorway:locateTile('E', '.')
+
+-- Wait for all generators to finish
+if not WaveFunctionCollapse:waitAll(wfcinner, wfcwater, wfcouter) then print("[inner_outer] a WFC failed") return self:regenerate() end
 
 -- Merge them all
 local tm = Tilemap.new(self.mapsize)
@@ -80,5 +77,6 @@ tm:fillAll()
 
 -- Elimitate the rest
 if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
+
 -- tm:printResult()
-return tm:getResult(true)
+return tm
