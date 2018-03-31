@@ -1057,7 +1057,7 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		end
 		-- NPC's with predominantly ranged attacks will want to stay at range.
 		if count.atk_range + count.escape > count.atk_melee + count.close and count.range_value/(count.melee_value + 1) > 1.5 then
-			tactic.old_safe_range = util.bound(math.ceil(count.avg_attack_range/2), 2, e.sight) -- debugging
+			--tactic.old_safe_range = util.bound(math.ceil(count.avg_attack_range/2), 2, e.sight)
 			local sum, break_pt, n, keys = 0, (count.range_value+count.melee_value)/3, 0, {} -- safe_range <= range of 2/3 of all attacks by value
 			for range, ct in pairs(count.atk_range_values) do
 				n = n + 1; keys[n] = range

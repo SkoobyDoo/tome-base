@@ -1942,8 +1942,6 @@ end
 function _M:applyRandomClass(b, data, instant)
 	if not data.level then data.level = b.level end -- use the level specified if needed
 
-print("[applyRandomClass] instant:", instant, "input data:") table.print(data, "__data__\t") -- debugging
-
 	------------------------------------------------------------
 	-- Apply talents from classes
 	------------------------------------------------------------

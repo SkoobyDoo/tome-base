@@ -3347,8 +3347,6 @@ function _M:levelupClass(c_data)
 	if new_level <= c_data.last_level then return end
 	print("[Actor:levelupClass]", self.name, "auto level up", c_data.class, c_data.last_level, "-->", new_level, c_data)
 	
-table.set(game, "debug", "levelupClass", {act=self, c_data=c_data}) -- debugging
-
 	local ttypes
 	-- temporarily remove any previous stat/talent points if they won't be used
 	local base_points = {self.unused_stats, self.unused_talents, self.unused_generics}
