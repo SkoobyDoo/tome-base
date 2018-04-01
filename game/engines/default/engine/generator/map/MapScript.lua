@@ -60,6 +60,11 @@ function _M:custom(lev, old_lev)
 		local file = self:getFile(self.data.mapscript..".lua", "mapscripts")
 		local f, err = loadfile(file)
 		if not f and err then error(err) end
+		package.loaded["engine.tilemaps.Tilemap"] = nil
+		package.loaded["engine.tilemaps.Static"] = nil
+		package.loaded["engine.tilemaps.WaveFunctionCollapse"] = nil
+		package.loaded["engine.tilemaps.Noise"] = nil
+		package.loaded["engine.tilemaps.Heightmap"] = nil
 		setfenv(f, setmetatable(env or {
 			self = self,
 			zone = self.zone,
@@ -69,6 +74,8 @@ function _M:custom(lev, old_lev)
 			Tilemap = require "engine.tilemaps.Tilemap",
 			Static = require "engine.tilemaps.Static",
 			WaveFunctionCollapse = require "engine.tilemaps.WaveFunctionCollapse",
+			Noise = require "engine.tilemaps.Noise",
+			Heightmap = require "engine.tilemaps.Heightmap",
 		}, {__index=_G}))
 		ret = f()
 	elseif self.data.custom then

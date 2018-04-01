@@ -63,20 +63,34 @@ tm:carveLinearPath('.', doorwaytunnel + doorwaypos, 6, '.')
 
 -- Find rooms
 local rooms = tm:findGroupsOf{'r'}
+local noroomforest = true
 tm:applyOnGroups(rooms, function(w, h, data, room, idx)
-	print("ROOM", idx, "::" , unpack(tm:groupOuterRectangle(room)))
+	local p1, p2, rw, rh = tm:groupOuterRectangle(room)
+	print("ROOM", idx, "::", rw, rh, "=>", rw * rh)
+	tm:fillGroup(room, '.')
+	if noroomforest and rw >= 8 and rh >= 8 then
+		local pond = Heightmap.new(1.6, {up_left=0, down_left=0, up_right=0, down_right=0, middle=1}):make(rw, rh, {' ', 'T', '=', '=', ';'})
+		pond:printResult()
+		tm:merge(p1.x, p1.y, pond)
+		noroomforest = false
+	end
+	-- table.print()
 	for j = 1, #room.list do
 		local jn = room.list[j]
 		-- data[jn.y][jn.x] = tostring(idx)
 	end
 end)
-tm:fillAll('.', 'r')
+if noroomforest then return self:regenerate() end
 
 -- Complete the map by putting wall in all the remaining blank spaces
 tm:fillAll()
 
 -- Elimitate the rest
-if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
+-- if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
 
 -- tm:printResult()
+
+-- local noise = Noise.new():make(12, 12, {'T', 'T', '=', '=', '=', ';', ';'})
+-- noise:printResult()
+
 return tm

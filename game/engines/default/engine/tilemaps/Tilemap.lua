@@ -295,6 +295,14 @@ function _M:eliminateByFloodfill(walls)
 	end
 end
 
+function _M:fillGroup(group, char)
+	-- print("[Tilemap] Filling group of", #group.list, "with", char)
+	for j = 1, #group.list do
+		local jn = group.list[j]
+		self.data[jn.y][jn.x] = char
+	end
+end
+
 function _M:isInGroup(group, x, y)
 	if not group.reverse then
 		group.reverse = {}
@@ -421,7 +429,7 @@ function _M:groupOuterRectangle(group)
 	-- 	end
 	-- end end
 
-	return {x1=x1, y1=y1, x2=x2, y2=y2, w=x2 - x1 + 1, h=y2 - y1 + 1}
+	return self:point(x1, y1), self:point(x2, y2), x2 - x1 + 1, y2 - y1 + 1
 end
 
 --- Carve out a simple linear path from coords until a tile is reached
@@ -461,6 +469,11 @@ end
 --- Merge and other Tilemap's data
 function _M:merge(x, y, tm, char_order, empty_char)
 	if not self.data or not tm.data then return end
+	-- if x is a table it's a point data so we shift parameters
+	if type(x) == "table" then
+		x, y, tm, char_order, empty_char = x.x, x.y, y, tm, char_order
+	end
+
 	x = math.floor(x)
 	y = math.floor(y)
 	char_order = table.reverse(char_order or {})

@@ -18,8 +18,6 @@
 -- darkgod@te4.org
 
 require "engine.class"
-local lom = require "lxp.lom"
-local mime = require "mime"
 local Tilemap = require "engine.tilemaps.Tilemap"
 
 --- Generate map-like data from samples using the WaveFunctionCollapse algorithm (in C++)
