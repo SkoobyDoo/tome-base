@@ -108,10 +108,10 @@ carrionworm = function(self, target, duration, x, y)
 				local t = self.summoner:getTalentFromId(self.summoner.T_INFESTATION)
 				game.level.map:addEffect(self,
 				self.x, self.y, 5,
-				engine.DamageType.WORMBLIGHT, t.getDamage(self.summoner, t),  -- Please someone make this more transparent, changing the alpha doesn't seem to work
+				engine.DamageType.WORMBLIGHT, t.getDamage(self.summoner, t),
 					2,
 					5, nil,
-					engine.MapEffect.new{color_br=150, color_bg=255, color_bb=150, effect_shader="shader_images/poison_effect.png"}
+					engine.MapEffect.new{alpha=90, color_br=1, color_bg=1, color_bb=1, effect_shader="shader_images/poison_effect.png"}
 				)
 				game.logSeen(self, "%s exudes a corrupted gas as it dies.", self.name:capitalize())
 	end
@@ -131,6 +131,7 @@ carrionworm = function(self, target, duration, x, y)
 	if game.party:hasMember(self) then
 		game.party:addMember(m, {
 			control=false,
+			temporary_level = true,
 			type="summon",
 			title="Summon",
 		})
