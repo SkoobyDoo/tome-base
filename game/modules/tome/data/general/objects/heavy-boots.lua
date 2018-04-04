@@ -26,7 +26,7 @@ newEntity{
 	moddable_tile = resolvers.moddable_tile("heavy_boots"),
 	add_name = " (#ARMOR#)",
 	display = "]", color=colors.SLATE,
-	require = { talent = { Talents.T_ARMOUR_TRAINING }, },
+	require = { flag = { "allow_wear_heavy" }, },
 	encumber = 3,
 	rarity = 7,
 	metallic = true,

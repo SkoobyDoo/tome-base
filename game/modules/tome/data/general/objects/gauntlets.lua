@@ -27,7 +27,7 @@ newEntity{
 	display = "[", color=colors.SLATE,
 	image = resolvers.image_material("hgloves", "metal"),
 	moddable_tile = resolvers.moddable_tile("gauntlets"),
-	require = { talent = { Talents.T_ARMOUR_TRAINING }, },
+	require = { flag = { "allow_wear_heavy" }, },
 	encumber = 1.5,
 	rarity = 9,
 	metallic = true,

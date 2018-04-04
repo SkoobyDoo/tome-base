@@ -64,7 +64,18 @@ newTalent{
 	getCriticalChanceReduction = function(self, t)
 		return self:combatTalentScale(t, 1, 9) * t.ArmorEffect(self, t)
 	end,
+	on_learn = function(self, t)
+		if self:getTalentLevelRaw(t) == 1 then self:attr("allow_wear_heavy", 1)
+		elseif self:getTalentLevelRaw(t) == 2 then self:attr("allow_wear_shield", 1)
+		elseif self:getTalentLevelRaw(t) == 3 then self:attr("allow_wear_massive", 1)
+		end
+	end,
 	on_unlearn = function(self, t)
+		if self:getTalentLevelRaw(t) == 0 then self:attr("allow_wear_heavy", -1)
+		elseif self:getTalentLevelRaw(t) == 1 then self:attr("allow_wear_shield", -1)
+		elseif self:getTalentLevelRaw(t) == 2 then self:attr("allow_wear_massive", -1)
+		end
+
 		for inven_id, inven in pairs(self.inven) do if inven.worn then
 			for i = #inven, 1, -1 do
 				local o = inven[i]

@@ -4346,24 +4346,12 @@ function _M:updateObjectRequirements(o)
 		if newreq.stat and newreq.stat.str then
 			newreq.stat.cun, newreq.stat.str = newreq.stat.str, nil
 		end
-		if newreq.talent then for i, tr in ipairs(newreq.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				newreq.talent[i] = {self.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
-				break
-			end
-		end end
 	end
 	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
 		newreq = newreq or table.clone(oldreq, true)
 		if newreq.stat and newreq.stat.str then
 			newreq.stat.dex, newreq.stat.str = newreq.stat.str, nil
 		end
-		if newreq.talent then for i, tr in ipairs(newreq.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				newreq.talent[i] = {self.T_AGILE_DEFENSE, 1}
-				break
-			end
-		end end
 	end
 	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
 		newreq = newreq or table.clone(oldreq, true)

@@ -30,7 +30,7 @@ newEntity{
 	encumber = 7,
 	metallic = true,
 	desc = [[Handheld deflection devices.]],
-	require = { talent = { {Talents.T_ARMOUR_TRAINING,2} }, },
+	require = { flag = { "allow_wear_shield" }, },
 	randart_able = "/data/general/objects/random-artifacts/shields.lua",
 	special_combat = { talented="shield", accuracy_effect="staff", damrange = 1.2, no_offhand_penalty=true },
 	egos = "/data/general/objects/egos/shield.lua", egos_chance = { prefix=resolvers.mbonus(40, 5), suffix=resolvers.mbonus(40, 5) },

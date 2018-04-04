@@ -209,7 +209,7 @@ if not game.zone.cultist_event_on_turn then
 					power_source = {arcane=true},
 					display = "]", color=colors.SLATE,
 					moddable_tile = resolvers.moddable_tile("helm"),
-					require = { talent = { m.T_ARMOUR_TRAINING }, },
+					require = { flag = { "allow_wear_heavy" }, },
 					encumber = 4,
 					metallic = true,
 					unique = true,
