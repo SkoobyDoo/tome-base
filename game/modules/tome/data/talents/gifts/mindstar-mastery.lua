@@ -66,8 +66,8 @@ newTalent{
 		local inc = t.getPercentInc(self, t)
 		return ([[Channel your mental power through your wielded mindstars, generating psionic blades.
 		Mindstar psiblades have their damage modifiers (how much damage they gain from stats) multiplied by %0.2f, their armour penetration by %0.2f and mindpower, willpower and cunning by %0.2f.
-		Also increases Physical Power by %d and increases weapon damage by %d%% when using mindstars.]]):
-		format(t.getStatmult(self, t), t.getAPRmult(self, t), t.getPowermult(self, t), damage, 100 * inc) --I5
+		Also increases weapon damage by %d%% when using mindstars.]]):
+		format(t.getStatmult(self, t), t.getAPRmult(self, t), t.getPowermult(self, t), 100 * inc) --I5
 	end,
 }
 

@@ -88,10 +88,10 @@ newTalent{
 		local inc = t.getPercentInc(self, t)
 		local reload = t.getReload(self,t)
 		local chance = t.getChance(self,t)
-		return ([[Increases Physical Power by %d and increases weapon damage by %d%% when using bows or slings, as well as your reload rate by %d.
+		return ([[Increases weapon damage by %d%% when using bows or slings, as well as your reload rate by %d.
 		In addition, your Shoot has a %d%% chance to mark targets on hit.
 The mark lasts for 5 turns, grants you visibility of the target (even through walls and other concealment), and causes them to become vulnerable to Headshot, Volley and Called Shots.]]):
-format(damage, inc * 100, reload, chance)
+format(inc * 100, reload, chance)
 	end,
 }
 
