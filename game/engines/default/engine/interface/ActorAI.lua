@@ -316,13 +316,15 @@ function _M:aiTalentTargets(t, aitarget, tg, all_targets, ax, ay)
 			friendlyfire = typ.friendlyfire and (type(typ.friendlyfire) == "number" and typ.friendlyfire or 100) or 0
 			if all_targets then	typ.selffire, typ.friendlyfire = 100, 100 end
 			targets = {}
-			self:project(typ, ax, ay, function(px, py)
-				local tgt = game.level.map(px, py, typ.scan_on or Map.ACTOR)
-				if tgt and not tgt.dead then
-					if log_detail > 2 then print("[aiTalentTargets]", t.id, "may affect", px, py, "actor:", tgt.uid, tgt.name) end
-					targets[#targets+1] = tgt
-				end
-			end)
+			if ax and ay then
+				self:project(typ, ax, ay, function(px, py)
+					local tgt = game.level.map(px, py, typ.scan_on or Map.ACTOR)
+					if tgt and not tgt.dead then
+						if log_detail > 2 then print("[aiTalentTargets]", t.id, "may affect", px, py, "actor:", tgt.uid, tgt.name) end
+						targets[#targets+1] = tgt
+					end
+				end)
+			end
 		end
 	end
 	return targets, selffire, friendlyfire, tg
