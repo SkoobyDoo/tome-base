@@ -118,7 +118,9 @@ function _M:onBirth(birther)
 	-- Make a list of random escort levels
 	local race_def = birther.birth_descriptor_def.race[self.descriptor.race]
 	local subrace_def = birther.birth_descriptor_def.subrace[self.descriptor.subrace]
+	local world = birther.birth_descriptor_def.world[self.descriptor.world]
 	local def = subrace_def.random_escort_possibilities or race_def.random_escort_possibilities
+	if world.random_escort_possibilities then def = world.random_escort_possibilities end -- World overrides
 	if def then
 		local zones = {}
 		for i, zd in ipairs(def) do for j = zd[2], zd[3] do zones[#zones+1] = {zd[1], j} end end
