@@ -1045,7 +1045,7 @@ function _M:changeLevelReal(lev, zone, params)
 		local old = self.zone
 
 		if self.zone and self.zone.on_leave then
-			local nl, nz, stop = self.zone.on_leave(lev, old_lev, zone)
+			local nl, nz, stop = self.zone.on_leave(lev, old_lev, old.temp_shift_zone)
 			if stop then return end
 			if nl then lev = nl end
 			if nz then zone = nz end
