@@ -7065,7 +7065,7 @@ function _M:checkStillInCombat()
 	-- Status effects need rechecking
 	for eff_id, p in pairs(self.tmp) do
 		local e = self:getEffectFromId(eff_id)
-		if e.status == "detrimental" then self:enterCombatStatus() break end
+		if e.status == "detrimental" and e.decrease > 0 then self:enterCombatStatus() break end
 	end
 
 	if game.turn - self.in_combat < 50 then return end -- Still good?
