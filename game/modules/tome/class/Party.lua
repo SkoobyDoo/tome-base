@@ -141,9 +141,18 @@ function _M:leftLevel(leaving_zone)
 		self:findSuitablePlayer()
 	end
 
-	if leaving_zone and self.switch_party_back_on_zone and self.old_party then
+	if leaving_zone and self.switch_party_back_on_zone then
+		self:switchToOldParty()
+	end
+end
+
+function _M:switchToOldParty()
+	if self.old_party then
 		game.party = self.old_party
 		game.party:setPlayer(game:getPlayer(true), true)
+		return true
+	else
+		return false
 	end
 end
 
