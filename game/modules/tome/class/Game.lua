@@ -816,13 +816,30 @@ function _M:leaveLevel(level, lev, old_lev)
 	if level.no_remove_entities then return end
 
 	level.last_turn = self.turn
-	for act, _ in pairs(self.party.members) do
-		if self.player ~= act and level:hasEntity(act) then
-			level:removeEntity(act)
-			self.to_re_add_actors[act] = true
+
+	if self.change_level_party then
+		game.party:switchParty(self.change_level_party)
+		for act, _ in pairs(self.party.members) do
+			if self.player ~= act then -- No check, we will add all the party
+				level:removeEntity(act)
+				self.to_re_add_actors[act] = true
+			end
 		end
+	elseif self.change_level_party_back then
+		for act, _ in pairs(self.party.members) do
+			if level:hasEntity(act) then -- Just remove it all, it's a temporary party
+				level:removeEntity(act)
+			end
+		end
+	else
+		for act, _ in pairs(self.party.members) do
+			if self.player ~= act and level:hasEntity(act) then
+				level:removeEntity(act)
+				self.to_re_add_actors[act] = true
+			end
+		end
+		if level:hasEntity(self.player) then level:removeEntity(self.player) end
 	end
-	if level:hasEntity(self.player) then level:removeEntity(self.player) end
 end
 
 function _M:onLevelLoad(id, fct, data)
@@ -1029,8 +1046,10 @@ function _M:changeLevelReal(lev, zone, params)
 
 	if params._debug_mode then
 		print("Entering zone:", self.zone.name, "level:", self.level and self.level.level, "in debug mode")	
-		if not self.level then return end
+		if not self.level then self.change_level_party = nil self.change_level_party_back = nil return end
 	elseif params.temporary_zone_shift then -- We only switch temporarily, keep the old one around
+		if params.temporary_zone_shift_party then self.change_level_party = params.temporary_zone_shift_party end
+
 		self:leaveLevel(self.level, lev, old_lev)
 
 		if type(zone) == "string" then
@@ -1061,11 +1080,13 @@ function _M:changeLevelReal(lev, zone, params)
 		popup = Dialog:simpleWaiter("Loading level", "Please wait while loading the level...", nil, 10000)
 		core.display.forceRedraw()
 
+		if self.zone.zone_party then self.change_level_party_back = true end
+
 		local old = self.zone
 
 		if self.zone and self.zone.on_leave then
 			local nl, nz, stop = self.zone.on_leave(lev, old_lev, old.temp_shift_zone)
-			if stop then return end
+			if stop then self.change_level_party = nil self.change_level_party_back = nil return end
 			if nl then lev = nl end
 			if nz then zone = nz end
 		end
@@ -1086,7 +1107,7 @@ function _M:changeLevelReal(lev, zone, params)
 	elseif not params.temporary_zone_shift then -- We move to a new zone as normal
 		if self.zone and self.zone.on_leave then
 			local nl, nz, stop = self.zone.on_leave(lev, old_lev, zone)
-			if stop then return end
+			if stop then self.change_level_party = nil self.change_level_party_back = nil return end
 			if nl then lev = nl end
 			if nz then zone = nz end
 		end
@@ -1131,6 +1152,9 @@ function _M:changeLevelReal(lev, zone, params)
 		end
 	end
 
+	-- Store for later
+	if params.temporary_zone_shift_party then self.zone.zone_party = true end
+
 	-- Post process walls
 	self.nicer_tiles:postProcessLevelTiles(self.level)
 
@@ -1167,8 +1191,11 @@ function _M:changeLevelReal(lev, zone, params)
 		end
 	end
 
-	-- place the player on the level
-	if self.zone.wilderness then -- Move back to old wilderness position
+	-- No placements to do, old party is still there, jsut switch it on
+	if self.change_level_party_back then
+		game.party:switchToOldParty()
+	-- Move back to old wilderness position
+	elseif self.zone.wilderness then
 		local x, y = self.player.wild_x, self.player.wild_y
 		local blocking_actor = self.level.map(x, y, engine.Map.ACTOR)
 		if blocking_actor then
@@ -1177,8 +1204,7 @@ function _M:changeLevelReal(lev, zone, params)
 			if newx and newy then blocking_actor:move(newx, newy, true)
 			else blocking_actor:teleportRandom(x, y, 10) end
 		end
-		self.player:move(self.player.wild_x, self.player.wild_y, true)
-		self.player.last_wilderness = self.zone.short_name
+	-- Place the player on the level
 	else
 		local x, y = nil, nil
 		if force_back_pos then
@@ -1362,6 +1388,9 @@ function _M:changeLevelReal(lev, zone, params)
 	end
 
 	if popup then popup:done() end
+
+	self.change_level_party = nil
+	self.change_level_party_back = nil
 
 	self:dieClonesDie()
 end
@@ -2562,6 +2591,11 @@ end
 function _M:onDealloc()
 	local time = os.time() - self.real_starttime
 	print("Played ToME for "..time.." seconds")
+end
+
+function _M:allowJSONDump()
+	if not self.party or self.party.temporary_party then return false
+	else return true end
 end
 
 function _M:saveVersion(token)
