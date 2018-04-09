@@ -105,12 +105,12 @@ newTalent{
 				self.summoner:project(tg, self.x, self.y, engine.DamageType.ARCANE, self.dam/10, nil)
 				self:project(tg, x, y, function(tx, ty)
 					-- In rare circumstances this can hit the same target 4-7 times so we need to sanity check it
-					local target = game.level.map(tx, ty, Map.ACTOR)
+					local target = game.level.map(tx, ty, engine.Map.ACTOR)
 					if not target then return end
 					if target.turn_procs.aether_beam and target.turn_procs.aether_beam > 2 then return end
 					target.turn_procs.aether_beam = target.turn_procs.aether_beam or 0
 					target.turn_procs.aether_beam = target.turn_procs.aether_beam + 1
-					DamageType:get(DamageType.ARCANE_SILENCE).projector(self, tx, ty, DamageType.ARCANE_SILENCE, {dam=self.dam, chance=25})
+					engine.DamageType:get(engine.DamageType.ARCANE_SILENCE).projector(self, tx, ty, engine.DamageType.ARCANE_SILENCE, {dam=self.dam, chance=25})
 				end)
 
 				self.summoner.__project_source = nil
