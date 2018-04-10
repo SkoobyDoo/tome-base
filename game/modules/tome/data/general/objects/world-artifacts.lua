@@ -931,7 +931,7 @@ newEntity{ base = "BASE_GREATMAUL",
 	use_talent = { id = Talents.T_FEARLESS_CLEAVE, level = 3, power = 18 },
 }
 
-newEntity{ base = "BASE_MACE",
+newEntity{ base = "BASE_MACE", define_as = "CROOKED_CLUB",
 	power_source = {technique=true},
 	unique = true,
 	name = "Crooked Club", color = colors.GREEN, image = "object/artifact/weapon_crooked_club.png",
@@ -1568,7 +1568,7 @@ newEntity{ base = "BASE_LIGHT_ARMOR",
 	},
 }
 
-newEntity{ base = "BASE_LIGHT_ARMOR",
+newEntity{ base = "BASE_LIGHT_ARMOR", define_as = "SKIN_OF_MANY",
 	power_source = {technique=true},
 	unique = true,
 	name = "Skin of Many", image = "object/artifact/robe_skin_of_many.png",
