@@ -4088,6 +4088,13 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	self:breakReloading()
 	self:fireTalentCheck("callbackOnTakeoff", o, bypass_set)
 
+	-- If objected buffed us, remove
+	local todel = {}
+	for eff_id, p in pairs(self.tmp) do
+		if p.__object_source == o then todel[#todel+1] = eff_id end
+	end
+	if #todel > 0 then for _, eff_id in ipairs(todel) do self:removeEffect(eff_id) end end
+
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
@@ -4490,6 +4497,13 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 
 	-- Unsustain ?
 	if not no_unsustain and not self:knowTalent(t_id) and t.mode == "sustained" and self:isTalentActive(t_id) then self:forceUseTalent(t_id, {ignore_energy=true, save_cleanup=true}) end
+
+	-- Remove buffs ?
+	local todel = {}
+	for eff_id, p in pairs(self.tmp) do
+		if p.__talent_source == t_id then todel[#todel+1] = eff_id end
+	end
+	if #todel > 0 then for _, eff_id in ipairs(todel) do self:removeEffect(eff_id) end end
 
 	self:recomputeRegenResources()
 
@@ -5219,7 +5233,9 @@ function _M:fireTalentCheck(event, ...)
 				ret = self:callEffect(tid, event, ...) or ret
 			elseif kind == "object" then
 				self.__project_source = tid
+				self.__object_use_running = tid
 				ret = tid:check(event, self, ...) or ret
+				self.__object_use_running = nil
 			else
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
@@ -6524,6 +6540,16 @@ function _M:on_temporary_effect_added(eff_id, e, p)
 	self:registerCallbacks(e, eff_id, "effect")
 	self:fireTalentCheck("callbackOnTemporaryEffectAdd", eff_id, e, p)
 	if e.status == "detrimental" then self:enterCombatStatus() end
+
+	-- Register talent source if any
+	if (e.status == "beneficial" or e.status == "neutral") then
+		if self.__talent_running then
+			p.__talent_source = self.__talent_running.id
+		end
+		if self.__object_use_running then
+			p.__object_source = self.__object_use_running
+		end
+	end
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
