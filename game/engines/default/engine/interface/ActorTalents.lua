@@ -1081,9 +1081,9 @@ function _M:triggerTalent(tid, name, ...)
 	name = name or "trigger"
 	if t[name] then
 		self.__talent_running = t
-		local r1, r2, r3, r4, r5, r6, r7, r8 = t[name](self, t, ...)
+		local ret = {t[name](self, t, ...)}
 		self.__talent_running = nil
-		return r1, r2, r3, r4, r5, r6, r7, r8 -- UHHHHHHHH :/ but unpack() doesnt work with nils in the list and it's quite possible some talent does return things this way
+		return unpack(ret, 1, table.maxn(ret))
 	end
 end
 
@@ -1093,9 +1093,9 @@ function _M:callTalent(tid, name, ...)
 	name = name or "trigger"
 	if t[name] then
 		self.__talent_running = t
-		local r1, r2, r3, r4, r5, r6, r7, r8 = t[name](self, t, ...)
+		local ret = {t[name](self, t, ...)}
 		self.__talent_running = nil
-		return r1, r2, r3, r4, r5, r6, r7, r8 -- UHHHHHHHH :/ but unpack() doesnt work with nils in the list and it's quite possible some talent does return things this way
+		return unpack(ret, 1, table.maxn(ret))
 	end
 end
 
