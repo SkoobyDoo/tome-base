@@ -298,7 +298,9 @@ function _M:use(who, typ, inven, item)
 	if not typ and #types == 1 then typ = types[1] end
 
 	if typ == "use" then
+		who.__object_use_running = self
 		local ret = self:useObject(who, inven, item)
+		who.__object_use_running = nil
 		if ret.used then
 			if self.charm_on_use then
 				for i, d in ipairs(self.charm_on_use) do
