@@ -150,6 +150,7 @@ function _M:switchToOldParty()
 	if self.old_party then
 		game.party = self.old_party
 		game.party:setPlayer(game:getPlayer(true), true)
+		if self.on_dispose then self:on_dispose(game.party) end
 		return true
 	else
 		return false
