@@ -66,6 +66,7 @@ newEntity{
 	block_sight = true,
 	is_door = true,
 	door_opened = "SOLID_DOOR_OPEN",
+	door_sound = "ambient/door_creaks/scifi_door",
 	dig = "FLOOR",
 }
 newEntity{
@@ -75,6 +76,7 @@ newEntity{
 	display = "'", color_r=238, color_g=154, color_b=77, back_color=colors.DARK_GREY,
 	always_remember = true,
 	door_closed = "SOLID_DOOR",
+	door_sound = "ambient/door_creaks/scifi_door",
 }
 newEntity{ base = "SOLID_DOOR", define_as = "SOLID_DOOR_HORIZ", image = "terrain/solidwall/solid_floor1.png", add_mos={{image = "terrain/solidwall/solid_wall_closed_doors1.png"}}, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1}}, door_opened = "SOLID_DOOR_HORIZ_OPEN"}
 newEntity{ base = "SOLID_DOOR_OPEN", define_as = "SOLID_DOOR_HORIZ_OPEN", image = "terrain/solidwall/solid_floor1.png", add_mos={{image = "terrain/solidwall/solid_wall_open_doors1.png"}}, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1}}, door_closed = "SOLID_DOOR_HORIZ"}
@@ -94,6 +96,7 @@ newEntity{
 	block_esp = true,
 	door_player_stop = "This door seems to be sealed.",
 	is_door = true,
+	door_sound = "ambient/door_creaks/scifi_door",
 	door_opened = "SOLID_DOOR_OPEN",
 }
 newEntity{ base = "SOLID_DOOR_SEALED", define_as = "SOLID_DOOR_SEALED_HORIZ", image = "terrain/solidwall/solid_floor1.png", add_mos={{image = "terrain/solidwall/solid_wall_closed_doors1.png"}}, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1, add_mos={{image="terrain/padlock2.png", display_y=0.1}}}}, door_opened = "SOLID_DOOR_HORIZ_OPEN"}
