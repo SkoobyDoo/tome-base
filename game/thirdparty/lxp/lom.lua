@@ -54,6 +54,20 @@ function CXML:findAllAttrs(tag, key, value)
 	end
 	return attrs
 end
+function CXML:findAllAttrsValueOrBody(tag, key, value)
+	local list = self:findAll(tag)
+	local attrs = {}
+	for i, node in ipairs(list) do
+		if node.attr[key] then
+			if node.attr[value] then
+				attrs[node.attr[key]] = node.attr[value]
+			else
+				attrs[node.attr[key]] = node[1]
+			end
+		end
+	end
+	return attrs
+end
 
 local function starttag (p, tag, attr)
 	local stack = p:getcallbacks().stack
