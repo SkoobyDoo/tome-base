@@ -62,7 +62,6 @@ end
 function _M:generate()
 	-- Draw UI
 	local w, h = self.font:size(self.text)
-	w=w*1.1
 	self.w, self.h = w - frame_ox1 + frame_ox2, h - frame_oy1 + frame_oy2
 
 	local s = core.display.newSurface(w, h)
