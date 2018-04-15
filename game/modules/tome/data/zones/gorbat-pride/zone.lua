@@ -62,7 +62,7 @@ return {
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",
-			nb_npc = {20, 30},
+			nb_npc = {40, 50},
 			guardian = "GORBAT",
 		},
 		object = {

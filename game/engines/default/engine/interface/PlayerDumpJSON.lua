@@ -29,6 +29,7 @@ allow_late_uuid = false
 
 --- Register the character on te4.org and return a UUID for it
 function _M:getUUID()
+	if game.allowJSONDump and not game:allowJSONDump() then return end
 	if self.__te4_uuid then return self.__te4_uuid end
 	local uuid = profile:registerNewCharacter(game.__mod_info.short_name)
 	if uuid then
@@ -38,6 +39,7 @@ end
 
 --- Call this when a character is saved to upload data to te4.org
 function _M:saveUUID(do_charball)
+	if game.allowJSONDump and not game:allowJSONDump() then return end
 	if game:isTainted() then return end
 	if not self.__te4_uuid then
 		-- Try to grab an UUID even after char reg

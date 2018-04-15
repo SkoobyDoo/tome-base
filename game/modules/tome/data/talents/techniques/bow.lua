@@ -37,8 +37,8 @@ newTalent{
 		local damage = t.getDamage(self, t)
 		local inc = t.getPercentInc(self, t)
 		local reloads = t.ammo_mastery_reload(self, t)
-		return ([[Increases Physical Power by %d and increases weapon damage by %d%% when using bows.
-		Also, increases your reload rate by %d.]]):format(damage, inc * 100, reloads)
+		return ([[Increases weapon damage by %d%% when using bows.
+		Also, increases your reload rate by %d.]]):format(inc * 100, reloads)
 	end,
 }
 

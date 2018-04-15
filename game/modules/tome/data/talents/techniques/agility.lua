@@ -82,9 +82,11 @@ newTalent{
 	mode = "passive",
 	getChance = function(self, t) return math.floor(self:combatTalentScale(t, 15, 45)) end,
 	on_learn = function(self, t)
+		self:attr("allow_wear_shield", 1)
 		self:attr("show_shield_combat", 1)
 	end,
 	on_unlearn = function(self, t)
+		self:attr("allow_wear_shield", -1)
 		self:attr("show_shield_combat", 1)
 	end,
 	callbackOnTakeDamage = function(self, t, src, x, y, type, dam, tmp)

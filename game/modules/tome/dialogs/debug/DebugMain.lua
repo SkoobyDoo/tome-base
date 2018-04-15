@@ -370,6 +370,7 @@ function _M:generateList()
 	list[#list+1] = {name="Give Sher'tul fortress energy", action="shertul-energy"}
 	list[#list+1] = {name="Give all ingredients", action="all-ingredients"}
 	list[#list+1] = {name="Weakdamage", action="weakdamage"}
+	list[#list+1] = {name="Spawn Event", dialog="SpawnEvent"}
 	list[#list+1] = {name="Endgamify", action="endgamify"}
 	list[#list+1] = {name="Particles Editor", action="particles-editor"}
 	self:triggerHook{"DebugMain:generate", menu=list}

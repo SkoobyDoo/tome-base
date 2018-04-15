@@ -24,7 +24,7 @@ require "engine.Generator"
 --- @classmod engine.generator.map.Hexacle
 module(..., package.seeall, class.inherit(engine.Generator))
 
-function _M:init(zone, map, grid_list, data)
+function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	data.segment_wide_chance = data.segment_wide_chance or 70
 	data.nb_segments = data.nb_segments or 8

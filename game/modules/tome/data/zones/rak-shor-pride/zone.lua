@@ -56,7 +56,7 @@ return {
 		},
 		actor = {
 			class = "mod.class.generator.actor.Random",
-			nb_npc = {20, 30},
+			nb_npc = {50, 60},
 			guardian = "RAK_SHOR",
 		},
 		object = {

@@ -86,5 +86,13 @@ function _M:event(e)
 		else
 			self:triggerHook{"UserChat:event", color=color, e=e, data=data}
 		end
+	elseif e.se == "Talk" then
+		-- Shake screen?
+		if e.login == "darkgod" then
+			if e.msg == e.msg:upper() and #e.msg >= 10 then
+				game:shakeScreen(30, 5)
+				game.log("SHAKING")
+			end
+		end
 	end
 end

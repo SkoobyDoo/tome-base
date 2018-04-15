@@ -137,6 +137,9 @@ _M.temporary_values_conf.force_melee_damtype = "last"
 -- AI
 _M.temporary_values_conf.ai_move = "last"
 
+-- Misc
+_M.temporary_values_conf.death_dialog = "last"
+
 _M.projectile_class = "mod.class.Projectile"
 
 function _M:init(t, no_default)
@@ -1478,7 +1481,8 @@ function _M:tooltip(x, y, seen_by)
 	if self.type == "humanoid" or self.type == "giant" then ts:add({"font","italic"}, "(", self.female and "female" or "male", ")", {"font","normal"}, true) else ts:add(true) end
 	ts:add(self.type:capitalize(), " / ", self.subtype:capitalize(), true)
 	ts:add("Rank: ") ts:merge(rank_color:toTString()) ts:add(rank, {"color", "WHITE"}, true)
-	ts:add({"color", 0, 255, 255}, ("Level: %d"):format(self.level), {"color", "WHITE"}, true)
+	if self.hide_level_tooltip then ts:add({"color", 0, 255, 255}, "Level: unknown", {"color", "WHITE"}, true)
+	else ts:add({"color", 0, 255, 255}, ("Level: %d"):format(self.level), {"color", "WHITE"}, true) end
 	if self:attr("invulnerable") then ts:add({"color", "PURPLE"}, "INVULNERABLE!", true) end
 	ts:add({"color", 255, 0, 0}, ("HP: %d (%d%%)"):format(self.life, self.life * 100 / self.max_life), {"color", "WHITE"})
 
@@ -3771,6 +3775,13 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	self:breakReloading()
 	self:fireTalentCheck("callbackOnTakeoff", o, bypass_set)
 
+	-- If objected buffed us, remove
+	local todel = {}
+	for eff_id, p in pairs(self.tmp) do
+		if p.__object_source == o then todel[#todel+1] = eff_id end
+	end
+	if #todel > 0 then for _, eff_id in ipairs(todel) do self:removeEffect(eff_id) end end
+
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
@@ -3971,24 +3982,12 @@ function _M:updateObjectRequirements(o)
 		if newreq.stat and newreq.stat.str then
 			newreq.stat.cun, newreq.stat.str = newreq.stat.str, nil
 		end
-		if newreq.talent then for i, tr in ipairs(newreq.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				newreq.talent[i] = {self.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
-				break
-			end
-		end end
 	end
 	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
 		newreq = newreq or table.clone(oldreq, true)
 		if newreq.stat and newreq.stat.str then
 			newreq.stat.dex, newreq.stat.str = newreq.stat.str, nil
 		end
-		if newreq.talent then for i, tr in ipairs(newreq.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				newreq.talent[i] = {self.T_AGILE_DEFENSE, 1}
-				break
-			end
-		end end
 	end
 	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
 		newreq = newreq or table.clone(oldreq, true)
@@ -4237,6 +4236,13 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 
 	-- Unsustain ?
 	if not no_unsustain and not self:knowTalent(t_id) and t.mode == "sustained" and self:isTalentActive(t_id) then self:forceUseTalent(t_id, {ignore_energy=true, save_cleanup=true}) end
+
+	-- Remove buffs ?
+	local todel = {}
+	for eff_id, p in pairs(self.tmp) do
+		if p.__talent_source == t_id then todel[#todel+1] = eff_id end
+	end
+	if #todel > 0 then for _, eff_id in ipairs(todel) do self:removeEffect(eff_id) end end
 
 	self:recomputeRegenResources()
 
@@ -4970,7 +4976,9 @@ function _M:fireTalentCheck(event, ...)
 				ret = self:callEffect(tid, event, ...) or ret
 			elseif kind == "object" then
 				self.__project_source = tid
+				self.__object_use_running = tid
 				ret = tid:check(event, self, ...) or ret
+				self.__object_use_running = nil
 			else
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
@@ -6340,6 +6348,16 @@ function _M:on_temporary_effect_added(eff_id, e, p)
 	self:registerCallbacks(e, eff_id, "effect")
 	self:fireTalentCheck("callbackOnTemporaryEffectAdd", eff_id, e, p)
 	if e.status == "detrimental" then self:enterCombatStatus() end
+
+	-- Register talent source if any
+	if (e.status == "beneficial" or e.status == "neutral") then
+		if self.__talent_running then
+			p.__talent_source = self.__talent_running.id
+		end
+		if self.__object_use_running then
+			p.__object_source = self.__object_use_running
+		end
+	end
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
@@ -6884,7 +6902,7 @@ function _M:checkStillInCombat()
 	-- Status effects need rechecking
 	for eff_id, p in pairs(self.tmp) do
 		local e = self:getEffectFromId(eff_id)
-		if e.status == "detrimental" then self:enterCombatStatus() break end
+		if e.status == "detrimental" and e.decrease > 0 then self:enterCombatStatus() break end
 	end
 
 	if game.turn - self.in_combat < 50 then return end -- Still good?

@@ -24,7 +24,7 @@ require "engine.Generator"
 --- @classmod engine.generator.map.Maze
 module(..., package.seeall, class.inherit(engine.Generator))
 
-function _M:init(zone, map, grid_list, data)
+function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	self.data = data
 	data.widen_w = data.widen_w or 1

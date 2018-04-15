@@ -191,7 +191,7 @@ function _M:tmxLoad(file)
 	local g = self:getLoader(t)
 	local map = lom.parse(data)
 	local mapprops = {}
-	if map:findOne("properties") then mapprops = map:findOne("properties"):findAllAttrs("property", "name", "value") end
+	if map:findOne("properties", nil, nil, true) then mapprops = map:findOne("properties", nil, nil, true):findAllAttrsValueOrBody("property", "name", "value") end
 	local w, h = tonumber(map.attr.width), tonumber(map.attr.height)
 	local tw, th = tonumber(map.attr.tilewidth), tonumber(map.attr.tileheight)
 	local chars = {}

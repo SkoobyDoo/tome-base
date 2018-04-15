@@ -108,6 +108,7 @@ newBirthDescriptor{
 		"Every 10 levels after level 50 the maximum points of each talent will increase by one.",
 	},
 	descriptor_choices = default_eyal_descriptors{ difficulty = { Tutorial = "never"} },
+	random_escort_possibilities = { {"infinite-dungeon", 5, 40} },
 	copy = {
 		-- Can levelup forever
 		resolvers.generic(function(e) e.max_level = nil end),

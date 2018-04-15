@@ -36,7 +36,7 @@ newEntity{
 	name = "wall", image = "terrain/solidwall/solid_wall_block1.png",
 	display = '#', color_r=255, color_g=255, color_b=255, back_color=colors.GREY,
 	z = 3,
-	nice_tiler = { method="wall3d", inner={"SOLID_WALL", 100, 1, 1}, north={"SOLID_WALL_NORTH", 100, 1, 1}, south={"SOLID_WALL_SOUTH", 10, 1, 7}, north_south="SOLID_WALL_NORTH_SOUTH",  },
+	nice_tiler = { method="wall3d", inner={"SOLID_WALL", 100, 1, 1}, north={"SOLID_WALL_NORTH", 100, 1, 1}, south={"SOLID_WALL_SOUTH", 10, 1, 7}, north_south="SOLID_WALL_NORTH_SOUTH", pillar_8={"SOLID_WALL_PILLAR_8", 100, 1, 1}, pillar_2="SOLID_WALL_PILLAR_2", pillar_6="SOLID_WALL_NORTH_SOUTH", pillar_4="SOLID_WALL_NORTH_SOUTH" },
 	always_remember = true,
 	does_block_move = true,
 	block_sight = true,
@@ -45,7 +45,9 @@ newEntity{
 for i = 1, 1 do
 	newEntity{ base = "SOLID_WALL", define_as = "SOLID_WALL"..i, image = "terrain/solidwall/solid_wall_block"..i..".png", z = 3}
 	newEntity{ base = "SOLID_WALL", define_as = "SOLID_WALL_NORTH"..i, image = "terrain/solidwall/solid_wall_block"..i..".png", z = 3, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1}}}
+	newEntity{ base = "SOLID_WALL", define_as = "SOLID_WALL_PILLAR_8"..i, image = "terrain/solidwall/solid_wall_block"..i..".png", z = 3, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1}}}
 end
+newEntity{ base = "SOLID_WALL", define_as = "SOLID_WALL_PILLAR_2", image = "terrain/solidwall/solid_wall1.png", z = 3}
 newEntity{ base = "SOLID_WALL", define_as = "SOLID_WALL_NORTH_SOUTH", image = "terrain/solidwall/solid_wall1.png", z = 3, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1}}}
 newEntity{ base = "SOLID_WALL", define_as = "SOLID_WALL_SOUTH", image = "terrain/solidwall/solid_wall1.png", z = 3}
 for i = 1, 7 do newEntity{ base = "SOLID_WALL", define_as = "SOLID_WALL_SOUTH"..i, image = "terrain/solidwall/solid_wall"..i..".png", z = 3} end
@@ -64,6 +66,7 @@ newEntity{
 	block_sight = true,
 	is_door = true,
 	door_opened = "SOLID_DOOR_OPEN",
+	door_sound = "ambient/door_creaks/scifi_door",
 	dig = "FLOOR",
 }
 newEntity{
@@ -73,6 +76,7 @@ newEntity{
 	display = "'", color_r=238, color_g=154, color_b=77, back_color=colors.DARK_GREY,
 	always_remember = true,
 	door_closed = "SOLID_DOOR",
+	door_sound = "ambient/door_creaks/scifi_door",
 }
 newEntity{ base = "SOLID_DOOR", define_as = "SOLID_DOOR_HORIZ", image = "terrain/solidwall/solid_floor1.png", add_mos={{image = "terrain/solidwall/solid_wall_closed_doors1.png"}}, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1}}, door_opened = "SOLID_DOOR_HORIZ_OPEN"}
 newEntity{ base = "SOLID_DOOR_OPEN", define_as = "SOLID_DOOR_HORIZ_OPEN", image = "terrain/solidwall/solid_floor1.png", add_mos={{image = "terrain/solidwall/solid_wall_open_doors1.png"}}, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1}}, door_closed = "SOLID_DOOR_HORIZ"}
@@ -92,6 +96,7 @@ newEntity{
 	block_esp = true,
 	door_player_stop = "This door seems to be sealed.",
 	is_door = true,
+	door_sound = "ambient/door_creaks/scifi_door",
 	door_opened = "SOLID_DOOR_OPEN",
 }
 newEntity{ base = "SOLID_DOOR_SEALED", define_as = "SOLID_DOOR_SEALED_HORIZ", image = "terrain/solidwall/solid_floor1.png", add_mos={{image = "terrain/solidwall/solid_wall_closed_doors1.png"}}, add_displays = {class.new{image="terrain/solidwall/solid_wall_top_block1.png", z=18, display_y=-1, add_mos={{image="terrain/padlock2.png", display_y=0.1}}}}, door_opened = "SOLID_DOOR_HORIZ_OPEN"}

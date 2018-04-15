@@ -155,6 +155,10 @@ newEntity{
 	notice = true,
 	change_level=1, change_zone="high-peak",
 	change_level_check = function()
+		if not game.player:hasQuest("orb-command") or not game.player:isQuestStatus("orb-command", engine.Quest.DONE) then
+			require("engine.ui.Dialog"):simplePopup("High Peak", 'The way forward is blocked. There must be some way around here to unlock those doors.')
+			return true
+		end
 		require("engine.ui.Dialog"):yesnoLongPopup("High Peak", 'As you stand on the stairs you can feel this is a "do or die" one way trip. If you enter there will be no coming back.\nEnter?', 500, function(ret) if ret then
 			game:changeLevel(1, "high-peak")
 		end end)

@@ -43,10 +43,5 @@ open_high_peak = function(self, who)
 	game:onLevelLoad("wilderness-1", function(zone, wild)
 		wild.map:removeParticleEmitter(wild.data.istari_shield)
 	end)
-
-	local g = game.zone:makeEntityByName(game.level, "terrain", "PEAK_STAIR")
-	for j = 11, 18 do
-		game.level.map(249, j, engine.Map.TERRAIN, g)
-	end
 	game.logPlayer(who, "#LIGHT_BLUE#There is a loud crack. The way is open.")
 end
