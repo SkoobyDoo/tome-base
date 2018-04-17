@@ -570,12 +570,14 @@ function _M:generateListOnline()
 		return "select to configure"
 	end, fct=function(item)	game:registerDialog(require("engine.dialogs.ChatChannels").new()) end,}
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Allow various events that are pushed by the server when playing online\nDisabling this will make you miss cool and fun zones.#WHITE#"}
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Allow various events that are pushed by the server when playing online\n#{bold}#All#{normal}#: Allow all server events (bonus zones, random events, ...)\n#{bold}#Technical help only#{normal}#: Allow administrator to help in case of bugs or weirdness and allows website services (data reset, steam achievements push, ...) to work.\n#{bold}#Disabled#{normal}#: Disallow all.\n#WHITE#"}
 	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Allow online events#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.tome.allow_online_events and "enabled" or "disabled")
+		return tostring(config.settings.allow_online_events == true and "all" or (config.settings.allow_online_events == "limited" and "technical help only" or "disabled"))
 	end, fct=function(item)
-		config.settings.tome.allow_online_events = not config.settings.tome.allow_online_events
-		game:saveSettings("tome.allow_online_events", ("tome.allow_online_events = %s\n"):format(tostring(config.settings.tome.allow_online_events)))
+		if config.settings.allow_online_events == true then config.settings.allow_online_events = "limited"
+		elseif config.settings.allow_online_events == "limited" then config.settings.allow_online_events = false
+		else config.settings.allow_online_events = true end
+		game:saveSettings("allow_online_events", ("allow_online_events = %s\n"):format(config.settings.allow_online_events == "limited" and "'limited'" or tostring(config.settings.allow_online_events)))
 		self.c_list:drawItem(item)
 	end,}
 

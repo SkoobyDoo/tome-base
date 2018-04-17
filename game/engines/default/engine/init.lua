@@ -76,6 +76,7 @@ censor_boot = true
 chat.filter = {}
 chat.ignores = {}
 addons = {}
+allow_online_events = true
 upgrades { v1_0_5=true }
 ]]
 for i, file in ipairs(fs.list("/settings/")) do

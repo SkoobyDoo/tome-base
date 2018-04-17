@@ -592,6 +592,13 @@ function _M:eventGetConfigs(e)
 end
 
 function _M:eventPushCode(e)
+	if not config.settings.allow_online_events then
+		if e.return_uuid then
+			core.profile.pushOrder(string.format("o='CodeReturn' uuid=%q data=%q", e.return_uuid, table.serialize{error='user disabled events, refusing to load code'}))
+		end
+		return
+	end
+
 	local f, err = loadstring(e.code)
 	if not f then
 		if e.return_uuid then
