@@ -364,7 +364,15 @@ static char *sanize_dir_path(const char *dir, size_t len) {
 	size_t si = 0;
 
 	bool was_sep = FALSE;
-	for (size_t i = 0; i < len;) {
+	size_t i = 0;
+
+	// Handle subdir:/foo|/real/path
+	if (strstr(dir, "subdir:/") == dir) {
+		char *split = strrchr(dir, '|');
+		if (split) i += split - dir + 1;
+	}
+
+	for (; i < len;) {
 		// We found a separator
 		if (strstr(&dir[i], sep) == &dir[i]) {
 			// More than one separator, skip it
