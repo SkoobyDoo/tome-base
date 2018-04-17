@@ -45,10 +45,10 @@ fs.mkdir(fs.getHomePath().."/4.0/")
 fs.mkdir(fs.getHomePath().."/4.0/profiles/")
 fs.mkdir(fs.getHomePath().."/4.0/settings/")
 
-fs.setPathAllowed(engine.homepath)
-fs.setPathAllowed(fs.getRealPath("/addons/"))
-if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/")) end
-fs.setPathAllowed(fs.getRealPath("/modules/"))
+fs.setPathAllowed(engine.homepath, true)
+fs.setPathAllowed(fs.getRealPath("/addons/"), true)
+if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/"), true) end
+fs.setPathAllowed(fs.getRealPath("/modules/"), true)
 fs.doneSettingPathAllowed()
 fs.setWritePath(engine.homepath)
 
