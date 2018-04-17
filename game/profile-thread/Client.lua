@@ -755,8 +755,9 @@ end
 
 function _M:pushCode(e)
 	if e.profile then
-		local f = loadstring(e.code)
-		if f then pcall(f) end
+		-- Unused anyway
+		-- local f = loadstring(e.code)
+		-- if f then pcall(f) end
 	else
 		if e.return_uuid then
 			cprofile.pushEvent(string.format("e='PushCode' return_uuid=%q code=%q", e.return_uuid, e.code))

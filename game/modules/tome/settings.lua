@@ -51,7 +51,6 @@ if type(config.settings.tome.visual_hotkeys) == "nil" then config.settings.tome.
 if type(config.settings.tome.talents_flyers) == "nil" then config.settings.tome.talents_flyers = false end
 if type(config.settings.tome.immediate_melee_keys) == "nil" then config.settings.tome.immediate_melee_keys = true end
 if type(config.settings.tome.immediate_melee_keys_auto) == "nil" then config.settings.tome.immediate_melee_keys_auto = true end
-if type(config.settings.tome.allow_online_events) == "nil" then config.settings.tome.allow_online_events = true end
 if type(config.settings.tome.small_frame_side) == "nil" then config.settings.tome.small_frame_side = true end
 if type(config.settings.tome.fullscreen_stun) == "nil" then config.settings.tome.fullscreen_stun = true end
 if type(config.settings.tome.fullscreen_confusion) == "nil" then config.settings.tome.fullscreen_confusion = true end
