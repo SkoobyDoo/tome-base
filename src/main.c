@@ -1138,6 +1138,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		/***************** Physfs Init *****************/
 		PHYSFS_init(argv[0]);
 
+		bool bootstrap_mounted = FALSE;
 		selfexe = get_self_executable(argc, argv);
 		if (selfexe && PHYSFS_mount(selfexe, "/", 1))
 		{
@@ -1146,6 +1147,7 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 		{
 			printf("NO SELFEXE: bootstrapping from CWD\n");
 			PHYSFS_mount("bootstrap", "/bootstrap", 1);
+			bootstrap_mounted = TRUE;
 		}
 
 		/***************** Lua Init *****************/
@@ -1222,6 +1224,16 @@ void boot_lua(int state, bool rebooting, int argc, char *argv[])
 			printf("WARNING: No bootstrap code found, defaulting to working directory for engine code!\n");
 			PHYSFS_mount("game/thirdparty", "/", 1);
 			PHYSFS_mount("game/", "/", 1);
+			luaL_loadstring(L,
+				"fs.setPathAllowed(fs.getRealPath('/addons/', true)) " \
+				"if fs.getRealPath('/dlcs/') then fs.setPathAllowed(fs.getRealPath('/dlcs/', true)) end " \
+				"fs.setPathAllowed(fs.getRealPath('/modules/', true)) "
+			);
+			lua_pcall(L, 0, 0, 0);
+		}
+
+		if (bootstrap_mounted) {
+			PHYSFS_removeFromSearchPath("bootstrap");
 		}
 
 		if (te4_web_init) te4_web_init(L);
