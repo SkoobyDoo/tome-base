@@ -344,7 +344,7 @@ void physfs_reset_dir_allowed(lua_State *L)
 }
 
 static int lua_fs_done_dir_allowed(lua_State *L) {
-	// can_set_allowed_dirs = FALSE;
+	can_set_allowed_dirs = FALSE;
 
 	int i;
 	for (i = 0; i < nb_allowed_dirs_write; i++) {
