@@ -35,6 +35,12 @@ else
 	fs.mount("game", "/", true)
 end
 
+fs.setPathAllowed(fs.getRealPath("/engines/"), false)
+fs.setPathAllowed(fs.getRealPath("/thirdparty/"), false)
+fs.setPathAllowed(fs.getRealPath("/addons/"), true)
+if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/"), true) end
+fs.setPathAllowed(fs.getRealPath("/modules/"), true)
+
 -- Look for a core
 function get_core(coretype, id)
 	coretype = coretype or "te4core"

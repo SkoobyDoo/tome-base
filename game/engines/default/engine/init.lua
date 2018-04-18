@@ -49,6 +49,10 @@ fs.setPathAllowed(engine.homepath, true)
 fs.setPathAllowed(fs.getRealPath("/addons/"), true)
 if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/"), true) end
 fs.setPathAllowed(fs.getRealPath("/modules/"), true)
+
+-- Last resort, add currently mounted paths, as readonly, so taht reset mounts work
+for _, path in ipairs(fs.getSearchPath()) do fs.setPathAllowed(path) end
+
 fs.doneSettingPathAllowed()
 fs.setWritePath(engine.homepath)
 
