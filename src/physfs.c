@@ -398,7 +398,7 @@ static char *sanize_dir_path(const char *dir, size_t len) {
 	}
 	sdir[si] = '\0';
 
-	printf("===sanitizing '%s' to '%s'\n", dir, sdir);
+	// printf("===sanitizing '%s' to '%s'\n", dir, sdir);
 	return sdir;	
 }
 
@@ -450,7 +450,6 @@ bool physfs_check_allow_path_read(lua_State *L, const char *path) {
 	char *spath = sanize_dir_path(path, strlen(path));
 	int i;
 	for (i = 0; i < nb_allowed_dirs_read; i++) {
-		printf("??READTEST??    '%s' <=> '%s'\n", spath, allowed_dirs_read[i]);
 		if (strstr(spath, allowed_dirs_read[i]) == spath) {
 			free(spath);
 			return TRUE;
