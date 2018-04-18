@@ -130,7 +130,7 @@ function _M:mountProfile(online, module)
 	fs.mkdir(string.format("/profiles/%s/generic/", online and "online" or "offline"))
 	if module then fs.mkdir(string.format("/profiles/%s/modules/%s", online and "online" or "offline", module)) end
 
-	local path = engine.homepath.."/profiles/"..(online and "online" or "offline")
+	local path = engine.homepath..fs.getPathSeparator().."profiles"..fs.getPathSeparator()..(online and "online" or "offline")
 	fs.mount(path, "/current-profile")
 	print("[PROFILE] mounted ", online and "online" or "offline", "on /current-profile")
 	fs.setWritePath(path)
@@ -138,7 +138,7 @@ function _M:mountProfile(online, module)
 	return restore
 end
 function _M:umountProfile(online, pop)
-	local path = engine.homepath.."/profiles/"..(online and "online" or "offline")
+	local path = engine.homepath..fs.getPathSeparator().."profiles"..fs.getPathSeparator()..(online and "online" or "offline")
 	fs.umount(path)
 	print("[PROFILE] unmounted ", online and "online" or "offline", "from /current-profile")
 
