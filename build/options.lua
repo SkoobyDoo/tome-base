@@ -71,6 +71,11 @@ newoption {
 }
 
 newoption {
+	trigger	    = "discord-nolib",
+	description = "Dont build discord lib"
+}
+
+newoption {
 	trigger	    = "web-awesomium",
 	description = "Use awesomium embedded browser as the webcore"
 }

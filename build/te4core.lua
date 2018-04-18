@@ -599,7 +599,7 @@ if _OPTIONS.steam then
 	dofile("../steamworks/build/steam-code.lua")
 end
 
-if _OPTIONS.discord then
+if _OPTIONS.discord and not _OPTIONS['discord-nolib'] then
 project "te4-discord"
 	configuration "linux"
 		kind "SharedLib"
