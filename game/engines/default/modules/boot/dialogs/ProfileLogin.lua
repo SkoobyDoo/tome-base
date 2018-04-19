@@ -68,6 +68,7 @@ function _M:init(dialogdef, profile_help_text)
 		self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=false, fct=function() self:okclick() end}
 		self.c_news2 = Textzone.new{text="about important game events from us.", width=self.iw - 20, auto_height=true}
 		local ok = require("engine.ui.Button").new{text="Create", fct=function() self:okclick() end}
+		local privacy = require("engine.ui.Button").new{text="Privacy Policy (opens in browser)", fct=function() self:privacypolicy() end}
 		local cancel = require("engine.ui.Button").new{text="Cancel", fct=function() self:cancelclick() end}
 
 		self:loadUI{
@@ -80,6 +81,7 @@ function _M:init(dialogdef, profile_help_text)
 			{left=0, top=self.c_desc.h+self.c_login.h+self.c_pass.h+self.c_pass2.h+self.c_email.h+self.c_news2.h+10, ui=self.c_news2},
 			{left=0, bottom=0, ui=ok},
 			{right=0, bottom=0, ui=cancel},
+			{hcenter=0, bottom=0, ui=privacy},
 		}
 		self:setFocus(self.c_login)
 	end
@@ -115,4 +117,8 @@ end
 
 function _M:cancelclick()
 	self.key:triggerVirtual("EXIT")
+end
+
+function _M:privacypolicy()
+	util.browserOpenUrl("https://te4.org/privacy-policy-data", {is_external=true})	
 end
