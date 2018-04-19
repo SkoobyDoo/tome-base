@@ -23,6 +23,7 @@ local url = require "socket.url"
 local ltn12 = require "ltn12"
 local Dialog = require "engine.ui.Dialog"
 local UserChat = require "engine.UserChat"
+local sha1 = require("sha1").sha1
 require "Json2"
 
 --- Handles the player profile, possibly online
@@ -98,6 +99,12 @@ function _M:start()
 	self:loadGenericProfile()
 
 	if self.generic.online and self.generic.online.login and self.generic.online.pass then
+		-- Convert to encrypted pass
+		if not self.generic.online.v2 then
+			self.generic.online.pass = sha1(self.generic.online.pass)
+			self:saveGenericProfile("online", {login=self.generic.online.login, pass=self.generic.online.pass, v2=true})
+		end
+
 		self.login = self.generic.online.login
 		self.pass = self.generic.online.pass
 		self:tryAuth()
@@ -147,9 +154,9 @@ end
 
 -- Define the fields that are sync'ed online, and how they are sync'ed
 local generic_profile_defs = {
-	firstrun = {nosync=true, {firstrun="number"}, receive=function(data, save) save.firstrun = data.firstrun end },
-	online = {nosync=true, {login="string:40", pass="string:40"}, receive=function(data, save) save.login = data.login save.pass = data.pass end },
-	onlinesteam = {nosync=true, {autolog="boolean"}, receive=function(data, save) save.autolog = data.autolog end },
+	firstrun = {nosync=true, no_sync=true, {firstrun="number"}, receive=function(data, save) save.firstrun = data.firstrun end },
+	online = {nosync=true, no_sync=true, {login="string:40", pass="string:40", v2="number"}, receive=function(data, save) save.login = data.login save.pass = data.pass save.v2 = data.v2 end },
+	onlinesteam = {nosync=true, no_sync=true, {autolog="boolean"}, receive=function(data, save) save.autolog = data.autolog end },
 	modules_played = { {name="index:string:30"}, {time_played="number"}, receive=function(data, save) max_set(save, data.name, data, "time_played") end, export=function(env) for k, v in pairs(env) do add{name=k, time_played=v} end end },
 	modules_loaded = { {name="index:string:30"}, {nb="number"}, receive=function(data, save) max_set(save, data.name, data, "nb") end, export=function(env) for k, v in pairs(env) do add{name=k, nb=v} end end },
 }
@@ -425,14 +432,16 @@ function _M:checkFirstRun()
 end
 
 function _M:performlogin(login, pass)
+	pass = sha1(pass)
+
 	self.login=login
 	self.pass=pass
 	print("[ONLINE PROFILE] attempting log in ", self.login)
 	self.auth_tried = nil
 	self:tryAuth()
 	self:waitFirstAuth()
-	if (profile.auth) then
-		self:saveGenericProfile("online", {login=login, pass=pass})
+	if profile.auth then
+		self:saveGenericProfile("online", {login=login, pass=pass, v2=true})
 		self:getConfigs("generic")
 		self:syncOnline("generic")
 	end
