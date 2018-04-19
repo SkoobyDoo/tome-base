@@ -2659,7 +2659,7 @@ function _M:saveGame()
 	-- savefile_pipe is created as a global by the engine
 	local clone = savefile_pipe:push(self.save_name, "game", self)
 	world:saveWorld()
-	if not self.creating_player then
+	if not self.creating_player and config.settings.tome.upload_charsheet then
 		local oldplayer = self.player
 		self.party:setPlayer(self:getPlayer(true), true)
 

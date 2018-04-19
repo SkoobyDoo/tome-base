@@ -82,6 +82,7 @@ chat.ignores = {}
 addons = {}
 allow_online_events = true
 disable_all_connectivity = false
+upload_charsheet = true
 upgrades { v1_0_5=true }
 ]]
 for i, file in ipairs(fs.list("/settings/")) do
