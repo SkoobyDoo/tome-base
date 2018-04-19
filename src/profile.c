@@ -33,6 +33,7 @@ static profile_type *main_profile = NULL;
 
 int push_order(lua_State *L)
 {
+	if (!main_profile) return 0;
 	size_t len;
 	const char *code = luaL_checklstring(L, 1, &len);
 //	printf("[profile order] %s\n", code);
@@ -55,6 +56,7 @@ int push_order(lua_State *L)
 
 int pop_order(lua_State *L)
 {
+	if (!main_profile) { lua_pushnil(L); return 1; }
 	profile_queue *q = NULL;
 	SDL_mutexP(main_profile->lock_iqueue);
 	if (main_profile->iqueue_head)
@@ -80,6 +82,7 @@ int pop_order(lua_State *L)
 
 int push_event(lua_State *L)
 {
+	if (!main_profile) return 0;
 	size_t len;
 	const char *code = luaL_checklstring(L, 1, &len);
 //	printf("[profile event] %s\n", code);
@@ -102,6 +105,7 @@ int push_event(lua_State *L)
 
 int pop_event(lua_State *L)
 {
+	if (!main_profile) { lua_pushnil(L); return 1; }
 	profile_queue *q = NULL;
 	SDL_mutexP(main_profile->lock_oqueue);
 	if (main_profile->oqueue_head)
@@ -195,6 +199,7 @@ void free_profile_thread()
 // Runs on main thread
 int create_profile_thread(lua_State *L)
 {
+	if (no_connectivity) return 0;
 	if (main_profile) return 0;
 
 	SDL_Thread *thread;

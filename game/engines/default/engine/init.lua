@@ -81,12 +81,22 @@ chat.filter = {}
 chat.ignores = {}
 addons = {}
 allow_online_events = true
+disable_all_connectivity = false
 upgrades { v1_0_5=true }
 ]]
 for i, file in ipairs(fs.list("/settings/")) do
 	if file:find(".cfg$") then
 		config.load("/settings/"..file)
 	end
+end
+
+if config.settings.disable_all_connectivity then
+	core.game.disableConnectivity()
+	local function void(t) for _, k in ipairs(table.keys(t)) do t[k] = nil end end
+	if core.steam then void(core.steam) core.steam = nil end
+	if core.discord then void(core.discord) core.discord = nil end
+	if core.webview then void(core.webview) core.webview = nil end
+	if socketcore then void(socketcore) socketcore = nil end
 end
 
 if config.settings.force_safeboot then

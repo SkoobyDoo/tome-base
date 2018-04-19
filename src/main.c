@@ -93,6 +93,7 @@ int requested_fps_idle = DEFAULT_IDLE_FPS;
 /* The currently "saved" fps, used for idle transitions. */
 int requested_fps_idle_saved = 0;
 bool forbid_idle_mode = FALSE;
+bool no_connectivity = FALSE;
 
 SDL_TimerID display_timer_id = 0;
 SDL_TimerID realtime_timer_id = 0;
