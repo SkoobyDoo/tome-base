@@ -58,6 +58,7 @@ extern void setupRealtime(float freq);
 extern void setupDisplayTimer(int fps);
 extern int docall (lua_State *L, int narg, int nret);
 extern bool no_steam;
+extern bool no_connectivity;
 extern bool safe_mode;
 extern bool fbo_active;
 extern bool multitexture_active;

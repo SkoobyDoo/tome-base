@@ -477,6 +477,9 @@ function _M:popEvent(specific)
 end
 
 function _M:waitEvent(name, cb, wait_max)
+	-- Dont try as it would fail and we'd fait for nothing
+	if config.settings.disable_all_connectivity then return end
+
 	-- Wait anwser, this blocks thegame but cant really be avoided :/
 	local stop = false
 	local first = true
@@ -509,6 +512,9 @@ function _M:noMoreAuthWait()
 end
 
 function _M:waitFirstAuth(timeout)
+	-- Dont try as it would fail and we'd fait for nothing
+	if config.settings.disable_all_connectivity then return end
+
 	if self.no_more_wait_auth then return end
 	if self.auth_tried and self.auth_tried >= 1 then return end
 	if not self.waiting_auth then return end
@@ -656,6 +662,9 @@ function _M:getNews(callback, steam)
 end
 
 function _M:tryAuth()
+	-- Dont try as it would fail and we'd fait for nothing
+	if config.settings.disable_all_connectivity then return end
+
 	print("[ONLINE PROFILE] auth")
 	self.auth_last_error = nil
 	if self.steam_token then
