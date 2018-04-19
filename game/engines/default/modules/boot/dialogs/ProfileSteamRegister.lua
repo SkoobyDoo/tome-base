@@ -43,7 +43,7 @@ Luckily this is very easy to do: you only require a profile name and optionally 
 
 	self.c_login = Textbox.new{title="Username: ", text="", chars=30, max_len=20, fct=function(text) self:okclick() end}
 	self.c_email = Textbox.new{title="Email: ", size_title=self.c_login.title, text="", chars=30, max_len=60, fct=function(text) self:okclick() end}
-	self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=true, fct=function() self:okclick() end}
+	self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=false, fct=function() self:okclick() end}
 	self.c_news2 = Textzone.new{text="about important game events from us.", width=self.iw - 20, auto_height=true}
 	local ok = require("engine.ui.Button").new{text="Register", fct=function() self:okclick() end}
 	local cancel = require("engine.ui.Button").new{text="Cancel", fct=function() self:cancelclick() end}
