@@ -2065,7 +2065,7 @@ function _M:regenAmmo()
 	if not r then return end
 	if ammo.combat.shots_left >= ammo.combat.capacity then ammo.combat.shots_left = ammo.combat.capacity return end
 	ammo.combat.reload_counter = (ammo.combat.reload_counter or 0) + 1
-	if ammo.combat.reload_counter == r then
+	if ammo.combat.reload_counter >= r then
 		ammo.combat.reload_counter = 0
 		ammo.combat.shots_left = util.bound(ammo.combat.shots_left + 1, 0, ammo.combat.capacity)
 	end
