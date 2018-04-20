@@ -168,7 +168,7 @@ newTalent{
 				return {BLIGHT=self:combatLimit(diseases.dur/diseases.num - 1, 3, 0, 0, 1, 5)}
 			end
 		end
-	end },
+	},
 	direct_hit = true,
 	requires_target = true,
 	getDamage = function(self, t) return (100 + self:combatTalentSpellDamage(t, 0, 50)) / 100 end,
