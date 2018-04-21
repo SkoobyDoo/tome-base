@@ -17,6 +17,26 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
+local getTargetDiseases = function(self, target)
+	if not target then return end
+	local diseases = self.turn_procs.target_diseases and self.turn_procs.target_diseases[target.uid]
+	if diseases then return diseases end
+
+	local num, dur = 0, 0
+	diseases = {}
+	for eff_id, p in pairs(target.tmp) do
+		local e = target.tempeffect_def[eff_id]
+		if e.subtype.disease then
+			num, dur = num + 1, dur + p.dur
+			diseases[#diseases+1] = {id=eff_id, params=p}
+		end
+	end
+	diseases.num, diseases.dur = num, dur
+	self.turn_procs.target_diseases = self.turn_procs.target_diseases or {}
+	self.turn_procs.target_diseases[target.uid] = diseases
+	return diseases
+end
+
 newTalent{
 	name = "Virulent Disease",
 	type = {"corruption/plague", 1},
@@ -28,6 +48,7 @@ newTalent{
 	tactical = { ATTACK = {BLIGHT = 2} },
 	requires_target = true,
 	no_energy = true,
+	--getTargetDiseases = getTargetDiseases,
 	target = function(self, t) return {type="hit", range=self:getTalentRange(t), talent=t} end,
 	range = function(self, t) return 5 end, -- Instant cast should not do thousands of damage at long range.  This is still too powerful, though
 	action = function(self, t)
@@ -158,6 +179,7 @@ newTalent{
 	vim = 20,
 	cooldown = 15,
 	range = 8,
+	getTargetDiseases = getTargetDiseases,
 	tactical = { DISABLE = function(self, t, target)
 			local diseases = t.getTargetDiseases(self, target)
 			if diseases and diseases.num > 0 then return {stun=0.1} end  -- We want the disable to be a small part of this calculation, partially to emphasize delaying its use
