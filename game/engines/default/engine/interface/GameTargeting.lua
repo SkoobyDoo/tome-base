@@ -36,7 +36,6 @@ function _M:init()
 
 	-- Allow scrolling when targetting
 	self.target.on_set_target = function(self, how)
-print("===============", self.target , self.target_type , self.target.x , self.active, self.target_type.stop_before_target , how)
 		if self.target and self.target_type and self.target.x and self.active and self.target_type.stop_before_target and how == "scan" then
 			local start_x = self.target_type.start_x or self.target_type.x or self.target_type.source_actor and self.target_type.source_actor.x or self.x
 			local start_y = self.target_type.start_y or self.target_type.y or self.target_type.source_actor and self.target_type.source_actor.y or self.y
