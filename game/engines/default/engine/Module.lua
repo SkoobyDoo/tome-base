@@ -475,7 +475,7 @@ function _M:addonMD5(add, base)
 	print("[MODULE LOADER] addon ", add.short_name, " MD5", fmd5, "computed in ", core.game.getTime() - t, vbase)
 
 	if __module_extra_info.compute_md5_only then
-		local f = io.open(__module_extra_info.compute_md5_only, "a")
+		local f = fs.open(__module_extra_info.compute_md5_only, "a")
 		f:write(("%s : addon[%s] md5\n"):format(fmd5, add.version_name))
 		f:close()
 	end
@@ -982,7 +982,7 @@ function _M:instanciate(mod, name, new_game, no_reboot, extra_module_info)
 			print("[MODULE LOADER] module MD5", module_md5, "computed in ", core.game.getTime() - t)
 
 			if __module_extra_info.compute_md5_only then
-				local f = io.open(__module_extra_info.compute_md5_only, "w")
+				local f = fs.open(__module_extra_info.compute_md5_only, "w")
 				f:write(("%s : module[%s] md5\n"):format(module_md5, mod.version_string))
 				f:close()
 			end
