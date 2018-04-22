@@ -2569,6 +2569,7 @@ function _M:startEvents()
 		for i, e in ipairs(game.zone.assigned_events[game.level.level] or {}) do
 			local f, err = loadfile(self:eventBaseName("", e))
 			if not f then error(err) end
+			game.zone.assigned_events[game.level.level].params = game.zone.assigned_events[game.level.level].params or {}
 			setfenv(f, setmetatable({level=game.level, zone=game.zone, event_id=e, params=game.zone.assigned_events[game.level.level].params[i], Map=Map}, {__index=_G}))
 			self:doneEvent(e, -1) -- unmark as done (for event code)
 			if f() then self:doneEvent(e, 1) end -- remark as done if event completed
