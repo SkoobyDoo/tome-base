@@ -2864,7 +2864,7 @@ end
 
 function _M:takeHit(value, src, death_note)
 	self:enterCombatStatus(src)
-	if src.enterCombatStatus then src:enterCombatStatus(self) end
+	if src and src.enterCombatStatus then src:enterCombatStatus(self) end
 
 	for eid, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eid]
