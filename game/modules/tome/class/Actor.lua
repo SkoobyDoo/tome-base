@@ -4939,7 +4939,6 @@ end
 -- @param ab the talent (not the id, the table)
 -- @return true to continue, false to stop
 function _M:preUseTalent(ab, silent, fake)
-
 	if ab._ai_parsed == nil then -- add some AI info to the talent if needed
 		print("[Actor:preUseTalent] PARSING TALENT for AI info", ab.id, self.name)
 		mod.class.interface.ActorAI.aiParseTalent(ab, self)
@@ -4950,7 +4949,8 @@ function _M:preUseTalent(ab, silent, fake)
 		return false
 	end
 
-	if not self:attr("no_talent_fail") then
+	if self:attr("no_talent_fail") then return true end
+
 	if not ab.never_fail and self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
 		if not silent then game.logSeen(self, "%s is too afraid to use %s.", self.name:capitalize(), ab.name) end
 		return false
@@ -5168,8 +5168,6 @@ function _M:preUseTalent(ab, silent, fake)
 	-- Cant heal
 	if ab.is_heal and (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) then return false end
 	if ab.is_teleport and self:attr("encased_in_ice") then return false end
-
-	end
 
 	return true
 end
