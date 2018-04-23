@@ -193,6 +193,7 @@ newEntity{ define_as = "SNAPROOT", -- backup guardian
 		[Talents.T_MASSIVE_BLOW] = 1, 
 	},
 	autolevel = "warriorwill",
+	auto_classes={{class="Summoner", start_level=51}},
 	ai = "tactical", ai_state = { talent_in=2, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
 	resolvers.inscriptions(6, "infusion"),

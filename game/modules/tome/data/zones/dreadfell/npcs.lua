@@ -186,6 +186,9 @@ newEntity{ define_as = "PALE_DRAKE",
 	resolvers.sustains_at_birth(),
 
 	autolevel = "caster",
+	auto_classes={{class="Archmage", start_level=41, level_rate=50},
+		{class="Corruptor", start_level=41, level_rate=50}
+	},
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"ranged",
 	resolvers.inscriptions(4, "rune"),
