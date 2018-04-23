@@ -94,7 +94,7 @@ end
 if config.settings.disable_all_connectivity then
 	core.game.disableConnectivity()
 	local function void(t) for _, k in ipairs(table.keys(t)) do t[k] = nil end end
-	if core.steam then void(core.steam) core.steam = nil end
+	-- if core.steam then void(core.steam) core.steam = nil end
 	if core.discord then void(core.discord) core.discord = nil end
 	if core.webview then void(core.webview) core.webview = nil end
 	if socketcore then void(socketcore) socketcore = nil end

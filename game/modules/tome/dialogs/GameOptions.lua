@@ -617,7 +617,6 @@ This includes, but is not limited to:
 - Expansions & DLCs: Similarly any and all official expansions to the game works under the same principles as the donator benfits and will thus also be disabled.
 - Easy addons downloading & installation: You will not be able to see ingame the list of available addons, nor to one-click install them. You may still do so manually.
 - Version checks: Addons will not be checked for new versions.
-- Steam: If you are running the game from this this will disable any and all Steam features and services as the game as no way to control what Steam would do.
 - Discord: If you use Discord Rich Presence integration this will also be disabled byt this setting.
 - Ingame game news: The main menu will stop showing you info about new updates to the game.
 
