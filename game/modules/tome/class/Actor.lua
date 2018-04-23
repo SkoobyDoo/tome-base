@@ -4951,6 +4951,10 @@ function _M:preUseTalent(ab, silent, fake)
 
 	if self:attr("no_talent_fail") then return true end
 
+	if self.turn_procs.forbid_instant_talents and self.turn_procs.forbid_instant_talents[ab.id] then
+		if not silent then game.logPlayer(self, "You already tried to use %s, an instant use talent, this turn and failed.", ab.name) end
+		return false
+	end
 	if not ab.never_fail and self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
 		if not silent then game.logSeen(self, "%s is too afraid to use %s.", self.name:capitalize(), ab.name) end
 		return false
@@ -5067,7 +5071,12 @@ function _M:preUseTalent(ab, silent, fake)
 			if (not self:attr("no_equilibrium_fail") and (not self:attr("no_equilibrium_summon_fail") or not ab.is_summon)) and not self:equilibriumChance(ab.equilibrium or ab.sustain_equilibrium) then
 				if not silent then game.logPlayer(self, "You fail to use %s due to your equilibrium!", ab.name) end
 				self:incEquilibrium((ab.equilibrium or ab.sustain_equilibrium) / 10)
-				self:useEnergy()
+				if not util.getval(ab.no_energy, self, ab) then
+					self:useEnergy()
+				else
+					self.turn_procs.forbid_instant_talents = self.turn_procs.forbid_instant_talents or {}
+					self.turn_procs.forbid_instant_talents[ab.id] = true
+				end
 				return false
 			end
 		end
@@ -5076,7 +5085,12 @@ function _M:preUseTalent(ab, silent, fake)
 		if (ab.is_spell and not self:isTalentActive(ab.id)) and not fake and self:attr("spell_failure") then
 			if rng.percent(self:attr("spell_failure")) then
 				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
-				self:useEnergy()
+				if not util.getval(ab.no_energy, self, ab) then
+					self:useEnergy()
+				else
+					self.turn_procs.forbid_instant_talents = self.turn_procs.forbid_instant_talents or {}
+					self.turn_procs.forbid_instant_talents[ab.id] = true
+				end
 				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 				return false
 			end
@@ -5086,7 +5100,12 @@ function _M:preUseTalent(ab, silent, fake)
 		if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
 			if rng.percent(self:attr("nature_failure")) then
 				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
-				self:useEnergy()
+				if not util.getval(ab.no_energy, self, ab) then
+					self:useEnergy()
+				else
+					self.turn_procs.forbid_instant_talents = self.turn_procs.forbid_instant_talents or {}
+					self.turn_procs.forbid_instant_talents[ab.id] = true
+				end
 				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 				return false
 			end
