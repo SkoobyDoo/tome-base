@@ -156,6 +156,7 @@ newTalent{
 					local parameters = table.clone(disease.params, true)
 					parameters.src = self
 					parameters.apply_power = self:combatSpellpower()
+					parameters.__tmpvals = nil
 					target:setEffect(disease.id, 6, parameters)
 				end
 			end)
@@ -279,6 +280,7 @@ newTalent{
 
 			local disease = rng.table(diseases)
 			local params = table.clone(disease.params, true)
+			params.__tmpvals = nil
 			params.src = self
 			if target:canBe("disease") then
 				target:setEffect(disease.id, 6, params)
