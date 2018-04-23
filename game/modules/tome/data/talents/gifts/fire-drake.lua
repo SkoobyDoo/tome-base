@@ -133,13 +133,15 @@ newTalent{
 	end,
 	getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 5, 9)) end,
 	action = function(self, t)
-		local duration = t.getDuration(self, t)
-		local radius = self:getTalentRadius(t)
-		local damage = self:mindCrit(t.getDamage(self, t))
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
+
+		local duration = t.getDuration(self, t)
+		local radius = self:getTalentRadius(t)
+		local damage = self:mindCrit(t.getDamage(self, t))
+
 		-- Add a lasting map effect
 		game.level.map:addEffect(self,
 			x, y, duration,
