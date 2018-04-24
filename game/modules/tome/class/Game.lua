@@ -689,7 +689,7 @@ function _M:updateCurrentChar()
 		if days > 0 then
 			playtime = ("%id %ih %im %ss"):format(days, hours, minutes, seconds)
 		elseif hours > 0 then
-			playtime = ("%id %im %ss"):format(hours, minutes, seconds)
+			playtime = ("%ih %im %ss"):format(hours, minutes, seconds)
 		elseif minutes > 0 then
 			playtime = ("%im %ss"):format(minutes, seconds)
 		else
@@ -2640,7 +2640,7 @@ function _M:saveGame()
 	-- savefile_pipe is created as a global by the engine
 	local clone = savefile_pipe:push(self.save_name, "game", self)
 	world:saveWorld()
-	if not self.creating_player then
+	if not self.creating_player and config.settings.tome.upload_charsheet then
 		local oldplayer = self.player
 		self.party:setPlayer(self:getPlayer(true), true)
 

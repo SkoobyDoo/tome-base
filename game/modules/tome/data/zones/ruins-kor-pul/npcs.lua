@@ -74,6 +74,7 @@ newEntity{ define_as = "SHADE",
 	inc_damage = {all=-20},
 
 	autolevel = "warriormage",
+	auto_classes={{class="Archmage", start_level=12, level_rate=75}},
 	ai = "tactical", ai_state = { talent_in=3, ai_move="move_astar", },
 
 	on_die = function(self, who)
@@ -114,6 +115,7 @@ newEntity{ base = "BASE_NPC_THIEF", define_as = "THE_POSSESSED",
 	},
 
 	autolevel = "rogue",
+	auto_classes={{class="Arcane Blade", start_level=12, level_rate=75}},
 	ai = "tactical", ai_state = { talent_in=2, ai_move="move_astar", },
 
 	on_die = function(self, who)
@@ -174,6 +176,9 @@ newEntity{ define_as = "KOR_FURY",
 	},
 
 	autolevel = "caster",
+	auto_classes={{class="Archmage", start_level=39, level_rate=50},
+		{class="Corruptor", start_level=39, level_rate=50}
+	},
 	ai = "tactical", ai_state = { ai_target="target_player_radius", ai_move="move_complex", sense_radius=50, talent_in=1, },
 	ai_tactic = resolvers.tactic"ranged",
 	resolvers.inscriptions(4, "rune"),

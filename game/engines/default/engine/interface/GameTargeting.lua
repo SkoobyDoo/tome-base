@@ -36,6 +36,18 @@ function _M:init()
 
 	-- Allow scrolling when targetting
 	self.target.on_set_target = function(self, how)
+		if self.target and self.target_type and self.target.x and self.active and self.target_type.stop_before_target and how == "scan" then
+			local start_x = self.target_type.start_x or self.target_type.x or self.target_type.source_actor and self.target_type.source_actor.x or self.x
+			local start_y = self.target_type.start_y or self.target_type.y or self.target_type.source_actor and self.target_type.source_actor.y or self.y
+			local l = core.fov.line(self.target.x, self.target.y, start_x, start_y)
+			local lx, ly = l:step()
+			if lx and ly then
+				self.target.x = lx
+				self.target.y = ly
+				self.target.entity = game.level.map(self.target.x, self.target.y, engine.Map.ACTOR)
+			end
+		end
+
 		if self.key ~= self.targetmode_key then return end
 		local dx, dy = game.level.map:moveViewSurround(self.target.x, self.target.y, 1, 1, true)
 		if how == "mouse" and (dx ~= 0 or dy ~= 0) then

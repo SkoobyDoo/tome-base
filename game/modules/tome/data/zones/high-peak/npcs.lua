@@ -290,6 +290,7 @@ newEntity{ define_as = "FALLEN_SUN_PALADIN_AERYN",
 		[Talents.T_SPECTRAL_SHIELD]=1,
 		[Talents.T_IRRESISTIBLE_SUN]=1,
 	},
+	auto_classes={{class="Sun Paladin", start_level=57, level_rate=100}},
 	resolvers.sustains_at_birth(),
 }
 

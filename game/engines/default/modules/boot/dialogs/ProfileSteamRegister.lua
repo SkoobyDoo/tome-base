@@ -43,10 +43,11 @@ Luckily this is very easy to do: you only require a profile name and optionally 
 
 	self.c_login = Textbox.new{title="Username: ", text="", chars=30, max_len=20, fct=function(text) self:okclick() end}
 	self.c_email = Textbox.new{title="Email: ", size_title=self.c_login.title, text="", chars=30, max_len=60, fct=function(text) self:okclick() end}
-	self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=true, fct=function() self:okclick() end}
+	self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=false, fct=function() self:okclick() end}
 	self.c_news2 = Textzone.new{text="about important game events from us.", width=self.iw - 20, auto_height=true}
 	local ok = require("engine.ui.Button").new{text="Register", fct=function() self:okclick() end}
 	local cancel = require("engine.ui.Button").new{text="Cancel", fct=function() self:cancelclick() end}
+	local privacy = require("engine.ui.Button").new{text="Privacy Policy (opens in browser)", fct=function() self:privacypolicy() end}
 	self:loadUI{
 		{left=0, top=0, ui=self.c_desc},
 		{left=0, top=self.c_desc.h, ui=self.c_login},
@@ -55,6 +56,7 @@ Luckily this is very easy to do: you only require a profile name and optionally 
 		{left=0, top=self.c_desc.h+self.c_login.h+self.c_email.h+self.c_news.h+5, ui=self.c_news2},
 		{left=0, bottom=0, ui=ok},
 		{right=0, bottom=0, ui=cancel},
+		{hcenter=0, bottom=0, ui=privacy},
 	}
 	self:setFocus(self.c_login)
 	self:setupUI(true, true)
@@ -98,4 +100,8 @@ end
 
 function _M:cancelclick()
 	self.key:triggerVirtual("EXIT")
+end
+
+function _M:privacypolicy()
+	util.browserOpenUrl("https://te4.org/privacy-policy-data", {is_external=true})	
 end

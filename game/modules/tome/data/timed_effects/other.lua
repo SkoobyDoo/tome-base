@@ -3327,3 +3327,29 @@ newEffect{
 	deactivate = function(self, eff)
 	end,
 }
+
+newEffect{
+	name = "RECALL", image = "effects/recall.png",
+	desc = "Recalling",
+	long_desc = function(self, eff) return "The target is waiting to be recalled back to the worldmap." end,
+	type = "magical",
+	subtype = { unknown=true },
+	status = "beneficial",
+	cancel_on_level_change = true,
+	parameters = { },
+	activate = function(self, eff)
+		eff.leveid = game.zone.short_name.."-"..game.level.level
+	end,
+	deactivate = function(self, eff)
+		if (eff.allow_override or (self == game:getPlayer(true) and self:canBe("worldport") and not self:attr("never_move"))) and eff.dur <= 0 then
+			game:onTickEnd(function()
+				if eff.leveid == game.zone.short_name.."-"..game.level.level and game.player.can_change_zone then
+					game.logPlayer(self, "You are yanked out of this place!")
+					game:changeLevel(1, eff.where or game.player.last_wilderness)
+				end
+			end)
+		else
+			game.logPlayer(self, "Space restabilizes around you.")
+		end
+	end,
+}

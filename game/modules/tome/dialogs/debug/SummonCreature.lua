@@ -130,6 +130,8 @@ function _M:placeCreature(m)
 					end
 					local Dstring = m.getDisplayString and m:getDisplayString() or ""
 					game.log("#LIGHT_BLUE#Added %s[%s]%s at (%d, %d)", Dstring, m.uid, m.name, x, y)
+					-- special cases
+					if m.alchemy_golem then game.zone:addEntity(game.level, m.alchemy_golem, "actor", util.findFreeGrid(m.x, m.y, 3, false, {[engine.Map.ACTOR]=true})) end
 				end
 			end
 			game:registerDialog(self)

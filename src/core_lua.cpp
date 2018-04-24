@@ -540,6 +540,12 @@ static int lua_force_next_tick(lua_State *L)
 	return 0;
 }
 
+static int lua_disable_connectivity(lua_State *L)
+{
+	no_connectivity = TRUE;
+	return 0;
+}
+
 static int lua_getclasstable(lua_State *L) {
 	const char *classname = luaL_checkstring(L, 1);
 	bool raw = lua_toboolean(L, 2);
@@ -636,6 +642,7 @@ static const struct luaL_Reg gamelib[] =
 	{"checkError", lua_check_error},
 	{"resetLocale", lua_reset_locale},
 	{"openBrowser", lua_open_browser},
+	{"disableConnectivity", lua_disable_connectivity},
 #ifdef TE4_PROFILING
 	{"CProfiler", lua_cprofiler},
 #endif

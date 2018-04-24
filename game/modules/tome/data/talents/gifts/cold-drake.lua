@@ -134,10 +134,10 @@ newTalent{
 		local tg = self:getTalentTarget(t)
 		local x, y = self:getTarget(tg)
 		if not x or not y then return nil end
-		local ice_damage = self:mindCrit(t.getIceDamage(self, t))
-		local ice_radius = t.getIceRadius(self, t)
 		local _ _, _, _, x, y = self:canProject(tg, x, y)
 		if game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") then return nil end
+		local ice_damage = self:mindCrit(t.getIceDamage(self, t))
+		local ice_radius = t.getIceRadius(self, t)
 
 		self:project(tg, x, y, function(px, py, tg, self)
 			local oe = game.level.map(px, py, Map.TERRAIN)

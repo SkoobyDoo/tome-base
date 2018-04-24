@@ -197,6 +197,9 @@ newEntity{ base="BASE_NPC_CORRUPTED_HORROR", define_as = "ABOMINATION",
 	end,
 
 	autolevel = "warriormage",
+	auto_classes={{class="Anorithil", start_level=36, level_rate=50},
+		{class="Cursed", start_level=36, level_rate=50}
+	},
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
 	resolvers.inscriptions(4, {}),

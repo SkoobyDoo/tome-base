@@ -74,7 +74,7 @@ newEntity{ define_as = "EPOCH",
 		[Talents.T_HASTE]={base=1, every=7},
 		[Talents.T_DIMENSIONAL_STEP]=5,
 	},
-
+	auto_classes={{class="Paradox Mage", start_level=36}},
 	resolvers.sustains_at_birth(),
 
 	autolevel = "caster",

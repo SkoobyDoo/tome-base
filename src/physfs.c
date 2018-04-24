@@ -278,6 +278,7 @@ static int lua_zip_add(lua_State *L)
 static int lua_fs_mount(lua_State *L)
 {
 	const char *src = luaL_checkstring(L, 1);
+	if (!physfs_check_allow_path_read(L, src)) return 0;
 	const char *dest = luaL_checkstring(L, 2);
 	bool append = lua_toboolean(L, 3);
 
@@ -318,18 +319,27 @@ static int lua_fs_get_real_path(lua_State *L)
 	return 1;
 }
 
-#define MAX_WRITE_DIRS 30
+#define MAX_READWRITE_DIRS 30
 static bool can_set_allowed_dirs = FALSE;
-static char* allowed_dirs[MAX_WRITE_DIRS];
-static int nb_allowed_dirs = 0;
+static char* allowed_dirs_write[MAX_READWRITE_DIRS];
+static char* allowed_dirs_read[MAX_READWRITE_DIRS];
+static int nb_allowed_dirs_write = 0;
+static int nb_allowed_dirs_read = 0;
 void physfs_reset_dir_allowed(lua_State *L)
 {
 	int i;
-	for (i = 0; i < nb_allowed_dirs; i++) {
-		free(allowed_dirs[i]);
-		allowed_dirs[i] = NULL;
+	for (i = 0; i < nb_allowed_dirs_write; i++) {
+		free(allowed_dirs_write[i]);
+		allowed_dirs_write[i] = NULL;
 	}
-	nb_allowed_dirs = 0;
+	nb_allowed_dirs_write = 0;
+
+	for (i = 0; i < nb_allowed_dirs_read; i++) {
+		free(allowed_dirs_read[i]);
+		allowed_dirs_read[i] = NULL;
+	}
+	nb_allowed_dirs_read = 0;
+
 	can_set_allowed_dirs = TRUE;
 }
 
@@ -337,42 +347,127 @@ static int lua_fs_done_dir_allowed(lua_State *L) {
 	can_set_allowed_dirs = FALSE;
 
 	int i;
-	for (i = 0; i < nb_allowed_dirs; i++) {
-		printf("%d==WRITEPATH==allowed== %s\n", i, allowed_dirs[i]);
+	for (i = 0; i < nb_allowed_dirs_write; i++) {
+		printf("%d==WRITEPATH==allowed== %s\n", i, allowed_dirs_write[i]);
+	}
+	for (i = 0; i < nb_allowed_dirs_read; i++) {
+		printf("%d==READPATH==allowed== %s\n", i, allowed_dirs_read[i]);
 	}
 	return 0;
+}
+
+static char *sanize_dir_path(const char *dir, size_t len) {
+	// Sanity path to remove // and such silliness
+	const char *sep = PHYSFS_getDirSeparator();
+	size_t sep_len = strlen(sep);
+	char *sdir = calloc(len * 2, sizeof(char));
+	size_t si = 0;
+
+	bool was_sep = FALSE;
+	size_t i = 0;
+
+	// Handle subdir:/foo|/real/path
+	if (strstr(dir, "subdir:/") == dir) {
+		char *split = strrchr(dir, '|');
+		if (split) i += split - dir + 1;
+	}
+
+	for (; i < len;) {
+		// We found a separator
+		if (strstr(&dir[i], sep) == &dir[i]) {
+			// More than one separator, skip it
+			if (was_sep) {
+				i += sep_len;
+			} else{
+				memcpy(&sdir[si], sep, sep_len);
+				i += sep_len;
+				si += sep_len;
+			}
+			was_sep = TRUE;
+		// Normal data
+		} else {
+			sdir[si++] = dir[i];
+			i++;
+			was_sep = FALSE;
+		}
+	}
+	// If we didnt have a last separator, have one, it's on the house
+	if (!was_sep) {
+		memcpy(&sdir[si], sep, sep_len);
+		si += sep_len;
+	}
+	sdir[si] = '\0';
+
+	// printf("===sanitizing '%s' to '%s'\n", dir, sdir);
+	return sdir;	
 }
 
 static int lua_fs_set_dir_allowed(lua_State *L) {
 	if (!can_set_allowed_dirs) return 0;
-	if (nb_allowed_dirs >= MAX_WRITE_DIRS) return 0;
+	bool to_write = lua_toboolean(L, 2);
+	if (to_write) {
+		if (nb_allowed_dirs_write >= MAX_READWRITE_DIRS) return 0;
+	} else {
+		if (nb_allowed_dirs_read >= MAX_READWRITE_DIRS) return 0;		
+	}
 
-	const char *dir = luaL_checkstring(L, 1);
-	allowed_dirs[nb_allowed_dirs] = strdup(dir);
-	nb_allowed_dirs++;
+	size_t len = 0;
+	const char *dir = luaL_checklstring(L, 1, &len);
+	char *sdir = sanize_dir_path(dir, len);
+
+	if (to_write) {
+		allowed_dirs_write[nb_allowed_dirs_write] = strdup(sdir);
+		nb_allowed_dirs_write++;
+	}
+	allowed_dirs_read[nb_allowed_dirs_read] = sdir;
+	nb_allowed_dirs_read++;		
 	return 0;
 }
 
-bool physfs_check_allow_path(lua_State *L, const char *path) {
-	if (can_set_allowed_dirs) return TRUE; // As long as we're stillsetting stuff up we can do any path
+bool physfs_check_allow_path_write(lua_State *L, const char *path) {
+	if (can_set_allowed_dirs) return TRUE; // As long as we're still setting stuff up we can do any path
+	
+	char *spath = sanize_dir_path(path, strlen(path));
 	int i;
-	for (i = 0; i < nb_allowed_dirs; i++) {
-		if (strstr(path, allowed_dirs[i]) == path) {
+	for (i = 0; i < nb_allowed_dirs_write; i++) {
+		if (strstr(spath, allowed_dirs_write[i]) == spath) {
+			free(spath);
 			return TRUE;
 		}
 	}
-	printf("ERROR TRYING TO ACCESS FORBIDDEN PATH: %s\n", path);
+	printf("ERROR TRYING TO ACCESS WRITE FORBIDDEN PATH: '%s' (sanitized to '%s')\n", path, spath);
 	if (L) {
-		lua_pushstring(L, "FORBIDDEN PATH");
+		lua_pushstring(L, "FORBIDDEN WRITE PATH");
 		lua_error(L);
 	}
+	free(spath);
+	return FALSE;
+}
+
+bool physfs_check_allow_path_read(lua_State *L, const char *path) {
+	if (can_set_allowed_dirs) return TRUE; // As long as we're still setting stuff up we can do any path
+	
+	char *spath = sanize_dir_path(path, strlen(path));
+	int i;
+	for (i = 0; i < nb_allowed_dirs_read; i++) {
+		if (strstr(spath, allowed_dirs_read[i]) == spath) {
+			free(spath);
+			return TRUE;
+		}
+	}
+	printf("ERROR TRYING TO ACCESS READ FORBIDDEN PATH: '%s' (sanitized to '%s')\n", path, spath);
+	if (L) {
+		lua_pushstring(L, "FORBIDDEN READ PATH");
+		lua_error(L);
+	}
+	free(spath);
 	return FALSE;
 }
 
 static int lua_fs_set_write_dir(lua_State *L)
 {
 	const char *src = luaL_checkstring(L, 1);
-	if (!physfs_check_allow_path(L, src)) return 0;
+	if (!physfs_check_allow_path_write(L, src)) return 0;
 	const int error = PHYSFS_setWriteDir(src);
 	if (error == 0)
 	{

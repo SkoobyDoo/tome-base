@@ -128,10 +128,12 @@ end
 function _M:updateUI()
 	local uis = table.clone(self.base_uis)
 
-	if profile.auth then
-		self:uiStats(uis)
-	else
-		self:uiLogin(uis)
+	if not config.settings.disable_all_connectivity then
+		if profile.auth then
+			self:uiStats(uis)
+		else
+			self:uiLogin(uis)
+		end
 	end
 
 ----------------------------
