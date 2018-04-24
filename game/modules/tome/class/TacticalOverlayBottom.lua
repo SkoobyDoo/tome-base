@@ -97,7 +97,7 @@ function _M:toScreenBack(x, y, w, h)
 
 	local map = game.level.map
 	local friend = -100
-	local lp = math.max(0, self.actor.life) / self.actor.max_life + 0.0001
+	local lp = math.min(1, math.max(0, self.actor.life) / self.actor.max_life + 0.0001)
 	if self.actor.faction and map then
 		if not map.actor_player then friend = Faction:factionReaction(map.view_faction, self.actor.faction)
 		else friend = map.actor_player:reactionToward(self.actor) end
