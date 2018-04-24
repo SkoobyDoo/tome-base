@@ -478,6 +478,15 @@ function _M:generate()
 	self.do_container:translate(self.display_x, self.display_y, -100)
 	self.full_container:add(self.do_container)
 
+	if self.__showup then
+		self.renderer_outer = core.renderer.renderer("static"):setRendererName(self:getClassName()..":FBO"):countDraws(false)
+		self.fbo = core.renderer.target()
+		self.fbo:setAutoRender(self.renderer)
+		self.renderer_outer:add(self.fbo)
+	else
+		self.renderer_outer = self.renderer
+	end
+
 	local b7 = self:getAtlasTexture(self.frame.b7)
 	local b9 = self:getAtlasTexture(self.frame.b9)
 	local b1 = self:getAtlasTexture(self.frame.b1)
@@ -774,12 +783,12 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 
 	self:updateTitle(self.title)
 
-	local mw, mh = self.display_x + math.floor(self.w / 2), self.display_y + math.floor(self.h / 2)
-	self.renderer:translate(mw, mh)
-	self.full_container:translate(-mw, -mh)
-
 	if self.__showup then
-		self.renderer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup)
+		local mw, mh = self.display_x + math.floor(self.w / 2), self.display_y + math.floor(self.h / 2)
+		self.renderer_outer:translate(mw, mh)
+		self.fbo:translate(-mw, -mh)
+
+		self.renderer_outer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup)
 	end
 
 	if self.allow_scroll then
@@ -1040,5 +1049,5 @@ function _M:toScreen(x, y, nb_keyframes)
 	-- DGDGDGDG
 	-- if self.first_display then self:firstDisplay() self.first_display = false end
 
-	self.renderer:toScreen()
+	self.renderer_outer:toScreen()
 end
