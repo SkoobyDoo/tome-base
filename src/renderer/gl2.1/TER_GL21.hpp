@@ -135,7 +135,7 @@ public:
 	TER_GL21_FrameBuffer(uint16_t w, uint16_t h, uint16_t nbt, bool hdr, bool depth);
 	virtual ~TER_GL21_FrameBuffer();
 
-	void use(bool state) {};
+	virtual void use(bool state);
 };
 
 /*****************************************************************

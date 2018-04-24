@@ -148,12 +148,15 @@ class TER_FrameBuffer; using sTER_FrameBuffer = shared_ptr<TER_FrameBuffer>;
 class TER_FrameBuffer {
 public:
 	uint16_t w, h, nbt;
+	glm::vec4 clear_color = {0, 0, 0, 1};
 	vector<sTER_Texture> textures;
 
 	virtual ~TER_FrameBuffer() {}
 	static sTER_FrameBuffer build(uint16_t w, uint16_t h, uint16_t nbt=1, bool hdr=false, bool depth=false);
 
 	inline bool isMRT() { return textures.size() > 1; }
+	inline void setClearColor(glm::vec4 &c) { clear_color = c; }
+	virtual void use(bool state) = 0;
 };
 
 /*****************************************************************
@@ -183,7 +186,7 @@ public:
 	inline void texture(sTER_Texture t, uint8_t idx=0) { cur_textures[idx] = t; }
 	inline void vertex(sTER_VertexBuffer v) { cur_vertexbuffer = v; }
 	inline void index(sTER_IndexBuffer i) { cur_indexbuffer = i; }
-	virtual void framebuffer(sTER_FrameBuffer f);
+	virtual void framebuffer(sTER_FrameBuffer f) { cur_framebuffer = f; }
 	virtual void submit(sTER_Program p) = 0;
 	virtual void frame() = 0;
 };

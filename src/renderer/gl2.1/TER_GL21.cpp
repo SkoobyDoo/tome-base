@@ -295,21 +295,21 @@ TER_GL21_FrameBuffer::TER_GL21_FrameBuffer(uint16_t w, uint16_t h, uint16_t nbt,
 
 TER_GL21_FrameBuffer::~TER_GL21_FrameBuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	if (fbo->depthbuffer) {
+	if (depthbuffer) {
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-		glDeleteTextures(1, &fbo->depthbuffer);
+		glDeleteTextures(1, &depthbuffer);
 	}
 	textures.clear();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glDeleteFramebuffers(1, fbo);
+	glDeleteFramebuffers(1, &fbo);
 }
 
 void TER_GL21_FrameBuffer::use(bool state) {
 	if (state) {
-		tglBindFramebuffer(GL_FRAMEBUFFER, fbo->fbo);
-		glDrawBuffers(fbo->buffers.size(), fbo->buffers.data());
-		tglClearColor(clear_r, clear_g, clear_b, clear_a);
-		if (fbo->depthbuffer) glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		tglBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glDrawBuffers(buffers.size(), buffers.data());
+		tglClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+		if (depthbuffer) glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		else glClear(GL_COLOR_BUFFER_BIT);
 	} else {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);		
