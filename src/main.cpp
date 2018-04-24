@@ -1388,6 +1388,8 @@ void main() \
 	sTER_IndexBuffer index_buf = TER_IndexBuffer::build(TER_BufferFormat::UINT32, TER_BufferMode::STATIC, index_data, 6);
 
 	sTER_FrameBuffer fbo = TER_FrameBuffer::build((float)screen->w, (float)screen->h, 1, false, false);
+	glm::vec4 c(0.5, 1, 0.5, 1);
+	fbo->setClearColor(c);
 
 	TER_Context *context = TER_Context::build();
 

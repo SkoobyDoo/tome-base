@@ -320,6 +320,8 @@ void TER_GL21_FrameBuffer::use(bool state) {
  ** Rendering Context
  *****************************************************************/
 TER_GL21_Context::TER_GL21_Context() {
+	// Defautl blend mode
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 }
 
 TER_GL21_Context::~TER_GL21_Context() {
@@ -330,10 +332,22 @@ void TER_GL21_Context::submit(sTER_Program _program) {
 	TER_GL21_VertexBuffer *vert_buf = static_cast<TER_GL21_VertexBuffer*>(cur_vertexbuffer.get());
 	TER_GL21_IndexBuffer *idx_buf = static_cast<TER_GL21_IndexBuffer*>(cur_indexbuffer.get());
 
+	// Close last framebuffer if we dont use it anymore
+	if (cur_framebuffer != last_framebuffer && last_framebuffer) last_framebuffer->use(false);
+
+	if (blendmode != last_blendmode) {
+		switch (blendmode) {
+			case TER_BlendMode::DEFAULT: glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); break;
+			case TER_BlendMode::ADDITIVE: glBlendFunc(GL_ONE, GL_ONE); break;
+			case TER_BlendMode::MIXED: glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+			case TER_BlendMode::SHINY: glBlendFunc(GL_SRC_ALPHA,GL_ONE); break;
+		}
+	}
+
 	if (cur_framebuffer) cur_framebuffer->use(true);
 
 	// Setup shader program
-	glUseProgram(program->program);
+	if (_program != last_program) glUseProgram(program->program);
 
 	// Bind textures
 	for (uint8_t i = 0; i < 3 && !holds_alternative<bool>(cur_textures[i]); i++) {
@@ -356,30 +370,40 @@ void TER_GL21_Context::submit(sTER_Program _program) {
 	}
 
 	// Bind attributes
-	glBindBuffer(GL_ARRAY_BUFFER, vert_buf->buff);
-	for (auto &attr : vert_buf->data_format->list) {
-		auto &program_attr = program->attributes[(uint8_t)get<0>(attr)];
-		if (program_attr.loc != -1) {
-			glEnableVertexAttribArray(program_attr.loc);
+	if (cur_vertexbuffer != last_vertexbuffer) {
+		glBindBuffer(GL_ARRAY_BUFFER, vert_buf->buff);
+		for (auto &attr : vert_buf->data_format->list) {
+			auto &program_attr = program->attributes[(uint8_t)get<0>(attr)];
+			if (program_attr.loc != -1) {
+				glEnableVertexAttribArray(program_attr.loc);
 
-			uint64_t offset = get<2>(attr) * vert_buf->base_data_size;
-			glVertexAttribPointer(program_attr.loc, get<3>(attr), vert_buf->gl_type, GL_FALSE, vert_buf->data_format->total_size * vert_buf->base_data_size, (void*)offset);
+				uint64_t offset = get<2>(attr) * vert_buf->base_data_size;
+				glVertexAttribPointer(program_attr.loc, get<3>(attr), vert_buf->gl_type, GL_FALSE, vert_buf->data_format->total_size * vert_buf->base_data_size, (void*)offset);
+			}
 		}
 	}
 
 	// Bind elements buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf->buff);
+	if (cur_indexbuffer != last_indexbuffer) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf->buff);
+	}
 
 	// By the power of the Mighty OpenGL, let there be draws!
 	glDrawElements(GL_TRIANGLES, idx_buf->data_nb, GL_UNSIGNED_INT, (void*)0);
 
-	if (cur_framebuffer) cur_framebuffer->use(false);
+	// Remember stuff that should only change rarely
+	last_indexbuffer = cur_indexbuffer;
+	last_vertexbuffer = cur_vertexbuffer;
+	last_framebuffer = cur_framebuffer;
+	last_program = _program;
+	last_blendmode = blendmode;
 
 	// Clean up state for next submit
 	cur_textures[0] = cur_textures[1] = cur_textures[2] = false;
 	cur_vertexbuffer = nullptr;
 	cur_indexbuffer = nullptr;
 	cur_framebuffer = nullptr;
+	// We do not cur_framebuffer->use(false) becasue this will be done by the next call
 }
 
 void TER_GL21_Context::frame() {

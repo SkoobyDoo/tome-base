@@ -142,6 +142,12 @@ public:
  ** Rendering Context
  *****************************************************************/
 class TER_GL21_Context : public TER_Context {
+protected:
+	sTER_VertexBuffer last_vertexbuffer;
+	sTER_IndexBuffer last_indexbuffer;
+	sTER_FrameBuffer last_framebuffer;
+	sTER_Program last_program;
+	TER_BlendMode last_blendmode = TER_BlendMode::DEFAULT;
 public:
 	TER_GL21_Context();
 	virtual ~TER_GL21_Context();
