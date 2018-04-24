@@ -2001,7 +2001,7 @@ static int lua_zlib_compress(lua_State *L)
 	char *res = (char*)malloc(reslen);
 	z_stream zi;
 
-	zi.next_in = (const Bytef*)data;
+	zi.next_in = (z_const Bytef*)data;
 	zi.avail_in = len;
 	zi.total_in = 0;
 
