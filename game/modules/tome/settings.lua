@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -51,7 +51,6 @@ if type(config.settings.tome.visual_hotkeys) == "nil" then config.settings.tome.
 if type(config.settings.tome.talents_flyers) == "nil" then config.settings.tome.talents_flyers = false end
 if type(config.settings.tome.immediate_melee_keys) == "nil" then config.settings.tome.immediate_melee_keys = true end
 if type(config.settings.tome.immediate_melee_keys_auto) == "nil" then config.settings.tome.immediate_melee_keys_auto = true end
-if type(config.settings.tome.allow_online_events) == "nil" then config.settings.tome.allow_online_events = true end
 if type(config.settings.tome.small_frame_side) == "nil" then config.settings.tome.small_frame_side = true end
 if type(config.settings.tome.fullscreen_stun) == "nil" then config.settings.tome.fullscreen_stun = true end
 if type(config.settings.tome.fullscreen_confusion) == "nil" then config.settings.tome.fullscreen_confusion = true end
@@ -59,6 +58,7 @@ if type(config.settings.tome.show_grid_lines) == "nil" then config.settings.tome
 if type(config.settings.tome.tinker_auto_switch) == "nil" then config.settings.tome.tinker_auto_switch = true end
 if type(config.settings.tome.quest_popup) == "nil" then config.settings.tome.quest_popup = true end
 if type(config.settings.tome.show_cloak_hoods) == "nil" then config.settings.tome.show_cloak_hoods = false end
+if type(config.settings.tome.upload_charsheet) == "nil" then config.settings.tome.upload_charsheet = true end
 if not config.settings.tome.fonts then config.settings.tome.fonts = {type="fantasy", size="normal"} end
 if not config.settings.tome.ui_theme3 then config.settings.tome.ui_theme3 = "dark" end
 if not config.settings.tome.uiset_mode then config.settings.tome.uiset_mode = "Minimalist" end

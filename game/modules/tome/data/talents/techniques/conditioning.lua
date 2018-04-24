@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -150,7 +150,11 @@ newTalent{
 	require = techs_con_req4,
 	points = 5,
 	cooldown = 24,
-	tactical = { STAMINA = 1, BUFF = 2 },
+	tactical = { STAMINA = 1, BUFF = 1 },
+	on_pre_use_ai = function(self, t) -- save it for combat
+		local tgt = self.ai_target.actor
+		if self.stamina/self.max_stamina < 0.5 or tgt and core.fov.distance(self.x, self.y, tgt.x, tgt.y) < 10 and self:hasLOS(tgt.x, tgt.y) then return true end
+	end,
 	getAttackPower = function(self, t) return self:combatTalentStatDamage(t, "con", 5, 25) end,
 	getDuration = function(self, t) return math.floor(self:combatTalentLimit(t, 24, 3, 7)) end, -- Limit < 24
 	no_energy = true,

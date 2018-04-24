@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,14 +43,17 @@ function _M:init(name, npc, player, data)
 
 	local f, err = loadfile(self:getChatFile(name))
 	if not f and err then error(err) end
-	setfenv(f, setmetatable({
+	local env = setmetatable({
 		cur_chat = self,
 		setDialogWidth = function(w) self.force_dialog_width = w end,
 		newChat = function(c) self:addChat(c) end,
-	}, {__index=data}))
+		setTextFont = function(font, size) self.dialog_text_font = {font, size} end,
+		setAnswerFont = function(font, size) self.dialog_answer_font = {font, size} end,
+	}, {__index=data})
+	setfenv(f, env)
 	self.default_id = f()
 
-	self:triggerHook{"Chat:load", data=data}
+	self:triggerHook{"Chat:load", data=data, env=env}
 end
 
 --- Get chat file

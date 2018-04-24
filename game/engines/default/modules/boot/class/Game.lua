@@ -1,5 +1,5 @@
 -- ToME - Tales of Middle-Earth
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -171,7 +171,7 @@ function _M:run()
 	if not self.news then
 		self.news = {
 			title = "Welcome to T-Engine and the Tales of Maj'Eyal",
-			text = [[#GOLD#"Tales of Maj'Eyal"#WHITE# is the main game, you can also install more addons or modules by by going to https://te4.org/
+			text = [[#GOLD#"Tales of Maj'Eyal"#WHITE# is the main game, you can also install more addons or modules by going to https://te4.org/
 
 When inside a module remember you can press Escape to bring up a menu to change keybindings, resolution and other module specific options.
 

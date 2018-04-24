@@ -1,6 +1,6 @@
 /*
     TE4 - T-Engine 4
-    Copyright (C) 2009 - 2017 Nicolas Casalini
+    Copyright (C) 2009 - 2018 Nicolas Casalini
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -216,7 +216,7 @@ static int lua_web_download_action(lua_State *L) {
 	long id = lua_tonumber(L, 2);
 	if (lua_isstring(L, 3)) {
 		const char *path = lua_tostring(L, 3);
-		if (!physfs_check_allow_path(L, path)) return 0;
+		if (!physfs_check_allow_path_write(L, path)) return 0;
 		te4_web_download_action(view, id, path);
 	} else {
 		te4_web_download_action(view, id, NULL);

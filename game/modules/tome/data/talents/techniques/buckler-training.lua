@@ -52,9 +52,11 @@ newTalent {
 		end
 	end,
 	on_learn = function(self, t)
+		self:attr("allow_wear_shield", 1)
 		self:attr("show_shield_combat", 1)
 	end,
 	on_unlearn = function(self, t)
+		self:attr("allow_wear_shield", -1)
 		self:attr("show_shield_combat", 1)
 	end,
 	info = function(self, t)

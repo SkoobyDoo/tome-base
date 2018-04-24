@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,17 +32,18 @@ frame_oy2 = 15
 --- @string text
 -- @int[opt=60] dur
 -- @param[opt=colors.Black] color
-function _M:init(text, dur, color)
+function _M:init(text, dur, color, font)
 	self.text = text
 	self.dur = dur or 60
 	self.color = color or colors.BLACK
+	self.use_font = font
 
-	Base.init(self, {font = {"/data/font/DroidSans-Bold.ttf", 16}})
+	Base.init(self, {font = self.use_font or {"/data/font/DroidSans-Bold.ttf", 16}})
 end
 
 --- on loaded
 function _M:loaded()
-	Base.init(self, {font = {"/data/font/DroidSans-Bold.ttf", 16}})
+	Base.init(self, {font = self.use_font or {"/data/font/DroidSans-Bold.ttf", 16}})
 end
 
 --- Serialization

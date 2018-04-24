@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ return {
 				{type="undead", subtype="giant", random_boss={rank = 3.5, loot_quantity = 2,}},
 				{type="horror", random_boss={rank = 3.5, loot_quantity = 2,}},
 			},
-			nb_npc = {20, 30},
+			nb_npc = {35, 40},
 		},
 		object = {
 			class = "engine.generator.object.Random",
@@ -187,7 +187,23 @@ return {
 				},
 			},
 		},
+		[5] = {
+			width = 50, height = 75,
+		},
+		[6] = {
+			width = 40, height = 65,
+		},
+		[7] = {
+			width = 40, height = 55,
+		},
+		[8] = {
+			width = 40, height = 40,
+		},
+		[9] = {
+			width = 35, height = 35,
+		},
 		[10] = {
+			width = 30, height = 30,
 			generator = {
 				map = {
 					down = "PORTAL_BOSS",

@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -46,8 +46,8 @@ function _M:init(chat, id, width)
 
 	self:generateList()
 
-	self.c_desc = Textzone.new{width=self.iw - 10 - xoff, height=1, auto_height=true, text=self.text.."\n"}
-	self.c_list = VariableList.new{width=self.iw - 10 - xoff, max_height=game.h * 0.70 - self.c_desc.h, list=self.list, fct=function(item) self:use(item) end, select=function(item) self:select(item) end}
+	self.c_desc = Textzone.new{font=chat.dialog_text_font, width=self.iw - 10 - xoff, height=1, auto_height=true, text=self.text.."\n"}
+	self.c_list = VariableList.new{font=chat.dialog_answer_font, width=self.iw - 10 - xoff, max_height=game.h * 0.70 - self.c_desc.h, list=self.list, fct=function(item) self:use(item) end, select=function(item) self:select(item) end}
 
 	local uis = {
 		{left=0, top=0, ui=self.c_desc},

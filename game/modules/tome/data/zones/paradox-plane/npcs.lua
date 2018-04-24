@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ newEntity{ define_as = "EPOCH",
 		[Talents.T_HASTE]={base=1, every=7},
 		[Talents.T_DIMENSIONAL_STEP]=5,
 	},
-
+	auto_classes={{class="Paradox Mage", start_level=36}},
 	resolvers.sustains_at_birth(),
 
 	autolevel = "caster",

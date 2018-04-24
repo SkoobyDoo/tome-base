@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -192,7 +192,7 @@ function _M:login()
 	elseif self.sock and not self.auth and self.user_login and self.user_pass then
 		self:command("AUTH", self.user_login)
 		self:read("200")
-		self:command("PASS", self.user_pass)
+		self:command("PASH", self.user_pass)
 		if self:read("200") then
 			print("[PROFILE] logged in!", self.user_login)
 			self.auth = self.last_line:unserialize()
@@ -755,8 +755,9 @@ end
 
 function _M:pushCode(e)
 	if e.profile then
-		local f = loadstring(e.code)
-		if f then pcall(f) end
+		-- Unused anyway
+		-- local f = loadstring(e.code)
+		-- if f then pcall(f) end
 	else
 		if e.return_uuid then
 			cprofile.pushEvent(string.format("e='PushCode' return_uuid=%q code=%q", e.return_uuid, e.code))

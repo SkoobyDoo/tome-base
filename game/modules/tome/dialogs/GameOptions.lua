@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -77,8 +77,6 @@ end
 function _M:select(item)
 	if item and self.uis[3] then
 		self.c_desc:switchItem(item, item.zone)
-		-- self.uis[3].ui = item.zone
-		-- self:setupUI()
 	end
 end
 
@@ -571,15 +569,6 @@ function _M:generateListOnline()
 		return "select to configure"
 	end, fct=function(item)	game:registerDialog(require("engine.dialogs.ChatChannels").new()) end,}
 
-	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text="Allow various events that are pushed by the server when playing online\nDisabling this will make you miss cool and fun zones.#WHITE#"}
-	list[#list+1] = { zone=zone, name="#GOLD##{bold}#Allow online events#WHITE##{normal}#", status=function(item)
-		return tostring(config.settings.tome.allow_online_events and "enabled" or "disabled")
-	end, fct=function(item)
-		config.settings.tome.allow_online_events = not config.settings.tome.allow_online_events
-		game:saveSettings("tome.allow_online_events", ("tome.allow_online_events = %s\n"):format(tostring(config.settings.tome.allow_online_events)))
-		self.c_list:drawItem(item)
-	end,}
-
 	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text="Open links in external browser instead of the embedded one.\nThis does not affect addons browse and installation which always stays ingame."}
 	list[#list+1] = { zone=zone, name="#GOLD##{bold}#Open links in external browser#WHITE##{normal}#", status=function(item)
 		return tostring(config.settings.open_links_external and "enabled" or "disabled")
@@ -595,6 +584,53 @@ function _M:generateListOnline()
 	end, fct=function(item)
 		config.settings.disable_discord = not config.settings.disable_discord
 		game:saveSettings("disable_discord", ("disable_discord = %s\n"):format(tostring(config.settings.disable_discord)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Keep a copy of your character sheets (not the whole savefile) on the online vault at te4.org.\nFor each characters you will be given a link to this online character sheet so that you drag about your heroic deeds or sad deaths to your friends or the whole community.#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Upload characters sheets to the online vault#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.upload_charsheet and "enabled" or "disabled")
+	end, fct=function(item)
+		config.settings.upload_charsheet = not config.settings.upload_charsheet
+		game:saveSettings("tome.upload_charsheet", ("tome.upload_charsheet = %s\n"):format(tostring(config.settings.upload_charsheet)))
+		self.c_list:drawItem(item)
+
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, text=string.toTString"Allow various events that are pushed by the server when playing online\n#{bold}#All#{normal}#: Allow all server events (bonus zones, random events, ...)\n#{bold}#Technical help only#{normal}#: Allow administrator to help in case of bugs or weirdness and allows website services (data reset, steam achievements push, ...) to work.\n#{bold}#Disabled#{normal}#: Disallow all.\n#WHITE#"}
+	list[#list+1] = { zone=zone, name=string.toTString"#GOLD##{bold}#Allow online events#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.allow_online_events == true and "all" or (config.settings.allow_online_events == "limited" and "technical help only" or "disabled"))
+	end, fct=function(item)
+		if config.settings.allow_online_events == true then config.settings.allow_online_events = "limited"
+		elseif config.settings.allow_online_events == "limited" then config.settings.allow_online_events = false
+		else config.settings.allow_online_events = true end
+		game:saveSettings("allow_online_events", ("allow_online_events = %s\n"):format(config.settings.allow_online_events == "limited" and "'limited'" or tostring(config.settings.allow_online_events)))
+		self.c_list:drawItem(item)
+	end,}
+
+	local zone = Textzone.new{width=self.c_desc.w, height=self.c_desc.h, scrollbar=true, text=[[Disables all connectivity to the network.
+This includes, but is not limited to:
+- Player profiles: You will not be able to login, register
+- Characters vault: You will not be able to upload any character to the online vault to show your glory
+- Item's Vault: You will not be able to access the online item's vault, this includes both storing and retrieving items.
+- Ingame chat: The ingame chat requires to connect to the server to talk to other players, this will not be possible.
+- Donator benefits: The base game being free, the only way to give donators their bonuses fairly is to check their online profile. This will thus be disabled.
+- Expansions & DLCs: Similarly any and all official expansions to the game works under the same principles as the donator benfits and will thus also be disabled.
+- Easy addons downloading & installation: You will not be able to see ingame the list of available addons, nor to one-click install them. You may still do so manually.
+- Version checks: Addons will not be checked for new versions.
+- Discord: If you use Discord Rich Presence integration this will also be disabled byt this setting.
+- Ingame game news: The main menu will stop showing you info about new updates to the game.
+
+Note that this setting only affects the game itself. If you use the game launcher, whose sole purpose is to make sure the game is up to date, it will still do so.
+If you do not want that, simply run the game directly: the #{bold}#only#{normal}# of the launcher is to update the game.
+
+#{bold}##CRIMSON#This is an extremely restrictive setting. It is recommended you only activate it if you have no other choice as it will remove many fun and acclaimed features.
+A full exit and restart of the game is neccessary to apply this setting.#{normal}#]]}
+	list[#list+1] = { zone=zone, name="#GOLD##{bold}#Disable all connectivity#WHITE##{normal}#", status=function(item)
+		return tostring(config.settings.disable_all_connectivity and "yes" or "no")
+	end, fct=function(item)
+		config.settings.disable_all_connectivity = not config.settings.disable_all_connectivity
+		game:saveSettings("disable_all_connectivity", ("disable_all_connectivity = %s\n"):format(tostring(config.settings.disable_all_connectivity)))
 		self.c_list:drawItem(item)
 	end,}
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -43,6 +43,11 @@ function _M:onPartyDeath(src, death_note)
 
 	-- Check for any survivor that can be controlled
 	local game_ender = not game.party:findSuitablePlayer()
+
+	-- Special game neder handler?
+	if game_ender and game.party.on_game_end then
+		game_ender = game.party:on_game_end(self, src, death_note)
+	end
 
 	-- No more player found! Switch back to main and die
 	if game_ender then

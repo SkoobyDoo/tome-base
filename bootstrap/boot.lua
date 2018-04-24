@@ -29,11 +29,18 @@ if __SELFEXE then
 	print("SelfExe gave us app directory of:", dir)
 	fs.mount(dir..fs.getPathSeparator().."game"..fs.getPathSeparator().."thirdparty", "/", true)
 	fs.mount(dir..fs.getPathSeparator().."game", "/", true)
+	fs.setPathAllowed(dir..fs.getPathSeparator().."game", false)
 else
 	print("No SelfExe, using basic path")
 	fs.mount("game"..fs.getPathSeparator().."thirdparty", "/", true)
 	fs.mount("game", "/", true)
 end
+
+fs.setPathAllowed(fs.getRealPath("/engines/"), false)
+fs.setPathAllowed(fs.getRealPath("/thirdparty/"), false)
+fs.setPathAllowed(fs.getRealPath("/addons/"), true)
+if fs.getRealPath("/dlcs/") then fs.setPathAllowed(fs.getRealPath("/dlcs/"), true) end
+fs.setPathAllowed(fs.getRealPath("/modules/"), true)
 
 -- Look for a core
 function get_core(coretype, id)

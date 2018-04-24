@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -143,9 +143,19 @@ function _M:leftLevel(leaving_zone)
 		self:findSuitablePlayer()
 	end
 
-	if leaving_zone and self.switch_party_back_on_zone and self.old_party then
+	if leaving_zone and self.switch_party_back_on_zone then
+		self:switchToOldParty()
+	end
+end
+
+function _M:switchToOldParty()
+	if self.old_party then
 		game.party = self.old_party
 		game.party:setPlayer(game:getPlayer(true), true)
+		if self.on_dispose then self:on_dispose(game.party) end
+		return true
+	else
+		return false
 	end
 end
 

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -98,18 +98,29 @@ newTalent{
 	cooldown = 20,
 	sustain_vim = 18,
 	tactical = { BUFF = 2 },
-	oversplash = function(self,t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 70), 100, 20, 0, 66.7, 46.7) end, -- Limit to <100%
+	getOversplash = function(self,t) return self:combatLimit(self:combatTalentSpellDamage(t, 10, 70), 100, 20, 0, 66.7, 46.7) end, -- Limit to <100%
+	callbackOnDealDamage = function(self, t, val, target, dead, death_note)
+		if not dead or self.turn_procs.overkilling then return end
+
+		self.turn_procs.overkill = true
+		local dam = (target.die_at - target.life) * t.getOversplash(self, t) / 100
+		local incdam = self.inc_damage
+		self.inc_damage = {}
+		local ok, err = pcall(function() self:project({type="ball", radius=2, selffire=false, x=target.x, y=target.y, talent=t}, target.x, target.y, DamageType.BLIGHT, dam, {type="acid"}) end)
+		self.inc_damage = incdam
+		self.turn_procs.overkill = nil
+		if not ok then error(err) end
+	end,
 	activate = function(self, t)
 		game:playSoundNear(self, "talents/flame")
-		return {ov = self:addTemporaryValue("overkill", t.oversplash(self,t)),}
+		return {}
 	end,
 	deactivate = function(self, t, p)
-		self:removeTemporaryValue("overkill", p.ov)
 		return true
 	end,
 	info = function(self, t)
 		return ([[When you kill a creature, the remainder of the damage done will not be lost. Instead, %d%% of it will splash in a radius 2 as blight damage.
-		The splash damage will increase with your Spellpower.]]):format(t.oversplash(self,t))
+		The splash damage will increase with your Spellpower.]]):format(t.getOversplash(self,t))
 	end,
 }
 

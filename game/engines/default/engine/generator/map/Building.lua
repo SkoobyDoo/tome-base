@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -49,6 +49,8 @@ end
 
 --- place a door in a wall
 function _M:doorOnWall(wall)
+	print("=WALLLDOOR")
+	table.print(wall)
 	if wall.vert then
 		local j = rng.table(table.keys(wall.ps))
 		self.map(wall.base, j, Map.TERRAIN, self:resolve("door"))
@@ -72,11 +74,11 @@ function _M:addWall(vert, base, p1, p2)
 			ps[z] = nil
 		else
 			rm_map.walled = true
-			if z == p1 or z == p2 or not game.level.map:checkEntity(x, y, Map.TERRAIN, "block_move") or 2 ~= 
-				(game.level.map:checkEntity(x - 1, y, Map.TERRAIN, "block_move") and 1 or 0) + 
-				(game.level.map:checkEntity(x + 1, y, Map.TERRAIN, "block_move") and 1 or 0) + 
-				(game.level.map:checkEntity(x, y - 1, Map.TERRAIN, "block_move") and 1 or 0) + 
-				(game.level.map:checkEntity(x, y + 1, Map.TERRAIN, "block_move") and 1 or 0) then 
+			if z == p1 or z == p2 or not self.map:checkEntity(x, y, Map.TERRAIN, "block_move") or 2 ~= 
+				(self.map:checkEntity(x - 1, y, Map.TERRAIN, "block_move") and 1 or 0) + 
+				(self.map:checkEntity(x + 1, y, Map.TERRAIN, "block_move") and 1 or 0) + 
+				(self.map:checkEntity(x, y - 1, Map.TERRAIN, "block_move") and 1 or 0) + 
+				(self.map:checkEntity(x, y + 1, Map.TERRAIN, "block_move") and 1 or 0) then 
 					ps[z] = nil
 			end
 		end

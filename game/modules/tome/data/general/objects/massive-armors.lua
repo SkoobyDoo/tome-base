@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ newEntity{
 	add_name = " (#ARMOR#)",
 	display = "[", color=colors.SLATE, image = resolvers.image_material("plate", "metal"),
 	moddable_tile = resolvers.moddable_tile("massive"),
-	require = { talent = { {Talents.T_ARMOUR_TRAINING,3} }, },
+	require = { flag = { "allow_wear_massive" }, },
 	encumber = 17,
 	rarity = 5,
 	metallic = true,

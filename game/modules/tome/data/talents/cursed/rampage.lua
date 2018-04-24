@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -148,7 +148,7 @@ newTalent{
 	cooldown = 6,
 	hate = 3,
 	random_ego = "attack",
-	tactical = { ATTACKAREA = { weapon = 3 } },
+	tactical = { ATTACKAREA = { PHYSICAL = 1 }, DISABLE = {stun = 1} },
 	getHitCount = function(self, t)
 		return 2 + math.min(math.floor(self:getTalentLevel(t) * 0.5), 3)
 	end,
@@ -158,6 +158,8 @@ newTalent{
 	getDamage = function(self, t)
 		return self:combatTalentPhysicalDamage(t, 10, 140)
 	end,
+	requires_target = true,
+	target = {type="ball", range=0, radius=1, friendlyfire=false}, -- for ai only
 	on_pre_use = function(self, t, silent)
 		if not self:hasEffect(self.EFF_RAMPAGE) then 
 			if not silent then game.logPlayer(self, "You must be rampaging to use this talant.") end

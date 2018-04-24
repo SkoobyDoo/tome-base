@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -75,6 +75,7 @@ newEntity{ define_as = "TROLL_PROX",
 	inc_damage = { all = -40 },
 
 	autolevel = "warrior",
+	auto_classes={{class="Berserker", start_level=11, level_rate=75},},
 	ai = "tactical", ai_state = { talent_in=3, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
 
@@ -137,6 +138,7 @@ newEntity{ define_as = "TROLL_SHAX",
 	inc_damage = { all = -40 },
 
 	autolevel = "warrior",
+	auto_classes={{class="Berserker", start_level=11, level_rate=75},},
 	ai = "tactical", ai_state = { talent_in=3, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
 
@@ -200,6 +202,7 @@ This is the troll the notes spoke about, no doubt.]],
 	resolvers.inscriptions(1, {"wild infusion", "heroism infusion"}),
 
 	autolevel = "warrior",
+	auto_classes={{class="Berserker", start_level=11, level_rate=75},},
 	ai = "tactical", ai_state = { talent_in=3, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
 
@@ -264,6 +267,9 @@ newEntity{ define_as = "ALUIN",
 	resolvers.sustains_at_birth(),
 
 	autolevel = "warriormage",
+	auto_classes={{class="Sun Paladin", start_level=36, level_rate=50},
+		{class="Cursed", start_level=36, level_rate=50}
+	},
 	ai = "tactical", ai_state = { talent_in=1, ai_move="move_astar", },
 	ai_tactic = resolvers.tactic"melee",
 	resolvers.inscriptions(4, {}),

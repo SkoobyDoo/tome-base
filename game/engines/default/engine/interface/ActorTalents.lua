@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -1079,14 +1079,24 @@ function _M:triggerTalent(tid, name, ...)
 
 	local t = _M.talents_def[tid]
 	name = name or "trigger"
-	if t[name] then return t[name](self, t, ...) end
+	if t[name] then
+		self.__talent_running = t
+		local ret = {t[name](self, t, ...)}
+		self.__talent_running = nil
+		return unpack(ret, 1, table.maxn(ret))
+	end
 end
 
 --- Trigger a talent method
 function _M:callTalent(tid, name, ...)
 	local t = _M.talents_def[tid]
 	name = name or "trigger"
-	if t[name] then return t[name](self, t, ...) end
+	if t[name] then
+		self.__talent_running = t
+		local ret = {t[name](self, t, ...)}
+		self.__talent_running = nil
+		return unpack(ret, 1, table.maxn(ret))
+	end
 end
 
 --- Trigger all talents matching

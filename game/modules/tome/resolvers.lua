@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -199,7 +199,7 @@ function resolvers.resolveObject(e, filter, do_wear, tries)
 					end
 				end
 			end
-			if not worn then print("General Object resolver]", o.uid, o.name, "COULD NOT BE WORN") end
+			if not worn then print("[General Object resolver]", o.uid, o.name, "COULD NOT BE WORN") end
 		end
 		-- if not worn, add to main inventory unless do_wear == false
 		if do_wear ~= false then
@@ -700,7 +700,7 @@ end
 -- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
 -- @param use_params = parameters to merge into self.use_power table
 function resolvers.charm(desc, cd, fct, tcd, use_params)
-	return {__resolver="charm", desc, cd, fct, tcd, use_params}
+	return {__resolver="charm", __resolve_last=true, desc, cd, fct, tcd, use_params}
 end
 function resolvers.calc.charm(tt, e)
 	local cd = tt[2]
@@ -719,7 +719,7 @@ end
 -- @param tcd = talent id to put on cooldown when used <"T_GLOBAL_CD">
 -- @param use_params = parameters to merge into self.use_talent table
 function resolvers.charmt(tid, tlvl, cd, tcd, use_params)
-	return {__resolver="charmt", tid, tlvl, cd, tcd, use_params}
+	return {__resolver="charmt", __resolve_last=true, tid, tlvl, cd, tcd, use_params}
 end
 function resolvers.calc.charmt(tt, e)
 	local cd = tt[3]
@@ -808,7 +808,7 @@ function resolvers.calc.sustains_at_birth(_, e)
 	e.on_added = function(self)
 		for tid, _ in pairs(self.talents) do
 			local t = self:getTalentFromId(tid)
-			if t and t.mode == "sustained" then
+			if t and t.mode == "sustained" and not self:isTalentActive(tid) then
 				self.energy.value = game.energy_to_act
 				self:useTalent(tid, nil, nil, nil, nil, true)
 			end
@@ -913,10 +913,11 @@ end
 --- Resolve tactical ai weights based on talents known
 --	mostly to make sure randbosses have sensible ai_tactic tables
 --	this tends to make npc's slightly more aggressive/defensive depending on their talents
---	@param method = function to be applied to generating the ai_tactic table <not implemented>
--- 	@param tactic_emphasis = average weight of favored tactics <1.5>
---	@param weight_power = smoothing factor to balance out weights <0.5>
---	applied with "on_added_to_level"
+--	@param method = function to be applied to generate the ai_tactic table <generally not implemented>
+--		tactics are updated with "on_added_to_level"
+--		use "instant" to resolve the tactics immediately using the "simple_recursive" method
+-- 	@param tactic_emphasis = average weight of favored tactics, higher values make the NPC more aggressive or defensive <1.5>
+--	@param weight_power = smoothing factor (> 0) to balance out weights <0.5>
 function resolvers.talented_ai_tactic(method, tactic_emphasis, weight_power)
 	local method = method or "simple_recursive"
 	return {__resolver="talented_ai_tactic", method, tactic_emphasis or 1.5, weight_power, __resolve_last=true,
@@ -931,9 +932,10 @@ function resolvers.calc.talented_ai_tactic(t, e)
 	end
 	--print("talented_ai_tactic resolver setting up on_added_to_level function")
 	--print(debug.traceback())
-	e.on_added_to_level = function(e, level, x, y)
+	local on_added = function(e, level, x, y)
 		print("running talented_ai_tactic resolver on_added_to_level function for", e.uid, e.name)
 		local t = e.__ai_tactic_resolver
+		if not t then print("talented_ai_tactic: No resolver table. Aborting") return end
 		e.__ai_tactic_resolver = nil
 		if t.old_on_added_to_level then t.old_on_added_to_level(e, level, x, y) end
 		
@@ -942,7 +944,7 @@ function resolvers.calc.talented_ai_tactic(t, e)
 			return t[1](t, e, level)
 		end
 		-- print("  # talented_ai_tactic resolver function for", e.name, "level=", e.level, e.uid)
-		local tactic_emphasis = t[2] or t.tactic_emphasis or 2 --want average tactic weight to be 2
+		local tactic_emphasis = t[2] or t.tactic_emphasis or 1.5 --desired average tactic weight
 		local weight_power = t[3] or t.weight_power or 0.5 --smooth out tactical weights
 		local tacs_offense = {attack=1, attackarea=1, areaattack=1}
 		local tacs_close = {closein=1, go_melee=1}
@@ -1055,7 +1057,7 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		end
 		-- NPC's with predominantly ranged attacks will want to stay at range.
 		if count.atk_range + count.escape > count.atk_melee + count.close and count.range_value/(count.melee_value + 1) > 1.5 then
-			tactic.old_safe_range = util.bound(math.ceil(count.avg_attack_range/2), 2, e.sight) -- debugging
+			--tactic.old_safe_range = util.bound(math.ceil(count.avg_attack_range/2), 2, e.sight)
 			local sum, break_pt, n, keys = 0, (count.range_value+count.melee_value)/3, 0, {} -- safe_range <= range of 2/3 of all attacks by value
 			for range, ct in pairs(count.atk_range_values) do
 				n = n + 1; keys[n] = range
@@ -1078,12 +1080,18 @@ function resolvers.calc.talented_ai_tactic(t, e)
 		tactic.tactical_sum=tactical
 		tactic.count = count
 		tactic.level = e.level
-		tactic.type = "computed"
+		tactic.type = "simple_recursive"
 		--- print("### talented_ai_tactic resolver ai_tactic table:")
 		--- for tac, wt in pairs(tactic) do print("    ##", tac, wt) end
 		e.ai_tactic = tactic
 --		e.__ai_tactic_resolver = nil
 		return tactic
+	end
+	if t[1] == "instant" then
+		e.__ai_tactic_resolver = t
+		on_added(e, level or game.level, e.x, e.y)
+	else
+		e.on_added_to_level = on_added
 	end
 end
 

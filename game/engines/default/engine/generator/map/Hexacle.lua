@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ require "engine.Generator"
 --- @classmod engine.generator.map.Hexacle
 module(..., package.seeall, class.inherit(engine.Generator))
 
-function _M:init(zone, map, grid_list, data)
+function _M:init(zone, map, level, data)
 	engine.Generator.init(self, zone, map, level)
 	data.segment_wide_chance = data.segment_wide_chance or 70
 	data.nb_segments = data.nb_segments or 8

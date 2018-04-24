@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -305,7 +305,7 @@ newEntity{
 	name = "glass wall", image = "terrain/glasswall.png",
 	display = '#', color=colors.AQUAMARINE, back_color=colors.GREY,
 	z = 3,
-	nice_tiler = { method="wall3d", inner="GLASSWALLF", north="GLASSWALL_NORTH", south="GLASSWALL_SOUTH", north_south="GLASSWALL_NORTH_SOUTH", small_pillar="GLASSWALL_SMALL_PILLAR", pillar_2="GLASSWALL_PILLAR_2", pillar_8="GLASSWALL_PILLAR_8", pillar_4="GLASSWALL_PILLAR_4" },
+	nice_tiler = { method="wall3d", inner="GLASSWALLF", north="GLASSWALL_NORTH", south="GLASSWALL_SOUTH", north_south="GLASSWALL_NORTH_SOUTH", small_pillar="GLASSWALL_SMALL_PILLAR", pillar_2="GLASSWALL_PILLAR_2", pillar_8="GLASSWALL_PILLAR_8", pillar_4="GLASSWALL_PILLAR_4", pillar_6="GLASSWALL_PILLAR_6" },
 	always_remember = true,
 	does_block_move = true,
 	can_pass = {pass_wall=1},

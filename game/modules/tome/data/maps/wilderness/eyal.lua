@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ if game.player:knowTalent(game.player.T_TELEPORT_ANGOLWEN) then defineTile('ango
 -- Zigur is only know from the start to non casters
 if not game.player:knowTalent(game.player.T_MANA_POOL) and not game.player:knowTalent(game.player.T_VIM_POOL) and not game.player:knowTalent(game.player.T_VIM_POOL) and not game.player:knowTalent(game.player.T_NEGATIVE_POOL) and not game.player:knowTalent(game.player.T_POSITIVE_POOL) and not game.player:knowTalent(game.player.T_PARADOX_POOL) and not game.player:attr("undead") then defineTile('zigur', "TOWN_ZIGUR") else quickEntity('zigur', ')') end
 -- Iron Council is only known to dwarves
-if game.player.descriptor.race == "Dwarf" then defineTile('iron-council', "TOWN_IRON_COUNCIL") else quickEntity('iron-council', '#') end
+if game.player:attr("can_see_iron_council") then defineTile('iron-council', "TOWN_IRON_COUNCIL") else quickEntity('iron-council', '#') end
 
 
 -- Far East

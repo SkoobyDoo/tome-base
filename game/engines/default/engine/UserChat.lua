@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -255,8 +255,6 @@ Again, thank you, and enjoy Eyal!
 
 #{italic}#Your malevolent local god of darkness, #GOLD#DarkGod#{normal}#]]):format(data.donated, data.donated * 10, data.items_vault_slots)
 			Dialog:simpleLongPopup("Thank you!", text, 600)
-		elseif self.uc_ext then
-			self.uc_ext:event(e)
 		end
 	elseif e.se == "SelfJoin" then
 		self:addMessage("join", e.channel, profile.auth.login, e.channel, "#{italic}#Joined channel#{normal}#", nil, true)
@@ -329,6 +327,10 @@ Again, thank you, and enjoy Eyal!
 			}
 		end
 		self.channels_changed = true
+	end
+
+	if self.uc_ext then
+		self.uc_ext:event(e)
 	end
 
 	for fct, _ in pairs(self.on_event) do

@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -481,26 +481,15 @@ function _M:addedToLevel(level, x, y)
 		if game.difficulty == game.DIFFICULTY_NIGHTMARE then
 			talent_mult = 1.3
 			life_mult = 1.5
+			nb_classes = util.bound(self.rank - 3.5, 0, 1) -- up to 1 extra class
 		elseif game.difficulty == game.DIFFICULTY_INSANE then
 			talent_mult = 1.8
 			life_mult = 2.0
-			if self.rank >= 3.5 then
-				if self.rank >= 10 then nb_classes = 3
-				elseif self.rank >= 5 then nb_classes = 2
-				else nb_classes = 1
-				end
-			end
+			nb_classes = util.bound(self.rank - 3, 0, 2) -- up to 2 extra classes
 		elseif game.difficulty == game.DIFFICULTY_MADNESS then
 			talent_mult = 2.7
 			life_mult = 3.0
-			if self.rank >= 3.5 then
-				if self.rank >= 10 then nb_classes = 5
-				elseif self.rank >= 5 then nb_classes = 3
-				elseif self.rank >= 4 then nb_classes = 2
-				else nb_classes = 1
-				end
-			end
-	
+			nb_classes = util.bound((self.rank - 3)*1.5, 0, 3) -- up to 3 extra classes
 		end
 		if talent_mult ~= 1 then
 			-- increase level of innate talents
@@ -510,13 +499,16 @@ function _M:addedToLevel(level, x, y)
 					self:learnTalent(tid, true, math.floor(lev*(talent_mult - 1)))
 				end
 			end
-			-- add extra character classes
-			if nb_classes > 0 and not self.randboss and not self.no_difficulty_random_class then
-				-- Note: talent levels from added classes are not adjusted for difficulty
+			-- add the extra character classes (halved for randbosses)
+			if nb_classes > 0 and not self.no_difficulty_random_class then
+				-- Note: talent levels from added classes are not adjusted for difficulty directly
 				-- This means that the NPC's innate talents are generally higher level, preserving its "character"
-				local data = {auto_sustain=true, forbid_equip=false, nb_classes=nb_classes, update_body=true, spend_points=true, autolevel=nb_classes<2 and self.autolevel or "random_boss"}
+				if self.randboss then nb_classes = nb_classes/2 end
+				local data = {auto_sustain=true, forbid_equip=nb_classes<1, nb_classes=nb_classes, update_body=true, spend_points=true, autolevel=nb_classes<2 and self.autolevel or "random_boss"}
 				game.state:applyRandomClass(self, data, true)
+				self[#self+1] = resolvers.talented_ai_tactic("instant") -- regenerate AI TACTICS with the new class(es)
 				self:resolve() self:resolve(nil, true)
+				self:resetToFull()
 			end
 			
 			-- increase maximum life

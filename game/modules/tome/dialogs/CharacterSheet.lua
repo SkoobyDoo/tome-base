@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -476,7 +476,7 @@ function _M:drawDialog(kind, actor_to_compare)
 	local text = ""
 	local dur_text = ""
 
-	if player.__te4_uuid and profile.auth and profile.auth.drupid then
+	if player.__te4_uuid and profile.auth and profile.auth.drupid and not config.settings.disable_all_connectivity and config.settings.tome.upload_charsheet then
 		local path = "https://te4.org/characters/"..profile.auth.drupid.."/tome/"..player.__te4_uuid
 		local LinkTxt = "Online URL: #LIGHT_BLUE##{underline}#"..path.."#{normal}#"
 		local Link_w, Link_h = self.font:size(LinkTxt)

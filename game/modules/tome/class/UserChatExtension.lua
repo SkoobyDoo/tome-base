@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -85,6 +85,14 @@ function _M:event(e)
 			self.chat:addMessage("death", e.channel, e.login, {uname, color}, "#CRIMSON#"..data.msg.."#WHITE#", data.desc and {mode="tooltip", tooltip=data.desc} or nil)
 		else
 			self:triggerHook{"UserChat:event", color=color, e=e, data=data}
+		end
+	elseif e.se == "Talk" then
+		-- Shake screen?
+		if e.login == "darkgod" then
+			if e.msg == e.msg:upper() and #e.msg >= 10 then
+				game:shakeScreen(30, 5)
+				game.log("SHAKING")
+			end
 		end
 	end
 end

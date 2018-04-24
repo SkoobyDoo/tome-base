@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -273,7 +273,9 @@ uberTalent{
 	name = "Worldly Knowledge",
 	mode = "passive",
 	cant_steal = true,
+	no_npc_use = true,
 	on_learn = function(self, t, kind)
+		if not game.party:hasMember(self) then return end
 		local Chat = require "engine.Chat"
 		local chat = Chat.new("worldly-knowledge", {name="Worldly Knowledge"}, self)
 		chat:invoke()

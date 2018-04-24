@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -136,6 +136,9 @@ _M.temporary_values_conf.force_melee_damtype = "last"
 
 -- AI
 _M.temporary_values_conf.ai_move = "last"
+
+-- Misc
+_M.temporary_values_conf.death_dialog = "last"
 
 _M.projectile_class = "mod.class.Projectile"
 
@@ -1478,7 +1481,8 @@ function _M:tooltip(x, y, seen_by)
 	if self.type == "humanoid" or self.type == "giant" then ts:add({"font","italic"}, "(", self.female and "female" or "male", ")", {"font","normal"}, true) else ts:add(true) end
 	ts:add(self.type:capitalize(), " / ", self.subtype:capitalize(), true)
 	ts:add("Rank: ") ts:merge(rank_color:toTString()) ts:add(rank, {"color", "WHITE"}, true)
-	ts:add({"color", 0, 255, 255}, ("Level: %d"):format(self.level), {"color", "WHITE"}, true)
+	if self.hide_level_tooltip then ts:add({"color", 0, 255, 255}, "Level: unknown", {"color", "WHITE"}, true)
+	else ts:add({"color", 0, 255, 255}, ("Level: %d"):format(self.level), {"color", "WHITE"}, true) end
 	if self:attr("invulnerable") then ts:add({"color", "PURPLE"}, "INVULNERABLE!", true) end
 	ts:add({"color", 255, 0, 0}, ("HP: %d (%d%%)"):format(self.life, self.life * 100 / self.max_life), {"color", "WHITE"})
 
@@ -2487,7 +2491,7 @@ end
 
 function _M:takeHit(value, src, death_note)
 	self:enterCombatStatus(src)
-	if src.enterCombatStatus then src:enterCombatStatus(self) end
+	if src and src.enterCombatStatus then src:enterCombatStatus(self) end
 
 	for eid, p in pairs(self.tmp) do
 		local e = self.tempeffect_def[eid]
@@ -2505,15 +2509,6 @@ function _M:takeHit(value, src, death_note)
 	local dead, val = mod.class.interface.ActorLife.takeHit(self, value, src, death_note)
 
 	if src and src.fireTalentCheck then src:fireTalentCheck("callbackOnDealDamage", val, self, dead, death_note) end
-
-	if dead and src and src.attr and src:attr("overkill") and src.project and not src.turn_procs.overkill then
-		src.turn_procs.overkill = true
-		local dam = (self.die_at - self.life) * src:attr("overkill") / 100
-		local incdam = self.inc_damage
-		self.inc_damage = {}
-		src:project({type="ball", radius=2, selffire=false, x=self.x, y=self.y}, self.x, self.y, DamageType.BLIGHT, dam, {type="acid"})
-		self.inc_damage = incdam
-	end
 
 	if self._tactical then self._tactical:update() end
 	return dead, val
@@ -2920,23 +2915,389 @@ function _M:die(src, death_note)
 	return true
 end
 
-function _M:learnStats(statorder)
-	self.auto_stat_cnt = self.auto_stat_cnt or 1
+--- Learn stats (stat increment) in a specified order up to a maximum
+-- @param[table] statorder: an orded list of stat ids in which to learn, generally all learned in one character level
+-- @param repeats: maximum number of times to apply the statorder <1>
+function _M:learnStats(statorder, repeats)
+	statorder.idx = statorder.idx or 1
+	repeats = (repeats or 1)*#statorder
 	local nb = 0
 	local max = 60
 
-	-- Allow to go over a natural 60, up to 80 at level 50
+	-- Allow stats to go over a natural 60, up to 80 at level 50
 	if not self.no_auto_high_stats then max = 60 + (self.level * 20 / 50) end
 
-	while self.unused_stats > 0 do
-		if self:getStat(statorder[self.auto_stat_cnt]) < max then
-			self:incIncStat(statorder[self.auto_stat_cnt], 1)
+	while self.unused_stats > 0 and nb < repeats do
+		if self:getStat(statorder[statorder.idx]) < max then
+			self:incIncStat(statorder[statorder.idx], 1)
 			self.unused_stats = self.unused_stats - 1
 		end
-		self.auto_stat_cnt = util.boundWrap(self.auto_stat_cnt + 1, 1, #statorder)
+		statorder.idx = util.boundWrap(statorder.idx + 1, 1, #statorder)
 		nb = nb + 1
-		if nb >= #statorder then break end
 	end
+end
+
+--- Actor learns/advances in a character class, randomly gaining stats and learning talents based on levels in the class
+--	When first called, the actor gains starting stat bonuses and talents and learns talent categories according to the birth class descriptor
+-- Note: this does not handle any special class requirements, such as creating a golem, generating equipment, etc.
+-- @see game.state:applyRandomClass
+-- @param c_data[table] contains info on the class to learn/levelup in:
+-- @field class: name (birth descriptor subclass name) of the character class to learn ("Bulwark", "Solipsist", ...)
+-- @field start_level: starting actor level to begin leveling in the class <1>
+-- @field level_rate: rate levels in character class are gained as % of actor level <100>
+-- @field check_talents_level: set true to enforce character level limits on talent levels (i.e. level 5 at level 50) <nil>
+-- @field level_by_class: set true to use class level rather than actor level when checking talent/stat limits <nil>
+-- @foe;d ignore_special: set true to skip checking talent special requirements
+-- @field auto_sustain: set true to automatically turn on sustained talents learned <nil>
+-- @field tt_focus: talent type focus, higher values cause talent selections to be focused within fewer talent types <3>
+-- @field use_actor_points: set true to apply stat/talent points from base actor levels in addtion to class levels <nil>
+--  The following fields are automatically generated or updated from the class birth descriptor:
+-- @field ttypes[table]: talent trees to learn talents from (updated with birth descriptor)
+--		{talent_type_name = {[1]=known, [2]=mastery_add}, ...}
+-- @field auto_stats: ordered list of stat ids to use when applying unused_stats points
+--		generated from class descriptor by default, set false to disable, see Actor:learnStats
+-- Additional talent inputs for each talent definition t:
+--	t.random_boss_rarity: if defined, the percent chance the talent may be learned each time randomly selected
+function _M:levelupClass(c_data)
+	c_data.last_level = c_data.last_level or 0
+	c_data.start_level = c_data.start_level or 1
+
+	local new_level = math.ceil((self.level - c_data.start_level + 1)*(c_data.level_rate or 100)/100)
+	
+	if new_level <= c_data.last_level then return end
+	print("[Actor:levelupClass]", self.name, "auto level up", c_data.class, c_data.last_level, "-->", new_level, c_data)
+	
+	local ttypes
+	-- temporarily remove any previous stat/talent points if they won't be used
+	local base_points = {self.unused_stats, self.unused_talents, self.unused_generics}
+	if not c_data.use_actor_points then
+		self.unused_stats, self.unused_talents, self.unused_generics = 0, 0, 0 
+	end
+
+	-- Initialize if needed, updating auto_classes table
+	if c_data.class and not c_data.initialized then -- build talent category list from the class
+		local Birther = require "engine.Birther"
+		local c_def = Birther.birth_descriptor_def.subclass[c_data.class]
+		if not c_def then
+			print("[Actor:levelupClass] ### undefined class:", c_data.class)
+			return
+		end
+
+		local mclasses = Birther.birth_descriptor_def.class
+		local mclass = nil
+		for name, data in pairs(mclasses) do
+			if data.descriptor_choices and data.descriptor_choices.subclass and data.descriptor_choices.subclass[c_def.name] then mclass = data break end
+		end
+		if not mclass then
+			print("[Actor:levelupClass] ###class", c_data.class, "has no parent class type###")
+			return 
+		end
+
+		print(("[Actor:levelupClass] %s %s ## Initialzing auto_class %s (%s) %s%% level_rate from level %s ##"):format(self.uid, self.name, c_data.class, mclass.name, c_data.level_rate, c_data.start_level))
+
+		-- update class descriptor list and build inherent power sources
+		self.descriptor = self.descriptor or {}
+		self.descriptor.classes = self.descriptor.classes or {}
+		table.append(self.descriptor.classes, {c_def.name})
+		
+		-- build inherent power sources and forbidden power sources
+		-- self.forbid_power_source --> self.not_power_source used for classes
+		self.power_source = table.merge(self.power_source or {}, c_def.power_source or {})
+		self.not_power_source = table.merge(self.not_power_source or {}, c_def.not_power_source or {})
+		-- update power source parameters with the new class
+		self.not_power_source, self.power_source = game.state:updatePowers(game.state:attrPowers(self, self.not_power_source), self.power_source)
+		print("  *** power types: not_power_source =", table.concat(table.keys(self.not_power_source),","), "power_source =", table.concat(table.keys(self.power_source),","))
+		
+		-- apply class stat bonuses and set up class auto_stats (in auto_classes)
+		local auto_stats
+		if c_def.stats and c_data.auto_stats ~= false then
+			auto_stats = {}
+			for stat, v in pairs(c_def.stats or {}) do
+				local stat_id = self.stats_def[stat].id
+				self.stats[stat_id] = (self.stats[stat_id] or 10) + v
+				for i = 1, v do auto_stats[#auto_stats+1] = stat_id end
+			end
+			c_data.auto_stats = auto_stats
+		end
+		c_data.auto_stats = c_data.auto_stats or auto_stats
+
+		ttypes = {}
+		for tt, d in pairs(mclass.talents_types or {}) do
+			self:learnTalentType(tt, d[1]) self:setTalentTypeMastery(tt, (self:getTalentTypeMastery(tt) or 1) + d[2])
+			ttypes[tt] = table.clone(d)
+		end
+		for tt, d in pairs(mclass.unlockable_talents_types or {}) do
+			self:learnTalentType(tt, d[1]) self:setTalentTypeMastery(tt, (self:getTalentTypeMastery(tt) or 1) + d[2])
+			ttypes[tt] = table.clone(d)
+		end
+		for tt, d in pairs(c_def.talents_types or {}) do
+			self:learnTalentType(tt, d[1]) self:setTalentTypeMastery(tt, (self:getTalentTypeMastery(tt) or 1) + d[2])
+			ttypes[tt] = table.clone(d)
+		end
+		for tt, d in pairs(c_def.unlockable_talents_types or {}) do
+			self:learnTalentType(tt, d[1]) self:setTalentTypeMastery(tt, (self:getTalentTypeMastery(tt) or 1) + d[2])
+			ttypes[tt] = table.clone(d)
+		end
+		
+		-- set up input talent categories specified (generally for non-class talents)
+		if c_data.ttypes then
+			for tt, d in pairs(c_data.ttypes) do
+				if not self:knowTalentType(tt) then
+					if type(d) ~= "table" then
+						d={true, type(d) == "number" and d or rng.range(1, 3)*0.1}
+					else d=table.clone(d)
+					end
+					self:learnTalentType(tt, d[1])
+					self:setTalentTypeMastery(tt, (self:getTalentTypeMastery(tt) or 1) + d[2])
+					ttypes[tt] = table.mergeAdd(ttypes[tt] or {}, d)
+				end
+			end
+		end
+		if not next(ttypes) then -- if not specified, use all known talent types
+			for tt, known in pairs(self.talents_types) do
+				ttypes[tt] = {known, (self:getTalentTypeMastery(tt) or 1) - 1}
+			end
+		end
+		
+		-- Note: could limit number of talent trees selected here to limit # talents learned
+		
+--print("\t *** auto_levelup initialized talent category choices:", mclass.name , c_def.name , "\n\t")
+		-- set up (semi-random) rarity levels for talent categories
+		-- This tends to focus learned talents within certain trees (usually those with improved mastery)
+		local tt_count = 0
+		local unknown_tt={}
+		local tt_focus = c_data.tt_focus or 3
+		for tt, d in pairs(ttypes) do
+			d.tt = tt
+			tt_count = tt_count + 1
+			d.tt_count = tt_count
+			d.rarity = d.rarity or (1.3 + 0.5*tt_count)/math.max(0.1, self:getTalentTypeMastery(tt)*rng.float(0.1, tt_focus))^2
+--print(("\t *** %-40s  rarity %5.3f"):format(tt, d.rarity))
+			if not d[1] then table.insert(unknown_tt, d) end
+		end
+		c_data.unknown_tt = unknown_tt
+		c_data.ttypes = ttypes
+		
+		-- Assign class starting talents and set them to level up later
+		for tid, v in pairs(c_def.talents or {}) do
+			c_data.auto_talents = c_data.auto_talents or {}
+			local t = self:getTalentFromId(tid)
+			if not t.no_npc_use and (not t.random_boss_rarity or rng.chance(t.random_boss_rarity)) then
+				local every = 0
+				if t.points > 1 then
+					every = math.ceil(50/(t.points * 1.2))
+					table.insert(c_data.auto_talents, {tid=tid, start_level=c_data.start_level, base=v, every=every})
+				end
+				print(("\t ** learning %s birth talent %s %s (every %s levels)"):format(c_data.class, tid, v, every))
+				self:learnTalent(tid, true, v)
+			end
+		end
+		c_data.initialized = true
+	end
+
+	local init_level, learn_tids, learn_stats = c_data.last_level -- for log output summary
+	local to_activate = {}
+	while new_level > c_data.last_level do
+		c_data.last_level = c_data.last_level + 1
+		--print("{Actor:levelupClass] to", c_data.class, c_data.last_level)
+		learn_tids = learn_tids or {}
+		learn_stats = learn_stats or {}
+		-- Gain talent and category points, similar to Actor:levelup: (but with no prodigies)
+		if not self.no_points_on_levelup then
+			self.unused_stats = self.unused_stats + (self.stats_per_level or 3) + self:getRankStatAdjust()
+			self.unused_talents = self.unused_talents + 1
+			self.unused_generics = self.unused_generics + 1
+			if c_data.last_level % 5 == 0 then self.unused_talents = self.unused_talents + 1 end
+			if c_data.last_level % 5 == 0 then self.unused_generics = self.unused_generics - 1 end
+
+			if self.extra_talent_point_every and c_data.last_level % self.extra_talent_point_every == 0 then self.unused_talents = self.unused_talents + 1 end
+			if self.extra_generic_point_every and c_data.last_level % self.extra_generic_point_every == 0 then self.unused_generics = self.unused_generics + 1 end
+
+			-- At levels 10, 20 and 36 and then every 30 levels, we gain a new talent type
+			if c_data.last_level == 10 or c_data.last_level == 20 or c_data.last_level == 36 or (c_data.last_level > 50 and (c_data.last_level - 6) % 30 == 0) then
+				self.unused_talents_types = self.unused_talents_types + 1
+			end
+			-- if c_data.last_level == 30 or c_data.last_level == 42 then self.unused_prodigies = self.unused_prodigies + 1 end
+		elseif type(self.no_points_on_levelup) == "function" then
+			self:no_points_on_levelup()
+		end
+
+		--print((" *** level: %s/%s stats: %s talents: %s generics: %s categories: %s prodigies: %s"):format(c_data.last_level, new_level, self.unused_stats, self.unused_talents, self.unused_generics, self.unused_talents_types, self.unused_prodigies))
+
+		-- automatically level up any auto_talents, (usualy birth talents)
+		if c_data.auto_talents then
+			for i, d in ipairs(c_data.auto_talents) do
+				if c_data.last_level > d.start_level and (c_data.last_level - d.start_level)%d.every == 0 then
+					--print(("\t ** advancing %s auto_talent %s"):format(c_data.class, d.tid))
+					self:learnTalent(d.tid, true)
+				end
+			end
+		end
+
+		ttypes = c_data.ttypes
+
+		-- generate list of possible talent types based on the master list
+		--print("\t *** auto_levelup available talent categories:\n\t", table.concat(table.keys(ttypes), ", "))
+		local tt_choices = {}
+		for tt, d in pairs(ttypes) do
+			table.insert(tt_choices, d)
+		end
+
+		local fails, max_fails = 0, #tt_choices*4
+		-- assign unused category points
+		while self.unused_talents_types >= 1 and fails <= 5 do
+			print("\t *** Assigning", self.unused_talents_types, "category points")
+
+			-- 50% chance to learn a new talent category if possible
+			local tt
+			if rng.percent(50) then	tt = rng.tableRemove(c_data.unknown_tt) end
+			if not tt then tt = rng.table(tt_choices) end
+			
+			if tt then
+				if self:knowTalentType(tt.tt) then
+					print("\t *** auto_levelup IMPROVING TALENT TYPE", tt.tt)
+					local ml = self:getTalentTypeMastery(tt.tt) or 1
+					self:setTalentTypeMastery(tt.tt, ml + (ml <= 1 and 0.2 or 0.1)) -- 0.2 for 1st then 0.1 thereafter
+				else
+					print("\t *** auto_levelup LEARNING TALENT TYPE", tt.tt)
+					self:learnTalentType(tt.tt, true)
+					tt.rarity = tt.rarity/2  -- makes talents within an unlocked talent tree more likely to be learned
+				end
+				--print("\t *** talent type mastery:", tt, self:getTalentTypeMastery(tt))
+				self.unused_talents_types = self.unused_talents_types - 1
+			else fails = fails + 1
+			end
+		end
+		
+		-- learn talents randomly from available talent trees
+		-- Note: could put limit on number of talents learned here (similar to previous method)
+		fails = 0
+		local tt, tt_idx, tt_def
+		local t, t_idx
+		while fails < max_fails and (self.unused_talents >= 1 or self.unused_generics >= 1) do
+			-- pick a talent tree
+			tt, tt_idx = rng.rarityTable(tt_choices)
+			if not tt then break end
+			tt = tt.tt
+			tt_def = tt and self:knowTalentType(tt) and self.talents_types_def[tt]
+			-- begin category loop
+			if tt_def and (tt_def.generic and self.unused_generics >= 1 or not tt_def.generic and self.unused_talents >=1) then
+				--print("\t *** checking category:", tt)
+				-- try to find a talent to learn
+				local t_choices = {}
+				local nb_known = self:numberKnownTalent(tt)
+				-- update talent choices with each talent in the tree that can be learned
+				for i, t in ipairs(tt_def.talents) do
+					if t.no_npc_use or t.not_on_random_boss then
+						nb_known = nb_known + 1 -- treat as known to allow later talents to be learned
+					elseif t.type[2] and nb_known >= t.type[2] - 1 and (not t.random_boss_rarity or rng.percent(t.random_boss_rarity)) then -- check category talents known
+						table.insert(t_choices, t)
+					end
+				end
+				--	print("talent choices for", tt)	for i, t in ipairs(t_choices) do print("\t", i, t.id, t.name) end
+				local ok
+				repeat
+					t, t_idx = rng.table(t_choices)
+					if not t then break end
+					ok = true
+					local tlev = self:getTalentLevelRaw(t) + 1 -- talent level to learn
+					-- check max talent level
+					local max = t.points
+					if max > 1 then
+						max = math.max(max, math.ceil(max*1.2*c_data.last_level/50))
+						if c_data.check_talents_level then -- apply character level limits
+							max = math.min(max, t.points + math.max(0, math.floor((c_data.last_level - 50) / 10)) + (self.talents_inc_cap and self.talents_inc_cap[t.id] or 0))
+						end
+					end
+					if tlev > max then
+						ok = false
+					end
+					
+					if ok and t.require then -- check requirements to learn the talent
+						local req = rawget(t, "require")
+						if type(req) == "function" then req = req(self, t) end
+						if req then
+							if req.level then -- check talent-defined level limits
+								local lev = util.getval(req.level, tlev)
+								if c_data.level_by_class then
+									if c_data.last_level < lev then ok = false end
+								elseif self.level < lev then 
+									ok = false
+								end
+							end
+							if ok and req.talent then -- other prerequisite talents
+								for _, tid in ipairs(req.talent) do
+									if type(tid) == "table" then
+										if type(tid[2]) == "boolean" and tid[2] == false then
+											if self:knowTalent(tid[1]) then ok = false end
+										else
+											if tlev - 1 < tid[2] then ok = false end
+										end
+									else
+										if not self:knowTalent(tid) then ok = false end
+									end
+								end
+							end
+							if ok and req.special and not c_data.ignore_special then -- special checks
+								if not req.special.fct(self, t, 1) then ok = false	end
+							end
+							if ok and req.stat then -- check stat requirements, allocate stat points if needed
+								local need, needed, need_stats = 0, 0, {}
+								for s, v in pairs(req.stat) do
+									need = util.getval(v, tlev) - self:getStat(s)
+									if need > 0 then
+										need_stats[s] = need; needed = needed + need
+									end
+								end
+								if ok and needed <= self.unused_stats then -- allocate stats needed for the talent
+									for s, v in pairs(need_stats) do
+										local pts = self:incIncStat(s, v)
+										learn_stats[s] = (learn_stats[s] or 0) + pts
+										self.unused_stats = self.unused_stats - pts
+									end
+								else ok = false
+								end
+							end
+						end
+					end
+					ok = ok and self:learnTalent(t.id, true)
+					if ok then 
+--						print("\t *** learning "..(tt_def.generic and "GENERIC" or "CLASS").." talent", t.id, ok)
+						learn_tids[t.id] = (learn_tids[t.id] or 0) + 1
+						if tt_def.generic then self.unused_generics = self.unused_generics - 1 else self.unused_talents = self.unused_talents - 1 end
+						if t.mode == "sustained" and c_data.auto_sustain and not self:isTalentActive(t.id) then to_activate[t.id] = true end
+					else table.remove(t_choices, t_idx)
+					end
+				until ok
+				if not ok then -- no more talent choices possible for category
+					-- print("\t *** no talent choices in category:", tt)
+					table.remove(tt_choices, tt_idx)
+				end
+			else -- impossible to learn talents in the category
+				-- print("\t *** rejecting category:", tt)
+				table.remove(tt_choices, tt_idx)
+			end -- end category loop
+			fails = fails + 1
+		end
+	end
+	print("[Actor:levelupClass] ### levelup summary for", self.name, c_data.class, init_level, "-->", c_data.last_level)
+	print("[Actor:levelupClass] ### Talents Learned:")
+	table.print(learn_tids, "\t*\t")
+	print("[Actor:levelupClass] ### Talents forced Stats:", table.concatNice(table.to_strings(learn_stats, "%s: %s"), ", "))
+--	print((" *** auto_level complete: level: %s/%s remaining stats: %s talents: %s generics: %s categories: %s prodigies: %s"):format(c_data.last_level, new_level, self.unused_stats, self.unused_talents, self.unused_generics, self.unused_talents_types, self.unused_prodigies))
+
+	-- allocate any remaining stat points
+	if self.unused_stats > 0 and c_data.auto_stats then
+		print(" *** auto allocating", self.unused_stats, "remaining stat points")
+		self:learnStats(c_data.auto_stats, 5)
+	end
+	
+	-- restore unused stat and talent points
+	if not c_data.use_actor_points then
+		self.unused_stats, self.unused_talents, self.unused_generics = unpack(base_points)
+	end
+	-- turn on designated sustains
+	for tid, _ in pairs(to_activate) do self:forceUseTalent(tid, {ignore_energy=true}) end
 end
 
 function _M:resetToFull()
@@ -2973,20 +3334,30 @@ function _M:resolveLevelTalents()
 		end
 		self.learn_tids = nil
 	end
-	if not self.start_level or not self._levelup_talents then return end
+--	if not self.start_level or not self._levelup_talents then return end
 
-	local maxfact = 1  -- Balancing parameter for levels > 50: maxtalent level = actorlevel/50*maxfact * normal max talent level
-	maxfact=math.max(maxfact,self.level/50)
+	if self.start_level and self._levelup_talents then
+		local maxfact = 1  -- Balancing parameter for levels > 50: maxtalent level = actorlevel/50*maxfact * normal max talent level
+		maxfact=math.max(maxfact,self.level/50)
 
-	for tid, info in pairs(self._levelup_talents) do
-		if not info.max or (self.talents[tid] or 0) < math.floor(info.max*maxfact) then
-			local last = info.last or self.start_level
-			if self.level - last >= info.every then
-				self:learnTalent(tid, true)
-				info.last = self.level
+		for tid, info in pairs(self._levelup_talents) do
+			if not info.max or (self.talents[tid] or 0) < math.floor(info.max*maxfact) then
+				local last = info.last or self.start_level
+				if self.level - last >= info.every then
+					self:learnTalent(tid, true)
+					info.last = self.level
+				end
 			end
 		end
 	end
+
+	-- automatically level up classes as defined
+	if self.auto_classes then
+		for i, c_data in ipairs(self.auto_classes) do
+			self:levelupClass(c_data)
+		end
+	end
+
 end
 
 function _M:levelup()
@@ -3771,6 +4142,13 @@ function _M:onTakeoff(o, inven_id, bypass_set, silent)
 	self:breakReloading()
 	self:fireTalentCheck("callbackOnTakeoff", o, bypass_set)
 
+	-- If objected buffed us, remove
+	local todel = {}
+	for eff_id, p in pairs(self.tmp) do
+		if p.__object_source == o then todel[#todel+1] = eff_id end
+	end
+	if #todel > 0 then for _, eff_id in ipairs(todel) do self:removeEffect(eff_id) end end
+
 	self:checkTwoHandedPenalty()
 
 	self:updateModdableTile()
@@ -3971,24 +4349,12 @@ function _M:updateObjectRequirements(o)
 		if newreq.stat and newreq.stat.str then
 			newreq.stat.cun, newreq.stat.str = newreq.stat.str, nil
 		end
-		if newreq.talent then for i, tr in ipairs(newreq.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				newreq.talent[i] = {self.T_SKIRMISHER_BUCKLER_EXPERTISE, 1}
-				break
-			end
-		end end
 	end
 	if o.subtype == "shield" and self:knowTalent(self.T_AGILE_DEFENSE) then
 		newreq = newreq or table.clone(oldreq, true)
 		if newreq.stat and newreq.stat.str then
 			newreq.stat.dex, newreq.stat.str = newreq.stat.str, nil
 		end
-		if newreq.talent then for i, tr in ipairs(newreq.talent) do
-			if tr[1] == self.T_ARMOUR_TRAINING then
-				newreq.talent[i] = {self.T_AGILE_DEFENSE, 1}
-				break
-			end
-		end end
 	end
 	if (o.type == "weapon" or o.type == "ammo") and self:knowTalent(self.T_STRENGTH_OF_PURPOSE) then
 		newreq = newreq or table.clone(oldreq, true)
@@ -4237,6 +4603,13 @@ function _M:unlearnTalent(t_id, nb, no_unsustain, extra)
 
 	-- Unsustain ?
 	if not no_unsustain and not self:knowTalent(t_id) and t.mode == "sustained" and self:isTalentActive(t_id) then self:forceUseTalent(t_id, {ignore_energy=true, save_cleanup=true}) end
+
+	-- Remove buffs ?
+	local todel = {}
+	for eff_id, p in pairs(self.tmp) do
+		if p.__talent_source == t_id then todel[#todel+1] = eff_id end
+	end
+	if #todel > 0 then for _, eff_id in ipairs(todel) do self:removeEffect(eff_id) end end
 
 	self:recomputeRegenResources()
 
@@ -4561,7 +4934,6 @@ end
 -- @param ab the talent (not the id, the table)
 -- @return true to continue, false to stop
 function _M:preUseTalent(ab, silent, fake)
-
 	if ab._ai_parsed == nil then -- add some AI info to the talent if needed
 		print("[Actor:preUseTalent] PARSING TALENT for AI info", ab.id, self.name)
 		mod.class.interface.ActorAI.aiParseTalent(ab, self)
@@ -4572,7 +4944,12 @@ function _M:preUseTalent(ab, silent, fake)
 		return false
 	end
 
-	if not self:attr("no_talent_fail") then
+	if self:attr("no_talent_fail") then return true end
+
+	if self.turn_procs.forbid_instant_talents and self.turn_procs.forbid_instant_talents[ab.id] then
+		if not silent then game.logPlayer(self, "You already tried to use %s, an instant use talent, this turn and failed.", ab.name) end
+		return false
+	end
 	if not ab.never_fail and self:attr("feared") and (ab.mode ~= "sustained" or not self:isTalentActive(ab.id)) then
 		if not silent then game.logSeen(self, "%s is too afraid to use %s.", self.name:capitalize(), ab.name) end
 		return false
@@ -4689,7 +5066,12 @@ function _M:preUseTalent(ab, silent, fake)
 			if (not self:attr("no_equilibrium_fail") and (not self:attr("no_equilibrium_summon_fail") or not ab.is_summon)) and not self:equilibriumChance(ab.equilibrium or ab.sustain_equilibrium) then
 				if not silent then game.logPlayer(self, "You fail to use %s due to your equilibrium!", ab.name) end
 				self:incEquilibrium((ab.equilibrium or ab.sustain_equilibrium) / 10)
-				self:useEnergy()
+				if not util.getval(ab.no_energy, self, ab) then
+					self:useEnergy()
+				else
+					self.turn_procs.forbid_instant_talents = self.turn_procs.forbid_instant_talents or {}
+					self.turn_procs.forbid_instant_talents[ab.id] = true
+				end
 				return false
 			end
 		end
@@ -4698,7 +5080,12 @@ function _M:preUseTalent(ab, silent, fake)
 		if (ab.is_spell and not self:isTalentActive(ab.id)) and not fake and self:attr("spell_failure") then
 			if rng.percent(self:attr("spell_failure")) then
 				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-magic forces#LAST#!", self.name:capitalize(), ab.name) end
-				self:useEnergy()
+				if not util.getval(ab.no_energy, self, ab) then
+					self:useEnergy()
+				else
+					self.turn_procs.forbid_instant_talents = self.turn_procs.forbid_instant_talents or {}
+					self.turn_procs.forbid_instant_talents[ab.id] = true
+				end
 				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 				return false
 			end
@@ -4708,7 +5095,12 @@ function _M:preUseTalent(ab, silent, fake)
 		if (ab.is_nature and not self:isTalentActive(ab.id)) and not fake and self:attr("nature_failure") then
 			if rng.percent(self:attr("nature_failure")) then
 				if not silent then game.logSeen(self, "%s's %s has been disrupted by #ORCHID#anti-nature forces#LAST#!", self.name:capitalize(), ab.name) end
-				self:useEnergy()
+				if not util.getval(ab.no_energy, self, ab) then
+					self:useEnergy()
+				else
+					self.turn_procs.forbid_instant_talents = self.turn_procs.forbid_instant_talents or {}
+					self.turn_procs.forbid_instant_talents[ab.id] = true
+				end
 				self:fireTalentCheck("callbackOnTalentDisturbed", ab)
 				return false
 			end
@@ -4790,8 +5182,6 @@ function _M:preUseTalent(ab, silent, fake)
 	-- Cant heal
 	if ab.is_heal and (self:attr("no_healing") or ((self.healing_factor or 1) <= 0)) then return false end
 	if ab.is_teleport and self:attr("encased_in_ice") then return false end
-
-	end
 
 	return true
 end
@@ -4970,7 +5360,9 @@ function _M:fireTalentCheck(event, ...)
 				ret = self:callEffect(tid, event, ...) or ret
 			elseif kind == "object" then
 				self.__project_source = tid
+				self.__object_use_running = tid
 				ret = tid:check(event, self, ...) or ret
+				self.__object_use_running = nil
 			else
 				self.__project_source = self.sustain_talents[tid]
 				ret = self:callTalent(tid, event, ...) or ret
@@ -6340,6 +6732,16 @@ function _M:on_temporary_effect_added(eff_id, e, p)
 	self:registerCallbacks(e, eff_id, "effect")
 	self:fireTalentCheck("callbackOnTemporaryEffectAdd", eff_id, e, p)
 	if e.status == "detrimental" then self:enterCombatStatus() end
+
+	-- Register talent source if any
+	if (e.status == "beneficial" or e.status == "neutral") then
+		if self.__talent_running then
+			p.__talent_source = self.__talent_running.id
+		end
+		if self.__object_use_running then
+			p.__object_source = self.__object_use_running
+		end
+	end
 end
 
 function _M:on_temporary_effect_removed(eff_id, e, p)
@@ -6884,7 +7286,7 @@ function _M:checkStillInCombat()
 	-- Status effects need rechecking
 	for eff_id, p in pairs(self.tmp) do
 		local e = self:getEffectFromId(eff_id)
-		if e.status == "detrimental" then self:enterCombatStatus() break end
+		if e.status == "detrimental" and e.decrease > 0 then self:enterCombatStatus() break end
 	end
 
 	if game.turn - self.in_combat < 50 then return end -- Still good?

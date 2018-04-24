@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -2282,7 +2282,7 @@ newEffect{
 		-- Bypass all shields & such
 		local old = self.onTakeHit
 		self.onTakeHit = nil
-		mod.class.interface.ActorLife.takeHit(self, self.max_life * eff.dam / 100, nil, {special_death_msg="suffocated to death"})
+		mod.class.interface.ActorLife.takeHit(self, self.max_life * eff.dam / 100, self, {special_death_msg="suffocated to death"})
 		eff.dam = util.bound(eff.dam + 5, 20, 100)
 		self.onTakeHit = old
 	end,
@@ -3036,7 +3036,7 @@ newEffect{
 	type = "other",
 	subtype = { aura=true },
 	status = "neutral",
-	zone_wide_effect = true,
+	zone_wide_effect = false,
 	parameters = {},
 	activate = function(self, eff)
 	end,
@@ -3051,6 +3051,10 @@ newEffect{
 	callbackOnActBase = function(self, eff)
 		if not eff.id_challenge_quest or not self:hasQuest(eff.id_challenge_quest) then return end
 		self:hasQuest(eff.id_challenge_quest):check("on_act_base", self)
+	end,
+	callbackOnChangeLevel = function(self, eff)
+		local q = eff.id_challenge_quest and self:hasQuest(eff.id_challenge_quest)
+		if q then q:check("on_exit_level", self) end
 	end,
 }
 
@@ -3321,5 +3325,31 @@ newEffect{
 		self:effectTemporaryValue(eff, "inc_damage", {[engine.DamageType.COLD] = 20})
 	end,
 	deactivate = function(self, eff)
+	end,
+}
+
+newEffect{
+	name = "RECALL", image = "effects/recall.png",
+	desc = "Recalling",
+	long_desc = function(self, eff) return "The target is waiting to be recalled back to the worldmap." end,
+	type = "magical",
+	subtype = { unknown=true },
+	status = "beneficial",
+	cancel_on_level_change = true,
+	parameters = { },
+	activate = function(self, eff)
+		eff.leveid = game.zone.short_name.."-"..game.level.level
+	end,
+	deactivate = function(self, eff)
+		if (eff.allow_override or (self == game:getPlayer(true) and self:canBe("worldport") and not self:attr("never_move"))) and eff.dur <= 0 then
+			game:onTickEnd(function()
+				if eff.leveid == game.zone.short_name.."-"..game.level.level and game.player.can_change_zone then
+					game.logPlayer(self, "You are yanked out of this place!")
+					game:changeLevel(1, eff.where or game.player.last_wilderness)
+				end
+			end)
+		else
+			game.logPlayer(self, "Space restabilizes around you.")
+		end
 	end,
 }

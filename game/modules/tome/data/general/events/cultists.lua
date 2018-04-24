@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -209,7 +209,7 @@ if not game.zone.cultist_event_on_turn then
 					power_source = {arcane=true},
 					display = "]", color=colors.SLATE,
 					moddable_tile = resolvers.moddable_tile("helm"),
-					require = { talent = { m.T_ARMOUR_TRAINING }, },
+					require = { flag = { "allow_wear_heavy" }, },
 					encumber = 4,
 					metallic = true,
 					unique = true,

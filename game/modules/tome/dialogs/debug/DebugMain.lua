@@ -1,5 +1,5 @@
 -- ToME - Tales of Maj'Eyal
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -370,6 +370,7 @@ function _M:generateList()
 	list[#list+1] = {name="Give Sher'tul fortress energy", action="shertul-energy"}
 	list[#list+1] = {name="Give all ingredients", action="all-ingredients"}
 	list[#list+1] = {name="Weakdamage", action="weakdamage"}
+	list[#list+1] = {name="Spawn Event", dialog="SpawnEvent"}
 	list[#list+1] = {name="Endgamify", action="endgamify"}
 	list[#list+1] = {name="Particles Editor", action="particles-editor"}
 	self:triggerHook{"DebugMain:generate", menu=list}

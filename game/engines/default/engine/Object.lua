@@ -1,5 +1,5 @@
 -- TE4 - T-Engine 4
--- Copyright (C) 2009 - 2017 Nicolas Casalini
+-- Copyright (C) 2009 - 2018 Nicolas Casalini
 --
 -- This program is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -205,6 +205,9 @@ function _M:getSubtypeOrder()
 	return self.subtype or ""
 end
 
+--- Describe requirements flags naming
+_M.requirement_flags_names = {}
+
 --- Describe requirements
 function _M:getRequirementDesc(who)
 	local req = rawget(self, "require")
@@ -212,6 +215,19 @@ function _M:getRequirementDesc(who)
 
 	local str = tstring{"Requires:", true}
 
+	if req.flag then
+		for _, flag in ipairs(req.flag) do
+			if type(flag) == "table" then
+				local name = self.requirement_flags_names[flag[1]] or flag[1]
+				local c = (who:attr(flag[1]) and who:attr(flag[1]) >= flag[2]) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
+				str:add(c, "- ", ("%s (level %d)"):format(name, flag[2]), {"color", "LAST"}, true)
+			else
+				local name = self.requirement_flags_names[flag] or flag
+				local c = who:attr(flag) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
+				str:add(c, "- ", ("%s"):format(name), {"color", "LAST"}, true)
+			end
+		end
+	end
 	if req.stat then
 		for s, v in pairs(req.stat) do
 			local c = (who:getStat(s) >= v) and {"color", 0x00,0xff,0x00} or {"color", 0xff,0x00,0x00}
