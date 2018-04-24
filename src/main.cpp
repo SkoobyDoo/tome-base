@@ -1356,7 +1356,15 @@ void main() \
 ");
 	sTER_Program program = TER_Program::build(vertex, fragment);
 	program->setUniform("tex", 0);
-	program->setUniform("displayColor", {1, 0, 0, 1});
+	program->setUniform("displayColor", {1, 1, 1, 1});
+
+	sTER_Program program1 = TER_Program::build(vertex, fragment);
+	program1->setUniform("tex", 0);
+	program1->setUniform("displayColor", {1, 0, 0, 1});
+
+	sTER_Program program2 = TER_Program::build(vertex, fragment);
+	program2->setUniform("tex", 0);
+	program2->setUniform("displayColor", {1, 1, 0, 1});
 
 	SDL_Surface *s = IMG_Load("game/engines/default/data/gfx/background/tome.png");
 	sTER_Texture tex = TER_Texture::build(s);
@@ -1379,6 +1387,8 @@ void main() \
 	};
 	sTER_IndexBuffer index_buf = TER_IndexBuffer::build(TER_BufferFormat::UINT32, TER_BufferMode::STATIC, index_data, 6);
 
+	sTER_FrameBuffer fbo = TER_FrameBuffer::build((float)screen->w, (float)screen->h, 1, false, false);
+
 	TER_Context *context = TER_Context::build();
 
 	glm::mat4 view_m = glm::ortho(0.f, (float)screen->w, (float)screen->h, 0.0f, -1001.f, 1001.f);
@@ -1393,12 +1403,19 @@ void main() \
 		context->index(index_buf);
 		context->vertex(vertex_buf);
 		context->texture(tex);
-		context->submit(program);
+		context->framebuffer(fbo);
+		context->submit(program2);
 
 		context->model(model2_m);
 		context->index(index_buf);
 		context->vertex(vertex_buf);
 		context->texture(tex);
+		context->submit(program1);
+
+		context->model(model_m);
+		context->index(index_buf);
+		context->vertex(vertex_buf);
+		context->texture(fbo);
 		context->submit(program);
 
 		context->frame();

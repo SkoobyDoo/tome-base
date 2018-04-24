@@ -34,7 +34,9 @@ extern "C" {
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include "variant.hpp"
 using namespace std;
+using namespace mpark;
 
 enum class TER_RendererBackend { GL21 };
 
@@ -172,7 +174,7 @@ protected:
 
 	// Transient data, erased by submit
 	glm::mat4 model_m;
-	sTER_Texture cur_textures[3];
+	variant<bool,sTER_Texture,sTER_FrameBuffer> cur_textures[3];
 	sTER_VertexBuffer cur_vertexbuffer;
 	sTER_IndexBuffer cur_indexbuffer;
 	sTER_FrameBuffer cur_framebuffer;
@@ -184,6 +186,8 @@ public:
 	inline void model(glm::mat4 m) { model_m = m; }
 	inline void blend(TER_BlendMode b) { blendmode = b; }
 	inline void texture(sTER_Texture t, uint8_t idx=0) { cur_textures[idx] = t; }
+	inline void texture(sTER_FrameBuffer f, uint8_t idx=0) { cur_textures[idx] = f; }
+	inline void emptyTexture(uint8_t idx=0) { cur_textures[idx] = false; }
 	inline void vertex(sTER_VertexBuffer v) { cur_vertexbuffer = v; }
 	inline void index(sTER_IndexBuffer i) { cur_indexbuffer = i; }
 	virtual void framebuffer(sTER_FrameBuffer f) { cur_framebuffer = f; }

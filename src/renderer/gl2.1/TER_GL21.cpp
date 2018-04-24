@@ -330,14 +330,23 @@ void TER_GL21_Context::submit(sTER_Program _program) {
 	TER_GL21_VertexBuffer *vert_buf = static_cast<TER_GL21_VertexBuffer*>(cur_vertexbuffer.get());
 	TER_GL21_IndexBuffer *idx_buf = static_cast<TER_GL21_IndexBuffer*>(cur_indexbuffer.get());
 
+	if (cur_framebuffer) cur_framebuffer->use(true);
+
 	// Setup shader program
 	glUseProgram(program->program);
 
 	// Bind textures
-	for (uint8_t i = 0; i < 3 && cur_textures[i].get(); i++) {
-		TER_GL21_Texture *t = static_cast<TER_GL21_Texture*>(cur_textures[i].get());
-		glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(t->gl_type, t->tex);
+	for (uint8_t i = 0; i < 3 && !holds_alternative<bool>(cur_textures[i]); i++) {
+		if (holds_alternative<sTER_Texture>(cur_textures[i])) {
+			TER_GL21_Texture *t = static_cast<TER_GL21_Texture*>(get<sTER_Texture>(cur_textures[i]).get());
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(t->gl_type, t->tex);
+		} else if (holds_alternative<sTER_FrameBuffer>(cur_textures[i])) {
+			TER_GL21_FrameBuffer *f = static_cast<TER_GL21_FrameBuffer*>(get<sTER_FrameBuffer>(cur_textures[i]).get());
+			glActiveTexture(GL_TEXTURE0 + i);
+			TER_GL21_Texture *t = static_cast<TER_GL21_Texture*>(f->textures[0].get());
+			glBindTexture(GL_TEXTURE_2D, t->tex);
+		}
 	}
 
 	// Setup changing uniforms
@@ -364,10 +373,13 @@ void TER_GL21_Context::submit(sTER_Program _program) {
 	// By the power of the Mighty OpenGL, let there be draws!
 	glDrawElements(GL_TRIANGLES, idx_buf->data_nb, GL_UNSIGNED_INT, (void*)0);
 
+	if (cur_framebuffer) cur_framebuffer->use(false);
+
 	// Clean up state for next submit
-	cur_textures[0] = cur_textures[1] = cur_textures[2] = nullptr;
+	cur_textures[0] = cur_textures[1] = cur_textures[2] = false;
 	cur_vertexbuffer = nullptr;
 	cur_indexbuffer = nullptr;
+	cur_framebuffer = nullptr;
 }
 
 void TER_GL21_Context::frame() {
