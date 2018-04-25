@@ -544,7 +544,7 @@ _M.newButton = function(t)
 				game:registerDialog(d)
 				DebugConsole.line = "=__uids["..obj.uid.."]"
 				DebugConsole.line_pos = #DebugConsole.line
-				d.changed = true
+				d.changed_input = true
 			else
 				game.log("#LIGHT_BLUE#Nothing to Lua inspect")
 			end

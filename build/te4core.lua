@@ -33,6 +33,8 @@ function enableSanitizer()
 	if _OPTIONS.debugdeep then
 		buildoptions { "-ggdb", "-fsanitize=address", "-fno-omit-frame-pointer" }
 		linkoptions { "-fsanitize=address", "-fuse-ld=gold" }
+		-- buildoptions { "-ggdb", "-fsanitize=thread", "-fno-omit-frame-pointer" }
+		-- linkoptions { "-fsanitize=thread", "-fuse-ld=gold" }
 	end
 end
 

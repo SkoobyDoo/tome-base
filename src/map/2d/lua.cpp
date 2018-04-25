@@ -577,7 +577,8 @@ static int gl_minimap2d_free(lua_State *L) {
 static int gl_minimap2d_setmap(lua_State *L) {
 	Minimap2D *mor = *(Minimap2D**)auxiliar_checkclass(L, "gl{minimap2d}", 1);
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 2);
-	mor->setMap(map);
+	lua_pushvalue(L, 2);
+	mor->setMap(map, luaL_ref(L, LUA_REGISTRYINDEX));
 	lua_pushvalue(L, 1);
 	return 1;
 }

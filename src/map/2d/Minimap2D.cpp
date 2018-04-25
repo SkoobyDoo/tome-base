@@ -50,6 +50,7 @@ Minimap2D::Minimap2D() {
 Minimap2D::~Minimap2D() {
 	glDeleteTextures(1, &tex[0]);
 	if (map) map->removeMinimap(this);
+	refcleaner(&map_ref);
 }
 
 void Minimap2D::mapDeath(Map2D *map) {
@@ -57,17 +58,18 @@ void Minimap2D::mapDeath(Map2D *map) {
 	this->map = NULL;
 };
 
-void Minimap2D::setMap(Map2D *map) {
+void Minimap2D::setMap(Map2D *map, int ref) {
 	if (!map) { printf("[Minimap2D] ERROR: trying to setMap a NULL map\n"); return; }
+	refcleaner(&map_ref);
 	map->addMinimap(this);
 	this->map = map;
+	this->map_ref = ref;
 	next_update_full = true;
 };
 
 void Minimap2D::cloneInto(DisplayObject *_into) {
 	DisplayObject::cloneInto(_into);
 	Minimap2D *into = dynamic_cast<Minimap2D*>(_into);
-	into->map = map;
 }
 
 void Minimap2D::setTexture(GLuint tex, int lua_ref, int id) {

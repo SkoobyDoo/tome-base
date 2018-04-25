@@ -336,7 +336,7 @@ function _M:display()
 		if line:match("^=") then line = "return "..line:sub(2) end
 		local f, err = loadstring(line)
 		if not f then
-			self.textinput.text:textColor(unpack(colors.simple1(colors.RED)))
+			self.textinput.text:textColor(unpack(colors.simple1(colors.MOCCASIN)))
 		else
 			self.textinput.text:textColor(unpack(colors.simple1(colors.GREEN)))
 		end

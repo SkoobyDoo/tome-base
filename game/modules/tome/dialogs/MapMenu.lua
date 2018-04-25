@@ -96,7 +96,7 @@ function _M:use(item)
 		game:registerDialog(d)
 		DebugConsole.line = "=__uids["..item.actor.uid.."]"
 		DebugConsole.line_pos = #DebugConsole.line
-		d.changed = true
+		d.changed_input = true
 	elseif act == "debug-inventory" then
 		local d
 		local actor = item.actor

@@ -150,7 +150,7 @@ function _M:use(item)
 		game:registerDialog(d)
 		DebugConsole.line = "=__uids["..self.object.uid.."]"
 		DebugConsole.line_pos = #DebugConsole.line
-		d.changed = true
+		d.changed_input = true
 	else
 		self:triggerHook{"UseItemMenu:use", actor=self.actor, object=self.object, inven=self.inven, item=self.item, act=act, onuse=self.onuse}
 	end

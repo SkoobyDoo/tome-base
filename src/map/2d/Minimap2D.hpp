@@ -25,6 +25,7 @@
 
 class Minimap2D : public DORVertexes{
 private:
+	int map_ref = LUA_NOREF;
 	Map2D *map = nullptr;
 	struct {
 		int mdx = -9999, mdy = -9999;
@@ -48,7 +49,7 @@ public:
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 
 	void mapDeath(Map2D *map);
-	void setMap(Map2D *map);
+	void setMap(Map2D *map, int ref);
 	void redrawMiniMap();
 	void setMinimapInfo(int mdx, int mdy, int mdw, int mdh, float transp);
 };
