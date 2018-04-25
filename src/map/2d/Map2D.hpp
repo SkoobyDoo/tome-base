@@ -357,7 +357,7 @@ public:
  ****************************************************************************/
 class MapObjectRenderer : public DORFlatSortable, public MapObjectProcessor {
 private:
-	vector<sMapObject> mos;
+	vector<tuple<sMapObject,int>> mos;
 	bool allow_cb = false;
 	bool allow_particles = false;
 	float w, h;
@@ -371,7 +371,7 @@ public:
 	virtual const char* getKind() { return "MapObjectRenderer"; };
 
 	void resetMapObjects();
-	void addMapObject(sMapObject mo);
+	void addMapObject(sMapObject mo, int ref);
 	void removeMapObject(MapObject *mo);
 
 	virtual void render(RendererGL *container, mat4& cur_model, vec4& cur_color, bool cur_visible);

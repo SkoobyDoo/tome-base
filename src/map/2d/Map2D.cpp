@@ -344,29 +344,26 @@ DisplayObject* MapObjectRenderer::clone() {
 void MapObjectRenderer::cloneInto(DisplayObject *_into) {
 	DORFlatSortable::cloneInto(_into);
 	MapObjectRenderer *into = dynamic_cast<MapObjectRenderer*>(_into);
-
-	for (auto &it : mos) {
-		into->addMapObject(it);
-	}
 }
 
 void MapObjectRenderer::resetMapObjects() {
 	for (auto &it : mos) {
-		it->removeMOR(this);
+		get<0>(it)->removeMOR(this);
+		refcleaner(&get<1>(it));
 	}
 	mos.clear();
 	setChanged();
 }
 
-void MapObjectRenderer::addMapObject(sMapObject mo) {
-	mos.emplace_back(mo);
+void MapObjectRenderer::addMapObject(sMapObject mo, int ref) {
+	mos.emplace_back(mo, ref);
 	mo->addMOR(this);
 	setChanged();
 }
 
 void MapObjectRenderer::removeMapObject(MapObject *mo) {
 	for (auto it = mos.begin(); it != mos.end(); it++) {
-		if (it->get() == mo) {
+		if (get<0>(*it).get() == mo) {
 			mos.erase(it);
 			break;
 		}
@@ -380,7 +377,7 @@ void MapObjectRenderer::render(RendererGL *container, mat4& cur_model, vec4& cur
 	mat4 vmodel = cur_model * model;
 	vec4 vcolor = cur_color * color;
 	for (auto &it : mos) {
-		MapObject *dm = it.get();
+		MapObject *dm = get<0>(it).get();
 		while (dm) {
 			processMapObject(container, dm, 0, 0, vcolor, &vmodel);
 			dm = dm->next.get();

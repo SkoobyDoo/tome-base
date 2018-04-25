@@ -270,7 +270,8 @@ static int map_object_is_valid(lua_State *L) {
 static void map_object_update(lua_State *L, int moid, MapObjectRenderer *mor) {
 	while (lua_isuserdata(L, moid)) {
 		auto obj = lua_get_sobj<MapObject>(L, "core{mapobj2d}", moid);
-		mor->addMapObject(obj);
+		lua_pushvalue(L, moid);
+		mor->addMapObject(obj, luaL_ref(L, LUA_REGISTRYINDEX));
 		moid++;
 	}
 }

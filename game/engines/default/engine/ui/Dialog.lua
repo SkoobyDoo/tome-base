@@ -788,7 +788,11 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		self.renderer_outer:translate(mw, mh)
 		self.fbo:translate(-mw, -mh)
 
-		self.renderer_outer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup)
+		self.renderer_outer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup, function()
+			self.renderer_outer:clear()
+			self.fbo = nil
+			self.renderer_outer = self.renderer
+		end)
 	end
 
 	if self.allow_scroll then

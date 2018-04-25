@@ -97,7 +97,7 @@ void Minimap2D::redrawMiniMap() {
 
 	// Create/recreate the minimap data if needed
 	if (next_update_full) {
-		if (mm_data) delete mm_data;
+		if (mm_data) delete[] mm_data;
 		mm_data = new GLubyte[4 * info.mdw * info.mdh];
 		clear();
 		addQuad(
