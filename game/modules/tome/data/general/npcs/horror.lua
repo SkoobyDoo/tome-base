@@ -703,7 +703,7 @@ With each slow breath it takes reality distorts around it.  Blue twirls into red
 	--	[Talents.T_SLUMBER]={base=4, every=6, max=8},
 		[Talents.T_SLEEP]={base=4, every=6, max=8},
 	--	[Talents.T_RESTLESS_NIGHT]={base=4, every=6, max=8},
-		[Talents.T_DREAMSCAPE]={base=4, every=5, max=10},
+		--[Talents.T_DREAMSCAPE]={base=4, every=5, max=10},
 		
 		-- Summon Dream Seeds while awake
 		[Talents.T_SUMMON]=1,
@@ -760,13 +760,14 @@ With each slow breath it takes reality distorts around it.  Blue twirls into red
 				game.logSeen(self, "#LIGHT_BLUE#A dream seed escapes %s's sleeping mind.", self.name:capitalize())
 			end
 		-- Script the AI to encourage opening with dream scape
+		--[[  Disabled temporarily due to unknown bugs with Dreamscape
 		elseif self.ai_target.actor and self.ai_target.actor.game_ender and not game.zone.is_dream_scape then
 			if not self:isTalentCoolingDown(self.T_SLEEP) then
 				self:forceUseTalent(self.T_SLEEP, {})
 			elseif not self:isTalentCoolingDown(self.T_DREAMSCAPE) and self.ai_target.actor:attr("sleep") then
 				self:forceUseTalent(self.T_DREAMSCAPE, {})
 			end
-		end
+		end]]
 	end,
 	on_acquire_target = function(self, who)
 		self:useEnergy() -- Use energy as soon as we find a target so we don't move
