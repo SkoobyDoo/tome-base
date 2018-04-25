@@ -153,7 +153,7 @@ public:
 	~TextureHolder() {
 		printf("Freeing particle texture %d\n", tex->tex);
 		glDeleteTextures(1, &tex->tex);
-		free((void*)tex);
+		delete tex;
 	};
 };
 typedef shared_ptr<TextureHolder> spTextureHolder;

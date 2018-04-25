@@ -64,8 +64,8 @@ void DORSpriterCache::releaseTexture(texture_cache* tex) {
 		if (it->second == tex) {
 			tex->used--;
 			if (tex->used <= 0) {
-				tex_cache.erase(it);
 				printf("[SPRITER] Releasing texture %s = %d\n", it->first.c_str(), tex->tex);
+				tex_cache.erase(it);
 				glDeleteTextures(1, &tex->tex.tex);
 				delete tex;
 			}
@@ -94,8 +94,8 @@ void DORSpriterCache::releaseModel(SpriterModel* model) {
 		if (it->second->model == model) {
 			it->second->used--;
 			if (it->second->used <= 0) {
-				models_cache.erase(it);
 				printf("[SPRITER] Releasing model %s\n", it->first.c_str());
+				models_cache.erase(it);
 				delete model;
 			}
 			return;
