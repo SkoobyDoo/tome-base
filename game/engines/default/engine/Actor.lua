@@ -73,7 +73,7 @@ end
 -- modules should update this as needed
 _M.clone_nodes = {player=false, x=false, y=false,
 	fov_computed=false,	fov={v={actors={}, actors_dist={}}}, distance_map={v={}},
-	_mo=false, _last_mo=false, add_mos=false, add_displays=false,
+	_mo=false, _last_mo=false, add_displays=false,
 	shader=false, shader_args=false,
 }
 --- cloneActor default fields (merged by _M.cloneActor with cloneCustom)
@@ -92,6 +92,13 @@ function _M:cloneActor(post_copy, alt_nodes)
 	if post_copy or self.clone_copy then post_copy = post_copy or {} table.update(post_copy, self.clone_copy or {}, true) end
 	-- Clone all except sub-actors which need to simply reference the same ones
 	local a = self:cloneCustom(alt_nodes, function(d) return not d:isClassName("mod.class.Actor") end, post_copy)
+	-- Handle add_displays as a special case
+	if self.add_displays then
+		a.add_displays = {}
+		for i, d in ipairs(self.add_displays) do
+			table.insert(a.add_displays, d:cloneFull())
+		end
+	end
 	a:removeAllMOs()
 	return a, post_copy
 end
