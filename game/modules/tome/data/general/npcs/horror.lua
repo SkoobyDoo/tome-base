@@ -766,8 +766,8 @@ With each slow breath it takes reality distorts around it.  Blue twirls into red
 				self:forceUseTalent(self.T_SLEEP, {})
 			elseif not self:isTalentCoolingDown(self.T_DREAMSCAPE) and self.ai_target.actor:attr("sleep") then
 				self:forceUseTalent(self.T_DREAMSCAPE, {})
-			end
-		end]]
+			end]]
+		end
 	end,
 	on_acquire_target = function(self, who)
 		self:useEnergy() -- Use energy as soon as we find a target so we don't move
