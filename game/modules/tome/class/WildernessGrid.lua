@@ -29,19 +29,18 @@ end
 
 --- Attach or remove a display callback
 -- Defines particles to display
--- DGDGDGDG
--- function _M:defineDisplayCallback()
--- 	if not self._mo then return end
+function _M:defineDisplayCallback()
+	if not self._mo then return end
 
--- 	self._mo:displayCallback(function(x, y, w, h, zoom, on_map)
--- 		local glow = game.level.entrance_glow
--- 		if glow and self.change_zone and not game.visited_zones[self.change_zone] then
--- 			glow:checkDisplay()
--- 			if glow.ps:isAlive() then glow.ps:toScreen(x + w / 2, y + h / 2, true, w / (game.level and game.level.map.tile_w or w))
--- 			else self:removeParticles()
--- 			end
--- 		end
+	self._mo:displayCallback(function(x, y, w, h, zoom, on_map)
+		local glow = game.level.entrance_glow
+		if glow and self.change_zone and not game.visited_zones[self.change_zone] then
+			glow:checkDisplay()
+			if glow.ps:isAlive() then glow.ps:toScreen(x + w / 2, y + h / 2, true, w / (game.level and game.level.map.tile_w or w))
+			else self:removeParticles()
+			end
+		end
 
--- 		return true
--- 	end)
--- end
+		return true
+	end)
+end

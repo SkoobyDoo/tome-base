@@ -242,12 +242,12 @@ end
 --- Adds a particles emitter following the entity
 -- @param[type=Particles] ps
 function _M:addParticles(ps)
-	if self._mo then
-		local mo = self._last_mo
-		if not mo or ps.toback then mo = self._mo end
-		mo:addParticles(ps:getDO())
-	end
 	self.__particles[ps] = true
+	if self.x and self.y and game.level and game.level.map then
+		ps.x = self.x
+		ps.y = self.y
+		self:defineDisplayCallback()
+	end
 	return ps
 end
 
@@ -283,8 +283,12 @@ end
 function _M:removeParticles(ps)
 	if not ps then return end
 	self.__particles[ps] = nil
-	if self._mo then self._mo:removeParticles(ps:getDO()) end
 	ps:dieDisplay()
+	if self.x and self.y and game.level and game.level.map then
+		ps.x = nil
+		ps.y = nil
+		self:defineDisplayCallback()
+	end
 end
 
 --- Removes all particles emitters following the entity
@@ -303,11 +307,24 @@ function _M:cleanupParticles()
 	end
 end
 
+--- Get the particle emitters of this entity
+-- @param[type=string|bool] back "all" is a valid value
+function _M:getParticlesList(back)
+	local ps = {}
+	for e, _ in pairs(self.__particles) do
+		if (not back and not e.toback) or (back and e.toback) or (back == "all") then
+			e:checkDisplay()
+			ps[#ps+1] = e
+		end
+	end
+	return ps
+end
+
 --- Removes the particles from the running threads but keep the data for later
 function _M:closeParticles()
-	-- for e, _ in pairs(self.__particles) do
-	-- 	e:dieDisplay()
-	-- end
+	for e, _ in pairs(self.__particles) do
+		e:dieDisplay()
+	end
 end
 
 --- Attach or remove a display callback
@@ -316,6 +333,34 @@ function _M:defineDisplayCallback()
 	if self.add_displays then
 		for i, add in ipairs(self.add_displays) do add:defineDisplayCallback() end
 	end
+
+	if not self._mo then return end
+	if not next(self.__particles) then self._mo:displayCallback(nil) return end
+
+	-- Cunning trick here!
+	-- the callback we give to mo:displayCallback is a function that references self
+	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
+	-- thus we store a reference to a weak table and put self into it
+	-- this way when self dies the weak reference dies and does not prevent GC'ing
+	local weak = setmetatable({[1]=self}, {__mode="v"})
+
+	local ps = self:getParticlesList()
+	self._mo:displayCallback(function(x, y, w, h)
+		local self = weak[1]
+		if not self or not self._mo then return end
+
+		local e
+		for i = 1, #ps do
+			e = ps[i]
+			e:checkDisplay()
+			if e.ps:isAlive() then
+				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
+				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + h / 2 + (e.dy or 0) * h, true, w / game.level.map.tile_w)
+			else self:removeParticles(e)
+			end
+		end
+		return true
+	end)
 end
 
 --- Create the "map object" representing this entity

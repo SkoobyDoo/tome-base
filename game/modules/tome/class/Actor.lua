@@ -901,27 +901,132 @@ end
 
 --- Attach or remove a display callback
 -- Defines particles to display
+-- function _M:defineDisplayCallback()
+-- 	if not self._mo then return end
+
+-- 	if not self._tactical then
+-- 		if game.always_target and game.always_target ~= "old" then
+-- 			if config.settings.tome.small_frame_side then
+-- 				self._tactical = TacticalOverlaySide.new(self)
+-- 			else
+-- 				self._tactical = TacticalOverlayBottom.new(self)
+-- 			end
+-- 		else
+-- 			self._tactical = TacticalOverlayBig.new(self)
+-- 		end
+-- 	end
+
+-- 	if self._mo == self._last_mo or not self._last_mo then
+-- 		local DO = core.renderer.container():add(self._tactical.DO:removeFromParent()):add(self._tactical.DO_front:removeFromParent())
+-- 		-- self._mo:displayObject(DO)
+-- 	else
+-- 		self._mo:displayObject(self._tactical.DO:removeFromParent(), false)
+-- 		self._last_mo:displayObject(self._tactical.DO_front:removeFromParent(), true)
+-- 	end
+-- end
+--- Attach or remove a display callback
+-- Defines particles to display
 function _M:defineDisplayCallback()
 	if not self._mo then return end
 
-	if not self._tactical then
-		if game.always_target and game.always_target ~= "old" then
-			if config.settings.tome.small_frame_side then
-				self._tactical = TacticalOverlaySide.new(self)
-			else
-				self._tactical = TacticalOverlayBottom.new(self)
+	-- Cunning trick here!
+	-- the callback we give to mo:displayCallback is a function that references self
+	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
+	-- thus we store a reference to a weak table and put self into it
+	-- this way when self dies the weak reference dies and does not prevent GC'ing
+	local weak = setmetatable({[1]=self}, {__mode="v"})
+
+	local backps = self:getParticlesList(true)
+	local ps = self:getParticlesList()
+
+	-- local function tactical(x, y, w, h, zoom, on_map, tlx, tly)
+	-- 	local self = weak[1]
+	-- 	if not self then return end
+
+	-- 	if game.level and game.level.map.view_faction and game.always_target and game.always_target ~= "old" then
+	-- 		if on_map then
+	-- 			self:smallTacticalFrame(game.level.map, x, y, w, h, zoom, on_map, tlx, tly)
+	-- 		end
+	-- 	else
+	-- 		self:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
+	-- 	end
+
+	-- 	-- Chat
+	-- 	if game.level and self.can_talk then
+	-- 		local map = game.level.map
+	-- 		if not ichat then
+	-- 			ichat = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, "speak_bubble.png")
+	-- 		end
+
+	-- 		ichat:toScreen(x + w - 8, y, 8, 8)
+	-- 	end
+	-- end
+
+	local function particles(x, y, w, h, zoom, on_map)
+		local self = weak[1]
+		if not self or not self._mo then return end
+
+		local e
+		local dy = 0
+		if h > w then dy = (h - w) / 2 end
+		for i = 1, #ps do
+			e = ps[i]
+			e:checkDisplay()
+			if e.ps:isAlive() then
+				if game.level and game.level.map then e:shift(game.level.map, self._mo) end
+				e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
+			else self:removeParticles(e)
 			end
-		else
-			self._tactical = TacticalOverlayBig.new(self)
 		end
+
+		-- DGDGDGDG
+		-- if boss_rank_circles[self.rank or 1] then
+		-- 	local b = boss_rank_circles[self.rank]
+		-- 	if not b.ifront then b.ifront = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.front) end
+		-- 	b.ifront:toScreen(x, y + h - w * (0.616 - 0.5), w, w / 2)
+		-- end
+	end
+
+	local function backparticles(x, y, w, h, zoom, on_map)
+		local self = weak[1]
+		if not self then return end
+
+		local e
+		local dy = 0
+		if h > w then dy = (h - w) / 2 end
+		for i = 1, #backps do
+			e = backps[i]
+			e:checkDisplay()
+			if e.ps:isAlive() then e.ps:toScreen(x + w / 2 + (e.dx or 0) * w, y + dy + h / 2 + (e.dy or 0) * h, true, w / (game.level and game.level.map.tile_w or w))
+			else self:removeParticles(e)
+			end
+		end
+
+		-- DGDGDGDG
+		-- if boss_rank_circles[self.rank or 1] then
+		-- 	local b = boss_rank_circles[self.rank]
+		-- 	if not b.iback then b.iback = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.back) end
+		-- 	b.iback:toScreen(x, y + h - w * 0.616, w, w / 2)
+		-- end
 	end
 
 	if self._mo == self._last_mo or not self._last_mo then
-		local DO = core.renderer.container():add(self._tactical.DO:removeFromParent()):add(self._tactical.DO_front:removeFromParent())
-		-- self._mo:displayObject(DO)
+		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
+			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
+			backparticles(x, y, w, h, zoom, on_map)
+			particles(x, y, w, h, zoom, on_map)
+			return true
+		end)
 	else
-		self._mo:displayObject(self._tactical.DO:removeFromParent(), false)
-		self._last_mo:displayObject(self._tactical.DO_front:removeFromParent(), true)
+		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
+			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
+			backparticles(x, y, w, h, zoom, on_map)
+			return true
+		end)
+		self._last_mo:displayCallback(function(x, y, w, h, zoom, on_map)
+			particles(x, y, w, h, zoom, on_map)
+			return true
+		end)
 	end
 end
 

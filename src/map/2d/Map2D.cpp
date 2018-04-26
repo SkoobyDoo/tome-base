@@ -263,6 +263,10 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
 	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 
+	// DGDGDGDG: THIS DOES NOT WORK
+	// Or rather, it does, but if the refcleaner comes between a particel death and a map renderer update
+	// it will try to cann particle's toScreen whcih doesnt exist anymore
+	// To fix particles would need to know they are inside a map and .. ugh
 	if (allow_particles && dm->particles.size()) {
 		float px = base_x + tile_w * dm->scale / 2, py = base_y + tile_h * dm->scale / 2;
 		// Not on map, just display
@@ -705,6 +709,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	// DGDGDGDG Idea: define some layers as static and some as dynamic
 	// static ones are generated for the whole level and we let GPU clip because they dont change often at all
 	// dynamic one are generated for the screen and we do the clipping because they change every frame or close enough
+	// DGDGDGDG Idea: define a max layer size, say 64x64, any map bigger is split into multiple sectors
 
 	int32_t mini = 0, maxi = w;
 	int32_t minj = 0, maxj = h;
@@ -714,7 +719,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 			renderers[z]->resetDisplayLists();
 			renderers[z]->setChanged(true);
 
-			printf("------ recomputing Z %d\n", z);
+			// printf("------ recomputing Z %d\n", z);
 			for (int32_t j = minj; j < maxj; j++) {
 				for (int32_t i = mini; i < maxi; i++) {
 					// printf("     * i, j %dx%d\n", i, j);
