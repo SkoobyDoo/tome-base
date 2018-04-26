@@ -87,6 +87,9 @@ class MapObjectProcessor;
 
 using ParticlesVector = vector<tuple<DORParticles*,int>>;
 using sMapObject = shared_ptr<MapObject>;
+using sMapObject = shared_ptr<MapObject>;
+using sMap2D = shared_ptr<Map2D>;
+using sMinimap2D = shared_ptr<Minimap2D>;
 
 
 /****************************************************************************
@@ -175,7 +178,7 @@ public:
 
 	void resetMoveAnim();
 	void setMoveAnim(int32_t startx, int32_t starty, float max, float blur, uint8_t twitch_dir, float twitch);
-	vec2 computeMoveAnim(float nb_keyframes);
+	bool computeMoveAnim(float nb_keyframes);
 
 	void addMOR(MapObjectRenderer *mor);
 	void removeMOR(MapObjectRenderer *mor);
@@ -225,11 +228,6 @@ private:
 	float scroll_anim_start_x = 0, scroll_anim_start_y = 0;
 	float scroll_anim_dx = 0, scroll_anim_dy = 0;
 
-	// Sorter data
-	vector<MapObjectSort*> sorting_mos;
-	uint32_t sorting_mos_next = 0;
-	uint8_t zdepth_sort_start = 0;
-
 	// Shaders
 	int default_shader_ref = LUA_NOREF;
 	shader_type *default_shader = nullptr;
@@ -256,7 +254,8 @@ private:
 
 	// Renderer
 	float keyframes = 0;
-	RendererGL renderer;
+	vector<RendererGL*> renderers;
+	vector<bool> renderers_changed;
 
 	// Minimap listing
 	bool minimap_changed = true;
@@ -284,6 +283,7 @@ public:
 
 		map[off] = mo;
 		if (mo) { mo->grid_x = x; mo->grid_y = y; }
+		renderers_changed[z] = true;
 		minimap_changed = true;
 		return old;
 	}
@@ -314,23 +314,9 @@ public:
 	/* Z-layers */
 	void setZCallback(int32_t z, int ref);
 
-	/* MO sorter */
-	void setZSortStart(uint8_t v) { zdepth_sort_start = v; }
-	inline void initSorter() { sorting_mos_next = 0; }
-	inline MapObjectSort* getSorter() {
-		// When we lack space, we double it
-		if (sorting_mos_next >= sorting_mos.size()) {
-			sorting_mos.reserve(sorting_mos.size() * 2);
-			while (sorting_mos.size() < sorting_mos.capacity()) sorting_mos.emplace_back(new MapObjectSort());
-		}
-		MapObjectSort *mos = sorting_mos[sorting_mos_next];
-		sorting_mos_next++;
-		return mos;
-	};
-
 	/* Compute visuals */
 	void computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j);
-	vec2 computeScrollAnim(float nb_keyframes);
+	bool computeScrollAnim(float nb_keyframes);
 
 	/* Vision handling */
 	void setVisionShader(shader_type *s, int ref);

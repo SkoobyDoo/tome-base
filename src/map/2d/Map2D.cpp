@@ -177,8 +177,8 @@ void MapObject::setMoveAnim(int32_t startx, int32_t starty, float max, float blu
 	move_twitch = twitch; // defaults to 0
 }
 
-inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
-	if (!nb_keyframes) return {move_anim_dx, move_anim_dy};
+inline bool MapObject::computeMoveAnim(float nb_keyframes) {
+	if (!nb_keyframes) return move_max > 0;
 
 	move_step += nb_keyframes;
 	if (move_step >= move_max) {
@@ -207,8 +207,9 @@ inline vec2 MapObject::computeMoveAnim(float nb_keyframes) {
 		}
 
 //			printf("==computing %f x %f : %f x %f // %d/%d\n", animdx, animdy, adx, ady, move_step, move_max);
+		return true;
 	}
-	return {move_anim_dx, move_anim_dy};
+	return false;
 }
 
 inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject *dm, float dx, float dy, vec4 color, mat4 *model) {
@@ -400,14 +401,14 @@ void MapObjectRenderer::sortZ(RendererGL *container, mat4& cur_model) {
  *************************************************************************/
 Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight)
 	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight),
-	  renderer(VBOMode::STREAM), MapObjectProcessor(tile_w, tile_h, true, true, true), seens_vbo(VBOMode::STATIC), grid_lines_vbo(VBOMode::STATIC)
+	MapObjectProcessor(tile_w, tile_h, true, true, true), seens_vbo(VBOMode::STATIC), grid_lines_vbo(VBOMode::STATIC)
 {
 	w_off = h;
 	z_off = w * h;
 
 	// Compute viewport, we make it a bit bigger than requested to be able to do smooth scrolling without black zones
-	viewport_pos = {-2, -2};
-	viewport_size = {mwidth + 2, mheight + 2};
+	viewport_pos = {-50, -50};
+	viewport_size = {mwidth + 50, mheight + 50};
 	viewport_dimension = viewport_size - viewport_pos;
 
 	// Init the map data
@@ -417,10 +418,6 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	map_lites = new bool[w * h]; std::fill_n(map_lites, w * h, false);
 	map_important = new bool[w * h]; std::fill_n(map_important, w * h, false);
 	zobjects = new DisplayObject*[z]; std::fill_n(zobjects, z, nullptr);
-
-	// Reserve some sorting space
-	sorting_mos.reserve(8092);
-	for (uint32_t i = 0; i < sorting_mos.capacity(); i++) sorting_mos.emplace_back(new MapObjectSort());
 
 	// Init vision data
 	seens_texture_size = powerOfTwoSize(viewport_dimension.x, viewport_dimension.y);
@@ -443,10 +440,15 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 		1, 1, 1, 1
 	);
 
-	// Init renderer
-	renderer.setRendererName(strdup("map-layer"), false);
-	renderer.setManualManagement(true);
-	// renderer.countDraws(true);
+	// Init renderers
+	for (int32_t i = 0; i < z; i++) {
+		RendererGL *renderer = new RendererGL(VBOMode::STREAM);
+		renderer->setRendererName(strdup("map-layer"), false);
+		renderer->setManualManagement(true);
+		// renderer->countDraws(true);
+		renderers.push_back(renderer);
+		renderers_changed.push_back(true);
+	}
 
 	setupGridLines();
 }
@@ -459,7 +461,8 @@ Map2D::~Map2D() {
 	delete[] map_lites;
 	delete[] map_important;
 	delete[] zobjects;
-	for (auto mos : sorting_mos) delete mos;
+
+	for (int32_t i = 0; i < zdepth; i++) delete renderers[i];
 
 	for (auto &it : minimap_dos) it->mapDeath(this);
 
@@ -571,8 +574,8 @@ void Map2D::scroll(int32_t x, int32_t y, float smooth) {
 	my = y;	
 }
 
-inline vec2 Map2D::computeScrollAnim(float nb_keyframes) {
-	if (!nb_keyframes) return {scroll_anim_dx, scroll_anim_dx};
+inline bool Map2D::computeScrollAnim(float nb_keyframes) {
+	if (!nb_keyframes) return scroll_anim_max > 0;
 
 	scroll_anim_step += nb_keyframes;
 	if (scroll_anim_step >= scroll_anim_max) {
@@ -587,8 +590,9 @@ inline vec2 Map2D::computeScrollAnim(float nb_keyframes) {
 		// Final step
 		scroll_anim_dx = adx * scroll_anim_step / scroll_anim_max - adx;
 		scroll_anim_dy = ady * scroll_anim_step / scroll_anim_max - ady;
+		return true;
 	}
-	return {scroll_anim_dx, scroll_anim_dy};
+	return false;
 }
 
 vec2 Map2D::getScroll() {
@@ -599,7 +603,7 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 	MapObject *dm;
 	vec4 color = shown;
 
-	float dx = floor((i - mx) * tile_w), dy = floor((j - my) * tile_h);
+	float dx = floor(i * tile_w), dy = floor(j * tile_h);
 
 	/********************************************************
 	 ** Select the color to use
@@ -611,22 +615,15 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 	/********************************************************
 	 ** Compute/display movement
 	 ********************************************************/
-	m->computeMoveAnim(keyframes);
+	if (m->computeMoveAnim(keyframes)) renderers_changed[dz] = true;
 	
 	/********************************************************
 	 ** Display the entity
 	 ********************************************************/
-	float dm_peel = 0;
 	dm = m;
 	while (dm) {
-		MapObjectSort *so = getSorter();
-		so->m = dm;
-		so->dx = dx + floor(m->move_anim_dx * tile_w);
-		so->dy = dy + floor(m->move_anim_dy * tile_h);
-		so->dy_sort = j + dm->pos.y + m->move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
-		so->color = color;
+		processMapObject(renderers[dz], dm, dx + floor(m->move_anim_dx * tile_w), dy + floor(m->move_anim_dy * tile_h), color, nullptr);
 		dm = dm->next.get();
-		dm_peel += 0.001;
 	}
 
 	// Motion bluuuurr!
@@ -652,26 +649,13 @@ inline void Map2D::computeGrid(MapObject *m, int32_t dz, int32_t i, int32_t j) {
 				else blur_move_anim_dy -= m->move_twitch * where;
 			}
 
-			dm_peel = 0;
 			dm = m;
 			while (dm) {
-				MapObjectSort *so = getSorter();
-				so->m = dm;
-				so->dx = dx + floor((dm->pos.x + blur_move_anim_dx) * tile_w);
-				so->dy = dy + floor((dm->pos.y + blur_move_anim_dy) * tile_h);
-				so->dy_sort = j + dm->pos.y + blur_move_anim_dy + ((float)dz / (zdepth)) + dm->size.y + dm_peel;
-				so->color = color;
-				so->color.a = 0.3 + (step / m->move_step) * 0.7;
+				processMapObject(renderers[dz], dm, dx + floor((dm->pos.x + blur_move_anim_dx) * tile_w), dy + floor((dm->pos.y + blur_move_anim_dy) * tile_h), {color.r, color.g, color.b, 0.3 + (step / m->move_step) * 0.7}, nullptr);
 				dm = dm->next.get();
-				dm_peel += 0.001;
 			}
 		}
 	}
-}
-
-static bool sort_mos(MapObjectSort *i, MapObjectSort *j) {
-	if (i->dy_sort == j->dy_sort) return i->dx < j->dx;
-	else return i->dy_sort < j->dy_sort;
 }
 
 void Map2D::updateVision() {
@@ -702,79 +686,79 @@ void Map2D::updateVision() {
 void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	color *= tint;
 
-	renderer.resetDisplayLists();
-	renderer.setChanged(true);
-
 	computeScrollAnim(keyframes);
 
+	float msx = -floor((mx + scroll_anim_dx) * tile_w), msy = -floor((my + scroll_anim_dy) * tile_h);
 	float sx = -floor(scroll_anim_dx * tile_w), sy = -floor(scroll_anim_dy * tile_h);
-	int32_t msx = mx + scroll_anim_dx, msy = my + scroll_anim_dy;
-	int32_t mini = msx + viewport_pos.x, maxi = msx + viewport_size.x;
-	int32_t minj = msy + viewport_pos.y, maxj = msy + viewport_size.y;
 
-	uint32_t start_sort = 0;
-	initSorter();
-	// printf("==================================== START\n");
-	for (int32_t z = 0; z < zdepth; z++) {
-		// printf("------ Z %d\n", z);
-		if (z == zdepth_sort_start) { start_sort = sorting_mos_next; }
-		for (int32_t j = minj; j < maxj; j++) {
-			for (int32_t i = mini; i < maxi; i++) {
-				// printf("     * i, j %dx%d\n", i, j);
-				if (!checkBounds(z, i, j)) continue;
-				MapObject *mo = at(z, i, j);
-				if (!mo) continue;
-
-				float seen = isSeen(i, j);
-				if ((mo->isSeen() && seen) || mo->isRemember() || mo->isUnknown()) {
-					computeGrid(mo, z, i, j);
-				}
-			}
-		}
-	}
-	// printf("==================================== END\n");
-	// stable_sort(map->sort_mos, map->sort_mos + start_sort, sort_mos_shader);
-	sort(sorting_mos.begin() + start_sort, sorting_mos.begin() + sorting_mos_next, sort_mos);
-	// printf("sorted %d mos\n", sorting_mos_next - start_sort);
-
-	for (int spos = 0; spos < sorting_mos_next; spos++) {
-		MapObjectSort *so = sorting_mos[spos];
-		MapObject *dm = so->m;
-		processMapObject(&renderer, so->m, so->dx, so->dy, so->color, nullptr);
-	}
-	
-	mat4 zmodel = mat4();
-	vec4 zcolor = vec4(1, 1, 1, 1);
-	for (int32_t z = 0; z < zdepth; z++) {
-		if (zobjects[z]) {
-			// DGDGDGDG: this is super-fugly, change it! Idealy do it all without callbacks
-			DORCallbackMapZ *mz = dynamic_cast<DORCallbackMapZ*>(zobjects[z]);
-			if (mz) {
-				mz->sx = sx;
-				mz->sy = sy;
-				mz->z = z;
-				mz->keyframes = keyframes;
-			}
-			zobjects[z]->render(&renderer, zmodel, zcolor, true);
-		}
-	}
 
 	// Compute the smooth scrolling matrix offset
 	mat4 scrollmodel = mat4();
 	scrollmodel = glm::translate(scrollmodel, glm::vec3(sx, sy, 0));
-	cur_model = cur_model * scrollmodel;
+	mat4 scur_model = cur_model * scrollmodel;
 
-	// Render the map
-	renderer.toScreen(cur_model, color);
+	mat4 mscrollmodel = mat4();
+	mscrollmodel = glm::translate(mscrollmodel, glm::vec3(msx, msy, 0));
+	mat4 mcur_model = cur_model * mscrollmodel;
+
+
+	// DGDGDGDG Idea: define some layers as static and some as dynamic
+	// static ones are generated for the whole level and we let GPU clip because they dont change often at all
+	// dynamic one are generated for the screen and we do the clipping because they change every frame or close enough
+
+	int32_t mini = 0, maxi = w;
+	int32_t minj = 0, maxj = h;
+	for (int32_t z = 0; z < zdepth; z++) {
+		if (renderers_changed[z]) {
+			renderers_changed[z] = false;
+			renderers[z]->resetDisplayLists();
+			renderers[z]->setChanged(true);
+
+			printf("------ recomputing Z %d\n", z);
+			for (int32_t j = minj; j < maxj; j++) {
+				for (int32_t i = mini; i < maxi; i++) {
+					// printf("     * i, j %dx%d\n", i, j);
+					if (!checkBounds(z, i, j)) continue;
+					MapObject *mo = at(z, i, j);
+					if (!mo) continue;
+
+					float seen = isSeen(i, j);
+					if ((mo->isSeen() && seen) || mo->isRemember() || mo->isUnknown()) {
+						computeGrid(mo, z, i, j);
+					}
+				}
+			}
+		}
+
+		// Render the layer
+		renderers[z]->toScreen(mcur_model, color);
+	}
+	
+	mat4 zmodel = mat4();
+	vec4 zcolor = vec4(1, 1, 1, 1);
+	// DGDGDGDG
+	// for (int32_t z = 0; z < zdepth; z++) {
+	// 	if (zobjects[z]) {
+	// 		// DGDGDGDG: this is super-fugly, change it! Idealy do it all without callbacks
+	// 		DORCallbackMapZ *mz = dynamic_cast<DORCallbackMapZ*>(zobjects[z]);
+	// 		if (mz) {
+	// 			mz->sx = sx;
+	// 			mz->sy = sy;
+	// 			mz->z = z;
+	// 			mz->keyframes = keyframes;
+	// 		}
+	// 		zobjects[z]->render(&renderer, zmodel, zcolor, true);
+	// 	}
+	// }
 
 	// Render the vision overlay	
 	if (show_vision) {
 		updateVision();
-		seens_vbo.toScreen(cur_model);
+		seens_vbo.toScreen(scur_model);
 	}
 
 	// Render grid lines
-	if (show_grid_lines) grid_lines_vbo.toScreen(cur_model);
+	if (show_grid_lines) grid_lines_vbo.toScreen(scur_model);
 
 	// Update minimaps
 	if (minimap_changed) {
