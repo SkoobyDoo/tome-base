@@ -1208,8 +1208,7 @@ function _M:displayEffects(z, nb_keyframes, sx, sy)
 				-- Now display each grids
 				for lx, ys in pairs(e.seen_grids) do
 					for ly, _ in pairs(ys) do
-						s:toScreen(self.display_x + sx + (lx - self.mx) * self.tile_w * self.zoom, self.display_y + sy + (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
-						print("===", self.display_x + sx, self.display_y + sy)
+						s:toScreen(self.display_x + sx + lx * self.tile_w * self.zoom, self.display_y + sy + ly * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
 					end
 				end
 			-- We have a fbo/shader pair, so we display everything inside it and apply the shader to get nice borders and such
@@ -1235,7 +1234,7 @@ function _M:displayEffects(z, nb_keyframes, sx, sy)
 				-- Now display each grids
 				for lx, ys in pairs(e.seen_grids) do
 					for ly, _ in pairs(ys) do
-						s:toScreen((lx - self.mx) * self.tile_w * self.zoom, (ly - self.my) * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
+						s:toScreen(lx * self.tile_w * self.zoom, ly * self.tile_h * self.zoom, self.tile_w * self.zoom, self.tile_h * self.zoom)
 					end
 				end
 				self.fbo:use(false, prevfbo)
@@ -1434,7 +1433,6 @@ end
 --- Display the particle emitters, called by self:display()
 function _M:displayParticles(z, nb_keyframes, sx, sy)
 	if not next(self.z_particles[z]) then return false end
-	nb_keyframes = nb_keyframes or 1
 	local adx, ady = sx, sy
 	local alive
 	local dx, dy = self.display_x, self.display_y
@@ -1448,17 +1446,12 @@ function _M:displayParticles(z, nb_keyframes, sx, sy)
 				end
 			end
 
-			if nb_keyframes == 0 and e.x and e.y then
-				-- Just display it, not updating, no emitting
-				if e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
-					e.ps:toScreen(dx + adx + (e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + ady + (e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle, e.zoom * self.zoom)
-				end
-			elseif e.x and e.y then
+			if e.x and e.y then
 				alive = e.ps:isAlive()
 
 				-- Update more, if needed
 				if alive and e.x + e.radius >= self.mx and e.x - e.radius < self.mx + self.viewport.mwidth and e.y + e.radius >= self.my and e.y - e.radius < self.my + self.viewport.mheight then
-					e.ps:toScreen(dx + adx + (e.x - self.mx + 0.5) * self.tile_w * self.zoom, dy + ady + (e.y - self.my + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle)
+					e.ps:toScreen(dx + adx + (e.x + 0.5) * self.tile_w * self.zoom, dy + ady + (e.y + 0.5 + util.hexOffset(e.x)) * self.tile_h * self.zoom, show_particle)
 				end
 
 				if not alive then

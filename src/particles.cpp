@@ -656,8 +656,8 @@ static int lua_particles_to_screen(lua_State *L)
 	if (!show) return 0;
 
 	mat4 model = mat4();
-	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
 	model = glm::translate(model, glm::vec3(x, y, 0));
+	model = glm::scale(model, glm::vec3(zoom, zoom, zoom));
 
 	particles_to_screen(ps, model);
 	return 0;

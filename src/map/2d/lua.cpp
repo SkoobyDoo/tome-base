@@ -27,7 +27,6 @@ extern "C" {
 #include "lauxlib.h"
 #include "lualib.h"
 #include "auxiliar.h"
-#include "map.h"
 #include "main.h"
 #include "script.h"
 #include "useshader.h"

@@ -39,42 +39,52 @@ public:
 	virtual const char* getKind() { return "DORCallbackMap"; };
 	virtual void toScreen(mat4 cur_model, vec4 color) {
 		if (cb_ref == LUA_NOREF) return;
+
+		// Adjust for current rendering model, to account for the scrolling & such
+		vec4 p(dx, dy, 0, 1);
+		p = cur_model * p;
+
 		lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
 		lua_checkstack(L, 8);
-		lua_pushnumber(L, dx);
-		lua_pushnumber(L, dy);
+		lua_pushnumber(L, p.x);
+		lua_pushnumber(L, p.y);
 		lua_pushnumber(L, dw);
 		lua_pushnumber(L, dh);
 		lua_pushnumber(L, scale);
 		lua_pushboolean(L, true);
 		lua_pushnumber(L, tldx);
 		lua_pushnumber(L, tldy);
-		if (lua_pcall(L, 8, 1, 0))
-		{
+		if (lua_pcall(L, 8, 1, 0)) {
 			printf("DORCallbackMap callback error: %s\n", lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
+		keyframes = 0;
 	};
 };
 class DORCallbackMapZ : public DORCallback {
 public:
-	float sx, sy, z, keyframes;
+	float z;
 
 	DO_STANDARD_CLONE_METHOD(DORCallbackMapZ);
 	virtual const char* getKind() { return "DORCallbackMapZ"; };
 	virtual void toScreen(mat4 cur_model, vec4 color) {
 		if (cb_ref == LUA_NOREF) return;
+
+		// Adjust for current rendering model, to account for the scrolling & such
+		vec4 p(0, 0, 0, 1);
+		p = cur_model * p;
+
 		lua_rawgeti(L, LUA_REGISTRYINDEX, cb_ref);
 		lua_checkstack(L, 4);
 		lua_pushnumber(L, z);
 		lua_pushnumber(L, keyframes);
-		lua_pushnumber(L, sx);
-		lua_pushnumber(L, sy);
-		if (lua_pcall(L, 4, 1, 0))
-		{
+		lua_pushnumber(L, p.x);
+		lua_pushnumber(L, p.y);
+		if (lua_pcall(L, 4, 1, 0)) {
 			printf("DORCallbackMapZ callback error: %s\n", lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
+		keyframes = 0;
 	};
 };
 /****************************************************************************/

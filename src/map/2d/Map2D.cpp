@@ -550,6 +550,7 @@ void Map2D::setZCallback(int32_t z, int ref) {
 	}
 
 	DORCallbackMapZ *cb = new DORCallbackMapZ();
+	cb->z = z;
 	cb->setCallback(ref);
 	zobjects[z] = cb;
 }
@@ -690,6 +691,9 @@ void Map2D::updateVision() {
 void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	color *= tint;
 
+	mat4 zmodel = mat4();
+	vec4 zcolor = vec4(1, 1, 1, 1);
+
 	computeScrollAnim(keyframes);
 
 	float msx = -floor((mx + scroll_anim_dx) * tile_w), msy = -floor((my + scroll_anim_dy) * tile_h);
@@ -733,28 +737,15 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 					}
 				}
 			}
+
+			if (zobjects[z]) {
+				zobjects[z]->render(renderers[z], zmodel, zcolor, true);
+			}
 		}
 
 		// Render the layer
 		renderers[z]->toScreen(mcur_model, color);
 	}
-	
-	mat4 zmodel = mat4();
-	vec4 zcolor = vec4(1, 1, 1, 1);
-	// DGDGDGDG
-	// for (int32_t z = 0; z < zdepth; z++) {
-	// 	if (zobjects[z]) {
-	// 		// DGDGDGDG: this is super-fugly, change it! Idealy do it all without callbacks
-	// 		DORCallbackMapZ *mz = dynamic_cast<DORCallbackMapZ*>(zobjects[z]);
-	// 		if (mz) {
-	// 			mz->sx = sx;
-	// 			mz->sy = sy;
-	// 			mz->z = z;
-	// 			mz->keyframes = keyframes;
-	// 		}
-	// 		zobjects[z]->render(&renderer, zmodel, zcolor, true);
-	// 	}
-	// }
 
 	// Render the vision overlay	
 	if (show_vision) {
