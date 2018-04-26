@@ -1125,13 +1125,13 @@ void DORContainer::cloneInto(DisplayObject* _into) {
 }
 void DORContainer::add(DisplayObject *dob) {
 	containerAdd(this, dob);
-	setChanged();
+	setChanged(true);
 	setSortingChanged();
 };
 
 void DORContainer::remove(DisplayObject *dob) {
 	if (containerRemove(dob)) {
-		setChanged();
+		setChanged(true);
 		setSortingChanged();
 	}
 };

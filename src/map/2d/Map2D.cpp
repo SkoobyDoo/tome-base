@@ -54,7 +54,6 @@ MapObject::MapObject(int64_t uid, uint8_t nb_textures, bool on_seen, bool on_rem
 }
 
 MapObject::~MapObject() {
-	printf("======================map object dying %ld\n", uid);
 	mos_particles_clean.erase(this);
 	clearParticles();
 	for (int i = 0; i < nb_textures; i++) {

@@ -715,7 +715,7 @@ void on_redraw()
 
 	// Run GC every second, this is the only place the GC should be called
 	// This is also a way to ensure the GC wont try to delete things while in callbacks from the display code and such which is annoying
-	if (ticks_count_gc >= 1000) {
+	if (ticks_count_gc >= 1) { // DGDGDGDG this should be set to 1000 when debugging is done
 		refcleaner_clean(L);
 		lua_gc(L, LUA_GCCOLLECT, 0);
 		ticks_count_gc = 0;
@@ -823,6 +823,7 @@ void setupDisplayTimer(int fps)
 		max_ms_per_frame = 1000 / fps;
 		printf("[ENGINE] Setting requested FPS to %d (%d ms)\n", fps, 1000 / fps);
 	} else {
+		max_ms_per_frame = 0;
 		printf("[ENGINE] Setting requested FPS to unbound\n");
 	}
 }
