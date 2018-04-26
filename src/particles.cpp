@@ -167,7 +167,7 @@ static int particles_alter_fbo(lua_State *L)
 		return 0;
 	}
 
-	alter_fbo = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	alter_fbo = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	return 0;
 }
 
@@ -184,7 +184,7 @@ static int particles_bloom_fbo(lua_State *L)
 		return 0;
 	}
 
-	bloom_fbo = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	bloom_fbo = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	return 0;
 }
 

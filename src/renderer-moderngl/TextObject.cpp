@@ -307,7 +307,7 @@ void DORText::parseText() {
 						// Call method to get the DO
 						lua_call(L, 8, 1);
 
-						DisplayObject *c = userdata_to_DO(__FUNCTION__, L, -1);
+						DisplayObject *c = userdata_to_DO(L, -1);
 						if (c) {
 							c->setLuaRef(luaL_ref(L, LUA_REGISTRYINDEX));
 							c->translate(bx + size, by + (nb_lines-1) * font_h, -1, false);

@@ -57,7 +57,7 @@ using namespace std;
 extern DisplayList* getDisplayList(RendererGL *container, GLuint tex, shader_type *shader);
 extern void releaseDisplayList(DisplayList *dl);
 
-template<class T=DisplayObject>T* userdata_to_DO(const char *caller, lua_State *L, int index, const char *auxclass=nullptr) {
+template<class T=DisplayObject>T* userdata_to_DO(lua_State *L, int index, const char *auxclass=nullptr) {
 	DisplayObject **ptr;
 	if (auxclass) {
 		ptr = reinterpret_cast<DisplayObject**>(auxiliar_checkclass(L, auxclass, index));
@@ -71,7 +71,7 @@ template<class T=DisplayObject>T* userdata_to_DO(const char *caller, lua_State *
 	}
 	T* result = dynamic_cast<T*>(*ptr);
 	if (!result) {
-		printf("display object of wrong class! %s / %s (expected) !=! %s (actual) from %s\n", typeid(T).name(), auxclass ? auxclass : "", (*ptr)->getKind(), caller);
+		printf("display object of wrong class! %s / %s (expected) !=! %s (actual)\n", typeid(T).name(), auxclass ? auxclass : "", (*ptr)->getKind());
 		traceback(L);
 		luaL_error(L, "display object of wrong class");
 	}

@@ -58,13 +58,13 @@ static void setWeakSelfRef(lua_State *L, int idx, DisplayObject *c) {
 }
 int gl_generic_getkind(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	lua_pushstring(L, c->getKind());
 	return 1;
 }
 int gl_generic_clone(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	const char *luatype = auxiliar_getclassname(L, 1);
 
 	DisplayObject **nc = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
@@ -74,7 +74,7 @@ int gl_generic_clone(lua_State *L)
 }
 int gl_generic_color_get(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	vec4 color = c->getColor();
 	lua_pushnumber(L, color.r);
 	lua_pushnumber(L, color.g);
@@ -84,13 +84,13 @@ int gl_generic_color_get(lua_State *L)
 }
 int gl_generic_translate_get(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	float x, y, z;
 
 	if (lua_toboolean(L, 2)) {
 		DisplayObject *stop_at = NULL;
 		if (lua_isuserdata(L, 2)) {
-			stop_at = userdata_to_DO(__FUNCTION__, L, 2);
+			stop_at = userdata_to_DO(L, 2);
 		}
 
 		// Absolute position mode
@@ -109,7 +109,7 @@ int gl_generic_translate_get(lua_State *L)
 }
 int gl_generic_rotate_get(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	float x, y, z;
 	c->getRotate(&x, &y, &z);
 	lua_pushnumber(L, x);
@@ -119,7 +119,7 @@ int gl_generic_rotate_get(lua_State *L)
 }
 int gl_generic_scale_get(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	float x, y, z;
 	c->getScale(&x, &y, &z);
 	lua_pushnumber(L, x);
@@ -129,14 +129,14 @@ int gl_generic_scale_get(lua_State *L)
 }
 int gl_generic_shown_get(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	lua_pushboolean(L, c->getShown());
 	return 1;
 }
 
 int gl_generic_color(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	c->setColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -215,7 +215,7 @@ static bool string_get_lua_table(lua_State *L, int table_idx, float field, const
 
 int gl_generic_physic_create(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	int pid = c->enablePhysic();
 	DORPhysic *physic = c->getPhysic(pid);
 
@@ -255,7 +255,7 @@ int gl_generic_physic_create(lua_State *L)
 
 int gl_generic_physic_destroy(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	if (lua_toboolean(L, 2)) {
 		c->destroyPhysic(-1);
 	} else {
@@ -266,7 +266,7 @@ int gl_generic_physic_destroy(lua_State *L)
 
 int gl_generic_get_physic(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	DORPhysic *physic = c->getPhysic(lua_tonumber(L, 2));
 	// if (!physic) {
 	// 	lua_pushstring(L, "physic() called without previous call to enablePhysic");
@@ -316,7 +316,7 @@ static easing_ptr easings_table[] = {
 
 int gl_generic_tween(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	int easing_id = lua_tonumber(L, 3);
 	easing_ptr easing = easings_table[easing_id];
 	int on_end_ref = LUA_NOREF;
@@ -342,7 +342,7 @@ int gl_generic_tween(lua_State *L)
 }
 int gl_generic_cancel_tween(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	if (lua_isboolean(L, 2) && lua_toboolean(L, 2)) {
 		c->cancelTween(TweenSlot::MAX);
 	} else {
@@ -353,14 +353,14 @@ int gl_generic_cancel_tween(lua_State *L)
 }
 int gl_generic_has_tween(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	lua_pushboolean(L, c->hasTween((TweenSlot)lua_tonumber(L, 2)));
 	return 1;
 }
 
 int gl_generic_translate(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	c->translate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -368,7 +368,7 @@ int gl_generic_translate(lua_State *L)
 
 int gl_generic_rotate(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	c->rotate(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -376,7 +376,7 @@ int gl_generic_rotate(lua_State *L)
 
 int gl_generic_scale(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	c->scale(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_toboolean(L, 5));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -384,7 +384,7 @@ int gl_generic_scale(lua_State *L)
 
 int gl_generic_reset_matrix(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	c->resetModelMatrix();
 	lua_pushvalue(L, 1);
 	return 1;
@@ -392,7 +392,7 @@ int gl_generic_reset_matrix(lua_State *L)
 
 int gl_generic_shown(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	c->shown(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -400,7 +400,7 @@ int gl_generic_shown(lua_State *L)
 
 int gl_generic_remove_from_parent(lua_State *L)
 {
-	DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+	DisplayObject *c = userdata_to_DO(L, 1);
 	c->removeFromParent();
 	lua_pushvalue(L, 1);
 	return 1;
@@ -444,7 +444,7 @@ static int gl_renderer_new(lua_State *L)
 
 static int gl_renderer_free(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	delete(r);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -452,7 +452,7 @@ static int gl_renderer_free(lua_State *L)
 
 static int gl_renderer_view(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	View *t = *(View**)auxiliar_checkclass(L, "gl{view}", 2);
 	lua_pushvalue(L, 2);
 	r->setView(t);//, luaL_ref(L, LUA_REGISTRYINDEX));
@@ -463,7 +463,7 @@ static int gl_renderer_view(lua_State *L)
 
 static int gl_renderer_zsort(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	if (lua_isstring(L, 2)) {
 		SortMode mode = SortMode::NO_SORT;
 		const char *ms = lua_tostring(L, 2);
@@ -485,7 +485,7 @@ static int gl_renderer_zsort(lua_State *L)
 
 static int gl_renderer_cutoff(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	r->cutoff(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -493,7 +493,7 @@ static int gl_renderer_cutoff(lua_State *L)
 
 static int gl_renderer_blend(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	r->enableBlending(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -501,7 +501,7 @@ static int gl_renderer_blend(lua_State *L)
 
 static int gl_renderer_premultiplied_alpha(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	r->premultipliedAlpha(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -509,7 +509,7 @@ static int gl_renderer_premultiplied_alpha(lua_State *L)
 
 static int gl_renderer_shader(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	if (lua_isnil(L, 2)) {
 		r->setShader(NULL, LUA_NOREF);
 	} else {
@@ -523,7 +523,7 @@ static int gl_renderer_shader(lua_State *L)
 
 static int gl_renderer_set_name(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	r->setRendererName(luaL_checkstring(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -531,7 +531,7 @@ static int gl_renderer_set_name(lua_State *L)
 
 static int gl_renderer_count_time(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	r->countTime(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -539,7 +539,7 @@ static int gl_renderer_count_time(lua_State *L)
 
 static int gl_renderer_count_draws(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	r->countDraws(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -547,7 +547,7 @@ static int gl_renderer_count_draws(lua_State *L)
 
 static int gl_renderer_toscreen(lua_State *L)
 {
-	RendererGL *r = userdata_to_DO<RendererGL>(__FUNCTION__, L, 1, "gl{renderer}");
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
 	if (lua_isnumber(L, 2)) {
 		mat4 model = mat4();
 		model = glm::translate(model, glm::vec3(lua_tonumber(L, 2), lua_tonumber(L, 3), 0));
@@ -574,7 +574,7 @@ static int gl_container_new(lua_State *L)
 
 static int gl_container_free(lua_State *L)
 {
-	DORContainer *c = userdata_to_DO<DORContainer>(__FUNCTION__, L, 1, "gl{container}");
+	DORContainer *c = userdata_to_DO<DORContainer>(L, 1, "gl{container}");
 	delete(c);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -583,8 +583,8 @@ static int gl_container_free(lua_State *L)
 static int gl_container_add(lua_State *L)
 {
 	// We do not make any checks on the types, so the same method can be used for container & renderer and to add any kind of display object
-	DORContainer *c = userdata_to_DO<DORContainer>(__FUNCTION__, L, 1);
-	DisplayObject *add = userdata_to_DO(__FUNCTION__, L, 2);
+	DORContainer *c = userdata_to_DO<DORContainer>(L, 1);
+	DisplayObject *add = userdata_to_DO(L, 2);
 	c->add(add);
 	add->setLuaRef(luaL_ref(L, LUA_REGISTRYINDEX));
 	lua_pushvalue(L, 1);
@@ -594,8 +594,8 @@ static int gl_container_add(lua_State *L)
 static int gl_container_remove(lua_State *L)
 {
 	// We do not make any checks on the types, so the same method can be used for container & renderer and to add any kind of display object
-	DORContainer *c = userdata_to_DO<DORContainer>(__FUNCTION__, L, 1);
-	DisplayObject *add = userdata_to_DO(__FUNCTION__, L, 2);
+	DORContainer *c = userdata_to_DO<DORContainer>(L, 1);
+	DisplayObject *add = userdata_to_DO(L, 2);
 	c->remove(add);
 	lua_pushvalue(L, 1);
 	return 1;
@@ -604,7 +604,7 @@ static int gl_container_remove(lua_State *L)
 static int gl_container_clear(lua_State *L)
 {
 	// We do not make any checks on the types, so the same method can be used for container & renderer and to add any kind of display object
-	DORContainer *c = userdata_to_DO<DORContainer>(__FUNCTION__, L, 1);
+	DORContainer *c = userdata_to_DO<DORContainer>(L, 1);
 	c->clear();
 	lua_pushvalue(L, 1);
 	return 1;
@@ -635,7 +635,7 @@ static int gl_target_new(lua_State *L)
 
 static int gl_target_free(lua_State *L)
 {
-	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	delete(c);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -643,7 +643,7 @@ static int gl_target_free(lua_State *L)
 
 static int gl_target_toscreen(lua_State *L)
 {
-	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	c->toScreen(lua_tonumber(L, 2), lua_tonumber(L, 3));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -651,7 +651,7 @@ static int gl_target_toscreen(lua_State *L)
 
 static int gl_target_compute(lua_State *L)
 {
-	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	c->tick();
 	lua_pushvalue(L, 1);
 	return 1;
@@ -659,7 +659,7 @@ static int gl_target_compute(lua_State *L)
 
 static int gl_target_use(lua_State *L)
 {
-	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	c->use(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -667,7 +667,7 @@ static int gl_target_use(lua_State *L)
 
 static int gl_target_displaysize(lua_State *L)
 {
-	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	if (lua_isnumber(L, 2)) {
 		c->displaySize(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_toboolean(L, 4));
 		lua_pushvalue(L, 1);
@@ -683,7 +683,7 @@ static int gl_target_displaysize(lua_State *L)
 
 static int gl_target_clearcolor(lua_State *L)
 {
-	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	c->setClearColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -691,7 +691,7 @@ static int gl_target_clearcolor(lua_State *L)
 
 static int gl_target_view(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	View *t = *(View**)auxiliar_checkclass(L, "gl{view}", 2);
 	lua_pushvalue(L, 2);
 	v->setView(t, luaL_ref(L, LUA_REGISTRYINDEX));
@@ -702,7 +702,7 @@ static int gl_target_view(lua_State *L)
 
 static int gl_target_texture(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
 	int id = lua_tonumber(L, 3);
 	if (!id) {
@@ -718,8 +718,8 @@ static int gl_target_texture(lua_State *L)
 
 static int gl_target_target_texture(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
-	DORTarget *t = userdata_to_DO<DORTarget>(__FUNCTION__, L, 2, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
+	DORTarget *t = userdata_to_DO<DORTarget>(L, 2, "gl{target}");
 	int id = lua_tonumber(L, 4);
 	if (!id) {
 		lua_pushstring(L, "Can not set textute 0 of a target object");
@@ -734,7 +734,7 @@ static int gl_target_target_texture(lua_State *L)
 
 static int gl_target_mode_none(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 
 	v->setSpecialMode(nullptr);
 
@@ -744,7 +744,7 @@ static int gl_target_mode_none(lua_State *L)
 
 static int gl_target_mode_blur(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 
 	int blur_passes = lua_tonumber(L, 2);
 	float renderscale = lua_tonumber(L, 3);
@@ -766,7 +766,7 @@ static int gl_target_mode_blur(lua_State *L)
 
 static int gl_target_mode_blur_downsampling(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 
 	int blur_passes = lua_tonumber(L, 2);
 
@@ -802,7 +802,7 @@ static int gl_target_post_effect_enable(lua_State *L)
 
 static int gl_target_mode_posteffects(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 
 	TargetPostProcess *mode = new TargetPostProcess(v);
 	v->setSpecialMode(mode);
@@ -830,7 +830,7 @@ static int gl_target_mode_posteffects(lua_State *L)
 
 static int gl_target_shader(lua_State *L)
 {
-	DORTarget *v = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *v = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
@@ -843,11 +843,11 @@ static int gl_target_shader(lua_State *L)
 
 static int gl_target_set_auto_render(lua_State *L)
 {
-	DORTarget *c = userdata_to_DO<DORTarget>(__FUNCTION__, L, 1, "gl{target}");
+	DORTarget *c = userdata_to_DO<DORTarget>(L, 1, "gl{target}");
 	if (lua_isnil(L, 2)) {
 		c->setAutoRender(NULL, LUA_NOREF);
 	} else {
-		SubRenderer *o = userdata_to_DO<SubRenderer>(__FUNCTION__, L, 2);
+		SubRenderer *o = userdata_to_DO<SubRenderer>(L, 2);
 		if (o) {
 			lua_pushvalue(L, 2);
 			c->setAutoRender(o, luaL_ref(L, LUA_REGISTRYINDEX));
@@ -872,7 +872,7 @@ static int gl_vertexes_new(lua_State *L)
 
 static int gl_vertexes_free(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -880,7 +880,7 @@ static int gl_vertexes_free(lua_State *L)
 
 static int gl_vertexes_clear(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	v->clear();
 	lua_pushvalue(L, 1);
 	return 1;
@@ -888,7 +888,7 @@ static int gl_vertexes_clear(lua_State *L)
 
 static int gl_vertexes_reserve(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	v->reserveQuads(lua_tonumber(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -896,7 +896,7 @@ static int gl_vertexes_reserve(lua_State *L)
 
 static int gl_vertexes_point(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float u1 = lua_tonumber(L, 4);  float v1 = lua_tonumber(L, 5); 
 	float r = lua_tonumber(L, 6); float g = lua_tonumber(L, 7); float b = lua_tonumber(L, 8); float a = lua_tonumber(L, 9);
 	v->addPoint(
@@ -909,7 +909,7 @@ static int gl_vertexes_point(lua_State *L)
 
 static int gl_vertexes_quad(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	if (lua_isnumber(L, 2)) {
 		float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float u1 = lua_tonumber(L, 4);  float v1 = lua_tonumber(L, 5); 
 		float x2 = lua_tonumber(L, 6);  float y2 = lua_tonumber(L, 7);  float u2 = lua_tonumber(L, 8);  float v2 = lua_tonumber(L, 9); 
@@ -965,7 +965,7 @@ static int gl_vertexes_quad(lua_State *L)
 
 static int gl_vertexes_model_data(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	v->setDataKinds(VERTEX_BASE + VERTEX_MODEL_INFO);
 	lua_pushvalue(L, 1);
 	return 1;
@@ -973,7 +973,7 @@ static int gl_vertexes_model_data(lua_State *L)
 
 static int gl_vertexes_quad_pie(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	float x1 = lua_tonumber(L, 2);  float y1 = lua_tonumber(L, 3);  float x2 = lua_tonumber(L, 4);  float y2 = lua_tonumber(L, 5); 
 	float u1 = lua_tonumber(L, 6);  float v1 = lua_tonumber(L, 7);  float u2 = lua_tonumber(L, 8);  float v2 = lua_tonumber(L, 9); 
 	float angle = lua_tonumber(L, 10);
@@ -990,7 +990,7 @@ static int gl_vertexes_quad_pie(lua_State *L)
 
 static int gl_vertexes_load_obj(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	string filename(luaL_checkstring(L, 2));
 	v->loadObj(filename);
 	lua_pushvalue(L, 1);
@@ -999,7 +999,7 @@ static int gl_vertexes_load_obj(lua_State *L)
 
 static int gl_vertexes_texture(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
 	int id = lua_tonumber(L, 3);
 	lua_pushvalue(L, 2);
@@ -1011,8 +1011,8 @@ static int gl_vertexes_texture(lua_State *L)
 
 static int gl_vertexes_target_texture(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
-	DORTarget *t = userdata_to_DO<DORTarget>(__FUNCTION__, L, 2, "gl{target}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
+	DORTarget *t = userdata_to_DO<DORTarget>(L, 2, "gl{target}");
 	int id = lua_tonumber(L, 4);
 	lua_pushvalue(L, 2);
 	v->setTexture(t->getTexture(lua_tonumber(L, 3)), luaL_ref(L, LUA_REGISTRYINDEX), id);
@@ -1023,7 +1023,7 @@ static int gl_vertexes_target_texture(lua_State *L)
 
 static int gl_vertexes_font_atlas_texture(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	FontInstance *f = *(FontInstance**)auxiliar_checkclass(L, "sdl{font}", 2);
 	lua_pushvalue(L, 2);
 	v->setTexture(f->kind->getAtlasTexture(), luaL_ref(L, LUA_REGISTRYINDEX));
@@ -1034,7 +1034,7 @@ static int gl_vertexes_font_atlas_texture(lua_State *L)
 
 static int gl_vertexes_shader(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
@@ -1047,7 +1047,7 @@ static int gl_vertexes_shader(lua_State *L)
 
 static int gl_vertexes_uniform_tween(lua_State *L)
 {
-	DORVertexes *v = userdata_to_DO<DORVertexes>(__FUNCTION__, L, 1, "gl{vertexes}");
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	v->getShaderUniformTween(luaL_checkstring(L, 2), luaL_checknumber(L, 3) - 1, luaL_checknumber(L, 4));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -1077,7 +1077,7 @@ static int gl_text_new(lua_State *L)
 
 static int gl_text_free(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -1085,7 +1085,7 @@ static int gl_text_free(lua_State *L)
 
 static int gl_text_model_data(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->setDataKinds(VERTEX_BASE + VERTEX_MODEL_INFO + VERTEX_KIND_INFO);
 	lua_pushvalue(L, 1);
 	return 1;
@@ -1093,7 +1093,7 @@ static int gl_text_model_data(lua_State *L)
 
 static int gl_text_linefeed(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->setNoLinefeed(!lua_toboolean(L, 2));
 
 	lua_pushvalue(L, 1);
@@ -1102,7 +1102,7 @@ static int gl_text_linefeed(lua_State *L)
 
 static int gl_text_get_letter_position(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	vec2 pos = v->getLetterPosition(lua_tonumber(L, 2));
 	lua_pushnumber(L, pos.x);
 	lua_pushnumber(L, pos.y);
@@ -1111,7 +1111,7 @@ static int gl_text_get_letter_position(lua_State *L)
 
 static int gl_text_max_width(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->setMaxWidth(lua_tonumber(L, 2));
 
 	lua_pushvalue(L, 1);
@@ -1120,7 +1120,7 @@ static int gl_text_max_width(lua_State *L)
 
 static int gl_text_max_lines(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->setMaxLines(lua_tonumber(L, 2));
 
 	lua_pushvalue(L, 1);
@@ -1129,7 +1129,7 @@ static int gl_text_max_lines(lua_State *L)
 
 static int gl_text_shadow(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	vec4 color = {0, 0, 0, 0.7};
 	if (lua_isnumber(L, 4)) {
 		color.r = lua_tonumber(L, 4);
@@ -1145,7 +1145,7 @@ static int gl_text_shadow(lua_State *L)
 
 static int gl_text_outline(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	vec4 color = {0, 0, 0, 0.7};
 	if (lua_isnumber(L, 3)) {
 		color.r = lua_tonumber(L, 3);
@@ -1161,7 +1161,7 @@ static int gl_text_outline(lua_State *L)
 
 static int gl_text_style(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	const char *style = luaL_checkstring(L, 2);
 
 	if (!strcmp(style, "normal")) v->setTextStyle(FONT_STYLE_NORMAL);
@@ -1177,8 +1177,8 @@ static int gl_text_style(lua_State *L)
 
 static int gl_text_from(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
-	DORText *prev = userdata_to_DO<DORText>(__FUNCTION__, L, 2, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
+	DORText *prev = userdata_to_DO<DORText>(L, 2, "gl{text}");
 	v->setFrom(prev);
 
 	lua_pushvalue(L, 1);
@@ -1187,7 +1187,7 @@ static int gl_text_from(lua_State *L)
 
 static int gl_text_text_color(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->setTextColor(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5));
 
 	lua_pushvalue(L, 1);
@@ -1196,7 +1196,7 @@ static int gl_text_text_color(lua_State *L)
 
 static int gl_text_center(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->center();
 	lua_pushvalue(L, 1);
 	return 1;
@@ -1204,7 +1204,7 @@ static int gl_text_center(lua_State *L)
 
 static int gl_text_set(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	v->setText(luaL_checkstring(L, 2), lua_toboolean(L, 3));
 
 	lua_pushvalue(L, 1);
@@ -1213,7 +1213,7 @@ static int gl_text_set(lua_State *L)
 
 static int gl_text_stats(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 
 	lua_pushnumber(L, v->w);
 	lua_pushnumber(L, v->h);
@@ -1223,7 +1223,7 @@ static int gl_text_stats(lua_State *L)
 
 static int gl_text_texture(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 2);
 	int id = lua_tonumber(L, 3);
 	lua_pushvalue(L, 2);
@@ -1235,7 +1235,7 @@ static int gl_text_texture(lua_State *L)
 
 static int gl_text_shader(lua_State *L)
 {
-	DORText *v = userdata_to_DO<DORText>(__FUNCTION__, L, 1, "gl{text}");
+	DORText *v = userdata_to_DO<DORText>(L, 1, "gl{text}");
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
@@ -1272,7 +1272,7 @@ static int gl_callback_new(lua_State *L)
 
 static int gl_callback_free(lua_State *L)
 {
-	DORCallback *v = userdata_to_DO<DORCallback>(__FUNCTION__, L, 1, "gl{callback}");
+	DORCallback *v = userdata_to_DO<DORCallback>(L, 1, "gl{callback}");
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -1280,7 +1280,7 @@ static int gl_callback_free(lua_State *L)
 
 static int gl_callback_set(lua_State *L)
 {
-	DORCallback *v = userdata_to_DO<DORCallback>(__FUNCTION__, L, 1, "gl{callback}");
+	DORCallback *v = userdata_to_DO<DORCallback>(L, 1, "gl{callback}");
 	if (!lua_isfunction(L, 2)) {
 		lua_pushstring(L, "callback arg is not a function");
 		lua_error(L);
@@ -1294,7 +1294,7 @@ static int gl_callback_set(lua_State *L)
 
 static int gl_callback_enable(lua_State *L)
 {
-	DORCallback *v = userdata_to_DO<DORCallback>(__FUNCTION__, L, 1, "gl{callback}");
+	DORCallback *v = userdata_to_DO<DORCallback>(L, 1, "gl{callback}");
 	v->enable(lua_toboolean(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -1305,47 +1305,47 @@ static int gl_callback_enable(lua_State *L)
  ******************************************************************/
 static int gl_particles_free(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
 }
 static int gl_particles_shift(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	v->shift(lua_tonumber(L, 2), lua_tonumber(L, 3), lua_toboolean(L, 4));
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int gl_particles_zoom(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	v->setZoom(lua_tonumber(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int gl_particles_speed(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	v->setSpeed(lua_tonumber(L, 2));
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int gl_particles_is_dead(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	lua_pushboolean(L, v->isDead());
 	return 1;
 }
 static int gl_particles_count_alive(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	lua_pushnumber(L, v->countAlive());
 	return 1;
 }
 static int gl_particles_trigger(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	string name((const char*)lua_tostring(L, 2));
 	v->fireTrigger(name);
 	lua_pushvalue(L, 1);
@@ -1353,14 +1353,14 @@ static int gl_particles_trigger(lua_State *L)
 }
 static int gl_particles_params(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	v->updateParameters(L, 2);
 	lua_pushvalue(L, 1);
 	return 1;
 }
 static int gl_particles_on_events(lua_State *L)
 {
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 1, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 1, "gl{particles}");
 	if (lua_isfunction(L, 2)) {
 		lua_pushvalue(L, 2);
 		v->setEventsCallback(luaL_ref(L, LUA_REGISTRYINDEX));
@@ -1391,7 +1391,7 @@ static int gl_spriter_new(lua_State *L)
 
 static int gl_spriter_free(lua_State *L)
 {
-	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
 	delete(v);
 	lua_pushnumber(L, 1);
 	return 1;
@@ -1399,7 +1399,7 @@ static int gl_spriter_free(lua_State *L)
 
 static int gl_spriter_shader(lua_State *L)
 {
-	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
 	if (lua_isnil(L, 2)) {
 		v->setShader(NULL);
 	} else {
@@ -1412,7 +1412,7 @@ static int gl_spriter_shader(lua_State *L)
 
 static int gl_spriter_get_object_position(lua_State *L)
 {
-	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
 	vec2 pos = v->getObjectPosition(lua_tostring(L, 2));
 	lua_pushnumber(L, pos.x);
 	lua_pushnumber(L, pos.y);
@@ -1421,7 +1421,7 @@ static int gl_spriter_get_object_position(lua_State *L)
 
 static int gl_spriter_character_map(lua_State *L)
 {
-	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
 	if (lua_toboolean(L, 3)) v->applyCharacterMap(lua_tostring(L, 2));
 	else v->removeCharacterMap(lua_tostring(L, 2));
 	return 0;
@@ -1429,7 +1429,7 @@ static int gl_spriter_character_map(lua_State *L)
 
 static int gl_spriter_set_anim(lua_State *L)
 {
-	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
 	v->startAnim(luaL_checkstring(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4));
 	lua_pushvalue(L, 1);
 	return 1;
@@ -1437,7 +1437,7 @@ static int gl_spriter_set_anim(lua_State *L)
 
 static int gl_spriter_trigger_callback(lua_State *L)
 {
-	DORSpriter *v = userdata_to_DO<DORSpriter>(__FUNCTION__, L, 1, "gl{spriter}");
+	DORSpriter *v = userdata_to_DO<DORSpriter>(L, 1, "gl{spriter}");
 	if (!lua_isfunction(L, 2)) {
 		lua_pushstring(L, "callback arg is not a function");
 		lua_error(L);
@@ -1584,8 +1584,8 @@ static int gl_view_ortho(lua_State *L)
 static int gl_view_project(lua_State *L)
 {
 	View *v = *(View**)auxiliar_checkclass(L, "gl{view}", 1);
-	DisplayObject *camera = userdata_to_DO(__FUNCTION__, L, 5);
-	DisplayObject *origin = userdata_to_DO(__FUNCTION__, L, 6);
+	DisplayObject *camera = userdata_to_DO(L, 5);
+	DisplayObject *origin = userdata_to_DO(L, 6);
 	lua_pushvalue(L, 5);
 	int camera_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	lua_pushvalue(L, 6);

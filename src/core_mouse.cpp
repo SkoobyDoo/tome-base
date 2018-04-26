@@ -142,7 +142,7 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 		mouse_drag_h = luaL_checknumber(L, 3);
 
 		if (!mouse_renderer) mouse_renderer = new RendererGL(VBOMode::STATIC);
-		DisplayObject *c = userdata_to_DO(__FUNCTION__, L, 1);
+		DisplayObject *c = userdata_to_DO(L, 1);
 		mouse_drag_do = c->clone();
 		// mouse_drag_do->setLuaState(NULL); // Lua state ? where we are going we don't need a lua state!
 		mouse_renderer->add(mouse_drag_do);

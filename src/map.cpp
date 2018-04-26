@@ -251,7 +251,7 @@ static int map_object_set_do(lua_State *L)
 {
 	map_object *obj = (map_object*)auxiliar_checkclass(L, "core{mapobj}", 1);
 	if (!lua_isnil(L, 2)) {
-		DisplayObject *v = userdata_to_DO(__FUNCTION__, L, 2);
+		DisplayObject *v = userdata_to_DO(L, 2);
 		obj->displayobject = v;
 		lua_pushvalue(L, 2);
 		obj->do_ref = luaL_ref(L, LUA_REGISTRYINDEX);

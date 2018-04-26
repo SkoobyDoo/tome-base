@@ -123,7 +123,7 @@ static int map_object_texture(lua_State *L) {
 static int map_object_set_do(lua_State *L) {
 	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	if (!lua_isnil(L, 2)) {
-		DisplayObject *v = userdata_to_DO(__FUNCTION__, L, 2);
+		DisplayObject *v = userdata_to_DO(L, 2);
 		lua_pushvalue(L, 2);
 		obj->setDisplayObject(v, luaL_ref(L, LUA_REGISTRYINDEX), lua_toboolean(L, 3));
 	} else {
@@ -146,14 +146,14 @@ static int map_object_shader(lua_State *L) {
 
 static int map_object_add_particles(lua_State *L) {
 	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 2, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 2, "gl{particles}");
 	lua_pushvalue(L, 2);
 	obj->addParticles(v, luaL_ref(L, LUA_REGISTRYINDEX));
 	return 0;
 }
 static int map_object_remove_particles(lua_State *L) {
 	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
-	DORParticles *v = userdata_to_DO<DORParticles>(__FUNCTION__, L, 2, "gl{particles}");
+	DORParticles *v = userdata_to_DO<DORParticles>(L, 2, "gl{particles}");
 	obj->removeParticles(v);
 	return 0;
 }
@@ -282,7 +282,7 @@ static int map_objects_to_displayobject(lua_State *L) {
 	bool allow_cb = lua_toboolean(L, 3);
 	bool allow_particles = lua_toboolean(L, 4);
 
-	MapObjectRenderer *mor = new MapObjectRenderer(w, h, allow_cb, allow_cb);
+	MapObjectRenderer *mor = new MapObjectRenderer(w, h, allow_cb, allow_particles);
 
 	map_object_update(L, 5, mor);
 
@@ -551,6 +551,7 @@ static int map_get_display_object_mm(lua_State *L) {
 static int gl_mapobjectrenderer_free(lua_State *L) {
 	MapObjectRenderer **mor = (MapObjectRenderer**)auxiliar_checkclass(L, "gl{mapobj2drender}", 1);
 	delete *mor;
+	*mor = nullptr;
 
 	lua_pushnumber(L, 1);
 	return 1;
@@ -558,8 +559,10 @@ static int gl_mapobjectrenderer_free(lua_State *L) {
 
 static int gl_mapobjectrenderer_update(lua_State *L) {
 	MapObjectRenderer *mor = *(MapObjectRenderer**)auxiliar_checkclass(L, "gl{mapobj2drender}", 1);
-	mor->resetMapObjects();
-	map_object_update(L, 2, mor);
+	if (mor) {
+		mor->resetMapObjects();
+		map_object_update(L, 2, mor);
+	}
 	lua_pushvalue(L, 1);
 	return 1;
 }
