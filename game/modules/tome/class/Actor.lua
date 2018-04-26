@@ -968,7 +968,7 @@ function _M:defineDisplayCallback()
 
 		local e
 		local dy = 0
-		if h > w then dy = (h - w) / 2 end
+		if h > w then dy = -(h - w) / 2 end
 		for i = 1, #ps do
 			e = ps[i]
 			e:checkDisplay()
@@ -993,7 +993,7 @@ function _M:defineDisplayCallback()
 
 		local e
 		local dy = 0
-		if h > w then dy = (h - w) / 2 end
+		if h > w then dy = -(h - w) / 2 end
 		for i = 1, #backps do
 			e = backps[i]
 			e:checkDisplay()

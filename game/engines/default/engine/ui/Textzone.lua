@@ -68,7 +68,7 @@ function _M:generate()
 	if self.scrollbar then draw_max_w = self.w - Scrollbar:getWidth()
 	else draw_max_w = self.w end
 
-	local strs = self.text:splitLines(self.w, self.font)
+	local strs = self.text:splitLines(draw_max_w, self.font)
 	local max_lines = #strs
 
 	local last_text = nil
