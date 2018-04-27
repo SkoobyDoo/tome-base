@@ -43,6 +43,7 @@ extern "C" {
 #endif
 #include <atomic>
 #include "muparser/include/muParser.h"
+#include "rng.hpp"
 
 #define GLM_FORCE_INLINE
 #include "glm/glm.hpp"
@@ -275,6 +276,7 @@ protected:
 	static unordered_map<string, spShaderHolder> stored_shaders;
 	static unordered_map<string, spDefHolder> stored_defs;
 public:
+	static MT::MersenneTwist rng;
 	static unordered_set<Ensemble*> all_ensembles;
 	static spTextureHolder getTexture(const char *tex_str);
 	static spNoiseHolder getNoise(const char *noise_str);

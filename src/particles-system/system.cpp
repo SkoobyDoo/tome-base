@@ -254,6 +254,7 @@ void System::draw(mat4 &model) {
 /********************************************************************
  ** Ensemble
  ********************************************************************/
+MT::MersenneTwist Ensemble::rng;
 unordered_map<string, spTextureHolder> Ensemble::stored_textures;
 unordered_map<string, spNoiseHolder> Ensemble::stored_noises;
 unordered_map<string, spPointsListHolder> Ensemble::stored_points_lists;

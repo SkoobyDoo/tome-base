@@ -24,7 +24,7 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	mana = 10,
-	cooldown = 0,
+	cooldown = 3,
 	tactical = { ATTACK = {LIGHTNING = 2} },
 	range = 10,
 	direct_hit = true,

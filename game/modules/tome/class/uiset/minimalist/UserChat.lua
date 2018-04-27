@@ -38,32 +38,32 @@ function _M:init(minimalist)
 	profile.chat:enableFading(config.settings.tome.log_fade or 3)
 	self.do_container:add(profile.chat.renderer)
 
-	-- self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
-	-- 	profile.chat:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)
-	-- end, nil, "log", true, 1)
+	self.mouse:registerZone(0, 0, self.w, self.h, function(button, mx, my, xrel, yrel, bx, by, event)
+		profile.chat:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)
+	end, nil, "log", true, 1)
 
-	-- profile.chat:onMouse(function(item, sub_es, button, event, x, y, xrel, yrel, bx, by)
-	-- 	local mx, my = core.mouse.get()
-	-- 	if ((not item or not sub_es or #sub_es == 0) and (not item or not item.url)) or (item and item.faded == 0) then game.mouse:delegate(button, mx, my, xrel, yrel, nil, nil, event, "playmap") return end
+	profile.chat:onMouse(function(item, sub_es, button, event, x, y, xrel, yrel, bx, by)
+		local mx, my = core.mouse.get()
+		if ((not item or not sub_es or #sub_es == 0) and (not item or not item.url)) or (item and item.faded == 0) then game.mouse:delegate(button, mx, my, xrel, yrel, nil, nil, event, "playmap") return end
 
-	-- 	local tooltips = {}
-	-- 	if sub_es then for i, e in ipairs(sub_es) do
-	-- 		if e.tooltip then
-	-- 			local t = e:tooltip()
-	-- 			if t then table.append(tooltips, t) end
-	-- 			if i < #sub_es then table.append(tooltips, { tstring{ true, "---" } } )
-	-- 			else table.append(tooltips, { tstring{ true } } ) end
-	-- 		end
-	-- 	end end
-	-- 	if item.url then
-	-- 		table.append(tooltips, tstring{"Clicking will open ", {"color", "LIGHT_BLUE"}, {"font", "italic"}, item.url, {"color", "WHITE"}, {"font", "normal"}, " in your browser"})
-	-- 	end
+		local tooltips = {}
+		if sub_es then for i, e in ipairs(sub_es) do
+			if e.tooltip then
+				local t = e:tooltip()
+				if t then table.append(tooltips, t) end
+				if i < #sub_es then table.append(tooltips, { tstring{ true, "---" } } )
+				else table.append(tooltips, { tstring{ true } } ) end
+			end
+		end end
+		if item.url then
+			table.append(tooltips, tstring{"Clicking will open ", {"color", "LIGHT_BLUE"}, {"font", "italic"}, item.url, {"color", "WHITE"}, {"font", "normal"}, " in your browser"})
+		end
 
-	-- 	local extra = {}
-	-- 	extra.log_str = tooltips
-	-- 	game.tooltip.old_ttmx = -100
-	-- 	game.mouse:delegate(button, mx, my, xrel, yrel, nil, nil, event, "playmap", extra)
-	-- end)
+		local extra = {}
+		extra.log_str = tooltips
+		game.tooltip.old_ttmx = -100
+		game.mouse:delegate(button, mx, my, xrel, yrel, nil, nil, event, "playmap", extra)
+	end)
 end
 
 function _M:getName()

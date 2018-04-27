@@ -690,6 +690,8 @@ static const struct luaL_Reg plib[] =
 };
 
 extern "C" int luaopen_particles_system(lua_State *L) {
+	Ensemble::rng.init_genrand(time(NULL));
+
 	auxiliar_newclass(L, "particles{compose}", pcompose);
 	luaL_openlib(L, "core.particlescompose", plib, 0);
 

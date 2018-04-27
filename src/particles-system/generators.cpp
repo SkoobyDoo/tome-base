@@ -35,7 +35,7 @@ void Generator::shift(float x, float y, bool absolute) {
 void LifeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* life = p.getSlot4(LIFE);
 	for (uint32_t i = start; i < end; i++) {
-		life[i].x = life[i].y = genrand_real(min, max);
+		life[i].x = life[i].y = Ensemble::rng.genrand_real(min, max);
 		life[i].z = (float)0.0;
 		life[i].w = (float)1.0 / life[i].x;
 	}
@@ -63,8 +63,8 @@ void OriginPosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end
 void DiskPosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
-		float a = genrand_real(min_angle, max_angle);
-		float r = genrand_real(0, radius);
+		float a = Ensemble::rng.genrand_real(min_angle, max_angle);
+		float r = Ensemble::rng.genrand_real(0, radius);
 		pos[i].x = final_pos.x + cos(a) * r;
 		pos[i].y = final_pos.y + sin(a) * r;
 	}
@@ -73,8 +73,8 @@ void DiskPosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) 
 void CirclePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
-		float a = genrand_real(min_angle, max_angle);
-		float r = genrand_real(radius - width, radius + width);
+		float a = Ensemble::rng.genrand_real(min_angle, max_angle);
+		float r = Ensemble::rng.genrand_real(radius - width, radius + width);
 		pos[i].x = final_pos.x + cos(a) * r;
 		pos[i].y = final_pos.y + sin(a) * r;
 	}
@@ -89,9 +89,9 @@ void TrianglePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t e
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
 		// Find a random point in the *rectangle* of this coord system
-		vec2 p(genrand_real(0, 1), genrand_real(0, 1));
+		vec2 p(Ensemble::rng.genrand_real(0, 1), Ensemble::rng.genrand_real(0, 1));
 		// But make sure we fall in the first half of it: AKA our triangle
-		while (p.x + p.y > 1) { p.x=genrand_real(0, 1); p.y=genrand_real(0, 1); }
+		while (p.x + p.y > 1) { p.x=Ensemble::rng.genrand_real(0, 1); p.y=Ensemble::rng.genrand_real(0, 1); }
 		// Matrix * vector compute: we return to the normal coords
 		pos[i].x = final_pos.x + start_pos.x + p.x*u.x + p.y*v.x;
 		pos[i].y = final_pos.y + start_pos.y + p.x*u.y + p.y*v.y;
@@ -101,7 +101,7 @@ void TrianglePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t e
 void LinePosGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
-		pos[i].x = (p2.x - p1.x) * genrand_real(0, 1) + p1.x;
+		pos[i].x = (p2.x - p1.x) * Ensemble::rng.genrand_real(0, 1) + p1.x;
 		pos[i].y = (p1.y - p2.y) / (p1.x - p2.x) * (pos[i].x - p1.x) + p1.y;
 		pos[i].x += final_pos.x;
 		pos[i].y += final_pos.y;
@@ -131,7 +131,7 @@ void JaggedLineGeneratorBase::generateStrands(ParticlesData &p, uint32_t &start,
 		positions.push_back((float)0);
 		if (nb_gen > 2) {
 			// Randomly choose spots
-		 	for (int i = 0; i < nb_gen - 2; i++) positions.push_back((float)genrand_real(0, 1)); 
+		 	for (int i = 0; i < nb_gen - 2; i++) positions.push_back((float)Ensemble::rng.genrand_real(0, 1)); 
 			std::sort(positions.begin(), positions.end());
 		}
 	 
@@ -154,7 +154,7 @@ void JaggedLineGeneratorBase::generateStrands(ParticlesData &p, uint32_t &start,
 			// defines an envelope. Points near the middle of the bolt can be further from the central line.
 			float envelope = curpos > 0.95f ? 20 * (1 - curpos) : 1;
 	 
-			float displacement = genrand_real(-sway, sway);
+			float displacement = Ensemble::rng.genrand_real(-sway, sway);
 			displacement -= (displacement - prevDisplacement) * (1 - scale);
 			displacement *= envelope;
 	 
@@ -226,8 +226,8 @@ uint32_t ImagePosGenerator::generateLimit(ParticlesData &p, uint32_t start, uint
 void DiskVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec2* vel = p.getSlot2(VEL);
 	for (uint32_t i = start; i < end; i++) {
-		float a = genrand_real(0.0, M_PI * 2.0);
-		float r = genrand_real(min_vel, max_vel);
+		float a = Ensemble::rng.genrand_real(0.0, M_PI * 2.0);
+		float r = Ensemble::rng.genrand_real(min_vel, max_vel);
 		vel[i].x = cos(a) * r;
 		vel[i].y = sin(a) * r;
 	}
@@ -238,8 +238,8 @@ void DirectionVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t 
 	vec4* life = p.getSlot4(LIFE);
 	vec2* vel = p.getSlot2(VEL);
 	for (uint32_t i = start; i < end; i++) {
-		float a = atan2f(pos[i].y - from.y - final_pos.y, pos[i].x - from.x - final_pos.x) + genrand_real(min_rot, max_rot);
-		float r = genrand_real(min_vel, max_vel);
+		float a = atan2f(pos[i].y - from.y - final_pos.y, pos[i].x - from.x - final_pos.x) + Ensemble::rng.genrand_real(min_rot, max_rot);
+		float r = Ensemble::rng.genrand_real(min_vel, max_vel);
 		vel[i].x = cos(a) * r;
 		vel[i].y = sin(a) * r;
 	}
@@ -248,7 +248,7 @@ void DirectionVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t 
 void BasicSizeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
-		pos[i].z = genrand_real(min_size, max_size);
+		pos[i].z = Ensemble::rng.genrand_real(min_size, max_size);
 	}
 }
 
@@ -256,8 +256,8 @@ void StartStopSizeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t
 	vec4* pos = p.getSlot4(POS);
 	vec2* size = p.getSlot2(SIZE);
 	for (uint32_t i = start; i < end; i++) {
-		float size_start = genrand_real(min_start_size, max_start_size);
-		float size_stop = genrand_real(min_stop_size, max_stop_size);
+		float size_start = Ensemble::rng.genrand_real(min_start_size, max_start_size);
+		float size_stop = Ensemble::rng.genrand_real(min_stop_size, max_stop_size);
 		pos[i].z = size_start;
 		size[i].x = size_start;
 		size[i].y = size_stop;
@@ -267,7 +267,7 @@ void StartStopSizeGenerator::generate(ParticlesData &p, uint32_t start, uint32_t
 void BasicRotationGenerator::generate(ParticlesData &p, uint32_t start, uint32_t end) {
 	vec4* pos = p.getSlot4(POS);
 	for (uint32_t i = start; i < end; i++) {
-		pos[i].w = genrand_real(min_rot, max_rot);
+		pos[i].w = Ensemble::rng.genrand_real(min_rot, max_rot);
 	}
 }
 
@@ -276,7 +276,7 @@ void RotationByVelGenerator::generate(ParticlesData &p, uint32_t start, uint32_t
 	vec2* vel = p.getSlot2(VEL);
 	for (uint32_t i = start; i < end; i++) {
 		float a = atan2f(vel[i].y, vel[i].x);
-		pos[i].w = a + genrand_real(min_rot, max_rot);
+		pos[i].w = a + Ensemble::rng.genrand_real(min_rot, max_rot);
 	}
 }
 
@@ -297,7 +297,7 @@ void BasicRotationVelGenerator::generate(ParticlesData &p, uint32_t start, uint3
 	vec4* pos = p.getSlot4(POS);
 	vec2* rot_vel = p.getSlot2(ROT_VEL);
 	for (uint32_t i = start; i < end; i++) {
-		rot_vel[i].x = genrand_real(min_rot, max_rot);
+		rot_vel[i].x = Ensemble::rng.genrand_real(min_rot, max_rot);
 		rot_vel[i].y = pos[i].w; // Store initial rotation
 	}
 }
@@ -307,8 +307,8 @@ void StartStopColorGenerator::generate(ParticlesData &p, uint32_t start, uint32_
 	vec4* cstart = p.getSlot4(COLOR_START);
 	vec4* cstop = p.getSlot4(COLOR_STOP);
 	for (uint32_t i = start; i < end; i++) {
-		vec4 color_start = glm::mix(min_color_start, max_color_start, genrand_real(0, 1));
-		vec4 color_stop = glm::mix(min_color_stop, max_color_stop, genrand_real(0, 1));
+		vec4 color_start = glm::mix(min_color_start, max_color_start, Ensemble::rng.genrand_real(0, 1));
+		vec4 color_stop = glm::mix(min_color_stop, max_color_stop, Ensemble::rng.genrand_real(0, 1));
 		color[i] = color_start;
 		cstart[i] = color_start;
 		cstop[i] = color_stop;
