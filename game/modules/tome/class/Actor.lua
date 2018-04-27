@@ -951,29 +951,6 @@ function _M:defineDisplayCallback()
 	local backps = self:getParticlesList(true)
 	local ps = self:getParticlesList()
 
-	-- local function tactical(x, y, w, h, zoom, on_map, tlx, tly)
-	-- 	local self = weak[1]
-	-- 	if not self then return end
-
-	-- 	if game.level and game.level.map.view_faction and game.always_target and game.always_target ~= "old" then
-	-- 		if on_map then
-	-- 			self:smallTacticalFrame(game.level.map, x, y, w, h, zoom, on_map, tlx, tly)
-	-- 		end
-	-- 	else
-	-- 		self:bigTacticalFrame(x, y, w, h, zoom, on_map, tlx, tly)
-	-- 	end
-
-	-- 	-- Chat
-	-- 	if game.level and self.can_talk then
-	-- 		local map = game.level.map
-	-- 		if not ichat then
-	-- 			ichat = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, "speak_bubble.png")
-	-- 		end
-
-	-- 		ichat:toScreen(x + w - 8, y, 8, 8)
-	-- 	end
-	-- end
-
 	local function particles(x, y, w, h, zoom, on_map)
 		local self = weak[1]
 		if not self or not self._mo then return end
@@ -992,13 +969,6 @@ function _M:defineDisplayCallback()
 			else self:removeParticles(e)
 			end
 		end
-
-		-- DGDGDGDG
-		-- if boss_rank_circles[self.rank or 1] then
-		-- 	local b = boss_rank_circles[self.rank]
-		-- 	if not b.ifront then b.ifront = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.front) end
-		-- 	b.ifront:toScreen(x, y + h - w * (0.616 - 0.5), w, w / 2)
-		-- end
 	end
 
 	local function backparticles(x, y, w, h, zoom, on_map)
@@ -1017,25 +987,16 @@ function _M:defineDisplayCallback()
 			else self:removeParticles(e)
 			end
 		end
-
-		-- DGDGDGDG
-		-- if boss_rank_circles[self.rank or 1] then
-		-- 	local b = boss_rank_circles[self.rank]
-		-- 	if not b.iback then b.iback = game.level.map.tilesTactic:get('', 0,0,0, 0,0,0, b.back) end
-		-- 	b.iback:toScreen(x, y + h - w * 0.616, w, w / 2)
-		-- end
 	end
 
 	if self._mo == self._last_mo or not self._last_mo then
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
 			particles(x, y, w, h, zoom, on_map)
 			return true
 		end)
 	else
 		self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
-			-- tactical(tlx or x, tly or y, w, h, zoom, on_map)
 			backparticles(x, y, w, h, zoom, on_map)
 			return true
 		end)

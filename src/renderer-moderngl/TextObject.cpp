@@ -300,12 +300,10 @@ void DORText::parseText() {
 						lua_pushnil(L);
 						lua_pushnumber(L, font_h);
 						lua_pushnumber(L, font_h);
-						lua_pushnumber(L, 1);
-						lua_pushnil(L);
-						lua_pushnil(L);
-						lua_pushboolean(L, true);
+						lua_pushboolean(L, false);
+						lua_pushboolean(L, false);
 						// Call method to get the DO
-						lua_call(L, 8, 1);
+						lua_call(L, 6, 1);
 
 						DisplayObject *c = userdata_to_DO(L, -1);
 						if (c) {
