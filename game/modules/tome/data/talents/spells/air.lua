@@ -24,7 +24,7 @@ newTalent{
 	points = 5,
 	random_ego = "attack",
 	mana = 10,
-	cooldown = 3,
+	cooldown = 0,
 	tactical = { ATTACK = {LIGHTNING = 2} },
 	range = 10,
 	direct_hit = true,
@@ -42,8 +42,8 @@ newTalent{
 		local dam = self:spellCrit(t.getDamage(self, t))
 		self:project(tg, x, y, DamageType.LIGHTNING_DAZE, {dam=rng.avg(dam / 3, dam, 3), daze=self:attr("lightning_daze_tempest") or 0})
 		local _ _, x, y = self:canProject(tg, x, y)
-		
-		game.level.map:particleComposeEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=500, ty=0})
+
+		game.level.map:particleComposeEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=(x-self.x)*Map.tile_w, ty=(y-self.y)*Map.tile_h})
 		-- if core.shader.active() then game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=x-self.x, ty=y-self.y}, {type="lightning"})
 		-- else game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "lightning_beam", {tx=x-self.x, ty=y-self.y})
 		-- end

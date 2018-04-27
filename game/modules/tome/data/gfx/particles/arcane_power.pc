@@ -1,0 +1,52 @@
+return {
+	parameters = { size=48.000000 },
+	{
+		max_particles = 2000, blend=PC.ShinyBlend, type=PC.RendererPoint, compute_only=true,
+		texture = "/data/gfx/particle.png",
+		shader = "particles/glow",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, max=0.700000, duration=10.000000, min=0.500000},
+				{PC.CirclePosGenerator, width="size/10", max_angle=2.356194, base_point={0.000000, 0.000000}, radius="size", min_angle=0.785398},
+				{PC.BasicSizeGenerator, max_size=5.000000, min_size=2.000000},
+				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
+				{PC.StartStopColorGenerator, min_color_start={0.972881, 0.000000, 1.000000, 1.000000}, max_color_start={0.559327, 0.057975, 0.765625, 1.000000}, min_color_stop={0.788032, 0.490619, 0.824219, 0.000000}, max_color_stop={0.493861, 0.314984, 0.515625, 0.000000}},
+				{PC.DirectionVelGenerator, min_vel=100.000000, max_vel=200.000000, from={0.000000, 300.000000}, min_rot=0.000000, max_rot=0.000000},
+				{PC.OriginPosGenerator},
+			}, startat=0.000000, dormant=false, duration=-1.000000, rate=0.010000, triggers = { die = PC.TriggerDELETE }, display_name="active", nb=20.000000, events = { stopping = PC.EventSTOP } },
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, max=3.000000, duration=10.000000, min=0.300000},
+				{PC.CirclePosGenerator, width=20.000000, max_angle=6.283185, base_point={0.000000, 0.000000}, radius="size+200", min_angle=0.000000},
+				{PC.BasicSizeGenerator, max_size=70.000000, min_size=25.000000},
+				{PC.BasicRotationGenerator, min_rot=0.000000, max_rot=6.283185},
+				{PC.StartStopColorGenerator, min_color_start={0.000000, 0.000000, 0.890196, 1.000000}, max_color_start={0.498039, 1.000000, 0.831373, 1.000000}, min_color_stop={0.000000, 0.525490, 0.270588, 0.000000}, max_color_stop={0.000000, 1.000000, 0.000000, 0.000000}},
+				{PC.OriginPosGenerator},
+				{PC.DirectionVelGenerator, min_vel=-150.000000, max_vel=-300.000000, from={0.000000, 0.000000}, min_rot=0.000000, max_rot=0.000000},
+			}, startat=0.000000, duration=0.000000, rate=0.010000, dormant=true, events = { dying = PC.EventSTART }, triggers = { die = PC.TriggerWAKEUP }, display_name="dying", nb=500.000000, hide=true },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.EasingPosUpdater, easing="linear"},
+			{PC.EasingColorUpdater, bilinear=false, easing="outQuad"},
+		},
+	},
+	{
+		max_particles = 2000, blend=PC.ShinyBlend, type=PC.RendererPoint, compute_only=false,
+		texture = "/data/gfx/particle.png",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.LifeGenerator, min=0.300000, max=0.600000},
+				{PC.CopyGenerator, copy_pos=true, copy_color=true, source_system=1.000000},
+				{PC.StartStopSizeGenerator, min_start_size=5.000000, min_stop_size=1.000000, max_stop_size=1.000000, max_start_size=7.000000},
+			}, startat=0.000000, duration=-1.000000, rate=0.020000, nb=20.000000, dormant=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=false},
+			{PC.LinearSizeUpdater},
+		},
+	},
+}
