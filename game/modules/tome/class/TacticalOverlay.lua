@@ -38,16 +38,16 @@ local boss_rank_circles = {
 
 function _M:setup(tactic_tiles)
 	for rank, data in pairs(boss_rank_circles) do
-		data.iback = tactic_tiles:get(nil, 0,0,0, 0,0,0, data.back)
-		data.ifront = tactic_tiles:get(nil, 0,0,0, 0,0,0, data.front)
+		data.iback = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, data.back, nil, nil, true))
+		data.ifront = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, data.front, nil, nil, true))
 	end
-	ichat = tactic_tiles:get(nil, 0,0,0, 0,0,0, "speak_bubble.png")
+	ichat = core.renderer.textureTile(tactic_tiles:get(nil, 0,0,0, 0,0,0, "speak_bubble.png", nil, nil, true))
 end
 
 function _M:init()
 	self.DO_rank_back = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1):shown(false)
 	self.DO_rank_front = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1):shown(false)
-	self.DO_chat = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1):texture(ichat):shown(false)
+	self.DO_chat = core.renderer.colorQuad(0, 0, 1, 1, 1, 1, 1, 1):shown(false)
 
 	self.DO_front = core.renderer.renderer():setRendererName("TacticalFront:UID:"..self.actor.uid)
 
@@ -63,8 +63,8 @@ function _M:update()
 	if self.actor.rank ~= self.old_rank then
 		if boss_rank_circles[self.actor.rank or 1] then
 			local b = boss_rank_circles[self.actor.rank]
-			self.DO_rank_back:texture(b.iback):translate(0, h - w * 0.616):scale(w, w / 2, 1):shown(true)
-			self.DO_rank_front:texture(b.ifront):translate(0, h - w * (0.616 - 0.5)):scale(w, w / 2, 1):shown(true)
+			core.renderer.fromTextureTable(b.iback, 0, 0, w, w / 2, false, 1, 1, 1, 1, self.DO_rank_back):translate(0, h - w * 0.616):shown(true)
+			core.renderer.fromTextureTable(b.ifront, 0, 0, w, w / 2, false, 1, 1, 1, 1, self.DO_rank_front):translate(0, h - w * (0.616 - 0.5)):shown(true)
 		else
 			self.DO_rank_back:shown(false)
 			self.DO_rank_front:shown(false)
@@ -75,7 +75,7 @@ function _M:update()
 	-- Chat
 	if self.actor.can_talk ~= self.old_talk then
 		if self.actor.can_talk then
-			self.DO_chat:translate(w - 8, 0):scale(8, 8):shown(true)
+			self.DO_chat:translate(w - 8, 0):shown(true)
 		else
 			self.DO_chat:shown(false)
 		end

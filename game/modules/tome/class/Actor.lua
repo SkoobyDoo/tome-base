@@ -929,6 +929,18 @@ end
 function _M:defineDisplayCallback()
 	if not self._mo then return end
 
+	if not self._tactical then
+		if game.always_target and game.always_target ~= "old" then
+			if config.settings.tome.small_frame_side then
+				self._tactical = TacticalOverlaySide.new(self)
+			else
+				self._tactical = TacticalOverlayBottom.new(self)
+			end
+		else
+			self._tactical = TacticalOverlayBig.new(self)
+		end
+	end
+
 	-- Cunning trick here!
 	-- the callback we give to mo:displayCallback is a function that references self
 	-- but self contains mo so it would create a cyclic reference and prevent GC'ing
@@ -966,6 +978,8 @@ function _M:defineDisplayCallback()
 		local self = weak[1]
 		if not self or not self._mo then return end
 
+		self._tactical.DO_front:toScreen(x, y)
+
 		local e
 		local dy = 0
 		if h > w then dy = -(h - w) / 2 end
@@ -990,6 +1004,8 @@ function _M:defineDisplayCallback()
 	local function backparticles(x, y, w, h, zoom, on_map)
 		local self = weak[1]
 		if not self then return end
+
+		self._tactical.DO:toScreen(x, y)
 
 		local e
 		local dy = 0
