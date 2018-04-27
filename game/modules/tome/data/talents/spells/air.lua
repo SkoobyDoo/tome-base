@@ -120,9 +120,7 @@ newTalent{
 			print("[Chain lightning] jumping from", sx, sy, "to", actor.x, actor.y)
 			local dam = self:spellCrit(t.getDamage(self, t))
 			self:project(tgr, actor.x, actor.y, DamageType.LIGHTNING_DAZE, {dam=rng.avg(rng.avg(dam / 3, dam, 3), dam, 5), daze=self:attr("lightning_daze_tempest") or 0})
-			if core.shader.active() then game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "lightning_beam", {tx=actor.x-sx, ty=actor.y-sy}, {type="lightning"})
-			else game.level.map:particleEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "lightning_beam", {tx=actor.x-sx, ty=actor.y-sy})
-			end
+			game.level.map:particleComposeEmitter(sx, sy, math.max(math.abs(actor.x-sx), math.abs(actor.y-sy)), "lightning_beam", {tx=(actor.x-sx)*Map.tile_w, ty=(actor.y-sy)*Map.tile_h})
 
 			sx, sy = actor.x, actor.y
 		end
