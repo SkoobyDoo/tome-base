@@ -29,11 +29,12 @@ local __particles_gl = {}
 setmetatable(__particles_gl, {__mode="v"})
 
 --- Make a particle emitter
-function _M:init(def, radius, args, shader)
+function _M:init(def, radius, args, speed, zoom)
 	self.args = args or {}
 	self.def = def
 	self.radius = radius or 1
-	self.shader = shader
+	self.zoom = zoom or 1
+	self.speed = speed or 1
 
 	self:loaded()
 end
@@ -53,7 +54,7 @@ function _M:cloned()
 end
 
 function _M:loaded()
-	self.ps = PC.new("/data/gfx/particles/"..self.def..".pc")
+	self.ps = PC.new("/data/gfx/particles/"..self.def..".pc", self.args, self.speed, self.zoom)
 end
 
 --- Gets a DisplayObject representing this particle
@@ -87,9 +88,12 @@ function _M:dieDisplay(no_callback)
 end
 
 function _M:shift(map, mo)
+	local Map = require "engine.Map"
+	if not Map.tile_w then return end
+
 	local adx, ady = mo:getWorldPos()
 	if self._adx then
-		self.ps:shift(self._adx - adx, self._ady - ady)
+		self.ps:displace((self._adx - adx) * Map.tile_w, (self._ady - ady) * Map.tile_h)
 	end					
 	self._adx, self._ady = adx, ady
 end

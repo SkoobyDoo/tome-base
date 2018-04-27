@@ -259,6 +259,7 @@ public:
 	void setHidden(bool hide) { hidden = hide; };
 
 	void shift(float x, float y, bool absolute);
+	void displace(float x, float y);
 	void update(float nb_keyframes);
 	void draw(mat4 &model);
 	void print();
@@ -324,6 +325,7 @@ public:
 	void updateParameters(lua_State *L, int table_id);
 
 	void shift(float x, float y, bool absolute);
+	void displace(float x, float y);
 
 	void update(float nb_keyframes);
 	void draw(mat4 model);

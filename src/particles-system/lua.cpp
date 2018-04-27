@@ -92,6 +92,13 @@ static int p_shift(lua_State *L)
 	return 0;
 }
 
+static int p_displace(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	(*ee)->displace(lua_tonumber(L, 2), lua_tonumber(L, 3));
+	return 0;
+}
+
 static int p_zoom(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
@@ -110,6 +117,13 @@ static int p_is_dead(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
 	lua_pushboolean(L, (*ee)->isDead());
+	return 1;
+}
+
+static int p_is_alive(lua_State *L)
+{
+	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
+	lua_pushboolean(L, !(*ee)->isDead());
 	return 1;
 }
 
@@ -297,10 +311,12 @@ static int p_new(lua_State *L) {
 	e->exprs.finish();
 
 	// Modify the values with the given ones
-	lua_pushnil(L);
-	while (lua_next(L, 2) != 0) {
-		e->exprs.set(lua_tostring(L, -2), lua_tonumber(L, -1));
-		lua_pop(L, 1);
+	if (lua_istable(L, 2)) {
+		lua_pushnil(L);
+		while (lua_next(L, 2) != 0) {
+			e->exprs.set(lua_tostring(L, -2), lua_tonumber(L, -1));
+			lua_pop(L, 1);
+		}
 	}
 
 	current_ensemble = e;
@@ -652,7 +668,9 @@ static const struct luaL_Reg pcompose[] =
 {
 	{"__gc", p_free},
 	{"shift", p_shift},
+	{"displace", p_displace},
 	{"dead", p_is_dead},
+	{"isAlive", p_is_alive},
 	{"zoom", p_zoom},
 	{"speed", p_speed},
 	{"trigger", p_trigger},

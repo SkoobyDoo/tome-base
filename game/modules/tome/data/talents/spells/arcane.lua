@@ -79,7 +79,8 @@ newTalent{
 			res = self:addTemporaryValue("resists", {[DamageType.ARCANE] = t.getArcaneResist(self, t)}),
 			display_resist = t.getArcaneResist(self, t),
 			power = self:addTemporaryValue("combat_spellpower", t.getSpellpowerIncrease(self, t)),
-			particle = self:addParticles(Particles.new("arcane_power", 1)),
+			-- particle = self:addParticles(Particles.new("arcane_power", 1)),
+			particle = self:addParticles(ParticlesCompose.new("arcane_power", 1, nil, 0.6 + self:getTalentLevel(t) / 5, 0.7)),
 		}
 	end,
 	deactivate = function(self, t, p)

@@ -177,6 +177,11 @@ void MapObject::setMoveAnim(int32_t startx, int32_t starty, float max, float blu
 	move_twitch = twitch; // defaults to 0
 }
 
+vec2 MapObject::getWorldPos() {
+	vec2 p(grid_x + move_anim_dx, grid_y + move_anim_dy);
+	return p;
+}
+
 inline bool MapObject::computeMoveAnim(float nb_keyframes) {
 	if (!nb_keyframes) return move_max > 0;
 

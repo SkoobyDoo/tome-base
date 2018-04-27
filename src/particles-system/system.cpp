@@ -194,6 +194,27 @@ void System::shift(float x, float y, bool absolute) {
 	for (auto &e : emitters) e->shift(x, y, absolute);
 }
 
+void System::displace(float x, float y) {
+	lock_guard<mutex> lguard(list.mux);
+
+	vec2 disp(x, y);
+
+	vec2* origin = list.getSlot2(ORIGIN_POS);
+	if (origin) {
+		for (uint32_t i = 0; i < list.count; i++) {
+			origin[i] = origin[i] + disp;
+		}
+	}
+
+	vec4* pos = list.getSlot4(POS);
+	if (pos) {
+		for (uint32_t i = 0; i < list.count; i++) {
+			pos[i].x = pos[i].x + x;
+			pos[i].y = pos[i].y + y;
+		}
+	}
+}
+
 void System::fireTrigger(string &name) {
 	lock_guard<mutex> guard(mux);
 
@@ -453,6 +474,9 @@ void Ensemble::add(System *system) {
 }
 void Ensemble::shift(float x, float y, bool absolute) {
 	for (auto &s : systems) s->shift(x / zoom, y / zoom, absolute);
+}
+void Ensemble::displace(float x, float y) {
+	for (auto &s : systems) s->displace(x / zoom, y / zoom);
 }
 void Ensemble::update(float nb_keyframes) {
 	nb_keyframes *= speed;

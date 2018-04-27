@@ -160,10 +160,12 @@ end
 
 function _M:shift(map, mo)
 	if not self.can_shift then return end
+	local Map = require "engine.Map"
+	if not Map.tile_w then return end
 
 	local adx, ady = mo:getWorldPos()
 	if self._adx then
-		self.ps:shift(adx - self._adx, ady - self._ady)
+		self.ps:shift((self._adx - adx) * Map.tile_w, (self._ady - ady) * Map.tile_h)
 	end					
 	self._adx, self._ady = adx, ady
 end

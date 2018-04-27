@@ -32,6 +32,7 @@ function _M:loadDefinition(file, env)
 	env = env or setmetatable({
 		DamageType = require("engine.DamageType"),
 		Particles = require("engine.Particles"),
+		ParticlesCompose = require("engine.ParticlesCompose"),
 		Talents = self,
 		Map = require("engine.Map"),
 		MapEffect = require("engine.MapEffect"),

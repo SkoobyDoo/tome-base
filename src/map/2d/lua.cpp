@@ -254,9 +254,9 @@ static int map_object_get_move_anim(lua_State *L) {
 
 static int map_object_get_world_pos(lua_State *L) {
 	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
-	lua_pushnumber(L, 0);lua_pushnumber(L, 0);return 2;
-	// lua_pushnumber(L, obj->world_x);
-	// lua_pushnumber(L, obj->world_y);
+	vec2 p = obj->getWorldPos();
+	lua_pushnumber(L, p.x);
+	lua_pushnumber(L, p.y);
 	return 2;
 }
 

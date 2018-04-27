@@ -227,6 +227,8 @@ Tiles:loadTileset("/data/gfx/ts-gfx-terrain.lua")
 Tiles:loadTileset("/data/gfx/ts-gfx-talents-effects.lua")
 UIBase:loadTileset("/data/gfx/ts-tome-ui.lua")
 
+core.particlescompose.defaultShader("particles/normal")
+
 -- Factions
 dofile("/data/factions.lua")
 

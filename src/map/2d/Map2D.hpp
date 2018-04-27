@@ -189,6 +189,7 @@ public:
 	void resetMoveAnim();
 	void setMoveAnim(int32_t startx, int32_t starty, float max, float blur, uint8_t twitch_dir, float twitch);
 	bool computeMoveAnim(float nb_keyframes);
+	vec2 getWorldPos();
 
 	void addMOR(MapObjectRenderer *mor);
 	void removeMOR(MapObjectRenderer *mor);

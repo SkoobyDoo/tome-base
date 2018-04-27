@@ -21,6 +21,7 @@ require "engine.class"
 local Entity = require "engine.Entity"
 local Tiles = require "engine.Tiles"
 local Particles = require "engine.Particles"
+local ParticlesCompose = require "engine.ParticlesCompose"
 local Faction = require "engine.Faction"
 local DamageType = require "engine.DamageType"
 local Shader = require "engine.Shader"
@@ -1384,6 +1385,18 @@ end
 --- Add a new particle emitter
 function _M:particleEmitter(x, y, radius, def, args, shader, zdepth)
 	local e = Particles.new(def, radius, args, shader)
+	e.x = x
+	e.y = y
+	e.zdepth = zdepth
+
+	self.particles[#self.particles+1] = e
+	if not e.zdepth then e.zdepth = self.zdepth - 1 end
+	self.z_particles[e.zdepth][e] = true
+	return e
+end
+
+function _M:particleComposeEmitter(x, y, radius, def, args, speed, zoom, zdepth)
+	local e = ParticlesCompose.new(def, radius, args, speed, zoom)
 	e.x = x
 	e.y = y
 	e.zdepth = zdepth
