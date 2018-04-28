@@ -89,6 +89,7 @@ void Minimap2D::setMinimapInfo(int mdx, int mdy, int mdw, int mdh, float transp)
 	info.mdh = mdh;
 	info.transp = transp;
 	ready = true;
+	redrawMiniMap();
 }
 
 void Minimap2D::redrawMiniMap() {

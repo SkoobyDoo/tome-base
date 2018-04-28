@@ -530,6 +530,8 @@ static int map_get_display_object_mm(lua_State *L) {
 	Map2D *map = *(Map2D**)auxiliar_checkclass(L, "core{map2d}", 1);
 
 	Minimap2D *tm = new Minimap2D();
+	lua_pushvalue(L, 1);
+	tm->setMap(map, luaL_ref(L, LUA_REGISTRYINDEX));
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));
 	*v = tm;
