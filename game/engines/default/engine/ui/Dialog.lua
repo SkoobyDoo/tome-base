@@ -910,10 +910,11 @@ function _M:mouseEvent(button, x, y, xrel, yrel, bx, by, event)
 
 			-- Pass the event
 			ui.ui.mouse:delegate(button, bx, by, xrel, yrel, bx, by, event)
-			return
+			return true
 		end
 	end
 	self:no_focus()
+	return false
 end
 
 function _M:keyEvent(...)

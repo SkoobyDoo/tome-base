@@ -961,11 +961,11 @@ function _M:makeUI()
 	self.mouse:registerZone(0, 0, game.w, game.h, function(button, mx, my, xrel, yrel, bx, by, event)
 		if mx < game.w - 550 and my >= self.uidialog.margin_top and my <= game.h - self.uidialog.margin_bottom then
 			if core.key.modState("ctrl") then
-				if event == "button" and button == "wheelup" then
+				if event == "button" and (button == "wheelup" or button == "button4") then
 					particle_speed = util.bound(particle_speed + 0.05, 0.1, 10)
 					self.pdo:speed(particle_speed)
 					return true
-				elseif event == "button" and button == "wheeldown" then
+				elseif event == "button" and (button == "wheeldown" or button == "button5") then
 					particle_speed = util.bound(particle_speed - 0.05, 0.1, 10)
 					self.pdo:speed(particle_speed)
 					return true
@@ -975,12 +975,12 @@ function _M:makeUI()
 					return true
 				end
 			else
-				if event == "button" and button == "wheelup" then
+				if event == "button" and (button == "wheelup" or button == "button4") then
 					particle_zoom = util.bound(particle_zoom + 0.05, 0.1, 10)
 					self.pdo:zoom(particle_zoom)
 					self:shift(mx, my)
 					return true
-				elseif event == "button" and button == "wheeldown" then
+				elseif event == "button" and (button == "wheeldown" or button == "button5") then
 					particle_zoom = util.bound(particle_zoom - 0.05, 0.1, 10)
 					self.pdo:zoom(particle_zoom)
 					self:shift(mx, my)
@@ -1008,7 +1008,7 @@ function _M:makeUI()
 			end
 		else self:shift((game.w - (self.hide_ui and 0 or 550)) / 2, game.h / 2) end
 
-		self.uidialog:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)
+		if mx < game.w - 550 then if self.uidialog:mouseEvent(button, mx, my, xrel, yrel, bx, by, event) then return true end end
 
 		return false
 	end)
@@ -1262,7 +1262,7 @@ function _M:toScreen(x, y, nb_keyframes)
 end
 
 function _M:keyEvent(...)
-	self.uidialog:keyEvent(...)
+	-- self.uidialog:keyEvent(...)
 	Dialog.keyEvent(self, ...)
 end
 

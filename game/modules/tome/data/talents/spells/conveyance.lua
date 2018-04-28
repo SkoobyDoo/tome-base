@@ -132,9 +132,9 @@ newTalent{
 			end
 		end
 
-		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
+		game.level.map:particleComposeEmitter(target.x, target.y, 2, "portalblue", nil, 8, 0.35)
 		target:teleportRandom(x, y, range)
-		game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
+		game.level.map:particleComposeEmitter(target.x, target.y, 2, "portalblue", nil, 8, 0.35)
 		print("[phase door] final location of ", target.name, target.x, target.y, "vs", x, y)
 		
 		if target ~= self then
@@ -234,17 +234,17 @@ newTalent{
 				range = t.getRange(self, t)
 			end
 			local _ _, x, y = self:canProject(tg, x, y)
-			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
+			game.level.map:particleComposeEmitter(target.x, target.y, 2, "portalblue", nil, 6, 0.42)
 			newpos = target:teleportRandom(x, y, range)
 			-- teleport randomly if there was no suitable destination in the target area
 			if not newpos then
 				newpos = target:teleportRandom(x, y, t.getRange(self, t), t.minRange)
 			end
-			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
+			game.level.map:particleComposeEmitter(target.x, target.y, 2, "portalblue", nil, 6, 0.42)
 		else
-			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
+			game.level.map:particleComposeEmitter(target.x, target.y, 2, "portalblue", nil, 6, 0.42)
 			newpos = target:teleportRandom(x, y, t.getRange(self, t), t.minRange)
-			game.level.map:particleEmitter(target.x, target.y, 1, "teleport")
+			game.level.map:particleComposeEmitter(target.x, target.y, 2, "portalblue", nil, 6, 0.42)
 		end
 		print("[teleport] final location of ", target.name, target.x, target.y)
 		if target ~= self then

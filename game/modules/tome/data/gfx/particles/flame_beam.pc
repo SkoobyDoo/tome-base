@@ -1,0 +1,26 @@
+return {
+	parameters = { ty=0.000000, tx=500.000000 },
+	{
+		display_name = "beam",
+		max_particles = 250, blend=PC.AdditiveBlend, type=PC.RendererPoint, compute_only=false,
+		texture = "/data/gfx/particles_textures/particle_boom_anim.png",
+		shader = "particles/glow",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.FixedColorGenerator, color_stop={0.953125, 0.510159, 0.051919, 0.000000}, color_start={0.933594, 0.735687, 0.473890, 1.000000}},
+				{PC.LifeGenerator, min=0.400000, max=0.800000},
+				{PC.LinePosGenerator, p2={"tx", "ty"}, p1={0.000000, 0.000000}, base_point={0.000000, 0.000000}},
+				{PC.DirectionVelGenerator, min_vel=50.000000, max_vel=150.000000, from={10.000000, 0.000000}, min_rot=0.000000, max_rot=0.000000},
+				{PC.StartStopSizeGenerator, min_start_size=20.000000, min_stop_size=1.000000, max_stop_size=3.000000, max_start_size=30.000000},
+			}, startat=0.000000, duration=0.200000, rate=0.010000, triggers = { die = PC.TriggerDELETE }, display_name="top arm", nb="1+sqrt(tx*tx+ty*ty)/100", dormant=false },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.LinearColorUpdater, bilinear=false},
+			{PC.EulerPosUpdater, global_acc={0.000000, 0.000000}, global_vel={0.000000, 0.000000}},
+			{PC.AnimatedTextureUpdater, splity=5.000000, repeat_over_life=1.000000, splitx=5.000000, firstframe=0.000000, lastframe=22.000000},
+			{PC.EasingSizeUpdater, easing="inCubic"},
+		},
+	},
+}
