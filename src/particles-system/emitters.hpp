@@ -47,6 +47,7 @@ public:
 class LinearEmitter : public Emitter {
 private:
 	float accumulator = 0;
+	float startat_cnt = 0;
 public:
 	float nb;
 	float rate;
@@ -60,6 +61,7 @@ class BurstEmitter : public Emitter {
 private:
 	float bursting = 0;
 	float accumulator = 0;
+	float startat_cnt = 0;
 public:
 	float nb;
 	float burst;
@@ -73,6 +75,7 @@ public:
 class BuildupEmitter : public Emitter {
 private:
 	float accumulator = 0;
+	float startat_cnt = 0;
 public:
 	float nb, nb_sec;
 	float rate, rate_sec;

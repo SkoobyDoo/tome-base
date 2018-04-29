@@ -101,6 +101,7 @@ public:
 	void circleCast(float x, float y, float radius, uint16 mask_bits);
 
 	void drawDebug(float x, float y);
+	int getPhysicsCount();
 
 	static void setUnitScale(float scale);
 	static PhysicSimulator *getCurrent();

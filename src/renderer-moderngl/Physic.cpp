@@ -701,6 +701,10 @@ void PhysicSimulator::use() {
 	current = this;
 }
 
+int PhysicSimulator::getPhysicsCount() {
+	return physic_obj_count;
+}
+
 void PhysicSimulator::setGravity(float x, float y) {
 	world.SetGravity(b2Vec2(x / unit_scale, -y / unit_scale));
 }

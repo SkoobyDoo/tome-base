@@ -124,6 +124,22 @@ function table.max(t)
 	return m
 end
 
+function table.maxKey(t)
+	local m = nil
+	for k, v in pairs(t) do
+		if not m then m = k
+		else m = math.max(m, k)
+		end
+	end
+	return m
+end
+
+function table.findValue(t, fv)
+	for k, v in pairs(t) do
+		if v == fv then return k end
+	end
+end
+
 function table.print_shallow(src, offset, ret)
 	if type(src) ~= "table" then print("table.print has no table:", src) return end
 	offset = offset or ""

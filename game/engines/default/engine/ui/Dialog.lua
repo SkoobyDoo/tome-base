@@ -478,7 +478,7 @@ function _M:generate()
 	self.do_container:translate(self.display_x, self.display_y, -100)
 	self.full_container:add(self.do_container)
 
-	if self.__showup then
+	if self.__showup or self.force_fbo then
 		self.renderer_outer = core.renderer.renderer("static"):setRendererName(self:getClassName()..":FBO"):countDraws(false)
 		self.fbo = core.renderer.target()
 		self.fbo:setAutoRender(self.renderer)
@@ -789,9 +789,11 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 		self.fbo:translate(-mw, -mh)
 
 		self.renderer_outer:scale(0.01, 0.01, 1):tween(7, "scale_x", nil, 1, self.__showup):tween(7, "scale_y", nil, 1, self.__showup, function()
-			self.renderer_outer:clear()
-			self.fbo = nil
-			self.renderer_outer = self.renderer
+			if not self.force_fbo then
+				self.renderer_outer:clear()
+				self.fbo = nil
+				self.renderer_outer = self.renderer
+			end
 		end)
 	end
 

@@ -508,7 +508,6 @@ void Ensemble::updateParameters(lua_State *L, int table_id) {
 
 	for (auto &it : parametrized_values) {
 		*get<0>(it) = exprs.eval(get<1>(it));
-		// printf("update : %f\n", exprs.eval(get<1>(it)));
 	}
 
 	for (auto &s : systems) s->mux.unlock();

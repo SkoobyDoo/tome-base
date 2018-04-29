@@ -73,7 +73,7 @@ void LinearEmitter::emit(ParticlesData &p, float dt) {
 	if (dormant) return;
 
 	// We are not at start yet
-	if (startat > 0) { startat -= dt; return; }
+	if (startat > startat_cnt) { startat_cnt += dt; return; }
 
 	// A trigger forced use to fire
 	if (next_tick_force_generate) { for (uint16_t i = 0; i < next_tick_force_generate; i++) generate(p, nb); next_tick_force_generate = 0; return; }
@@ -108,7 +108,7 @@ void BurstEmitter::emit(ParticlesData &p, float dt) {
 	if (dormant) return;
 
 	// We are not at start yet
-	if (startat > 0) { startat -= dt; return; }
+	if (startat > startat_cnt) { startat_cnt += dt; return; }
 
 	// A trigger forced use to fire
 	if (next_tick_force_generate) { bursting = burst; }
@@ -149,7 +149,7 @@ void BuildupEmitter::emit(ParticlesData &p, float dt) {
 	if (dormant) return;
 
 	// We are not at start yet
-	if (startat > 0) { startat -= dt; return; }
+	if (startat > startat_cnt) { startat_cnt += dt; return; }
 
 	// A trigger forced use to fire
 	if (next_tick_force_generate) { for (uint16_t i = 0; i < next_tick_force_generate; i++) generate(p, nb); next_tick_force_generate = 0; return; }

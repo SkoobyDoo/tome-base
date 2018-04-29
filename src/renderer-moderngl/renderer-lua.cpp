@@ -1840,6 +1840,11 @@ static int physic_world_debug_draw(lua_State *L) {
 	return 0;
 }
 
+static int physic_world_get_count(lua_State *L) {
+	lua_pushnumber(L, PhysicSimulator::current->getPhysicsCount());
+	return 1;
+}
+
 /******************************************************************
  ** Lua declarations
  ******************************************************************/
@@ -2070,6 +2075,7 @@ const luaL_Reg physicslib[] = {
 	{"worldGravity", physic_world_gravity},
 	{"worldScale", physic_world_unit_to_pixel},
 	{"drawDebug", physic_world_debug_draw},
+	{"getCount", physic_world_get_count},
 	{NULL, NULL}
 };
 

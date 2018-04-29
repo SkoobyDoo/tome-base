@@ -226,14 +226,18 @@ function _M:display(nb_keyframes)
 	if _M.fps_shown then
 		fps_counter_frames = fps_counter_frames + nb_keyframes
 		if fps_counter_frames >= 30 then
-			fps_counter_frames = 0
-			local fps, msframe = core.display.getFPS()
-			fps_counter:text(("%0.1f FPS\n%d draws/frame\n%d ms/frame\n%d mb lua memory"):format(fps, core.display.countDraws(), msframe, collectgarbage("count")/1024))
+			fps_counter:text(self:updateFPSCounter())
 		else
 			core.display.countDraws()
 		end
 		fps_counter_renderer:toScreen()
 	end
+end
+
+function _M:updateFPSCounter()
+	fps_counter_frames = 0
+	local fps, msframe = core.display.getFPS()
+	return ("%0.1f FPS\n%d draws/frame\n%d ms/frame\n%d mb lua memory"):format(fps, core.display.countDraws(), msframe, collectgarbage("count")/1024)
 end
 
 --- Return the DisplayObject to draw

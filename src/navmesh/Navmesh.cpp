@@ -399,7 +399,10 @@ static inline int32_t get_winding(mesh_point &p1, mesh_point &p2, mesh_point &te
 bool Navmesh::pathFindByTriangle(mesh_point &start, mesh_point &end, int &tri_start_id, int &tri_end_id, vector<mesh_point> &path) {
 	tri_start_id = findTriangle(start.x, start.y);
 	tri_end_id = findTriangle(end.x, end.y);
-	if (!tri_start_id || !tri_end_id) { printf("[NAVMESH] pathFind start or stop triangle is unfound: %d, %d\n", tri_start_id, tri_end_id); return false; }
+	if (!tri_start_id || !tri_end_id) {
+		// printf("[NAVMESH] pathFind start or stop triangle is unfound: %d, %d\n", tri_start_id, tri_end_id);
+		return false;
+	}
 	// printf("Starting pathfind from %dx%d (triangle %d) to %dx%d (triangle %d)\n", start.x, start.y, tri_start_id, end.x, end.y, tri_end_id);
 
 	sp_mesh_triangle tri_start = mesh[tri_start_id-1];
