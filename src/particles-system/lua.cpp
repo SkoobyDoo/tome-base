@@ -76,6 +76,15 @@ static int p_gc_textures(lua_State *L)
 	return 0;
 }
 
+static int p_debug_count(lua_State *L)
+{
+	uint32_t nb_systems, nb_particles;
+	Ensemble::debugCount(nb_systems, nb_particles);
+	lua_pushnumber(L, nb_systems);
+	lua_pushnumber(L, nb_particles);
+	return 2;
+}
+
 static int p_free(lua_State *L)
 {
 	Ensemble **ee = (Ensemble**)auxiliar_checkclass(L, "particles{compose}", 1);
@@ -683,6 +692,7 @@ static const struct luaL_Reg pcompose[] =
 
 static const struct luaL_Reg plib[] =
 {
+	{"debugCount", p_debug_count},
 	{"gcTextures", p_gc_textures},
 	{"defaultShader", p_default_shader},
 	{"new", p_new},

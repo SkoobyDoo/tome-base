@@ -127,7 +127,7 @@ end
 -- Beware, do not keep a reference to the Particles afterwards unless needed; just keep one to the DO which will itself reference the Particles
 function _M:getDO()
 	if not self.ps then return end
-	return self.ps:getDO(self)
+	return self.ps:getDO()
 end
 
 function _M:setSub(def, radius, args, shader)

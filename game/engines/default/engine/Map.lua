@@ -312,8 +312,8 @@ function _M:makeCMap()
 	local wself = self:weakSelf()
 	for z = 0, self.zdepth - 1 do
 		self._map:zCallback(z, function(z, nb_keyframe, sx, sy)
-			if not wself.__getstrong then return end
-			return wself.__getstrong:zDisplay(z, nb_keyframe, sx, sy)
+			if not wself() then return end
+			return wself():zDisplay(z, nb_keyframe, sx, sy)
 		end)
 	end
 end

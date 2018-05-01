@@ -284,6 +284,7 @@ public:
 	static spShaderHolder getShader(lua_State *L, const char *shader_str);
 	static int getDefinition(lua_State *L, const char *def_str);
 	static void gcTextures();
+	static void debugCount(uint32_t &nb_systems, uint32_t &nb_particles);
 
 private:
 	int event_cb_ref = LUA_NOREF;

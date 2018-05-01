@@ -715,9 +715,9 @@ void on_redraw()
 
 	// Run GC every second, this is the only place the GC should be called
 	// This is also a way to ensure the GC wont try to delete things while in callbacks from the display code and such which is annoying
-	if (ticks_count_gc >= 1000) {
+	if (ticks_count_gc >= 100) {
 		refcleaner_clean(L);
-		lua_gc(L, LUA_GCCOLLECT, 0);
+		lua_gc(L, LUA_GCSTEP, 5);
 		ticks_count_gc = 0;
 	}
 }

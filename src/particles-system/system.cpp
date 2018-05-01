@@ -438,13 +438,13 @@ void Ensemble::getExpression(lua_State *L, float *dst, const char *expr_str, int
 }
 
 Ensemble::Ensemble() {
-	printf("===Ensemble created, %lx\n", this);
+	// printf("===Ensemble created, %lx\n", this);
 	lock_guard<mutex> lock(th_runner_singleton.mux);
 	all_ensembles.insert(this);
 }
 
 Ensemble::~Ensemble() {
-	printf("===Ensemble destroyed, %lx\n", this);
+	// printf("===Ensemble destroyed, %lx\n", this);
 	refcleaner(&event_cb_ref);
 	refcleaner(&parameters_ref);
 	lock_guard<mutex> lock(th_runner_singleton.mux);
@@ -458,6 +458,14 @@ void Ensemble::gcTextures() {
 	stored_shaders.clear();
 	stored_defs.clear();
 	default_particlescompose_shader.reset();
+}
+
+void Ensemble::debugCount(uint32_t &nb_systems, uint32_t &nb_particles) {
+	nb_particles = nb_systems = 0;
+	for (auto it : all_ensembles) {
+		nb_systems += it->systems.size();
+		nb_particles += it->countAlive();
+	}
 }
 
 uint32_t Ensemble::countAlive() {

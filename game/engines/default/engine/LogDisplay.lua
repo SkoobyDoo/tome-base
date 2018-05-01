@@ -71,8 +71,8 @@ function _M:resize(x, y, w, h)
 
 	local wself = self:weakSelf()
 	local cb = core.renderer.callback(function()
-		if not wself.__getstrong then return end
-		wself.__getstrong:update()
+		if not wself() then return end
+		wself():update()
 	end)
 	self.renderer:add(cb)
 

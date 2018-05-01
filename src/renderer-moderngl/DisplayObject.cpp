@@ -28,7 +28,6 @@ extern "C" {
 #include "physfsrwops.h"
 #include "main.h"
 }
-int donb = 0;
 #include "renderer-moderngl/Renderer.hpp"
 #include "renderer-moderngl/Physic.hpp"
 #include "tinyobjloader/tiny_obj_loader.h"
@@ -46,15 +45,16 @@ int donb = 0;
  *************************************************************************/
 int DisplayObject::weak_registry_ref = LUA_NOREF;
 bool DisplayObject::pixel_perfect = true;
+uint32_t DisplayObject::do_nb = 0;
 
 DisplayObject::DisplayObject() {
-	donb++;
-	// printf("+DOs %d\n", donb);
+	do_nb++;
+	// printf("+DOs %d\n", do_nb);
 	model = mat4(); color.r = 1; color.g = 1; color.b = 1; color.a = 1;
 }
 DisplayObject::~DisplayObject() {
-	donb--;
-	// printf("-DOs %d\n", donb);
+	do_nb--;
+	// printf("-DOs %d\n", do_nb);
 	removeFromParent();
 	refcleaner(&lua_ref);
 	if (tweener) delete tweener;

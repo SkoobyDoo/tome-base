@@ -667,14 +667,14 @@ static int lua_particles_to_screen(lua_State *L)
 static int particles_get_do(lua_State *L)
 {
 	particles_type *ps = (particles_type*)auxiliar_checkclass(L, "core{particles}", 1);
-	if (!lua_istable(L, 2)) {
-		lua_pushliteral(L, "2nd argument is not an engine.Particles");
-		lua_error(L);
-		return 0;
-	}
+	// if (!lua_istable(L, 2)) {
+	// 	lua_pushliteral(L, "2nd argument is not an engine.Particles");
+	// 	lua_error(L);
+	// 	return 0;
+	// }
 
 	DORParticles *pdo = new DORParticles();
-	lua_pushvalue(L, 2);
+	lua_pushvalue(L, 1);
 	pdo->setParticles(ps, luaL_ref(L, LUA_REGISTRYINDEX));
 
 	DisplayObject **v = (DisplayObject**)lua_newuserdata(L, sizeof(DisplayObject*));

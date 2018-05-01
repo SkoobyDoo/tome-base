@@ -82,7 +82,7 @@ end
 
 function _M:showSelect()
 	local sx, sy = self.base_x, self.base_y + self.h
-	if self.dialog.__getstrong and self.dialog.__getstrong.scrollbar then sy = sy - self.dialog.__getstrong.scrollbar.pos  end
+	if self.dialog() and self.dialog().scrollbar then sy = sy - self.dialog().scrollbar.pos  end
 
 	if sy + self.h + self.c_list.h > game.h then sy = game.h - self.c_list.h - self.h end
 

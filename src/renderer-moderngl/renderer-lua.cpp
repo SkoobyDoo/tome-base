@@ -1767,7 +1767,7 @@ static int body_sleep(lua_State *L)
  ** Generic non object functions
  ******************************************************************/
 static int gl_dos_count(lua_State *L) {
-	lua_pushnumber(L, donb);
+	lua_pushnumber(L, DisplayObject::do_nb);
 	return 1;
 }
 

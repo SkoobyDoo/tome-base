@@ -216,10 +216,22 @@ function _M:proxyDataSet(k, v)
 	return true
 end
 
+local weak_metat = {
+	__mode = "v",
+	__index = function(t, k) util.show_backtrace() return rawget(t, "__getstrong")[k] end,
+	__call = function(t) return rawget(t, "__getstrong") end,
+}
+
 --- Returns a weak "self" reference
 -- Can be then used to call methods, get & set data and will silently fail if self is no more
 function _M:weakSelf()
-	return setmetatable({__getstrong=self}, {__mode = "v"})
+	return setmetatable({__getstrong=self}, weak_metat)
+end
+
+--- Returns a weak reference to a (table) value
+-- Can be then used to call methods, get & set data and will silently fail if self is no more
+function _M:weakVal(val)
+	return setmetatable({__getstrong=val}, weak_metat)
 end
 
 function _M:getClassName()
