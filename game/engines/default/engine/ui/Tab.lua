@@ -26,6 +26,8 @@ local Focusable = require "engine.ui.Focusable"
 module(..., package.seeall, class.inherit(Base, Focusable))
 
 function _M:init(t)
+	self:proxyData{"selected"}
+
 	self.title = assert(t.title, "no tab title")
 	self.selected = t.default
 	self.on_change = t.on_change
@@ -66,13 +68,18 @@ function _M:generate()
 	self.key:addCommands{
 		_SPACE = function() self:select() end,
 	}
-
 end
 
 function _M:select(selected, notrig)
 	if selected == nil then selected = true end
 	self.selected = selected
-	self.frame_do.container:shown(not selected)
-	self.frame_sel_do.container:shown(selected)
-	if self.on_change and not notrig then self.on_change(selected) end
+end
+
+function _M:proxyDataSet(k, v)
+	if k == "selected" and self.do_container then
+		self.frame_do.container:shown(not v)
+		self.frame_sel_do.container:shown(v)
+		if self.on_change and not notrig then self.on_change(v) end
+	end
+	return true
 end

@@ -42,6 +42,7 @@ function _M:init(minimalist)
 		profile.chat:mouseEvent(button, mx, my, xrel, yrel, bx, by, event)
 	end, nil, "log", true, 1)
 
+	-- DGDGDGDG this is not correct, verbatim for Log
 	profile.chat:onMouse(function(item, sub_es, button, event, x, y, xrel, yrel, bx, by)
 		local mx, my = core.mouse.get()
 		if ((not item or not sub_es or #sub_es == 0) and (not item or not item.url)) or (item and item.faded == 0) then game.mouse:delegate(button, mx, my, xrel, yrel, nil, nil, event, "playmap") return end

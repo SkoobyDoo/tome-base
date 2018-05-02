@@ -18,7 +18,6 @@
 -- darkgod@te4.org
 
 return {
-	require_kind = "adv",
 	frag = "default/gl",
 	vert = "water",
 	-- frag = "water",
