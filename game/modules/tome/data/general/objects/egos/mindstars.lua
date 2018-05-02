@@ -1178,8 +1178,14 @@ newEntity{
 		melee_project = { [DamageType.ITEM_ACID_CORRODE]= resolvers.mbonus_material(15, 5), [DamageType.ITEM_NATURE_SLOW]= resolvers.mbonus_material(15, 5),},
 	},
 	no_auto_hotkey = true,
+	exclude_selective_list = true,
 	resolvers.charm("divide the mindstar in two", 1,
 		function(self, who)
+			if self.mitoticed then
+				game.logPlayer(who, "Your %s has already been divided.", self:getName({no_add_name = true, do_color = true}))
+				return
+			end
+
 			-- Check for free slot first
 			if who:getFreeHands() == 0 then
 				game.logPlayer(who, "You must have a free hand to divide the %s.", self:getName({no_add_name = true, do_color = true}))
@@ -1207,22 +1213,36 @@ newEntity{
 			
 			who:takeoffObject(inven_id, pos)
 			-- Remove some properties before cloning
-			o.cost = self.cost / 2 -- more don't split for extra gold discouragement
+			o.cost = 0 -- more don't split for extra gold discouragement
 			o.max_power = nil
 			o.power_regen = nil
 			o.use_power = nil
 			o.use_talent = nil
-			local o2 = o:clone()
+			o.mitoticed = true
+			local o2 = o:cloneFull()
+
+			-- Remove mitotic function forever
+			for i, ego in ripairs(o.ego_list) do if ego[1] and ego[1].keywords and ego[1].keywords.mitotic then
+				for i = #ego[1], 1, -1 do if type(ego[1][i]) == "table" and ego[1][i].__resolver == "charm" then
+					table.remove(ego[1], i)
+				end end
+			end end
+			for i, ego in ripairs(o2.ego_list) do if ego[1] and ego[1].keywords and ego[1].keywords.mitotic then
+				for i = #ego[1], 1, -1 do if type(ego[1][i]) == "table" and ego[1][i].__resolver == "charm" then
+					table.remove(ego[1], i)
+				end end
+			end end
 
 			-- Build the item set
-			o.define_as = "MS_EGO_SET_MITOTIC_ACID"
-			o2.define_as = "MS_EGO_SET_MITOTIC_SLIME"
-			o.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_SLIME"} }
-			o2.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_ACID"} }
+			local uid = "_"..game.turn.."_"..rng.range(1, 99999)
+			o.define_as = "MS_EGO_SET_MITOTIC_ACID"..uid
+			o2.define_as = "MS_EGO_SET_MITOTIC_SLIME"..uid
+			o.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_SLIME"..uid} }
+			o2.set_list = { {"define_as", "MS_EGO_SET_MITOTIC_ACID"..uid} }
 
 			o.on_set_complete = function(self, who)
 				self:specialWearAdd({"combat","burst_on_crit"}, { [engine.DamageType.ACID_BLIND] = 10 * self.material_level } )
-				game.logPlayer(who, "#GREEN#The mindstars pulse with life.")
+				game.logPlayer(who, "#GREEN#The mindstars pulse with life as it synergises with its twin.")
 			end
 			o.on_set_broken = function(self, who)
 				game.logPlayer(who, "#SLATE#The link between the mindstars is broken.")

@@ -45,21 +45,21 @@ for i = 1, 4 do newEntity{ base = "UNDERGROUND_CREEP", define_as = "UNDERGROUND_
 
 
 local treesdef = {
-	{"dreamy_mushroom_01_trunk_head_%02d", 1, 2, tall=-1},
-	{"dreamy_mushroom_02_trunk_head_%02d", 1, 3, tall=-1},
-	{"dreamy_mushroom_03_trunk_head_%02d", 1, 3, tall=-1},
-	{"dreamy_mushroom_04_trunk_head_%02d", 1, 2, tall=-1},
-	{"dreamy_mushroom_05_trunk_head_%02d", 1, 2, tall=-1},
-	{"dreamy_mushroom_06_trunk_head_%02d", 1, 2, tall=-1},
-	{"dreamy_mushroom_07_trunk_head_%02d", 1, 4, tall=-1},
-	{"dreamy_mushroom_08_trunk_head_%02d", 1, 4, tall=-1},
-	{"dreamy_mushroom_09_trunk_head_%02d", 1, 2, tall=-1},
-	{"dreamy_mushroom_10_trunk_head_%02d", 1, 2, tall=-1},
-	{"dreamy_mushroom_11_trunk_head_%02d", 1, 2, tall=-1},
-	{"small_dreamy_mushroom_01_trunk_head_%02d", 1, 2, tall=0},
-	{"small_dreamy_mushroom_02_trunk_head_%02d", 1, 6, tall=0},
-	{"small_dreamy_mushroom_03_trunk_head_%02d", 1, 5, tall=0},
-	{"small_dreamy_mushroom_04_trunk_head_%02d", 1, 3, tall=0},
+	{"small_dreamy_mushroom_01", {"trunk", {"head_%02d", 1, 2}}},
+	{"small_dreamy_mushroom_02", {"trunk", {"head_%02d", 1, 6}}},
+	{"small_dreamy_mushroom_03", {"trunk", {"head_%02d", 1, 5}}},
+	{"small_dreamy_mushroom_04", {"trunk", {"head_%02d", 1, 3}}},
+	{"dreamy_mushroom_01", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"dreamy_mushroom_02", {tall=-1, "trunk", {"head_%02d", 1, 3}}},
+	{"dreamy_mushroom_03", {tall=-1, "trunk", {"head_%02d", 1, 3}}},
+	{"dreamy_mushroom_04", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"dreamy_mushroom_05", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"dreamy_mushroom_06", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"dreamy_mushroom_07", {tall=-1, "trunk", {"head_%02d", 1, 4}}},
+	{"dreamy_mushroom_08", {tall=-1, "trunk", {"head_%02d", 1, 4}}},
+	{"dreamy_mushroom_09", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"dreamy_mushroom_10", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"dreamy_mushroom_11", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
 }
 
 newEntity{

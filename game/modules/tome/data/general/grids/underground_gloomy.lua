@@ -45,18 +45,18 @@ for i = 1, 4 do newEntity{ base = "UNDERGROUND_CREEP", define_as = "UNDERGROUND_
 
 
 local treesdef = {
-	{"gloomy_mushroom_01_trunk_head_%02d", 1, 2, tall=-1},
-	{"gloomy_mushroom_02_trunk_head_%02d", 1, 3, tall=-1},
-	{"gloomy_mushroom_03_trunk_head_%02d", 1, 3, tall=-1},
-	{"gloomy_mushroom_04_trunk_head_%02d", 1, 2, tall=-1},
-	{"gloomy_mushroom_05_trunk_head_%02d", 1, 2, tall=-1},
-	{"gloomy_mushroom_06_trunk_head_%02d", 1, 2, tall=-1},
-	{"gloomy_mushroom_07_trunk_head_%02d", 1, 4, tall=-1},
-	{"gloomy_mushroom_08_trunk_head_%02d", 1, 4, tall=-1},
-	{"small_gloomy_mushroom_01_trunk_head_%02d", 1, 2, tall=0},
-	{"small_gloomy_mushroom_02_trunk_head_%02d", 1, 6, tall=0},
-	{"small_gloomy_mushroom_03_trunk_head_%02d", 1, 5, tall=0},
-	{"small_gloomy_mushroom_04_trunk_head_%02d", 1, 3, tall=0},
+	{"small_gloomy_mushroom_01", {"trunk", {"head_%02d", 1, 2}}},
+	{"small_gloomy_mushroom_02", {"trunk", {"head_%02d", 1, 6}}},
+	{"small_gloomy_mushroom_03", {"trunk", {"head_%02d", 1, 5}}},
+	{"small_gloomy_mushroom_04", {"trunk", {"head_%02d", 1, 3}}},
+	{"gloomy_mushroom_01", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"gloomy_mushroom_02", {tall=-1, "trunk", {"head_%02d", 1, 3}}},
+	{"gloomy_mushroom_03", {tall=-1, "trunk", {"head_%02d", 1, 4}}},
+	{"gloomy_mushroom_04", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"gloomy_mushroom_05", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"gloomy_mushroom_06", {tall=-1, "trunk", {"head_%02d", 1, 2}}},
+	{"gloomy_mushroom_07", {tall=-1, "trunk", {"head_%02d", 1, 4}}},
+	{"gloomy_mushroom_08", {tall=-1, "trunk", {"head_%02d", 1, 4}}},
 }
 
 newEntity{
