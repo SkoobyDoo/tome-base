@@ -19,6 +19,7 @@
 
 require "engine.class"
 local UI = require "engine.ui.Base"
+local FontPackage = require "engine.FontPackage"
 local MiniContainer = require "mod.class.uiset.minimalist.MiniContainer"
 local Map = require "engine.Map"
 
@@ -44,6 +45,10 @@ function _M:init(minimalist, w, h)
 	self.do_container:add(shadow)
 	self.do_container:add(self.sand:translate(11, 32))
 	self.do_container:add(front)
+
+	local font = FontPackage:get("resources_normal", true)
+	self.text = core.renderer.text(font):shadow(1):translate(bw / 2 + 11, font:height() + 32)
+	self.do_container:add(self.text)
 
 	MiniContainer.init(self, minimalist)
 
@@ -73,6 +78,8 @@ function _M:update(nb_keyframes)
 			local m = math.max(game.level.max_turn_counter, c)
 			local p = c / m
 			self.sand:cutoff(0, self.sand_h * (1-p), self.sand_w, self.sand_h * p)
+
+			self.text:text(("%d"):format(game.level.turn_counter / 10)):center()
 
 			self.old_turn = game.level.turn_counter
 			self.old_turn_max = game.level.max_turn_counter
