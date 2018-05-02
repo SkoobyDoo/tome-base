@@ -30,6 +30,7 @@ local Stats = require "engine.interface.ActorStats"
 local Textzone = require "engine.ui.Textzone"
 local FontPackage = require "engine.FontPackage"
 local EquipDoll = require "engine.ui.EquipDoll"
+local ActorFrame = require "engine.ui.ActorFrame"
 local TextzoneList = require "engine.ui.TextzoneList"
 
 module(..., package.seeall, class.inherit(Dialog, mod.class.interface.TooltipsData))
@@ -50,6 +51,8 @@ function _M:init(actor, start_tab)
 	Dialog.init(self, "Character Sheet: "..self.actor.name, util.bound(self.font_w*200, game.w*0.5, game.w*0.95), util.bound(self.font_h*36, game.h*.35, game.h*.85))
 
 	self.talent_sorting = config.settings.tome.charsheet_talent_sorting or 1
+
+	local c_actor = ActorFrame.new{w=128, h=128, actor=actor}
 
 	self.c_general = Tab.new{title="[G]eneral", default=start_tab == "general", on_change=function(s) if s then self:switchTo("general") end end}
 	self.c_attack = Tab.new{title="[A]ttack", default=start_tab == "attack", on_change=function(s) if s then self:switchTo("attack") end end}
@@ -187,6 +190,7 @@ Mouse: Hover over stat for info
 		{left=0, top=self.c_tut.h + self.c_general.h, ui=self.vs},
 		{right=0, bottom=0, ui=self.b_talents_sorting},
 		{left=0, top=self.c_tut.h + self.c_general.h + 5 + self.vs.h, ui=self.c_desc},
+		{right=0, top=-16, ignore_size=true, ui=c_actor}
 	}
 --	self:setFocus(self.c_general)
 	self:setupUI()
@@ -241,11 +245,6 @@ _M.immune_order = table.keys(_M.immune_types)
 table.sort(_M.immune_order, function(a, b)
 		return (_M.immune_labels[a] or "_") < (_M.immune_labels[b] or "_")
 	end)
-	
-function _M:innerDisplay(x, y, nb_keyframes)
-	-- DGDGDGDG
-	-- self.actor:toScreen(nil, x + self.iw - 128, y + 6, 128, 128)
-end
 
 function _M:switchTo(kind)
 	if not self.done_generating then return end
