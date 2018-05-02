@@ -356,6 +356,8 @@ newEntity{
 		purse = 5,
 		empty_before_restock = false,
 		filters = {
+		},
+		fixed = {
 			{id=true, defined="ZIGUR_HISTORY"},
 		},
 	},
