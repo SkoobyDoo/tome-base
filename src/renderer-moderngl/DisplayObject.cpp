@@ -964,7 +964,7 @@ void DORVertexes::render(RendererGL *container, mat4& cur_model, vec4& cur_color
 	if (!visible || !cur_visible) return;
 	mat4 vmodel = cur_model * model;
 	vec4 vcolor = cur_color * color;
-	auto dl = getDisplayList(container, tex, shader, data_kind, RenderKind::QUADS);
+	auto dl = getDisplayList(container, tex, shader, data_kind, render_kind);
 
 	// Make sure we do not have to reallocate each step
 	int nb = vertices.size();

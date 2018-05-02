@@ -153,6 +153,7 @@ public:
 	virtual const char* getKind() { return "DORTarget"; };
 	virtual void setTexture(GLuint tex, int lua_ref, int id);
 
+	GLuint getDepthTexture() { return fbo.depthbuffer; }
 	void setView(View *view, int ref);
 	void setClearColor(float r, float g, float b, float a);
 	void displaySize(int w, int h, bool center);

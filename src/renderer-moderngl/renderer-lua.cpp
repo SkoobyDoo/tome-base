@@ -424,16 +424,6 @@ static int gl_renderer_new(lua_State *L)
 			lua_error(L);
 		}		
 	}
-	// if (lua_isstring(L, 2)) {
-	// 	const char *ms = lua_tostring(L, 2);
-	// 	if (!strcmp(ms, "quads")) kind = RenderKind::QUADS;
-	// 	else if (!strcmp(ms, "triangles")) kind = RenderKind::TRIANGLES;
-	// 	else if (!strcmp(ms, "points")) kind = RenderKind::POINTS;
-	// 	else {
-	// 		lua_pushstring(L, "Parameter to renderer() must be either nil or quads/triangles/points");
-	// 		lua_error(L);
-	// 	}
-	// }
 
 	RendererGL *rgl = new RendererGL(mode);
 	*r = rgl;
@@ -882,6 +872,27 @@ static int gl_vertexes_clear(lua_State *L)
 {
 	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
 	v->clear();
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
+static int gl_vertexes_render_kind(lua_State *L)
+{
+	DORVertexes *v = userdata_to_DO<DORVertexes>(L, 1, "gl{vertexes}");
+	RenderKind kind = RenderKind::QUADS;
+	if (lua_isstring(L, 2)) {
+		const char *ms = lua_tostring(L, 2);
+		if (!strcmp(ms, "quads")) kind = RenderKind::QUADS;
+		else if (!strcmp(ms, "triangles")) kind = RenderKind::TRIANGLES;
+		else if (!strcmp(ms, "points")) kind = RenderKind::POINTS;
+		else if (!strcmp(ms, "lines")) kind = RenderKind::LINES;
+		else {
+			lua_pushstring(L, "Parameter to renderKind() must be either nil or quads/triangles/points/lines");
+			lua_error(L);
+		}
+	}
+	v->setRenderKind(kind);
+
 	lua_pushvalue(L, 1);
 	return 1;
 }
@@ -1924,6 +1935,7 @@ static const struct luaL_Reg gl_vertexes_reg[] =
 	{"textureFontAtlas", gl_vertexes_font_atlas_texture},
 	{"shader", gl_vertexes_shader},
 	{"uniformTween", gl_vertexes_uniform_tween},
+	{"renderKind", gl_vertexes_render_kind},
 	{"clear", gl_vertexes_clear},
 	INJECT_GENERIC_DO_METHODS
 	{NULL, NULL},

@@ -27,8 +27,6 @@
 
 class RendererGL;
 
-enum class RenderKind { QUADS, TRIANGLES, POINTS, LINES }; 
-
 // struct sortable_vertex {
 // 	vertex v;
 // 	array<GLuint, DO_MAX_TEX> tex;

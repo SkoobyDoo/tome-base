@@ -38,6 +38,8 @@ extern lua_State *L;
 using namespace glm;
 using namespace std;
 
+enum class RenderKind { QUADS, TRIANGLES, POINTS, LINES }; 
+
 class View;
 class RendererGL;
 class DisplayObject;
@@ -209,6 +211,7 @@ class DORVertexes : public DORFlatSortable{
 	friend class DisplayObject;
 	friend class DORTweener;
 protected:
+	RenderKind render_kind = RenderKind::QUADS;
 	uint8_t data_kind = VERTEX_BASE;
 	vector<vertex> vertices;
 	vector<vertex_map_info> vertices_map_info;
@@ -239,6 +242,7 @@ public:
 	void clear();
 
 	void setDataKinds(uint8_t kinds);
+	void setRenderKind(RenderKind kind) { render_kind = kind; }
 
 	void reserveQuads(int nb) { if (nb <= 0) return; vertices.reserve(4 * nb); };
 
