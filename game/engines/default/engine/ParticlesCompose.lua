@@ -101,3 +101,7 @@ end
 function _M:shiftCustom(dx, dy)
 	self.ps:shift(dx, dy)
 end
+
+function _M:trigger(name)
+	self.ps:trigger(name)
+end

@@ -2228,7 +2228,6 @@ do return end
 		end,
 
 		SHOW_CHARACTER_SHEET = function()
-			package.loaded["mod.dialogs.CharacterSheet"] = nil
 			self:registerDialog(require("mod.dialogs.CharacterSheet").new(self.player))
 		end,
 
