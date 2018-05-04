@@ -55,6 +55,7 @@ newEntity{
 	dig = "BOGWATER",
 	nice_tiler = { method="replace", base={"BOGTREE", 100, 1, 20}},
 	shader = "water",
+	z = 1,
 }
 for i = 1, 20 do
 	newEntity(class:makeNewTrees({base="BOGTREE", define_as = "BOGTREE"..i, image = "terrain/water_grass_5_1.png"}, {
@@ -72,7 +73,8 @@ end
 newEntity{ base="WATER_BASE",
 	define_as = "BOGWATER",
 	name = "bog water",
-	image="terrain/water_grass_5_1.png",
+	image = "terrain/water_grass_5_1.png",
+	shader = "water",
 }
 
 newEntity{ base="BOGWATER",
