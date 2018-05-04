@@ -72,33 +72,37 @@ function _M:init(t, no_default)
 
 	mod.class.Grid.init(self, t, no_default)
 
-	self.world_sphere = Quadratic.new()
-
 	self.sphere_size = self.sphere_size * Map.tile_w
 end
 
 function _M:defineDisplayCallback()
 	if not self._mo then return end
 
-	local tex = Map.tiles:get('', 0, 0, 0, 0, 0, 0, self.sphere_map)
+	local planettex = core.loader.png("/data/gfx/shockbolt/"..self.sphere_map)
+	local cloudtex = core.loader.png("/data/gfx/shockbolt/stars/clouds.png")
+	local planet = self.makePlanet(planettex, cloudtex, {160/255, 160/255, 200/255, 0.5}, self.sphere_size, {planet_time_scale=100000, clouds_time_scale=70000, rotate_angle=math.rad(22), light_angle=math.pi})
+	local planet_renderer = core.renderer.renderer("static"):add(planet)
 
 	self._mo:displayCallback(function(x, y, w, h, zoom, on_map, tlx, tly)
 		if not game.level then return end
-		local rot = (game.level.data.frames % self.rot_speed) * 360 / self.rot_speed
+		print("---------", x, y)
+		planet_renderer:toScreen(0, 0)
 
-		core.display.glDepthTest(true)
-		core.display.glMatrix(true)
-		core.display.glTranslate(x + w / 2, y + h / 2, 0)
-		core.display.glRotate(self.x_rot, 0, 1, 0)
-		core.display.glRotate(self.y_rot, 1, 0, 0)
-		core.display.glRotate(rot, 0, 0, 1)
-		core.display.glColor(1, 1, 1, 1)
+		-- local rot = (game.level.data.frames % self.rot_speed) * 360 / self.rot_speed
 
-		tex:bind(0)
-		self.world_sphere.q:sphere(self.sphere_size)
+		-- core.display.glDepthTest(true)
+		-- core.display.glMatrix(true)
+		-- core.display.glTranslate(x + w / 2, y + h / 2, 0)
+		-- core.display.glRotate(self.x_rot, 0, 1, 0)
+		-- core.display.glRotate(self.y_rot, 1, 0, 0)
+		-- core.display.glRotate(rot, 0, 0, 1)
+		-- core.display.glColor(1, 1, 1, 1)
 
-		core.display.glMatrix(false)
-		core.display.glDepthTest(false)
+		-- tex:bind(0)
+		-- self.world_sphere.q:sphere(self.sphere_size)
+
+		-- core.display.glMatrix(false)
+		-- core.display.glDepthTest(false)
 
 		return true
 	end)
