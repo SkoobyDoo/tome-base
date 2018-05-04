@@ -114,11 +114,7 @@ return {
 	post_process = function(level)
 		if level.level == 1 then
 			local Map = require "engine.Map"
-			if core.shader.allow("volumetric") then
-				level.starfield_shader = require("engine.Shader").new("starfield", {size={Map.viewport.width, Map.viewport.height}})
-			else
-				level.background_particle = require("engine.Particles").new("starfield", 1, {width=Map.viewport.width, height=Map.viewport.height})
-			end
+			level.background_particle = require("engine.Particles").new("starfield", 1, {width=Map.viewport.width, height=Map.viewport.height, speed=2000})
 			if config.settings.tome.weather_effects and core.shader.allow("distort") then
 				level.foreground_particle = require("engine.Particles").new("temporalsnow", 1, {width=Map.viewport.width, height=Map.viewport.height, r=0.65, g=0.25, b=1, rv=-0.001, gv=0, bv=-0.001, factor=2, dir=math.rad(110+180)})
 			end
@@ -178,11 +174,7 @@ return {
 		if level.level ~= 1 then return end
 
 		local Map = require "engine.Map"
-		if level.starfield_shader and level.starfield_shader.shad then
-			level.starfield_shader.shad:use(true)
-			core.display.drawQuad(x, y, Map.viewport.width, Map.viewport.height, 1, 1, 1, 1)
-			level.starfield_shader.shad:use(false)
-		elseif level.background_particle then
+		if level.background_particle then
 			level.background_particle.ps:toScreen(x, y, true, 1)
 		end
 	end,

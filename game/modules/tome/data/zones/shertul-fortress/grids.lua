@@ -371,6 +371,7 @@ newEntity{
 				self._mo:displayCallback(function(x, y, w, h)
 					local p = game:getPlayer(true)
 					if not p or not game.level or not game.level.map then return end
+					-- DGDGDGDG
 					p:toScreen(game.level.map.tiles, x + w * 0.23, y + h * 0.3, w * 0.6, h * 0.6, 0.5, false, false)
 				end)
 			end,

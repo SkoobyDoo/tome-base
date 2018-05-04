@@ -17,34 +17,5 @@
 -- Nicolas Casalini "DarkGod"
 -- darkgod@te4.org
 
-require "engine.class"
-local Tiles = require "engine.Tiles"
-local Base = require "engine.ui.Base"
-
---- A generic entity display
--- @classmod engine.ui.EntityDisplay
-module(..., package.seeall, class.inherit(Base))
-
-function _M:init(t)
-	self.entity = t.entity
-	self.w = assert(t.width, "no entity width")
-	self.h = assert(t.height, "no entity height")
-	self.back_color = t.back_color
-
-	Base.init(self, t)
-end
-
-function _M:generate()
-	self.mouse:reset()
-	self.key:reset()
-end
-
-function _M:display(x, y)
-	if not self.entity then return end
-
-	if self.back_color then
-		core.display.drawQuad(x, y, self.w, self.h, unpack(self.back_color))
-	end
-
-	self.entity:toScreen(nil, x, y, self.w, self.h)
-end
+local _M = require "engine.ui.ActorFrame"
+return _M

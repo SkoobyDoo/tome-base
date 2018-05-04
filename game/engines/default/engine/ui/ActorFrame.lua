@@ -26,10 +26,11 @@ local Tiles = require "engine.Tiles"
 module(..., package.seeall, class.inherit(Base))
 
 function _M:init(t)
-	self.actor = assert(t.actor, "no actorframe actor")
+	self.actor = assert(t.actor or t.entity, "no actorframe actor")
 	self.w = assert(t.w, "no actorframe w")
 	self.h = assert(t.h, "no actorframe h")
 	self.tiles = t.tiles or Tiles.new(self.w, self.h, nil, nil, true, nil)
+	self.back_color = t.back_color
 
 	t.request_renderer = true
 	Base.init(self, t)
@@ -39,9 +40,14 @@ end
 function _M:setActor(actor)
 	if actor.getDO then
 		self.actor = actor
-		self.do_container:clear():add(self.actor:getDO(self.w, self.h))
+		self.do_container:clear()
+		if self.back_color then self.do_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.back_color))) end
+		self.do_container:add(self.actor:getDO(self.w, self.h))
 	end
 end
+_M.setEntity = _M.setActor
 
 function _M:generate()
+	self.mouse:reset()
+	self.key:reset()
 end

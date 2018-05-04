@@ -56,7 +56,15 @@ function _M:generate()
 	if self.image then
 		if self.shadow then self.do_container:add(core.renderer.fromSurface(self.image, 5, 5, self.w, self.h, false, 0, 0, 0, 0.5)) end
 		if self.back_color then self.do_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.back_color))) end
-		self.do_container:add(core.renderer.fromSurface(self.image, 0, 0, self.w, self.h, false, 1, 1, 1, 1))
+		self.img_do = core.renderer.fromSurface(self.image, 0, 0, 1, 1, false, 1, 1, 1, 1):scale(self.w, self.h, 1)
+		self.do_container:add(self.img_do)
+	end
+end
+
+function _M:resize(w, h)
+	self.w, self.h = w, h
+	if self.img_do then
+		self.img_do:scale(self.w, self.h, 1)
 	end
 end
 

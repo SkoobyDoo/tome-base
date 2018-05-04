@@ -74,8 +74,7 @@ function _M:init(l, w, force_height)
 	if l.image then
 		image = Image.new{file="lore/"..l.image, auto_width=true, auto_height=true}
 		while image.w >= game.w * 0.85 or image.h >= game.h * 0.85 do
-			image.w = math.floor(image.w * 0.95)
-			image.h = math.floor(image.h * 0.95)
+			image:resize(math.floor(image.w * 0.95), math.floor(image.h * 0.95))
 		end
 
 		if image.w < w then
