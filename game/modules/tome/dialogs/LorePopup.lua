@@ -69,10 +69,22 @@ function _M:init(l, w, force_height)
 	local image
 	if l.image then
 		image = Image.new{file="lore/"..l.image, auto_width=true, auto_height=true}
-		uis = {
-			{hcenter = 0, top = 3, ui=image},
-			{left = 3, top = 3 + image.h, ui=c_text},
-		}
+		while image.w >= game.w * 0.85 or image.h >= game.h * 0.85 do
+			image.w = math.floor(image.w * 0.95)
+			image.h = math.floor(image.h * 0.95)
+		end
+
+		if image.w < w then
+			uis = {
+				{hcenter = 0, top = 3, ui=image},
+				{left = 3, top = 3 + image.h, ui=c_text},
+			}
+		else
+			uis = {
+				{left = 0, top = 3, ui=image},
+				{left = 3, top = 3 + image.h, ui=c_text},
+			}
+		end
 	end
 	
 	local on_end = function() 
@@ -88,18 +100,18 @@ function _M:init(l, w, force_height)
 	self.key:addBind("ACCEPT", on_end)
 	self:setupUI(true, true)
 
-	if self.w >= game.w or self.h >= game.h then
-		if l.image then
-			image.w = math.floor(image.w / 2)
-			image.h = math.floor(image.h / 2)
-			uis = {
-				{hcenter = 0, top = 3, ui=image},
-				{left = 3, top = 3 + image.h, ui=c_text},
-			}
-		end
-		self:loadUI(uis)
-		self:setupUI(true, true)
-	end
+	-- if self.w >= game.w or self.h >= game.h then
+	-- 	if l.image then
+	-- 		image.w = math.floor(image.w / 2)
+	-- 		image.h = math.floor(image.h / 2)
+	-- 		uis = {
+	-- 			{hcenter = 0, top = 3, ui=image},
+	-- 			{left = 3, top = 3 + image.h, ui=c_text},
+	-- 		}
+	-- 	end
+	-- 	self:loadUI(uis)
+	-- 	self:setupUI(true, true)
+	-- end
 
 	game:registerDialog(self)
 	game:playSound("actions/read")
