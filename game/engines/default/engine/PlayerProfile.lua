@@ -579,7 +579,7 @@ function _M:eventGetNews(e)
 end
 
 function _M:eventIncrLogConsume(e)
-	local module = game.__mod_info.short_name
+	local module = type(game) == "table" and game.__mod_info.short_name
 	if not module then return end
 	print("[PROFILE] Server accepted our incr log, deleting")
 	local pop = self:mountProfile(true, module)
