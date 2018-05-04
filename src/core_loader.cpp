@@ -299,6 +299,7 @@ static int lua_loader_png(lua_State *L) {
 	// l->finish();
 	// delete l;
 
+	// if this is chagned remember to change the caching superload in utils.lua
 	lua_pushnumber(L, sw);
 	lua_pushnumber(L, sh);
 	lua_pushnumber(L, 1);

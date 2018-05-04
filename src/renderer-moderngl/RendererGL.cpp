@@ -449,9 +449,10 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 			} else if ((*dl)->render_kind == RenderKind::POINTS) {
 				glDrawArrays(GL_POINTS, 0, (*dl)->list.size());
 			} else if ((*dl)->render_kind == RenderKind::LINES) {
-				glLineWidth(25);
-				glEnable(GL_LINE_SMOOTH);
+				glLineWidth(line_width);
+				if (line_smooth) glEnable(GL_LINE_SMOOTH);
 				glDrawArrays(GL_LINES, 0, (*dl)->list.size());
+				if (line_smooth) glDisable(GL_LINE_SMOOTH);
 			}
 			nb_vert += (*dl)->list.size();
 		}

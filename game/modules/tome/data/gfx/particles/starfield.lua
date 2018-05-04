@@ -19,7 +19,7 @@
 
 if core.shader.allow("volumetric") then ------------ Shader mode
 
-use_shader = {type="starfield", size={width, height}, speed=200}
+use_shader = {type="starfield", size={width, height}, speed=speed or 200}
 
 base_size = 64
 

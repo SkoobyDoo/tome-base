@@ -1,0 +1,38 @@
+return {
+	parameters = { size=100.000000 },
+	{
+		display_name = "beam",
+		max_particles = 800, blend=PC.AdditiveBlend, type=PC.RendererPoint, compute_only=false,
+		texture = "/data/gfx/particles_textures/directional_particle.png",
+		shader = "particles/glow",
+		emitters = {
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.FixedColorGenerator, color_stop={0.516269, 0.051919, 0.953125, 0.981481}, color_start={0.925802, 0.473890, 0.933594, 0.055556}},
+				{PC.LifeGenerator, min=2.000000, max=2.000000},
+				{PC.StartStopSizeGenerator, min_start_size=15.000000, min_stop_size=1.000000, max_stop_size=3.000000, max_start_size=20.000000},
+				{PC.DirectionVelGenerator, min_vel="size/2*0.9", max_vel="size/2*1.1", from={0.000000, 0.000000}, min_rot=0.000000, max_rot=6.283185},
+				{PC.CirclePosGenerator, width=2.000000, max_angle=6.283185, base_point={0.000000, 0.000000}, radius=10.000000, min_angle=0.000000},
+				{PC.OriginPosGenerator},
+				{PC.RotationByVelGenerator, min_rot=0.000000, max_rot=0.000000},
+			}, hide=false, startat=0.000000, duration=0.800000, rate=0.030000, display_name="sides", nb=10.000000, dormant=false },
+			{PC.LinearEmitter, {
+				{PC.BasicTextureGenerator},
+				{PC.FixedColorGenerator, color_stop={0.860354, 0.259348, 0.949219, 0.015432}, color_start={0.513725, 0.050980, 0.952941, 1.000000}},
+				{PC.LifeGenerator, min=1.000000, max=1.000000},
+				{PC.StartStopSizeGenerator, min_start_size=10.000000, min_stop_size=1.000000, max_start_size=15.000000, max_stop_size=3.000000},
+				{PC.DirectionVelGenerator, min_vel=-80.000000, max_vel=-100.000000, from={0.000000, 0.000000}, min_rot=0.000000, max_rot=6.283185},
+				{PC.CirclePosGenerator, width=2.000000, max_angle=6.283185, base_point={0.000000, 0.000000}, radius="size", min_angle=0.000000},
+				{PC.OriginPosGenerator},
+				{PC.RotationByVelGenerator, min_rot=0.000000, max_rot=0.000000},
+				{PC.DirectionVelGenerator, min_vel="-size*0.9", max_vel="-size*1.1", from={0.000000, 0.000000}, min_rot=0.000000, max_rot=0.000000},
+			}, startat=1.700000, duration=0.800000, rate=0.030000, dormant=false, hide=false, nb=10.000000, display_name="sides (duplicated)" },
+		},
+		updaters = {
+			{PC.BasicTimeUpdater},
+			{PC.EasingSizeUpdater, easing="inBack"},
+			{PC.EasingColorUpdater, bilinear=true, easing="inOutSine"},
+			{PC.EasingPosUpdater, easing="inQuad"},
+		},
+	},
+}

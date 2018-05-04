@@ -98,6 +98,9 @@ protected:
 	vec4 cutpos1;
 	vec4 cutpos2;
 
+	bool line_smooth = false;
+	float line_width = 1;
+
 	shader_type *my_default_shader = NULL;
 	int my_default_shader_lua_ref = LUA_NOREF;
 
@@ -127,6 +130,7 @@ public:
 	void zSorting(SortMode mode) { zsort = mode; };
 	void enableBlending(bool v) { allow_blending = v; };
 	void premultipliedAlpha(bool v) { premultiplied_alpha = v; };
+	void setLineMode(float size, bool smooth) { line_width = size; line_smooth = smooth; }
 	void sortedToDL();
 	void update();
 	virtual void toScreen(mat4 cur_model, vec4 color);

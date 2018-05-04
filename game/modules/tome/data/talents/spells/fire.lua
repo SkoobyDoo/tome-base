@@ -52,7 +52,7 @@ newTalent{
 		else
 			grids = self:project(tg, x, y, DamageType.FIREBURN, self:spellCrit(t.getDamage(self, t)))
 			local _ _, x, y = self:canProject(tg, x, y)
-			game.level.map:particleEmitter(self.x, self.y, tg.radius, "flamebeam", {tx=x-self.x, ty=y-self.y})
+			game.level.map:particleComposeEmitter(self.x, self.y, tg.radius, "flame_beam", {tx=(x-self.x)*Map.tile_w, ty=(y-self.y)*Map.tile_h})
 		end
 
 		if self:attr("burning_wake") and grids then

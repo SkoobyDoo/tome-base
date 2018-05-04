@@ -326,7 +326,7 @@ end
 
 function _M:setTextShadow(color, x, y)
 	if color == false or color == nil then
-		self.text_shadow = nil
+		self.text_shadow = false
 	elseif type(v) == "table" then -- Already a color, use it
 		self.text_shadow = {x=x, y=y or x, color=colors.smart1(v)}
 	else -- Just use a default outline value
@@ -336,7 +336,7 @@ end
 
 function _M:setTextOutline(v)
 	if v == false or v == nil then
-		self.text_outline = nil
+		self.text_outline = false
 	elseif type(v) == "table" then -- Already a color, use it
 		self.text_outline = colors.smart1(v)
 	elseif type(v) == "number" then -- Assuem this is the desired alpha

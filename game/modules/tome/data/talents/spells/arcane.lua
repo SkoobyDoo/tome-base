@@ -45,7 +45,7 @@ newTalent{
 		self:project(tg, x, y, DamageType.ARCANE, self:spellCrit(t.getDamage(self, t)), nil)
 		local _ _, x, y = self:canProject(tg, x, y)
 		if tg.type == "beam" then
-			game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "mana_beam", {tx=x-self.x, ty=y-self.y})
+			game.level.map:particleComposeEmitter(self.x, self.y, tg.radius, "arcane_beam", {tx=(x-self.x)*Map.tile_w, ty=(y-self.y)*Map.tile_h})
 		else
 			game.level.map:particleEmitter(x, y, 1, "manathrust")
 		end

@@ -18,6 +18,7 @@
 -- darkgod@te4.org
 
 local tween = require "tween"
+local Shader = require "engine.Shader"
 local DOVertexes = core.game.getCClass("gl{vertexes}")
 local DORenderer = core.game.getCClass("gl{renderer}")
 local DOText = core.game.getCClass("gl{text}")
@@ -34,6 +35,63 @@ local DOAll = {
 	DOVertexes, DORenderer, DOText, DOContainer, DOTarget, DOCallback, DOSpriter, DOParticles,
 	Map2D, Minimap2D, MapObjectRenderer,
 }
+
+-----------------------------------------------------------------------------------
+-- Drawing primitives
+-----------------------------------------------------------------------------------
+core.renderer.draw = {}
+function core.renderer.draw.arc(x, y, radius, angle1, angle2, points, r, g, b, a, v)
+	v = v or core.renderer.vertexes()
+
+	-- Nothing to display with no points or equal angles. (Or is there with line mode?)
+	points = points or math.max(10, radius)
+	if points <= 0 or angle1 == angle2 then return v end
+
+	-- Oh, you want to draw a circle?
+	if math.abs(angle1 - angle2) >= 2.0 * math.pi then
+		-- circle(mode, x, y, radius, points)
+		return v
+	end
+
+	local angle_shift = (angle2 - angle1) / points
+	-- Bail on precision issues.
+	if angle_shift == 0.0 then return v end
+
+	local phi = angle1
+	local num_coords = (points + 3) * 2
+	local coords = { {x=x, y=y} }
+	v:point(x, y, 0, 0, r, g, b, a)
+
+	for i = 0, points do
+		table.insert(coords, {x=x + radius * math.cos(phi), y=y + radius * math.sin(phi)})
+		v:point(x + radius * math.cos(phi), y + radius * math.sin(phi), 0, 0, r, g, b, a)
+		v:point(x + radius * math.cos(phi), y + radius * math.sin(phi), 0, 0, r, g, b, a)
+		phi = phi + angle_shift
+	end
+
+	v:point(x, y, 0, 0, r, g, b, a)
+	table.insert(coords, {x=x, y=y})
+
+	v:renderKind("lines")
+
+	-- table.print(coords)
+	-- // GL_POLYGON can only fill-draw convex polygons, so we need to do stuff manually here
+	-- if (mode == DRAW_LINE)
+	-- {
+	-- 	polyline(coords, num_coords); // Artifacts at sharp angles if set to looping.
+	-- }
+	-- else
+	-- {
+	-- 	gl.prepareDraw();
+	-- 	gl.bindTexture(0);
+	-- 	glEnableClientState(GL_VERTEX_ARRAY);
+	-- 	glVertexPointer(2, GL_FLOAT, 0, (const GLvoid *) coords);
+	-- 	glDrawArrays(GL_TRIANGLE_FAN, 0, points + 2);
+	-- 	glDisableClientState(GL_VERTEX_ARRAY);
+	-- }
+
+	return v
+end
 
 -----------------------------------------------------------------------------------
 -- Loaders and initializers
@@ -53,6 +111,7 @@ end
 local white = core.loader.png("/data/gfx/white.png")
 core.renderer.white = white
 core.renderer.plaincolor = white
+core.renderer.colorshader = Shader.new("default/color")
 
 function DOVertexes:plainColorQuad()
 	self:texture(white)

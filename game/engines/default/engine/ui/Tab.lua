@@ -68,6 +68,8 @@ function _M:generate()
 	self.key:addCommands{
 		_SPACE = function() self:select() end,
 	}
+
+	self.finished = true
 end
 
 function _M:select(selected, notrig)
@@ -79,7 +81,7 @@ function _M:proxyDataSet(k, v)
 	if k == "selected" and self.do_container then
 		self.frame_do.container:shown(not v)
 		self.frame_sel_do.container:shown(v)
-		if self.on_change and not notrig then self.on_change(v) end
+		if self.on_change and self.finished then self.on_change(v) end
 	end
 	return true
 end

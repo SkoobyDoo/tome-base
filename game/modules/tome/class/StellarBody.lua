@@ -20,9 +20,49 @@
 require "engine.class"
 require "mod.class.Grid"
 local Map = require "engine.Map"
-local Quadratic = require "engine.Quadratic"
+local Shader = require "engine.Shader"
 
 module(..., package.seeall, class.inherit(mod.class.Grid))
+
+-- STATIC
+function makeAtmosphere(size, light_angle, r, g, b, a)
+	local size2 = size / 2
+	size2 = size2 * 128 / 112
+	local tex = core.loader.png("/data/gfx/shockbolt/stars/atmosphere.png")
+	return core.renderer.vertexes():quad(
+		-size2, -size2,   0, 0,
+		 size2, -size2,   1, 0,
+		 size2,  size2,   1, 1,
+		-size2,  size2,   0, 1,
+		r, g, b, a
+	):texture(tex):rotate(math.pi, 0, light_angle)
+end
+
+-- STATIC
+function makePlanet(planettex, cloudtex, atmosphere, size, args)
+	args = args or {}
+
+	local planet = core.renderer.container()
+
+	-- Build the planet itself
+	local planetshader = Shader.new("planet", args)
+	local vectortex = core.loader.png("/data/gfx/shockbolt/stars/template.png")
+	local size2 = size / 2
+	planet:add(core.renderer.vertexes():quad(
+		-size2, -size2,   0, 0,
+		 size2, -size2,   1, 0,
+		 size2,  size2,   1, 1,
+		-size2,  size2,   0, 1,
+		1, 1, 1, 1
+	):texture(vectortex, 0):texture(planettex, 1):texture(cloudtex, 2):shader(planetshader))
+
+	-- Add an atmosphere
+	if atmosphere then
+		planet:add(makeAtmosphere(size, args.light_angle or math.rad(180), unpack(atmosphere)))
+	end
+
+	return planet
+end
 
 function _M:init(t, no_default)
 	t.sphere_map = t.sphere_map or "stars/eyal.png"

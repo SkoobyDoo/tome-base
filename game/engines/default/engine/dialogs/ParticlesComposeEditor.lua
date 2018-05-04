@@ -41,6 +41,19 @@ local PC = core.particlescompose
 -- @classmod engine.dialogs.ParticlesComposeEditor
 module(..., package.seeall, class.inherit(Dialog))
 
+-- Override paths if editing a module
+local filesprefix = ""
+local fileswritepath = nil
+if __module_extra_info.editmodule then
+	local mrpath = fs.getRealPath('/modules/'..__module_extra_info.editmodule..'/')
+	if mrpath then
+		fs.mount(mrpath, "/editmodule")
+		filesprefix = "/editmodule"
+		fileswritepath = mrpath
+	end
+end
+
+
 local UIDialog
 
 local new_default_linear_emitter = {PC.LinearEmitter, {
@@ -1019,13 +1032,13 @@ function _M:selectTexture(system)
 
 	local list = {}
 
-	for i, file in ipairs(fs.list("/data/gfx/particles_textures/")) do if file:find("%.png$") then
-		list[#list+1] = "/data/gfx/particles_textures/"..file
+	for i, file in ipairs(fs.list(filesprefix.."/data/gfx/particles_textures/")) do if file:find("%.png$") then
+		list[#list+1] = filesprefix.."/data/gfx/particles_textures/"..file
 	end end 
 
 	local clist = ImageList.new{font=self.dfont, width=self.iw, height=self.ih, tile_w=128, tile_h=128, force_size=true, padding=10, scrollbar=true, root_loader=true, list=list, fct=function(item)
 		game:unregisterDialog(d)
-		system.texture = item.data
+		system.texture = item.data:gsub('^'..filesprefix, '')
 		self:makeUI()
 		self:regenParticle()
 	end}
@@ -1043,7 +1056,7 @@ function _M:selectShader(system)
 
 	local list = {{name = "--", path=nil}}
 
-	for i, file in ipairs(fs.list("/data/gfx/shaders/particles/")) do if file:find("%.lua$") then
+	for i, file in ipairs(fs.list(filesprefix.."/data/gfx/shaders/particles/")) do if file:find("%.lua$") then
 		list[#list+1] = {name=file, path="particles/"..file:gsub("%.lua$", "")}
 	end end 
 
@@ -1067,7 +1080,7 @@ function _M:selectFile(spe, field)
 
 	local list = {{name = "--", path=nil}}
 
-	for i, file in ipairs(fs.list(field.dir)) do if file:find(field.filter) then
+	for i, file in ipairs(fs.list(filesprefix..field.dir)) do if file:find(field.filter) then
 		list[#list+1] = {name=file, path=field.dir..file}
 	end end 
 
@@ -1147,7 +1160,7 @@ function _M:init(no_bloom)
 			local menu = require("engine.dialogs.GameMenu").new(list)
 			game:registerDialog(menu)
 		end,
-		-- LUA_CONSOLE = function() game:registerDialog(require("engine.DebugConsole").new()) end,
+		LUA_CONSOLE = function() game:registerDialog(require("engine.DebugConsole").new()) end,
 		FILE_NEW = function() print("FILE_NEW") self.uidialog:reset() end,
 		FILE_LOAD = function() print("FILE_LOAD") self.uidialog:load(self) end,
 		FILE_MERGE = function() print("FILE_MERGE") self.uidialog:merge(self) end,
@@ -1338,8 +1351,8 @@ function UIDialog:load(master)
 	local d = Dialog.new("Load particle effects from /data/gfx/particles/", game.w * 0.6, game.h * 0.6)
 
 	local list = {}
-	for i, file in ipairs(fs.list("/data/gfx/particles/")) do if file:find("%.pc$") then
-		list[#list+1] = {name=file, path="/data/gfx/particles/"..file}
+	for i, file in ipairs(fs.list(filesprefix.."/data/gfx/particles/")) do if file:find("%.pc$") then
+		list[#list+1] = {name=file, path=filesprefix.."/data/gfx/particles/"..file}
 	end end 
 
 	local clist = List.new{font=self.dfont, scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
@@ -1370,8 +1383,8 @@ function UIDialog:merge(master)
 	local d = Dialog.new("Load particle effects from /data/gfx/particles/", game.w * 0.6, game.h * 0.6)
 
 	local list = {}
-	for i, file in ipairs(fs.list("/data/gfx/particles/")) do if file:find("%.pc$") then
-		list[#list+1] = {name=file, path="/data/gfx/particles/"..file}
+	for i, file in ipairs(fs.list(filesprefix.."/data/gfx/particles/")) do if file:find("%.pc$") then
+		list[#list+1] = {name=file, path=filesprefix.."/data/gfx/particles/"..file}
 	end end 
 
 	local clist = List.new{font=self.dfont, scrollbar=true, width=d.iw, height=d.ih, list=list, fct=function(item)
@@ -1477,7 +1490,9 @@ function UIDialog:saveAs(txt, silent)
 
 	local basedir = "/data/gfx/particles/"
 	local path
-	if mod.team then
+	if fileswritepath then
+		path = fileswritepath..basedir
+	elseif mod.team then
 		basedir = "/save/"
 		path = fs.getRealPath(basedir)
 	else

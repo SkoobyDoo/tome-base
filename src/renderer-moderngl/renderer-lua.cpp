@@ -451,6 +451,14 @@ static int gl_renderer_view(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_linemode(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
+	r->setLineMode(lua_tonumber(L, 2), lua_toboolean(L, 3));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_renderer_zsort(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
@@ -1865,6 +1873,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"__gc", gl_renderer_free},
 	{"zSort", gl_renderer_zsort},
 	{"view", gl_renderer_view},
+	{"lineMode", gl_renderer_linemode},
 	INJECT_GENERIC_DO_METHODS
 	{"add", gl_container_add},
 	{"remove", gl_container_remove},
