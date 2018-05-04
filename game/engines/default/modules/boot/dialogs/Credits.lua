@@ -195,7 +195,7 @@ function _M:init()
 
 	self:triggerHook{"Boot:credits", credits=credits}
 
-	self.credit_container = core.renderer.renderer("static")
+	self.credit_container = core.renderer.renderer("static"):translate(game.w / 2, 0)
 	local y = 0
 	for i, credit in ipairs(credits) do
 		local item, w, h = self:makeEntry(credit)
