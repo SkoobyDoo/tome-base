@@ -108,7 +108,7 @@ local changer = function(id)
 				local StellarBody = require "mod.class.StellarBody"
 				local planettex = core.loader.png("/data/gfx/shockbolt/stars/eyal.png")
 				local cloudtex = core.loader.png("/data/gfx/shockbolt/stars/clouds.png")
-				local planet = StellarBody.makePlanet(planettex, cloudtex, {160/255, 160/255, 200/255, 0.5}, 300, {planet_time_scale=100000, clouds_time_scale=70000, rotate_angle=math.rad(22), light_angle=math.pi})
+				local planet = StellarBody.makePlanet(planettex, cloudtex, {160/255, 160/255, 200/255, 0.5}, 600, {planet_time_scale=900000, clouds_time_scale=700000, rotate_angle=math.rad(22), light_angle=math.pi})
 				level.tmpdata.planet_renderer = core.renderer.renderer("static"):add(planet)
 			end
 			level.tmpdata.planet_renderer:toScreen():translate(x + 350 - parx * 60, y + 350 - pary * 60)
