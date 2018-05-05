@@ -582,6 +582,7 @@ function resolvers.calc.moddable_tile(t, e)
 	elseif slot == "shotbag" then r = {"shotbag_01","shotbag_02","shotbag_03","shotbag_04","shotbag_05"}
 	elseif slot == "gembag" then r = {"gembag_01","gembag_02","gembag_03","gembag_04","gembag_05"}
 	end
+	if not r then return end
 	local ml = e.material_level or 1
 	r = r[util.bound(ml, 1, #r)]
 	if r2 then
