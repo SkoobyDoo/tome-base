@@ -327,7 +327,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	if (!visible) return;
 	if (changed_children) update();
 	if (displays.empty()) return;
-	// printf("Displaying renderer %s\n", getRendererName());
+	// printf("Displaying renderer %s with %d\n", getRendererName(), displays.size());
 
 	long int start_time;
 	if (count_time) start_time = SDL_GetTicks();

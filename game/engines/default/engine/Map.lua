@@ -516,7 +516,7 @@ function _M:updateMap(x, y)
 				self._fovcache.path_caches[ps]:set(x, y, g:check("block_move", x, y, self.path_strings_computed[ps] or ps, false, true))
 			end
 
-			g:getMapObjects(self.tiles, mos, 2)
+			g:getMapObjects(self.tiles, mos, 1)
 			g:setupMinimapInfo(g._mo, self)
 		end
 		if t then

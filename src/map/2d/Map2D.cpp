@@ -409,7 +409,8 @@ void MapObjectRenderer::sortZ(RendererGL *container, mat4& cur_model) {
  ** Map itself
  *************************************************************************/
 Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, int32_t mwidth, int32_t mheight)
-	: zdepth(z), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight),
+	// z+1 to account for z=0 on the lua side
+	: zdepth(z+1), w(w), h(h), tile_w(tile_w), tile_h(tile_h), mwidth(mwidth), mheight(mheight),
 	MapObjectProcessor(tile_w, tile_h, true, true, true), seens_vbo(VBOMode::STATIC), grid_lines_vbo(VBOMode::STATIC)
 {
 	w_off = h;
@@ -421,12 +422,12 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	viewport_dimension = viewport_size - viewport_pos;
 
 	// Init the map data
-	map = new sMapObject[z * w * h];
+	map = new sMapObject[zdepth * w * h];
 	map_seens = new float[w * h]; std::fill_n(map_seens, w * h, 0);
 	map_remembers = new bool[w * h]; std::fill_n(map_remembers, w * h, false);
 	map_lites = new bool[w * h]; std::fill_n(map_lites, w * h, false);
 	map_important = new bool[w * h]; std::fill_n(map_important, w * h, false);
-	zobjects = new DisplayObject*[z]; std::fill_n(zobjects, z, nullptr);
+	zobjects = new DisplayObject*[zdepth]; std::fill_n(zobjects, zdepth, nullptr);
 
 	// Init vision data
 	seens_texture_size = powerOfTwoSize(viewport_dimension.x, viewport_dimension.y);
@@ -450,9 +451,10 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	);
 
 	// Init renderers
-	for (int32_t i = 0; i < z; i++) {
+	for (int32_t i = 0; i < zdepth; i++) {
 		RendererGL *renderer = new RendererGL(VBOMode::STREAM);
-		renderer->setRendererName(strdup("map-layer"), false);
+		string name("map-layer:"); name += to_string(i);
+		renderer->setRendererName(strdup(name.c_str()), false);
 		renderer->setManualManagement(true);
 		// renderer->countDraws(true);
 		renderers.push_back(renderer);

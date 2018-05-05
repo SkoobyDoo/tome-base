@@ -426,7 +426,7 @@ static int map_set_grid(lua_State *L) {
 	if (x < 0 || y < 0 || x >= size.x || y >= size.y) return 0;
 
 	for (uint8_t z = 0; z < map->getDepth(); z++) {
-		lua_pushnumber(L, z + 1);
+		lua_pushnumber(L, z);
 		lua_gettable(L, 4); // Access the table of mos for this spot
 		sMapObject mo(nullptr);
 		if (!lua_isnoneornil(L, -1)) mo = lua_get_sobj<MapObject>(L, "core{mapobj2d}", -1);

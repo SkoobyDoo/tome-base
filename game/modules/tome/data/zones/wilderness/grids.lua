@@ -338,7 +338,7 @@ newEntity{
 	always_remember = true,
 	can_encounter="water", equilibrium_level=-10,
 	special_minimap = colors.BLUE,
-	shader = "water",
+	shader = "water", z = 0,
 }
 newEntity{ base = "WATER_BASE", define_as = "WATER_BASE_DEEP", can_pass = {pass_water=1}, does_block_move = true }
 
