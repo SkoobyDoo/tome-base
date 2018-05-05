@@ -104,7 +104,8 @@ newKind{
 		if o then return o:getDO(64, 64) end
 	end,
 	use = function(self, actor)
-		local o, item, inven = actor:findInAllInventories(self.data)
+		-- local o, item, inven = actor:findInAllInventories(self.data)
+		local o, item, inven = actor:findInAllInventories(self.data, {no_add_name=true, force_id=true, no_count=true})
 		if not o then require("engine.ui.Dialog"):simplePopup("Item not found", "You do not have any "..self.data..".")
 		else actor:playerUseItem(o, item, inven)
 		end
