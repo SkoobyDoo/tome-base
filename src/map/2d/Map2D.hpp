@@ -313,9 +313,10 @@ public:
 	inline vec2 getSize() { return {w, h}; }
 	inline vec2 getTileSize() { return {tile_w, tile_h}; }
 	inline uint8_t getDepth() { return zdepth; }
-	void setShown(vec4 t) { shown = t; }
-	void setObscure(vec4 t) { obscure = t; }
-	void setTint(vec4 t) { tint = t; }
+	void fullRedraw() { for (int32_t z = 0; z < zdepth; z++) renderers_changed[z] = true; }
+	void setShown(vec4 t) { shown = t; fullRedraw(); }
+	void setObscure(vec4 t) { obscure = t; fullRedraw(); }
+	void setTint(vec4 t) { tint = t; fullRedraw(); }
 	void setDefaultShader(shader_type *s, int ref);
 
 	/* Scrolling */

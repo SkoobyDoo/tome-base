@@ -79,6 +79,6 @@ void main(void)
 	float ddy = dy - reflectionCutOff;
 	if (ddx > 0. && ddy > 0.) alpha = pow(alpha, ddx*ddy*reflectionIntence);
 		
-	vec4 col = texture2D(tex,c1)*(alpha);
+	vec4 col = texture2D(tex, mod(c1, vec2(1.0, 1.0))) * alpha;
 	gl_FragColor = col;
 }
