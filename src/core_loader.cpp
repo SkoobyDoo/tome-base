@@ -408,6 +408,7 @@ extern "C" void core_loader_waitall() {
 }
 
 static int lua_loader_wait(lua_State *L) {
+	core_loader_waitall();
 	return 0;
 }
 
