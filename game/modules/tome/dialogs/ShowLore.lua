@@ -23,6 +23,7 @@ local ListColumns = require "engine.ui.ListColumns"
 local TextzoneList = require "engine.ui.TextzoneList"
 local Separator = require "engine.ui.Separator"
 local Image = require "engine.ui.Image"
+local Empty = require "engine.ui.Empty"
 
 module(..., package.seeall, class.inherit(Dialog))
 
@@ -37,6 +38,8 @@ function _M:init(title, actor)
 
 	local vsep = Separator.new{dir="horizontal", size=self.ih - 10}
 	self.c_desc = TextzoneList.new{width=math.floor(self.iw / 2 - vsep.w / 2), scrollbar=true, height=self.ih}
+	self.c_image_dummy = Empty.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=1}
+	self.c_image = self.c_image_dummy
 
 	self:generateList()
 
@@ -49,6 +52,7 @@ function _M:init(title, actor)
 	self:loadUI{
 		{left=0, top=0, ui=self.c_list},
 		{right=0, top=0, ui=self.c_desc},
+		{right=0, top=self.c_desc, ui=self.c_image},
 		{hcenter=0, top=5, ui=vsep},
 	}
 	self:setFocus(self.c_list)
@@ -77,24 +81,16 @@ end
 function _M:select(item)
 	if item then
 		self.c_desc:switchItem(item, ("#GOLD#Category:#AQUAMARINE# %s\n#GOLD#Found as:#0080FF# %s\n#GOLD#Text:#ANTIQUE_WHITE# %s"):format(item.cat, item.name, item.desc))
-		if item.image then
-			if type(item.image) == "string" then
-				self.image = Image.new{file="lore/"..item.image, auto_width=true, auto_height=true}
-				local r = self.image.w / self.image.h
-				self.image.w = self.iw / 2 - 20
-				self.image.h = self.image.w / r
-				item.image = self.image
-			else
-				self.image = item.image
-			end
+		if item.image and type(item.image) == "string" then
+			local image = Image.new{file="lore/"..item.image, auto_width=true, auto_height=true}
+			local r = image.w / image.h
+			image:resize(self.iw / 2 - 20, (self.iw / 2 - 20) / r)
+			self:replaceUI(self.c_image, image)
+			self.c_image = image
+			self:moveUIElement(self.c_image, self.iw - image.w, self.ih - image.h)
 		else
-			self.image = nil
+			self:replaceUI(self.c_image, self.c_image_dummy)
+			self.c_image = self.c_image_dummy
 		end
-	end
-end
-
-function _M:innerDisplay(x, y, nb_keyframes)
-	if self.image then
-		self.image:display(x + self.iw - self.image.w, y + self.ih - self.image.h)
 	end
 end

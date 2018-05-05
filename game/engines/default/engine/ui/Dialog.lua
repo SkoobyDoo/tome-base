@@ -574,6 +574,19 @@ function _M:generate()
 		_RIGHT = function() self:moveFocus(1) end,
 	}
 	self.key:addBind("SCREENSHOT", function() if type(game) == "table" and game.key then game.key:triggerVirtual("SCREENSHOT") end end)
+	if config.settings.cheat and self:getClassName() ~= "engine.DebugConsole" then
+		self.key:addBind("LUA_CONSOLE", function()
+			local DebugConsole = require "engine.DebugConsole"
+			local d = DebugConsole.new()
+			if game and game.dialogs and game.dialogs[self] then
+				DebugConsole.line = "=game.dialogs["..game.dialogs[self].."]"
+				DebugConsole.line_pos = #DebugConsole.line
+				d.changed_input = true
+			end
+			game:registerDialog(d)
+		end)
+	end
+
 end
 
 function _M:updateTitle(title)
@@ -613,6 +626,16 @@ function _M:loadUI(t)
 			ui.ui:setFocus(false)
 		end
 	end
+end
+
+function _M:getActualContainer()
+	local actual_container = self.do_container
+	if self.allow_scroll then
+		actual_container = core.renderer.container()
+		self.do_container:add(actual_container)
+		self.scroll_container = actual_container
+	end
+	return actual_container
 end
 
 function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
@@ -670,13 +693,7 @@ function _M:setupUI(resizex, resizey, on_resize, addmw, addmh)
 	self:resize(nw, nh)
 
 	self.do_container:clear()
-	local actual_container = self.do_container
-	if self.allow_scroll then
-		actual_container = core.renderer.container()
-		self.do_container:add(actual_container)
-		self.scroll_container = actual_container
-	end
-
+	local actual_container = self:getActualContainer()
 
 	local full_h = 0
 	for i, ui in ipairs(self.uis) do
@@ -811,10 +828,16 @@ end
 function _M:replaceUI(oldui, newui)
 	for i, ui in ipairs(self.uis) do
 		if ui.ui == oldui then
+			if oldui.do_container then oldui.do_container:removeFromParent() end
 			ui.ui = newui
 			ui.ui.mouse.delegate_offset_x = ui.x
 			ui.ui.mouse.delegate_offset_y = ui.y
 			ui.ui:positioned(ui.x, ui.y, self.display_x + ui.x, self.display_y + ui.y)
+			if ui.ui.do_container then
+				ui.ui.do_container:translate(ui.x, ui.y, 0)
+				ui.ui.do_container:removeFromParent()
+				self:getActualContainer():add(ui.ui.do_container)
+			end
 		end
 	end
 end
@@ -837,18 +860,25 @@ function _M:setFocus(id, how)
 	self:on_focus(id, ui)
 end
 
-function _M:moveUIElement(id, left, right, top, bottom)
+function _M:moveUIElement(id, x, y)
 	if type(id) == "table" then
 		for i = 1, #self.uis do
 			if self.uis[i].ui == id then id = i break end
 		end
 		if type(id) == "table" then return end
 	end
+	local ui = self.uis[id]
 
-	self.uis[id].left = left or self.uis[id].left
-	self.uis[id].right = right or self.uis[id].right
-	self.uis[id].top = top or self.uis[id].top
-	self.uis[id].bottom = bottom or self.uis[id].bottom
+	if not x then x = ui.x end
+	if not y then y = ui.y end
+
+	ui.x, ui.y = x, y
+	ui.ui.mouse.delegate_offset_x = ui.x
+	ui.ui.mouse.delegate_offset_y = ui.y
+	ui.ui:positioned(ui.x, ui.y, self.display_x + ui.x, self.display_y + ui.y)
+	if ui.ui.do_container then
+		ui.ui.do_container:translate(ui.x, ui.y, 0)
+	end
 end
 
 function _M:getUIElement(id)

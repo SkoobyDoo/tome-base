@@ -26,7 +26,6 @@ newEntity{
 	type = "floor", subtype = "lava",
 	name = "lava floor", image = "terrain/lava_floor.png",
 	display = '.', color=colors.RED, back_color=colors.DARK_GREY,
-	shader = "lava",
 	mindam = resolvers.mbonus(5, 15),
 	maxdam = resolvers.mbonus(10, 30),
 	DamageType = engine.DamageType.FIRE,
