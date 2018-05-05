@@ -24,6 +24,7 @@ local ListColumns = require "engine.ui.ListColumns"
 local Textzone = require "engine.ui.Textzone"
 local TextzoneList = require "engine.ui.TextzoneList"
 local Separator = require "engine.ui.Separator"
+local EntityDisplay = require "engine.ui.EntityDisplay"
 
 module(..., package.seeall, class.inherit(Dialog))
 -- Could use better icons when available
@@ -81,6 +82,7 @@ Right click or press '~' to configure talent confirmation and automatic use.
 			else return "" end
 		end},
 	}
+	self.c_image = EntityDisplay.new{width=64, height=64}
 	self.c_list = TreeList.new{width=math.floor(self.iw / 2 - vsep.w / 2), height=self.ih - 10, all_clicks=true, scrollbar=true, columns=cols, tree=self.list, fct=function(item, sel, button) self:use(item, button) end, select=function(item, sel) self:select(item) end, on_drag=function(item, sel) self:onDrag(item) end}
 	self.c_list.cur_col = 2
 
@@ -88,6 +90,7 @@ Right click or press '~' to configure talent confirmation and automatic use.
 		{left=0, top=0, ui=self.c_list},
 		{right=0, top=self.c_tut.h + 20, ui=self.c_desc},
 		{right=0, top=0, ui=self.c_tut},
+		{right=0, top=self.c_tut, ignore_size=true, ui=self.c_image},
 		{hcenter=0, top=5, ui=vsep},
 	}
 	self:setFocus(self.c_list)
@@ -148,6 +151,11 @@ end
 function _M:select(item)
 	if item then
 		self.c_desc:switchItem(item, item.desc)
+		if item.entity then
+			self.c_image:setEntity(item.entity)
+		else
+			self.c_image:setEntity(nil)
+		end
 		self.cur_item = item
 	end
 end
@@ -226,13 +234,6 @@ function _M:use(item, button)
 
 	game:unregisterDialog(self)
 	self.actor:useTalent(item.talent)
-end
-
--- Display the player tile
-function _M:innerDisplay(x, y, nb_keyframes)
-	if self.cur_item and self.cur_item.entity then
-		self.cur_item.entity:toScreen(game.uiset.hotkeys_display_icons.tiles, x + self.iw - 64, y + self.iy + self.c_tut.h - 32 + 10, 64, 64)
-	end
 end
 
 function _M:generateList()

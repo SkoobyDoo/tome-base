@@ -53,10 +53,11 @@ end
 
 function _M:proxyDataSet(k, v)
 	if (k == "actor" or k == "entity") and self.inited then
+		self.do_container:clear()
+		if self.back_color then self.do_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.back_color))) end
+
 		local actor = v
-		if actor.getDO then
-			self.do_container:clear()
-			if self.back_color then self.do_container:add(core.renderer.colorQuad(0, 0, self.w, self.h, colors.smart1unpack(self.back_color))) end
+		if actor and actor.getDO then
 			self.do_container:add(actor:getDO(self.w, self.h))
 		end
 	end

@@ -78,10 +78,10 @@ static int lua_is_touch_enabled(lua_State *L)
 
 int mouse_cursor_s_ref = LUA_NOREF;
 int mouse_cursor_down_s_ref = LUA_NOREF;
-SDL_Surface *mouse_cursor_s = NULL;
-SDL_Surface *mouse_cursor_down_s = NULL;
-SDL_Cursor *mouse_cursor = NULL;
-SDL_Cursor *mouse_cursor_down = NULL;
+SDL_Surface *mouse_cursor_s = nullptr;
+SDL_Surface *mouse_cursor_down_s = nullptr;
+SDL_Cursor *mouse_cursor = nullptr;
+SDL_Cursor *mouse_cursor_down = nullptr;
 extern int mouse_cursor_ox, mouse_cursor_oy;
 static int sdl_set_mouse_cursor(lua_State *L)
 {
@@ -97,7 +97,7 @@ static int sdl_set_mouse_cursor(lua_State *L)
 		mouse_cursor_down_s = *s;
 		mouse_cursor_down_s_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
-		if (mouse_cursor_down) { SDL_FreeCursor(mouse_cursor_down); mouse_cursor_down = NULL; }
+		if (mouse_cursor_down) { SDL_FreeCursor(mouse_cursor_down); mouse_cursor_down = nullptr; }
 		mouse_cursor_down = SDL_CreateColorCursor(mouse_cursor_down_s, -mouse_cursor_ox, -mouse_cursor_oy);
 		if (mouse_cursor_down) SDL_SetCursor(mouse_cursor_down);
 	}
@@ -119,8 +119,9 @@ static int sdl_set_mouse_cursor(lua_State *L)
 }
 
 extern int mousex, mousey;
-static RendererGL *mouse_renderer = NULL;
-static DisplayObject *mouse_drag_do = NULL;
+static RendererGL *mouse_renderer = nullptr;
+static DisplayObject *mouse_drag_do = nullptr;
+static int mouse_drag_do_ref = LUA_NOREF;
 static bool mouse_drag_set = false;
 static int mouse_drag_w = 32, mouse_drag_h = 32;
 static int sdl_set_mouse_cursor_drag(lua_State *L)
@@ -132,8 +133,8 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 		}
 		mouse_drag_set = false;
 		if (mouse_drag_do) {
-			delete mouse_drag_do;
-			mouse_drag_do = NULL;
+			mouse_drag_do = nullptr;
+			refcleaner(&mouse_drag_do_ref);
 		}
 	}
 	else
@@ -143,8 +144,9 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 
 		if (!mouse_renderer) mouse_renderer = new RendererGL(VBOMode::STATIC);
 		DisplayObject *c = userdata_to_DO(L, 1);
-		mouse_drag_do = c->clone();
-		// mouse_drag_do->setLuaState(NULL); // Lua state ? where we are going we don't need a lua state!
+		lua_pushvalue(L, 1);
+		mouse_drag_do_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+		mouse_drag_do = c;
 		mouse_renderer->add(mouse_drag_do);
 		mouse_drag_set = true;
 	}
@@ -165,16 +167,18 @@ static const struct luaL_Reg mouselib[] =
 
 int luaopen_core_mouse(lua_State *L)
 {
-	if (mouse_drag_do) {
-		mouse_renderer->clear();
-		mouse_drag_set = false;
-		delete mouse_drag_do;
-		mouse_drag_do = NULL;
-	}
-
 	luaL_openlib(L, "core.mouse", mouselib, 0);
 	lua_settop(L, 0);
 	return 1;
+}
+
+void core_mouse_close() {
+	if (mouse_drag_do) {
+		mouse_renderer->clear();
+		mouse_drag_set = false;
+		mouse_drag_do = nullptr;
+		refcleaner(&mouse_drag_do_ref);
+	}
 }
 
 void mouse_draw_drag() {
