@@ -704,17 +704,9 @@ end
 -- @string[opt] tstr
 function _M:getDisplayString(tstr)
 	if tstr then
-		if core.display.FBOActive() or true then
-			return tstring{{"uid", self.uid}}
-		else
-			return tstring{}
-		end
+		return tstring{{"uid", self.uid}}
 	else
-		if core.display.FBOActive() or true then
-			return "#UID:"..self.uid..":0#"
-		else
-			return ""
-		end
+		return "#UID:"..self.uid..":0#"
 	end
 end
 

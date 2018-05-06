@@ -76,6 +76,7 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 	self.descriptors_by_type = {}
 
 	self.actor_frame = ActorFrame.new{actor=self.actor, w=64, h=64}
+	self.class_frame = ActorFrame.new{w=64, h=64}
 
 	self.c_ok = Button.new{text="     Play!     ", fct=function() self:atEnd("created") end}
 	self.c_random = Button.new{text="Random!", fct=function() self:randomBirth() end}
@@ -137,11 +138,6 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 		fct=function(item, sel, v) self:classUse(item, sel, v) end,
 		select=function(item, sel) self:updateDesc(item) end,
 		on_expand=function(item) end,
-		on_drawitem=function(item, h)
-			if not item.def or not item.def.display_entity32 then return end
-			local sc = item.def.display_entity32:getDO(h, h)
-			item._container:add(sc)
-		end,
 	}
 
 	self.cur_order = 1
@@ -179,8 +175,9 @@ function _M:init(title, actor, order, at_end, quickbirth, w, h)
 
 		{left=0, bottom=self.c_ok, ui=self.c_extra_options},
 
-		
+	
 		{right=0, top=-32, ui=self.actor_frame},
+		{right=self.c_desc.w - self.class_frame.w, top=0, ignore_size=true, ui=self.class_frame},
 	}
 	self:setupUI()
 
@@ -587,6 +584,8 @@ end
 
 function _M:classUse(item, sel, v)
 	if not item then return end
+
+	self.class_frame:setEntity(nil)
 	if item.nodes then
 		for i, item in ipairs(self.c_class.tree) do if item.shown then self.c_class:treeExpand(false, item) end end
 		self.c_class:treeExpand(nil, item)
@@ -598,8 +597,12 @@ function _M:classUse(item, sel, v)
 		self:setDescriptor("class", item.pid)
 		self:setDescriptor("subclass", item.id)
 		self.sel_class = item
-		self.sel_class.name = tstring{{"font","bold"}, {"color","LIGHT_GREEN"}, self.sel_class.basename:toString(), {"font","normal"}}
+		self.sel_class.name = self.sel_class.selected_name
 		self.c_class:drawItem(item)
+
+		if item.def.display_entity128 then
+			self.class_frame:setEntity(item.def.display_entity128)
+		end
 	end
 end
 
@@ -864,7 +867,10 @@ function _M:generateClasses()
 						if how == "nolore" and self.descriptors_by_type.subrace then
 							desc = "#CRIMSON#Playing this class with the race you selected does not make much sense lore-wise. You can still do it but might miss on some special quests/...#WHITE#\n" .. desc
 						end
-						nodes[#nodes+1] = { name = sd.display_name, basename=sd.display_name, id=sd.name, pid=d.name, desc=desc, def=sd }
+						local basename = sd.display_name
+						if sd.display_entity32 then basename = sd.display_entity32:getDisplayString()..basename end
+						local selected_name = "#{bold}##LIGHT_GREEN#"..basename.."#LAST##{normal}#"
+						nodes[#nodes+1] = { name = basename, selected_name=selected_name, basename=basename, id=sd.name, pid=d.name, desc=desc, def=sd }
 						if self.sel_class and self.sel_class.id == sd.name then newsel = nodes[#nodes] end
 					end
 				end
