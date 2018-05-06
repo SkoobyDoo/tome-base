@@ -92,7 +92,6 @@ end
 _M.allcontainers = {
 	"mod.class.uiset.minimalist.PlayerFrame",
 	"mod.class.uiset.minimalist.Minimap",
-	"mod.class.uiset.minimalist.Toolbar",
 	"mod.class.uiset.minimalist.Resources",
 	"mod.class.uiset.minimalist.Effects",
 	"mod.class.uiset.minimalist.Hourglass",
@@ -101,6 +100,7 @@ _M.allcontainers = {
 	"mod.class.uiset.minimalist.Log",
 	"mod.class.uiset.minimalist.UserChat",
 	"mod.class.uiset.minimalist.CustomZone",
+	"mod.class.uiset.minimalist.Toolbar",
 }
 
 function _M:saveSettings()
@@ -188,6 +188,13 @@ function _M:placeContainers()
 			container:loadConfig(config.settings.tome.uiset_minimalist2.places[container.container_id])
 		end
 	end
+end
+
+function _M:handleResolutionChange(w, h, ow, oh)
+	game:resizeMapViewport(w, h, 0, 0)
+
+	for _, container in ipairs(self.minicontainers) do container:onResolutionChange(w, h, ow, oh) end
+	return false
 end
 
 function _M:display(nb_keyframes)

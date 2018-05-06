@@ -895,6 +895,7 @@ end
 function _M:toggleDisplay(ui, show)
 	if not self.ui_by_ui[ui] then return end
 	self.ui_by_ui[ui].hidden = not show
+	ui.do_container:shown(show)
 end
 
 function _M:moveFocus(v)

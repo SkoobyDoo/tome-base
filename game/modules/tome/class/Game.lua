@@ -628,10 +628,6 @@ function _M:resizeMapViewport(w, h, x, y)
 	w = math.floor(w)
 	h = math.floor(h)
 
-	-- convert from older faulty versions
-	if game.level and game.level.map and (rawget(game.level.map, "display_x") or rawget(game.level.map, "display_y")) then
-		game.level.map.display_x, game.level.map.display_y = nil, nil
-	end
 	Map.display_x = x
 	Map.display_y = y
 	Map.viewport.width = w
@@ -639,14 +635,13 @@ function _M:resizeMapViewport(w, h, x, y)
 	Map.viewport.mwidth = math.floor(w / Map.tile_w)
 	Map.viewport.mheight = math.floor(h / Map.tile_h)
 
-	self:createFBOs()
-
 	if self.level then
 		self.level.map:makeCMap()
 		self.level.map:redisplay()
 		if self.player then
 			self.player:updateMainShader()
 			self.level.map:moveViewSurround(self.player.x, self.player.y, config.settings.tome.scroll_dist, config.settings.tome.scroll_dist)
+			print("=============== OK", x, y, w, h)
 		end
 	end
 end
@@ -1714,8 +1709,8 @@ end
 
 function _M:createFBOs()
 	print("[GAME] Creating FBOs")
---[[
 	Map:enableFBORenderer("target_fbo")
+--[[
 
 --	self.mm_fbo = core.display.newFBO(200, 200)
 --	if self.mm_fbo then self.mm_fbo_shader = Shader.new("mm_fbo") if not self.mm_fbo_shader.shad then self.mm_fbo = nil self.mm_fbo_shader = nil end end

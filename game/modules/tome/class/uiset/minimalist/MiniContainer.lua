@@ -179,15 +179,40 @@ function _M:checkSnap()
 
 	local oldorient = self.orientation
 	self.orientation = self:getDefaultOrientation()
-	if x1 <= 4 then self.orientation = "right" end
-	if x2 >= game.w -4 then self.orientation = "left" end
-	if y1 <= 4 then self.orientation = "down" end
-	if y2 >= game.h - 4 then self.orientation = "up" end
+	self.snaped_to = {}
+	if x1 <= 4 then self.orientation = "right" self.snaped_to.left = true end
+	if x2 >= game.w -4 then self.orientation = "left" self.snaped_to.right = true end
+	if y1 <= 4 then self.orientation = "down" self.snaped_to.top = true end
+	if y2 >= game.h - 4 then self.orientation = "up" self.snaped_to.bottom = true end
 	if self.orientation ~= oldorient then self:onSnapChange() end
 end
 
 function _M:onSnapChange()
 	-- Override me to do stuff if needed
+end
+
+function _M:onResolutionChange(w, h, ow, oh)
+	if not self.snaped_to then return end
+	local nx, ny = nil, nil
+	if self.snaped_to.left then
+		nx = self.x
+	elseif self.snaped_to.right then
+		nx = w - (ow - self.x)
+	end
+	if self.snaped_to.top then
+		ny = self.y
+	elseif self.snaped_to.bottom then
+		ny = h - (oh - self.y)
+	end
+
+	if not nx then
+		nx = math.floor(w * self.x / ow)
+	end
+	if not ny then
+		ny = math.floor(h * self.y / oh)
+	end
+
+	self:move(nx or self.x, ny or self.y)
 end
 
 function _M:setAlpha(a)

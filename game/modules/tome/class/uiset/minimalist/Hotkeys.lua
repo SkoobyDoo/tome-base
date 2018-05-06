@@ -86,7 +86,7 @@ function _M:getDefaultGeometry()
 	local th = 52
 	if config.settings.tome.hotkey_icons then th = (8 + config.settings.tome.hotkey_icons_size) * config.settings.tome.hotkey_icons_rows end
 
-	local x = 10
+	local x = 3
 	local y = game.h - th
 	local w = game.w - 60
 	local h = th
