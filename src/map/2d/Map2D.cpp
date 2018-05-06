@@ -246,7 +246,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 	else if (dm->root->shader) shader = dm->root->shader;
 	else shader = default_shader;
 
-	auto dl = getDisplayList(renderer, {dm->textures[0], 0, 0}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
+	auto dl = getDisplayList(renderer, {dm->textures[0], dm->textures[1], dm->textures[2]}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
 
 	// Make sure we do not have to reallocate each step
 	// DGDGDGDG: actually do it

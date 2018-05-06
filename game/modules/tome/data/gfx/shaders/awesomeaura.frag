@@ -154,18 +154,18 @@ vec4 Uberblend(vec4 col0, vec4 col1)
 
 void main(void)
 {
-	vec2 radius = gl_TexCoord[0].xy - vec2(0.5, 0.5);
+	vec2 radius = te4_uv - vec2(0.5, 0.5);
 	float innerRadius = 0.25;
 	float outerRadius = 0.5;
 	
 	vec2 planarPos;
-	vec4 displacement = texture2D(tex, gl_TexCoord[0].xy);
+	vec4 displacement = texture2D(tex, te4_uv);
 	planarPos.x = displacement.b;	
 	planarPos.y = displacement.a * 3.0 * (1.0 + 10.0 * pow((planarPos.x) * (1.0 - planarPos.x) * 4.0, 1.0)) / max(flameScale, 1e-3);
 	
 	vec4 resultColor = vec4(0.0, 0.0, 0.0, 0.0);
 		
-	resultColor = GetFireAuraColor(tick / time_factor, planarPos, 6.0, 15.0 * max(flameScale, 1e-3), 1.0, 1.0, 1.0, 0.75);//texture2D(tex, gl_TexCoord[0].xy) * texture2D(flames, gl_TexCoord[0].xy) + 0.2;
+	resultColor = GetFireAuraColor(tick / time_factor, planarPos, 6.0, 15.0 * max(flameScale, 1e-3), 1.0, 1.0, 1.0, 0.75);//texture2D(tex, te4_uv) * texture2D(flames, te4_uv) + 0.2;
 	
 	gl_FragColor = resultColor;
 	gl_FragColor.a *= alpha;

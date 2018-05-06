@@ -164,8 +164,7 @@ void build_sdm_ex(const unsigned char *texData, int srcWidth, int srcHeight, uns
 			//float ang = atan2((float)(offset.x), -(float)(offset.y));
 			sdmTexData[(x + y * dstWidth) * 4 + 0] = 127 + (float)(-vectorMap[x + y * dstWidth].x) / maxSize * 127;
 			sdmTexData[(x + y * dstWidth) * 4 + 1] = 127 + (float)(-vectorMap[x + y * dstWidth].y) / maxSize * 127;
-			sdmTexData[(x + y * dstWidth) * 4 + 2] = 127 + (float)(-vectorMap[x + y * dstWidth].y) / maxSize * 127;
-			// sdmTexData[(x + y * dstWidth) * 4 + 2] = (unsigned char)(clamp(ang / 3.141592f * 0.5f + 0.5f, 0.0f, 1.0f) * 255);
+			sdmTexData[(x + y * dstWidth) * 4 + 2] = (unsigned char)(clamp(ang / 3.141592f * 0.5f + 0.5f, 0.0f, 1.0f) * 255);
 			sdmTexData[(x + y * dstWidth) * 4 + 3] = (unsigned char)(offsetLen / sqrtf(dstWidth * dstWidth + dstHeight * dstHeight) * 255);
 		}
 	}

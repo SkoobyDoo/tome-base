@@ -735,6 +735,8 @@ static int gl_texture_to_sdl(lua_State *L)
 	return 1;
 }
 
+static int print_png(lua_State *L, GLubyte *image, int width, int height);
+
 static int gl_texture_alter_sdm(lua_State *L) {
 	texture_type *t = (texture_type*)auxiliar_checkclass(L, "gl{texture}", 1);
 	bool doubleheight = lua_toboolean(L, 2);
@@ -760,6 +762,8 @@ static int gl_texture_alter_sdm(lua_State *L) {
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, dh, 0, GL_RGBA, GL_UNSIGNED_BYTE, sdm);
+
+	print_png(L, sdm, w, dh);
 
 	free(tmp);
 	free(sdm);
@@ -1390,6 +1394,72 @@ static int sdl_get_png_screenshot(lua_State *L)
 	luaL_pushresult(&B);
 
 	return 1;
+}
+
+static int print_png(lua_State *L, GLubyte *image, int width, int height) {
+	unsigned long i;
+	png_structp png_ptr;
+	png_infop info_ptr;
+	png_colorp palette;
+	png_bytep *row_pointers;
+
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+	if (png_ptr == NULL)
+	{
+		return 0;
+	}
+
+	info_ptr = png_create_info_struct(png_ptr);
+	if (info_ptr == NULL)
+	{
+		png_destroy_write_struct(&png_ptr, png_infopp_NULL);
+		return 0;
+	}
+
+	if (setjmp(png_jmpbuf(png_ptr)))
+	{
+		png_destroy_write_struct(&png_ptr, &info_ptr);
+		return 0;
+	}
+
+	luaL_Buffer B;
+	luaL_buffinit(L, &B);
+	png_set_write_fn(png_ptr, &B, png_write_data_fn, png_output_flush_fn);
+
+	png_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_RGBA,
+		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+	row_pointers = (png_bytep *)malloc(height * sizeof(png_bytep));
+	if(row_pointers == NULL)
+	{
+		png_destroy_write_struct(&png_ptr, &info_ptr);
+		luaL_pushresult(&B); lua_pop(L, 1);
+		return 0;
+	}
+
+	for (i = 0; i < height; i++)
+	{
+		row_pointers[i] = (png_bytep)image + (height - 1 - i) * width * 4;
+	}
+
+	png_set_rows(png_ptr, info_ptr, row_pointers);
+	png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+
+	free(row_pointers);
+	row_pointers = NULL;
+
+	luaL_pushresult(&B);
+
+	size_t len;
+	const char* pstr = lua_tolstring(L, -1, &len);
+	PHYSFS_File *f = PHYSFS_openWrite("/test.png");
+	PHYSFS_write(f, pstr, sizeof(char), len);
+	PHYSFS_close(f);
+
+	lua_pop(L, 1);
 }
 
 static int gl_fbo_to_png(lua_State *L)

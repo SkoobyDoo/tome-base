@@ -15,14 +15,14 @@ uniform vec3 color;
 
 void main(void)
 {
-	vec2 radius = gl_TexCoord[0].xy - vec2(0.5, 0.5);
+	vec2 radius = te4_uv - vec2(0.5, 0.5);
 	float innerRadius = 0.25;
 	float outerRadius = 0.5;
 	
 	vec2 planarPos;
-	vec4 displacement = texture2D(displMapTex, gl_TexCoord[0].xy);
+	vec4 displacement = texture2D(displMapTex, te4_uv);
 
-	vec2 point = gl_TexCoord[0].xy;
+	vec2 point = te4_uv;
 	float eps = 0.05;
 	vec2 basisY = vec2(
 		 texture2D(displMapTex, point + vec2(eps, 0.0)).a - texture2D(displMapTex, point + vec2(-eps, 0.0)).a,
