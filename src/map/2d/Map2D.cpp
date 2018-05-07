@@ -418,8 +418,8 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	z_off = w * h;
 
 	// Compute viewport, we make it a bit bigger than requested to be able to do smooth scrolling without black zones
-	viewport_pos = {-50, -50};
-	viewport_size = {mwidth + 50, mheight + 50};
+	viewport_pos = {-2, -2};
+	viewport_size = {mwidth + 2, mheight + 2};
 	viewport_dimension = viewport_size - viewport_pos;
 
 	// Init the map data
@@ -733,14 +733,24 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 	// dynamic one are generated for the screen and we do the clipping because they change every frame or close enough
 	// DGDGDGDG Idea: define a max layer size, say 64x64, any map bigger is split into multiple sectors
 
-	int32_t mini = 0, maxi = w;
-	int32_t minj = 0, maxj = h;
 	for (int32_t z = 0; z < zdepth; z++) {
 		if (renderers_changed[z]) {
 			renderers_changed[z] = false;
 			renderers[z]->resetDisplayLists();
 			renderers[z]->setChanged(true);
 
+			int32_t mini, maxi;
+			int32_t minj, maxj;
+
+			// DGDGDGDG
+			// if (z==10) {
+			// 	mini = mx + viewport_pos.x; maxi = mx + viewport_size.x;
+			// 	minj = my + viewport_pos.y; maxj = my + viewport_size.y;
+			// } else {
+				mini = 0; maxi = w;
+				minj = 0; maxj = h;
+			// }
+			
 			// printf("------ recomputing Z %d\n", z);
 			for (int32_t j = minj; j < maxj; j++) {
 				for (int32_t i = mini; i < maxi; i++) {

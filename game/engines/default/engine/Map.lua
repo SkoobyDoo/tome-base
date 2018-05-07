@@ -232,7 +232,6 @@ function _M:save()
 	return class.save(self, {
 		z_effects = true,
 		z_particles = true,
-		z_state = true,
 		fbo_shader = true,
 		fbo = true,
 		_check_entities = true,
@@ -309,18 +308,10 @@ function _M:makeCMap()
 	for i, ps in ipairs(self.path_strings) do
 		self._fovcache.path_caches[ps] = core.fov.newCache(self.w, self.h)
 	end
-end
 
-function _M:updateZCallback(z)
-	local state = (next(self.z_effects[z]) or next(self.z_particles[z])) and true or false
-	if self.z_state[z] == state then return end
-
-	self.z_state[z] = state
-
-	if not state then
-		self._map:zCallback(z, nil)
-	else
-		local wself = self:weakSelf()
+	-- DGDGDGDG: only register that when actually needed, and unregister when not
+	local wself = self:weakSelf()
+	for z = 0, self.zdepth - 1 do
 		self._map:zCallback(z, function(z, nb_keyframe, sx, sy)
 			if not wself() then return end
 			return wself():zDisplay(z, nb_keyframe, sx, sy)
@@ -423,12 +414,9 @@ function _M:loaded()
 
 	self.z_effects = {}
 	self.z_particles = {}
-	self.z_state = {}
 	for z = 0, self.zdepth - 1 do self.z_effects[z] = {} self.z_particles[z] = {} end
 	for i, e in ipairs(self.effects) do if e.overlay then self.z_effects[e.overlay.zdepth][e] = true end end
 	for i, e in ipairs(self.particles) do if e.zdepth then self.z_particles[e.zdepth][e] = true end end
-
-	for z = 0, self.zdepth - 1 do self:updateZCallback(z) end
 
 	self:redisplay()
 end
@@ -1185,10 +1173,7 @@ function _M:addEffect(src, x, y, duration, damtype, dam, radius, dir, angle, ove
 	if e.overlay and not e.overlay.zdepth then e.overlay.zdepth = self.zdepth - 1 end
 
 	table.insert(self.effects, e)
-	if e.overlay then
-		self.z_effects[e.overlay.zdepth][e] = true
-		self:updateZCallback(e.overlay.zdepth)
-	end
+	if e.overlay then self.z_effects[e.overlay.zdepth][e] = true end
 
 	self.changed = true
 	return e
@@ -1332,7 +1317,6 @@ function _M:processEffects(update_shape_only)
 		end
 		if e.overlay then
 			self.z_effects[e.overlay.zdepth][e] = nil
-			self:updateZCallback(e.overlay.zdepth)
 		end
 	end
 end
@@ -1409,7 +1393,6 @@ function _M:particleEmitter(x, y, radius, def, args, shader, zdepth)
 	self.particles[#self.particles+1] = e
 	if not e.zdepth then e.zdepth = self.zdepth - 1 end
 	self.z_particles[e.zdepth][e] = true
-	self:updateZCallback(e.zdepth)
 	return e
 end
 
@@ -1422,7 +1405,6 @@ function _M:particleComposeEmitter(x, y, radius, def, args, speed, zoom, zdepth)
 	self.particles[#self.particles+1] = e
 	if not e.zdepth then e.zdepth = self.zdepth - 1 end
 	self.z_particles[e.zdepth][e] = true
-	self:updateZCallback(e.zdepth)
 	return e
 end
 
@@ -1433,7 +1415,6 @@ function _M:addParticleEmitter(e, x, y)
 	self.particles[#self.particles+1] = e
 	if not e.zdepth then e.zdepth = self.zdepth - 1 end
 	self.z_particles[e.zdepth][e] = true
-	self:updateZCallback(e.zdepth)
 	return e
 end
 
@@ -1455,7 +1436,6 @@ function _M:removeParticleEmitters()
 		local e = table.remove(self.particles, self.particles_todel[i])
 		if e then
 			self.z_particles[e.zdepth][e] = nil
-			self:updateZCallback(e.zdepth)
 
 			if e.on_remove then e:on_remove() end
 			e.dead = true
