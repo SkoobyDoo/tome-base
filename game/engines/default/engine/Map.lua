@@ -309,6 +309,7 @@ function _M:makeCMap()
 		self._fovcache.path_caches[ps] = core.fov.newCache(self.w, self.h)
 	end
 
+	-- DGDGDGDG: only register that when actually needed, and unregister when not
 	local wself = self:weakSelf()
 	for z = 0, self.zdepth - 1 do
 		self._map:zCallback(z, function(z, nb_keyframe, sx, sy)

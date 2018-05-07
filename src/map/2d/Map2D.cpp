@@ -744,6 +744,7 @@ void Map2D::toScreen(mat4 cur_model, vec4 color) {
 					}
 				}
 			}
+			// printf("------ recomputing Z DONE\n");
 
 			if (zobjects[z]) {
 				zobjects[z]->render(renderers[z], zmodel, zcolor, true);
