@@ -344,6 +344,8 @@ static int map_set_z_callback(lua_State *L) {
 	if (lua_isfunction(L, 3)) {
 		lua_pushvalue(L, 3);
 		map->setZCallback(z, luaL_ref(L, LUA_REGISTRYINDEX));
+	} else {
+		map->setZCallback(z, LUA_NOREF);
 	}
 	return 0;
 }

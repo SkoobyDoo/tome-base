@@ -413,6 +413,7 @@ function _M:makeMapObject(tiles, idx)
 	-- Texture 0 is always the normal image/ascii tile
 	-- we pcall it because some weird cases can not find a tile
 	if ok then
+		-- print('=---= showing mo', self.uid, self.image, btex:getValue())
 		if self.spriter then
 			local sp = core.renderer.spriter("/data/gfx/spriters/"..self.spriter[1]..".scml", self.spriter[2] or "default")
 			if self.spriter.anim then sp:setAnim(self.spriter.anim) end
@@ -428,6 +429,7 @@ function _M:makeMapObject(tiles, idx)
 			self._mo:texture(0, btex, false, btexx, btexy, tex_x, tex_y)
 		end
 	else
+		-- print('=---= hiding mo', self.uid, self.image)
 		self._mo:hide()
 	end
 

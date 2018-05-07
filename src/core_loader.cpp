@@ -83,7 +83,7 @@ public:
 	}
 	virtual bool finish() {
 		if (s) {
-			printf("[LOADER] done loading PNG %s!\n", filename.c_str());
+			printf("[LOADER] done loading PNG %s in texture %d!\n", filename.c_str(), tex->tex);
 			tfglBindTexture(GL_TEXTURE_2D, tex->tex);
 			GLenum texture_format = sdl_gl_texture_format(s);
 			GLint nOfColors = s->format->BytesPerPixel;

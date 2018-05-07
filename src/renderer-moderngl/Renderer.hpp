@@ -65,14 +65,14 @@ template<class T=DisplayObject>T* userdata_to_DO(lua_State *L, int index, const 
 		ptr = reinterpret_cast<DisplayObject**>(lua_touserdata(L, index));
 		if (!ptr) {
 			printf("invalid display object passed ! %s expected\n", typeid(T).name());
-			traceback(L);
+			traceback(L, true);
 			luaL_error(L, "invalid display object passed");
 		}
 	}
 	T* result = dynamic_cast<T*>(*ptr);
 	if (!result) {
 		printf("display object of wrong class! %s / %s (expected) !=! %s (actual)\n", typeid(T).name(), auxclass ? auxclass : "", (*ptr)->getKind());
-		traceback(L);
+		traceback(L, true);
 		luaL_error(L, "display object of wrong class");
 	}
 	return result;

@@ -244,7 +244,7 @@ private:
 	shader_type *default_shader = nullptr;
 
 	// Z-layers
-	DisplayObject **zobjects;
+	DORCallbackMapZ **zobjects;
 
 	// Visibility
 	vec4 obscure = {0.6,0.6,0.6,1}, shown = {1,1,1,1}, tint = {1,1,1,1};

@@ -330,9 +330,10 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	// printf("Displaying renderer %s with %d\n", getRendererName(), displays.size());
 
 	long int start_time;
+	int nb_draws_start;
 	if (count_time) start_time = SDL_GetTicks();
 	if (count_draws) {
-		nb_draws = 0;
+		nb_draws_start = nb_draws;
 	}
 
 	cur_model = cur_model * model; // This is .. undeeded ..??
@@ -473,7 +474,7 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 		printf("RendererGL<%s> drew %d vertexes in %ld calls\n", renderer_name, nb_vert, displays.size());
 	}
 	if (count_draws) {
-		printf("RendererGL<%s> drew in %d calls\n", renderer_name, nb_draws);
+		printf("RendererGL<%s> drew in %d calls\n", renderer_name, nb_draws - nb_draws_start);
 	}
 	if (count_time) {
 		printf("RendererGL<%s> drew in %ld ms\n", renderer_name, SDL_GetTicks() - start_time);

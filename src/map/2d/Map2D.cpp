@@ -247,6 +247,7 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 	else shader = default_shader;
 
 	auto dl = getDisplayList(renderer, {dm->textures[0], dm->textures[1], dm->textures[2]}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
+	// printf("[%ld]-- %d %d %d : %lx\n", dm->uid, dm->textures[0], dm->textures[1], dm->textures[2], shader);
 
 	// Make sure we do not have to reallocate each step
 	// DGDGDGDG: actually do it
@@ -427,7 +428,7 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 	map_remembers = new bool[w * h]; std::fill_n(map_remembers, w * h, false);
 	map_lites = new bool[w * h]; std::fill_n(map_lites, w * h, false);
 	map_important = new bool[w * h]; std::fill_n(map_important, w * h, false);
-	zobjects = new DisplayObject*[zdepth]; std::fill_n(zobjects, zdepth, nullptr);
+	zobjects = new DORCallbackMapZ*[zdepth]; std::fill_n(zobjects, zdepth, nullptr);
 
 	// Init vision data
 	seens_texture_size = powerOfTwoSize(viewport_dimension.x, viewport_dimension.y);
@@ -465,6 +466,11 @@ Map2D::Map2D(int32_t z, int32_t w, int32_t h, int32_t tile_w, int32_t tile_h, in
 }
 
 Map2D::~Map2D() {
+	for (int32_t i = 0; i < zdepth; i++) {
+		if (zobjects[i]) delete zobjects[i];
+		delete renderers[i];
+	}
+
 	refcleaner(&default_shader_ref);
 	delete[] map;
 	delete[] map_seens;
@@ -472,8 +478,6 @@ Map2D::~Map2D() {
 	delete[] map_lites;
 	delete[] map_important;
 	delete[] zobjects;
-
-	for (int32_t i = 0; i < zdepth; i++) delete renderers[i];
 
 	for (auto &it : minimap_dos) it->mapDeath(this);
 
@@ -551,15 +555,22 @@ void Map2D::setGridLinesShader(shader_type *s, int ref) {
 
 void Map2D::setZCallback(int32_t z, int ref) {
 	if (!checkBounds(z, 0, 0)) return;
-	if (zobjects[z]) {
-		printf("[Map2D] Error, setting zCallback (%d) over existing DO/CB\n", z);
-		return;
-	}
 
-	DORCallbackMapZ *cb = new DORCallbackMapZ();
-	cb->z = z;
-	cb->setCallback(ref);
-	zobjects[z] = cb;
+	if (ref != LUA_NOREF) {
+		DORCallbackMapZ *cb = zobjects[z];
+		if (!cb) {
+			cb = new DORCallbackMapZ();
+			cb->z = z;
+			zobjects[z] = cb;
+		}
+		cb->setCallback(ref);
+	} else {
+		if (!zobjects[z]) return;
+
+		delete zobjects[z];
+		zobjects[z] = nullptr;
+	}
+	renderers_changed[z] = true;
 }
 
 void Map2D::scroll(int32_t x, int32_t y, float smooth) {

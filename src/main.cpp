@@ -194,7 +194,7 @@ static void add_lua_error(const char *file, int line, const char *func)
 	last_lua_error_tail = cur;
 }
 
-int traceback (lua_State *L) {
+int traceback (lua_State *L, bool produce_error) {
 	lua_Debug ar;
 	int n = 0;
 	printf("Lua Error: %s\n", lua_tostring(L, 1));
@@ -204,7 +204,7 @@ int traceback (lua_State *L) {
 	}
 
 	// Do it again for the lua error popup, if needed
-	if (1)
+	if (produce_error)
 	{
 		n = 0;
 		new_lua_error(lua_tostring(L, 1));
@@ -215,6 +215,10 @@ int traceback (lua_State *L) {
 	}
 	fflush(stdout);
 	return 1;
+}
+
+static int traceback_error(lua_State *L) {
+	return traceback(L, true);
 }
 
 void stackDump (lua_State *L) {
@@ -255,7 +259,7 @@ int docall (lua_State *L, int narg, int nret)
 	int status;
 	int base = lua_gettop(L) - narg;  /* function index */
 //	printf("<===%d (%d)\n", base, narg);
-	lua_pushcfunction(L, traceback);  /* push traceback function */
+	lua_pushcfunction(L, traceback_error);  /* push traceback function */
 	lua_insert(L, base);  /* put it under chunk and args */
 	status = lua_pcall(L, narg, nret, base);
 	lua_remove(L, base);  /* remove traceback function */
