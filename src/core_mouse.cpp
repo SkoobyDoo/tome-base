@@ -153,8 +153,15 @@ static int sdl_set_mouse_cursor_drag(lua_State *L)
 	return 0;
 }
 
+static int lua_set_mouse_relative(lua_State *L) {
+	bool v = lua_toboolean(L, 1);
+	SDL_SetRelativeMouseMode(v ? SDL_TRUE : SDL_FALSE);
+	return 0;
+}
+
 static const struct luaL_Reg mouselib[] =
 {
+	{"setRelative", lua_set_mouse_relative},
 	{"touchCapable", lua_is_touch_enabled},
 	{"setMouseCursor", sdl_set_mouse_cursor},
 	{"setMouseDrag", sdl_set_mouse_cursor_drag},

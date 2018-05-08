@@ -703,6 +703,9 @@ static int program_compile(lua_State *L)
 	p->p_texcoord = glGetUniformLocation(p->shader, "texCoord");
 	p->p_tex = glGetUniformLocation(p->shader, "tex");
 	p->p_mvp = glGetUniformLocation(p->shader, "mvp");
+	p->p_view = glGetUniformLocation(p->shader, "view");
+	p->p_model = glGetUniformLocation(p->shader, "model");
+	p->p_projection = glGetUniformLocation(p->shader, "projection");
 	// printf("Uniform locations %d %d %d %d %d %d %d\n", p->p_tick, p->p_color, p->p_mapcoord, p->p_texsize, p->p_texcoord, p->p_tex, p->p_mvp);
 
 	p->vertex_attrib = glGetAttribLocation(p->shader, "te4_position");

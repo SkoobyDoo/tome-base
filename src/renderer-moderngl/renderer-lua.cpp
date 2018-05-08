@@ -543,6 +543,14 @@ static int gl_renderer_count_draws(lua_State *L)
 	return 1;
 }
 
+static int gl_renderer_count_vertexes(lua_State *L)
+{
+	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
+	r->countVertexes(lua_toboolean(L, 2));
+	lua_pushvalue(L, 1);
+	return 1;
+}
+
 static int gl_renderer_toscreen(lua_State *L)
 {
 	RendererGL *r = userdata_to_DO<RendererGL>(L, 1, "gl{renderer}");
@@ -1603,12 +1611,20 @@ static int gl_view_ortho(lua_State *L)
 static int gl_view_project(lua_State *L)
 {
 	View *v = *(View**)auxiliar_checkclass(L, "gl{view}", 1);
-	DisplayObject *camera = userdata_to_DO(L, 5);
-	DisplayObject *origin = userdata_to_DO(L, 6);
-	lua_pushvalue(L, 5);
-	int camera_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	lua_pushvalue(L, 6);
-	int origin_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	DisplayObject *camera = nullptr;
+	DisplayObject *origin = nullptr;
+	int camera_ref = LUA_NOREF;
+	int origin_ref = LUA_NOREF;
+	if (lua_isuserdata(L, 5)) {
+		camera = userdata_to_DO(L, 5);
+		lua_pushvalue(L, 5);
+		camera_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
+	if (lua_isuserdata(L, 6)) {
+		origin = userdata_to_DO(L, 6);
+		lua_pushvalue(L, 6);
+		origin_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	}
 	float nearp = 0.001, farp = 1000;
 
 	if (lua_isnumber(L, 7)) nearp = lua_tonumber(L, 7);
@@ -1885,6 +1901,7 @@ static const struct luaL_Reg gl_renderer_reg[] =
 	{"setRendererName", gl_renderer_set_name},
 	{"countTime", gl_renderer_count_time},
 	{"countDraws", gl_renderer_count_draws},
+	{"countVertexes", gl_renderer_count_vertexes},
 	{"toScreen", gl_renderer_toscreen},
 	{NULL, NULL},
 };

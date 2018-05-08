@@ -346,6 +346,10 @@ function _M:preprocess(code, kind, def)
 		end)
 	end
 	code = code:gsub('#include "([^"]+)"', function(file)
+		file = file:gsub("%b{}", function(name)
+			name = name:sub(2, #name - 1)
+			return def.args[name]
+		end)
 		local subcode = self:loadFile("/data/gfx/shaders/"..file)
 		subcode = self:preprocess(subcode, kind, def)
 		return subcode

@@ -62,8 +62,6 @@ void View::setProjectView(
 ) {
 	this->w = w; this->h = h;
 	from_screen_size = false;
-	refcleaner(&camera_lua_ref);
-	refcleaner(&origin_lua_ref);
 
 	mode = ViewMode::PROJECT;
 	view = glm::perspective(
@@ -72,10 +70,17 @@ void View::setProjectView(
 		near_clip,        // Near clipping plane. Keep as big as possible, or you'll get precision issues.
 		far_clip       // Far clipping plane. Keep as little as possible.
 	);
-	camera_lua_ref = camera_ref;
-	origin_lua_ref = origin_ref;
-	camera_do = camera;
-	origin_do = origin;
+
+	if (camera) {
+		refcleaner(&camera_lua_ref);
+		camera_lua_ref = camera_ref;
+		camera_do = camera;
+	}
+	if (origin) {
+		refcleaner(&origin_lua_ref);
+		origin_lua_ref = origin_ref;
+		origin_do = origin;
+	}
 }
 
 void View::onScreenResize(int w, int h) {
@@ -105,8 +110,8 @@ void View::use(bool v) {
 	}
 }
 
-mat4 View::get() {
-	if (mode == ViewMode::ORTHO) return view;
+void View::update() {
+	if (mode == ViewMode::ORTHO) return;
 
 	if (camera_do->isChanged() || origin_do->isChanged()) {
 		camera_do->changed = false;
@@ -119,16 +124,32 @@ mat4 View::get() {
 		camera_point = camm.model * camera_point;
 		origin_point = orim.model * origin_point;
 
-		printf("View:recomputing camera %f x %f x %f, origin %f x %f x %f\n", camera_point.x, camera_point.y, camera_point.z, origin_point.x, origin_point.y, origin_point.z);
+		// printf("View:recomputing camera %f x %f x %f, origin %f x %f x %f\n", camera_point.x, camera_point.y, camera_point.z, origin_point.x, origin_point.y, origin_point.z);
 
 		cam = glm::lookAt(
 			glm::vec3(camera_point),
 			glm::vec3(origin_point),
-			glm::vec3(0, -1, 0)
+			glm::vec3(0, 0, 1)
 		);
 	}
+}
 
+mat4 View::get() {
+	if (mode == ViewMode::ORTHO) return view;
+
+	update();
 	return view * cam;
+}
+
+mat4 View::getCam() {
+	if (mode == ViewMode::ORTHO) return mat4();
+
+	update();
+	return cam;
+}
+
+mat4 View::getView() {
+	return view;
 }
 
 // Make a default screensize orthogonal view, use it and stack it, never removing it so we have a default

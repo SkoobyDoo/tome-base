@@ -57,7 +57,10 @@ public:
 	void use(bool v);
 	void print();
 
+	void update();
 	mat4 get();
+	mat4 getView();
+	mat4 getCam();
 
 	virtual void onScreenResize(int w, int h);
 

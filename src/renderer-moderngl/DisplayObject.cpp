@@ -528,6 +528,7 @@ void DORVertexes::cloneInto(DisplayObject *_into) {
 	into->tex_max = tex_max;
 	into->tex = tex;
 	into->shader = shader;
+	into->render_kind = render_kind;
 	// Clone reference
 	for (int i = 0; i < DO_MAX_TEX; i++) {
 		if (L && tex_lua_ref[i] != LUA_NOREF) {
@@ -565,7 +566,7 @@ int DORVertexes::addQuad(
 
 	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
 	if ((z1 != z2) || (z1 != z3) || (z1 != z4) || (z3 != z4) || (size && (z1 != zflat))) {
-		printf("Warning making non flat DORVertexes::addQuad!\n");
+		// printf("Warning making non flat DORVertexes::addQuad!\n");
 		is_zflat = false;
 	}
 	if (!size) zflat = z1;
@@ -585,7 +586,7 @@ int DORVertexes::addQuad(vertex v1, vertex v2, vertex v3, vertex v4) {
 
 	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
 	if ((v1.pos.z != v2.pos.z) || (v1.pos.z != v3.pos.z) || (v1.pos.z != v4.pos.z) || (v3.pos.z != v4.pos.z) || (size && (v1.pos.z != zflat))) {
-		printf("Warning making non flat DORVertexes::addQuad!\n");
+		// printf("Warning making non flat DORVertexes::addQuad!\n");
 		is_zflat = false;
 	}
 	if (!size) zflat = v1.pos.z;
@@ -639,7 +640,7 @@ int DORVertexes::addQuadPie(
 	if (size + 10 >= vertices.capacity()) {vertices.reserve(vertices.capacity() * 2);}
 
 	if ((size && (0 != zflat))) {
-		printf("Warning making non flat DORVertexes::addQuadPie!\n");
+		// printf("Warning making non flat DORVertexes::addQuadPie!\n");
 		is_zflat = false;
 	}
 	if (!size) zflat = 0;
@@ -756,7 +757,7 @@ int DORVertexes::addPoint(
 
 	// This really shouldnt happend from the lua side as we dont even expose the addQuad version with z positions
 	if (size && (z1 != zflat)) {
-		printf("Warning making non flat DORVertexes::addQuad!\n");
+		// printf("Warning making non flat DORVertexes::addQuad!\n");
 		is_zflat = false;
 	}
 	if (!size) zflat = z1;
@@ -845,7 +846,7 @@ void DORVertexes::loadObj(const string &filename) {
 					texcoords.x = attrib.texcoords[2 * idx.texcoord_index + 0];
 					texcoords.y = attrib.texcoords[2 * idx.texcoord_index + 1];
 					// tex[0] = materials_diffuses[mat_id];
-					// printf("SHAPE %d tex : %d : %fx%f\n", s, materials_diffuses[mat_id], texcoords[0], texcoords[1]);
+					printf("SHAPE %d tex : %d : %fx%f\n", s, texcoords.x, texcoords.y);
 				}
 
 				if (mat_id >= 0) {

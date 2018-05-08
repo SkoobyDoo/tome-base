@@ -337,7 +337,8 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 	}
 
 	cur_model = cur_model * model; // This is .. undeeded ..??
-	mat4 mvp = (view ? view->get() : View::getCurrent()->get()) * cur_model;
+	View *use_view = view ? view : View::getCurrent();
+	mat4 mvp = use_view->get() * cur_model;
 	cur_color = cur_color * color;
 
 	if (cutting) activateCutting(cur_model, true);
@@ -396,6 +397,15 @@ void RendererGL::toScreen(mat4 cur_model, vec4 cur_color) {
 
 			if (shader->p_mvp != -1) {
 				glUniformMatrix4fv(shader->p_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+			}
+			if (shader->p_view != -1) {
+				glUniformMatrix4fv(shader->p_view, 1, GL_FALSE, glm::value_ptr(use_view->getCam()));
+			}
+			if (shader->p_model != -1) {
+				glUniformMatrix4fv(shader->p_model, 1, GL_FALSE, glm::value_ptr(cur_model));
+			}
+			if (shader->p_projection != -1) {
+				glUniformMatrix4fv(shader->p_projection, 1, GL_FALSE, glm::value_ptr(use_view->getView()));
 			}
 
 			glEnableVertexAttribArray(shader->vertex_attrib);
