@@ -504,7 +504,7 @@ void DORVertexes::setTexture(GLuint tex, int lua_ref, int id) {
 }
 
 void DORVertexes::setShader(shader_type *s) {
-	shader = s ? s : default_shader;
+	shader = s ? s : nullptr;
 	tween_uni = {0, 0, 0};
 }
 

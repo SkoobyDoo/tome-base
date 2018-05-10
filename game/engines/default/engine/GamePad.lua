@@ -67,7 +67,7 @@ function _M:receiveDevice(added, id)
 	else
 		if self.handlers.__removed then self.handlers.__removed(id, "__removed") end
 	end
-	-- print("=gamepad device", added, id)
+	print("=gamepad device", added, id)
 end
 
 function _M:addHandler(kind, fct)

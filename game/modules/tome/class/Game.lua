@@ -53,6 +53,7 @@ local BigNews = require "engine.BigNews"
 
 local Calendar = require "engine.Calendar"
 local Gestures = require "engine.ui.Gestures"
+local GamePad = require "engine.GamePad"
 
 local Dialog = require "engine.ui.Dialog"
 local MapMenu = require "mod.dialogs.MapMenu"
@@ -1425,6 +1426,7 @@ function _M:chronoRestore(name, remove)
 	game.key:setupRebootKeys() -- engine does it for us but not on chronoworld reload
 	game.key:setCurrent()
 	game.mouse:setCurrent()
+	game.gamepad:setCurrent()
 	profile.chat:setupOnGame()
 
 	core.wait.disable() -- "game" changed, we cant just unload the dialog, it doesnt exist anymore
@@ -1947,6 +1949,8 @@ tome.tactical_mode_set = true
 end
 
 function _M:setupCommands()
+	self.gamepad = GamePad.new()
+
 	-- Make targeting work
 	self.normal_key = self.key
 	self:targetSetupKey()
@@ -2391,6 +2395,7 @@ do return end
 	end, function() return self.player.allow_talents_worldmap end))
 
 	self.key:setCurrent()
+	self.gamepad:setCurrent()
 end
 
 function _M:setupMouse(reset)
