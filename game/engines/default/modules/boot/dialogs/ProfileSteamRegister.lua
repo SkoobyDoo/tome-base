@@ -27,7 +27,7 @@ local Textzone = require "engine.ui.Textzone"
 module(..., package.seeall, class.inherit(Dialog))
 
 function _M:init()
-	Dialog.init(self, "Steam User Account", 500, 400)
+	Dialog.init(self, "Steam User Account", math.min(800, game.w * 0.9), 400)
 	self.alpha = 230
 
 	self.c_desc = Textzone.new{width=math.floor(self.iw - 10), auto_height=true, text=[[Welcome to #GOLD#Tales of Maj'Eyal#LAST#.
@@ -43,8 +43,8 @@ Luckily this is very easy to do: you only require a profile name and optionally 
 
 	self.c_login = Textbox.new{title="Username: ", text="", chars=30, max_len=20, fct=function(text) self:okclick() end}
 	self.c_email = Textbox.new{title="Email: ", size_title=self.c_login.title, text="", chars=30, max_len=60, fct=function(text) self:okclick() end}
-	self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails", default=false, fct=function() self:okclick() end}
-	self.c_news2 = Textzone.new{text="about important game events from us.", width=self.iw - 20, auto_height=true}
+	self.c_news = Checkbox.new{title="Accept to receive #{bold}#very infrequent#{normal}# (a few per year) mails about important game events from us.", default=false, fct=function() self:okclick() end}
+	self.c_age = Checkbox.new{title="You at least 16 years old, or have parental authorization to play the game.", default=false, fct=function() self:okclick() end}
 	local ok = require("engine.ui.Button").new{text="Register", fct=function() self:okclick() end}
 	local cancel = require("engine.ui.Button").new{text="Cancel", fct=function() self:cancelclick() end}
 	local privacy = require("engine.ui.Button").new{text="Privacy Policy (opens in browser)", fct=function() self:privacypolicy() end}
@@ -53,7 +53,7 @@ Luckily this is very easy to do: you only require a profile name and optionally 
 		{left=0, top=self.c_desc.h, ui=self.c_login},
 		{left=0, top=self.c_desc.h+self.c_login.h+5, ui=self.c_email},
 		{left=0, top=self.c_desc.h+self.c_login.h+self.c_email.h+5, ui=self.c_news},
-		{left=0, top=self.c_desc.h+self.c_login.h+self.c_email.h+self.c_news.h+5, ui=self.c_news2},
+		{left=0, top=self.c_desc.h+self.c_login.h+self.c_email.h+self.c_news.h+5, ui=self.c_age},
 		{left=0, bottom=0, ui=ok},
 		{right=0, bottom=0, ui=cancel},
 		{hcenter=0, bottom=0, ui=privacy},
@@ -76,7 +76,11 @@ function _M:okclick()
 		self:simplePopup("Email", "Your email does not look right.")
 		return
 	end
-
+	if not self.c_age.checked then
+		self:simplePopup("Age Check", "You need to be 16 years old or more or to have parental authorization to play this game.")
+		return
+	end
+	
 	local d = self:simpleWaiter("Registering...", "Registering on https://te4.org/, please wait...") core.display.forceRedraw()
 	d:timeout(30, function() Dialog:simplePopup("Steam", "Steam client not found.")	end)
 	core.steam.sessionTicket(function(ticket)
