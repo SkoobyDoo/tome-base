@@ -559,7 +559,7 @@ You will also have a user page on #LIGHT_BLUE#https://te4.org/#LAST# to show off
 This is all optional, you are not forced to use this feature at all, but the developer would thank you if you did as it will make balancing easier.]]
 
 function _M:checkFirstTime()
-	if not profile.generic.firstrun and not core.steam then
+	if not profile.generic.firstrun then
 		local d = require("mod.dialogs.FirstRun").new(profile_help_text)
 		local mm = self.dialogs[#self.dialogs]
 		self:unregisterDialog(mm)
@@ -570,11 +570,18 @@ end
 
 function _M:checkBootLoginRegister()
 	if __module_extra_info.boot_and_register then
-		local dialogdef = {}
-		dialogdef.fct = function(login) self:setPlayerLogin(login) end
-		dialogdef.name = "creation"
-		dialogdef.justlogin = false
-		game:registerDialog(require('mod.dialogs.ProfileLogin').new(dialogdef, game.profile_help_text))
+		if core.steam then
+			local mm = self.dialogs[#self.dialogs]
+			if mm and mm:isClassName("mod.dialogs.MainMenu") then
+				mm:loginSteam()
+			end
+		else
+			local dialogdef = {}
+			dialogdef.fct = function(login) self:setPlayerLogin(login) end
+			dialogdef.name = "creation"
+			dialogdef.justlogin = false
+			game:registerDialog(require('mod.dialogs.ProfileLogin').new(dialogdef, game.profile_help_text))
+		end
 	end
 end
 

@@ -85,10 +85,18 @@ disable_all_connectivity = true
 upload_charsheet = true
 upgrades { v1_0_5=true }
 ]]
+local loaded_config_files = {}
 for i, file in ipairs(fs.list("/settings/")) do
 	if file:find(".cfg$") then
 		config.load("/settings/"..file)
+		loaded_config_files[file] = true
 	end
+end
+
+-- Keep the same setting when upgrading
+-- What a FRELLING MESS
+if not loaded_config_files["disable_all_connectivity.cfg"] and not config.settings.firstrun_gdpr then
+	config.settings.disable_all_connectivity = false
 end
 
 if config.settings.disable_all_connectivity then
