@@ -131,7 +131,7 @@ function _M:onDownload(handlers)
 	local Dialog = require "engine.ui.Dialog"
 
 	handlers.on_download_request = function(downid, url, file, mime)
-		if mime == "application/t-engine-addon" and self.allow_downloads.addons and url:find("^http://te4%.org/") then
+		if mime == "application/t-engine-addon" and self.allow_downloads.addons and url:find("^https://te4%.org/") then
 			local name = file
 			if self._next_download_name and os.time() - self._next_download_name.time <= 3 then name = self._next_download_name.name self._next_download_name = nil end
 			print("Accepting addon download to:", self.dest)
@@ -140,7 +140,7 @@ function _M:onDownload(handlers)
 			game:registerDialog(self.download_dialog)
 			self.view:downloadAction(downid, self.dest)
 			return
-		elseif mime == "application/t-engine-module" and self.allow_downloads.modules and url:find("^http://te4%.org/") then
+		elseif mime == "application/t-engine-module" and self.allow_downloads.modules and url:find("^https://te4%.org/") then
 			local name = file
 			if self._next_download_name and os.time() - self._next_download_name.time <= 3 then name = self._next_download_name.name self._next_download_name = nil end
 			print("Accepting module download to:", self.dest)
