@@ -81,7 +81,7 @@ chat.filter = {}
 chat.ignores = {}
 addons = {}
 allow_online_events = true
-disable_all_connectivity = false
+disable_all_connectivity = true
 upload_charsheet = true
 upgrades { v1_0_5=true }
 ]]

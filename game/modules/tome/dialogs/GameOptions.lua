@@ -613,11 +613,10 @@ This includes, but is not limited to:
 - Characters vault: You will not be able to upload any character to the online vault to show your glory
 - Item's Vault: You will not be able to access the online item's vault, this includes both storing and retrieving items.
 - Ingame chat: The ingame chat requires to connect to the server to talk to other players, this will not be possible.
-- Donator benefits: The base game being free, the only way to give donators their bonuses fairly is to check their online profile. This will thus be disabled.
-- Expansions & DLCs: Similarly any and all official expansions to the game works under the same principles as the donator benfits and will thus also be disabled.
+- Purchaser / Donator benefits: The base game being free, the only way to give donators their bonuses fairly is to check their online profile. This will thus be disabled.
 - Easy addons downloading & installation: You will not be able to see ingame the list of available addons, nor to one-click install them. You may still do so manually.
 - Version checks: Addons will not be checked for new versions.
-- Discord: If you use Discord Rich Presence integration this will also be disabled byt this setting.
+- Discord: If you use Discord Rich Presence integration this will also be disabled by this setting.
 - Ingame game news: The main menu will stop showing you info about new updates to the game.
 
 Note that this setting only affects the game itself. If you use the game launcher, whose sole purpose is to make sure the game is up to date, it will still do so.

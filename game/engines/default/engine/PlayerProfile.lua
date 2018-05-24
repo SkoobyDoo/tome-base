@@ -1044,7 +1044,8 @@ function _M:isDonator(s)
 end
 
 function _M:allowDLC(dlc)
-	if core.steam then if core.steam.checkDLC(dlc[2]) then return true end end
-	if self.auth and self.auth.dlcs and self.auth.dlcs[dlc[1]] then return true end
-	return false
+	-- if core.steam then if core.steam.checkDLC(dlc[2]) then return true end end
+	-- if self.auth and self.auth.dlcs and self.auth.dlcs[dlc[1]] then return true end
+	-- return false
+	return true
 end
