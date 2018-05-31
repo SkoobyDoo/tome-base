@@ -319,7 +319,7 @@ void DORSpriter::onKeyframe(float nb_keyframe) {
 	instance->setTimeElapsed(1000.0 * nb_keyframe / KEYFRAMES_PER_SEC);
 	setChanged();
 
-	if (instance->animationJustFinished(true)) {
+	if (instance->animationJustFinished(true) && trigger_cb_lua_ref != LUA_NOREF) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, DisplayObject::weak_registry_ref);
 		lua_rawgeti(L, LUA_REGISTRYINDEX, trigger_cb_lua_ref);
 		lua_rawgeti(L, -2, getWeakSelfRef());
@@ -327,7 +327,7 @@ void DORSpriter::onKeyframe(float nb_keyframe) {
 		lua_pushstring(L, instance->currentAnimationName().c_str());
 		if (lua_pcall(L, 3, 0, 0))
 		{
-			printf("DORSpriter trigger callback error: %s\n", lua_tostring(L, -1));
+			printf("DORSpriter trigger callback keyframe error: %s\n", lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
 		lua_pop(L, 1); // weak registery

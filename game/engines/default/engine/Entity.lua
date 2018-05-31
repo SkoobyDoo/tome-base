@@ -416,11 +416,15 @@ function _M:makeMapObject(tiles, idx)
 		-- print('=---= showing mo', self.uid, self.image, btex:getValue())
 		if self.spriter then
 			local sp = core.renderer.spriter("/data/gfx/spriters/"..self.spriter[1]..".scml", self.spriter[2] or "default")
+			if self.spriter[3] then
+				for _, cm in ipairs(self.spriter[3]) do sp:characterMap(cm, true) end
+			end
 			if self.spriter.anim then sp:setAnim(self.spriter.anim) end
 			if self.spriter.scale then if type(self.spriter.scale) == "table" then sp:scale(self.spriter.scale[1], self.spriter.scale[2], self.spriter.scale[3]) else sp:scale(self.spriter.scale, self.spriter.scale, self.spriter.scale) end end
 			local spr = core.renderer.renderer("stream") -- We add it to a renderer and then use the renderer, this way the map doesnt need to redraw the full z layer each frame
 			spr:add(sp)
 			self._mo:displayObject(spr)
+			self._sp = sp
 		elseif self.anim then
 			self._mo:texture(0, btex, false, btexx / self.anim.max, btexy, tex_x, tex_y)
 			self._mo:setAnim(0, self.anim.max, self.anim.speed or 1, self.anim.loop or -1)
