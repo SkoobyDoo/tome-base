@@ -553,6 +553,7 @@ newEntity{ base="TOWN", define_as = "TOWN_ZIGUR",
 	name = "Zigur (Town)", add_mos = {{image="terrain/village_01.png"}},
 	desc = "Ziguranth main training ground",
 	change_zone="town-zigur",
+	change_level_check = function() local p = game.party:findMember{main=true} if p:attr("has_arcane_knowledge") or p:attr("undead") then require("engine.ui.Dialog"):simplePopup("Zigur", "Somehow as magic user you feel this place is not safe for you.") return true end return false end,
 }
 newEntity{ base="TOWN", define_as = "TOWN_IRON_COUNCIL",
 	name = "Iron Council (Town)",

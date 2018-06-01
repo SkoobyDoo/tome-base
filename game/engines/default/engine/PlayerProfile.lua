@@ -579,7 +579,7 @@ function _M:eventGetNews(e)
 end
 
 function _M:eventIncrLogConsume(e)
-	local module = game.__mod_info.short_name
+	local module = type(game) == "table" and game.__mod_info.short_name
 	if not module then return end
 	print("[PROFILE] Server accepted our incr log, deleting")
 	local pop = self:mountProfile(true, module)
@@ -1044,7 +1044,8 @@ function _M:isDonator(s)
 end
 
 function _M:allowDLC(dlc)
-	if core.steam then if core.steam.checkDLC(dlc[2]) then return true end end
-	if self.auth and self.auth.dlcs and self.auth.dlcs[dlc[1]] then return true end
-	return false
+	-- if core.steam then if core.steam.checkDLC(dlc[2]) then return true end end
+	-- if self.auth and self.auth.dlcs and self.auth.dlcs[dlc[1]] then return true end
+	-- return false
+	return true
 end
