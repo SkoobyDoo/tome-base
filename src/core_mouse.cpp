@@ -159,8 +159,15 @@ static int lua_set_mouse_relative(lua_State *L) {
 	return 0;
 }
 
+static int lua_set_mouse_capture(lua_State *L) {
+	bool v = lua_toboolean(L, 1);
+	SDL_CaptureMouse(v ? SDL_TRUE : SDL_FALSE);
+	return 0;
+}
+
 static const struct luaL_Reg mouselib[] =
 {
+	{"capture", lua_set_mouse_capture},
 	{"setRelative", lua_set_mouse_relative},
 	{"touchCapable", lua_is_touch_enabled},
 	{"setMouseCursor", sdl_set_mouse_cursor},
