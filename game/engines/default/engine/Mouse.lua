@@ -33,20 +33,12 @@ function _M:init()
 	self.last_pos = { x = 0, y = 0 }
 	self.scale = 1
 	self.relative_mode = false
-	self.capture_mode = false
 end
 
 function _M:relativeMode(v)
 	self.relative_mode = v
 	if _M.current == self then
 		core.mouse.setRelative(v)
-	end
-end
-
-function _M:captureMode(v)
-	self.capture_mode = v
-	if _M.current == self then
-		core.mouse.capture(v)
 	end
 end
 
@@ -143,7 +135,6 @@ end
 function _M:setCurrent()
 	core.mouse.set_current_handler(self)
 	core.mouse.setRelative(self.relative_mode)
-	core.mouse.capture(self.capture_mode)
 --	if game then game.mouse = self end
 	_M.current = self
 end

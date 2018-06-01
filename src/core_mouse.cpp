@@ -161,6 +161,7 @@ static int lua_set_mouse_relative(lua_State *L) {
 
 static int lua_set_mouse_capture(lua_State *L) {
 	bool v = lua_toboolean(L, 1);
+	printf("==============[MOUSE] CCAPTURING: %d\n", v);
 	SDL_CaptureMouse(v ? SDL_TRUE : SDL_FALSE);
 	return 0;
 }
