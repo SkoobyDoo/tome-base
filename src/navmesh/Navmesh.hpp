@@ -195,6 +195,7 @@ public:
 
 	void enableDebug(bool v) { debug = v; };
 	void drawDebug(float x, float y);
+	vector<sp_mesh_triangle>& getTrianglesList() { return mesh; };
 };
 
 #endif

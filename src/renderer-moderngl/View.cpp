@@ -102,11 +102,14 @@ void View::use(bool v) {
 	in_use = v;
 	if (v) {
 		views_stack.push(this);
+		glViewport(0, 0, w, h);
 	} else {
 		if (views_stack.top() != this) {
 			printf("[GL STATE] ERROR VIEW POPED IS NOT THIS\n");
 		}
 		views_stack.pop();
+		View *nv = views_stack.top();
+		glViewport(0, 0, nv->w, nv->h);
 	}
 }
 

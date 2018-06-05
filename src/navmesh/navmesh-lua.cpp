@@ -91,6 +91,34 @@ static int navmesh_free(lua_State *L)
 	return 1;
 }
 
+static int navmesh_get_triangles(lua_State *L) {
+	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
+	auto mesh = p->getTrianglesList();
+	lua_newtable(L);
+	int i = 1;
+	for (auto &tri : mesh) {
+		lua_newtable(L);
+
+		lua_newtable(L);
+		lua_pushliteral(L, "x"); lua_pushnumber(L, tri->p1.x); lua_rawset(L, -3);
+		lua_pushliteral(L, "y"); lua_pushnumber(L, tri->p1.y); lua_rawset(L, -3);
+		lua_rawseti(L, -2, 1);
+		
+		lua_newtable(L);
+		lua_pushliteral(L, "x"); lua_pushnumber(L, tri->p2.x); lua_rawset(L, -3);
+		lua_pushliteral(L, "y"); lua_pushnumber(L, tri->p2.y); lua_rawset(L, -3);
+		lua_rawseti(L, -2, 2);
+		
+		lua_newtable(L);
+		lua_pushliteral(L, "x"); lua_pushnumber(L, tri->p3.x); lua_rawset(L, -3);
+		lua_pushliteral(L, "y"); lua_pushnumber(L, tri->p3.y); lua_rawset(L, -3);
+		lua_rawseti(L, -2, 3);
+		
+		lua_rawseti(L, -2, i++);
+	}
+	return 1;
+}
+
 static int navmesh_is_in_triangle(lua_State *L)
 {
 	Navmesh *p = *(Navmesh**)auxiliar_checkclass(L, "navmesh{map}", 1);
@@ -214,6 +242,7 @@ static const struct luaL_Reg navmesh_reg[] =
 	{"findTriangle", navmesh_find_triangle},
 	{"pathFind", navmesh_find_path},
 	{"pathFindAsync", navmesh_find_path_async},
+	{"getTriangles", navmesh_get_triangles},
 	{"drawDebug", navmesh_debug_draw},
 	{NULL, NULL},
 };
