@@ -238,36 +238,38 @@ inline void MapObjectProcessor::processMapObject(RendererGL *renderer, MapObject
 		dm->bdisplayobject->render(renderer, m, color, true);
 	}
 
-	float tx1 = dm->tex_coords[0].x, tx2 = dm->tex_coords[0].x + dm->tex_coords[0].z;
-	float ty1 = dm->tex_coords[0].y, ty2 = dm->tex_coords[0].y + dm->tex_coords[0].w;
+	if (!dm->hide_base) {
+		float tx1 = dm->tex_coords[0].x, tx2 = dm->tex_coords[0].x + dm->tex_coords[0].z;
+		float ty1 = dm->tex_coords[0].y, ty2 = dm->tex_coords[0].y + dm->tex_coords[0].w;
 
-	shader_type *shader = default_shader;
-	if (dm->shader) shader = dm->shader;
-	else if (dm->root->shader) shader = dm->root->shader;
-	else shader = default_shader;
+		shader_type *shader = default_shader;
+		if (dm->shader) shader = dm->shader;
+		else if (dm->root->shader) shader = dm->root->shader;
+		else shader = default_shader;
 
-	auto dl = getDisplayList(renderer, {dm->textures[0], dm->textures[1], dm->textures[2]}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
-	// printf("[%ld]-- %d %d %d : %lx\n", dm->uid, dm->textures[0], dm->textures[1], dm->textures[2], shader);
+		auto dl = getDisplayList(renderer, {dm->textures[0], dm->textures[1], dm->textures[2]}, shader, VERTEX_MAP_INFO, RenderKind::QUADS);
+		// printf("[%ld]-- %d %d %d : %lx\n", dm->uid, dm->textures[0], dm->textures[1], dm->textures[2], shader);
 
-	// Make sure we do not have to reallocate each step
-	// DGDGDGDG: actually do it
+		// Make sure we do not have to reallocate each step
+		// DGDGDGDG: actually do it
 
-	// Put it directly into the DisplayList
-	if (model) {
-		dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
-		dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
-		dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
-		dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
-	} else {
-		dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
-		dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
-		dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
-		dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
+		// Put it directly into the DisplayList
+		if (model) {
+			dl->list.push_back({(*model) * vec4(x1, y1, 0, 1), {tx1, ty1}, color});
+			dl->list.push_back({(*model) * vec4(x2, y1, 0, 1), {tx2, ty1}, color});
+			dl->list.push_back({(*model) * vec4(x2, y2, 0, 1), {tx2, ty2}, color});
+			dl->list.push_back({(*model) * vec4(x1, y2, 0, 1), {tx1, ty2}, color});
+		} else {
+			dl->list.push_back({{x1, y1, 0, 1}, {tx1, ty1}, color});
+			dl->list.push_back({{x2, y1, 0, 1}, {tx2, ty1}, color});
+			dl->list.push_back({{x2, y2, 0, 1}, {tx2, ty2}, color});
+			dl->list.push_back({{x1, y2, 0, 1}, {tx1, ty2}, color});
+		}
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
+		dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 	}
-	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 0.0}});
-	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 0.0}});
-	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 1.0, 1.0}});
-	dl->list_map_info.push_back({dm->tex_coords[0], {(float)dm->grid_x, (float)dm->grid_y, 0.0, 1.0}});
 
 	// DGDGDGDG: THIS DOES NOT WORK
 	// Or rather, it does, but if the refcleaner comes between a particel death and a map renderer update

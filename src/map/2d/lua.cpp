@@ -94,6 +94,12 @@ static int map_object_hide(lua_State *L) {
 	return 0;
 }
 
+static int map_object_hide_base(lua_State *L) {
+	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
+	obj->setHiddenBase(true);
+	return 0;
+}
+
 static int map_object_on_seen(lua_State *L) {
 	auto obj = lua_get_sobj_get<MapObject>(L, "core{mapobj2d}", 1);
 	if (lua_isboolean(L, 2)) {
@@ -645,6 +651,7 @@ static const struct luaL_Reg map_object_reg[] = {
 	{"isValid", map_object_is_valid},
 	{"onSeen", map_object_on_seen},
 	{"hide", map_object_hide},
+	{"hideBase", map_object_hide_base},
 	{"minimap", map_object_minimap},
 	{"resetMoveAnim", map_object_reset_move_anim},
 	{"setMoveAnim", map_object_set_move_anim},

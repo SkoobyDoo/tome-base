@@ -114,6 +114,7 @@ protected:
 	int64_t uid = 0;
 	bool valid = true;
 	bool hide = false;
+	bool hide_base = false;
 
 	const static uint8_t MAX_TEXTURES = 5;
 	uint8_t nb_textures = 0;
@@ -167,6 +168,7 @@ public:
 	void setCallback(int ref);
 	void chain(sMapObject n);
 	void setHidden(bool v) { hide = v; }
+	void setHiddenBase(bool v) { hide_base = v; }
 	void setSeen(bool v) { on_seen = v; }
 	bool setTexture(uint8_t slot, GLuint tex, int ref, vec4 coords);
 	void setDisplayObject(DisplayObject *d, int ref, bool front);

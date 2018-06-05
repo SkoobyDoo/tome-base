@@ -121,7 +121,6 @@ function _M:get(char, fr, fg, fb, br, bg, bb, image, alpha, do_outline, allow_ti
 	end
 
 	if (self.use_images or not dochar) and image then char = image end
-
 	if self.repo[char] and self.repo[char][fgidx] and self.repo[char][fgidx][bgidx] then
 		local s = self.repo[char][fgidx][bgidx]
 		return s[1], s[2], s[3], s[4], s[5], s[6], s[7]

@@ -422,8 +422,9 @@ function _M:makeMapObject(tiles, idx)
 			if self.spriter.anim then sp:setAnim(self.spriter.anim) end
 			if self.spriter.scale then if type(self.spriter.scale) == "table" then sp:scale(self.spriter.scale[1], self.spriter.scale[2], self.spriter.scale[3]) else sp:scale(self.spriter.scale, self.spriter.scale, self.spriter.scale) end end
 			local spr = core.renderer.renderer("stream") -- We add it to a renderer and then use the renderer, this way the map doesnt need to redraw the full z layer each frame
-			spr:add(sp)
+			spr:add(sp:translate(tiles.w / 2, tiles.h / 2))
 			self._mo:displayObject(spr)
+			self._mo:hideBase()
 			self._sp = sp
 		elseif self.anim then
 			self._mo:texture(0, btex, false, btexx / self.anim.max, btexy, tex_x, tex_y)
