@@ -187,6 +187,10 @@ _M.defaults.display_default_target = function(self, d)
 	self.target.y = self.target.y or self.source_actor.y
 end
 
+function _M:setCustomDraw(fct)
+	self.custom_draw = fct
+end
+
 function _M:display(dispx, dispy, prevfbo, rotate_keyframes)
 	local ox, oy = self.display_x, self.display_y
 	local sx, sy = game.level.map._map:getScroll()
@@ -194,8 +198,10 @@ function _M:display(dispx, dispy, prevfbo, rotate_keyframes)
 	sy = sy + game.level.map.display_y
 	self.display_x, self.display_y = dispx or sx or self.display_x, dispy or sy or self.display_y
 
-	if self.active then
-		self:realDisplay(self.display_x, self.display_y)
+	self.do_display = false
+	self:realDisplay(self.display_x, self.display_y)
+
+	if self.do_display then
 		self.renderer:toScreen(self.display_x, self.display_y)
 	end
 
@@ -203,6 +209,8 @@ function _M:display(dispx, dispy, prevfbo, rotate_keyframes)
 end
 
 function _M:realDisplay(dispx, dispy, display_highlight)
+	if not self.active and not self.custom_draw then return end
+
 	self.zone_layer:clear()
 
 	if not display_highlight then
@@ -245,6 +253,10 @@ function _M:realDisplay(dispx, dispy, display_highlight)
 			end
 		end
 	end
+
+	if self.custom_draw then self.custom_draw(display_highlight) self.do_display = true end
+	if not self.active then return end
+	self.do_display = true
 
 	-- DGDGDGDG oh my .. multitarget !! !
 	-- if self.target_type.multiple then
