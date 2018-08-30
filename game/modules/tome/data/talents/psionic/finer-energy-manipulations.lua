@@ -116,7 +116,7 @@ newTalent{
 		local fat = t.fatigueBoost(self, t)
 		return ([[Manipulate forces on the molecular level to realign, rebalance, and synergize equipment you wear to your form and function.
 		Any weapon you wield will gain a boost of %d to both accuracy and power. (The power is treated like an increase to your stats.  Mindstars cannot be manipulated in this way because they are already in an ideal natural state.)
-		Your total armour will increase by %d and your fatigue rating by %d for each body armour and shield worn.
+		Your total armour will increase by %d and your fatigue will decrease by %d for each body armour and shield worn.
 		The effects increase with your Mindpower.]]):
 		format(weapon_boost, arm, fat)
 	end,
