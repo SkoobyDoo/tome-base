@@ -836,7 +836,7 @@ newEntity{
 			on_kill = 1,
 			desc=function(self, who, special)
 				local targets = self.combat.projection_targets
-				return ("Projects up to %d attacks dealing 30%% weapon damage to random targets in range 7 (cannot hit the initial target)"):format(targets or 0)
+				return ("Projects up to %d attacks dealing 30%% weapon damage to random targets in range 7 as mind damage (cannot hit the initial target)"):format(targets or 0)
 			end,
 			fct=function(combat, who, target)
 				if who.turn_procs.ego_projection then return end
