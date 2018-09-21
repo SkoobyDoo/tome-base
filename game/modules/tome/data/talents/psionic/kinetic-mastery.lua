@@ -40,7 +40,7 @@ newTalent{
 		return true
 	end,
 	info = function(self, t)
-		return ([[For %d turns your telekinesis transcends your normal limits, increasing your Physical damage by %d%% and you Physical resistance penetration by %d%%.
+		return ([[For %d turns your telekinesis transcends your normal limits, increasing your Physical damage by %d%% and your Physical resistance penetration by %d%%.
 		In addition:
 		The cooldowns of Kinetic Shield, Kinetic Leech, Kinetic Aura, Kinetic Strike and Mindlash are reset.
 		Kinetic Aura effects will have their radius increased by 1.
@@ -141,16 +141,16 @@ newTalent{
 	info = function(self, t)
 		local range = self:getTalentRange(t)
 		local dam = damDesc(self, DamageType.PHYSICAL, t.getDamage(self, t))
-		return ([[Build telekinetic power and dump it onto an adjacent creature or yourself. 
-		This will launch them to where ever you target in a radius of %d. 
-		
-		Upon landing, launched enemy takes %0.1f Physical damage and is stunned for %d turns.  
-		All other creatures within radius 2 of the landing point take %0.1f Physical damage and are knocked away from you.
+		return ([[Build telekinetic power and dump it into an adjacent creature or yourself.
+		This will launch them to a targeted location in radius %d.
+
+		Launched enemies take %0.1f Physical damage and are stunned for %d turns upon landing.
+		When the target lands, creatures within radius 2 take %0.1f Physical damage and are knocked away from you.
 		This talent ignores %d%% of the knockback resistance of the thrown target, which takes half damage if it resists being thrown.
-		
+
 		When used on yourself, you will launch in a straight line, knocking enemies flying and doing %0.1f Physical damage to each.
 		You can break through %d walls while doing this.
-		The damage improves with your Mindpower and the range increases with Mindpower.]]):
+		The damage and range increases with Mindpower.]]):
 		format(range, dam, math.floor(range/2), dam/2, t.getKBResistPen(self, t), dam, math.floor(range/2))
 	end,
 }
@@ -254,7 +254,7 @@ newTalent{
 		local dur = t.getDuration(self, t)
 		local dam = t.getDamage(self, t)
 		return ([[Bind the target mercilessly with constant, bone-shattering pressure, pinning and slowing it by 50%% for %d turns and dealing %0.1f Physical damage each turn.
-		The duration and damage will improve with your Mindpower.]]):
+		The duration and damage improve with Mindpower.]]):
 		format(dur, damDesc(self, DamageType.PHYSICAL, dam))
 	end,
 }

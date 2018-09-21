@@ -307,7 +307,7 @@ This is countered by armour penetration and is applied before all kinds of criti
 ]]
 TOOLTIP_ARMOR_HARDINESS = [[#GOLD#Armour Hardiness#LAST#
 Armour hardiness represents how much of each incoming blows the armour will affect.
-Absorbs (hardiness)% of incoming physical damage, up to a maximum of (armour) damage absorbed.
+Absorbs (hardiness)% of incoming weapon damage, up to a maximum of (armour) damage absorbed.
 ]]
 TOOLTIP_CRIT_REDUCTION = [[#GOLD#Crit Reduction#LAST#
 Crit reduction reduces the chance an opponent has of landing a critical strike with a melee or ranged attack.
@@ -316,10 +316,10 @@ TOOLTIP_CRIT_SHRUG = [[#GOLD#Crits Shrug Off#LAST#
 Gives a chance to ignore the bonus critical damage from any direct damage attacks (melee, spells, ranged, mind powers, ...).
 ]]
 TOOLTIP_DEFENSE = [[#GOLD#Defense#LAST#
-Defense represents your chance to avoid physical melee attacks and reduces the chance you'll be knocked off-balance by an enemy's attack. It is measured against the attacker's Accuracy.
+Defense represents your chance to avoid melee weapon attacks and reduces the chance you'll be knocked off-balance by an enemy's attack. It is measured against the attacker's Accuracy.
 ]]
 TOOLTIP_RDEFENSE = [[#GOLD#Ranged Defense#LAST#
-Defense represents your chance to avoid physical ranged attacks and reduces the chance you'll be knocked off-balance by an enemy's attack. It is measured against the attacker's Accuracy.
+Defense represents your chance to avoid ranged weapon attacks and reduces the chance you'll be knocked off-balance by an enemy's attack. It is measured against the attacker's Accuracy.
 ]]
 TOOLTIP_SAVES = [[#GOLD#Saves#LAST#
 Saving throws represent your ability to shrug off, partially or fully, detrimental effects applied to you.  Most detrimental effects will check their power (physical, spell, mental) vs your corresponding save type to determine if they take effect or not.  The chance is usually ~50% when power and save are equal.

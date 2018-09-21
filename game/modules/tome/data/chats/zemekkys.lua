@@ -40,7 +40,7 @@ end
 -----------------------------------------------------------------
 
 newChat{ id="welcome",
-	text = [[#LIGHT_GREEN#*A slot in the door opens and a pair of wild eyes peers out.*#WHITE#
+	text = [[#LIGHT_GREEN#*A slot in the door opens and a pair of wild eyes peer out.*#WHITE#
 What do you want, @playerdescriptor.race@?]],
 	answers = {
 		{"Paladin Aeryn told me that you could help me. I need to get to Maj'Eyal.", jump="help", cond=function(npc, player) return game.state:isAdvanced() and not player:hasQuest("west-portal") end},
