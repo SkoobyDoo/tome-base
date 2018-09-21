@@ -69,9 +69,10 @@ tm:applyOnGroups(rooms, function(w, h, data, room, idx)
 	print("ROOM", idx, "::", rw, rh, "=>", rw * rh)
 	tm:fillGroup(room, '.')
 	if noroomforest and rw >= 8 and rh >= 8 then
-		local pond = Heightmap.new(1.6, {up_left=0, down_left=0, up_right=0, down_right=0, middle=1}):make(rw, rh, {' ', 'T', '=', '=', ';'})
+		local pond = Heightmap.new(1.6, {up_left=0, down_left=0, up_right=0, down_right=0, middle=1}):make(rw-2, rh-2, {' ', 'T', '=', '=', ';'})
 		pond:printResult()
-		tm:merge(p1.x, p1.y, pond)
+		tm:fillGroup(room, ';')
+		tm:merge(p1.x+1, p1.y+1, pond)
 		noroomforest = false
 	end
 	-- table.print()
@@ -86,11 +87,14 @@ if noroomforest then return self:regenerate() end
 tm:fillAll()
 
 -- Elimitate the rest
--- if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
+if tm:eliminateByFloodfill{'#', 'T'} < 400 then return self:regenerate() end
 
 -- tm:printResult()
 
--- local noise = Noise.new():make(12, 12, {'T', 'T', '=', '=', '=', ';', ';'})
--- noise:printResult()
+
+print('---==============---')
+local noise = Noise.new():make(12, 12, {'T', 'T', '=', '=', '=', ';', ';'})
+noise:printResult()
+print('---==============---')
 
 return tm
